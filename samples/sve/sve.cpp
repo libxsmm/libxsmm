@@ -39,7 +39,7 @@ template <typename T>
 void benchmark( int m, int n, struct SVE_UnaryBenchmark &io_result ) {
 
   size_t l_warmupRuns = 50;
-  size_t l_benchmarkRuns = 10 * 1000 * 1000;
+  size_t l_benchmarkRuns = 1000 * 1000;
   size_t l_dataSize = m * n;
 
   // allocate buffers
@@ -184,7 +184,7 @@ int main(/*int argc, char* argv[]*/) {
   int r0 = testSVEKernels();
   if( r0 != EXIT_SUCCESS ) return r0;
 
-  int m = 19, n = 27;
+  int m = 64, n = 64;
 
   // start the benchmarking
   std::vector<struct SVE_UnaryBenchmark> types;
@@ -194,6 +194,7 @@ int main(/*int argc, char* argv[]*/) {
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_INC, "+=1", 1, sizeof(T) * 2 });
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, "1/x", 1, sizeof(T) * 2 } );
   types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_SQRT, "sqrt", 1, sizeof(T) * 2 } );
+  types.push_back( { LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT, "1/sqrt", 1, sizeof(T) * 2 });
 
   libxsmm_finalize();
 

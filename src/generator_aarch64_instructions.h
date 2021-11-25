@@ -352,7 +352,9 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03002 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000802 /* multiply, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V       0x650e3000 /* reciprocal estimate, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* Newton step to improve the reciprocal, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3000 /* reciprocial sqrt estimate, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c02 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da001 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da001 /* square root, vectors, predicated */

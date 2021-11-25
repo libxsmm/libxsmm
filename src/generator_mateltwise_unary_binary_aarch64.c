@@ -632,9 +632,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
           }
           break;
-        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:/* this function only produces an estimate. is this truly ok? */
-          if( l_is_sve ){
-            /* todo can we improve the performance by using different temporary registers? */
+        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:
+          if( l_is_sve ) {
+            /* can we improve the performance by using multiple temporary registers? no,still 2.60x faster than ASIMD on 64x64  */
             /* one iteration step is close to perfect with 1/[1..50] */
             unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
@@ -651,9 +651,31 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT:
-          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
+          /* typical relative error in tests (iterations = 0, fp32): 5-8% */
+          /* typical relative error in tests (iterations = 1, fp32): 0.06% */
+          /* typical relative error in tests (iterations = 2, fp32): 0.001% */
+          unsigned char num_iterations = 2;
+          if( l_is_sve ) {
+            unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
+            unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
+            /* Newton iteration: guess *= (3-guess*guess*x)/2 */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
+                                                     cur_vreg, cur_vreg, 0, num_iterations ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+            for(unsigned char i=0;i<num_iterations;i++){
+              unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                       tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
+                                                       cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                       tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
+            }
+          } else {
+            /* todo: this only is an estimate as well, apply Newton iterations to improve the results */
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
                                                      (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+          }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_SQRT:
           if( l_is_sve ) {
@@ -1521,6 +1543,13 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   if( op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL ){
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+  }
+
+  if( op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT ){
+    /* two temporary registers are required, 3 in total: original, guess, guess squared */
+    i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_ELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV)) {
