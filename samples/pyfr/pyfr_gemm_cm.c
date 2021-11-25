@@ -16,9 +16,28 @@
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #else /* prototypes for GEMM */
-void dgemm_(const char*, const char*, const int*, const int*, const int*,
-  const double*, const double*, const int*, const double*, const int*,
-  const double*, double*, const int*);
+void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
+              const double* a, const int* LDA, const double* b, const int* LDB,
+              const double* beta, double* c, const int* LDC ) {
+  const int my_M = *M;
+  const int my_N = *N;
+  const int my_K = *K;
+  const int my_LDA = *LDA;
+  const int my_LDB = *LDB;
+  const int my_LDC = *LDC;
+  const float my_alpha = *alpha;
+  const float my_beta = *beta;
+  int m = 0, n = 0, k = 0;
+
+  for ( n = 0; n < my_N; ++n ) {
+    for ( m = 0; m < my_M; ++m ) {
+      c[(n * my_LDC) + m] = my_beta * c[(n * my_LDC) + m];
+      for ( k = 0; k < my_K; ++k ) {
+        c[(n * my_LDC) + m] += my_alpha * a[(k * my_LDA) + m] * b[(n * my_LDB) + k];
+      }
+    }
+  }
+}
 #endif
 
 
@@ -35,7 +54,9 @@ int main(int argc, char *argv[])
   int reps, i, j;
   const int nblock = 16;
   double alpha = 1.0, beta = 1.0;
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   char transa = 'N', transb = 'N';
+#endif
   int l_prefetch_op = LIBXSMM_PREFETCH_NONE;
   libxsmm_dmmfunction kernel = NULL;
 
@@ -84,7 +105,11 @@ int main(int argc, char *argv[])
   kernel = libxsmm_dmmdispatch(m, nblock, k, NULL, NULL, NULL, NULL, NULL, NULL, &l_prefetch_op );
 
   /* init MKL */
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+#else
+  my_dgemm(&m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+#endif
 
   #pragma omp parallel for
   for (i = 0; i < ldc*n; i++) {
@@ -94,7 +119,11 @@ int main(int argc, char *argv[])
 
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < reps; j++ ) {
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+#else
+    my_dgemm(&m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+#endif
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

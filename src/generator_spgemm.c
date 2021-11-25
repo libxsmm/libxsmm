@@ -117,7 +117,21 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_spgemm_csr_asparse_reg( io_generated_code, i_xgemm_desc, i_row_idx, i_column_idx, i_values );
+
+    /* x86 */
+    if ( io_generated_code->arch >= LIBXSMM_X86_GENERIC &&
+         io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_x86( io_generated_code, i_xgemm_desc,
+                                                    i_row_idx, i_column_idx, i_values );
+    /* aarch64 */
+    } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
+                io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64( io_generated_code, i_xgemm_desc,
+                                                        i_row_idx, i_column_idx, i_values );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+      return;
+    }
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */

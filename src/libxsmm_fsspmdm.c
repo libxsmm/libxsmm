@@ -86,11 +86,13 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_dfsspmdm* new_handle = NULL;
   libxsmm_dmmfunction k_sparse1 = NULL;
   libxsmm_dmmfunction k_sparse2 = NULL;
+  libxsmm_dmmfunction k_sparse4 = NULL;
   libxsmm_dmmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
   const int vlen = LIBXSMM_UPDIV(libxsmm_cpuid_vlen32(libxsmm_target_archid), 2);
   const int N_sparse1 = vlen;
   const int N_sparse2 = vlen * 2;
+  const int N_sparse4 = vlen * 4;
   const int N_dense = vlen;
   static int error_once = 0;
 
@@ -205,6 +207,14 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
         k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
+    /* And if that worked try going even wider still */
+    if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
+      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
+                                                   0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+        k_sparse4 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
+    }
   }
   LIBXSMM_HANDLE_ERROR_OFF_END();
 
@@ -230,7 +240,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   }
 
   /* Tally up how many kernels we got */
-  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2;
+  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2 + !!k_sparse4;
 
   /* We have at least one kernel */
   if (0 < nkerns) {
@@ -239,6 +249,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
+    double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     void* fp;
 
     /* If we have two or more kernels then try to benchmark them */
@@ -293,8 +304,19 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
+    /* Benchmark sparse (widest) */
+    if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; ++i ) {
+        for ( j = 0; j < N; j += N_sparse4 ) {
+          k_sparse4( perm, B + j, C + j );
+        }
+      }
+      dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+    }
+
     /* Dense fastest */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 ) {
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -304,7 +326,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 ) {
+    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4 ) {
       assert(NULL != k_sparse1);
       new_handle->N_chunksize = N_sparse1;
       new_handle->kernel = k_sparse1;
@@ -314,13 +336,23 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 ) {
+    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4 ) {
       assert(NULL != k_sparse2);
       new_handle->N_chunksize = N_sparse2;
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
+    }
+
+    /* Sparse (widest) fastest */
+    if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
+        assert(NULL != k_sparse4);
+        new_handle->N_chunksize = N_sparse4;
+        new_handle->kernel = k_sparse4;
+    } else if ( NULL != k_sparse4 ) {
+        LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
+        libxsmm_free( fp );
     }
 
     libxsmm_free( B );
@@ -360,11 +392,13 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_sfsspmdm* new_handle = NULL;
   libxsmm_smmfunction k_sparse1 = NULL;
   libxsmm_smmfunction k_sparse2 = NULL;
+  libxsmm_smmfunction k_sparse4 = NULL;
   libxsmm_smmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
   const int vlen = libxsmm_cpuid_vlen32(libxsmm_target_archid);
   const int N_sparse1 = vlen;
   const int N_sparse2 = vlen * 2;
+  const int N_sparse4 = vlen * 4;
   const int N_dense = vlen;
   static int error_once = 0;
 
@@ -479,6 +513,14 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
         k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
       }
     }
+    /* And if that worked try going even wider still */
+    if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
+      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
+                                                   0, ldb, ldc, one, beta, flags, prefetch);
+      if ( NULL != xgemm_desc ) {
+        k_sparse4 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
+      }
+    }
   } LIBXSMM_HANDLE_ERROR_OFF_END();
 
   /* Free CSR */
@@ -503,7 +545,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   }
 
   /* Tally up how many kernels we got */
-  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2;
+  nkerns = !!k_dense + !!k_sparse1 + !!k_sparse2 + !!k_sparse4;
 
   /* We have at least one kernel */
   if (0 < nkerns) {
@@ -512,6 +554,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
+    double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     void* fp;
 
     /* If we have two or more kernels then try to benchmark them */
@@ -561,13 +604,24 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       for ( i = 0; i < 250; ++i ) {
         for ( j = 0; j < N; j += N_sparse2 ) {
           k_sparse2( perm, B + j, C + j );
-        }
+       }
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
+    /* Benchmark sparse (widest) */
+    if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
+      t = libxsmm_timer_tick();
+      for ( i = 0; i < 250; ++i ) {
+        for ( j = 0; j < N; j += N_sparse4 ) {
+          k_sparse4( perm, B + j, C + j );
+        }
+      }
+      dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
+    }
+
     /* Dense fastest */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 ) {
+    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -577,7 +631,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 ) {
+    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4 ) {
       assert(NULL != k_sparse1);
       new_handle->N_chunksize = N_sparse1;
       new_handle->kernel = k_sparse1;
@@ -587,12 +641,22 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 ) {
+    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4 ) {
       assert(NULL != k_sparse2);
       new_handle->N_chunksize = N_sparse2;
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
+      libxsmm_free( fp );
+    }
+
+    /* Sparse (widest) fastest */
+    if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
+      assert(NULL != k_sparse4);
+      new_handle->N_chunksize = N_sparse4;
+      new_handle->kernel = k_sparse4;
+    } else if ( NULL != k_sparse4 ) {
+      LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
     }
 

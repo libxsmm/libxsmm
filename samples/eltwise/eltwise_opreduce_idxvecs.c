@@ -76,7 +76,7 @@ void shuffle_array(unsigned long long *array, int n) {
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0;
+  unsigned int m = 64, n = 64, i, j, jj, k, iters = 10000, n_cols_idx = 32, op = 0, op_order = 0, scale_op_res = 0, redop = 0, use_implicit_idx = 0, _j = 0, _i = 0;
   libxsmm_blasint ld_in = 64;
   float  *inp_matrix, *result, *ref_result, *inp_matrix2, *scale_vals, *vec_in;
   libxsmm_bfloat16 *inp_matrix_bf16, *result_bf16, *inp_matrix_bf162, *scale_vals_bf16;
@@ -95,6 +95,7 @@ int main(int argc, char* argv[])
   char scaleopresname[50];
   char redopname[50];
   unsigned int use_bf16 = 0;
+  unsigned int bcast_factor = 0;
   unsigned int argop_mode = 0;
   unsigned int idx_mode = 0;
   unsigned int use_regular_vecin = 0;
@@ -125,6 +126,7 @@ int main(int argc, char* argv[])
   if ( argc > 12 ) idx_mode        = atoi(argv[12]);
   if ( argc > 13 ) iters       = atoi(argv[13]);
   if ( argc > 14 ) use_bf16    = atoi(argv[14]);
+  if ( argc > 15 ) bcast_factor = atoi(argv[15]);
 
   if (op == OP_DIV)  avoid_small_vals = 1;
 
@@ -263,9 +265,9 @@ int main(int argc, char* argv[])
   }
 
   if (use_bf16 == 0) {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, idx_dtype, opredop_flags);
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, idx_dtype, opredop_flags, bcast_factor);
   } else {
-    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags);
+    kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags, bcast_factor);
   }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -377,7 +379,11 @@ int main(int argc, char* argv[])
     } else {
       _j = cols_ind_array2[jj];
     }
-    for (i = 0; i < m; i++) {
+    for (_i = 0; _i < m; _i++) {
+      i = _i;
+      if (bcast_factor > 0) {
+        i = _i/bcast_factor;
+      }
       if (redop == REDOP_NONE) {
         vec_in = ref_result;
       } else {
@@ -421,36 +427,36 @@ int main(int argc, char* argv[])
 
       if (redop != REDOP_NONE) {
         if (redop == REDOP_SUM) {
-          ref_result[i] += op_res;
+          ref_result[_i] += op_res;
         }
         if (redop == REDOP_MIN) {
           if (argop_vec_0 > 0) {
-            if (op_res <= ref_result[i]) {
-              ref_argop_off_vec_0[i] = j;
+            if (op_res <= ref_result[_i]) {
+              ref_argop_off_vec_0[_i] = j;
             }
           }
           if (argop_vec_1 > 0) {
-            if (op_res <= ref_result[i]) {
-              ref_argop_off_vec_1[i] = _j;
+            if (op_res <= ref_result[_i]) {
+              ref_argop_off_vec_1[_i] = _j;
             }
           }
-          ref_result[i] = LIBXSMM_MIN(ref_result[i], op_res);
+          ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
         }
         if (redop == REDOP_MAX) {
           if (argop_vec_0 > 0) {
-            if (op_res >= ref_result[i]) {
-              ref_argop_off_vec_0[i] = j;
+            if (op_res >= ref_result[_i]) {
+              ref_argop_off_vec_0[_i] = j;
             }
           }
           if (argop_vec_1 > 0) {
-            if (op_res >= ref_result[i]) {
-              ref_argop_off_vec_1[i] = _j;
+            if (op_res >= ref_result[_i]) {
+              ref_argop_off_vec_1[_i] = _j;
             }
           }
-          ref_result[i] = LIBXSMM_MAX(ref_result[i], op_res);
+          ref_result[_i] = LIBXSMM_MAX(ref_result[_i], op_res);
         }
       } else {
-        ref_result[i] = op_res;
+        ref_result[_i] = op_res;
       }
     }
   }
@@ -568,7 +574,11 @@ int main(int argc, char* argv[])
       } else {
         _j = cols_ind_array2[jj];
       }
-      for (i = 0; i < m; i++) {
+      for (_i = 0; _i < m; _i++) {
+        i = _i;
+        if (bcast_factor > 0) {
+          i = _i/bcast_factor;
+        }
         if (redop == REDOP_NONE) {
           vec_in = ref_result;
         } else {
@@ -611,36 +621,36 @@ int main(int argc, char* argv[])
         }
         if (redop != REDOP_NONE) {
           if (redop == REDOP_SUM) {
-            ref_result[i] += op_res;
+            ref_result[_i] += op_res;
           }
           if (redop == REDOP_MIN) {
             if (argop_vec_0 > 0) {
-              if (op_res < ref_result[i]) {
-                ref_argop_off_vec_0[i] = j;
+              if (op_res < ref_result[_i]) {
+                ref_argop_off_vec_0[_i] = j;
               }
             }
             if (argop_vec_1 > 0) {
-              if (op_res < ref_result[i]) {
-                ref_argop_off_vec_1[i] = _j;
+              if (op_res < ref_result[_i]) {
+                ref_argop_off_vec_1[_i] = _j;
               }
             }
-            ref_result[i] = LIBXSMM_MIN(ref_result[i], op_res);
+            ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
           }
           if (redop == REDOP_MAX) {
             if (argop_vec_0 > 0) {
-              if (op_res > ref_result[i]) {
-                ref_argop_off_vec_0[i] = j;
+              if (op_res > ref_result[_i]) {
+                ref_argop_off_vec_0[_i] = j;
               }
             }
             if (argop_vec_1 > 0) {
-              if (op_res > ref_result[i]) {
-                ref_argop_off_vec_1[i] = _j;
+              if (op_res > ref_result[_i]) {
+                ref_argop_off_vec_1[_i] = _j;
               }
             }
-            ref_result[i] = LIBXSMM_MAX(ref_result[i], op_res);
+            ref_result[_i] = LIBXSMM_MAX(ref_result[_i], op_res);
           }
         } else {
-          ref_result[i] = op_res;
+          ref_result[_i] = op_res;
         }
       }
     }

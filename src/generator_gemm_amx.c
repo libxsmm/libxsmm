@@ -556,13 +556,19 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
-  int im, in, acc_id = 0, i_n_offset, i_m_offset, zmm_reg = 0;
+  int im, in, acc_id = 0, i_n_offset, i_m_offset, i_m_offset_bias = 0, zmm_reg = 0;
+  int vbias_reg = 31;
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
   unsigned int col = 0;
   unsigned int gp_reg_bias = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
 
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
+    /* Check if we have to fuse colbias bcast */
+    if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+      gp_reg_bias = i_gp_reg_mapping->gp_reg_lda;
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, gp_reg_bias );
+    }
     if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->n_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
       /* Check if we have to save the tmp registers  */
@@ -571,10 +577,47 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
       }
 
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
-
       i_m_offset = 0;
+      i_m_offset_bias = 0;
       for (im = 0; im < m_tiles; im++) {
         i_n_offset = 0;
+        if (i_micro_kernel_config->fused_bcolbias == 1) {
+          /* load 16 bit values into ymm portion of the register */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVDQU16,
+              gp_reg_bias,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              i_m_offset_bias * 2/*(i_micro_kernel_config->datatype_size/2)*/,
+              'y',
+              vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          /* convert 16 bit values into 32 bit (integer convert) */
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VPMOVSXWD,
+              i_micro_kernel_config->vector_name,
+              vbias_reg, vbias_reg );
+          /* shift 16 bits to the left to generate valid FP32 numbers */
+          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
+              i_micro_kernel_config->vector_name,
+              vbias_reg,
+              vbias_reg,
+              16);
+          i_m_offset_bias += m_blocking_info->sizes[im];
+        }
+        if (i_micro_kernel_config->fused_scolbias == 1) {
+          /* load FP32 bias */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVUPS,
+              gp_reg_bias,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              i_m_offset_bias * 4,
+              'z',
+              vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          i_m_offset_bias += m_blocking_info->sizes[im];
+        }
+
         for (in = 0; in < n_tiles; in++) {
           /* Now for all the columns in the tile, upconvert them to F32 from BF16  */
           for (col = 0; col < n_blocking_info->sizes[in]; col++) {
@@ -600,6 +643,9 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 zmm_reg,
                 zmm_reg,
                 16);
+            if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, 'z', zmm_reg, vbias_reg, zmm_reg );
+            }
             /* Store upconverted column to GEMM scratch */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -633,9 +679,68 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
       }
     } else {
       i_m_offset = 0;
+      i_m_offset_bias = 0;
       for (im = 0; im < m_tiles; im++) {
         i_n_offset = 0;
+        if (i_micro_kernel_config->fused_bcolbias == 1) {
+          /* load 16 bit values into ymm portion of the register */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVDQU16,
+              gp_reg_bias,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              i_m_offset_bias * 2/*(i_micro_kernel_config->datatype_size/2)*/,
+              'y',
+              vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          /* convert 16 bit values into 32 bit (integer convert) */
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VPMOVSXWD,
+              i_micro_kernel_config->vector_name,
+              vbias_reg, vbias_reg );
+          /* shift 16 bits to the left to generate valid FP32 numbers */
+          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
+              i_micro_kernel_config->vector_name,
+              vbias_reg,
+              vbias_reg,
+              16);
+          i_m_offset_bias += m_blocking_info->sizes[im];
+        }
+        if (i_micro_kernel_config->fused_scolbias == 1) {
+          /* load FP32 bias */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMOVUPS,
+              gp_reg_bias,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              i_m_offset_bias * 4,
+              'z',
+              vbias_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+          i_m_offset_bias += m_blocking_info->sizes[im];
+        }
         for (in = 0; in < n_tiles; in++) {
+          if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+            for (col = 0; col < n_blocking_info->sizes[in]; col++) {
+              zmm_reg = (col % 16) + i_micro_kernel_config->reserved_zmms;
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                  i_micro_kernel_config->instruction_set,
+                  LIBXSMM_X86_INSTR_VMOVUPS,
+                  i_gp_reg_mapping->gp_reg_c,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4/*i_micro_kernel_config->datatype_size*/,
+                  'z',
+                  zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 1, 0 );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, 'z', zmm_reg, vbias_reg, zmm_reg );
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                  i_micro_kernel_config->instruction_set,
+                  LIBXSMM_X86_INSTR_VMOVUPS,
+                  i_gp_reg_mapping->gp_reg_c,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4/*i_micro_kernel_config->datatype_size*/,
+                  'z',
+                  zmm_reg, (im == m_tiles-1) ? i_micro_kernel_config->mask_m_fp32 : 0, 0, 1 );
+            }
+          }
           libxsmm_x86_instruction_tile_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_TILELOADD,
@@ -653,6 +758,9 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
         }
         i_m_offset += m_blocking_info->sizes[im];
       }
+    }
+    if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+      libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (i_xgemm_desc->lda * 4/*l_micro_kernel_config.datatype_size*/)/4);
     }
   } else { /* Beta=0 */
     /* Check if we have to fuse colbias bcast */

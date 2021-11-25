@@ -487,6 +487,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_PREFETCHNTA:
       libxsmm_strncpy(o_instr_name, "prefetchnta", i_instr_name_max_length, 11 );
       break;
+    case LIBXSMM_X86_INSTR_PREFETCHW:
+      libxsmm_strncpy(o_instr_name, "prefetchw", i_instr_name_max_length, 9 );
+      break;
     case LIBXSMM_X86_INSTR_CLDEMOTE:
       libxsmm_strncpy(o_instr_name, "cldemote", i_instr_name_max_length, 8 );
       break;
@@ -874,7 +877,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( io_generated_code->arch < LIBXSMM_X86_GENERIC ) {
