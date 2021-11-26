@@ -943,7 +943,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
-      if (0 != context && 0 != *context && '0' != *context) {
+      if (NULL != context && '\0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
       }
       else {
