@@ -4655,8 +4655,8 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
 
     if ( l_maxsize - i < 6 )
     {
-       fprintf(stderr, "libxsmm_instruction_jump_back_to_label: Our jump instructions need at most 6 bytes\n");
-       exit(-1);
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
     l_tmp = internal_x86_jumping( io_generated_code, i, l_val, i_jmp_instr );
