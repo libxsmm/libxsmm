@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 NAME=$(basename $0 .sh)
 GREP=$(command -v grep)
 ENV=$(command -v env)
@@ -22,9 +22,9 @@ if [ "Windows_NT" = "${OS}" ]; then
   LDD=$(command -v cygcheck)
   EXE=.exe
 else
-  if [ "" != "$(command -v ldd)" ]; then
+  if [ "$(command -v ldd)" ]; then
     LDD=ldd
-  elif [ "" != "$(command -v otool)" ]; then
+  elif [ "$(command -v otool)" ]; then
     LDD="otool -L"
   else
     LDD=echo
@@ -32,7 +32,7 @@ else
 fi
 
 MICINFO=$(command -v micinfo)
-if [ "" != "${MICINFO}" ]; then
+if [ "${MICINFO}" ]; then
   MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/[[:space:]]\+Total No of Active Cores :[[:space:]]\+\([0-9]\+\)/s//\1/p")
 fi
 if [ "" = "${MICCORES}" ]; then
@@ -41,7 +41,7 @@ fi
 MICTPERC=3
 
 if [ "-mic" != "$1" ]; then
-  if [ "" != "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
+  if [ "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       KMP_AFFINITY=scatter,granularity=fine,1 \

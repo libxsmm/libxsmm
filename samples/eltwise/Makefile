@@ -37,19 +37,36 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_reduce $(OUTDIR)/eltwise_scale
-
+XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform $(OUTDIR)/eltwise_unary_quantization
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS)
 
-$(OUTDIR)/eltwise_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_reduce-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/eltwise_scale: $(OUTDIR)/.make $(BLDDIR)/eltwise_scale-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/eltwise_scale-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/eltwise_opreduce_idxvecs: $(OUTDIR)/.make $(BLDDIR)/eltwise_opreduce_idxvecs-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_opreduce_idxvecs-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_binary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_binary_simple-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_binary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_simple: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_simple-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_relu: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_relu-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_relu-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_dropout: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_dropout-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_dropout-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_transform: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_transform-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_transform-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/eltwise_unary_quantization: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_quantization-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/eltwise_unary_quantization-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

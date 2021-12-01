@@ -1,14 +1,14 @@
 # ROOTDIR avoid abspath to match Makefile targets
-ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
-INCDIR = include
-SCRDIR = scripts
-TSTDIR = tests
-BLDDIR = obj
-SRCDIR = src
-OUTDIR = lib
-BINDIR = bin
-SPLDIR = samples
-DOCDIR = documentation
+ROOTDIR := $(subst //,,$(dir $(firstword $(MAKEFILE_LIST)))/)
+INCDIR := include
+SCRDIR := scripts
+TSTDIR := tests
+BLDDIR := obj
+SRCDIR := src
+OUTDIR := lib
+BINDIR := bin
+SPLDIR := samples
+DOCDIR := documentation
 
 # subdirectories (relative) to PREFIX (install targets)
 PINCDIR ?= $(INCDIR)
@@ -23,9 +23,9 @@ LICFDIR ?= $(PDOCDIR)
 LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
-CFLAGS = $(RPM_OPT_FLAGS)
-CXXFLAGS = $(RPM_OPT_FLAGS)
-FCFLAGS = $(RPM_OPT_FLAGS)
+CFLAGS := $(RPM_OPT_FLAGS)
+CXXFLAGS := $(RPM_OPT_FLAGS)
+FCFLAGS := $(RPM_OPT_FLAGS)
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -66,6 +66,14 @@ PRECISION ?= 0
 # Specify the size of a cacheline (Bytes)
 CACHELINE ?= 64
 
+# Max. size of JIT-buffer [Bytes]
+# 0: fixed/internal default
+# N: fixed/specific value
+CODE_BUF_MAXSIZE ?= 0
+ifneq (0,$(CODE_BUF_MAXSIZE))
+  DFLAGS += -DLIBXSMM_CODE_MAXSIZE=$(CODE_BUF_MAXSIZE)
+endif
+
 # Alpha argument of GEMM
 # Supported: 1.0
 ALPHA ?= 1
@@ -76,7 +84,7 @@ endif
 
 # Beta argument of GEMM
 # Supported: 0.0, 1.0
-# 0: C  = A * B
+# 0: C := A * B
 # 1: C += A * B
 BETA ?= 1
 ifneq (1,$(BETA))
@@ -115,24 +123,10 @@ MALLOC ?= 0
 # 0: disabled
 WRAP ?= 1
 
-# JIT backend is enabled by default
-ifeq (0,$(shell echo "$(PLATFORM)" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "0")) # NaN
-  JIT ?= 1
-else # disabled if platform is forced
-# enable: make PLATFORM=1 JIT=1
-  JIT ?= 0
-endif
-
-# TRACE facility
-INSTRUMENT ?= $(TRACE)
-
-# target library for a broad range of systems
-ifneq (0,$(JIT))
-  SSE ?= 1
-endif
-
-ifneq (,$(MAXTARGET))
-  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
+# Attempts to pin OpenMP based threads
+AUTOPIN ?= 0
+ifneq (0,$(AUTOPIN))
+  DFLAGS += -DLIBXSMM_AUTOPIN
 endif
 
 # Profiling JIT code using Linux Perf
@@ -167,12 +161,6 @@ endif
 # always agnostic wrt the threading runtime
 OMP ?= 0
 
-ifneq (,$(MKL))
-ifneq (0,$(MKL))
-  BLAS = $(MKL)
-endif
-endif
-
 ifneq (1,$(CACHE))
   DFLAGS += -DLIBXSMM_CAPACITY_CACHE=$(CACHE)
 endif
@@ -183,19 +171,19 @@ ifeq (0,$(INIT))
 endif
 
 # Kind of documentation (internal key)
-DOCEXT = pdf
+DOCEXT := pdf
 
 # Timeout when downloading documentation parts
-TIMEOUT = 30
+TIMEOUT := 30
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = \
+EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
   PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
   SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
 # fixed .state file directory (included by source)
-DIRSTATE = $(OUTDIR)/..
+DIRSTATE := $(OUTDIR)/..
 
 ifeq (,$(M)$(N)$(K))
 ifeq (,$(filter-out 0,$(MNK)))
@@ -204,26 +192,62 @@ endif
 endif
 
 # avoid to link with C++ standard library
-FORCE_CXX = 0
+FORCE_CXX := 0
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
+
+# TRACE facility
+INSTRUMENT ?= $(TRACE)
+
+# JIT backend is enabled by default
+ifeq (0,$(call qnum,$(PLATFORM))) # NaN
+  JIT ?= 1
+else ifeq (1,$(PLATFORM))
+# JIT is disabled if platform is forced
+# enable with "PLATFORM=1 JIT=1" or "PLATFORM=2"
+  VTUNE := 0
+  MKL := 0
+  JIT ?= 0
+else
+# imply JIT=1 if PLATFORM=2 (or higher)
+  VTUNE := 0
+  MKL := 0
+  JIT ?= 1
+endif
+
+# target library for a broad range of systems
+ifneq (0,$(JIT))
+  SSE ?= 1
+endif
+
+ifneq (,$(MKL))
+ifneq (0,$(MKL))
+  BLAS := $(MKL)
+endif
+endif
+
+ifneq (,$(MAXTARGET))
+  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
+endif
 
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(ROOTDIR)/$(SRCDIR))
 
-# Version numbers according to interface (version.txt)
-ifneq (,$(PYTHON))
-  VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
-  VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
-  VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
-else
+ifeq (,$(PYTHON))
   $(info --------------------------------------------------------------------------------)
   $(error No Python interpreter found)
 endif
+
+# Version numbers according to interface (version.txt)
+VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
+VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
+VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
+VERSION_ALL ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py)
+VERSION_RELEASED ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(VERSION_ALL))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
@@ -249,53 +273,51 @@ endif
 # target library for a broad range of systems
 ifneq (0,$(JIT))
 ifeq (file,$(origin AVX))
-  AVX_STATIC = 0
+  AVX_STATIC := 0
 endif
 endif
 AVX_STATIC ?= $(AVX)
 
 ifeq (1,$(AVX_STATIC))
-  GENTARGET = snb
+  GENTARGET := snb
 else ifeq (2,$(AVX_STATIC))
-  GENTARGET = hsw
+  GENTARGET := hsw
 else ifeq (3,$(AVX_STATIC))
   ifneq (0,$(MIC))
     ifeq (2,$(MIC))
-      GENTARGET = knm
+      GENTARGET := knm
     else
-      GENTARGET = knl
+      GENTARGET := knl
     endif
   else
-    GENTARGET = skx
+    GENTARGET := skx
   endif
 else ifneq (0,$(SSE))
-  GENTARGET = wsm
+  GENTARGET := wsm
 else
-  GENTARGET = noarch
+  GENTARGET := noarch
 endif
 
 ifneq (Darwin,$(UNAME))
-  GENGEMM = @$(ENVBIN) \
+  GENGEMM := @$(ENVBIN) \
     LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
     PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 else # osx
-  GENGEMM = @$(ENVBIN) \
+  GENGEMM := @$(ENVBIN) \
     DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
     PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
-ifneq (,$(PYTHON))
-  INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
-endif
-NINDICES = $(words $(INDICES))
+INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+NINDICES := $(words $(INDICES))
 
-SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-KRNOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
-KRNOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
+SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
+KRNOBJS_HST := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KRNOBJS_MIC := $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
-HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
           $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
           $(ROOTDIR)/include/libxsmm_blocked_gemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
@@ -323,7 +345,7 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
-SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
+SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
@@ -335,33 +357,33 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward_weight_update.c \
           libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c libxsmm_dnn_softmaxloss.c \
           libxsmm_dnn_softmaxloss_forward.c libxsmm_dnn_softmaxloss_backward.c libxsmm_dnn_optimizer.c libxsmm_dnn_optimizer_sgd.c )
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
+SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 
-SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
-OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
-OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
-EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
+SRCFILES_GEN_GEMM_BIN := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
+OBJFILES_GEN_GEMM_BIN := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
+OBJFILES_GEN_LIB := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
+OBJFILES_HST := $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
+OBJFILES_MIC := $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
+EXTOBJS_HST  := $(BLDDIR)/intel64/libxsmm_ext.o \
                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                $(BLDDIR)/intel64/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
-EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
+EXTOBJS_MIC  := $(BLDDIR)/mic/libxsmm_ext.o \
                $(BLDDIR)/mic/libxsmm_ext_xcopy.o \
                $(BLDDIR)/mic/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/mic/libxsmm_ext_gemm.o
-NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
-NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
+NOBLAS_HST   := $(BLDDIR)/intel64/libxsmm_noblas.o
+NOBLAS_MIC   := $(BLDDIR)/mic/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
+OBJECTS := $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
           $(KRNOBJS_HST) $(KRNOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC) $(NOBLAS_HST) $(NOBLAS_MIC)
 ifneq (,$(strip $(FC)))
-  FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
+  FTNOBJS := $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
-MSGJITPROFILING = 0
+MSGJITPROFILING := 0
 ifneq (0,$(JIT))
 ifneq (0,$(VTUNE))
 ifeq (,$(filter Darwin,$(UNAME)))
@@ -371,44 +393,58 @@ ifeq (,$(filter Darwin,$(UNAME)))
       DFLAGS += -DLIBXSMM_PERF_JITDUMP
     endif
   endif
-  VTUNEROOT = $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
+  VTUNEROOT := $(shell env | grep VTUNE_PROFILER | grep -m1 _DIR | cut -d= -f2-)
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+    VTUNEROOT := $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
   endif
   ifeq (,$(VTUNEROOT))
-    VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
+    VTUNEROOT := $(EBROOTVTUNE)/vtune_amplifier
   endif
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
     ifneq (0,$(SYM))
-      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      LIBJITPROFILING := $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING := $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
       IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
+      WERROR := 0
       ifneq (0,$(INTEL))
         CXXFLAGS += -diag-disable 271
         CFLAGS += -diag-disable 271
       endif
     endif
-    MSGJITPROFILING = 1
+    MSGJITPROFILING := 1
   endif
 endif
 endif
 endif
 
-ifneq (,$(PYTHON))
-information = \
-	$(info ================================================================================) \
-	$(info LIBXSMM $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py) ($(UNAME))) \
-	$(info --------------------------------------------------------------------------------) \
-	$(info $(GINFO)) \
-	$(info $(CINFO)) \
-	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
-	$(if $(strip $(FC)),$(NULL), \
-	$(if $(strip $(FC_VERSION)), \
-	$(info Fortran Compiler $(FC_VERSION) is outdated!), \
-	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
-	$(info --------------------------------------------------------------------------------)
+# no warning conversion for released versions
+ifneq (0,$(VERSION_RELEASED))
+  WERROR := 0
 endif
+# no warning conversion for non-x86
+ifneq (x86_64,$(MNAME))
+  WERROR := 0
+endif
+# no warning conversion
+ifneq (,$(filter-out 0 1,$(INTEL)))
+  WERROR := 0
+endif
+
+information = \
+  $(info ================================================================================) \
+  $(info LIBXSMM $(VERSION_ALL) ($(UNAME)$(if $(filter-out 0,$(LIBXSMM_TARGET_HIDDEN)),$(NULL),$(if $(HOSTNAME),@$(HOSTNAME))))) \
+  $(info --------------------------------------------------------------------------------) \
+  $(info $(GINFO)) \
+  $(info $(CINFO)) \
+  $(if $(strip $(FC)),$(info $(FINFO))) \
+  $(if $(strip $(FC)),$(NULL), \
+  $(if $(strip $(FC_VERSION)), \
+  $(info Fortran Compiler $(FC_VERSION) is outdated!), \
+  $(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
+  $(info --------------------------------------------------------------------------------) \
+  $(if $(ENVSTATE),$(info Environment: $(ENVSTATE)) \
+  $(info --------------------------------------------------------------------------------))
 
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
@@ -449,21 +485,16 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
-ifneq (2,$(INTRINSICS))
+ifneq (,$(filter 0 1,$(INTRINSICS)))
 ifeq (0,$(COMPATIBLE))
-ifeq (0,$(AVX))
-	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
-else
-	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
-endif
 ifeq (0,$(INTEL))
-	$(info If adjusting INTRINSICS was necessary, reconsider an updated tool chain.)
+	$(info If adjusting INTRINSICS was necessary, consider updated GNU Binutils.)
 else # Intel Compiler
-	$(info Intel Compiler does not require adjusting INTRINSICS.)
+	$(info Intel Compiler does not usually require adjusting INTRINSICS.)
 endif
 	$(info --------------------------------------------------------------------------------)
-endif
-endif
+endif # COMPATIBLE
+endif # INTRINSICS
 ifneq (0,$(MSGJITPROFILING))
 ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
@@ -511,66 +542,76 @@ lib_mic: clib_mic flib_mic ext_mic noblas_mic
 .PHONY: lib_hst
 lib_hst: clib_hst flib_hst ext_hst noblas_hst
 
-PREFETCH_UID = 0
-PREFETCH_TYPE = 0
-PREFETCH_SCHEME = nopf
+PREFETCH_UID := 0
+PREFETCH_TYPE := 0
+PREFETCH_SCHEME := nopf
 ifneq (Windows_NT,$(UNAME)) # TODO: full support for Windows calling convention
-  ifneq (0,$(shell echo $$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))))
-    PREFETCH_UID = $(PREFETCH)
-  else ifneq (0,$(shell echo $$((0 > $(PREFETCH))))) # auto
-    PREFETCH_UID = 1
+  ifneq (0,$(shell echo "$$((0 <= $(PREFETCH) && $(PREFETCH) <= 6))"))
+    PREFETCH_UID := $(PREFETCH)
+  else ifneq (0,$(shell echo "$$((0 > $(PREFETCH)))")) # auto
+    PREFETCH_UID := 1
   else ifeq (pfsigonly,$(PREFETCH))
-    PREFETCH_UID = 2
+    PREFETCH_UID := 2
   else ifeq (BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 3
+    PREFETCH_UID := 3
   else ifeq (curAL2,$(PREFETCH))
-    PREFETCH_UID = 4
+    PREFETCH_UID := 4
   else ifeq (curAL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 5
+    PREFETCH_UID := 5
   else ifeq (AL2,$(PREFETCH))
-    PREFETCH_UID = 6
+    PREFETCH_UID := 6
   else ifeq (AL2_BL2viaC,$(PREFETCH))
-    PREFETCH_UID = 7
+    PREFETCH_UID := 7
   endif
   # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
   ifeq (1,$(PREFETCH_UID))
     # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
     # select "nopf" for statically generated code.
-    PREFETCH_SCHEME = nopf
-    PREFETCH_TYPE = -1
+    PREFETCH_SCHEME := nopf
+    PREFETCH_TYPE := -1
   else ifeq (2,$(PREFETCH_UID))
-    PREFETCH_SCHEME = pfsigonly
-    PREFETCH_TYPE = 1
+    PREFETCH_SCHEME := pfsigonly
+    PREFETCH_TYPE := 1
   else ifeq (3,$(PREFETCH_UID))
-    PREFETCH_SCHEME = BL2viaC
-    PREFETCH_TYPE = 4
+    PREFETCH_SCHEME := BL2viaC
+    PREFETCH_TYPE := 4
   else ifeq (4,$(PREFETCH_UID))
-    PREFETCH_SCHEME = curAL2
-    PREFETCH_TYPE = 8
+    PREFETCH_SCHEME := curAL2
+    PREFETCH_TYPE := 8
   else ifeq (5,$(PREFETCH_UID))
-    PREFETCH_SCHEME = curAL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((4 | 8)))
+    PREFETCH_SCHEME := curAL2_BL2viaC
+    PREFETCH_TYPE := $(shell echo "$$((4 | 8))")
   else ifeq (6,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2
-    PREFETCH_TYPE = 2
+    PREFETCH_SCHEME := AL2
+    PREFETCH_TYPE := 2
   else ifeq (7,$(PREFETCH_UID))
-    PREFETCH_SCHEME = AL2_BL2viaC
-    PREFETCH_TYPE = $(shell echo $$((4 | 2)))
+    PREFETCH_SCHEME := AL2_BL2viaC
+    PREFETCH_TYPE := $(shell echo "$$((4 | 2))")
   endif
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC)) # adopt host scheme
-  PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
+  PREFETCH_SCHEME_MIC := $(PREFETCH_SCHEME)
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
-#FLAGS = $(shell echo $$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32))))
-FLAGS = 0
+#FLAGS := $(shell echo "$$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32)))")
+FLAGS := 0
 
-SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
+SUPPRESS_UNUSED_VARIABLE_WARNINGS := LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
   #SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
-  #SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
-  SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
+  #SUPPRESS_UNUSED_PREFETCH_WARNINGS := $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
+  SUPPRESS_UNUSED_PREFETCH_WARNINGS := $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
+endif
+
+EXTCFLAGS := -DLIBXSMM_BUILD_EXT
+ifneq (0,$(call qnum,$(OMP))) # NaN
+  DFLAGS += -DLIBXSMM_SYNC_OMP
+else # default (no OpenMP based synchronization)
+  ifeq (,$(filter environment% override command%,$(origin OMP)))
+    EXTCFLAGS += $(OMPFLAG)
+    EXTLDFLAGS += $(OMPLIB)
+  endif
 endif
 
 # auto-clean the co-build
@@ -588,42 +629,32 @@ endif
 
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h $(INCDIR)/libxsmm_version.h
+
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(DIRSTATE)/.state
 	$(information)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
-		$(ROOTDIR)/.github/install.sh; \
+		$(ROOTDIR)/.github/install.sh 2>/dev/null; \
 	fi
 	@$(CP) $(filter $(ROOTDIR)/include/%.h,$(HEADERS)) $(INCDIR) 2>/dev/null || true
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
-		$(shell echo $$(($(THREADS)+$(OMP)))) \
+		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
-endif
+
 $(INCDIR)/libxsmm_version.h: $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h $(INCDIR)/.make \
                              $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_version.h > $@
-else
-.PHONY: $(INCDIR)/libxsmm_version.h
-endif
-
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h \
                      $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
-else
-.PHONY: $(INCDIR)/libxsmm.h
-endif
+		$(shell echo "$$(($(PRECISION)+($(FORTRAN)<<2)))") $(PREFETCH_TYPE) $(INDICES) > $@
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
@@ -632,32 +663,23 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_source.
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
                      $(INCDIR)/libxsmm_version.h \
                      $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
-		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
+		$(shell echo "$$(($(PRECISION)+($(FORTRAN)<<2)))") $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
-		$(shell echo $$(($(THREADS)+$(OMP)))) \
+		$(shell echo "$$((0<$(THRESHOLD)?$(THRESHOLD):0))") $(shell echo "$$(($(THREADS)+$(OMP)))") \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
-else
-.PHONY: $(INCDIR)/libxsmm.f
-endif
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(DIRSTATE)/.state
 	@$(PYTHON) $(call quote,$(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py) $(call qapath,$(DIRSTATE)/.state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
-else
-.PHONY: $(BLDDIR)/libxsmm_dispatch.h
-endif
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
@@ -721,21 +743,21 @@ endif # noarch
 		-e "/#error No kernel was compiled, lacking support for current architecture?/d" \
 		-e "/#pragma message (\".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: \" __FILE__)/d" \
 		| tr "~" "\n" > $(TMPFILE)
-ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
-endif
 	@$(MV) $(TMPFILE) $@
 endif
 
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
 	@rm -f $(1)
-	-$(CC) $(4) -c $(2) -o $(1)
+	-$(CC) $(4) $(if $(filter 0,$(WERROR)),$(NULL),$(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
-		echo "--------------------------------------------------------------"; \
-		echo "In case of assembler error, perhaps the Binutils are outdated."; \
-		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
-		echo "--------------------------------------------------------------"; \
+		if [ "2" = "$(INTRINSICS)" ]; then \
+			echo "--------------------------------------------------------------"; \
+			echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
+			echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
+			echo "--------------------------------------------------------------"; \
+		fi; \
 		false; \
 	fi
 endef
@@ -744,16 +766,6 @@ ifneq (0,$(GLIBC))
   DFLAGS += -DLIBXSMM_BUILD=2
 else
   DFLAGS += -DLIBXSMM_BUILD=1
-endif
-
-EXTCFLAGS = -DLIBXSMM_BUILD_EXT
-ifeq (0,$(OMP))
-  ifeq (,$(filter environment% override command%,$(origin OMP)))
-    EXTCFLAGS += $(OMPFLAG)
-    EXTLDFLAGS += $(OMPLIB)
-  endif
-else # OpenMP
-  DFLAGS += -DLIBXSMM_SYNC_OMP
 endif
 
 ifneq (0,$(MIC))
@@ -804,20 +816,6 @@ $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
 
-.PHONY: compile_mic
-ifneq (0,$(MIC))
-ifneq (0,$(MPSS))
-compile_mic:
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) -mmic -c $< -o $@
-endif
-endif
-
-.PHONY: compile_hst
-compile_hst:
-$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
-
 .PHONY: module_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
@@ -865,7 +863,7 @@ module: module_hst module_mic
 
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB) $(OUTDIR)/module
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
@@ -999,7 +997,7 @@ else # static
 endif
 
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
-DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/tvm_cnnlayer/ \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
@@ -1332,14 +1330,27 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		-e 'N;/^\n$$/d;P;D' \
 		> $@
 
+$(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md"
+	@echo >> $@
+
+$(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md"
+	@echo >> $@
+
+$(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Q&A.md"
+	@echo >> $@
+
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
 $(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dl.md $(ROOTDIR)/documentation/libxsmm_aux.md \
-$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
+$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md \
+$(ROOTDIR)/documentation/libxsmm_compat.md $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && ( \
@@ -1353,16 +1364,18 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		iconv -t utf-8 libxsmm_be.md && echo && \
 		echo "# Appendix" && \
 		echo "## Compatibility" && \
-		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
+		sed "s/^\(##*\) /#\1 /" libxsmm_compat.md | iconv -t utf-8 && \
 		echo "## Validation" && \
-		wget -T $(TIMEOUT) -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
+		sed "s/^\(##*\) /#\1 /" libxsmm_valid.md | iconv -t utf-8 && \
+		echo "## Q&A" && \
+		sed "s/^\(##*\) /#\1 /" libxsmm_qna.md | iconv -t utf-8; ) \
 	| sed \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
 		--template=$(call qndir,$(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -1388,13 +1401,13 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
 	| pandoc \
 		--template=$(TMPFILE) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
 		-V classoption=DIV=45 \
@@ -1409,7 +1422,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tensorflow.md \
@@ -1419,7 +1432,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-e 's/----*//g' \
 	| pandoc \
 		--template=$(call qndir,$(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-f gfm+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
 		-V author-meta="Hans Pabst" \
@@ -1488,15 +1501,16 @@ endif
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
+	@rm -f $(HEREDIR)/python3
 
 .PHONY: clean-all
 clean-all: clean
-	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
 		"$(MAKE) --no-print-directory clean" \; 2>/dev/null || true
 
 .PHONY: realclean-all
 realclean-all: realclean
-	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
 		"$(MAKE) --no-print-directory realclean" \; 2>/dev/null || true
 
 .PHONY: distclean
@@ -1520,8 +1534,8 @@ ifeq (,$(strip $(ALIAS_PREFIX)))
   override ALIAS_PREFIX := $(PREFIX)
 endif
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
-  PPKGDIR = libdata/pkgconfig
-  PMODDIR = share/modules
+  PPKGDIR := libdata/pkgconfig
+  PMODDIR := $(PDOCDIR)
 endif
 
 .PHONY: install-minimal
@@ -1576,9 +1590,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing pkg-config and module files..."
 	@mkdir -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
-	@mkdir -p $(PREFIX)/$(PMODDIR)
-	@if [ ! -e $(PREFIX)/$(PMODDIR)/module ]; then \
-		@$(CP) -v $(OUTDIR)/module $(PREFIX)/$(PMODDIR)/libxsmm 2>/dev/null || true; \
+	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
+		mkdir -p $(PREFIX)/$(PMODDIR); \
+		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
 	fi
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
@@ -1611,7 +1625,10 @@ endif
 endif
 
 .PHONY: install-all
-install-all: install samples
+install-all: install
+
+.PHONY: install-realall
+install-realall: install samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
@@ -1627,7 +1644,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 .PHONY: install-dev
-install-dev: install-all build-tests
+install-dev: install-realall build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
@@ -1645,20 +1662,20 @@ ifneq ($(PREFIX),$(ABSDIR))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  ALIAS_PRIVLIBS = $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
+  ALIAS_PRIVLIBS := $(call ldlib,$(LD),$(SLDFLAGS),dbghelp)
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    ALIAS_PRIVLIBS = $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
+    ALIAS_PRIVLIBS := $(LIBPTHREAD) $(LIBRT) $(LIBDL) $(LIBM) $(LIBC)
   else
-    ALIAS_PRIVLIBS = $(LIBDL) $(LIBM) $(LIBC)
+    ALIAS_PRIVLIBS := $(LIBDL) $(LIBM) $(LIBC)
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  ALIAS_PRIVLIBS_EXT = -fopenmp
+  ALIAS_PRIVLIBS_EXT := -fopenmp
 endif
 
-ALIAS_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
-ALIAS_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
+ALIAS_INCLUDEDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
@@ -1733,7 +1750,7 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >> $@
 
-$(OUTDIR)/module: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
+$(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 	@echo "#%Module1.0" > $@
 	@echo >> $@
 	@echo "module-whatis \"LIBXSMM $(VERSION_STRING)\"" >> $@
@@ -1788,12 +1805,12 @@ deb:
 		echo "Architecture: amd64" >> control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm" \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
-		wget -T $(TIMEOUT) -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE}" \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \
@@ -1825,4 +1842,3 @@ deb:
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
-

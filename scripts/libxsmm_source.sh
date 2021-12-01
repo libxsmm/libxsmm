@@ -1,11 +1,16 @@
 #!/usr/bin/env sh
 
 SRCDIR=../src
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
+GIT=$(command -v git)
 
 if [ "" = "${GREP}" ]; then
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
+fi
+if [ "${GIT}" ] && [ "" = "$(${GIT} ls-files "${HERE}/${SRCDIR}/libxsmm_main.c" 2>/dev/null)" ]; then
+  GIT=""
 fi
 cat << EOM
 /******************************************************************************
@@ -41,8 +46,6 @@ cat << EOM
 #endif
 EOM
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
-
 if [ "" = "$1" ]; then
   DSTDIR=${SRCDIR}
 else
@@ -53,9 +56,11 @@ fi
 export LC_ALL=C
 
 # good-enough pattern to match a main function, and to exclude this translation unit
-for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" *.c); do
+for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" ./*.c); do
   BASENAME=$(basename "${FILE}")
-  echo "#include \"${DSTDIR}/${BASENAME}\""
+  if [ "" = "${GIT}" ] || [ "$(${GIT} ls-files "${HERE}/${SRCDIR}/${BASENAME}" 2>/dev/null)" ]; then
+    echo "#include \"${DSTDIR}/${BASENAME}\""
+  fi
 done
 
 cat << EOM

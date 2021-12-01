@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #SBATCH --job-name resnet3
 #SBATCH --time 1-00:00:00
 #SBATCH -N 1

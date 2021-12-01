@@ -10,10 +10,10 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 CASE=0
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   CASE=$1
   shift
 fi

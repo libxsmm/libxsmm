@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 
-Copyright (c) 2009-2020, Intel Corporation  
+Copyright (c) 2009-2021, Intel Corporation  
 Copyright (c) 2016-2019, Google Inc.  
 Copyright (c) 2012-2014, Technische Universitaet Muenchen  
 All rights reserved.

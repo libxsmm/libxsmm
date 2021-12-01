@@ -533,6 +533,32 @@ For example:
 ./build/bin/gxm train model_zoo/resnet/1_resnet50_dummy_56.prototxt model_zoo/resnet/solver.prototxt
 ```
 
+### Preping on RHEL 8.0 / CentOS 8.0
+
+```bash
+dnf install protobuf
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-compiler-3.5.0-7.el8.x86_64.rpm
+dnf install protobuf-compiler-3.5.0-7.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-devel-3.5.0-7.el8.x86_64.rpm
+dnf install protobuf-devel-3.5.0-7.el8.x86_64.rpm
+dnf install lmdb
+dnf install lmdb-devel
+wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-devel-3.4.1-9.el8.x86_64.rpm
+wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-3.4.1-9.el8.x86_64.rpm
+dnf install opencv-3.4.1-9.el8.x86_64.rpm
+dnf install opencv-devel-3.4.1-9.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-2.1.2-6.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-devel-2.1.2-6.el8.x86_64.rpm
+dnf install gflags-2.1.2-6.el8.x86_64.rpm
+dnf install gflags-devel-2.1.2-6.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-devel-0.3.5-3.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-0.3.5-3.el8.x86_64.rpm
+dnf install glog-0.3.5-3.el8.x86_64.rpm
+dnf install glog-devel-0.3.5-3.el8.x86_64.rpm
+```
+
+Make sure that the makefile follows the OpenCV Ver 3 path!
+
 ## Xsmm LSTM
 
 This code may be integrated with Tensorflow to make use of LIBXSMM's LSTM. Support for creating a Python wheel and a pip package can be found in the [directory](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/tf_lstm_ops) as well.
@@ -567,7 +593,7 @@ Further, another [Fortran example](https://github.com/hfp/libxsmm/blob/master/sa
 This code sample aims to provide a simple piece of code, which takes an image and produces a visual result using LIBXSMM's MHD image file I/O. Performing a single convolution is *not* a showcase of LIBXSMM's Deeplearning as the code only runs over a single image with one channel.
 LIBXSMM's CNNs are vectorized over image channels (multiple images) according to the native vector-width of the processor and otherwise fall back to a high-level implementation.
 
-**NOTE**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/cnnlayer).
+**Note**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/cnnlayer).
 
 The executable can run with the following arguments (all arguments are optional):
 

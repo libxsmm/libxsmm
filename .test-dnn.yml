@@ -130,7 +130,13 @@ script:
     export CHECK=1 CHECK_SCALE=1 ITERS=1 MB=${OMP_NUM_THREADS};
     for KIND in F B U; do
       echo; echo "--- TEST ResNet-50 (precision=bf16 kind=${KIND} mb=${MB} nt=${OMP_NUM_THREADS})";
-      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 F L 1 &&
-      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 B L 1 &&
-      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 U L 1;
+      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 ${KIND} L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
+    export CHECK=1 CHECK_SCALE=1 ITERS=1 MB=${OMP_NUM_THREADS};
+    for KIND in F B U; do
+      echo; echo "--- TEST ResNet-50 (precision=bf16 kind=${KIND} mb=${MB} nt=${OMP_NUM_THREADS})";
+      ./run_resnet50_mock.sh ${MB} ${ITERS} -1 bf16 ${KIND} L 1;
     done)

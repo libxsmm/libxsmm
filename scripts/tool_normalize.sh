@@ -13,30 +13,37 @@
 PATTERNS="*.c *.cc *.cpp *.cxx *.h *.hpp *.hxx *.f *.F90 *.fh *.py *.sh *.env *.yml *.txt *.slurm"
 BANNED_CHARS="\t"
 
+PATPRE="s/^[[:space:]][[:space:]]*#/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 PATBAN="s/[${BANNED_CHARS}]/"
 PATCMT="s/[[:space:]]\/\//"
 PATEOL="s/\r$/"
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 # separate multiple patterns with space
 FMTDIRS=${2:-"samples src tests"}
-FMTXPAT="/gxm/"
+FMTXPAT="/gxm/ /mlpcell/"
+# limiter
 DIR=$1
 
 FMTBIN=$(command -v clang-format)
 FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
 DIFF=$(command -v diff)
+SED=$(command -v gsed)
 GIT=$(command -v git)
-SED=$(command -v sed)
 CUT=$(command -v cut)
 TR=$(command -v tr)
 CP=$(command -v cp)
 RM=$(command -v rm)
+
+# GNU sed is desired (macOS)
+if [ "" = "${SED}" ]; then
+  SED=$(command -v sed)
+fi
 
 if [ "${ICONV}" ]; then
   CAT="${ICONV} -t ASCII"
@@ -69,7 +76,8 @@ then
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS} *Makefile*; do
   for FILE in $(${GIT} ls-files ${PATTERN}); do
-    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]]; then continue; fi
+    # FILE must be located in DIR (if given) and FILE must exist
+    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]] || [ ! -e ${FILE} ]; then continue; fi
     echo -n "${FILE}"
     #
     # Reformat code (fallback: check for banned characters, etc.).
@@ -115,6 +123,12 @@ then
     then
       echo " : has banned characters"
       exit 1
+    elif [[ ${FILE} = "src/"* ]] && \
+         [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]] && \
+         [ "$(${SED} -n "${PATPRE}x/p" ${FILE} 2>/dev/null)" ];
+    then
+      echo " : white space leads '#' (malformed preprocessor command)"
+      exit 1
     elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
       ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} > ${TMPF}
       ${CP} ${TMPF} ${FILE}
@@ -141,7 +155,7 @@ then
     # Check and fix executable flag of file under source control.
     #
     FLAGS=$(${GIT} ls-files -s ${FILE} | ${CUT} -d' ' -f1)
-    if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ]; then
+    if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ] || [ "*.slurm" = "${PATTERN}" ]; then
       if [ "$(${SED} -n '1!b;/#!/p' ${FILE})" ] && \
          [ "100755" != "${FLAGS}" ];
       then
@@ -166,6 +180,6 @@ then
   exit 0
 fi
 
-echo "Error: missing prerequisites!"
+>&2 echo "Error: missing prerequisites!"
 exit 1
 

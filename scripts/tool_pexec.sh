@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -9,22 +9,32 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-GIT=$(command -v git)
+set -o pipefail
 
-SHIFT=0
-if [ "$1" ]; then
-  SHIFT=$1
+BASENAME=$(command -v basename)
+XARGS=$(command -v xargs)
+SED=$(command -v gsed)
+
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+CPU=${HERE}/tool_cpuinfo.sh
+
+# GNU sed is desired (macOS)
+if [ "" = "${SED}" ]; then
+  SED=$(command -v sed)
 fi
 
-NAME=$(${GIT} rev-parse --abbrev-ref HEAD 2>/dev/null)
-MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
-
-if [ "${MAIN}" ]; then
-  VERSION="${NAME}-${MAIN}"
-  REVC=$(${GIT} rev-list --count ${MAIN}..HEAD 2>/dev/null)
+if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${SED}" ] && [ -e "${CPU}" ]; then
+  NC=$1
+  if [ ! "${NC}" ] || [ "0" = "${NC}" ]; then
+    HERE=$(cd "$(dirname "$0")" && pwd -P)
+    NC=$(${CPU} -nc)
+  fi
+  OMP_NUM_THREADS=1 \
+  OMP_PROC_BIND=TRUE \
+  ${XARGS} -I{} -P "${NC}" bash -c "{} || ( \
+    1>&2 echo 'ERROR: {}' && exit 255)" < /dev/stdin 2> >( \
+    ${SED} "/xargs/d" >&2)
 else
-  VERSION=${NAME}
-  REVC=$(${GIT} rev-list --count HEAD 2>/dev/null)
+  >&2 echo "Error: missing prerequisites!"
+  exit 1
 fi
-
-echo "${VERSION}-$((REVC+SHIFT))"

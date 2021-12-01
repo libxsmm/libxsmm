@@ -16,11 +16,8 @@ UNIQ=$(command -v uniq)
 SED=$(command -v sed)
 TR=$(command -v tr)
 
-if [ "" != "${MKDIR}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${DIFF}" ] && [ "" != "${UNIQ}" ];
-then
-  HERE=$(cd "$(dirname "$0")"; pwd -P)
-  if [ "" != "$1" ]; then
+if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
+  if [ "$1" ]; then
     STATEFILE=$1/.state
     ${MKDIR} -p "$1"
     shift
@@ -38,13 +35,14 @@ then
     STATE_DIFF=$(printf "%s\n" "${STATE}" \
                | ${DIFF} "${STATEFILE}" - 2>/dev/null | ${SED} -n 's/[<>] \(..*\)/\1/p' \
                | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d' ${EXCLUDE} | ${UNIQ})
-    if [ "0" != "$?" ] || [ "" != "${STATE_DIFF}" ]; then
+    RESULT=$?
+    if [ "0" != "${RESULT}" ] || [ "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
         printf "%s\n" "${STATE}" > "${STATEFILE}"
       fi
-      echo "$0 $(echo "${STATE_DIFF}")"
+      echo "$0 ${STATE_DIFF}"
       # only needed to execute body of .state-rule
-      if [ "" != "${TOUCH}" ]; then ${TOUCH} "$0"; fi
+      if [ "${TOUCH}" ]; then ${TOUCH} "$0"; fi
     fi
   else # difference must not be determined
     if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
@@ -52,10 +50,13 @@ then
     fi
     echo "$0"
     # only needed to execute body of .state-rule
-    if [ "" != "${TOUCH}" ]; then ${TOUCH} "$0"; fi
+    if [ "${TOUCH}" ]; then ${TOUCH} "$0"; fi
   fi
+elif [ ! "${DIFF}" ]; then
+  >&2 echo "Error: please install diffutils - diff command is missing!"
+  exit 1
 else
-  echo "Error: missing prerequisites!"
+  >&2 echo "Error: missing prerequisites!"
   exit 1
 fi
 

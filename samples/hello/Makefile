@@ -55,7 +55,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-ifneq (0,$(shell echo "$$((3>$(GCC) || 40600<=$(FC_VERSION_NUM)))"))
+ifneq (0,$(shell echo "$$((3>$(XSMM_GCC) || 40600<=$(FC_VERSION_NUM)))"))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
 	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(EXTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
@@ -69,7 +69,7 @@ $(OUTDIR)/$(OUTNAME)c: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(DEPDIR)/includ
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-cpp.o $(DEPDIR)/include/libxsmm_source.h
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(XLD) -o $@ $(BLDDIR)/$(OUTNAME)-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

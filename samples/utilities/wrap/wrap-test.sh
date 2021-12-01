@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 DEPDIR=${HERE}/../../..
 
 TMPF=$(${DEPDIR}/.mktmp.sh /tmp/.libxsmm_XXXXXX.out)
@@ -25,7 +25,7 @@ if [ "Darwin" != "$(${UNAME})" ]; then
 else
   LIBEXT=dylib
 fi
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   TEST=$1
   shift
 else

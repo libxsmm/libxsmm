@@ -9,22 +9,26 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import sphinx_rtd_theme
+import os
 
 project = 'LIBXSMM'
-copyright = '2009-2020, Intel Corporation.'
+copyright = '2009-2021, Intel Corporation.'
 author = 'Intel Corporation'
+user = os.environ.get('USER')
 
-# m2r implies recommonmark
 extensions = [
-    "m2r"
+    #"recommonmark",
+    "m2r2"
 ]
 
 master_doc = "index"
 source_suffix = [
-    ".rst", ".md"
+    ".rst",
+    #".md"
 ]
 
 exclude_patterns = [
+    "*-" + user + "-*.md",
     "Thumbs.db",
     ".DS_Store",
     "_build"

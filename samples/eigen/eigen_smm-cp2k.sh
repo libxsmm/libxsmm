@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=eigen_smm-cp2k.txt
 
@@ -28,7 +28,7 @@ RUNS10=$(${SCRT} -1 $((128*128*128)) 41  23, 6, 14 16 29, 14 32 29, 5 32 13 24 2
 RUNS11=$(${SCRT} -1 $((128*128*128)) 46  23, 6, 14 16 29, 14 32 29, 5 32 13 24 26, 9 32 22, 64, 78, 16 29 55, 32 29 55, 12, 4 5 7 9 13 25 26 28 32 45, 4 10 15, 6 7 8, 13 14 25 26 32 0 0)
 
 CASE=6
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   CASE=$1
   shift
 fi
@@ -38,18 +38,18 @@ case "$1" in
   ;;
 esac
 
-if [ "" = "${!RUNS}" ]; then
+if [ -z "${RUNS}" ]; then
   RUNS=RUNS11
 fi
 
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   SIZE=$1
   shift
 else
   SIZE=0
 fi
 # NREPEAT not defined if not given per CLI
-if [ "" != "$1" ]; then
+if [ "$1" ]; then
   NREPEAT=$1
 fi
 cat /dev/null > ${FILE}

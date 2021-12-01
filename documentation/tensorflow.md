@@ -1,8 +1,8 @@
-# TensorFlow&trade; with LIBXSMM
+# <span>TensorFlow&trade;</span> with LIBXSMM
 
 ## Getting Started
 
-Previously, this document covered building TensorFlow with LIBXSMM's API for Deep Learning (direct convolutions and Winograd). LIBXSMM's Deep Learning domain (DL) is under active research and quickly evolving, and hence reintegration with TensorFlow may be needed. This document focuses on building TensorFlow from source with Intel&#160;MKL and MKL-DNN plus LIBXSMM's code for sparse Matrix Dense-Matrix multiplication (SpMDM). LIBXSMM SpMDM is rather stable and integrated with TensorFlow since TF&#160;1.1 (`--define tensorflow_xsmm=1`). To start building TensorFlow, one may clone the source from the official Git-repository:
+Previously, this document covered building TensorFlow with LIBXSMM's API for Deep Learning (direct convolutions and Winograd). LIBXSMM's Deep Learning domain (DL) is under active research and quickly evolving, and hence reintegration with TensorFlow may be needed. This document focuses on building TensorFlow from source with <span>Intel&#160;MKL</span> and MKL-DNN plus LIBXSMM's code for sparse Matrix Dense-Matrix multiplication (SpMDM). LIBXSMM SpMDM is rather stable and integrated with TensorFlow since <span>TF&#160;1.1</span> (`--define tensorflow_xsmm=1`). To start building TensorFlow, one may clone the source from the official Git-repository:
 
 ```bash
 git clone https://github.com/tensorflow/tensorflow.git
@@ -21,7 +21,7 @@ export CC=/path/to/gcc/bin/gcc
 export FC=/path/to/gcc/bin/gfortran
 ```
 
-TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was the de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. In earlier revisions of TensorFlow some frameworks could be disabled at configure-time in a non-interactive fashion using environment variables (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, `TF_NEED_KAFKA=0`). However, the current mechanism to disable certain frameworks is per Bazel's build-line (`--config=noaws`, `--config=nogcp`, `--config=nohdfs`, `--config=noignite`, `--config=nokafka`, `--config=nonccl`).
+TensorFlow may be configured for the first time. In the past, <span>Python&#160;3</span> was problematic since it was not the primary development vehicle (and <span>Python&#160;2.7</span> was the de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. In earlier revisions of TensorFlow some frameworks could be disabled at configure-time in a non-interactive fashion using environment variables (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, `TF_NEED_KAFKA=0`). However, the current mechanism to disable certain frameworks is per Bazel's build-line (`--config=noaws`, `--config=nogcp`, `--config=nohdfs`, `--config=noignite`, `--config=nokafka`, `--config=nonccl`).
 
 ```bash
 cd /path/to/tensorflow
@@ -55,9 +55,9 @@ bazel build --config=mkl -c opt --copt=-O2 \
 * AVX-512/CORE/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq`
 * AVX-512/MIC/KNL/KNM: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: In the past, TensorFlow or specifically Eigen's packed math abstraction asserted an unmet condition in case of AVX-512. Therefore, one should either (1)&#160;limit the code to Intel AVX2 instructions, or (2)&#160;supply `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded).
+**Note**: In the past, TensorFlow or specifically Eigen's packed math abstraction asserted an unmet condition in case of AVX-512. Therefore, one should either <span>(1)&#160;limit</span> the code to Intel AVX2 instructions, or <span>(2)&#160;supply</span> `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded).
 
-To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug code because of exceeding 2&#160;GB for the size of the wheel).
+To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug code because of exceeding <span>2&#160;GB</span> for the size of the wheel).
 
 ```bash
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
@@ -76,13 +76,13 @@ pip uninstall tensorflow
 pip install /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-**NOTE**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
+**Note**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
 
 ## Performance Tuning<a name="performance-tuning-and-profiling"></a>
 
 To use MKL and MKL-DNN effectively, the environment shall be setup with at least `KMP_BLOCKTIME=1` (perhaps more environment settings such as `KMP_AFFINITY=compact,1,granularity=fine`, `KMP_HW_SUBSET=1T`, and `OMP_NUM_THREADS=<number-of-physical-cores-not-threads>` are beneficial). The `KMP_BLOCKTIME` shall be set to a "low number of Milliseconds" (if not zero) to allow OpenMP workers to quickly transition between MKL's and TF's (Eigen) thread-pool. Please note that LIBXSMM uses the native TensorFlow (Eigen) thread-pool.
 
-It can be very beneficial to scale TensorFlow even on a per-socket basis (in case of multi-socket systems). Generally, this may involve (1)&#160;real MPI-based communication, or (2)&#160;just trivially running multiple instances of TensorFlow separately (without tight communication). For example, [Horovod](https://github.com/uber/horovod) can be used to perform an almost "trivial" instancing of TensorFlow, and to add an intermittent averaging scheme for exchanging weights between independently learning instances (Horovod is out of scope for this document). Similarly, for inference all incoming requests may be dispatched (in batches) to independent instances of TensorFlow. For the latter, the web-based client/server infrastructure TensorFlow Serving may be used to serve inference-requests.
+It can be very beneficial to scale TensorFlow even on a per-socket basis (in case of multi-socket systems). Generally, this may involve <span>(1)&#160;real</span> MPI-based communication, or <span>(2)&#160;just</span> trivially running multiple instances of TensorFlow separately (without tight communication). For example, [Horovod](https://github.com/uber/horovod) can be used to perform an almost "trivial" instancing of TensorFlow, and to add an intermittent averaging scheme for exchanging weights between independently learning instances (Horovod is out of scope for this document). Similarly, for inference all incoming requests may be dispatched (in batches) to independent instances of TensorFlow. For the latter, the web-based client/server infrastructure TensorFlow Serving may be used to serve inference-requests.
 
 However, to quickly check the benefits of scaling TensorFlow, one may simply use `numactl` to run on a single socket only; multiplying the achieved performance according to the number of sockets yields a quick estimate of scaling performance. Here is an example for a single dual-socket Skylake server system with HT enabled and sub-NUMA clustering disabled (2x24 cores, 96 threads in two memory-domains/sockets).
 
@@ -148,7 +148,7 @@ bazel-bin/tensorflow/models/tutorials/image/alexnet/alexnet_benchmark \
 
 ### Convnet Benchmarks
 
-The section may be outdated due to helps to the Convnet Benchmarks being superseded (Alexnet, Overfeat, VGG, and Googlenet&#160;v1). Recently, the original Convnet benchmark **stopped working with current TensorFlow**: please rely on TensorFlow model repository (previous section).
+The section may be outdated due to helps to the Convnet Benchmarks being superseded (Alexnet, Overfeat, VGG, and <span>Googlenet&#160;v1</span>). Recently, the original Convnet benchmark **stopped working with current TensorFlow**: please rely on TensorFlow model repository (previous section).
 
 ```bash
 git clone https://github.com/soumith/convnet-benchmarks.git
@@ -236,7 +236,7 @@ Please verify recall and accuracy as follows:
 
 ## Development and Tests<a name="regression-tests"></a>
 
-This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: (1)&#160;sparse CNN using SpMDM routines, and (2)&#160;CNN using direct convolutions. To build and run the regression tests for the sparse routines (SpMDM):
+This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: <span>(1)&#160;sparse</span> CNN using SpMDM routines, and <span>(2)&#160;CNN</span> using direct convolutions. To build and run the regression tests for the sparse routines (SpMDM):
 
 ```bash
 bazel build <all-build-flags-used-to-build-the-wheel> //tensorflow/core/kernels:sparse_matmul_op_test

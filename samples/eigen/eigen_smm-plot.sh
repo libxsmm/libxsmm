@@ -21,7 +21,7 @@ RM=$(command -v rm)
 
 VARIANT="LIBXSMM streamed (A,B)"
 
-HERE=$(cd "$(dirname "$0")"; pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 FILE=${HERE}/eigen_smm-cp2k.txt
 
 PERF=$(${GREP} -A2 "${VARIANT}" ${FILE} \
@@ -38,7 +38,7 @@ echo "min=${MIN}"
 echo "max=${MAX}"
 
 BC=$(command -v bc)
-if [ "" != "${BC}" ]; then
+if [ "${BC}" ]; then
   AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 

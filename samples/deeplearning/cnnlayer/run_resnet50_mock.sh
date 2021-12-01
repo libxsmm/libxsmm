@@ -36,28 +36,36 @@ else
   PAD=$7
 fi
 
-if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-  export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
-elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
-  export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
-  export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
-  export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
-fi
-if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
-  export HT=$((NT/(NC)))
-else
-  export NS=1 NC=1 NT=1 HT=1
-fi
-if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
-  export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
-else
-  export NN=${NS}
+if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
+  if [ "$(command -v lscpu)" ]; then
+    NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+    if [ "" = "${NS}" ]; then NS=1; fi
+    NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+  elif [ -e /proc/cpuinfo ]; then
+    NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    if [ "" = "${NS}" ] || [ "" = "${NS}" ]; then NS=1; fi
+    NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$(${GREP} "core id" /proc/cpuinfo  | ${WC} -l | ${TR} -d " ")
+  elif [ "Darwin" = "$(uname)" ]; then
+    NS=$(sysctl hw.packages    | ${CUT} -d: -f2 | ${TR} -d " ")
+    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | ${TR} -d " ")
+    NT=$(sysctl hw.logicalcpu  | ${CUT} -d: -f2 | ${TR} -d " ")
+  fi
+  if [ "${NC}" ] && [ "${NT}" ]; then
+    HT=$((NT/NC))
+  else
+    NS=1 NC=1 NT=1 HT=1
+  fi
+  if [ "$(command -v numactl)" ]; then
+    NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
+  else
+    NN=${NS}
+  fi
 fi
 
-CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
-if [ "" != "${GREP}" ] && [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
+if [ "${GREP}" ] && [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
   if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
     NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
   elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then
@@ -84,28 +92,25 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
 #
-if [ "${BIN}" != "f32" ]; then
-  true
-else
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  224 224 ${MB}  3     64 7 7 3 3 2 ${TYPE} ${FORMAT} ${PAD}
-fi
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64   256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64    64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64    64 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256   64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128  128 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256  256 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512  512 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
+
+#${NUMACTL} ./layer_example_${BIN} ${ITERS}  224 224 ${MB}  3     64 7 7 3 3 2 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64   256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64    64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  64    64 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256   64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128  128 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256  256 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512  512 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 2048  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
 

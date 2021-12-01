@@ -43,3 +43,29 @@ For example:
 ./build/bin/gxm train model_zoo/resnet/1_resnet50_dummy_56.prototxt model_zoo/resnet/solver.prototxt
 ```
 
+## Preping on RHEL 8.0 / CentOS 8.0
+
+```bash
+dnf install protobuf
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-compiler-3.5.0-7.el8.x86_64.rpm
+dnf install protobuf-compiler-3.5.0-7.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-devel-3.5.0-7.el8.x86_64.rpm
+dnf install protobuf-devel-3.5.0-7.el8.x86_64.rpm
+dnf install lmdb
+dnf install lmdb-devel
+wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-devel-3.4.1-9.el8.x86_64.rpm
+wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-3.4.1-9.el8.x86_64.rpm
+dnf install opencv-3.4.1-9.el8.x86_64.rpm
+dnf install opencv-devel-3.4.1-9.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-2.1.2-6.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-devel-2.1.2-6.el8.x86_64.rpm
+dnf install gflags-2.1.2-6.el8.x86_64.rpm
+dnf install gflags-devel-2.1.2-6.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-devel-0.3.5-3.el8.x86_64.rpm
+wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-0.3.5-3.el8.x86_64.rpm
+dnf install glog-0.3.5-3.el8.x86_64.rpm
+dnf install glog-devel-0.3.5-3.el8.x86_64.rpm
+```
+
+Make sure that the makefile follows the OpenCV Ver 3 path!
+
