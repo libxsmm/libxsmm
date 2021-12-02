@@ -1478,6 +1478,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_MIC:
     case LIBXSMM_X86_AVX512:
     case LIBXSMM_X86_AVX512_VL256:
+    case LIBXSMM_X86_AVX512_VL256_CLX:
+    case LIBXSMM_X86_AVX512_VL256_CPX:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE42:
@@ -1549,6 +1551,12 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 #if defined(LIBXSMM_PLATFORM_X86)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
+    }
+    else if (arch == libxsmm_stristr(arch, "avx512_vl256_cpx")) {
+      target_archid = LIBXSMM_X86_AVX512_VL256_CPX;
+    }
+    else if (arch == libxsmm_stristr(arch, "avx512_vl256_clx")) {
+      target_archid = LIBXSMM_X86_AVX512_VL256_CLX;
     }
     else if (arch == libxsmm_stristr(arch, "avx512_vl256")) {
       target_archid = LIBXSMM_X86_AVX512_VL256;
@@ -4398,14 +4406,16 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(
   libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type, libxsmm_meltw_opreduce_vecs_flags flags)
+  libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type, libxsmm_meltw_opreduce_vecs_flags flags, unsigned short bcast_param)
 {
   libxsmm_descriptor_blob blob;
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
-  unsigned char argidx_params = (unsigned char) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
+  unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
+  unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
+  unsigned short combined_params = argidx_params | bcast_shifted_params;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
-    (unsigned short)flags, argidx_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
+    (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4420,7 +4430,7 @@ LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     in_type, compute_type, out_type, LIBXSMM_DATATYPE_UNSUPPORTED, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, 0, 0,
-    (unsigned short)flags, (unsigned char)type, LIBXSMM_MELTW_OPERATION_UNARY);
+    (unsigned short)flags, (unsigned short)type, LIBXSMM_MELTW_OPERATION_UNARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4435,7 +4445,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     in_type, compute_type, out_type, LIBXSMM_DATATYPE_UNSUPPORTED, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, (ldi2 == NULL) ? m : *ldi2, 0,
-    (unsigned short)flags, (unsigned char)type, LIBXSMM_MELTW_OPERATION_BINARY);
+    (unsigned short)flags, (unsigned short)type, LIBXSMM_MELTW_OPERATION_BINARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
@@ -4450,7 +4460,7 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     in_type, compute_type, out_type, LIBXSMM_DATATYPE_UNSUPPORTED, m, n, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo, (ldi2 == NULL) ? m : *ldi2, (ldi3 == NULL) ? m : *ldi3,
-    (unsigned short)flags, (unsigned char)type, LIBXSMM_MELTW_OPERATION_TERNARY);
+    (unsigned short)flags, (unsigned short)type, LIBXSMM_MELTW_OPERATION_TERNARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 

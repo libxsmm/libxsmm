@@ -877,7 +877,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( io_generated_code->arch < LIBXSMM_X86_GENERIC ) {
@@ -943,7 +943,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
-      if (0 != context && 0 != *context && '0' != *context) {
+      if (NULL != context && '\0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
       }
       else {

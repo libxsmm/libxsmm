@@ -70,10 +70,10 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
 
 /** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
-LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string);
+LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);
 
 /** Return the pointer to the 1st match of "b" in "a", or NULL (no match). */
-LIBXSMM_API const char* libxsmm_stristr(const char* a, const char* b);
+LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
 
 /**
  * Check if pointer is SIMD-aligned and optionally consider the next access (increment in Bytes).

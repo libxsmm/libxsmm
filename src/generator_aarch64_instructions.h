@@ -184,7 +184,7 @@
  * 1st byte
  *   7: SVE: predication required
  *   6-5: not used
- *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP insturctions, if 4 & 3 is set for ASIMD -> immediate, e.g. shift is used
+ *   4:   tuple-type: ignore all sz bits, ignore shift bits for GP instructions, if 4 & 3 is set for ASIMD -> immediate, e.g. shift is used
  *   3:   tuple-type: ignore second sz bit, vec register is destination (for UMOV/INS)
  *   2:   has immediate
  *   1-0: number of register operands
@@ -253,9 +253,15 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF   0x2c000007
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R         0x0d40c002
 #define LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST  0x0dc0c003
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST   0x0ddf8002
+#define LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST   0x0dc08003
+
 /* ASIMD <-> GPR moves */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V      0x4e001c1e
 #define LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G     0x0e003c16
+#define LIBXSMM_AARCH64_INSTR_ASIMD_DUP_HALF     0x0e000c1e
+#define LIBXSMM_AARCH64_INSTR_ASIMD_DUP_FULL     0x4e000c1e
+
 /* define ASIMD compute instructions */
 #define LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V        0x2e201c13
 #define LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V        0x0ea01c13
@@ -291,6 +297,7 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V       0x0e20d40b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V       0x0ea0d40b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V       0x2e20dc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V     0x0f80900f
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V       0x2e20fc0b
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V       0x2ea0f80a
 #define LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V      0x2ea1f80a
@@ -339,32 +346,49 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF     0xa540a086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR        0xe5e04083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF     0xe5e0e086
+#define LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF   0xe590e086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF   0xe510e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF    0x8540c086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF    0x85c0e086
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF   0xa5802086
+#define LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF     0x85c04085
+#define LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF     0x85c06085
+
 /* define SVE compute instructions */
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
-#define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 1
-#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 2
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 0x80
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE 0x10
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED 0x40
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0 2
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 1 /* all sve instructions have src0 currently */
 /* the actual instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03002 /* exclusive or, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603002 /* binary or, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000002 /* add, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000402 /* subtract, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000802 /* multiply, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V       0x650e3000 /* reciprocal estimate, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001802 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3000 /* reciprocial sqrt estimate, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c02 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
+#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03013 /* exclusive or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000003 /* add, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000403 /* subtract, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000803 /* multiply, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V       0x650e3002 /* reciprocal estimate, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001803 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
 /* define predicated SVE compute instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da001 /* negate, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da001 /* square root, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028001 /* multiply, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d8001 /* divide, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188001 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200003 /* fused multiply-add, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028082 /* multiply, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d8082 /* divide, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P /* todo: change name to fmla_v_p everywhere */
+#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P
+/* define indexed instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
+
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403
@@ -433,6 +457,21 @@ typedef enum libxsmm_aarch64_sve_pattern {
   LIBXSMM_AARCH64_SVE_PATTERN_MUL3   = 0x1e,
   LIBXSMM_AARCH64_SVE_PATTERN_ALL    = 0x1f
 } libxsmm_aarch64_sve_pattern;
+
+typedef enum libxsmm_aarch64_sve_prefetch {
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL1KEEP = 0x0,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL1STRM = 0x1,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL2KEEP = 0x2,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL2STRM = 0x3,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL3KEEP = 0x4,
+  LIBXSMM_AARCH64_SVE_PREFETCH_LDL3STRM = 0x5,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL1KEEP = 0x8,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL1STRM = 0x9,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL2KEEP = 0xa,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL2STRM = 0xb,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL3KEEP = 0xc,
+  LIBXSMM_AARCH64_SVE_PREFETCH_STL3STRM = 0xd
+} libxsmm_aarch64_sve_prefetch;
 
 /**
  * Opens the inline assembly section / jit stream
@@ -503,12 +542,33 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
  * @param i_tupletype tuple specifier
  */
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*               io_generated_code,
-                                                    const unsigned int                    i_vmove_instr,
-                                                    const unsigned char                   i_gp_reg_addr,
-                                                    const unsigned char                   i_gp_reg_offset,
-                                                    const unsigned char                   i_vec_reg,
-                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype );
+void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*               io_generated_code,
+                                                      const unsigned int                    i_vmove_instr,
+                                                      const unsigned char                   i_gp_reg_addr,
+                                                      const unsigned char                   i_gp_reg_offset,
+                                                      const unsigned char                   i_vec_reg,
+                                                      const libxsmm_aarch64_asimd_tupletype i_tupletype );
+
+/**
+ * Generates ldX, stX, etc. instructions for structs
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vmove_instr actual vmov variant
+ * @param i_gp_reg_addr gp register containing the base address
+ * @param i_gp_reg_offset gp register containing an offset
+ * @param i_vec_reg the simd register
+ * @param i_index the index to address the vector element
+ * @param i_asimdwidth widht of regiaters (1,2,4,8,16 byte)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*           io_generated_code,
+                                                    const unsigned int                i_vmove_instr,
+                                                    const unsigned char               i_gp_reg_addr,
+                                                    const unsigned char               i_gp_reg_offset,
+                                                    const short                       i_offset,
+                                                    const unsigned char               i_vec_reg,
+                                                    const short                       i_index,
+                                                    const libxsmm_aarch64_asimd_width i_asimdwidth );
 
 /**
  * Generates ldp, stp, etc. instructions
@@ -569,6 +629,15 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const short                            i_offset,
                                            const unsigned char                    i_vec_reg,
                                            const unsigned char                    i_pred_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*            io_generated_code,
+                                               const unsigned int                 i_prefetch_instr,
+                                               const unsigned char                i_gp_reg_addr,
+                                               const unsigned char                i_gp_reg_offset,
+                                               const short                        i_offset,
+                                               const unsigned char                i_pred_reg,
+                                               const libxsmm_aarch64_sve_prefetch i_prefetch );
 
 /**
  * Generates fmla and similar
