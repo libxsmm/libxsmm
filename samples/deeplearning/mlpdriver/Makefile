@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/mlp_example_f32 $(OUTDIR)/mlp_example_bf16 $(OUTDIR)/mlp_mnist_f32
+XFILES := $(OUTDIR)/mlp_example_f32 $(OUTDIR)/mlp_example_bf16
 
 .PHONY: all
 all: $(XFILES)
@@ -56,9 +56,6 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/mlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_example_f32-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_mnist_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist_f32-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_mnist_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/mlp_example_bf16: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))

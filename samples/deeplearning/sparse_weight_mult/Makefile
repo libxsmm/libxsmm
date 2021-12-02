@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/sparse_weight_B_mult $(OUTDIR)/sparse_weight_A_mult $(OUTDIR)/simple $(OUTDIR)/parallel_sparse_weight_B_mult $(OUTDIR)/sparse_weight_C_redmult $(OUTDIR)/parallel_sparse_weight_C_redmult $(OUTDIR)/parallel_sparse_weight_B_conv
+XFILES := $(OUTDIR)/sparse_weight_B_mult $(OUTDIR)/sparse_weight_A_mult $(OUTDIR)/simple $(OUTDIR)/parallel_sparse_weight_B_mult $(OUTDIR)/sparse_weight_C_redmult $(OUTDIR)/parallel_sparse_weight_C_redmult
 .PHONY: all
 all: $(XFILES)
 
@@ -64,9 +64,6 @@ $(OUTDIR)/simple: $(OUTDIR)/.make $(BLDDIR)/simple-c.o $(LIBDEP) $(EXTDEP)
 
 $(OUTDIR)/parallel_sparse_weight_B_mult: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/parallel_sparse_weight_B_conv: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/sparse_weight_C_redmult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_C_redmult-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/sparse_weight_C_redmult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
