@@ -69,15 +69,11 @@ $(OUTDIR)/layer_example_i8i8: $(OUTDIR)/.make $(BLDDIR)/layer_example_i8i8-c.o $
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h $(SRCDIR)/../../external_aux/perf_counter_markers.h
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h $(SRCDIR)
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/perf_counter_markers.o: $(SRCDIR)/../../external_aux/perf_counter_markers.c $(SRCDIR)/../../external_aux/perf_counter_markers.h .state $(BLDDIR)/.make
-	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
-
-$(OUTDIR)/resnet_driver_f32: $(OUTDIR)/.make $(BLDDIR)/resnet_driver_f32-c.o $(BLDDIR)/perf_counter_markers.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/resnet_driver_f32-c.o $(BLDDIR)/perf_counter_markers.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
+$(OUTDIR)/resnet_driver_f32: $(OUTDIR)/.make $(BLDDIR)/resnet_driver_f32-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/resnet_driver_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 .PHONY: clean
 clean:
@@ -103,4 +99,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@rm -f $(XFILES) $(MODULES)
 endif
-
