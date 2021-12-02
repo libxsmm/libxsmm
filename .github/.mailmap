@@ -1,18 +1,19 @@
 Pennycook <john.pennycook@intel.com> John Pennycook
-alazzaro <alfio.lazzaro@gmail.com>
+alazzaro <alfio.lazzaro@gmail.com> Alfio Lazzaro
 alheinecke <alexander.heinecke@intel.com> <heinecke.alex@gmail.com>
 alheinecke <alexander.heinecke@intel.com> Alexander Heinecke
-alheinecke <heinecke.alex@gmail.com> Alexander Heinecke
-ankushmandal <ankush.mandal@intel.com>
+ankushmandal <ankush.mandal@intel.com> Ankush Mandal
 ankushmandal <ankush.mandal@intel.com> <ankushmandal19@gmail.com>
 benoitsteiner <benoit.steiner.goog@gmail.com> <benoitsteiner@users.noreply.github.com>
 benoitsteiner <benoit.steiner.goog@gmail.com> Benoit Steiner
 breuera <anbreuer@ucsd.edu> Alexander Nikolas Breuer
-danielpeter <daniel.peter22@gmail.com>
+breuera <anbreuer@ucsd.edu> <breuer@mytum.de>
+danielpeter <daniel.peter22@gmail.com> Daniel Peter
 ddkalamk <dhiraj.d.kalamkar@intel.com> Dhiraj D Kalamkar
 dev-zero <tiziano.mueller@chem.uzh.ch> Tiziano Müller
-dmudiger <dheevatsa.mudigere@intel.com>
+dmudiger <dheevatsa.mudigere@intel.com> Dheevatsa Mudigere
 dmudiger <dheevatsa.mudigere@intel.com> <dmudiger@users.noreply.github.com>
+egeor <evangelos.georganas@intel.com> Evangelos Georganas
 egeor <evangelos.georganas@intel.com> <egeor@eecs.berkeley.edu>
 egeor <evangelos.georganas@intel.com> <egeorgan@abhewitt-mobl3.amr.corp.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@abniemei-mobl.amr.corp.intel.com>
@@ -32,7 +33,9 @@ egeor <evangelos.georganas@intel.com> <egeorgan@ssmajors-mobl.amr.corp.intel.com
 egeor <evangelos.georganas@intel.com> <egeorgan@swagne2-mobl.amr.corp.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@trobert1-mobl1.ger.corp.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@vbmontoy-mobl.amr.corp.intel.com>
+egeor <evangelos.georganas@intel.com> <root@localhost.localdomain>
 egeor <evangelos.georganas@intel.com> egeorgan
+deeptiag1 <deepti.aggarwal@intel.com> Deepti Aggarwal
 geoffreyQiu <juq005@ucsd.edu> <geoffrey0824@sjtu.edu.cn>
 geoffreyQiu <juq005@ucsd.edu> Junyi Qiu
 gmhenry <greg.henry@intel.com> <gmhenry@jflmkl025.jf.intel.com>
@@ -47,6 +50,10 @@ hfp <hans.pabst@intel.com> <ec_sw_sl_git@intel.com>
 hfp <hans.pabst@intel.com> <hf.pabst@gmail.com>
 hfp <hans.pabst@intel.com> <hfp@users.noreply.github.com>
 hfp <hans.pabst@intel.com> Hans Pabst
+hfp <hans.pabst@intel.com> <badges@fossa.io>
+hfp <hans.pabst@intel.com> <NoEmailShouldEverBeSentToSCMAdmin>
+hfp <hans.pabst@intel.com> <ubuntu@ip-172-31-6-215.ec2.internal>
+hfp <hans.pabst@intel.com> <ubuntu@ip-172-31-6-215.ec2.internal>
 jasonsewall-intel <jason.sewall@intel.com> Jason Sewall
 jeffhammond <jeff.science@gmail.com> Jeff Hammond
 jewillco <jewillco@google.com> Jeremiah J. Willcock
@@ -57,14 +64,31 @@ kunalbanerjee <kunal.banerjee@intel.com> Kunal Banerjee
 maxhutch <maxhutch@gmail.com> Max Hutchinson
 mdebski <maciejd@google.com> <md319428@students.mimuw.edu.pl>
 mdebski <maciejd@google.com> Maciej DÄ™bski
-nrsatish <nadathur.rajagopalan.satish@intel.com>
+nrsatish <nadathur.rajagopalan.satish@intel.com> Nadathur Rajagopalan Satish
 nrsatish <nadathur.rajagopalan.satish@intel.com> <nrsatish@users.noreply.github.com>
 rajbarik <rajkishore.barik@intel.com> <rajbarik@users.noreply.github.com>
 rajbarik <rajkishore.barik@intel.com> Raj Barik
 savancha <sasikanth.avancha@intel.com> Sasikanth Avancha
-taknevski <anand.venkat@intel.com>
+taknevski <anand.venkat@intel.com> Anand Venkat
 taknevski <anand.venkat@intel.com> <avenkat@ssr-nfs1.sc.intel.com>
+taknevski <anand.venkat@intel.com> <avenkat@pcl-tiergarten.sc.intel.com>
 cseo <cseo@linux.vnet.ibm.com> Carlos Eduardo Seo
 courbet <courbet@google.com> Clement Courbet
 xing-liu <xing.research@gmail.com> Xing Liu
 mahudu97 <mahuduhd@gmail.com> Mehedi Vin P
+nshustrov <nikita.a.shustrov@intel.com> Nikita Shustrov
+abhisek-kundu <abhisek.kundu@intel.com> Abhisek Kundu
+abhisek-kundu <abhisek.kundu@intel.com> <40352027+abhisek-kundu@users.noreply.github.com>
+ypsoh <yongseok.soh@intel.com> Yongseok Paul Soh
+ypsoh <yongseok.soh@intel.com> <ysoh@iam-ssh1.research.intel-research.net>
+schtomerintel <tomer.schwartz@intel.com> Tomer Schwartz
+tjleeyon <yangliyl@google.com> Yang Li
+adelmanm <menachem.adelman@intel.com> Menachem Adelman
+ibhati <ishwar.s.bhati@intel.com> Ishwar Bhati
+zbarukh <barukh.ziv@intel.com> Barukh Ziv
+nkmellem <naveen.k.mellempudi@intel.com> Naveen K. Mellempudi
+narendrachaudhary51 <narendrachaudhary51@gmail.com> Narendra Chaudhary
+FreddieWitherden <freddie@witherden.org> Freddie Witherden
+RanACohen <ran.a.cohen@intel.com> Ran A. Cohen
+RanACohen <ran.a.cohen@intel.com> <rcohen@habana.ai>
+yuk12 <wasim.mzr@gmail.com> Vasimuddin Md

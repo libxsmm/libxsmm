@@ -29,4 +29,5 @@ int main(/*int argc, char* argv[]*/) {
   /* kernel multiplies and accumulates matrices: C += Ai * Bi */
   for (i = 0; i < batchsize; ++i) kernel(a + i * m * k, b + i * k * n, c);
   free(a), free(b), free(c);
+  return 0;
 }

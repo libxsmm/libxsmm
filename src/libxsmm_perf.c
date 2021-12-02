@@ -9,6 +9,8 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
+#include <libxsmm_memory.h>
+#include <libxsmm_timer.h>
 #include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -51,6 +53,16 @@
 # define LIBXSMM_PERF_ERROR(msg)
 #endif
 
+#if !defined(PERF_JITDUMP_NOLIBXSMM)
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_MAGIC);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_MAGIC_SWAPPED);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_VERSION);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint64_t JITDUMP_FLAGS_ARCH_TIMESTAMP);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_LOAD);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_MOVE);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_DEBUG_INFO);
+LIBXSMM_APIVAR_PRIVATE_DEF(/*const*/ uint32_t JITDUMP_CODE_CLOSE);
+#endif
 
 LIBXSMM_APIVAR_DEFINE(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
@@ -73,8 +85,8 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
   struct tm tm = *localtime(&t);
 
   /* initialize global variables */
-  JITDUMP_MAGIC = 'J' << 24 | 'i' << 16 | 'T' << 8 | 'D';
-  JITDUMP_MAGIC_SWAPPED = 'J' | 'i' << 8 | 'T' << 16 | 'D' << 24;
+  JITDUMP_MAGIC = ('J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
+  JITDUMP_MAGIC_SWAPPED = ('J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
   JITDUMP_VERSION = 1;
   JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
   JITDUMP_CODE_LOAD = 0;
@@ -87,7 +99,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     path_base = getenv("HOME");
   }
   if (path_base == NULL) {
-    path_base = getenv(".");
+    path_base = ".";
   }
 
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/", path_base);
@@ -156,7 +168,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write header.\n");
     goto error;
   }
-
 #else
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%u.map", pid);
   internal_perf_fp = fopen(file_name, "w+");
@@ -165,9 +176,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     goto error;
   }
 #endif
-
   return;
-
 error:
   if (internal_perf_fp != NULL) {
     fclose(internal_perf_fp);
@@ -207,7 +216,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_finalize(void)
   munmap(internal_perf_marker, page_size);
   fclose(internal_perf_fp);
   return;
-
 error:
   assert(0);
 #else
@@ -257,7 +265,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
     LIBXSMM_FLOCK(internal_perf_fp);
 
     /* This will be unique as we hold the file lock. */
-    rec.internal_perf_codeidx = internal_perf_codeidx++;
+    rec.code_index = internal_perf_codeidx++;
 
     /* Count number of written items to check for errors. */
     res = 0;
@@ -270,7 +278,6 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
     fflush(internal_perf_fp);
 
     assert(res == 4); /* Expected 4 items written above */
-
 #else
     fprintf(internal_perf_fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
     fflush(internal_perf_fp);

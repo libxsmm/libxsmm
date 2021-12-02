@@ -78,7 +78,7 @@ template<typename T>
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld_src = 0)
 {
-  const libxsmm_blasint ld = 0 == ld_src ? ncols : ld_src;
+  const libxsmm_blasint ld = (0 == ld_src ? ncols : ld_src);
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
 # pragma omp critical(smmadd)

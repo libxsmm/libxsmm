@@ -40,7 +40,7 @@
             END DO
           END DO
         END DO
-        c(:,:) = 0
+        c(:,:) = REAL(0, T)
 
         ! repeat inner part to exercise libxsmm_xdispatch
         DO j = 1, nrepeat

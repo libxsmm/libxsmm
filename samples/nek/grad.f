@@ -99,9 +99,9 @@
             DO iy = 1, n
               DO iz = 1, k
                 a(ix,iy,iz,i) = ix + iy * m + iz * m * n
-                cx(ix,iy,iz,i) = 0.
-                cy(ix,iy,iz,i) = 0.
-                cz(ix,iy,iz,i) = 0.
+                cx(ix,iy,iz,i) = REAL(0, T)
+                cy(ix,iy,iz,i) = REAL(0, T)
+                cz(ix,iy,iz,i) = REAL(0, T)
               END DO
             END DO
           END DO
@@ -121,9 +121,9 @@
             DO ix = 1, m
               DO iy = 1, n
                 DO iz = 1, k
-                  rx(ix,iy,iz,i) = 0.
-                  ry(ix,iy,iz,i) = 0.
-                  rz(ix,iy,iz,i) = 0.
+                  rx(ix,iy,iz,i) = REAL(0, T)
+                  ry(ix,iy,iz,i) = REAL(0, T)
+                  rz(ix,iy,iz,i) = REAL(0, T)
                 END DO
               END DO
             END DO

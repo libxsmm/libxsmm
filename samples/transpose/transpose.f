@@ -24,7 +24,7 @@
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
         !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
-        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, k
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, ldi, ldo, i, j, k
         REAL(T), POINTER :: an(:,:), bn(:,:), bt(:,:)
         DOUBLE PRECISION :: duration
         INTEGER(8) :: nbytes, start
@@ -55,15 +55,15 @@
         END IF
         IF (4 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(4, argv)
-          READ(argv, "(I32)") lda
+          READ(argv, "(I32)") ldi
         ELSE
-          lda = m
+          ldi = m
         END IF
         IF (5 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(5, argv)
-          READ(argv, "(I32)") ldb
+          READ(argv, "(I32)") ldo
         ELSE
-          ldb = n
+          ldo = ldi
         END IF
         IF (6 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(6, argv)
@@ -74,16 +74,16 @@
 
         nbytes = INT(m * n, 8) * T ! size in Byte
         WRITE(*, "(2(A,I0),2(A,I0),A,I0,A)")                            &
-     &    "m=", m, " n=", n, " ldi=", lda, " ldo=", ldb,                &
+     &    "m=", m, " n=", n, " ldi=", ldi, " ldo=", ldo,                &
      &    " size=", (nbytes / ISHFT(1, 20)), "MB"
 
-        ALLOCATE(b1(ldb*MAX(m,n)))
-        bn(1:ldb,1:n) => b1
-        bt(1:ldb,1:m) => b1
+        ALLOCATE(b1(ldo*MAX(m,n)))
+        bn(1:ldo,1:n) => b1
+        bt(1:ldo,1:m) => b1
 
         IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
-          ALLOCATE(a1(lda*n))
-          an(1:lda,1:n) => a1
+          ALLOCATE(a1(ldi*n))
+          an(1:ldi,1:n) => a1
           !$OMP PARALLEL DO PRIVATE(i, j) DEFAULT(NONE) SHARED(m, n, an)
           DO j = 1, n
             DO i = 1, m
@@ -93,10 +93,10 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            !CALL libxsmm_otrans_omp(ptr(b1), ptr(a1), S, m, n, lda, ldb)
-            !CALL libxsmm_otrans(ptr(b1), ptr(a1), S, m, n, lda, ldb)
-            !CALL libxsmm_otrans(bn, an, m, n, lda, ldb)
-            CALL libxsmm_otrans(b1, a1, m, n, lda, ldb)
+            !CALL libxsmm_otrans_omp(ptr(b1), ptr(a1), S, m, n, ldi, ldo)
+            !CALL libxsmm_otrans(ptr(b1), ptr(a1), S, m, n, ldi, ldo)
+            !CALL libxsmm_otrans(bn, an, m, n, ldi, ldo)
+            CALL libxsmm_otrans(b1, a1, m, n, ldi, ldo)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           DEALLOCATE(a1)
@@ -110,9 +110,9 @@
           !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            !CALL libxsmm_itrans(ptr(b1), S, m, n, ldb)
-            !CALL libxsmm_itrans(bn, m, n, ldb)
-            CALL libxsmm_itrans(b1, m, n, ldb)
+            !CALL libxsmm_itrans(ptr(b1), S, m, n, ldi, ldo)
+            !CALL libxsmm_itrans(bn, m, n, ldi)
+            CALL libxsmm_itrans(b1, m, n, ldi)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF

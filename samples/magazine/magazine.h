@@ -68,12 +68,11 @@
 
 static void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
-  int i;
+  int i, j;
   for (i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
+    for (j = 0; j < nrows; ++j) {
       const int k = i * ld + j;
-      dst[k] = (TYPE)(seed1 / (1.0 + k));
+      dst[k] = (TYPE)(seed1 * (1.0 + i * nrows + j));
     }
     for (; j < ld; ++j) {
       const int k = i * ld + j;
