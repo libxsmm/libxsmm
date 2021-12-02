@@ -763,6 +763,13 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
   libxsmm_jump_source label_source[512];
 } libxsmm_jump_label_tracker;
 
+LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
+  unsigned char const_data[20480];
+  unsigned int const_data_size;
+  unsigned int const_data_pc_load_insns[128];
+  unsigned int const_data_nload_insns;
+} libxsmm_const_data_tracker;
+
 /* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
@@ -1393,6 +1400,9 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_lable_tracker );
+
+LIBXSMM_API_INTERN
+void libxsmm_reset_const_data_tracker( libxsmm_const_data_tracker* io_const_data_tracker );
 
 LIBXSMM_API_INTERN
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,

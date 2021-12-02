@@ -66,6 +66,9 @@ PRECISION ?= 0
 # Specify the size of a cacheline (Bytes)
 CACHELINE ?= 64
 
+# Max. size of JIT-buffer [Bytes]
+# 0: fixed/internal default
+# N: fixed/specific value
 CODE_BUF_MAXSIZE ?= 0
 ifneq (0,$(CODE_BUF_MAXSIZE))
   DFLAGS += -DLIBXSMM_CODE_MAXSIZE=$(CODE_BUF_MAXSIZE)

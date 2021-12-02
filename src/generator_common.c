@@ -805,6 +805,11 @@ void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_const_data_tracker( libxsmm_const_data_tracker* io_const_data_tracker ) {
+  memset( io_const_data_tracker, 0, sizeof(*io_const_data_tracker) );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                    const char*                     i_routine_name,
                                    const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
