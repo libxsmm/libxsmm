@@ -431,15 +431,15 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #ifdef LUT_RECIPROCATE
                        compact_load_matrix3_ ( io_code, m1, i, 1, 3, numb, datasz, regset );
                        compact_mult_two_nums_ ( io_code, 0, 3, 0, numb, regset );
-  #ifdef LUT_N2
+# ifdef LUT_N2
                        if ( j+1 <= n1 ) compact_mult_two_nums_ ( io_code, 4, 3, 4, numb, regset );
-  #endif
+# endif
 #else
                        compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                        compact_divide_two_nums_ ( io_code, 0, 3, 0, numb, regset );
-  #ifdef LUT_N2
+# ifdef LUT_N2
                        if ( j+1 <= n1 ) compact_divide_two_nums_ ( io_code, 4, 3, 4, numb, regset );
-  #endif
+# endif
 #endif
                     }
                     compact_store_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
@@ -456,15 +456,15 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #ifdef LUT_RECIPROCATE
                           compact_load_matrix3_ ( io_code, m1, i+1, 1, 3, numb, datasz, regset );
                           compact_mult_two_nums_ ( io_code, 7, 3, 7, numb, regset );
-  #ifdef LUT_N2
+# ifdef LUT_N2
                           if ( j+1 <= n1 ) compact_mult_two_nums_ ( io_code, 9, 3, 9, numb, regset );
-  #endif
+# endif
 #else
                           compact_load_matrix1_ ( io_code, lda, i+1, i+1, 3, numb, datasz, regset );
                           compact_divide_two_nums_ ( io_code, 7, 3, 7, numb, regset );
-  #ifdef LUT_N2
+# ifdef LUT_N2
                           if ( j+1 <= n1 ) compact_divide_two_nums_ ( io_code, 9, 3, 9, numb, regset );
-  #endif
+# endif
 #endif
                        }
                        compact_store_matrix2_ ( io_code, ldb, i+1, j, 7, numb, datasz, regset );
@@ -543,24 +543,23 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #ifdef LLT_N2
                        if ( j+1 <= n1) {
                           compact_load_matrix2_ ( io_code, ldb, k, j+1, 8, numb, datasz, regset );
-  #if 0
+# if 0
                           compact_load_matrix1_ ( io_code, lda, k, i, 9, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 7, 9, 8, numb, regset );
-  #else
+# else
                           compact_fms_cminusab_ ( io_code, 7, 3, 8, numb, regset );
-  #endif
+# endif
                        }
 #endif
 #if defined(LLT_N2) && defined(LLT_M2)
                        if ((i-1>=1)&&(j+1<=n1)) {
-  #if 0
+# if 0
                           compact_load_matrix2_ ( io_code, ldb, k, j+1, 11, numb, datasz, regset );
                           compact_load_matrix1_ ( io_code, lda, k, i-1, 12, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 10, 12, 11, numb, regset );
-  #else
+# else
                           compact_fms_cminusab_ ( io_code, 10, 6, 8 , numb, regset );
-  #endif
-
+# endif
                        }
 #endif
                     }
@@ -569,19 +568,19 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #ifndef LLT_RECIPROCATE
                        compact_load_matrix1_ ( io_code, lda, i, i, 3, numb, datasz, regset );
                        compact_divide_two_nums_ ( io_code, 0, 3, 0, numb, regset );
-   #ifdef LLT_N2
+# ifdef LLT_N2
                        if ( j+1 <= n1 ) {
                           compact_divide_two_nums_ ( io_code, 7, 3, 7, numb, regset );
                        }
-   #endif
+# endif
 #else
                        compact_load_matrix3_ ( io_code, m1, i, 1, 3, numb, datasz, regset );
                        compact_mult_two_nums_ ( io_code, 0, 3, 0, numb, regset );
-   #ifdef LLT_N2
+# ifdef LLT_N2
                        if ( j+1 <= n1 ) {
                           compact_mult_two_nums_ ( io_code, 7, 3, 7, numb, regset );
                        }
-   #endif
+# endif
 #endif
                     }
                     compact_store_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
@@ -590,13 +589,13 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_load_matrix1_ ( io_code, lda, i, i-1, 6, numb, datasz, regset );
                        compact_fms_cminusab_ ( io_code, 4, 6, 0, numb, regset );
                        if ( nounit ) {
-   #ifndef LLT_RECIPROCATE
+# ifndef LLT_RECIPROCATE
                           compact_load_matrix1_ ( io_code, lda, i-1, i-1, 6, numb, datasz, regset );
                           compact_divide_two_nums_ ( io_code, 4, 6, 4, numb, regset );
-   #else
+# else
                           compact_load_matrix3_ ( io_code, m1, i-1, 1, 6, numb, datasz, regset );
                           compact_mult_two_nums_ ( io_code, 4, 6, 4, numb, regset );
-   #endif
+# endif
                        }
                        compact_store_matrix2_ ( io_code, ldb, i-1, j, 4, numb, datasz, regset );
                     }
@@ -609,12 +608,12 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_load_matrix1_ ( io_code, lda, i, i-1, 12, numb, datasz, regset );
                        compact_fms_cminusab_ ( io_code, 10, 12, 7, numb, regset );
                        if ( nounit ) {
-   #ifdef LLT_RECIPROCATE
+# ifdef LLT_RECIPROCATE
                           compact_mult_two_nums_ ( io_code, 10, 6, 10, numb, regset );
-   #else
+# else
                           compact_load_matrix1_ ( io_code, lda, i-1, i-1, 12, numb, datasz, regset );
                           compact_divide_two_nums_ ( io_code, 10, 12, 10, numb, regset );
-   #endif
+# endif
                        }
                        compact_store_matrix2_ ( io_code, ldb, i-1, j+1, 10, numb, datasz, regset );
                     }
