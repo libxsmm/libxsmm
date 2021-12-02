@@ -674,8 +674,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                and I'd guess double needs roughly twice as many iterations */
             unsigned char num_iterations_max = i_micro_kernel_config->datatype_size_in-1;
             /* every iteration for fp32 brought ~x50 improvement, so use the 50-logarithm */
-            unsigned char num_iterations = (unsigned char) (num_iterations_max - log2(libxsmm_get_ulp_precision())/log2(50));
-            num_iterations = LIBXSMM_MIN(num_iterations, num_iterations_max);
+            unsigned char num_iterations = (unsigned char) LIBXSMM_CLMP(num_iterations_max - log2(libxsmm_get_ulp_precision())/log2(50), 0, num_iterations_max);
             if( l_is_sve ) {
               unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
               unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
