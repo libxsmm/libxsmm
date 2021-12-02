@@ -24,6 +24,7 @@
   if (0 == j) {
     _hp = &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K);
   } else {
+    assert(NULL != h);
     _hp = &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K);
   }
   if (j == t-1) {
