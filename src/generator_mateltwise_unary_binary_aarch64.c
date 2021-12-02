@@ -633,7 +633,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
             unsigned char l_immediate_enum = 1; // 0 = 0.5, 1 = 1.0
             if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P,
-                                                     cur_vreg, l_immediate_enum, 0, cur_vreg, l_pred_reg, l_sve_type );
+                                                     l_immediate_enum, 0, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
                                                      cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,

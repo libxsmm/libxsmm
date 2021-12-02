@@ -928,17 +928,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   /* add with immediate is currently the only instruction with an immediate; may be a flag in the future */
   /* this check could be disabled for performance reasons */
   if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P ){
-    if( l_vec_reg_src_1 > 1) {
+    if( l_vec_reg_src_0 > 1) {
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
       exit(-1);
-    } else if( i_vec_reg_dst != i_vec_reg_src_0 ){
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
-      exit(-1);
     }
-    /* src0 == dst, */
-    /* src1 is 0 or 1, */
-    /* in the command, only a single "src" register is part of the instruction */
-    l_vec_reg_src_0 = l_vec_reg_src_1;
   }
 
   /* special instruction, where only dst = src_0 is supported; maybe a flag in the future */
@@ -948,7 +941,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
       exit(-1);
     }
-    i_vec_reg_src_0 = i_vec_reg_src_1;
+    l_vec_reg_src_0 = l_vec_reg_src_1;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -965,10 +958,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       /* setting Zm */
       if( l_is_indexed ){
         if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
-          code[code_head] |= (unsigned int)((0x7 & i_vec_reg_src_1) << 16);
+          code[code_head] |= (unsigned int)((0x7 & l_vec_reg_src_1) << 16);
           code[code_head] |= (unsigned int)((0x3 & i_index) << 19);
         } else if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_D ) {
-          code[code_head] |= (unsigned int)((0xf & i_vec_reg_src_1) << 16);
+          code[code_head] |= (unsigned int)((0xf & l_vec_reg_src_1) << 16);
           code[code_head] |= (unsigned int)((0x1 & i_index) << 20);
         } /* else todo: half-type is missing */
       } else {

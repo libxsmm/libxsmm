@@ -11,7 +11,7 @@ or
 make BLAS=0 LIBXSMM_NO_BLAS=1 STATIC=0 -j 48
 
 cd /path/to/libxsmm/samples/sve
-make compile
+make
 
 make run
 ```

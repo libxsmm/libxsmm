@@ -88,7 +88,7 @@ run:
 
 .PHONY: valgrind
 valgrind:
-	LD_LIBRARY_PATH=../../lib LIBXSMM_VERBOSE=-1 valgrind ./sve_performance_test
+	LIBXSMM_VERBOSE=-1 valgrind ./sve_performance_test
 
 .PHONY: runTests
 	LIBXSMM_VERBOSE=-1 ../eltwise/run_test_aarch64_sve.sh
