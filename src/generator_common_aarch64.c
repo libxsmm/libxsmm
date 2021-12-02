@@ -147,7 +147,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
       libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);
     }
     return;
-  }/* else ASIMD mit 1-4 fp32 elements */
+  }/* else ASIMD with 1-4 fp32 elements */
 
   unsigned int l_gpload_instr  = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST;
   unsigned int l_gpstore_instr = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STR_I_POST;

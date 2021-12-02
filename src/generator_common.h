@@ -1453,5 +1453,10 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int* o_range_1, unsigned int* o_block_1,
   unsigned int* o_range_2, unsigned int* o_block_2 );
 
+/** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or 1e4 for just an estimate
+ * can be set with the environment variable LIBXSMM_ULP_PRECISION
+ */
+LIBXSMM_API_INTERN float libxsmm_get_ulp_precision(void);
+
 #endif /* GENERATOR_COMMON_H */
 

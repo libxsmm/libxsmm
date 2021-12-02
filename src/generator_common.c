@@ -1207,3 +1207,12 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   return l_ret;
 }
 
+LIBXSMM_API_INTERN float libxsmm_get_ulp_precision(void){
+  static float precision = 0;
+  if(precision <= 0){
+    char* env = getenv("LIBXSMM_ULP_PRECISION");
+    if(env) precision = (float) atof(env);
+    if(precision <= 0) precision = 1e4;/* the default precision is just an estimate; could be changed */
+  }
+  return precision;
+}

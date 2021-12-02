@@ -622,8 +622,8 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
-                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                       (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
           }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_INC:
@@ -636,25 +636,30 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      l_immediate_enum, 0, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
-                                                     cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
-                                                     (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+                                                       cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
+                                                       (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
           }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:
           if( l_is_sve ) {
             /* can we improve the performance by using multiple temporary registers? no,still 2.60x faster than ASIMD on 64x64  */
             /* one iteration step is close to perfect with 1/[1..50] */
-            unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
-                                                     cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
-                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
-                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            if(libxsmm_get_ulp_precision() < 1e4){
+              unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
+                                                       cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
+                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
+                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            } else {/* if we don't really care about precision, we can skip the extra iteration */
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
+                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+            }
           } else {
             /* todo: this is only an approximation */
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
-                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
                                                        (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
           }
           break;
@@ -665,21 +670,26 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           /* typical relative error in tests (iterations = 3, fp32): 0.00002% */
           /* typical relative error in tests (iterations = 4, fp32): 0.0002% */
           {
-            unsigned char num_iterations = 2;
+            /* the maximum number of useful iterations depends on the type; for fp32 it looks like 3 is the limit,
+               and I'd guess double needs roughly twice as many iterations */
+            unsigned char num_iterations_max = i_micro_kernel_config->datatype_size_in-1;
+            /* every iteration for fp32 brought ~x50 improvement, so use the 50-logarithm */
+            unsigned char num_iterations = (unsigned char) (num_iterations_max - log2(libxsmm_get_ulp_precision())/log2(50));
+            num_iterations = LIBXSMM_MIN(num_iterations, num_iterations_max);
             if( l_is_sve ) {
               unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
               unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
               /* Newton iteration: guess *= (3-guess*guess*x)/2 */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
-                                                      cur_vreg, cur_vreg, 0, num_iterations ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+                                                      cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
               for(unsigned char i=0;i<num_iterations;i++){
                 unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                        tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+                                                         tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
-                                                        cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+                                                         cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                        tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
+                                                         tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
               }
             } else {
               /* todo: this only is an estimate as well, apply Newton iterations to improve the results */
