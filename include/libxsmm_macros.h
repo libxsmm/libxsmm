@@ -266,13 +266,11 @@
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
+#if !defined(LIBXSMM_CALLER)
+# define LIBXSMM_CALLER NULL
+#endif
 #if !defined(LIBXSMM_FUNCNAME)
-# if defined(LIBXSMM_CALLER)
-#   define LIBXSMM_FUNCNAME LIBXSMM_CALLER
-# else
-#   define LIBXSMM_CALLER NULL
-#   define LIBXSMM_FUNCNAME ""
-# endif
+# define LIBXSMM_FUNCNAME LIBXSMM_CALLER
 #endif
 #if !defined(LIBXSMM_CALLER_ID)
 # if defined(__GNUC__) || 1
