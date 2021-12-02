@@ -127,8 +127,8 @@ if (0 == result_nan) {
   double compr_var = 0, compt_var = 0;
 
   /* initial variance */
-  LIBXSMM_ASSERT(0 == info->var_ref);
-  LIBXSMM_ASSERT(0 == info->var_tst);
+  assert(0 == info->var_ref); /* !LIBXSMM_ASSERT */
+  assert(0 == info->var_tst); /* !LIBXSMM_ASSERT */
 
   if (0 != size) { /* final average */
     info->avg_ref = info->l1_ref / size;
