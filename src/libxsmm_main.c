@@ -1145,6 +1145,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
       gid = tid; /* protect initialization */
+      LIBXSMM_UNUSED_NDEBUG(gid);
 #if (0 != LIBXSMM_SYNC)
       /* coverity[check_return] */
       LIBXSMM_TLS_CREATE(&libxsmm_tlskey);
@@ -1278,7 +1279,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
     else /*if (gid != tid)*/ { /* avoid recursion */
       LIBXSMM_ASSERT(gid != tid);
-      LIBXSMM_UNUSED(gid);
       while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) LIBXSMM_SYNC_YIELD;
       internal_init();
     }
@@ -1612,12 +1612,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "arm_v82")) {
       target_archid = LIBXSMM_AARCH64_V82;
     }
-    else if (arch == libxsmm_stristr(arch, "a64fx"))
-    {
+    else if (arch == libxsmm_stristr(arch, "a64fx")) {
       target_archid = LIBXSMM_AARCH64_A64FX;
     }
-    else if (arch == libxsmm_stristr(arch, "appl_m1"))
-    {
+    else if (arch == libxsmm_stristr(arch, "appl_m1")) {
       target_archid = LIBXSMM_AARCH64_APPL_M1;
     }
 #endif
@@ -1894,7 +1892,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             decompress_A = 1;
             sparsity_factor_A = (int)request->descriptor.gemm->meltw_param;
           }
-
           /* query batch reduce variant */
           if ( (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS & request->descriptor.gemm->flags) > 1 ) {
             br = 1;
@@ -1928,7 +1925,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           } else {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
           }
-
           if ( request->descriptor.gemm->meltw_operation != 0 ) {
             /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
             LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_uh%u_si%i_tc-%s_avnni%i_bvnni%i_cvnni%i_meop%u-%s_mefl%u_meld%u-%u-%u_decompress_A%i_spfactor%i.mxm", target_arch, tname,
@@ -2177,18 +2173,20 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     char* code_buffer = NULL;
 # if defined(__APPLE__) && defined(__arm64__)
 # else
-    void* code_buffer_result = &code_buffer;
+    void* code_buffer_ptr = &code_buffer;
 # endif
-    LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
+    const size_t total_size = (size_t)generated_code.code_size + generated_code.data_size;
+    const size_t data_size = generated_code.data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
+    LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
-    code_buffer = (char*)mmap(0, generated_code.code_size, PROT_WRITE | PROT_EXEC | PROT_READ,
+    code_buffer = (char*)mmap(0, total_size, PROT_WRITE | PROT_EXEC | PROT_READ,
       MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
     result = ((0 <= (long long)code_buffer) ? EXIT_SUCCESS : EXIT_FAILURE);
 # else
-    result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
+    result = libxsmm_xmalloc((void**)code_buffer_ptr, total_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
       LIBXSMM_MALLOC_FLAG_RWX, &extra, sizeof(extra));
 # endif
@@ -2198,29 +2196,29 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       pthread_jit_write_protect_np(0/*false*/);
 # endif
       /* copy temporary buffer into the prepared executable buffer */
-# if defined(NDEBUG)
-      { int i; /* precondition: jit_buffer == generated_code.generated_code */
-        for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
-      }
-# else
-      memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
-# endif
+      memcpy(code_buffer, generated_code.generated_code, total_size);
 # if defined(__APPLE__) && defined(__arm64__)
       code->ptr = code_buffer; /* commit buffer */
       LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
       pthread_jit_write_protect_np(1/*true*/);
-      sys_icache_invalidate(code_buffer, generated_code.code_size);
+      sys_icache_invalidate(code_buffer, total_size);
 # else
-      /* attribute/protect buffer and revoke unnecessary flags */
-      result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
+      /* attribute and protect code-buffer by setting only necessary flags */
+      result = libxsmm_malloc_attrib((void**)code_buffer_ptr,
+        LIBXSMM_MALLOC_FLAG_X, jit_name, &data_size);
+      if (EXIT_SUCCESS == result && 0 != data_size) { /* check for success */
+        void *const data_buffer = code_buffer + generated_code.code_size;
+        /* attribute and protect constant data by setting only necessary flags */
+        result = libxsmm_malloc_xattrib(data_buffer, LIBXSMM_MALLOC_FLAG_R, data_size);
+      }
       if (EXIT_SUCCESS == result) { /* check for success */
         code->ptr = code_buffer; /* commit buffer */
         LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
 #   if defined(__aarch64__)
 #     if defined(__clang__)
-        __clear_cache(code_buffer, code_buffer + generated_code.code_size);
+        __clear_cache(code_buffer, code_buffer + total_size);
 #     else
-        __builtin___clear_cache(code_buffer, code_buffer + generated_code.code_size);
+        __builtin___clear_cache(code_buffer, code_buffer + total_size);
 #     endif
 #   endif
       }
@@ -4405,8 +4403,9 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
 }
 
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx(
-  libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype out_type, libxsmm_datatype idx_type, libxsmm_meltw_opreduce_vecs_flags flags, unsigned short bcast_param)
+  const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+  const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype idx_type,
+  const libxsmm_meltw_opreduce_vecs_flags flags, const unsigned short bcast_param )
 {
   libxsmm_descriptor_blob blob;
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
@@ -4424,8 +4423,9 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
 
 
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype compute_type, libxsmm_datatype out_type, libxsmm_meltw_unary_flags flags, libxsmm_meltw_unary_type type)
+  const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+  const libxsmm_datatype in_type, const libxsmm_datatype compute_type, const libxsmm_datatype out_type,
+  const libxsmm_meltw_unary_flags flags, const libxsmm_meltw_unary_type type )
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -4439,8 +4439,9 @@ LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary(
 
 
 LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype compute_type, libxsmm_datatype out_type, libxsmm_meltw_binary_flags flags, libxsmm_meltw_binary_type type)
+  const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+  const libxsmm_datatype in_type, const libxsmm_datatype compute_type, const libxsmm_datatype out_type,
+  const libxsmm_meltw_binary_flags flags, const libxsmm_meltw_binary_type type)
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -4454,8 +4455,9 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary(
 
 
 LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
-  libxsmm_datatype in_type, libxsmm_datatype compute_type, libxsmm_datatype out_type, libxsmm_meltw_ternary_flags flags, libxsmm_meltw_ternary_type type)
+  const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+  const libxsmm_datatype in_type, const libxsmm_datatype compute_type, const libxsmm_datatype out_type,
+  const libxsmm_meltw_ternary_flags flags, const libxsmm_meltw_ternary_type type)
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,

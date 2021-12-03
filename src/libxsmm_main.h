@@ -967,13 +967,21 @@ LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
+ * Attribute memory allocation and protect with only the necessary flags (revoke other flags).
+ * This procedure is not suitable for executable buffers, profiler support, etc.
+ */
+LIBXSMM_API_INTERN int libxsmm_malloc_xattrib(void* buffer, int flags, size_t size);
+
+/**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
  * relocate the given memory.
  */
 LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
-  /** If a name is given, an executable buffer will be dumped into a file. */
-  const char* name);
+  /** If name is given, profiler support, and code dump (verbose mode) are supported. */
+  const char* name,
+  /** If data_size if given, amount of memory-attribution is lowered by data_size. */
+  const size_t* data_size);
 
 /** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);

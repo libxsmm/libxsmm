@@ -469,6 +469,24 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
                                                const unsigned short    i_callee_save_bitmask );
 
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                             libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_adr_data( libxsmm_generated_code*     io_generated_code,
+                                           unsigned int                i_reg,
+                                           unsigned int                i_off,
+                                           libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned char*        i_data,
+                                                   unsigned int                i_ndata_bytes,
+                                                   unsigned int                i_alignment,
+                                                   unsigned int                i_append_only,
+                                                   libxsmm_const_data_tracker* io_const_data );
+
 /**
  * Generates ldr, str, etc. instructions
  *
