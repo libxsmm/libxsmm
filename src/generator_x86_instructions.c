@@ -5187,6 +5187,89 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
+                                       unsigned int                i_reg,
+                                       unsigned int                i_off,
+                                       libxsmm_const_data_tracker* io_const_data ){
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char* l_buf = (unsigned char*) io_generated_code->generated_code;
+    unsigned int l_cs = io_generated_code->code_size;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size + 7 < l_cs ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Ensure we have space in the fixup buffer */
+    if ( 128 == io_const_data->const_data_nload_insns ) {
+      fprintf( stderr, "libxsmm_x86_instruction_lea_data out of fixup space!\n" );
+      exit(-1);
+    }
+
+    /* lea i_reg, [rip + i_off + <FIXUP>] */
+    l_buf[l_cs++] = (i_reg >= 8) ? 0x4c : 0x48;
+    l_buf[l_cs++] = 0x8d;
+    l_buf[l_cs++] = 0x5 + (i_reg % 8)*8;
+
+    /* Stash the offset */
+    memcpy( l_buf + l_cs, &i_off, sizeof(i_off) );
+
+    io_const_data->const_data_pc_load_insns[io_const_data->const_data_nload_insns++] = io_generated_code->code_size;
+    io_generated_code->code_size += 7;
+  } else {
+    fprintf(stderr, "libxsmm_x86_instruction_lea_data: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned char*        i_data,
+                                               unsigned int                i_ndata_bytes,
+                                               unsigned int                i_alignment,
+                                               unsigned int                i_append_only,
+                                               libxsmm_const_data_tracker* io_const_data ) {
+  i_alignment = LIBXSMM_MAX( i_alignment, 1 );
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char* l_data = (unsigned char*) io_const_data->const_data;
+    unsigned int l_dsize = io_const_data->const_data_size;
+    unsigned int l_doff, l_npad;
+
+    /* See if we already have the data */
+    if ( !i_append_only ) {
+      for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
+        if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
+          return l_doff;
+        }
+      }
+    }
+
+    /* Determine how much padding is needed */
+    l_npad = LIBXSMM_UP( l_dsize, i_alignment) - l_dsize;
+
+    /* Ensure we have enough space */
+    if ( l_dsize + l_npad + i_ndata_bytes > sizeof(io_const_data->const_data) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return ~0U;
+    }
+
+    /* Copy the data */
+    memcpy( l_data + l_dsize + l_npad, i_data, i_ndata_bytes );
+
+    /* Update the size */
+    io_const_data->const_data_size += l_npad + i_ndata_bytes;
+
+    /* Return the offset of the new data in the buffer */
+    return l_dsize + l_npad;
+  } else {
+    fprintf(stderr, "libxsmm_x86_instruction_add_data: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_amx( libxsmm_generated_code*   io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                            unsigned int                  i_prefetch) {
@@ -5981,6 +6064,46 @@ void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*  
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(aptr), \"m\"(ldaptr), \"m\"(bptr), \"m\"(ldbptr), \"m\"(apfptr), \"m\"(bpfptr) : \"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                         libxsmm_const_data_tracker* io_const_data ) {
+  unsigned int l_i;
+  unsigned char* l_code_buffer = (unsigned char*) io_generated_code->generated_code;
+  unsigned int l_code_size = io_generated_code->code_size;
+  unsigned int l_data_size = io_const_data->const_data_size;
+  unsigned int l_max_size = io_generated_code->buffer_size;
+
+  /* Handle any constant data */
+  if ( l_data_size > 0 ) {
+    /* Round up to a page boundary */
+    l_code_size = LIBXSMM_UP( l_code_size, LIBXSMM_PAGE_MINSIZE );
+
+    /* Ensure we have space in the code stream */
+    if ( l_max_size < l_data_size + l_code_size ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Copy the data into the buffer */
+    memcpy( l_code_buffer + l_code_size, io_const_data->const_data, l_data_size );
+
+    /* Update the data size including unused space (page-size alignment */
+    io_generated_code->data_size = l_code_size + l_data_size - io_generated_code->code_size;
+
+    /* Fill in the load address */
+    for ( l_i = 0; l_i < io_const_data->const_data_nload_insns; l_i++ ) {
+      unsigned int l_lea_off = io_const_data->const_data_pc_load_insns[l_i];
+      unsigned int l_off, l_rip_off;
+
+      /* Read the user-provided offset */
+      memcpy( &l_off, l_code_buffer + l_lea_off + 3, sizeof(l_off) );
+
+      l_rip_off = l_code_size - l_lea_off - 7 + l_off;
+      memcpy( l_code_buffer + l_lea_off + 3, &l_rip_off, sizeof(l_rip_off) );
+    }
   }
 }
 

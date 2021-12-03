@@ -55,6 +55,20 @@ void libxsmm_x86_instruction_close_stream_amx( libxsmm_generated_code*   io_gene
                                            unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
+                                       unsigned int                i_reg,
+                                       unsigned int                i_off,
+                                       libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned char*        i_data,
+                                               unsigned int                i_ndata_bytes,
+                                               unsigned int                i_alignment,
+                                               unsigned int                i_append_only,
+                                               libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_vec_instr,
                                                    const unsigned int          i_gp_reg_base,
@@ -702,9 +716,13 @@ void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*   
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_matequation( libxsmm_generated_code*                  io_generated_code,
-                                                     const unsigned int                        i_gp_struct_params );
+                                                      const unsigned int                        i_gp_struct_params );
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*       io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                         libxsmm_const_data_tracker* io_const_data );
 
 /**
  * @TODO: clean-up
