@@ -1145,9 +1145,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
       gid = tid; /* protect initialization */
-#if defined(NDEBUG)
-      LIBXSMM_UNUSED(gid);
-#endif
+      LIBXSMM_UNUSED_NDEBUG(gid);
 #if (0 != LIBXSMM_SYNC)
       /* coverity[check_return] */
       LIBXSMM_TLS_CREATE(&libxsmm_tlskey);
@@ -1281,7 +1279,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
     else /*if (gid != tid)*/ { /* avoid recursion */
       LIBXSMM_ASSERT(gid != tid);
-      LIBXSMM_UNUSED(gid);
       while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) LIBXSMM_SYNC_YIELD;
       internal_init();
     }
