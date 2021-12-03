@@ -381,6 +381,27 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_flags               elt_meltwfused;
 } libxsmm_xmelt_flags;
 
+/** Flag enumeration which can be binary ORed, for very simple dispatch interface */
+typedef enum libxsmm_basic_gemm_flags {
+  LIBXSMM_BASIC_GEMM_FLAG_NONE = 0,
+  /** Transpose matrix A. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_A = 1,
+  /** Transpose matrix B. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_B = 2,
+  /** Transpose matrix A and B. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_AB = LIBXSMM_BASIC_GEMM_FLAG_TRANS_A | LIBXSMM_BASIC_GEMM_FLAG_TRANS_B,
+  /** Beta=0|1 */
+  LIBXSMM_BASIC_GEMM_FLAG_BETA_0 = 4,
+  /** Generate aligned load instructions. */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_A = 8,
+  /** Aligned load/store instructions. */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C = 16,
+  /** Aligned C matrix, but using NTS Hint when storing */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C,
+  /** Marker flag; do not use. */
+  LIBXSMM_BASIC_GEMM_FLAG_INVALID = 131072
+} libxsmm_basic_gemm_flags;
+
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_NONE = 0,
