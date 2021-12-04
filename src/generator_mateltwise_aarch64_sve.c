@@ -19,6 +19,15 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+
+LIBXSMM_API_INTERN
+libxsmm_aarch64_sve_type libxsmm_generator_aarch64_get_sve_type(unsigned char i_size){
+   if(i_size == 1) return LIBXSMM_AARCH64_SVE_TYPE_B;
+   if(i_size == 2) return LIBXSMM_AARCH64_SVE_TYPE_H;
+   if(i_size == 4) return LIBXSMM_AARCH64_SVE_TYPE_S;
+   return LIBXSMM_AARCH64_SVE_TYPE_D;
+ }
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_sve_init_micro_kernel_config_fullvector( libxsmm_generated_code*           io_generated_code,
                                                                                libxsmm_mateltwise_kernel_config* io_micro_kernel_config,

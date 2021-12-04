@@ -11,6 +11,7 @@
 
 #include "generator_aarch64_instructions.h"
 #include "generator_mateltwise_aarch64.h"
+#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
@@ -347,6 +348,9 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
   unsigned int offset = 0;
   LIBXSMM_UNUSED(i_mask_reg);
 
+  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
+
   /* In this case we don't have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
   #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
@@ -393,19 +397,28 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
               libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( io_generated_code, i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_1, cur_vreg,
                                                                      i_micro_kernel_config->datatype_size_in, (im == i_m_blocking - 1) ? i_mask_last_m_chunk : 0, 1 );
             } else if ((bcast_scalar == 1) && (in > 0) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
-                                                         i_start_vreg, i_start_vreg, 0, cur_vreg,
-                                                         (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+              if(l_is_sve){
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                                         i_start_vreg, i_start_vreg, 0, cur_vreg, 0, l_sve_type);
+              } else {
+                libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
+                                                           i_start_vreg, i_start_vreg, 0, cur_vreg,
+                                                           (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+              }
             }
           }
 
            if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY)) {
              /* Copy the register to the rest of the "M-registers" in this case....  */
              if (im > 0) {
-               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
-                                                          i_start_vreg + in * i_m_blocking, i_start_vreg + in * i_m_blocking, 0, cur_vreg,
-                                                         (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-
+               if(l_is_sve){
+                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                                          i_start_vreg + in * i_m_blocking, i_start_vreg + in * i_m_blocking, 0, cur_vreg, 0, l_sve_type);
+               } else {
+                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
+                                                            i_start_vreg + in * i_m_blocking, i_start_vreg + in * i_m_blocking, 0, cur_vreg,
+                                                            (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+               }
             }
           }
 
@@ -428,10 +441,15 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
           if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY)) {
             /* Copy the register to the rest of the "N-REGISTERS" in this case....  */
             if (in > 0) {
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
-                                                         i_start_vreg + im, i_start_vreg + im, 0, cur_vreg,
-                                                        (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+              if(l_is_sve){
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                                         i_start_vreg + im, i_start_vreg + im, 0, cur_vreg, 0, l_sve_type );
+              } else {
+                libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
+                                                           i_start_vreg + im, i_start_vreg + im, 0, cur_vreg,
+                                                           (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
 
+              }
             }
           }
         }
@@ -587,7 +605,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
   LIBXSMM_UNUSED(i_mask_reg);
 
   unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
-  libxsmm_aarch64_sve_type l_sve_type = LIBXSMM_AARCH64_SVE_TYPE_S;/* todo get sve type from inputs somehow */
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
 
   for (in = 0; in < i_n_blocking; in++) {
     if ((bcast_col == 1) && (in > 0)) {
@@ -1210,7 +1228,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   /* todo if predicated & needed, define the predicate */
   unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD);
   unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
-  libxsmm_aarch64_sve_type l_sve_type = LIBXSMM_AARCH64_SVE_TYPE_S;/* todo get sve type from inputs somehow */
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {

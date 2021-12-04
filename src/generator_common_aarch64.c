@@ -11,6 +11,7 @@
 ******************************************************************************/
 
 #include "generator_mateltwise_aarch64.h"
+#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
@@ -114,29 +115,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     } else {
-      /* we need two registers for comparison with whilelt: we use i_gp_reg_addr and i_gp_reg_addr + i_masked_elems (saved into i_gp_reg_scratch) */
-      /* todo: we probably need this in other functions later as well */
-      libxsmm_aarch64_sve_type l_sve_data_type;
-      switch(i_datatype_size) {
-        case 1:
-          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_B;
-          break;
-        case 2:
-          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_H;
-          break;
-        case 4:
-          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_S;
-          break;
-        case 8:
-          l_sve_data_type = LIBXSMM_AARCH64_SVE_TYPE_D;
-          break;
-        default:
-          /* should not happen */
-          return;
-      }
-      libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_scratch, i_masked_elems, 0);
-      libxsmm_aarch64_instruction_sve_pcompute(io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_WHILELT, l_pred_reg,
-        i_gp_reg_addr, LIBXSMM_AARCH64_GP_WIDTH_X, i_gp_reg_scratch, LIBXSMM_AARCH64_SVE_PATTERN_ALL, l_sve_data_type);
+      libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, i_masked_elems, i_gp_reg_scratch);
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     }
@@ -217,35 +196,74 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
                                                             const unsigned int      i_datatype_size,
                                                             const unsigned int      i_masked_elems,
                                                             const unsigned int      i_adv_gpr ) {
-  unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
 
-  if ( i_masked_elems != 1 ) {
-    if ( i_adv_gpr == 0 ) {
-      libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
-                                                       i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, i_vec_reg,
-                                                       (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+  unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_datatype_size);
+
+  /* ld1r -> ld1rw (msize=32,esize=32), is predicated */
+  int l_pred_reg = 0;// todo find usable predicate register
+
+  if(l_is_sve) {
+    if ( i_masked_elems != 1 ) {
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
+                                            i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
+      if ( i_adv_gpr ) {
+        /* increment address by offset; correct? */
+        libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);
+      }
+      if ( i_masked_elems != 0 ) {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
+        if ( i_masked_elems == 2 ) {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+        } else if ( i_masked_elems == 3 ) {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+        } else {
+          /* shouldn't happen */
+        }
+      }
     } else {
-      libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST,
-                                                       i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_XZR, i_vec_reg,
-                                                       (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-    }
-    if ( i_masked_elems != 0 ) {
-      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
-      if ( i_masked_elems == 2 ) {
-        libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                    i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-      } else if ( i_masked_elems == 3 ) {
-        libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                    i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-      } else {
-        /* shouldn't happen */
+      /* clears vreg, but why? */
+      libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, 0, l_sve_type );
+      /* todo check if is correct instruction; + what if it's not fp32?  */
+      libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, 1, i_gp_reg_scratch);
+      libxsmm_aarch64_instruction_sve_move(io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF, i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg);
+      if( l_offset > 0){
+        /* increment address by offset; correct? */
+        libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);
       }
     }
   } else {
-    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
-                                            i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                            (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+    if ( i_masked_elems != 1 ) {
+      if ( i_adv_gpr == 0 ) {
+        libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
+                                                         i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, i_vec_reg,
+                                                        (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+      } else {
+        libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST,
+                                                        i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_XZR, i_vec_reg,
+                                                        (i_datatype_size == 4) ?  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
+      }
+      if ( i_masked_elems != 0 ) {
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
+        if ( i_masked_elems == 2 ) {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+        } else if ( i_masked_elems == 3 ) {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+        } else {
+          /* shouldn't happen */
+        }
+      }
+    } else {
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
+                                              i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
+                                              (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+    }
   }
 }
 

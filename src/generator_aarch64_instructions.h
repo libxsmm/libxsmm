@@ -381,9 +381,6 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P /* todo: change name to fmla_v_p everywhere */
-#define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P
-#define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
