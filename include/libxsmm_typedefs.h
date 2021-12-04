@@ -807,11 +807,53 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_param {
   libxsmm_matrix_arg_v2 b;   /* b matrix  */
   libxsmm_matrix_arg_v2 c;   /* c matrix  */
   libxsmm_matrix_arg_v2 d;   /* additional tensor for binary op on c */
-  libxsmm_matrix_arg_v2 e;   /* additional tensor for tenary op on c */
   libxsmm_matrix_arg_v2 ap;  /* a after applying unary op */
   libxsmm_matrix_arg_v2 bp;  /* b after applying unary op */
   libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
 } libxsmm_gemm_ext_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape_flags {
+  libxsmm_blasint m;                    /* number of rows of A and C */
+  libxsmm_blasint n;                    /* number of cols of C and B */
+  libxsmm_blasint k;                    /* number of cols of A and number of rows of B */
+  libxsmm_blasint* lda;                 /* leading dimension of A, if NULL induced from M,K */
+  libxsmm_blasint* ldb;                 /* leading dimension of B, if NULL induced from K,N */
+  libxsmm_blasint* ldc;                 /* leading dimension of C, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of A and B */
+  libxsmm_datatype out_type;            /* datatype of C */
+  libxsmm_datatype comp_type;           /* datatype of inner product */
+  libxsmm_gemm_flags flags;             /* flags for GEMM operation */
+  libxsmm_gemm_prefetch_type prefetch;  /* prefetch option for the GEMM operation*/
+} libxsmm_gemm_shape_flags;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
+  libxsmm_gemm_batch_reduce_type br_type;  /* specifying the type of the BRGEMM operation */
+  unsigned long long br_stride_a_hint;     /* mandatory hint for strided BRGEMM */
+  unsigned long long br_stride_b_hint;     /* mandatory hint for strided BRGEMM */
+  unsigned char br_unroll_hint;            /* optional hint containing the BR count */
+} libxsmm_gemm_batch_reduce_config;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_unary_argops {
+  libxsmm_blasint* ldap;                      /* leading dimensions of Ap */
+  libxsmm_meltw_unary_flags ap_unary_flags;   /* flags for Ap = unary( A ) */
+  libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
+  libxsmm_blasint store_ap;                   /* nonzero for storing Ap */
+  libxsmm_blasint* ldbp;                      /* leading dimensions of Bp */
+  libxsmm_meltw_unary_flags bp_unary_flags;   /* flags for Bp = unary( B ) */
+  libxsmm_meltw_unary_type bp_unary_type;     /* op type for Bp = unary( B ) */
+  libxsmm_blasint store_bp;                   /* nonzero for storing Bp */
+  libxsmm_blasint* ldcp;                      /* leading dimensions of Cp */
+  libxsmm_meltw_unary_flags cp_unary_flags;   /* flags for Cp = unary( C ) */
+  libxsmm_meltw_unary_type cp_unary_type;     /* op type for Cp = unary( C ) */
+  libxsmm_blasint store_cp;                   /* nonzero for storing Cp */
+} libxsmm_gemm_ext_unary_argops;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_binary_postops {
+  libxsmm_blasint* ldd;                       /* leading dimensions of D */
+  libxsmm_datatype d_in_type;                 /* datatype of D */
+  libxsmm_meltw_binary_flags d_binary_flags;  /* flags for C = binary( C, D ) */
+  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+} libxsmm_gemm_ext_binary_postops;
 
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
