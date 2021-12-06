@@ -87,9 +87,9 @@ double run_jit_double( const gemm_def*     i_gemm_def,
 
   l_start = libxsmm_timer_tick();
   if (i_gemm_def->br_type == 0) {
-    l_test_jit.dmm = libxsmm_dmmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
-                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
-                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    l_test_jit.dmm = libxsmm_dmmdispatch_v2(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                            &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                            &l_flags );
   } else if (i_gemm_def->br_type == 1) {
     if (i_gemm_def->br_unroll == 0) {
       l_test_jit.dmra = libxsmm_dmmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
@@ -267,9 +267,9 @@ double run_jit_float( const gemm_def*     i_gemm_def,
 
   l_start = libxsmm_timer_tick();
   if (i_gemm_def->br_type == 0) {
-    l_test_jit.smm = libxsmm_smmdispatch(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
-                                         &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
-                                         &l_alpha, &l_beta, &l_flags, &(i_gemm_def->prefetch));
+    l_test_jit.smm = libxsmm_smmdispatch_v2(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
+                                            &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
+                                            &l_flags);
   } else if (i_gemm_def->br_type == 1) {
     if (i_gemm_def->br_unroll == 0) {
       l_test_jit.smra = libxsmm_smmdispatch_reducebatch_addr(i_gemm_def->m, i_gemm_def->n, i_gemm_def->k,
