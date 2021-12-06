@@ -278,10 +278,6 @@ LIBXSMM_APIVAR_PRIVATE_DEF(unsigned int libxsmm_thread_count);
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 
-#if (0 != LIBXSMM_SYNC)
-LIBXSMM_APIVAR_PRIVATE_DEF(LIBXSMM_TLS_TYPE libxsmm_tlskey);
-#endif
-
 
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
@@ -1147,8 +1143,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       gid = tid; /* protect initialization */
       LIBXSMM_UNUSED_NDEBUG(gid);
 #if (0 != LIBXSMM_SYNC)
-      /* coverity[check_return] */
-      LIBXSMM_TLS_CREATE(&libxsmm_tlskey);
       { /* construct and initialize locks */
 # if defined(LIBXSMM_REGLOCK_TRY)
         const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
@@ -1442,8 +1436,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
-    /* coverity[check_return] */
-    LIBXSMM_TLS_DESTROY(libxsmm_tlskey);
 #endif
   }
 }
