@@ -282,7 +282,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
         libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                         &l_mateltwise_kernel_config, l_mateltwise_desc );
-
     }
 
     /* stack management at the end (does nothing for my case?) for melt kernel */
