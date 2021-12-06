@@ -819,7 +819,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape_flags {
   libxsmm_blasint* lda;                 /* leading dimension of A, if NULL induced from M,K */
   libxsmm_blasint* ldb;                 /* leading dimension of B, if NULL induced from K,N */
   libxsmm_blasint* ldc;                 /* leading dimension of C, if NULL induced from M,N */
-  libxsmm_datatype in_type;             /* datatype of A and B */
+  libxsmm_datatype a_in_type;           /* datatype of A */
+  libxsmm_datatype b_in_type;           /* datatype of B */
   libxsmm_datatype out_type;            /* datatype of C */
   libxsmm_datatype comp_type;           /* datatype of inner product */
   libxsmm_gemm_flags flags;             /* flags for GEMM operation */
