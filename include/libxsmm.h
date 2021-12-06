@@ -137,11 +137,11 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_ext( const libxsmm_gemm_s
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                     const libxsmm_basic_gemm_flags flags );
+                                                     const libxsmm_basic_gemm_flags* flags );
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (single-precision). */
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                     const libxsmm_basic_gemm_flags flags );
+                                                     const libxsmm_basic_gemm_flags* flags );
 
 /* @TODO: we might want to also NOT add these functios under the new frontend */
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate) */

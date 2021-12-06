@@ -2890,23 +2890,43 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config ) {
+  return NULL;
 }
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_ext( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
                                                             const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
+  return NULL;
 }
 
 
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                         const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                        const libxsmm_basic_gemm_flags flags ) {
+                                                        const libxsmm_basic_gemm_flags* flags ) {
+  const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags); /* we leverage that basic flags and flags alias */
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
+    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
+    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
+    NULL != ldc ? *ldc : m, LIBXSMM_ALPHA, LIBXSMM_BETA,
+    gemm_flags, libxsmm_get_gemm_xprefetch(NULL));
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  return result.dmm;
 }
 
 
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                         const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                        const libxsmm_basic_gemm_flags flags ) {
+                                                        const libxsmm_basic_gemm_flags* flags ) {
+  const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags); /* we leverage that basic flags and flags alias */
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
+    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
+    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
+    NULL != ldc ? *ldc : m, LIBXSMM_ALPHA, LIBXSMM_BETA,
+    gemm_flags, libxsmm_get_gemm_xprefetch(NULL));
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  return result.smm;
 }
 
 
