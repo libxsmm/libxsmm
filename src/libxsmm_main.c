@@ -2897,6 +2897,27 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 }
 
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config ) {
+}
+
+
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_ext( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
+                                                            const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
+}
+
+
+LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                        const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                        const libxsmm_basic_gemm_flags flags ) {
+}
+
+
+LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                        const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                        const libxsmm_basic_gemm_flags flags ) {
+}
+
+
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta, const int* flags, const int* prefetch)
