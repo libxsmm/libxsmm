@@ -170,7 +170,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* check LDA */
-  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0 ) {
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) == LIBXSMM_GEMM_FLAG_TRANS_A ) {
+    // Non FP32 and BRGEMM are not supported for the trans_a = 1 case
+    if ((LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ||
+        (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS              )) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
+      return;
+    }
     if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.k ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
       return;
