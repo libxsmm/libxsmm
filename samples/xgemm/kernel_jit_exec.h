@@ -42,13 +42,22 @@ double run_jit_double( const gemm_def*     i_gemm_def,
                        const double*       i_b,
                        double*             o_c,
                        const unsigned int  i_print_jit_info) {
+#if 0
+#define FP64_USE_GEMM_EXT
+#endif
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   libxsmm_gemm_shape_flags l_shapeflags;
   libxsmm_gemm_batch_reduce_config l_brconfig;
+  libxsmm_gemm_ext_unary_argops l_argops;
+  libxsmm_gemm_ext_binary_postops l_postops;
+#ifdef FP64_USE_GEMM_EXT
+  libxsmm_gemm_ext_param gemm_param;
+#else
   libxsmm_gemm_param gemm_param;
+#endif
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
   size_t l_t, l_r;
@@ -125,6 +134,9 @@ double run_jit_double( const gemm_def*     i_gemm_def,
     l_brconfig.br_unroll_hint = 0;
   }
 
+  /* setting ext strcuts to 0 */
+  memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
+  memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
   l_start = libxsmm_timer_tick();
   if (i_gemm_def->br_type == 0) {
@@ -132,7 +144,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
                                             &(i_gemm_def->lda), &(i_gemm_def->ldb), &(i_gemm_def->ldc),
                                             &l_flags );
   } else {
+#ifdef FP64_USE_GEMM_EXT
+    l_test_jit.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shapeflags, l_brconfig, l_argops, l_postops );
+#else
     l_test_jit.gemm = libxsmm_dispatch_gemm_v2( l_shapeflags, l_brconfig );
+#endif
   }
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
@@ -145,7 +161,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
   libxsmm_get_mmkernel_info(l_test_jit, &l_info);
 
   /* reset GEMM paramater */
-  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param));
+#ifdef FP64_USE_GEMM_EXT
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_ext_param) );
+#else
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+#endif
   gemm_param.op.primary = &l_br;
   gemm_param.c.primary = o_c;
 
@@ -167,7 +187,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
             l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
           }
         }
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     } else if (i_gemm_def->br_type == 2) {
       gemm_param.a.primary = (void*)i_a;
@@ -175,13 +199,21 @@ double run_jit_double( const gemm_def*     i_gemm_def,
       gemm_param.b.primary = (void*)i_b;
       gemm_param.b.secondary = l_b_offs;
       for (l_t = 0; l_t < g_reps; l_t++) {
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     } else if (i_gemm_def->br_type == 3) {
       gemm_param.a.primary = (void*)i_a;
       gemm_param.b.primary = (void*)i_b;
       for (l_t = 0; l_t < g_reps; l_t++) {
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     }
   } else {
@@ -201,7 +233,11 @@ double run_jit_double( const gemm_def*     i_gemm_def,
             l_b_addr[l_r] = (const double*)i_b + (l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k);
           }
         }
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     } else if (i_gemm_def->br_type == 2) {
       gemm_param.a.primary = (void*)i_a;
@@ -209,13 +245,21 @@ double run_jit_double( const gemm_def*     i_gemm_def,
       gemm_param.b.primary = (void*)i_b;
       gemm_param.b.secondary = l_b_offs;
       for (l_t = 0; l_t < g_reps; l_t++) {
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     } else if (i_gemm_def->br_type == 3) {
       gemm_param.a.primary = (void*)i_a;
       gemm_param.b.primary = (void*)i_b;
       for (l_t = 0; l_t < g_reps; l_t++) {
+#ifdef FP64_USE_GEMM_EXT
+        l_test_jit.gemm_ext( &gemm_param );
+#else
         l_test_jit.gemm( &gemm_param );
+#endif
       }
     }
   }

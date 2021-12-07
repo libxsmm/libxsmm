@@ -239,11 +239,26 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   /** LDx, LDy, LDz,  additional meltw LDs */
   unsigned int meltw_ldx, meltw_ldy, meltw_ldz;
   /** optional param field */
-  unsigned char meltw_param;
+  unsigned short meltw_param;
   /** Set of flags */
   unsigned short meltw_flags;
   /** operation specifier */
   unsigned char meltw_operation;
+  /* Ap, Bp, Cp */
+  unsigned char eltw_ap_op;
+  unsigned char eltw_bp_op;
+  unsigned char eltw_cp_op;
+  unsigned short eltw_ap_flags;
+  unsigned short eltw_bp_flags;
+  unsigned short eltw_cp_flags;
+  unsigned short eltw_ap_param;
+  unsigned short eltw_bp_param;
+  unsigned short eltw_cp_param;
+  unsigned int ldap;
+  unsigned int ldbp;
+  unsigned int ldcp;
+  /* internal flags2 */
+  unsigned char internal_flags_2;
 };
 
 /** Packed structure storing the mateltw argument description. */

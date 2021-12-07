@@ -2860,12 +2860,16 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     const int batch_reduce =
       LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
       LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
+      LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI |
+      LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
+    /* @TODO fix this code for the 3 kernel types we have
+     * right now XGEMM ABI and BRGEMM go to 96 byte */
     wrap.kind = (libxsmm_descriptor_kind)(0 == (batch_reduce & descriptor->flags)
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
@@ -2901,7 +2905,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
   }
 
   /* use the XGEMM ABI which utiliztes an arg struct */
-  gemm_flags |= LIBXSMM_GEMM_USE_XGEMM_ABI;
+  gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* set BRGEMM option */
   if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS ) {
@@ -2938,13 +2942,82 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
 }
 
 
-LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
-                                                            const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
-  LIBXSMM_UNUSED( shape_flags );
-  LIBXSMM_UNUSED( br_config );
-  LIBXSMM_UNUSED( unary_argops );
-  LIBXSMM_UNUSED( binary_postops );
-  return NULL;
+LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
+                                                                const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
+  int gemm_flags = (NULL == (shape_flags.flags) ? LIBXSMM_FLAGS : *(shape_flags.flags));
+  libxsmm_descriptor_blob blob;
+  libxsmm_xmmfunction result;
+  libxsmm_gemm_descriptor *desc = NULL;
+
+  /* @TODO some checks */
+  if ( shape_flags.a_in_type != shape_flags.b_in_type ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
+
+  /* set BRGEMM option */
+  if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS ) {
+    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
+  } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_OFFSET ) {
+    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
+  } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+  } else {
+    /* not a BRGEMM */
+  }
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, shape_flags.a_in_type, shape_flags.out_type,
+    shape_flags.m, shape_flags.n, shape_flags.k,
+    NULL != shape_flags.lda ? *(shape_flags.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? shape_flags.m : shape_flags.k),
+    NULL != shape_flags.ldb ? *(shape_flags.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? shape_flags.k : shape_flags.n),
+    NULL != shape_flags.ldc ? *(shape_flags.ldc) : shape_flags.m, LIBXSMM_ALPHA, !((*(shape_flags.flags) & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+      gemm_flags, libxsmm_get_gemm_xprefetch(shape_flags.prefetch));
+
+  /* add more BRGEMM related fields */
+  if ( (br_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (br_config.br_unroll_hint != 0) ) {
+    desc->c3 = (unsigned char)(((br_config.br_unroll_hint < 255) && (br_config.br_unroll_hint > 0)) ? br_config.br_unroll_hint : 0);
+  }
+  if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+    desc->c1 = br_config.br_stride_a_hint;
+    desc->c2 = br_config.br_stride_b_hint;
+  }
+
+  /* setting binary post-op eltwise fields */
+  desc->meltw_datatype_aux = (unsigned char)binary_postops.d_in_type;
+  desc->meltw_flags = (unsigned short)binary_postops.d_binary_flags;
+  desc->meltw_param = (unsigned short)binary_postops.d_binary_type;
+  desc->meltw_operation = ( binary_postops.d_binary_type == LIBXSMM_MELTW_TYPE_BINARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_BINARY;
+  desc->meltw_ldx = (NULL != binary_postops.ldd) ? *(binary_postops.ldd) : shape_flags.m;
+  desc->meltw_ldy = 0;
+  desc->meltw_ldz = 0;
+
+  /* setting unary argops eltwise fileds */
+  desc->internal_flags_2 = 0;
+  desc->eltw_ap_op = ( unary_argops.ap_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
+  desc->eltw_ap_flags = (unsigned short)unary_argops.ap_unary_flags;
+  desc->eltw_ap_param = (unsigned short)unary_argops.ap_unary_type;
+  desc->ldap = (NULL != unary_argops.ldap) ? *(unary_argops.ldap) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? shape_flags.m : shape_flags.k);
+  desc->internal_flags_2 |= (unary_argops.store_ap != 0) ? 0x1 : 0x0;
+
+  desc->eltw_bp_op = ( unary_argops.bp_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
+  desc->eltw_bp_flags = (unsigned short)unary_argops.bp_unary_flags;
+  desc->eltw_bp_param = (unsigned short)unary_argops.bp_unary_type;
+  desc->ldbp = (NULL != unary_argops.ldbp) ? *(unary_argops.ldbp) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? shape_flags.k : shape_flags.n);
+  desc->internal_flags_2 |= (unary_argops.store_bp != 0) ? 0x2 : 0x0;
+
+  desc->eltw_cp_op = ( unary_argops.cp_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
+  desc->eltw_cp_flags = (unsigned short)unary_argops.cp_unary_flags;
+  desc->eltw_cp_param = (unsigned short)unary_argops.cp_unary_type;
+  desc->ldcp = (NULL != unary_argops.ldcp) ? *(unary_argops.ldcp) : shape_flags.m;
+  desc->internal_flags_2 |= (unary_argops.store_cp != 0) ? 0x4 : 0x0;
+
+  /* JIT! */
+  result = libxsmm_xmmdispatch(desc);
+
+  return result.gemm_ext;
 }
 
 

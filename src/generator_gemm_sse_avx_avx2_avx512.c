@@ -171,7 +171,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* implementing load from struct */
-  if ( (LIBXSMM_GEMM_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_USE_XGEMM_ABI ) {
+  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
+       ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_param_struct, i_gp_reg_mapping->gp_reg_help_1 );
     /* A pointer */
@@ -207,6 +208,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     if ( (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
       libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, i_gp_reg_mapping->gp_reg_scf, 0 );
+    }
+    /* check values for gemm_ext */
+    if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+      if ( (i_xgemm_desc->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+           (i_xgemm_desc->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
+        return;
+      }
     }
   }
 

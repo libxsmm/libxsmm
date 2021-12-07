@@ -132,8 +132,8 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config );
 /** Query or JIT-generate SMM-kernel with fusion, general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
-LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
-                                                            const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
+LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape_flags shape_flags, const libxsmm_gemm_batch_reduce_config br_config,
+                                                                const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
