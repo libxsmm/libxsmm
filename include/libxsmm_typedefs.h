@@ -399,7 +399,7 @@ typedef enum libxsmm_basic_gemm_flags {
   /** Aligned C matrix, but using NTS Hint when storing */
   LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C,
   /** Marker flag; do not use. */
-  LIBXSMM_BASIC_GEMM_FLAG_INVALID = 131072
+  LIBXSMM_BASIC_GEMM_FLAG_INVALID = 524288
 } libxsmm_basic_gemm_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -827,8 +827,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape_flags {
   libxsmm_datatype b_in_type;           /* datatype of B */
   libxsmm_datatype out_type;            /* datatype of C */
   libxsmm_datatype comp_type;           /* datatype of inner product */
-  libxsmm_gemm_flags flags;             /* flags for GEMM operation */
-  libxsmm_gemm_prefetch_type prefetch;  /* prefetch option for the GEMM operation*/
+  int* flags;                           /* flags for GEMM operation */
+  int* prefetch;                        /* prefetch option for the GEMM operation*/
 } libxsmm_gemm_shape_flags;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
