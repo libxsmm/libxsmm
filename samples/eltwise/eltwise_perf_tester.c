@@ -9,9 +9,16 @@
 /* Antonio Noack (FSU Jena)
 ******************************************************************************/
 
-#include <libxsmm_source.h>
-
-#define T float
+/**
+ * This file should be compatible with all correctness tests, and used as an additional benchmark.
+ * You need to define
+ *  - BENCHMARK_FLOPS_PER_ITERATION as the number of operations inside your kernel call
+ *  - BENCHMARK_BANDWIDTH_PER_ITERATION as the number of bytes transferred inside your kernel call, shall be > 0
+ *  - BENCHMARKED_CALL your kernel call, e.g. unary_kernel( &unary_param );
+ * 
+ * This benchmarking only works if no architectures shall be compared, or calling the kernel and creating the kernel need to be in the same function.
+ * You can disable benchmarking by setting BENCHMARK_DURATION to 0.
+ */
 
 /*
 
@@ -31,163 +38,101 @@ objdump -D -b binary -maarch64 <fileName>
 
 */
 
+/* default values */
+#define BENCHMARK_FLOPS_PER_ITERATION 1
 
-struct SVE_UnaryBenchmark {
-  libxsmm_meltw_unary_type unaryType;
-  char* name;
-  unsigned int flopsPerElement;
-  unsigned int bandwidthPerElement;
-  double gflops; /* compute performance in GFlop/s */
-  double gbandwidth; /* bandwidth in GiB */
-};
+#define BENCHMARK_BANDWIDTH_PER_ITERATION 1
 
-void benchmark( int m, int n, struct SVE_UnaryBenchmark *io_result ) {
+/* the benchmarked kernel call, sin() is just a sample */
+#define BENCHMARKED_CALL sin(3.14)
 
-  double l_targetRuntimeSeconds = 0.1;/* could be an environment variable */
-  size_t l_warmupRuns = 1000;/* warmup also measures how long it needs approximately */
-  size_t l_benchmarkRuns;
-  size_t l_dataSize = m * n;
+/* how many architectures will be tested at max; more archs would need to be implemented in getBenchmarkedArch() */
+#define MAX_BENCHMARK_ARCHITECTURES 2
 
-  /* allocate buffers */
-  T* l_input = malloc(sizeof(T) * l_dataSize);
-  T* l_output = malloc(sizeof(T) * l_dataSize);
-  for(int i=0;i<l_dataSize;i++) l_input[i] = (T) i;
 
-  libxsmm_meltwfunction_unary l_kernel = libxsmm_dispatch_meltw_unary(m, n, &m, &m,
-     LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-     LIBXSMM_MELTW_FLAG_UNARY_NONE, io_result->unaryType );
-
-  libxsmm_meltw_unary_param param;
-
-  param.in.primary  = l_input;
-  param.out.primary = l_output;
-
-  libxsmm_timer_tickint l_startTime0 = libxsmm_timer_tick();
-
-  /* warmup runs */
-  for(size_t i=0;i<l_warmupRuns;i++){
-    l_kernel( &param );
+const char* getBenchmarkedArch(int index) {
+  if (index < 0 || index >= MAX_BENCHMARK_ARCHITECTURES) return 0;
+  static const char* archs[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
+  int i;
+  if (archs[0] == 0) {
+    /* init all other architectures to zero, just in case */
+    for (i = 1; i < MAX_BENCHMARK_ARCHITECTURES; i++) {
+      archs[i] = NULL;
+    }
+    /* find main architecture */
+    archs[0] = libxsmm_get_target_arch();
+    /* find secondary/comparison architectures (currently only one) */
+    const char* arch1 = getenv("ARCH1");
+    if (arch1) {
+      libxsmm_set_target_arch(arch1);
+      archs[1] = libxsmm_get_target_arch();
+    }
   }
-
-  libxsmm_timer_tickint l_endTime0 = libxsmm_timer_tick();
-  double l_warmupDuration = libxsmm_timer_duration(l_startTime0, l_endTime0);
-  if(l_warmupDuration <= 1e-6) l_warmupDuration = 1e-6;
-  l_benchmarkRuns = (size_t) (l_targetRuntimeSeconds * l_warmupRuns / l_warmupDuration);
-
-  /* actual measurement runs */
-  libxsmm_timer_tickint l_startTime = libxsmm_timer_tick();
-
-  for(size_t i=0;i<l_benchmarkRuns;i++){
-    l_kernel( &param );
-  }
-
-  libxsmm_timer_tickint l_endTime = libxsmm_timer_tick();
-
-  /* compute delta time */
-  double l_duration = libxsmm_timer_duration(l_startTime, l_endTime);
-
-  double l_flopsPerRun = io_result->flopsPerElement * (m * n);
-  double l_bandwidthPerRun = io_result->bandwidthPerElement * (m * n);
-
-  /* compute performance metrics */
-  io_result->gflops = (double) l_flopsPerRun * l_benchmarkRuns / l_duration * 1e-9;
-  io_result->gbandwidth = (double) l_bandwidthPerRun * l_benchmarkRuns / l_duration * 1e-9;
-
-  free(l_input);
-  free(l_output);
-
+  return archs[index];
 }
 
-void printPerformance(struct SVE_UnaryBenchmark bench, const char* architecture){
-  if(bench.gflops > 0){
-    printf("  %s: %f GFlop/s, %f GB/s\n", architecture, bench.gflops, bench.gbandwidth);
-  } else {
-    printf("  %s: %f GB/s\n", architecture, bench.gbandwidth);
+/* returns the target duration of every single benchmark run; if the duration is <= 0 or NaN, no benchmarks will be run */
+double getBenchmarkDuration(){
+  static double duration = -1;
+  if (duration < 0) {
+    duration = 0.1;
+    const char* dur = getenv("BENCHMARK_DURATION");
+    if(dur){
+      duration = atof(dur);
+    }
   }
+  return duration;
 }
 
-int main(int argc, const char* argv[]) {
-
-  if(argc < 3 && argc > 5){
-    printf("Usage: %s <m> <n> [<arch0> <arch1>]\n", argv[0]);
-    return -1;
-  }
-
-  int m = atol(argv[1]);
-  int n = atol(argv[2]);
-  const char* arch0 = argc > 3 ? argv[3] : libxsmm_get_target_arch();
-  const char* arch1 = argc > 4 ? argv[4] : NULL;
-  int has_second_arch = arch1 != NULL;
-
-  if(m <= 0 || n <= 0){
-    printf("m and n must be positive!\n");
-    return -1;
-  }
-
-  printf("Starting benchmark\n");
-
-  /* could be customized in the future */
-  #define num_tests 7
-  struct SVE_UnaryBenchmark types[num_tests] = {
-    { LIBXSMM_MELTW_TYPE_UNARY_XOR, "xor", 0, sizeof(T) },
-    { LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, "copy", 0, sizeof(T) * 2 },
-    { LIBXSMM_MELTW_TYPE_UNARY_X2, "x²", 1, sizeof(T) * 2 },
-    { LIBXSMM_MELTW_TYPE_UNARY_INC, "+=1", 1, sizeof(T) * 2 },
-    { LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, "1/x", 1, sizeof(T) * 2 },
-    { LIBXSMM_MELTW_TYPE_UNARY_SQRT, "sqrt", 1, sizeof(T) * 2 },
-    { LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT, "1/sqrt", 1, sizeof(T) * 2 },
-  };
-
-  if(!has_second_arch){
-    libxsmm_init();
-    libxsmm_set_target_arch(arch0);
-    arch0 = libxsmm_get_target_arch();
-  }
-
-  for(int i=0;i<num_tests;i++){
-
-    struct SVE_UnaryBenchmark type0 = types[i], type1 = types[i];
-
-    if(has_second_arch){
-
-      /* run with arch0 */
-      libxsmm_init();
-      libxsmm_set_target_arch(arch0); /* e.g. LIBXSMM_AARCH64_V82 */
-      benchmark(m, n, &type0);
-      if(i == 0) arch0 = libxsmm_get_target_arch();
-      libxsmm_finalize();
-
-      /* run with arch1 */
-      libxsmm_init();
-      libxsmm_set_target_arch(arch1); /* e.g. LIBXSMM_AARCH64_A64FX */
-      benchmark(m, n, &type1);
-      if(i == 0) arch1 = libxsmm_get_target_arch();
-      libxsmm_finalize();
-
-      /* print benchmark results */
-      printf("Testing %s:\n", type0.name);
-      printPerformance(type0, arch0);
-      printPerformance(type1, arch1);
-      /* bandwidth is always not-zero, gflops can be */
-      printf("  Comparison: %s is %fx faster\n", arch0, type0.gbandwidth/type1.gbandwidth);
-
-    } else {
-
-      /* run with arch0 */
-      benchmark(m, n, &type0);
-
-      /* print benchmark results */
-      printf("Testing %s:\n", type0.name);
-      printPerformance(type0, arch0);
-
+#define BENCHMARK_INIT() \
+  double l_targetRuntimeSeconds = getBenchmarkDuration(); \
+  size_t l_warmupRuns = 1000, l_warmupIndex; \
+  size_t l_benchmarkRuns, l_benchmarkIndex; \
+  double l_warmupDuration, l_duration; \
+  double l_gflops[MAX_BENCHMARK_ARCHITECTURES]; \
+  double l_gbandwidth[MAX_BENCHMARK_ARCHITECTURES]; \
+  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES]; \
+  const char* l_arch; \
+  libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */ \
+  for (int l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) { \
+    if (l_targetRuntimeSeconds > 0){\
+      l_arch = l_archNames[l_archIndex] = getBenchmarkedArch(l_archIndex); \
+      if (!l_arch) break; \
+      libxsmm_finalize(); \
+      libxsmm_init(); \
+      libxsmm_set_target_arch(l_arch);\
     }
 
+#define BENCHMARK_RUN() \
+  if (l_targetRuntimeSeconds > 0) { \
+    /* warmup and computation how many steps are required */ \
+    l_startTime0 = libxsmm_timer_tick(); \
+    for (l_warmupIndex = 0; l_warmupIndex < l_warmupRuns; l_warmupIndex++) { \
+      BENCHMARKED_CALL; \
+    } \
+    l_endTime0 = libxsmm_timer_tick(); \
+    l_warmupDuration = libxsmm_timer_duration(l_startTime0, l_endTime0); \
+    if (l_warmupDuration <= 1e-9) l_warmupDuration = 1e-9; \
+    l_benchmarkRuns = (size_t)(l_targetRuntimeSeconds * l_warmupRuns / l_warmupDuration); \
+\
+    /* running the actual benchmark */ \
+    l_startTime = libxsmm_timer_tick(); \
+    for (l_benchmarkIndex = 0; l_benchmarkIndex < l_benchmarkRuns; l_benchmarkIndex++) { \
+      BENCHMARKED_CALL; \
+    } \
+    l_endTime = libxsmm_timer_tick(); \
+    l_duration = libxsmm_timer_duration(l_startTime, l_endTime); \
+    l_gflops[l_archIndex] = BENCHMARK_FLOPS_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
+    l_gbandwidth[l_archIndex] = BENCHMARK_BANDWIDTH_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
+\
+    /* printing results */ \
+    if (getBenchmarkedArch(1)) printf("Architecture  : %s\n", l_arch); \
+    printf("GB/s Bandwidth: %.24f\n", l_gbandwidth[l_archIndex]); \
+    printf("GFlops        : %.24f\n", l_gflops[l_archIndex]); \
+    printf("Runs          : %ld\n", l_benchmarkRuns); /* how often the kernel was run; could be interesting */ \
+    if (l_archIndex > 0) /* comparison with the first/main architecture */ \
+      printf("       Speedup: %.24fx\n", l_gbandwidth[l_archIndex] / l_gbandwidth[0]); \
   }
 
-  if(!has_second_arch){
-    libxsmm_finalize();
-  }
-
-  printf("Finished benchmark\n");
-
-}
+#define BENCHMARK_FINALIZE() \
+  } // end of loop over architectures
