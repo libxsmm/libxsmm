@@ -1207,12 +1207,22 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   return l_ret;
 }
 
-LIBXSMM_API_INTERN float libxsmm_get_ulp_precision(void){
-  static float precision = 0;
-  if(precision <= 0){
+LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void){
+  static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+  static int hasBeenInited = 0;
+  if(!hasBeenInited){
     char* env = getenv("LIBXSMM_ULP_PRECISION");
-    if(env) precision = (float) atof(env);
-    if(precision <= 0) precision = 1e4;/* the default precision is just an estimate; could be changed */
+    float p = 0;
+    if(env){
+      p = (float)atof(env);/* alternatively to atof, we could use strcmp */
+      if (p == 0.5)
+        precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+      else if (p == 1.0)
+        precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
+      else
+        precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
+    }
+    hasBeenInited = 1;
   }
   return precision;
 }
