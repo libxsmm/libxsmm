@@ -95,9 +95,6 @@ LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_
   if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY) {
     result = 0;
   }
-  //if (cur_node->tmp.ld != cur_node->le->tmp.ld) {
-  //  result = 0;
-  //}
   if ((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
