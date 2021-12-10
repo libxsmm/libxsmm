@@ -94,15 +94,19 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
-  unsigned int buffer_size;   /** total size if the buffer generated_code */
-  unsigned int code_size;     /** size of bytes used in generated_code */
+  unsigned int buffer_size;   /** total size of the buffer generated_code */
+  unsigned int code_size;     /** size in bytes used for generated_code (without constant data) */
   unsigned int code_type;     /**
                                *  0: generated code contains inline assembly in a C function
                                *     which can be dumped into a *.c/cc/cpp file
                                *  1: generated code contains assembly which can be
                                *     dumped into an *.s file
-                               * >1: generated code contains a function in binary code which can be
-                               *     called, when the code is copied into executable memory
+                               * >1: generated code contains a function in binary code which can
+                               *     be called, when the code is copied into executable memory
+                               */
+  unsigned int data_size;     /**
+                               * amount of constant data located after the generated code
+                               * data_size size is separate/excluded from code_size
                                */
   unsigned int last_error;    /**
                                *  0: no error occurred
@@ -110,11 +114,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                */
   unsigned int arch;          /* target arch for the current code generation task */
   unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
-                               * we track this value to have RBP availbale for general compute
+                               * we track this value to have RBP available for general compute
                                */
 } libxsmm_generated_code;
 
-/** function to translate LIBXSMM Generator error codes to error messages */
+/** Translate LIBXSMM generator error-codes to error messages */
 LIBXSMM_API
 const char* libxsmm_strerror(unsigned int i_error_code);
 

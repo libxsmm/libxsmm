@@ -288,13 +288,7 @@ void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out
                                        const char*                    i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = NULL;
-  l_generated_code.buffer_size = 0;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 0;
-  l_generated_code.last_error = 0;
-  l_generated_code.arch = 0;
-  l_generated_code.sf_size = 0;
+  LIBXSMM_MEMZERO127(&l_generated_code);
 
   /* set arch */
   if ( strcmp(i_arch, "wsm") == 0  ) {

@@ -31,6 +31,11 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                                    unsigned char           i_gp_reg_scratch );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_mov_aarch64( libxsmm_generated_code* io_generated_code,
+                                    unsigned int            i_src_reg,
+                                    unsigned int            i_dst_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
     unsigned int                                   instr,
     const unsigned int                             i_vec_inout );
@@ -391,6 +396,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_cod
                                                               const unsigned int      i_gp_reg_tmp,
                                                               const libxsmm_aarch64_asimd_tupletype i_tupletype,
                                                               unsigned long long imm64);
+
 /**
  * Load constants in the ASIMD register
  *
@@ -407,6 +413,26 @@ void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_cod
                                                           const unsigned int      i_gp_reg_tmp1,
                                                           void                    *imm64_array,
                                                           const unsigned int       i_start_index);
+
+/**
+ * Load constants in an SVE register with 128-bit replication
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_vec_reg SVE register to fill
+ * @param i_gp_reg_tmp0 first temp register
+ * @param i_gp_reg_tmp1 second temp register
+ * @param i_pred_tmp predicate temp register
+ * @param imm64_array array containing data to load
+ * @param i_start_index starting offset in the array
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_code* io_generated_code,
+                                                              const unsigned char     i_vec_reg,
+                                                              const unsigned int      i_gp_reg_tmp0,
+                                                              const unsigned int      i_gp_reg_tmp1,
+                                                              const unsigned int      i_pred_tmp,
+                                                              void*                   imm64_array,
+                                                              const unsigned int      i_start_index);
 
 #endif /* GENERATOR_COMMON_AARCH64_H */
 
