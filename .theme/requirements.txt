@@ -1,4 +1,4 @@
 sphinx-rtd-theme
 recommonmark
-mkdocs>=1.2.2
+mkdocs>=1.2.3
 m2r2
