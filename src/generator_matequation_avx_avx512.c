@@ -415,7 +415,8 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
     }
   }
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
-    if ( node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) {
+    if ( (node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
+         (node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ) {
       result = 1;
     }
   }
@@ -547,7 +548,7 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       info.arg.m = cur_node->tmp.m;
       info.arg.n = cur_node->tmp.n;
       info.arg.ld = cur_node->tmp.ld;
-      info.arg.in_pos = -(cur_node->tmp.id + 1);
+      info.arg.in_pos = -(cur_node->tmp.id + 1);  /*(cur_node->tmp.id >= 0) ? -(cur_node->tmp.id + 1) : cur_node->tmp.id;*/
       info.arg.dtype = cur_node->tmp.dtype;
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
@@ -671,7 +672,25 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     if (eqn_tree_id == (queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+      if (cur_eqn->eqn_root->tmp.id >= 0) {
+        libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
+      } else {
+        libxsmm_blasint arg_tmp_id = -1-cur_eqn->eqn_root->tmp.id;
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            l_kernel_config.alu_mov_instruction,
+            l_gp_reg_mapping.gp_reg_param_struct,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            8,
+            temp_reg,
+            0 );
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            l_kernel_config.alu_mov_instruction,
+            temp_reg,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            arg_tmp_id*24,
+            temp_reg,
+            0 );
+      }
       copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
@@ -687,13 +706,18 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       /* For these nodes use strategy via scratch  */
       /* Re assign visit_stamps to current equation tree  */
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
-#if 0
-      printf("\nJITing tree with scratch %d\n", eqn_tree_id);
+      if (eqn_tree_id < queue_size - 1) {
+        if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
+            ((cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) || (cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM))) {
+          copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
+        } else {
+          copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
+        }
+      }
+#if 1
+      printf("\nJITing tree with scratch %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
-      if (eqn_tree_id < queue_size - 1) {
-        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
-      }
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
@@ -717,8 +741,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
-#if 0
-      printf("\nJITing tree with regblocks %d\n", eqn_tree_id);
+#if 1
+      printf("\nJITing tree with regblocks %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;

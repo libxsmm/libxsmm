@@ -51,9 +51,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
 } libxsmm_matrix_eqn_binary_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_ternary_op {
-  libxsmm_meltw_ternary_type  type;
-  libxsmm_meltw_ternary_flags flags;
-  libxsmm_datatype            dtype;
+  libxsmm_meltw_ternary_type        type;
+  libxsmm_meltw_ternary_flags       flags;
+  libxsmm_datatype                  dtype;
+  libxsmm_gemm_batch_reduce_config  brgemm_config;
 } libxsmm_matrix_eqn_ternary_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_arg {
