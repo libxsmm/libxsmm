@@ -95,7 +95,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_matrix_eqn_elem *
   ldc = cur_op->tmp.ld;
   memset(&br_config, 0, sizeof(libxsmm_gemm_batch_reduce_config));
   if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM)) {
-    br_config = cur_op->info.t_op.brgemm_config;
+
   }
   /* set BRGEMM option */
   if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS ) {

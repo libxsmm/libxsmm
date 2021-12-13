@@ -365,7 +365,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[0], n_i[0], ld_i[0], 0, 0, in_dt );
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32, &brconf );
+  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[2], n_i[2], ld_i[2], 2, 0, in_dt );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[3], n_i[3], ld_i[3], 3, 0, in_dt );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, 0, in_dt );
