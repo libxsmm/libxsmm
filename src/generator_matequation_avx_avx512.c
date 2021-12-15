@@ -18,6 +18,7 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 #include "generator_common_x86.h"
+#include "libxsmm_matrixeqn.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -410,13 +411,14 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
     }
   }
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-    if ( node->info.b_op.type  == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+    if ( (node->info.b_op.type  == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) ||
+         (node->info.b_op.is_brgemm  == 1)) {
       result = 1;
     }
   }
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
     if ( (node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
-         (node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ) {
+         (node->info.t_op.is_brgemm == 1) ) {
       result = 1;
     }
   }
@@ -708,7 +710,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
       if (eqn_tree_id < queue_size - 1) {
         if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
-            ((cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) || (cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM))) {
+            ((cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) || (cur_eqn->eqn_root->info.t_op.is_brgemm == 1))) {
           copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
         } else {
           copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;

@@ -551,6 +551,12 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, con
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype );
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld,
+                                                  const libxsmm_blasint in_pos, const libxsmm_datatype dtype, libxsmm_matrix_arg_attributes arg_attr );
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos );
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos) ;
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos );
+
 LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx );
 LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor );

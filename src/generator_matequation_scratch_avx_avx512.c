@@ -18,6 +18,7 @@
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
+#include "generator_gemm_sse_avx_avx2_avx512.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
@@ -63,16 +64,6 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_matrix_eqn_elem *
   int prefetch = 0;
   int gemm_flags = LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
   libxsmm_datatype a_in_type, b_in_type;
-  int op_flags;
-
-  if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-    op_flags = (int)cur_op->info.b_op.flags;
-  } else {
-    op_flags = (int)cur_op->info.t_op.flags;
-  }
-
-  op_flags = op_flags & 0x0000FFFF;
-  gemm_flags = gemm_flags | op_flags;
 
   m = cur_op->tmp.m;
   n = cur_op->tmp.n;
@@ -94,18 +85,41 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_matrix_eqn_elem *
   }
   ldc = cur_op->tmp.ld;
   memset(&br_config, 0, sizeof(libxsmm_gemm_batch_reduce_config));
-  if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM)) {
-
+  if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+    gemm_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
   }
-  /* set BRGEMM option */
-  if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS ) {
-    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
-  } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_OFFSET ) {
-    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
-  } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
-  } else {
-    /* not a BRGEMM */
+  if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_brgemm == 1)) ||
+      ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
+    if ((cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) &&
+        (cur_op->le->info.arg.arg_attr.type == LIBXSMM_MATRIX_ARG_TYPE_SET)) {
+      br_config.br_unroll_hint = cur_op->le->info.arg.arg_attr.set_cardinality_hint;
+      if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_ABS_ADDRESS) {
+        br_config.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
+      } else if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_OFFSET_BASE) {
+        br_config.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
+      } else if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE) {
+        br_config.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+        br_config.br_stride_a_hint = cur_op->le->info.arg.arg_attr.set_stride_hint;
+      } else {
+        /* This should not happen */
+      }
+    }
+    if ((cur_op->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) &&
+        (cur_op->ri->info.arg.arg_attr.type == LIBXSMM_MATRIX_ARG_TYPE_SET)) {
+      if (cur_op->ri->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE) {
+        br_config.br_stride_b_hint = cur_op->ri->info.arg.arg_attr.set_stride_hint;
+      }
+    }
+    /* set BRGEMM option */
+    if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS ) {
+      gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
+    } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_OFFSET ) {
+      gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
+    } else if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+      gemm_flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+    } else {
+      /* not a BRGEMM */
+    }
   }
 
   shape_flags.m = m;
@@ -265,8 +279,9 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
   }
 
   if (((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->up->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
-        ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
-        ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM))) {
+      ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->up->info.b_op.is_brgemm == 1)) ||
+      ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
+      ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.is_brgemm == 1))) {
     if (ptr_id == 0) {
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4, temp_reg );
     } else {
@@ -319,8 +334,9 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
   }
 
   if (((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
-        ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
-        ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM))) {
+      ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.is_brgemm == 1)) ||
+      ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
+      ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.is_brgemm == 1))) {
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12, temp_reg );
   } else {
     if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
@@ -384,8 +400,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
 #endif
 
     if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
+        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_brgemm == 1)) ||
         ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
-        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM))) {
+        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
       libxsmm_gemm_descriptor *desc = NULL;
       libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
@@ -398,11 +415,32 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op, temp_reg, (timestamp == last_timestamp) );
 
       /* If BRGEMM, set br count address in struct  */
-      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM)) {
-        unsigned long long br_count = cur_op->info.t_op.brgemm_config.br_unroll_hint;
-        libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, br_count );
-        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1, temp_reg);
-        libxsmm_generator_meqn_getaddr_stack_var( io_generated_code,LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1, temp_reg);
+      if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_brgemm == 1)) ||
+          ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_param_struct,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            0,
+            temp_reg,
+            0 );
+        if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              temp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              cur_op->info.b_op.op_arg_pos*32,
+              temp_reg,
+              0 );
+        } else {
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              temp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              cur_op->info.b_op.op_arg_pos*32,
+              temp_reg,
+              0 );
+        }
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0, temp_reg);
       }
 

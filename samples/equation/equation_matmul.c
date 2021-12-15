@@ -236,16 +236,19 @@ int main( int argc, char* argv[] ) {
   }
 
   /* Result = gelu(A+B) * tanh(C x D)  */
+  libxsmm_matrix_arg_attributes arg_singular_attr;
+  arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
+
   my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, m_i[0], n_i[0], ld_i[0], 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, m_i[1], n_i[1], ld_i[1], 1, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MATMUL, LIBXSMM_BASIC_GEMM_FLAG_BETA_0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, m_i[2], n_i[2], ld_i[2], 2, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, m_i[3], n_i[3], ld_i[3], 3, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[1], n_i[1], ld_i[1], 1, in_dt, arg_singular_attr);
+  libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MATMUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_singular_attr);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_singular_attr);
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
 
   func0 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn0 );
@@ -301,7 +304,6 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-
   /* Now benchmarking the equations */
   if (datatype_mode == 0) {
     eqn0_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -354,21 +356,32 @@ int main( int argc, char* argv[] ) {
   }
   arg_array[1].primary = copy_B;
   /* Result = gelu(A) * tanh( B + Sum Ci x Di ) */
-  libxsmm_gemm_batch_reduce_config  brconf;
-  brconf.br_type          = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-  brconf.br_stride_a_hint = ld_i[2] * n_i[2] * sizeof(float);
-  brconf.br_stride_b_hint = ld_i[3] * n_i[3] * sizeof(float);
-  brconf.br_unroll_hint   = blocks_i[2];
+  libxsmm_matrix_arg_attributes arg_set_attr0, arg_set_attr1;
+
+  arg_set_attr0.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
+  arg_set_attr0.set_type = LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE;
+  arg_set_attr0.set_cardinality_hint = blocks_i[2];
+  arg_set_attr0.set_stride_hint = ld_i[2] * n_i[2] * sizeof(float);
+
+  arg_set_attr1.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
+  arg_set_attr1.set_type = LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE;
+  arg_set_attr1.set_cardinality_hint = blocks_i[3];
+  arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(float);
+
+  libxsmm_matrix_op_arg op_arg_arr[1];
+  unsigned long long  brcount = blocks_i[2];
+  op_arg_arr[0].primary = (void*)&brcount;
+  eqn_param.ops_args = op_arg_arr;
 
   my_eqn1 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[0], n_i[0], ld_i[0], 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[2], n_i[2], ld_i[2], 2, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[3], n_i[3], ld_i[3], 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, 0, in_dt );
+  libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr );
+  libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+  libxsmm_matrix_eqn_push_back_ternary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32, 0);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, in_dt, arg_singular_attr );
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
 
   func1 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn1 );

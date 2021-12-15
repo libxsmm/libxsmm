@@ -345,9 +345,16 @@ typedef enum libxsmm_meltw_binary_type {
   LIBXSMM_MELTW_TYPE_BINARY_DIV         =  4,
   LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
   LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
-  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM      =  7,
-  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 8,
-  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  9
+  LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7,
+  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                       =  9,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS               =  10,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS               =  11,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS       =  12,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                =  13,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS        =  14,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS          =  15,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  16
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
@@ -370,7 +377,15 @@ typedef enum libxsmm_meltw_ternary_type {
   LIBXSMM_MELTW_TYPE_TERNARY_MATMUL      =  2,
   LIBXSMM_MELTW_TYPE_TERNARY_BLEND       =  3,
   LIBXSMM_MELTW_TYPE_TERNARY_NMULADD     =  4,
-  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM      =  5
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM                       =  5,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS               =  6,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS               =  7,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS_B_TRANS       =  8,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI                =  9,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_B_TRANS        =  10,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS          =  11,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  12
+
 } libxsmm_meltw_ternary_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
@@ -723,6 +738,25 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
   void* argop_off_vec_0;
   void* argop_off_vec_1;
 } libxsmm_meltw_opreduce_vecs_idx_param;
+
+typedef enum libxsmm_matrix_arg_type {
+  LIBXSMM_MATRIX_ARG_TYPE_SINGULAR = 0,
+  LIBXSMM_MATRIX_ARG_TYPE_SET      = 1
+} libxsmm_matrix_arg_type;
+
+typedef enum libxsmm_matrix_arg_set_type {
+  LIBXSMM_MATRIX_ARG_SET_TYPE_NONE        = 0,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_ABS_ADDRESS = 1,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_OFFSET_BASE = 2,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE = 3
+} libxsmm_matrix_arg_set_type;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_attributes {
+  libxsmm_matrix_arg_type     type;
+  libxsmm_matrix_arg_set_type set_type;
+  libxsmm_blasint             set_cardinality_hint;
+  libxsmm_blasint             set_stride_hint;
+} libxsmm_matrix_arg_attributes;
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
