@@ -122,7 +122,7 @@ double getBenchmarkDuration(){
     printf("GFlops        : %.24f\n", l_gflops[l_archIndex]); \
     printf("Runs          : %ld\n", l_benchmarkRuns); /* how often the kernel was run; could be interesting */ \
     if (l_archIndex > 0) /* comparison with the first/main architecture */ \
-      printf("       Speedup: %.24fx\n", l_gbandwidth[l_archIndex] / l_gbandwidth[0]); \
+      printf("Speedup       : %.24fx\n", l_gbandwidth[l_archIndex] / l_gbandwidth[0]); \
   }
 
 #define BENCHMARK_FINALIZE() \
