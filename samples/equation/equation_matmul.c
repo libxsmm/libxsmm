@@ -151,11 +151,15 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_blasint m_i[128], n_i[128], ld_i[128], blocks_i[128];
+  libxsmm_matrix_arg_attributes arg_set_attr0, arg_set_attr1;
+  libxsmm_matrix_arg_attributes arg_singular_attr;
   float *arg[128];
   libxsmm_matrix_arg arg_array[128];
   libxsmm_bfloat16 *bf16_arg[128];
   libxsmm_matrix_arg bf16_arg_array[128];
   libxsmm_blasint n_tensors, ref_id;
+  libxsmm_matrix_op_arg op_arg_arr[9];
+  unsigned long long  brcount;
   i = 1;
   n_tensors = atoi(argv[i++]);
   ref_id = n_tensors;
@@ -184,7 +188,7 @@ int main( int argc, char* argv[] ) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_BF16;
   } else if (datatype_mode == 3) {
-    in_dt = LIBXSMM_DATATYPE_BF16;;
+    in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_F32;
   }
 
@@ -211,6 +215,9 @@ int main( int argc, char* argv[] ) {
           float val = (float)libxsmm_rng_f64();
           cur_arr[j + i *ld_i[k] + l * block_size] = val;
           libxsmm_rne_convert_fp32_bf16( &cur_arr[j + i *ld_i[k] + l * block_size], &bf16_cur_arr[j + i *ld_i[k] + l * block_size], 1 );
+          if ( datatype_mode == 1) {
+            libxsmm_convert_bf16_f32(&bf16_cur_arr[j + i *ld_i[k] + l * block_size],&cur_arr[j + i *ld_i[k] + l * block_size], 1 );
+          }
         }
       }
     }
@@ -236,7 +243,6 @@ int main( int argc, char* argv[] ) {
   }
 
   /* Result = gelu(A+B) * tanh(C x D)  */
-  libxsmm_matrix_arg_attributes arg_singular_attr;
   arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
   my_eqn0 = libxsmm_matrix_eqn_create();
@@ -266,13 +272,12 @@ int main( int argc, char* argv[] ) {
 
   func0(&eqn_param);
 
-  if (datatype_mode == 0) {
+  if (datatype_mode == 0 || datatype_mode == 1) {
     eqn0_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1],
               arg[2], m_i[2], n_i[2], ld_i[2],
               arg[3], m_i[3], n_i[3], ld_i[3] );
-  } else if (datatype_mode == 1) {
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
@@ -287,9 +292,10 @@ int main( int argc, char* argv[] ) {
     printf("Equation IN: BF16, OUT: F32 \n");
   }
 
-
   printf("\n\nNow testing equation 0...\n\n");
-
+  if (datatype_mode == 1) {
+    libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
+  }
   /* compare */
   printf("##########################################\n");
   printf("#   Correctness  - Output                #\n");
@@ -305,25 +311,23 @@ int main( int argc, char* argv[] ) {
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   /* Now benchmarking the equations */
-  if (datatype_mode == 0) {
+  if (datatype_mode == 0 || datatype_mode == 1) {
     eqn0_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1],
               arg[2], m_i[2], n_i[2], ld_i[2],
               arg[3], m_i[3], n_i[3], ld_i[3] );
-  } else if (datatype_mode == 1) {
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
-    if (datatype_mode == 0) {
+    if (datatype_mode == 0 || datatype_mode == 1) {
       eqn0_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
                 arg[0], m_i[0], n_i[0], ld_i[0],
                 arg[1], m_i[1], n_i[1], ld_i[1],
                 arg[2], m_i[2], n_i[2], ld_i[2],
                 arg[3], m_i[3], n_i[3], ld_i[3] );
-    } else if (datatype_mode == 1) {
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -355,22 +359,29 @@ int main( int argc, char* argv[] ) {
     }
   }
   arg_array[1].primary = copy_B;
+
   /* Result = gelu(A) * tanh( B + Sum Ci x Di ) */
-  libxsmm_matrix_arg_attributes arg_set_attr0, arg_set_attr1;
 
   arg_set_attr0.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
   arg_set_attr0.set_type = LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE;
   arg_set_attr0.set_cardinality_hint = blocks_i[2];
-  arg_set_attr0.set_stride_hint = ld_i[2] * n_i[2] * sizeof(float);
+  if (in_dt == LIBXSMM_DATATYPE_F32) {
+    arg_set_attr0.set_stride_hint = ld_i[2] * n_i[2] * sizeof(float);
+  } else {
+    arg_set_attr0.set_stride_hint = ld_i[2] * n_i[2] * sizeof(libxsmm_bfloat16);
+  }
 
   arg_set_attr1.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
   arg_set_attr1.set_type = LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE;
   arg_set_attr1.set_cardinality_hint = blocks_i[3];
-  arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(float);
+  if (in_dt == LIBXSMM_DATATYPE_F32) {
+    arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(float);
+  } else {
+    arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(libxsmm_bfloat16);
+  }
 
-  libxsmm_matrix_op_arg op_arg_arr[1];
-  unsigned long long  brcount = blocks_i[2];
-  op_arg_arr[0].primary = (void*)&brcount;
+  brcount = blocks_i[2];
+  op_arg_arr[7].primary = (void*)&brcount;
   eqn_param.ops_args = op_arg_arr;
 
   my_eqn1 = libxsmm_matrix_eqn_create();
@@ -378,26 +389,28 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr );
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-  libxsmm_matrix_eqn_push_back_ternary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32, 0);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32, 7);
   libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
   libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, in_dt, arg_singular_attr );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, LIBXSMM_DATATYPE_F32, arg_singular_attr );
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
 
   func1 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn1 );
   func1(&eqn_param);
 
-  if (datatype_mode == 0) {
+  if (datatype_mode == 0 || datatype_mode == 1) {
     eqn1_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
               arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
               arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
-  } else if (datatype_mode == 1) {
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
 
+  if (datatype_mode == 1) {
+    libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
+  }
   /* compare */
   printf("##########################################\n");
   printf("#   Correctness  - Output                #\n");
@@ -413,25 +426,23 @@ int main( int argc, char* argv[] ) {
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   /* Now benchmarking the equations */
-  if (datatype_mode == 0) {
+  if (datatype_mode == 0 || datatype_mode == 1) {
     eqn1_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
               arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
               arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
-  } else if (datatype_mode == 1) {
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
-    if (datatype_mode == 0) {
+    if (datatype_mode == 0 || datatype_mode == 1) {
       eqn1_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
                 arg[0], m_i[0], n_i[0], ld_i[0],
                 arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
                 arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
                 arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
-    } else if (datatype_mode == 1) {
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
