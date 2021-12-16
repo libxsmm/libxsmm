@@ -126,4 +126,4 @@ double getBenchmarkDuration(){
   }
 
 #define BENCHMARK_FINALIZE() \
-  } // end of loop over architectures
+  } /* end of loop over architectures */
