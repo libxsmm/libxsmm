@@ -163,6 +163,7 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -327,15 +328,10 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-/* todo: isn't matmul a gemm? what is it's flops here? */
-#define BENCHMARK_FLOPS_PER_ITERATION (M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1))
-/* todo: would muladd/mulsub count as 3x or 4x bandwidth? */
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * 3 * sizeof(float))
-#define BENCHMARKED_CALL binary_kernel(&binary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
+  /* muladd had 4x bandwidth instead of 3x, because 3x load + 1x store instead of 2x load + 1x store */
+  bandwidthPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 4 : 3) * sizeof(float);
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
@@ -372,6 +368,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -550,13 +547,9 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1))
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * 3 * sizeof(libxsmm_bfloat16))
-#define BENCHMARKED_CALL binary_kernel(&binary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
+  bandwidthPerIteration = M * N * 3 * sizeof(libxsmm_bfloat16);
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -595,6 +588,7 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -767,13 +761,9 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1))
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (2 * sizeof(float)  + sizeof(libxsmm_bfloat16)))
-#define BENCHMARKED_CALL binary_kernel(&binary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
+  bandwidthPerIteration = M * N * (2 * sizeof(float)  + sizeof(libxsmm_bfloat16));
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -811,6 +801,7 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -977,13 +968,10 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1))
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (2 * sizeof(libxsmm_bfloat16) + sizeof(float)))
-#define BENCHMARKED_CALL binary_kernel(&binary_param);
-  BENCHMARK_RUN();
+
+  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
+  bandwidthPerIteration = M * N * (2 * sizeof(libxsmm_bfloat16) + sizeof(float));
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;

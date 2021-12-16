@@ -262,6 +262,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_meltw_unary_type unary_type;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -393,14 +394,9 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-  /* undef to prevent warnings */
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N)
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(float))
-#define BENCHMARKED_CALL unary_kernel(&unary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N);
+  bandwidthPerIteration = (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(float));
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   double error_bound = 0.0;
   if (RCP_OP || RCP_SQRT_OP) {
@@ -444,6 +440,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
   unsigned long long _N = N;
+  int flopsPerIteration, bandwidthPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -583,13 +580,9 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N)
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(libxsmm_bfloat16))
-#define BENCHMARKED_CALL unary_kernel(&unary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N);
+  bandwidthPerIteration = (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(libxsmm_bfloat16));
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -627,6 +620,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_type  unary_type;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -756,14 +750,10 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (M * N)
-/* todo: correct bandwidth? */
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2)
-#define BENCHMARKED_CALL unary_kernel(&unary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = M * N;
+  /* todo: is this the correct bandwidth? */
+  bandwidthPerIteration = M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -800,6 +790,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_type  unary_type;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -923,14 +914,10 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-#undef BENCHMARK_FLOPS_PER_ITERATION
-#undef BENCHMARK_BANDWIDTH_PER_ITERATION
-#undef BENCHMARKED_CALL
-#define BENCHMARK_FLOPS_PER_ITERATION (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N)
-/* todo: correct bandwidth? */
-#define BENCHMARK_BANDWIDTH_PER_ITERATION (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2)
-#define BENCHMARKED_CALL unary_kernel(&unary_param);
-  BENCHMARK_RUN();
+  flopsPerIteration = unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N;
+  /* todo: is this the correct bandwidth? */
+  bandwidthPerIteration = M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;

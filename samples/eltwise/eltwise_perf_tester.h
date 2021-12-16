@@ -11,11 +11,11 @@
 
 /**
  * This file should be compatible with all correctness tests, and used as an additional benchmark.
- * You need to define
- *  - BENCHMARK_FLOPS_PER_ITERATION as the number of operations inside your kernel call
- *  - BENCHMARK_BANDWIDTH_PER_ITERATION as the number of bytes transferred inside your kernel call, shall be > 0
+ * You need to define the following values as arguments to BENCHMARK_RUN()
  *  - BENCHMARKED_CALL your kernel call, e.g. unary_kernel( &unary_param );
- * 
+ *  - FLOPS_PER_ITERATION as the number of operations inside your kernel call
+ *  - BANDWIDTH_PER_ITERATION as the number of bytes transferred inside your kernel call, shall be > 0
+ *
  * This benchmarking only works if no architectures shall be compared, or calling the kernel and creating the kernel need to be in the same function.
  * You can disable benchmarking by setting BENCHMARK_DURATION to 0.
  */
@@ -38,17 +38,8 @@ objdump -D -b binary -maarch64 <fileName>
 
 */
 
-/* default values */
-#define BENCHMARK_FLOPS_PER_ITERATION 1
-
-#define BENCHMARK_BANDWIDTH_PER_ITERATION 1
-
-/* the benchmarked kernel call, sin() is just a sample */
-#define BENCHMARKED_CALL sin(3.14)
-
 /* how many architectures will be tested at max; more archs would need to be implemented in getBenchmarkedArch() */
 #define MAX_BENCHMARK_ARCHITECTURES 2
-
 
 const char* getBenchmarkedArch(int index) {
   if (index < 0 || index >= MAX_BENCHMARK_ARCHITECTURES) return 0;
@@ -103,7 +94,7 @@ double getBenchmarkDuration(){
       libxsmm_set_target_arch(l_arch);\
     }
 
-#define BENCHMARK_RUN() \
+#define BENCHMARK_RUN(BENCHMARKED_CALL, BANDWIDTH_PER_ITERATION, FLOPS_PER_ITERATION) \
   if (l_targetRuntimeSeconds > 0) { \
     /* warmup and computation how many steps are required */ \
     l_startTime0 = libxsmm_timer_tick(); \
@@ -122,8 +113,8 @@ double getBenchmarkDuration(){
     } \
     l_endTime = libxsmm_timer_tick(); \
     l_duration = libxsmm_timer_duration(l_startTime, l_endTime); \
-    l_gflops[l_archIndex] = BENCHMARK_FLOPS_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
-    l_gbandwidth[l_archIndex] = BENCHMARK_BANDWIDTH_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
+    l_gflops[l_archIndex] = FLOPS_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
+    l_gbandwidth[l_archIndex] = BANDWIDTH_PER_ITERATION * (double)l_benchmarkRuns / l_duration * 1e-9; \
 \
     /* printing results */ \
     if (getBenchmarkedArch(1)) printf("Architecture  : %s\n", l_arch); \
