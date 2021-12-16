@@ -10,7 +10,7 @@ This folder contains tests for kernels, which work on each element of a given in
 cd /path/to/libxsmm
 make
 or
-make BLAS=0 LIBXSMM_NO_BLAS=1 STATIC=0 -j 16
+make BLAS=0 LIBXSMM_NO_BLAS=1 STATIC=0 -j 64
 
 cd /path/to/libxsmm/samples/eltwise
 make -j 16
