@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "eltwise_perf_tester.c"
+#include "eltwise_perf_tester.h"
 
 #define NO_BCAST 0
 #define ROW_BCAST_IN0 1

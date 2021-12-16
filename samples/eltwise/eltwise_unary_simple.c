@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "eltwise_perf_tester.c"
+#include "eltwise_perf_tester.h"
 
 #define PI 3.14159265358979323846
 #define EPS 1.19209290e-03F
