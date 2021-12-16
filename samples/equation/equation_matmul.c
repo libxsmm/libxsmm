@@ -359,6 +359,7 @@ int main( int argc, char* argv[] ) {
     }
   }
   arg_array[1].primary = copy_B;
+  bf16_arg_array[1].primary = copy_B;
 
   /* Result = gelu(A) * tanh( B + Sum Ci x Di ) */
 
