@@ -115,7 +115,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     } else {
-      libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, i_masked_elems, i_gp_reg_scratch);
+      libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, i_masked_elems * i_datatype_size, i_gp_reg_scratch);
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     }
@@ -199,47 +199,20 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
 
   unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
   unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
-  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_datatype_size);
-
-  /* ld1r -> ld1rw (msize=32,esize=32), is predicated */
-  int l_pred_reg = 0;// todo find usable predicate register
 
   if( l_is_sve ) {
-    if ( i_masked_elems != 1 ) {/* 0, 2, 3 */
-      /* currently only fp32 works with this instruction */
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
-                                            i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
-      if ( i_adv_gpr ) {
-        /* increment address by offset; correct? */
-        libxsmm_aarch64_instruction_alu_compute_imm12(io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0);
-      }
-      if ( i_masked_elems != 0 ) {/* 2, 3 */
-        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch, 0x0 );
-        if ( i_masked_elems == 2 ) {
-          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                      i_gp_reg_scratch, i_vec_reg, 1, LIBXSMM_AARCH64_ASIMD_WIDTH_D );
-        } else if ( i_masked_elems == 3 ) {
-          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                      i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
-        } else {
-          /* shouldn't happen */
-        }
-      }
-    } else {/* 1: xor + ldr_i_post */
-      /* the asimd instruction clears the vector, because it loads the scalar value only to the first element, it looks like */
-      libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, 0, l_sve_type );
-      /* mark the predicate element to only load a scalar value  */
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, 1, i_gp_reg_scratch );
-      /* different element sizes use different instructions; W (word) = S (single precision) = 32 bits, H = half, B = byte, D = double precision/word */
-      int l_instr = l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_B ? LIBXSMM_AARCH64_INSTR_SVE_LD1B_I_OFF :
-                    l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_H ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF :
-                    l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_S ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF :
-                                                               LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF ;
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
-      if( l_offset ){
-        /* post increment address by offset */
-        libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
-      }
+    int l_pred_reg = 0;/* todo find suitable predicate register */
+    libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_datatype_size);
+    /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? i_masked_elems * i_datatype_size : -1, i_gp_reg_scratch );
+    /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
+    int l_instr = i_datatype_size == 1 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF :
+                  i_datatype_size == 2 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
+                  i_datatype_size == 4 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF :
+                                         LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF ;
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
+    if( l_offset ){/* post increment address by offset */
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
     }
   } else {
     if ( i_masked_elems != 1 ) {

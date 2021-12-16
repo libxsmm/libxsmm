@@ -1279,7 +1279,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   }
 #endif
 
-  if( l_is_sve && l_is_predicated ) {// set the whole predicate register to true
+  if( l_is_sve && l_is_predicated ) {/* set the whole predicate register to true */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
   }
 
