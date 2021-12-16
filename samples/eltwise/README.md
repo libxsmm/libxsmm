@@ -27,10 +27,10 @@ These collections call bash scripts from the subdirectory "kernel_test", which w
 
 ## Compare performance between different architectures
 
-If your machine supports multiple architectures like ARM ASIMD and ARM SVE, you can set the environment variable ARCH1 to a second architecture. The performance tests will then run the kernels on both architectures, and compare them.
+If your machine supports multiple architectures like ARM ASIMD and ARM SVE, you can set the environment variable **ARCH1** to a second architecture. The performance tests will then run the kernels on both architectures, and compare them.
 
 ## Useful environment variables
 
-When you want to test another architecture, specify LIBXSMM_TARGET.
+When you want to test another architecture, specify **LIBXSMM_TARGET**.
 
-If you want more debugging information, set LIBXSMM_VERBOSE. Setting it to -1 will print all debug information, and write the JIT-ed kernels into local files.
+If you want more debugging information, set **LIBXSMM_VERBOSE**. Setting it to -1 will print all debug information, and write the JIT-ed kernels into local files.
