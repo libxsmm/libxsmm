@@ -20,8 +20,7 @@ i = 0
 for m in randnum:
     for n in randnum:
         for k in randnum:
-            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
-                 + str(k) + ' ' + str(k) + ' ' + str(m) + '\n'
+            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' 100 100 100\n'
             if 0 == (i % 2):
                 f1.write(line)
             else:
