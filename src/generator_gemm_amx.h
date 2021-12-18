@@ -129,8 +129,14 @@ void libxsmm_generator_gemm_amx_adjust_n_advancement( libxsmm_generated_code* io
     libxsmm_blasint                     i_n_adjustment );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*        io_generated_code,
+void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code*        io_generated_code,
                                         const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_generated_code,
+                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                           libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_const );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*            io_generated_code,
