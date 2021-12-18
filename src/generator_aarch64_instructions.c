@@ -915,6 +915,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %u\n", i_vec_instr);
@@ -938,9 +939,9 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     }
   }
 
-  /* special instruction, where only dst = src_0 is supported; maybe a flag in the future */
+  /* special instruction, where only dst = src_0 is supported */
   /* this check could be disabled for performance reasons */
-  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ){
+  if( (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE ){
     if( i_vec_reg_src_0 != i_vec_reg_dst ){
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
       exit(-1);

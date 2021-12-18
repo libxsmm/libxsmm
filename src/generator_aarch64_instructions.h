@@ -362,13 +362,15 @@
 /* define SVE compute instructions */
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 0x80
-#define LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE 0x10
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED 0x40
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE 0x20
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE 0x10
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0 2
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 1 /* all sve instructions have src0 currently */
-/* the actual instructions */
+/* define unpredicated SVE instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03013 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_ADD_V          0x04200003 /* integer add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000003 /* add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000403 /* subtract, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000803 /* multiply, vectors, unpredicated */
@@ -379,11 +381,14 @@
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x65028082 /* multiply, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d8082 /* divide, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P     0x6502a082 /* round float to integral number, towards minus infinity, predicated */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
