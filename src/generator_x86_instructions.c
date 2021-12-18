@@ -197,6 +197,170 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned int          i_instr,
+                                                   const unsigned int          i_gp_reg_base,
+                                                   const unsigned int          i_gp_reg_idx,
+                                                   const unsigned int          i_scale,
+                                                   const int                   i_displacement,
+                                                   const unsigned int          i_reg_number_dst )
+{
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
+  /* prefix and op-code tables */
+  unsigned char tbl_prefix[4] = {0x00, 0x66, 0xf3, 0xf2};
+  unsigned char tbl_opext[2] = {0x38, 0x3a};
+  unsigned int prefix_idx = ((i_instr & 0x00070000) >> 16) - 4;
+  unsigned int opext = (i_instr & 0x00003000) >> 12;
+  unsigned int opext_idx = (i_instr & 0x00002000) >> 13;
+  /* table for modrm mod settings */
+  unsigned char tbl_scale[9] = { 0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
+  /* storing pointer to modrm byte */
+  unsigned char modrm = 0;
+  /* control variable if we need to encode in SIB mode */
+  unsigned char l_have_sib = 0;
+  /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
+  unsigned char l_forced_zdisp8 = 0;
+  /* we need a local non-const i_gp_reg_idx copy */
+  unsigned int l_gp_reg_idx;
+  /* we need a local non-const i_scale copy */
+  unsigned int l_scale;
+
+  /* 1st phase: let's compute some static information before starting the
+     encoding process */
+  /* 1 A) determine if SIB addressing mode is needed */
+  if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP || i_gp_reg_base == LIBXSMM_X86_GP_REG_R12) && (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF) ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = LIBXSMM_X86_GP_REG_RSP;
+    l_scale = 0;
+  } else if ( i_gp_reg_idx < 16 ) {
+    l_have_sib = 1;
+    l_gp_reg_idx = i_gp_reg_idx;
+    l_scale = i_scale;
+  } else {
+    l_have_sib = 0;
+    l_gp_reg_idx = 0;
+    l_scale = 0;
+  }
+
+  /* 1 B) determing if a force zero displacement is needed */
+  if ( ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_RBP) || (i_gp_reg_base == LIBXSMM_X86_GP_REG_R13) ) && (i_displacement == 0) ) {
+    l_forced_zdisp8 = 1;
+  } else {
+    l_forced_zdisp8 = 0;
+  }
+
+  /* encoding */
+  /* A): writing prefixes */
+  /* instruction prefix */
+  if ( prefix_idx != 0 ) {
+    code[code_head++] = tbl_prefix[prefix_idx];
+  }
+  /* REX prefix */
+  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (i_gp_reg_idx > 7) && (l_have_sib == 1) ) ) {
+    /* R */
+    code[code_head  ]  = (unsigned char)(( i_reg_number_dst > 7 ) ? 0x04 : 0x00);
+    /* B */
+    code[code_head  ] |= (unsigned char)(( i_gp_reg_base > 7 ) ? 0x01 : 0x00);
+    /* when have SIB, set Z */
+    if ( l_have_sib == 1 ) {
+      code[code_head  ] |= (unsigned char)(( i_gp_reg_idx > 7 ) ? 0x02 : 0x00);
+    }
+    /* start of REX prefix */
+    code[code_head++] |= 0x40;
+  }
+
+  /* B): opcode extensions */
+  if ( opext > 0 ) {
+    code[code_head++] = 0x0f;
+    if ( opext > 1 ) {
+      code[code_head++] = tbl_opext[opext_idx];
+    }
+  }
+
+  /* C) writing lowest op code byte */
+  code[code_head++] = (unsigned char) (i_instr & 0x000000ff);
+
+  /* D) setting modrm, we are in reg-only addressing mode */
+  modrm = code_head;
+  code[code_head  ]  = (unsigned char)(((unsigned char)(i_reg_number_dst << 3)) & 0x38);
+  if ( l_have_sib == 1 ) {
+    code[code_head++] |= (unsigned char)0x04; /* set SIB mode*/
+    /* set SIB */
+    code[code_head  ]  = tbl_scale[l_scale];
+    code[code_head  ] |= (unsigned char)(((unsigned char)(l_gp_reg_idx << 3)) & 0x38);
+    code[code_head++] |= (unsigned char)(((unsigned char) i_gp_reg_base  )    & 0x07);
+  } else {
+    code[code_head++] |= (unsigned char)(((unsigned char) i_gp_reg_base)      & 0x07);
+  }
+
+  /* 2 D) add displacemnt, if needed */
+  if ( (i_displacement != 0) || (l_forced_zdisp8 != 0) ) {
+    if ( (i_displacement <= 127) && (i_displacement >=-128) ) {
+      code[modrm]       |= (unsigned char)0x40;
+      code[code_head++]  = (unsigned char)(i_displacement);
+    } else {
+      code[modrm]       |= (unsigned char)0x80;
+      code[code_head++]  = (unsigned char)(i_displacement);
+      code[code_head++]  = (unsigned char)(i_displacement >> 8);
+      code[code_head++]  = (unsigned char)(i_displacement >> 16);
+      code[code_head++]  = (unsigned char)(i_displacement >> 24);
+    }
+  } else {}
+
+  io_generated_code->code_size = code_head;
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned int          i_instr,
+                                               const unsigned int          i_reg_number_src,
+                                               const unsigned int          i_reg_number_srcdst )
+{
+  unsigned int code_head = io_generated_code->code_size;
+  unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
+  /* prefix and op-code tables */
+  unsigned char tbl_prefix[4] = {0x00, 0x66, 0xf3, 0xf2};
+  unsigned char tbl_opext[2] = {0x38, 0x3a};
+  unsigned int prefix_idx = ((i_instr & 0x00070000) >> 16) - 4;
+  unsigned int opext = (i_instr & 0x00003000) >> 12;
+  unsigned int opext_idx = (i_instr & 0x00002000) >> 13;
+
+  /* A): writing prefixes */
+  /* instruction prefix */
+  if ( prefix_idx != 0 ) {
+    code[code_head++] = tbl_prefix[prefix_idx];
+  }
+  /* REX prefix */
+  if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) ) {
+    /* R */
+    code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
+    /* B is used and X is unused */
+    code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
+    /* start of REX prefix */
+    code[code_head++] |= 0x40;
+  }
+
+  /* B): opcode extensions */
+  if ( opext > 0 ) {
+    code[code_head++] = 0x0f;
+    if ( opext > 1 ) {
+      code[code_head++] = tbl_opext[opext_idx];
+    }
+  }
+
+  /* C) writing lowest op code byte */
+  code[code_head++] = (unsigned char) (i_instr & 0x000000ff);
+
+  /* D) setting modrm, we are in reg-only addressing mode */
+  code[code_head  ]  = (unsigned char)0xc0;
+  code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_srcdst << 3)) & 0x38);
+  code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_src)       & 0x07);
+
+  io_generated_code->code_size = code_head;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_vec_instr,
                                                    const unsigned int          i_gp_reg_base,
@@ -1519,7 +1683,28 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPBROADCASTW_GPR:
     case LIBXSMM_X86_INSTR_VPBROADCASTD_GPR:
     case LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR:
-      break;
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPS:
+    case LIBXSMM_X86_INSTR_MOVUPS:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_SUBSS:
+       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
       exit(-1);
@@ -1531,14 +1716,8 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     exit(-1);
   }
 
-  /* check for currently support archs in this encoder */
-  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
-    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: target error!\n");
-    exit(-1);
-  }
-
   /* select the code generator REX/VEX/EVEX */
-  if ( (i_vec_instr >= 16777216) && (io_generated_code->code_type > 1) ) {
+  if ( io_generated_code->code_type > 1 ) {
     unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
     unsigned int l_encoder_arch = 2;
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
@@ -1646,8 +1825,8 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       libxsmm_x86_instruction_vex_compute_3reg( io_generated_code, i_vec_instr, l_simd_name,
             l_reg_number_src0, l_reg_number_src1, l_reg_number_dst );
     } else {
-      fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: No REX encoder available!\n");
-      exit(-1);
+      libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, i_vec_instr,
+            l_reg_number_src0, l_reg_number_dst );
     }
 
     /* add imm if needed */
@@ -2004,7 +2183,28 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMOVQ_LD:
     case LIBXSMM_X86_INSTR_VMOVD_ST:
     case LIBXSMM_X86_INSTR_VMOVQ_ST:
-      break;
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPS:
+    case LIBXSMM_X86_INSTR_MOVUPS:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_SUBSS:
+       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
       exit(-1);
@@ -2426,6 +2626,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
                                                              i_vec_instr, i_vector_name,
                                                              i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
                                                              0, 0, 0, 0 );
+#if 0
   } else if ( (io_generated_code->arch < LIBXSMM_X86_AVX) &&
               (io_generated_code->code_type > 1 ) ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -2545,6 +2746,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     }
 
     io_generated_code->code_size = i;
+#endif
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
