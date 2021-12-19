@@ -2671,8 +2671,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
       exit(-1);
   }
 
-  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
-       (io_generated_code->code_type > 1 ) ) {
+  if ( io_generated_code->code_type > 1 ) {
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code,
                                                              i_vec_instr, i_vector_name,
                                                              i_vec_reg_number_0, i_vec_reg_number_1, i_vec_reg_number_2,
@@ -2814,9 +2813,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_2);
       } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %%%cmm%u\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %%%cmm%u\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_2 );
       }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
