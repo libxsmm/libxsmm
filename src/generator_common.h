@@ -214,9 +214,7 @@
 #define LIBXSMM_X86_INSTR_MOVSS            0xa0061010
 #define LIBXSMM_X86_INSTR_MOVSS_LD         0xa0061010
 #define LIBXSMM_X86_INSTR_MOVSS_ST         0xa0061011
-#define LIBXSMM_X86_INSTR_MOVDDUP          0xa0061012
-#define LIBXSMM_X86_INSTR_SHUFPS           0xa00c10c6
-#define LIBXSMM_X86_INSTR_SHUFPD           0xa00d10c6
+#define LIBXSMM_X86_INSTR_MOVDDUP          0xa0071012
 
 /* Shuffle/Permute/Blend instructions */
 /* VEx and EVEX */
@@ -589,6 +587,8 @@
 #define LIBXSMM_X86_INSTR_MULSS            0xa0061059
 #define LIBXSMM_X86_INSTR_ADDSS            0xa0061058
 #define LIBXSMM_X86_INSTR_SUBSS            0xa006105c
+#define LIBXSMM_X86_INSTR_SHUFPS           0xa00c10c6
+#define LIBXSMM_X86_INSTR_SHUFPD           0xa00d10c6
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_MOVB           30000

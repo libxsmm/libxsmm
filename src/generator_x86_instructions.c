@@ -216,7 +216,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
   /* table for modrm mod settings */
   unsigned char tbl_scale[9] = { 0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
   /* storing pointer to modrm byte */
-  unsigned char modrm = 0;
+  unsigned int modrm = 0;
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
   /* when having RBP/R13 as base register, we need a SIB byte, even without idx GPR */
@@ -257,14 +257,14 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (i_gp_reg_idx > 7) && (l_have_sib == 1) ) ) {
+  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) ) {
     /* R */
     code[code_head  ]  = (unsigned char)(( i_reg_number_dst > 7 ) ? 0x04 : 0x00);
     /* B */
     code[code_head  ] |= (unsigned char)(( i_gp_reg_base > 7 ) ? 0x01 : 0x00);
     /* when have SIB, set Z */
     if ( l_have_sib == 1 ) {
-      code[code_head  ] |= (unsigned char)(( i_gp_reg_idx > 7 ) ? 0x02 : 0x00);
+      code[code_head  ] |= (unsigned char)(( l_gp_reg_idx > 7 ) ? 0x02 : 0x00);
     }
     /* start of REX prefix */
     code[code_head++] |= 0x40;

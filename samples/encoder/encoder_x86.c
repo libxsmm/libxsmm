@@ -378,6 +378,46 @@ void test_vex_load_store( char* test_name, libxsmm_generated_code* mycode, unsig
   dump_code_buffer( mycode, test_name );
 }
 
+void test_rex_vload_vstore( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned int load_store_cntl ) {
+  unsigned int y;
+  unsigned int b;
+  unsigned int i;
+  unsigned int scale = 2;
+  int displ[3] = {0, 128, 2097152};
+  unsigned int d;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 3; ++d ) {
+      for (y = 0; y < 16; ++y ) {
+        if ( (load_store_cntl & 0x1) == 0x1 ) {
+          libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'x', y, 0, 0, 0 );
+        }
+        if ( (load_store_cntl & 0x2) == 0x2 ) {
+          libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, LIBXSMM_X86_GP_REG_UNDEF, 0, displ[d], 'x', y, 0, 0, 1 );
+        }
+      }
+    }
+  }
+  for (b = 0; b < 16; ++b ) {
+    for (i = 0; i < 16; ++i ) {
+      for ( d = 0; d < 3; ++d ) {
+        for (y = 0; y < 16; ++y ) {
+          if ( (load_store_cntl & 0x1) == 0x1 ) {
+            libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'x', y, 0, 0, 0 );
+          }
+          if ( (load_store_cntl & 0x2) == 0x2 ) {
+            libxsmm_x86_instruction_vec_move( mycode, mycode->arch, instr, b, i, scale, displ[d], 'x', y, 0, 0, 1 );
+          }
+        }
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 void test_vex_mask_load_store( char* test_name, libxsmm_generated_code* mycode, unsigned int is_gather, unsigned int instr ) {
   unsigned int y;
   unsigned int b;
@@ -1252,6 +1292,15 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_mask_load_store( "vex_mov_VPGATHERDQ_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERDQ_VEX );
   test_vex_mask_load_store( "vex_mov_VPGATHERQD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQD_VEX );
   test_vex_mask_load_store( "vex_mov_VPGATHERQQ_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQQ_VEX );
+
+  /* SSE only test */
+  test_rex_vload_vstore( "rex_mov_MOVAPD", &mycode, LIBXSMM_X86_INSTR_MOVAPD, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVUPD", &mycode, LIBXSMM_X86_INSTR_MOVUPD, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVAPS", &mycode, LIBXSMM_X86_INSTR_MOVAPS, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVUPS", &mycode, LIBXSMM_X86_INSTR_MOVUPS, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVSD", &mycode, LIBXSMM_X86_INSTR_MOVSD, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVSS", &mycode, LIBXSMM_X86_INSTR_MOVSS, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVDDUP", &mycode, LIBXSMM_X86_INSTR_MOVDDUP, 1 );
 
   /* test VEX/GP instructions */
   test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );
