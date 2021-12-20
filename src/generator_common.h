@@ -1180,6 +1180,7 @@
 #define LIBXSMM_ERR_BITMASK_REQUIRED      90045
 #define LIBXSMM_ERR_TRANS_A               90046
 #define LIBXSMM_ERR_LDA_TRANS             90047
+#define LIBXSMM_ERR_BRGEMM_TRANS          90048
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
