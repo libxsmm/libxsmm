@@ -692,7 +692,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_get_i
         l_use_masking_a_c = 1;
       }
     }
-  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
+  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
     /* @TODO check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 16 ) {
       l_m_blocking = 16;
@@ -904,7 +904,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_generator_gemm_sse_avx_avx2_avx512_updat
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
+  } else if ( ( ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) ) ) {
     if (i_current_m_blocking == 16) {
       l_m_blocking = i_xgemm_desc->m % 16;
       if ( l_m_blocking % 16 != 0 ) {
