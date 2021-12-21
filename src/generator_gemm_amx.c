@@ -1187,12 +1187,10 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-    libxsmm_micro_kernel_config*        i_micro_kernel_config,
-    int                                 m_tiles,
-    int                                 n_tiles ) {
+    libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
 
   int is_stride_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) > 0) ? 1 : 0;
   int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
@@ -1215,7 +1213,6 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   i_micro_kernel_config->stride_b_trans          = 0;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
-  LIBXSMM_UNUSED(m_tiles);
 
   /* Determine if we have to decompress A...  */
   if ((i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_DECOMPRESS_A) || (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A)) {
@@ -1268,13 +1265,6 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
     has_eltwise_fused = 1;
     i_micro_kernel_config->fused_eltwise = 1;
   }
-
-  /* Now push to RSP the callee-save registers  */
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
@@ -1528,7 +1518,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
 
   /* Now alllocate in stack required GEMM scratch if necessary*/
   if (LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-    int expand_scratch_factor = (n_tiles == 1) ? 2 : 1;
+    int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
     gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4/*i_micro_kernel_config->datatype_size*/;
     scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
     gemm_scratch_size += scratch_pad_size;
@@ -1567,7 +1557,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
@@ -1575,11 +1565,6 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
 }
 
 LIBXSMM_API_INTERN
@@ -2058,9 +2043,10 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
 
   /* Setup stack frame...  */
-  m_tiles = m_blocking_info[0].tiles;
-  n_tiles = n_blocking_info[0].tiles;
-  libxsmm_generator_gemm_amx_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
+  l_micro_kernel_config.m_tiles = m_blocking_info[0].tiles;
+  l_micro_kernel_config.n_tiles = n_blocking_info[0].tiles;
+  libxsmm_generator_x86_save_callee_regs( io_generated_code );
+  libxsmm_generator_gemm_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
   libxsmm_generator_gemm_amx_setup_fusion_infra( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
   libxsmm_generator_gemm_amx_setup_masking_infra( io_generated_code, &l_micro_kernel_config );
 
@@ -2157,7 +2143,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   }
 
   /* Properly destroy stack frame...  */
-  libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
+  libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
+  libxsmm_generator_x86_restore_callee_regs( io_generated_code );
 }
 
 LIBXSMM_API_INTERN

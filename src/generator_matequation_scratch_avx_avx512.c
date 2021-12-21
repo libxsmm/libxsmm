@@ -37,24 +37,6 @@ void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_b
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_x86_save_callee_regs(libxsmm_generated_code*   io_generated_code) {
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_x86_restore_callee_regs(libxsmm_generated_code*   io_generated_code ) {
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_matrix_eqn_elem *cur_op,  libxsmm_gemm_descriptor **out_desc ) {
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
@@ -445,7 +427,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       }
 
       /* Since this is a GEMM, store calle-save regs  */
-      libxsmm_generator_matequation_x86_save_callee_regs( io_generated_code );
+      libxsmm_generator_x86_save_callee_regs( io_generated_code );
       libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
 
       /* Call GEMM JITer  */
@@ -453,7 +435,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
 
       /* Since this is a GEMM, restore calle-save regs  */
       libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-      libxsmm_generator_matequation_x86_restore_callee_regs( io_generated_code );
+      libxsmm_generator_x86_restore_callee_regs( io_generated_code );
 
       /* Restore RSI as struct param ptr */
       libxsmm_generator_meqn_getaddr_stack_var(  io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0, LIBXSMM_X86_GP_REG_RSI );

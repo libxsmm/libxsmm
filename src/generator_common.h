@@ -842,6 +842,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
+  int m_tiles;
+  int n_tiles;
   int _im[4];
   int _in[4];
   int _C_tile_id[4];

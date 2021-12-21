@@ -14,6 +14,13 @@
 
 #include "generator_common.h"
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_save_callee_regs(libxsmm_generated_code*   io_generated_code);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_restore_callee_regs(libxsmm_generated_code*   io_generated_code );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                        io_generated_code,
     unsigned int                                   instr,
