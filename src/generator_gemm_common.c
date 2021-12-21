@@ -72,13 +72,13 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
     case LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF:
       return -80;
     case LIBXSMM_GEMM_STACK_VAR_ARG_7:
-      return 16;
+      return 56;
     case LIBXSMM_GEMM_STACK_VAR_ARG_8:
-      return 24;
+      return 64;
     case LIBXSMM_GEMM_STACK_VAR_ARG_9:
-      return 32;
+      return 72;
     case LIBXSMM_GEMM_STACK_VAR_ARG_10:
-      return 40;
+      return 80;
     default:
       return 0;
   }

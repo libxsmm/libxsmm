@@ -1269,6 +1269,13 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
     i_micro_kernel_config->fused_eltwise = 1;
   }
 
+  /* Now push to RSP the callee-save registers  */
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
+  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 88 );
@@ -1494,11 +1501,12 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
   }
 
   /* The stack now looks like this:
-   *      10th param (if applicable)                <-- RBP+40
-   *      9th param (if applicable)                 <-- RBP+32
-   *      8th param (if applicable)                 <-- RBP+24
-   *      7th param (if applicable)                 <-- RBP+16
-   *      Return address                            <-- RBP+8
+   *      10th param (if applicable)                <-- RBP+80
+   *      9th param (if applicable)                 <-- RBP+72
+   *      8th param (if applicable)                 <-- RBP+64
+   *      7th param (if applicable)                 <-- RBP+56
+   *      Return address                            <-- RBP+48
+   *      Calle SAVED-regs                          <-- RBP[+8,+16,+24,+32,+40]
    *      Entry/saved RBP                           <-- RBP
    *      prefetch A ptr                            <-- RBP-8
    *      prefetch B ptr                            <-- RBP-16
@@ -1531,20 +1539,14 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
   }
 
-  /* Now push to RSP the callee-save registers  */
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
-  libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
-
   /* The stack at exit of setup looks like this:
    *
-   *      10th param (if applicable)            <-- RBP+40
-   *      9th param (if applicable)             <-- RBP+32
-   *      8th param (if applicable)             <-- RBP+24
-   *      7th param (if applicable)             <-- RBP+16
-   *      Return address                        <-- RBP+8
+   *      10th param (if applicable)            <-- RBP+80
+   *      9th param (if applicable)             <-- RBP+72
+   *      8th param (if applicable)             <-- RBP+64
+   *      7th param (if applicable)             <-- RBP+56
+   *      Return address                        <-- RBP+48
+   *      Calle SAVED-regs                      <-- RBP[+8,+16,+24,+32,+40]
    *      Entry/saved RBP                       <-- RBP
    *      prefetch A ptr                        <-- RBP-8
    *      prefetch B ptr                        <-- RBP-16
@@ -1559,7 +1561,6 @@ void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*      
    *      Batch-reduce count                    <-- RBP-88, RSP
    *      [ Potentianl  pad for 64b align ]
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address
-   *      Callee-saved registers                <-- RSP
    *
    */
 
@@ -1572,13 +1573,13 @@ void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*    
     const libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
   LIBXSMM_UNUSED(i_xgemm_desc);
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
+  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
-  libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
-  libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
 }
 
 LIBXSMM_API_INTERN
