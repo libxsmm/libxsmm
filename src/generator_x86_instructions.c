@@ -2840,118 +2840,41 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement ) {
-  /* @TODO add checks in debug mode */
+  switch ( i_prefetch_instr ) {
+    case LIBXSMM_X86_INSTR_PREFETCHT0:
+    case LIBXSMM_X86_INSTR_PREFETCHT1:
+    case LIBXSMM_X86_INSTR_PREFETCHT2:
+    case LIBXSMM_X86_INSTR_PREFETCHNTA:
+    case LIBXSMM_X86_INSTR_PREFETCHW:
+    case LIBXSMM_X86_INSTR_CLDEMOTE:
+    case LIBXSMM_X86_INSTR_CLFLUSH:
+    case LIBXSMM_X86_INSTR_CLFLUSHOPT:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: %u\n", i_prefetch_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
-    int l_instype = 0;
-    int l_forced_offset=0;
+    unsigned int l_reg_op_ext = 0;
 
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8 = ((i_gp_reg_base > 7) && (i_gp_reg_base <= 15) ? 1 : 0);
-    int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
-    int l_sse_preamble = 64;
-    int l_place1 = i + 2;
-    int l_opcode = 0;
-    int l_havepf = 0;
-
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
-    }
-    if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) ||
-         ((int)i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) ||
-         (i_gp_reg_base > 15) ||
-         ((int)i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       fprintf(stderr, "libxsmm_instruction_prefetch: i_gp_reg_base error in libxsmm_instruction_prefetch\n");
-       exit(-1);
-    }
-    switch ( i_prefetch_instr ) {
-       case LIBXSMM_X86_INSTR_PREFETCHT0:
-          l_instype -= 8;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHT1:
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHT2:
-          l_instype += 8;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHNTA:
-          l_instype -= 16;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHW:
-          l_opcode = -0xb;
-          l_instype -= 8;
-          break;
-       case LIBXSMM_X86_INSTR_CLDEMOTE:
-          l_opcode = 0x4;
-          l_instype -= 16;
-          break;
-       case LIBXSMM_X86_INSTR_CLFLUSHOPT:
-          l_havepf = 0x66;
-          l_opcode = 0x96;
-          l_instype += 0x28;
-          break;
-       case LIBXSMM_X86_INSTR_VPREFETCH0:
-          fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch0\n");
-          exit(-1);
-          break;
-       case LIBXSMM_X86_INSTR_VPREFETCH1:
-          fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch1\n");
-          exit(-1);
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_prefetch: Strange prefetch instruction: %u\n",i_prefetch_instr);
-          exit(-1);
-    }
-
-    if ( l_havepf ) {
-      buf[i++] = (unsigned char)l_havepf;
-      ++l_place1;
-    }
-
-    if ( l_gp8 || l_ix8 )
-    {
-      if (l_gp8) l_sse_preamble += 1;
-      if (l_ix8) l_sse_preamble += 2;
-      buf[i++] = (unsigned char)l_sse_preamble;
-      ++l_place1;
-    }
-
-    if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ){
-      LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
-      buf[i++] = 0x0f;
-      buf[i++] = (unsigned char)(0x18 + l_opcode);
-      buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
-      if ( l_regbas0 == 4 ) buf[i++]=0x24;
+    /* check if we have op-code extension in modrm/reg and correct operand count */
+    if ( ((i_prefetch_instr >> 24) & 0x04 ) == 0x04 ) {
+      if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 ) {
+        l_reg_op_ext = ((i_prefetch_instr >> 20) & 0x07);
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) must have only one operand!\n", i_prefetch_instr);
+        exit(-1);
+      }
     } else {
-      const int l_regidx = i_gp_reg_idx % 8;
-      int l_sca = 0;
-      if (i_scale == 2) l_sca = 0x40;
-      else if (i_scale == 4) l_sca = 0x80;
-      else if (i_scale == 8) l_sca = 0xc0;
-      buf[i++] = 0x0f;
-      buf[i++] = (unsigned char)(0x18 + l_opcode);
-      buf[i++] = (unsigned char)(0x14 + l_instype);
-      buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) has no op-code modrm/reg extension!\n", i_prefetch_instr);
+      exit(-1);
     }
 
-    if ( ( l_regbas0 == 5) && (i_displacement==0) )
-    {
-      /* Registers like rbp/r13 when you have a displacement of 0, we need
-       * force the single byte of zero to appear.
-       */
-      l_forced_offset = 1;
-    }
-
-    i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, l_forced_offset, 1, buf );
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+    libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
+                                                   i_prefetch_instr, i_gp_reg_base,
+                                                   i_gp_reg_idx, i_scale, i_displacement, l_reg_op_ext );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;

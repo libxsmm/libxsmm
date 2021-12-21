@@ -1294,7 +1294,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_prefetch( "pf_PREFETCHT1", &mycode, LIBXSMM_X86_INSTR_PREFETCHT1 );
   test_prefetch( "pf_PREFETCHT2", &mycode, LIBXSMM_X86_INSTR_PREFETCHT2 );
   test_prefetch( "pf_PREFETCHNTA", &mycode, LIBXSMM_X86_INSTR_PREFETCHNTA );
+  test_prefetch( "pf_PREFETCHW", &mycode, LIBXSMM_X86_INSTR_PREFETCHW );
   test_prefetch( "pf_CLDEMOTE", &mycode, LIBXSMM_X86_INSTR_CLDEMOTE );
+  test_prefetch( "pf_CLFLUSH", &mycode, LIBXSMM_X86_INSTR_CLFLUSH );
   test_prefetch( "pf_CLFLUSHOPT", &mycode, LIBXSMM_X86_INSTR_CLFLUSHOPT );
 
   /* testing tile move */
