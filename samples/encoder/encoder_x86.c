@@ -1429,6 +1429,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_mem( "alu_mov_MOVL_ST", &mycode, LIBXSMM_X86_INSTR_MOVL, 2 );
   test_alu_mem( "alu_mov_MOVQ_LD", &mycode, LIBXSMM_X86_INSTR_MOVQ, 1 );
   test_alu_mem( "alu_mov_MOVQ_ST", &mycode, LIBXSMM_X86_INSTR_MOVQ, 2 );
+  test_alu_mem( "alu_mov_LEAW", &mycode, LIBXSMM_X86_INSTR_LEAW, 1 );
+  test_alu_mem( "alu_mov_LEAL", &mycode, LIBXSMM_X86_INSTR_LEAL, 1 );
+  test_alu_mem( "alu_mov_LEAQ", &mycode, LIBXSMM_X86_INSTR_LEAQ, 1 );
 
   free( codebuffer );
 

@@ -58,7 +58,7 @@
  * 28 #operands (2 bits=0-3)
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
  * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
- * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX
+ * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
  * 24 unused - free
  * 3rd byte:
  * ---------
@@ -600,15 +600,26 @@
 #define LIBXSMM_X86_INSTR_CLFLUSH          0x947410ae
 #define LIBXSMM_X86_INSTR_CLFLUSHOPT       0x947510ae
 
-#define LIBXSMM_X86_INSTR_MOVB           30000
-#define LIBXSMM_X86_INSTR_MOVW           30001
-#define LIBXSMM_X86_INSTR_MOVL           30002
-#define LIBXSMM_X86_INSTR_MOVQ           30003
+#define LIBXSMM_X86_INSTR_MOVB             0xa0040088
+#define LIBXSMM_X86_INSTR_MOVW             0xa0050089
+#define LIBXSMM_X86_INSTR_MOVL             0xa0040089
+#define LIBXSMM_X86_INSTR_MOVQ             0xa2840089
+#define LIBXSMM_X86_INSTR_MOVB_LD          0xa0040088
+#define LIBXSMM_X86_INSTR_MOVW_LD          0xa0050089
+#define LIBXSMM_X86_INSTR_MOVL_LD          0xa0040089
+#define LIBXSMM_X86_INSTR_MOVQ_LD          0xa2840089
+#define LIBXSMM_X86_INSTR_MOVB_ST          0xa004008a
+#define LIBXSMM_X86_INSTR_MOVW_ST          0xa005008b
+#define LIBXSMM_X86_INSTR_MOVL_ST          0xa004008b
+#define LIBXSMM_X86_INSTR_MOVQ_ST          0xa284008b
+#define LIBXSMM_X86_INSTR_LEAW             0xa005008d
+#define LIBXSMM_X86_INSTR_LEAL             0xa004008d
+#define LIBXSMM_X86_INSTR_LEAQ             0xa284008d
+
 #define LIBXSMM_X86_INSTR_ADDQ           30004
 #define LIBXSMM_X86_INSTR_SUBQ           30005
 #define LIBXSMM_X86_INSTR_CMPQ           30006
 #define LIBXSMM_X86_INSTR_JL             30007
-#define LIBXSMM_X86_INSTR_MOVSLQ         30015
 #define LIBXSMM_X86_INSTR_SALQ           30016
 #define LIBXSMM_X86_INSTR_IMUL           30017
 #define LIBXSMM_X86_INSTR_JE             30018
@@ -621,7 +632,6 @@
 #define LIBXSMM_X86_INSTR_JMP            30025
 #define LIBXSMM_X86_INSTR_POPCNT         30026
 #define LIBXSMM_X86_INSTR_TZCNT          30027
-#define LIBXSMM_X86_INSTR_LEAQ           30028
 #define LIBXSMM_X86_INSTR_ANDQ           30029
 #define LIBXSMM_X86_INSTR_SHLQ           30031
 #define LIBXSMM_X86_INSTR_SARQ           30032

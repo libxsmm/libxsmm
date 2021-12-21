@@ -257,11 +257,13 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) ) {
+  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
     /* R */
     code[code_head  ]  = (unsigned char)(( i_reg_number_dst > 7 ) ? 0x04 : 0x00);
     /* B */
     code[code_head  ] |= (unsigned char)(( i_gp_reg_base > 7 ) ? 0x01 : 0x00);
+    /* W */
+    code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
     /* when have SIB, set Z */
     if ( l_have_sib == 1 ) {
       code[code_head  ] |= (unsigned char)(( l_gp_reg_idx > 7 ) ? 0x02 : 0x00);
@@ -332,12 +334,14 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) ) {
+  if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
     /* R */
     code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
     /* B is used and X is unused */
     code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
-    /* start of REX prefix */
+    /* W */
+    code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
+     /* start of REX prefix */
     code[code_head++] |= 0x40;
   }
 
@@ -2908,127 +2912,62 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
-                                      const unsigned int     i_alu_instr,
-                                      const unsigned int     i_gp_reg_base,
-                                      const unsigned int     i_gp_reg_idx,
-                                      const unsigned int     i_scale,
-                                      const int              i_displacement,
-                                      const unsigned int     i_gp_reg_number,
-                                      const unsigned int     i_is_store ) {
+                                      const unsigned int      i_alu_instr,
+                                      const unsigned int      i_gp_reg_base,
+                                      const unsigned int      i_gp_reg_idx,
+                                      const unsigned int      i_scale,
+                                      const int               i_displacement,
+                                      const unsigned int      i_gp_reg_number,
+                                      const unsigned int      i_is_store ) {
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_MOVQ:
+    case LIBXSMM_X86_INSTR_MOVL:
+    case LIBXSMM_X86_INSTR_MOVW:
+    case LIBXSMM_X86_INSTR_MOVB:
+#if 0
+    case LIBXSMM_X86_INSTR_MOVQ_LD:
+    case LIBXSMM_X86_INSTR_MOVL_LD:
+    case LIBXSMM_X86_INSTR_MOVW_LD:
+    case LIBXSMM_X86_INSTR_MOVB_LD:
+#endif
+    case LIBXSMM_X86_INSTR_MOVQ_ST:
+    case LIBXSMM_X86_INSTR_MOVL_ST:
+    case LIBXSMM_X86_INSTR_MOVW_ST:
+    case LIBXSMM_X86_INSTR_MOVB_ST:
+    case LIBXSMM_X86_INSTR_LEAW:
+    case LIBXSMM_X86_INSTR_LEAL:
+    case LIBXSMM_X86_INSTR_LEAQ:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
 
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 )
   {
-     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-     int i = io_generated_code->code_size;
-     int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
-     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0, l_forced_offset=0;
-     int l_force_rex = 0;
-     int l_sixsix_pre = 0;
+    unsigned int l_alu_instr = i_alu_instr;
 
-     switch ( i_alu_instr ) {
-       case LIBXSMM_X86_INSTR_MOVSLQ:
-          l_force_rex = 1;
-          if ( i_is_store == 1 )
-          {
-             fprintf(stderr, "libxsmm_instruction_alu_mem: only use LIBXSMM_X86_INSTR_MOVSLQ with loads\n");
-             exit(-1);
-          }
-          break;
-       case LIBXSMM_X86_INSTR_MOVQ:
-          l_force_rex = 1;
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_LEAQ:
-          l_force_rex = 1;
-          l_inst = 0x2A;
-          break;
-       case LIBXSMM_X86_INSTR_MOVL:
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          l_base = -8;
-          break;
-       case LIBXSMM_X86_INSTR_MOVW:
-          l_sixsix_pre = 1;
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          l_base = -8;
-          break;
-       case LIBXSMM_X86_INSTR_MOVB:
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x25;
-          } else {
-             l_inst = 0x27;
-          }
-          l_base = -8;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_alu_mem: Unknown instruction: %u\n", i_alu_instr);
-          exit(-1);
-     }
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVQ_LD : LIBXSMM_X86_INSTR_MOVQ_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVL:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVL_LD : LIBXSMM_X86_INSTR_MOVL_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVW:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVW_LD : LIBXSMM_X86_INSTR_MOVW_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVB:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVB_LD : LIBXSMM_X86_INSTR_MOVB_ST;
+        break;
+    }
 
-     l_regbas0 = i_gp_reg_base % 8;
-     l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-     l_regnum  = i_gp_reg_number % 8;
-     l_nx8     = ((i_gp_reg_number>7)&&(i_gp_reg_number<=15)?1:0);
-
-     if (i_scale==2) l_sca=0x40;
-     else if (i_scale==4) l_sca=0x80;
-     else if (i_scale==8) l_sca=0xc0;
-
-     if ( l_sixsix_pre != 0 ) {
-       buf[i++] = (unsigned char)0x66;
-       l_place2++;
-     }
-
-     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
-     {
-         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 )
-         {
-            buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_nx8 * 0x04);
-         } else {
-            l_place2 = i+1;
-         }
-         buf[i++] = (unsigned char)(0x63 + l_inst);
-         buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regnum * 0x08);
-         if ( l_regbas0 == 4 ) /* rsp or r12 */
-         {
-            buf[i++] = 0x24;
-         }
-     } else {
-         int l_regidx  = i_gp_reg_idx  % 8;
-         int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 || l_ix8 )
-         {
-            buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_ix8 * 0x02 + l_nx8 * 0x04);
-         } else {
-            l_place2 = i+1;
-         }
-         buf[i++] = (unsigned char)(0x63 + l_inst);
-         buf[i++] = (unsigned char)(0x04 + l_regnum * 0x08);
-         buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
-     }
-     if ( (l_regbas0 == 5) && (i_displacement==0) )
-     {
-         l_forced_offset = 1;
-     }
-     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, l_forced_offset, 1, buf );
-
-     io_generated_code->code_size = i;
+    libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
+                                                   l_alu_instr, i_gp_reg_base,
+                                                   i_gp_reg_idx, i_scale, i_displacement, i_gp_reg_number );
+  } else {
+    /* @TODO */
   }
 }
 
