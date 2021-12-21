@@ -252,6 +252,10 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 
   /* encoding */
   /* A): writing prefixes */
+  /* operand size overwrite prefix */
+  if ( (i_instr & 0x0000c000) == 0x00004000 ) {
+    code[code_head++] = 0x66;
+  }
   /* instruction prefix */
   if ( prefix_idx != 0 ) {
     code[code_head++] = tbl_prefix[prefix_idx];
