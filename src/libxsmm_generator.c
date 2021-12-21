@@ -425,10 +425,12 @@ LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
 {
   /* normalize such that a <= b */
   unsigned int ci = ((b < a && 0 != b) ? LIBXSMM_UP(a, b) : b), c = a * ci;
+  /* sanitize limit argument */
+  if (NULL != limit && (0 == b || ((*limit / b) * b) < a)) limit = NULL;
   if (1 <= a) {
     unsigned int r = a - 1;
     for (; ((NULL != remainder ? *remainder : 0) < r)
-        &&  (NULL == limit || *limit >= ci); ci += b)
+        &&  (NULL == limit || ci <= *limit); ci += b)
     {
       const unsigned int ri = ci % a;
       if (ri < r) {

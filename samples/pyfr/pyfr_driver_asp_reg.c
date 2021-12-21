@@ -26,8 +26,8 @@ void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
   const int my_LDA = *LDA;
   const int my_LDB = *LDB;
   const int my_LDC = *LDC;
-  const float my_alpha = *alpha;
-  const float my_beta = *beta;
+  const float my_alpha = (float)*alpha;
+  const float my_beta = (float)*beta;
   int m = 0, n = 0, k = 0;
 
   for ( n = 0; n < my_N; ++n ) {

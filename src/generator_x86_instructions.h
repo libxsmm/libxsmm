@@ -69,6 +69,21 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
                                                libxsmm_const_data_tracker* io_const_data );
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned int          i_instr,
+                                                   const unsigned int          i_gp_reg_base,
+                                                   const unsigned int          i_gp_reg_idx,
+                                                   const unsigned int          i_scale,
+                                                   const int                   i_displacement,
+                                                   const unsigned int          i_reg_number_dst );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned int          i_instr,
+                                               const unsigned int          i_reg_number_src,
+                                               const unsigned int          i_reg_number_srcdst );
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_vec_instr,
                                                    const unsigned int          i_gp_reg_base,

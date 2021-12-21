@@ -41,10 +41,6 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_SYNC_GENERIC_PID) && 1
-# define LIBXSMM_SYNC_GENERIC_PID
-#endif
-
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;
@@ -651,20 +647,12 @@ LIBXSMM_API_INTERN unsigned int internal_get_tid(void)
 LIBXSMM_API unsigned int libxsmm_get_tid(void)
 {
 #if (0 != LIBXSMM_SYNC)
-# if defined(LIBXSMM_SYNC_GENERIC_PID)
+# if defined(_OPENMP) && defined(LIBXSMM_SYNC_OMP)
+  return (unsigned int)omp_get_thread_num();
+# else
   static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
   if (0xFFFFFFFF == tid) tid = internal_get_tid();
   return tid;
-# else
-  void* tls = LIBXSMM_TLS_GETVALUE(libxsmm_tlskey);
-  if (NULL == tls) {
-    static unsigned int tid[LIBXSMM_NTHREADS_MAX];
-    const int i = internal_get_tid();
-    tid[i] = i; tls = tid + i;
-    /* coverity[check_return] */
-    LIBXSMM_TLS_SETVALUE(libxsmm_tlskey, tls);
-  }
-  return *(unsigned int*)tls;
 # endif
 #else
   return 0;

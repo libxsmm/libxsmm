@@ -70,8 +70,9 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
 /**
  * Minimizes the waste, if "a" can only be processed in multiples of "b".
  * The remainder r is such that ((i * b) % a) <= r with i := {1, ..., a}.
- * Returns the multiple of "b" minimizing the remainder accordingly.
- * If no remainder is given (NULL), a value of zero is assumed.
+ * Return value of this function is (i * b) with i := {1, ..., a}.
+ * Remainder and limit are considered for early-exit and relaxation.
+ * If the remainder is not given (NULL), it is assumed to be zero.
  * For example: libxsmm_remainder(23, 8, NULL, NULL) => 184.
  */
 LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
