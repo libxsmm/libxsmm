@@ -463,9 +463,6 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JLE:
       libxsmm_strncpy(o_instr_name, "jle", i_instr_name_max_length, 3 );
       break;
-    case LIBXSMM_X86_INSTR_SALQ:
-      libxsmm_strncpy(o_instr_name, "salq", i_instr_name_max_length, 4 );
-      break;
     case LIBXSMM_X86_INSTR_SHLQ:
       libxsmm_strncpy(o_instr_name, "shlq", i_instr_name_max_length, 4 );
       break;

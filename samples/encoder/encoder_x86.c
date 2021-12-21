@@ -635,6 +635,22 @@ void test_alu_mem( char* test_name, libxsmm_generated_code* mycode, unsigned int
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_imm( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int b;
+  unsigned int d;
+  int imm[3] = {32, 128, 2097152};
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 1; ++d ) {
+      libxsmm_x86_instruction_alu_imm( mycode, instr, b, imm[d] );
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -1432,6 +1448,18 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_mem( "alu_mov_LEAW", &mycode, LIBXSMM_X86_INSTR_LEAW, 1 );
   test_alu_mem( "alu_mov_LEAL", &mycode, LIBXSMM_X86_INSTR_LEAL, 1 );
   test_alu_mem( "alu_mov_LEAQ", &mycode, LIBXSMM_X86_INSTR_LEAQ, 1 );
+
+  /* test alu imm */
+  test_alu_imm( "alu_imm_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );
+  test_alu_imm( "alu_imm_SHLQ", &mycode, LIBXSMM_X86_INSTR_SHLQ );
+  test_alu_imm( "alu_imm_SALQ", &mycode, LIBXSMM_X86_INSTR_SALQ );
+  test_alu_imm( "alu_imm_SARQ", &mycode, LIBXSMM_X86_INSTR_SARQ );
+  test_alu_imm( "alu_imm_SHRQ", &mycode, LIBXSMM_X86_INSTR_SHRQ );
+  test_alu_imm( "alu_imm_IMUL", &mycode, LIBXSMM_X86_INSTR_IMUL );
+  test_alu_imm( "alu_imm_SUBQ", &mycode, LIBXSMM_X86_INSTR_SUBQ );
+  test_alu_imm( "alu_imm_ANDQ", &mycode, LIBXSMM_X86_INSTR_ANDQ );
+  test_alu_imm( "alu_imm_MOVQ", &mycode, LIBXSMM_X86_INSTR_MOVQ );
+  test_alu_imm( "alu_imm_CMPQ", &mycode, LIBXSMM_X86_INSTR_CMPQ );
 
   free( codebuffer );
 

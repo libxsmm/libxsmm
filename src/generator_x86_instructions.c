@@ -3002,6 +3002,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:
           break;
+#if 0
        case LIBXSMM_X86_INSTR_SALQ:
           if ( (i_immediate < 0) || (i_immediate > 127) )
           {
@@ -3013,6 +3014,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
           l_unsignedadj = 0x3e;
           l_third += 0x20;
           break;
+#endif
        case LIBXSMM_X86_INSTR_SHLQ:
           if ( (i_immediate < 0) || (i_immediate > 127) )
           {
