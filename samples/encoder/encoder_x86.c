@@ -651,6 +651,22 @@ void test_alu_imm( char* test_name, libxsmm_generated_code* mycode, unsigned int
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_imm_i64( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  unsigned int b;
+  unsigned int d;
+  int imm[3] = {32, 128, 2097152};
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    for ( d = 0; d < 1; ++d ) {
+      libxsmm_x86_instruction_alu_imm_i64( mycode, instr, b, imm[d] );
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -1507,6 +1523,12 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_imm( "alu_imm_XORW_RM_IMM16", &mycode, LIBXSMM_X86_INSTR_XORW_RM_IMM16 );
   test_alu_imm( "alu_imm_XORD_RM_IMM32", &mycode, LIBXSMM_X86_INSTR_XORD_RM_IMM32 );
   test_alu_imm( "alu_imm_XORQ_RM_IMM32", &mycode, LIBXSMM_X86_INSTR_XORQ_RM_IMM32 );
+
+  test_alu_imm_i64( "alu_imm_MOVQ_IMM64", &mycode, LIBXSMM_X86_INSTR_MOVQ );
+  test_alu_imm_i64( "alu_imm_MOVB_R_IMM8",  &mycode, LIBXSMM_X86_INSTR_MOVB_R_IMM8 );
+  test_alu_imm_i64( "alu_imm_MOVW_R_IMM16", &mycode, LIBXSMM_X86_INSTR_MOVW_R_IMM16 );
+  test_alu_imm_i64( "alu_imm_MOVD_R_IMM32", &mycode, LIBXSMM_X86_INSTR_MOVD_R_IMM32 );
+  test_alu_imm_i64( "alu_imm_MOVQ_R_IMM64", &mycode, LIBXSMM_X86_INSTR_MOVQ_R_IMM64 );
 
   free( codebuffer );
 

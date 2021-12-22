@@ -343,10 +343,16 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   }
   /* REX prefix */
   if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
-    /* R */
-    code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
-    /* B is used and X is unused */
-    code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
+    /* some instructions have an OP code to encode the register and skip the modrm byte, then the B field is used */
+    if ( (i_instr & 0x01000000) == 0x01000000 ) {
+      /* B is used and X is unused */
+      code[code_head  ] |= (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x01 : 0x00);
+    } else {
+      /* R */
+      code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
+      /* B is used and X is unused */
+      code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
+    }
     /* W */
     code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
      /* start of REX prefix */
@@ -365,9 +371,14 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   code[code_head++] = (unsigned char) (i_instr & 0x000000ff);
 
   /* D) setting modrm, we are in reg-only addressing mode */
-  code[code_head  ]  = (unsigned char)0xc0;
-  code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_srcdst << 3)) & 0x38);
-  code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_src)       & 0x07);
+  /* some instructions have an OP code to encode the register and skip the modrm byte */
+  if ( (i_instr & 0x01000000) == 0x01000000 ) {
+    code[code_head-1] |= (unsigned char)(i_reg_number_srcdst & 0x07);
+  } else {
+    code[code_head  ]  = (unsigned char)0xc0;
+    code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_srcdst << 3)) & 0x38);
+    code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_src)       & 0x07);
+  }
 
   io_generated_code->code_size = code_head;
 }
@@ -3134,48 +3145,52 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
                                           const size_t            i_immediate ) {
-  /* @TODO add checks in debug mode */
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_MOVQ:
+    case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
+    case LIBXSMM_X86_INSTR_MOVW_R_IMM16:
+    case LIBXSMM_X86_INSTR_MOVD_R_IMM32:
+    case LIBXSMM_X86_INSTR_MOVQ_R_IMM64:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    unsigned char *l_cptr = (unsigned char *) &i_immediate;
-    int i = io_generated_code->code_size;
-    int l_first = 0;
-    int l_reg0 = 0;
+    unsigned int l_alu_instr = i_alu_instr;
 
-    if ( i_alu_instr != LIBXSMM_X86_INSTR_MOVQ )
-    {
-       fprintf(stderr,"How are you doing a 64-byte immediate on instruction: %u\n",i_alu_instr);
-       exit(-1);
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_MOVQ_R_IMM64;
+        break;
     }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 )
-    {
-       fprintf(stderr,"libxsmm_x86_instruction_alu_imm_i64 strange gp reg=%u\n",i_gp_reg_number);
-       exit(-1);
-    }
-    l_reg0 = i_gp_reg_number;
-    if ( i_gp_reg_number >= 8 )
-    {
-       l_first = 1;
-       l_reg0 -= 8;
-    }
-    buf[i++]= (unsigned char)(0x48 + l_first);
-    buf[i++]= (unsigned char)(0xb8 + l_reg0);
-    buf[i++] = l_cptr[0];
-    buf[i++] = l_cptr[1];
-    buf[i++] = l_cptr[2];
-    buf[i++] = l_cptr[3];
-    buf[i++] = l_cptr[4];
-    buf[i++] = l_cptr[5];
-    buf[i++] = l_cptr[6];
-    buf[i++] = l_cptr[7];
 
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+    /* generatoe the main instruction */
+    libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
+            0, i_gp_reg_number );
+
+    /* copy the immediate after the insturuction */
+    if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
+      unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+      unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
+      unsigned int l_immediate = (unsigned int)i_immediate;
+      unsigned int l_i = 0;
+      for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
+        code[io_generated_code->code_size++] = (unsigned char)l_immediate;
+        l_immediate = l_immediate >> 8;
+      }
+    } else {
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
+      exit(-1);
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
