@@ -333,7 +333,11 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   unsigned int opext_idx = (i_instr & 0x00002000) >> 13;
 
   /* A): writing prefixes */
-  /* instruction prefix */
+  /* operand size overwrite prefix */
+  if ( (i_instr & 0x0000c000) == 0x00004000 ) {
+    code[code_head++] = 0x66;
+  }
+   /* instruction prefix */
   if ( prefix_idx != 0 ) {
     code[code_head++] = tbl_prefix[prefix_idx];
   }
@@ -2925,21 +2929,21 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_is_store ) {
   switch ( i_alu_instr ) {
     case LIBXSMM_X86_INSTR_MOVQ:
-    case LIBXSMM_X86_INSTR_MOVL:
+    case LIBXSMM_X86_INSTR_MOVD:
     case LIBXSMM_X86_INSTR_MOVW:
     case LIBXSMM_X86_INSTR_MOVB:
 #if 0
     case LIBXSMM_X86_INSTR_MOVQ_LD:
-    case LIBXSMM_X86_INSTR_MOVL_LD:
+    case LIBXSMM_X86_INSTR_MOVD_LD:
     case LIBXSMM_X86_INSTR_MOVW_LD:
     case LIBXSMM_X86_INSTR_MOVB_LD:
 #endif
     case LIBXSMM_X86_INSTR_MOVQ_ST:
-    case LIBXSMM_X86_INSTR_MOVL_ST:
+    case LIBXSMM_X86_INSTR_MOVD_ST:
     case LIBXSMM_X86_INSTR_MOVW_ST:
     case LIBXSMM_X86_INSTR_MOVB_ST:
     case LIBXSMM_X86_INSTR_LEAW:
-    case LIBXSMM_X86_INSTR_LEAL:
+    case LIBXSMM_X86_INSTR_LEAD:
     case LIBXSMM_X86_INSTR_LEAQ:
       break;
     default:
@@ -2956,8 +2960,8 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
       case LIBXSMM_X86_INSTR_MOVQ:
         l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVQ_LD : LIBXSMM_X86_INSTR_MOVQ_ST;
         break;
-      case LIBXSMM_X86_INSTR_MOVL:
-        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVL_LD : LIBXSMM_X86_INSTR_MOVL_ST;
+      case LIBXSMM_X86_INSTR_MOVD:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVD_LD : LIBXSMM_X86_INSTR_MOVD_ST;
         break;
       case LIBXSMM_X86_INSTR_MOVW:
         l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVW_LD : LIBXSMM_X86_INSTR_MOVW_ST;
@@ -2985,54 +2989,54 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_ADDQ:
     case LIBXSMM_X86_INSTR_ADDB_RM_IMM8:
     case LIBXSMM_X86_INSTR_ADDW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_ADDL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ADDD_RM_IMM32:
     case LIBXSMM_X86_INSTR_ADDQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_ANDQ:
     case LIBXSMM_X86_INSTR_ANDB_RM_IMM8:
     case LIBXSMM_X86_INSTR_ANDW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_ANDL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ANDD_RM_IMM32:
     case LIBXSMM_X86_INSTR_ANDQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_CMPQ:
     case LIBXSMM_X86_INSTR_CMPB_RM_IMM8:
     case LIBXSMM_X86_INSTR_CMPW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_CMPL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_CMPD_RM_IMM32:
     case LIBXSMM_X86_INSTR_CMPQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_IMUL:
     case LIBXSMM_X86_INSTR_IMULW_IMM16:
-    case LIBXSMM_X86_INSTR_IMULL_IMM32:
+    case LIBXSMM_X86_INSTR_IMULD_IMM32:
     case LIBXSMM_X86_INSTR_IMULQ_IMM32:
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVB_RM_IMM8:
     case LIBXSMM_X86_INSTR_MOVW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_MOVL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_MOVD_RM_IMM32:
     case LIBXSMM_X86_INSTR_MOVQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_ORB_RM_IMM8:
     case LIBXSMM_X86_INSTR_ORW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_ORL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ORD_RM_IMM32:
     case LIBXSMM_X86_INSTR_ORQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_SHLQ:
     case LIBXSMM_X86_INSTR_SHLB_RM_IMM8:
     case LIBXSMM_X86_INSTR_SHLW_RM_IMM8:
-    case LIBXSMM_X86_INSTR_SHLL_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHLD_RM_IMM8:
     case LIBXSMM_X86_INSTR_SHLQ_RM_IMM8:
     case LIBXSMM_X86_INSTR_SARQ:
     case LIBXSMM_X86_INSTR_SARB_RM_IMM8:
     case LIBXSMM_X86_INSTR_SARW_RM_IMM8:
-    case LIBXSMM_X86_INSTR_SARL_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SARD_RM_IMM8:
     case LIBXSMM_X86_INSTR_SARQ_RM_IMM8:
     case LIBXSMM_X86_INSTR_SHRQ:
     case LIBXSMM_X86_INSTR_SHRB_RM_IMM8:
     case LIBXSMM_X86_INSTR_SHRW_RM_IMM8:
-    case LIBXSMM_X86_INSTR_SHRL_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHRD_RM_IMM8:
     case LIBXSMM_X86_INSTR_SHRQ_RM_IMM8:
     case LIBXSMM_X86_INSTR_SUBQ:
     case LIBXSMM_X86_INSTR_SUBB_RM_IMM8:
     case LIBXSMM_X86_INSTR_SUBW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_SUBL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_SUBD_RM_IMM32:
     case LIBXSMM_X86_INSTR_SUBQ_RM_IMM32:
     case LIBXSMM_X86_INSTR_XORB_RM_IMM8:
     case LIBXSMM_X86_INSTR_XORW_RM_IMM16:
-    case LIBXSMM_X86_INSTR_XORL_RM_IMM32:
+    case LIBXSMM_X86_INSTR_XORD_RM_IMM32:
     case LIBXSMM_X86_INSTR_XORQ_RM_IMM32:
       break;
     default:
@@ -3088,7 +3092,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
 
     /* @TODO fix! for IMUL we have a ternay instrucation */
     if ( l_alu_instr == LIBXSMM_X86_INSTR_IMULW_IMM16 ||
-         l_alu_instr == LIBXSMM_X86_INSTR_IMULL_IMM32 ||
+         l_alu_instr == LIBXSMM_X86_INSTR_IMULD_IMM32 ||
          l_alu_instr == LIBXSMM_X86_INSTR_IMULQ_IMM32 ) {
       l_reg_number_dst = i_gp_reg_number;
     }

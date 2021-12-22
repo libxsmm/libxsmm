@@ -40,8 +40,8 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_sse_microkernel( libx
     l_load_instr = LIBXSMM_X86_INSTR_MOVQ;
     l_store_instr = LIBXSMM_X86_INSTR_MOVQ;
   } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
-    l_load_instr = LIBXSMM_X86_INSTR_MOVL;
-    l_store_instr = LIBXSMM_X86_INSTR_MOVL;
+    l_load_instr = LIBXSMM_X86_INSTR_MOVD;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVD;
   } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
     l_load_instr = LIBXSMM_X86_INSTR_MOVW;
     l_store_instr = LIBXSMM_X86_INSTR_MOVW;
@@ -135,8 +135,8 @@ void libxsmm_generator_transform_norm_to_vnni_mbit_scalar_sse_microkernel( libxs
     l_load_instr = LIBXSMM_X86_INSTR_MOVQ;
     l_store_instr = LIBXSMM_X86_INSTR_MOVQ;
   } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
-    l_load_instr = LIBXSMM_X86_INSTR_MOVL;
-    l_store_instr = LIBXSMM_X86_INSTR_MOVL;
+    l_load_instr = LIBXSMM_X86_INSTR_MOVD;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVD;
   } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
     l_load_instr = LIBXSMM_X86_INSTR_MOVW;
     l_store_instr = LIBXSMM_X86_INSTR_MOVW;
@@ -270,8 +270,8 @@ void libxsmm_generator_transform_vnni_to_vnnit_mbit_scalar_sse_microkernel( libx
     l_load_instr = LIBXSMM_X86_INSTR_MOVQ;
     l_store_instr = LIBXSMM_X86_INSTR_MOVQ;
   } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
-    l_load_instr = LIBXSMM_X86_INSTR_MOVL;
-    l_store_instr = LIBXSMM_X86_INSTR_MOVL;
+    l_load_instr = LIBXSMM_X86_INSTR_MOVD;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVD;
   } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
     l_load_instr = LIBXSMM_X86_INSTR_MOVW;
     l_store_instr = LIBXSMM_X86_INSTR_MOVW;
@@ -386,8 +386,8 @@ void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_sse_microkernel( li
     l_load_instr = LIBXSMM_X86_INSTR_MOVQ;
     l_store_instr = LIBXSMM_X86_INSTR_MOVQ;
   } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
-    l_load_instr = LIBXSMM_X86_INSTR_MOVL;
-    l_store_instr = LIBXSMM_X86_INSTR_MOVL;
+    l_load_instr = LIBXSMM_X86_INSTR_MOVD;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVD;
   } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
     l_load_instr = LIBXSMM_X86_INSTR_MOVW;
     l_store_instr = LIBXSMM_X86_INSTR_MOVW;
