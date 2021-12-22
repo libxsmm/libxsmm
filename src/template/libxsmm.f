@@ -134,27 +134,29 @@
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
-     &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_GENERIC         = 1002,                           &
-     &    LIBXSMM_X86_SSE3            = 1003,                           &
-     &    LIBXSMM_X86_SSE4            = 1004,                           &
-     &    LIBXSMM_X86_AVX             = 1005,                           &
-     &    LIBXSMM_X86_AVX2            = 1006,                           &
-     &    LIBXSMM_X86_AVX512_VL256    = 1007,                           &
-     &    LIBXSMM_X86_AVX512          = 1010,                           &
-     &    LIBXSMM_X86_AVX512_MIC      = 1011,                           &
-     &    LIBXSMM_X86_AVX512_KNM      = 1012,                           &
-     &    LIBXSMM_X86_AVX512_CORE     = 1020,                           &
-     &    LIBXSMM_X86_AVX512_CLX      = 1021,                           &
-     &    LIBXSMM_X86_AVX512_CPX      = 1022,                           &
-     &    LIBXSMM_X86_AVX512_SPR      = 1023,                           &
-     &    LIBXSMM_X86_ALLFEAT         = 1999,                           &
-     &    LIBXSMM_AARCH64_V81         = 2001,                           &
-     &    LIBXSMM_AARCH64_V82         = 2002,                           &
-     &    LIBXSMM_AARCH64_A64FX       = 2100,                           &
-     &    LIBXSMM_AARCH64_APPL_M1     = 2200,                           &
-     &    LIBXSMM_AARCH64_ALLFEAT     = 2999
+     &    LIBXSMM_TARGET_ARCH_UNKNOWN   = 0,                            &
+     &    LIBXSMM_TARGET_ARCH_GENERIC   = 1,                            &
+     &    LIBXSMM_X86_GENERIC           = 1002,                         &
+     &    LIBXSMM_X86_SSE3              = 1003,                         &
+     &    LIBXSMM_X86_SSE4              = 1004,                         &
+     &    LIBXSMM_X86_AVX               = 1005,                         &
+     &    LIBXSMM_X86_AVX2              = 1006,                         &
+     &    LIBXSMM_X86_AVX512_VL256      = 1007,                         &
+     &    LIBXSMM_X86_AVX512_VL256_CLX  = 1008,                         &
+     &    LIBXSMM_X86_AVX512_VL256_CPX  = 1009,                         &
+     &    LIBXSMM_X86_AVX512            = 1010,                         &
+     &    LIBXSMM_X86_AVX512_MIC        = 1011,                         &
+     &    LIBXSMM_X86_AVX512_KNM        = 1012,                         &
+     &    LIBXSMM_X86_AVX512_CORE       = 1020,                         &
+     &    LIBXSMM_X86_AVX512_CLX        = 1021,                         &
+     &    LIBXSMM_X86_AVX512_CPX        = 1022,                         &
+     &    LIBXSMM_X86_AVX512_SPR        = 1023,                         &
+     &    LIBXSMM_X86_ALLFEAT           = 1999,                         &
+     &    LIBXSMM_AARCH64_V81           = 2001,                         &
+     &    LIBXSMM_AARCH64_V82           = 2002,                         &
+     &    LIBXSMM_AARCH64_A64FX         = 2100,                         &
+     &    LIBXSMM_AARCH64_APPL_M1       = 2200,                         &
+     &    LIBXSMM_AARCH64_ALLFEAT       = 2999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
@@ -1352,12 +1354,12 @@
 
         !> Register user-defined key-value; value can be queried (libxsmm_xdispatch).
         !> Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
-        !> i.e., if it is a structured type (padded data may be uninitialized), it must
-        !> be initially zero-filled (libxsmm_xclear) followed by an element-wise setup.
-        !> The size of the key is limited (see documentation). The given value is copied
-        !> by LIBXSMM and may be initialized at registration-time or whenever queried.
-        !> Registered data is released at program termination but can be also released
-        !> if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
+        !> i.e., a structured type (can be padded) must be initialized like a binary blob
+        !> (libxsmm_xclear) followed by an element-wise initialization. The size of the
+        !> key is limited (see documentation). The given value is copied by LIBXSMM and
+        !> can be initialized prior to registration or whenever queried. Registered data
+        !> is released when the program terminates but can be also released if needed
+        !> (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
         FUNCTION libxsmm_xregister(key, keysize, valsize,               &
      &  valinit, keyhash)
