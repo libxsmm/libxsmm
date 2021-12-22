@@ -1451,15 +1451,15 @@ int main( /*int argc, char* argv[]*/ ) {
 
   /* test alu imm */
   test_alu_imm( "alu_imm_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ );
-  test_alu_imm( "alu_imm_SHLQ", &mycode, LIBXSMM_X86_INSTR_SHLQ );
+  test_alu_imm( "alu_imm_ANDQ", &mycode, LIBXSMM_X86_INSTR_ANDQ );
+  test_alu_imm( "alu_imm_CMPQ", &mycode, LIBXSMM_X86_INSTR_CMPQ );
+  test_alu_imm( "alu_imm_IMUL", &mycode, LIBXSMM_X86_INSTR_IMUL );
+  test_alu_imm( "alu_imm_MOVQ", &mycode, LIBXSMM_X86_INSTR_MOVQ );
   test_alu_imm( "alu_imm_SALQ", &mycode, LIBXSMM_X86_INSTR_SALQ );
   test_alu_imm( "alu_imm_SARQ", &mycode, LIBXSMM_X86_INSTR_SARQ );
+  test_alu_imm( "alu_imm_SHLQ", &mycode, LIBXSMM_X86_INSTR_SHLQ );
   test_alu_imm( "alu_imm_SHRQ", &mycode, LIBXSMM_X86_INSTR_SHRQ );
-  test_alu_imm( "alu_imm_IMUL", &mycode, LIBXSMM_X86_INSTR_IMUL );
   test_alu_imm( "alu_imm_SUBQ", &mycode, LIBXSMM_X86_INSTR_SUBQ );
-  test_alu_imm( "alu_imm_ANDQ", &mycode, LIBXSMM_X86_INSTR_ANDQ );
-  test_alu_imm( "alu_imm_MOVQ", &mycode, LIBXSMM_X86_INSTR_MOVQ );
-  test_alu_imm( "alu_imm_CMPQ", &mycode, LIBXSMM_X86_INSTR_CMPQ );
 
   free( codebuffer );
 
