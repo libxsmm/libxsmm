@@ -1361,49 +1361,43 @@
         !> is released when the program terminates but can be also released if needed
         !> (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
-        FUNCTION libxsmm_xregister(key, keysize, valsize,               &
-     &  valinit, keyhash)
+        FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR),    INTENT(IN), VALUE     :: key
           INTEGER(C_INT), INTENT(IN)            :: keysize, valsize
           TYPE(C_PTR),    INTENT(IN),  OPTIONAL :: valinit
-          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xregister
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
           INTERFACE
             SUBROUTINE internal_xregister(regval,                       &
-     &      key, keysize, valsize, valinit, keyhash)                    &
+     &      key, keysize, valsize, valinit)                             &
      &      BIND(C, NAME="libxsmm_xregister_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key, valinit
               INTEGER(C_INT), INTENT(IN)  :: keysize, valsize
-              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
           CALL internal_xregister(libxsmm_xregister,                    &
-     &      key, keysize, valsize, valinit, keyhash)
+     &      key, keysize, valsize, valinit)
         END FUNCTION
 
         !> Query user-defined value from LIBXSMM's code registry.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
-        FUNCTION libxsmm_xdispatch(key, keysize, keyhash)
+        FUNCTION libxsmm_xdispatch(key, keysize)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
           INTEGER(C_INT), INTENT(IN) :: keysize
-          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xdispatch
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xdispatch
           INTERFACE
-            SUBROUTINE internal_xdispatch(regval, key, keysize, keyhash)&
+            SUBROUTINE internal_xdispatch(regval, key, keysize)         &
      &      BIND(C, NAME="libxsmm_xdispatch_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key
               INTEGER(C_INT), INTENT(IN)  :: keysize
-              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
-          CALL internal_xdispatch(libxsmm_xdispatch,                    &
-     &      key, keysize, keyhash)
+          CALL internal_xdispatch(libxsmm_xdispatch, key, keysize)
         END FUNCTION
 
         !> Auto-dispatched general dense MM (double-precision).

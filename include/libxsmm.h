@@ -119,11 +119,9 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
  * (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
  */
 LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
-  size_t value_size, const void* value_init, unsigned int* key_hash);
+  size_t value_size, const void* value_init);
 /** Query user-defined value from LIBXSMM's code registry. */
-LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size,
-  /** Optionally returns the hashed key. */
-  unsigned int* key_hash);
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
