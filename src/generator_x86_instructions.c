@@ -203,7 +203,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
                                                    const unsigned int          i_gp_reg_idx,
                                                    const unsigned int          i_scale,
                                                    const int                   i_displacement,
-                                                   const unsigned int          i_reg_number_dst )
+                                                   const unsigned int          i_reg_number_reg )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -261,9 +261,9 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
+  if ( (i_reg_number_reg > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
     /* R */
-    code[code_head  ]  = (unsigned char)(( i_reg_number_dst > 7 ) ? 0x04 : 0x00);
+    code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x04 : 0x00);
     /* B */
     code[code_head  ] |= (unsigned char)(( i_gp_reg_base > 7 ) ? 0x01 : 0x00);
     /* W */
@@ -289,7 +289,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 
   /* D) setting modrm, we are in reg-only addressing mode */
   modrm = code_head;
-  code[code_head  ]  = (unsigned char)(((unsigned char)(i_reg_number_dst << 3)) & 0x38);
+  code[code_head  ]  = (unsigned char)(((unsigned char)(i_reg_number_reg << 3)) & 0x38);
   if ( l_have_sib == 1 ) {
     code[code_head++] |= (unsigned char)0x04; /* set SIB mode*/
     /* set SIB */
@@ -320,8 +320,8 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_generated_code,
                                                const unsigned int          i_instr,
-                                               const unsigned int          i_reg_number_src,
-                                               const unsigned int          i_reg_number_srcdst )
+                                               const unsigned int          i_reg_number_rm,
+                                               const unsigned int          i_reg_number_reg )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -342,16 +342,16 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
+  if ( (i_reg_number_rm > 7) || (i_reg_number_reg > 7) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
     /* some instructions have an OP code to encode the register and skip the modrm byte, then the B field is used */
     if ( (i_instr & 0x01000000) == 0x01000000 ) {
       /* B is used and X is unused */
-      code[code_head  ] |= (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x01 : 0x00);
+      code[code_head  ] |= (unsigned char)(( i_reg_number_reg > 7 ) ? 0x01 : 0x00);
     } else {
       /* R */
-      code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
+      code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x04 : 0x00);
       /* B is used and X is unused */
-      code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
+      code[code_head  ] |= (unsigned char)(( i_reg_number_rm > 7 ) ? 0x01 : 0x00);
     }
     /* W */
     code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
@@ -373,11 +373,11 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   /* D) setting modrm, we are in reg-only addressing mode */
   /* some instructions have an OP code to encode the register and skip the modrm byte */
   if ( (i_instr & 0x01000000) == 0x01000000 ) {
-    code[code_head-1] |= (unsigned char)(i_reg_number_srcdst & 0x07);
+    code[code_head-1] |= (unsigned char)(i_reg_number_reg & 0x07);
   } else {
     code[code_head  ]  = (unsigned char)0xc0;
-    code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_srcdst << 3)) & 0x38);
-    code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_src)       & 0x07);
+    code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_reg << 3)) & 0x38);
+    code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_rm)       & 0x07);
   }
 
   io_generated_code->code_size = code_head;
