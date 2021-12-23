@@ -3449,9 +3449,10 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number ) {
   if ( io_generated_code->code_type > 1 ) {
-#if 0
+#if 1
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_PUSHQ,
                                      LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
+    io_generated_code->sf_size += 8;
 #else
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
@@ -3504,9 +3505,10 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number ) {
   if ( io_generated_code->code_type > 1 ) {
-#if 0
+#if 1
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_POPQ,
                                      LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
+    io_generated_code->sf_size -= 8;
 #else
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
