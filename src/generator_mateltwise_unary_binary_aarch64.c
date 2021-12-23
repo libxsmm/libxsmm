@@ -729,6 +729,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_EXP:
+          if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
           libxsmm_generator_exp_ps_3dts_aarch64(
             io_generated_code,
             cur_vreg,
@@ -881,6 +882,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
   unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
   libxsmm_aarch64_asimd_tupletype l_tupletype = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
+  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, i_pred_reg, -1, 0 );
+  }
 
   for (in = 0; in < i_n_blocking; in++) {
     unsigned int l_mask_adv = 0;

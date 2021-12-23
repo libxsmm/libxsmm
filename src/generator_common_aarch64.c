@@ -1364,7 +1364,7 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*              io
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P,
                                              i_vec_y, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_y,
                                              i_pred_reg, i_sve_type );
-                                             
+
     /* LIBXSMM_AARCH64_INSTR_ASIMD_FCVTMS_V: floating point convert to signed integer, rounding towards minus infinity */
     /* rounding to minus infinity should not be necessary (there is no direct instruction in SVE for that), because we already rounded previously */
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS,
