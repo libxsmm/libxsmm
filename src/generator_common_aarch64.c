@@ -1358,13 +1358,16 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*              io
                                         const libxsmm_aarch64_sve_type        i_sve_type,
                                         const unsigned char                   i_pred_reg ) {
   if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+
+    /* SVE has an instruction called "fexpa". Maybe it could be used */
+
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P,
                                              i_vec_y, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_y,
                                              i_pred_reg, i_sve_type );
-    /* floating point convert to signed integer, rounding towards minus infinity */
-    /* todo: implement this function in SVE */
-    /* todo: is rounding towards minus infinity really necessary? */
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCVTMS_V,
+                                             
+    /* LIBXSMM_AARCH64_INSTR_ASIMD_FCVTMS_V: floating point convert to signed integer, rounding towards minus infinity */
+    /* rounding to minus infinity should not be necessary (there is no direct instruction in SVE for that), because we already rounded previously */
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS,
                                              i_vec_y, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_y,
                                              i_pred_reg, i_sve_type );
 
@@ -1372,9 +1375,8 @@ void libxsmm_generator_scalefps_aarch64( libxsmm_generated_code*              io
                                              i_vec_y, i_vec_expmask, 0, i_vec_y,
                                              i_pred_reg, i_sve_type );
 
-    /* todo: we might need a scratch vector register, because it looks like there is no pure shl_i function for sve,
-     only shl_insert_immediate */
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SHL_I_V,
+    /* logical shift left should be the same as shift left */
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V,
                                              i_vec_y, LIBXSMM_AARCH64_SVE_REG_UNDEF, 23, i_vec_y,
                                              i_pred_reg, i_sve_type );
 

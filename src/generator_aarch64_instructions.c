@@ -894,6 +894,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     exit(-1);
   }
 
+  fprintf(stderr, "debug %x\n", i_vec_instr);
+
   /* this is a check whether the instruction is valid; it could removed for better performance */
   switch ( i_vec_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
@@ -901,12 +903,15 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P:
@@ -916,9 +921,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %u\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
       exit(-1);
   }
 
@@ -929,6 +935,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
   unsigned char l_is_type_specific = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE) !=  LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE; /* currently xor is the only instruction without type */
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
+  unsigned char l_is_lsl_i = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V;/* a special case for now */
 
   /* add with immediate is currently the only instruction with an immediate; may be a flag in the future */
   /* this check could be disabled for performance reasons */
@@ -959,23 +966,31 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
     /* setting Zn */
     code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_0) << 5);
-    if ( l_has_two_sources ){
-      /* setting Zm */
-      if( l_is_indexed ){
-        if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
-          code[code_head] |= (unsigned int)((0x7 & l_vec_reg_src_1) << 16);
-          code[code_head] |= (unsigned int)((0x3 & i_index) << 19);
-        } else if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_D ) {
-          code[code_head] |= (unsigned int)((0xf & l_vec_reg_src_1) << 16);
-          code[code_head] |= (unsigned int)((0x1 & i_index) << 20);
-        } /* else todo: half-type is missing */
-      } else {
-        code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 16);
+    if( l_is_lsl_i ){
+      /* left shift (immediate) has a special encoding, which was not used before */
+      unsigned int l_shifted_size = 1 << (int) i_type;/* B -> 1, H -> 10, S -> 100, D -> 1000 */
+      code[code_head] |= (unsigned int)((l_shifted_size >> 2) << 22);/* tszh in ARM docs */
+      code[code_head] |= (unsigned int)((l_shifted_size & 0x3) << 19);/* tszl in ARM docs */
+      code[code_head] |= (unsigned int)(i_index << 16); /* immediate value */
+    } else {
+      if ( l_has_two_sources ){
+        /* setting Zm */
+        if( l_is_indexed ){
+          if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
+            code[code_head] |= (unsigned int)((0x7 & l_vec_reg_src_1) << 16);
+            code[code_head] |= (unsigned int)((0x3 & i_index) << 19);
+          } else if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_D ) {
+            code[code_head] |= (unsigned int)((0xf & l_vec_reg_src_1) << 16);
+            code[code_head] |= (unsigned int)((0x1 & i_index) << 20);
+          } /* else todo: half-type is missing */
+        } else {
+          code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 16);
+        }
       }
-    }
-    if ( l_is_type_specific ) {
-      /* setting type */
-      code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
+      if ( l_is_type_specific ) {
+        /* setting type */
+        code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
+      }
     }
     if( l_is_predicated ) {
       /* setting p reg */
