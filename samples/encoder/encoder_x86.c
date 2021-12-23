@@ -673,6 +673,22 @@ void test_alu_imm_i64( char* test_name, libxsmm_generated_code* mycode, unsigned
   dump_code_buffer( mycode, test_name );
 }
 
+void test_alu_stack( char* test_name, libxsmm_generated_code* mycode, unsigned int is_pop ) {
+  unsigned int b;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (b = 0; b < 16; ++b ) {
+    if ( is_pop != 0 ) {
+      libxsmm_x86_instruction_pop_reg( mycode, b );
+    } else {
+      libxsmm_x86_instruction_push_reg( mycode, b );
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 int main( /*int argc, char* argv[]*/ ) {
   unsigned char* codebuffer = (unsigned char*)malloc( 8388608*sizeof(unsigned char) );
   libxsmm_generated_code mycode;
@@ -1543,6 +1559,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_alu_imm_i64( "alu_imm_MOVW_R_IMM16", &mycode, LIBXSMM_X86_INSTR_MOVW_R_IMM16 );
   test_alu_imm_i64( "alu_imm_MOVD_R_IMM32", &mycode, LIBXSMM_X86_INSTR_MOVD_R_IMM32 );
   test_alu_imm_i64( "alu_imm_MOVQ_R_IMM64", &mycode, LIBXSMM_X86_INSTR_MOVQ_R_IMM64 );
+
+  test_alu_stack( "alu_stack_PUSHQ", &mycode, 0 );
+  test_alu_stack( "alu_stack_POPQ", &mycode, 1 );
 
   free( codebuffer );
 
