@@ -3325,10 +3325,18 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_ORW_R_RM:
     case LIBXSMM_X86_INSTR_ORD_R_RM:
     case LIBXSMM_X86_INSTR_ORQ_R_RM:
+    case LIBXSMM_X86_INSTR_POPW:
+    case LIBXSMM_X86_INSTR_POPQ:
+    case LIBXSMM_X86_INSTR_POPW_RM:
+    case LIBXSMM_X86_INSTR_POPQ_RM:
     case LIBXSMM_X86_INSTR_POPCNT:
     case LIBXSMM_X86_INSTR_POPCNTW:
     case LIBXSMM_X86_INSTR_POPCNTD:
     case LIBXSMM_X86_INSTR_POPCNTQ:
+    case LIBXSMM_X86_INSTR_PUSHW:
+    case LIBXSMM_X86_INSTR_PUSHQ:
+    case LIBXSMM_X86_INSTR_PUSHW_RM:
+    case LIBXSMM_X86_INSTR_PUSHQ_RM:
     case LIBXSMM_X86_INSTR_SUBQ:
     case LIBXSMM_X86_INSTR_SUBB_RM_R:
     case LIBXSMM_X86_INSTR_SUBW_RM_R:
@@ -3387,7 +3395,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     }
 
     /* check that we have an UNDEF for 2 src operands */
-    if ( ((i_alu_instr >> 28) & 3) == 1 ) {
+    if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
       if ( i_gp_reg_number_src != LIBXSMM_X86_GP_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a 1 src operand instruction (%u), i_gp_reg_number_src needs to be LIBXSMM_X86_GP_REG_UNDEF!\n", i_alu_instr);
         exit(-1);
@@ -3397,8 +3405,19 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
 
     /* check if we need to flip operands */
     if ( ((i_alu_instr >> 24) & 0x08 ) == 0x08 ) {
+      unsigned int tmp = l_gp_reg_number_src;
       l_gp_reg_number_src  = l_gp_reg_number_dest;
-      l_gp_reg_number_dest = l_gp_reg_number_src;
+      l_gp_reg_number_dest = tmp;
+    }
+
+    /* check if we have op-code extension in modrm/reg */
+    if ( ((i_alu_instr >> 24) & 0x04 ) == 0x04 ) {
+      if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
+        l_gp_reg_number_dest = ((i_alu_instr >> 20) & 0x07);
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (%u) we need a single operand instruction!\n", i_alu_instr);
+        exit(-1);
+      }
     }
 
     /* generatoe the main instruction */
@@ -3429,35 +3448,9 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number ) {
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_push_reg: push instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_push_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0);
-
-    io_generated_code->code_size = i;
-    io_generated_code->sf_size += 8;
+    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_PUSHQ,
+                                     LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3480,35 +3473,9 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number ) {
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: pop instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0 + 8);
-
-    io_generated_code->code_size = i;
-    io_generated_code->sf_size -= 8;
+    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_POPQ,
+                                     LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
