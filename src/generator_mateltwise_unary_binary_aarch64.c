@@ -597,16 +597,23 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
 
   unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
-  unsigned char l_needs_sve_mask;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_vlen);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
-  LIBXSMM_UNUSED(i_mask_reg);
 
-  unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
+  unsigned char l_pred_reg = i_mask_reg;
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
   libxsmm_aarch64_asimd_tupletype l_tupletype = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
+
+  unsigned char l_op_needs_predicates =
+    i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_X2 &&
+    i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL &&
+    i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
+
+  if(l_op_needs_predicates && l_is_sve){
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
+  }
 
   for (in = 0; in < i_n_blocking; in++) {
     if ((bcast_col == 1) && (in > 0)) {
@@ -621,7 +628,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
       }
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      l_needs_sve_mask = (cur_vreg == i_start_vreg);
       switch(i_mateltwise_desc->param){
         case LIBXSMM_MELTW_TYPE_UNARY_X2:
           if( l_is_sve ) {
@@ -636,7 +642,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
         case LIBXSMM_MELTW_TYPE_UNARY_NEGATE:
           if( l_is_sve ) {
             /* fneg only exists predicated */
-            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
@@ -650,7 +655,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
             /* either create a 1-register like asimd, or add immediate value */
             /* todo test which one is faster (if it matters somehow) */
             unsigned char l_immediate_enum = 1; /* 0 = 0.5, 1 = 1.0 */
-            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P,
                                                      l_immediate_enum, 0, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
@@ -719,7 +723,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_SQRT:
           if( l_is_sve ) {
-            if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
           } else {
@@ -729,7 +732,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           }
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_EXP:
-          if( l_needs_sve_mask ) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
           libxsmm_generator_exp_ps_3dts_aarch64(
             io_generated_code,
             cur_vreg,
@@ -883,7 +885,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
   libxsmm_aarch64_asimd_tupletype l_tupletype = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
   if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, i_pred_reg, -1, 0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
   }
 
   for (in = 0; in < i_n_blocking; in++) {
@@ -1234,12 +1236,10 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int l_m_adjust_in2 = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned int offset = 0, offset2 = 0;
   unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
-  LIBXSMM_UNUSED(i_mask_reg);
 
   unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
-  /* todo if predicated & needed, define the predicate */
   unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD);
-  unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
+  unsigned char l_pred_reg = i_mask_reg;
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
 
   switch (i_mateltwise_desc->param) {
@@ -1867,8 +1867,13 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     reserved_zmms += 17;
 
     i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
-    i_micro_kernel_config->mask_hi       = reserved_zmms - 2;
-    i_micro_kernel_config->mask_lo       = reserved_zmms - 3;
+    if( l_is_sve ){
+      i_micro_kernel_config->mask_hi     = reserved_mask_regs++;
+      i_micro_kernel_config->mask_lo     = reserved_mask_regs++;
+    } else {
+      i_micro_kernel_config->mask_hi     = reserved_zmms - 2;
+      i_micro_kernel_config->mask_lo     = reserved_zmms - 3;
+    }
     i_micro_kernel_config->vec_nom       = reserved_zmms - 4;
     i_micro_kernel_config->vec_denom     = reserved_zmms - 5;
     i_micro_kernel_config->vec_c0        = reserved_zmms - 6;

@@ -907,6 +907,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P:
@@ -922,6 +923,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
@@ -933,7 +935,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
   unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
-  unsigned char l_is_type_specific = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE) !=  LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE; /* currently xor is the only instruction without type */
+  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V; /* currently xor is the only instruction without type */
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_is_lsl_i = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V;/* a special case for now */
 

@@ -364,11 +364,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 0x80
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED 0x40
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE 0x20
-#define LIBXSMM_AARCH64_INSTR_SVE_HAS_NO_TYPE 0x10
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0 2
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 1 /* all sve instructions have src0 currently */
 /* define unpredicated SVE instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03013 /* exclusive or, vectors, unpredicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ADD_V          0x04200003 /* integer add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c02 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
@@ -380,6 +379,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
 /* define predicated SVE compute instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P        0x05206083 /* mov; merge to vector registers into one, merging is decided by predicate register */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
@@ -391,6 +391,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P     0x6502a082 /* round float to integral number, towards minus infinity, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS  0x659ca082 /* convert 32 bit fp to 32 bit signed int, SS = single -> single */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004083 /* 0x10 belongs to the instruction, not to the flags! */
+                                                            /* compare greater than, store result into predicate register (dst is predicate register!) */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
