@@ -3449,39 +3449,9 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number ) {
   if ( io_generated_code->code_type > 1 ) {
-#if 1
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_PUSHQ,
                                      LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
     io_generated_code->sf_size += 8;
-#else
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_push_reg: push instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_push_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0);
-
-    io_generated_code->code_size = i;
-    io_generated_code->sf_size += 8;
-#endif
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3505,39 +3475,9 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number ) {
   if ( io_generated_code->code_type > 1 ) {
-#if 1
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_POPQ,
                                      LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
     io_generated_code->sf_size -= 8;
-#else
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: pop instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0 + 8);
-
-    io_generated_code->code_size = i;
-    io_generated_code->sf_size -= 8;
-#endif
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
