@@ -1672,40 +1672,58 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64( libxsmm_generated_code*     
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_aarch64( libxsmm_generated_code*                        io_generated_code,
-                                                        const unsigned int                             i_vec_x,
-                                                        const unsigned int                             i_vec_x2,
-                                                        const unsigned int                             i_vec_nom,
-                                                        const unsigned int                             i_vec_denom,
-                                                        const unsigned int                             i_mask_hi,
-                                                        const unsigned int                             i_mask_lo,
-                                                        const unsigned int                             i_vec_c0,
-                                                        const unsigned int                             i_vec_c1,
-                                                        const unsigned int                             i_vec_c2,
-                                                        const unsigned int                             i_vec_c3,
-                                                        const unsigned int                             i_vec_c1_d,
-                                                        const unsigned int                             i_vec_c2_d,
-                                                        const unsigned int                             i_vec_c3_d,
-                                                        const unsigned int                             i_vec_hi_bound,
-                                                        const unsigned int                             i_vec_lo_bound,
-                                                        const unsigned int                             i_vec_ones,
-                                                        const unsigned int                             i_vec_neg_ones,
-                                                        const unsigned int                             i_vec_halves,
-                                                        const unsigned int                             i_vec_tmp,
-                                                        const libxsmm_aarch64_asimd_tupletype          i_tupletype,
-                                                        const libxsmm_aarch64_sve_type                 i_sve_type,
-                                                        const unsigned char                            i_pred_reg ) {
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                             i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
-  libxsmm_generator_tanh_ps_rational_78_aarch64(
-    io_generated_code, i_vec_x, i_vec_x2, i_vec_nom, i_vec_denom,
-    i_mask_hi, i_mask_lo, i_vec_c0, i_vec_c1, i_vec_c2, i_vec_c3,
-    i_vec_c1_d, i_vec_c2_d, i_vec_c3_d, i_vec_hi_bound, i_vec_lo_bound,
-    i_vec_ones, i_vec_neg_ones, i_vec_tmp, i_tupletype, i_sve_type, i_pred_reg );
+                                                       const unsigned int                             i_vec_x,
+                                                       const unsigned int                             i_vec_x2,
+                                                       const unsigned int                             i_vec_nom,
+                                                       const unsigned int                             i_vec_denom,
+                                                       const unsigned int                             i_mask_hi,
+                                                       const unsigned int                             i_mask_lo,
+                                                       const unsigned int                             i_vec_c0,
+                                                       const unsigned int                             i_vec_c1,
+                                                       const unsigned int                             i_vec_c2,
+                                                       const unsigned int                             i_vec_c3,
+                                                       const unsigned int                             i_vec_c1_d,
+                                                       const unsigned int                             i_vec_c2_d,
+                                                       const unsigned int                             i_vec_c3_d,
+                                                       const unsigned int                             i_vec_hi_bound,
+                                                       const unsigned int                             i_vec_lo_bound,
+                                                       const unsigned int                             i_vec_ones,
+                                                       const unsigned int                             i_vec_neg_ones,
+                                                       const unsigned int                             i_vec_halves,
+                                                       const unsigned int                             i_vec_tmp,
+                                                       const libxsmm_aarch64_asimd_tupletype          i_tupletype,
+                                                       const libxsmm_aarch64_sve_type                 i_sve_type,
+                                                       const unsigned char                            i_pred_reg ) {
+  /* (tanh(x*0.5)+1)*0.5 = 1/(1+exp(-x)) */
+  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
 
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
-                                             i_vec_x, i_vec_ones, 0, i_vec_x, i_tupletype );
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                             i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_x, i_vec_halves, 0, i_vec_x, i_pred_reg, i_sve_type );
+    libxsmm_generator_tanh_ps_rational_78_aarch64(
+      io_generated_code, i_vec_x, i_vec_x2, i_vec_nom, i_vec_denom,
+      i_mask_hi, i_mask_lo, i_vec_c0, i_vec_c1, i_vec_c2, i_vec_c3,
+      i_vec_c1_d, i_vec_c2_d, i_vec_c3_d, i_vec_hi_bound, i_vec_lo_bound,
+      i_vec_ones, i_vec_neg_ones, i_vec_tmp, i_tupletype, i_sve_type, i_pred_reg );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                             i_vec_x, i_vec_ones,  0, i_vec_x, i_pred_reg, i_sve_type );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_x, i_vec_halves, 0, i_vec_x, i_pred_reg, i_sve_type );
+
+  } else {
+
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                               i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
+    libxsmm_generator_tanh_ps_rational_78_aarch64(
+      io_generated_code, i_vec_x, i_vec_x2, i_vec_nom, i_vec_denom,
+      i_mask_hi, i_mask_lo, i_vec_c0, i_vec_c1, i_vec_c2, i_vec_c3,
+      i_vec_c1_d, i_vec_c2_d, i_vec_c3_d, i_vec_hi_bound, i_vec_lo_bound,
+      i_vec_ones, i_vec_neg_ones, i_vec_tmp, i_tupletype, i_sve_type, i_pred_reg );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
+                                               i_vec_x, i_vec_ones, 0, i_vec_x, i_tupletype );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                               i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
+
+  }
 }
 
 
@@ -1720,12 +1738,8 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_cod
                                                            const unsigned long long              imm64 ) {
   if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
-    libxsmm_aarch64_instruction_sve_move(io_generated_code,
-      i_sve_type == LIBXSMM_AARCH64_SVE_TYPE_B ? LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF :
-      i_sve_type == LIBXSMM_AARCH64_SVE_TYPE_H ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
-      i_sve_type == LIBXSMM_AARCH64_SVE_TYPE_S ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF :
-                                                 LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
-      i_gp_reg_tmp, 0, 0, i_vec_reg, i_pred_reg);
+    libxsmm_aarch64_instruction_sve_compute(io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P,
+      i_gp_reg_tmp, 0, 0, i_vec_reg, i_pred_reg, i_sve_type );
   } else {
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,

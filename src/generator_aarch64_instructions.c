@@ -740,7 +740,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF:
        break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %u\n", i_vmove_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %x\n", i_vmove_instr);
       exit(-1);
   }
 
@@ -894,10 +894,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     exit(-1);
   }
 
-  fprintf(stderr, "debug %x\n", i_vec_instr);
-
   /* this is a check whether the instruction is valid; it could removed for better performance */
   switch ( i_vec_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
     case LIBXSMM_AARCH64_INSTR_SVE_ORR_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_V:
@@ -907,7 +907,6 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I:
-    case LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P:
@@ -935,7 +934,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
   unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
-  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V; /* currently xor is the only instruction without type */
+  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_is_lsl_i = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V;/* a special case for now */
 
@@ -962,8 +961,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     unsigned int code_head = io_generated_code->code_size >> 2;
     unsigned int* code     = (unsigned int *) io_generated_code->generated_code;
 
-    /* fix bits */
-    code[code_head] = (unsigned int)(0xffffff00 & i_vec_instr);
+    /* fix bits, 0x10 must not be used as flags */
+    code[code_head] = (unsigned int)(0xffffff10 & i_vec_instr);
     /* setting Zda/Zdn */
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
     /* setting Zn */

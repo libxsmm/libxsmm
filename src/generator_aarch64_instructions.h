@@ -359,6 +359,9 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF   0xa5802086
 #define LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF     0x85c04085
 #define LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF     0x85c06085
+/* define SVE move instructions, (using libxsmm_aarch64_instruction_sve_compute, because they have a libxsmm_aarch64_sve_type parameter) */
+#define LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P        0x0528a082 /* mov/cpy scalar from register and broadcast value into all active elements; predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P        0x0520c083 /* mov; merge to vector registers into one, merging is decided by predicate register */
 /* define SVE compute instructions */
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 0x80
@@ -379,7 +382,6 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
 /* define predicated SVE compute instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P        0x05206083 /* mov; merge to vector registers into one, merging is decided by predicate register */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
@@ -391,7 +393,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P     0x6502a082 /* round float to integral number, towards minus infinity, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS  0x659ca082 /* convert 32 bit fp to 32 bit signed int, SS = single -> single */
-#define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004083 /* 0x10 belongs to the instruction, not to the flags! */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004093 /* 0x10 belongs to the instruction, not to the flags! */
                                                             /* compare greater than, store result into predicate register (dst is predicate register!) */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
