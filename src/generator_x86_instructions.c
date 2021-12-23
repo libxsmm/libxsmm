@@ -346,7 +346,7 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
     /* some instructions have an OP code to encode the register and skip the modrm byte, then the B field is used */
     if ( (i_instr & 0x01000000) == 0x01000000 ) {
       /* B is used and X is unused */
-      code[code_head  ] |= (unsigned char)(( i_reg_number_reg > 7 ) ? 0x01 : 0x00);
+      code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x01 : 0x00);
     } else {
       /* R */
       code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x04 : 0x00);
