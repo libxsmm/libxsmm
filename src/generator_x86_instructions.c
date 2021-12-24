@@ -3296,7 +3296,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_CMPQ_R_RM:
     case LIBXSMM_X86_INSTR_IMUL:
     case LIBXSMM_X86_INSTR_IMULW:
-    case LIBXSMM_X86_INSTR_IMULL:
+    case LIBXSMM_X86_INSTR_IMULD:
     case LIBXSMM_X86_INSTR_IMULQ:
     case LIBXSMM_X86_INSTR_LZCNTW:
     case LIBXSMM_X86_INSTR_LZCNTD:
