@@ -1396,44 +1396,122 @@ int main( /*int argc, char* argv[]*/ ) {
   test_vex_mask_load_store( "vex_mov_VPGATHERQD_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQD_VEX );
   test_vex_mask_load_store( "vex_mov_VPGATHERQQ_VEX", &mycode, 1, LIBXSMM_X86_INSTR_VPGATHERQQ_VEX );
 
-  /* SSE only test */
-  test_rex_vload_vstore( "rex_mov_MOVAPD", &mycode, LIBXSMM_X86_INSTR_MOVAPD, 3 );
-  test_rex_vload_vstore( "rex_mov_MOVUPD", &mycode, LIBXSMM_X86_INSTR_MOVUPD, 3 );
+  /* SSE1 tests */
   test_rex_vload_vstore( "rex_mov_MOVAPS", &mycode, LIBXSMM_X86_INSTR_MOVAPS, 3 );
   test_rex_vload_vstore( "rex_mov_MOVUPS", &mycode, LIBXSMM_X86_INSTR_MOVUPS, 3 );
-  test_rex_vload_vstore( "rex_mov_MOVSD", &mycode, LIBXSMM_X86_INSTR_MOVSD, 3 );
   test_rex_vload_vstore( "rex_mov_MOVSS", &mycode, LIBXSMM_X86_INSTR_MOVSS, 3 );
-  test_rex_vload_vstore( "rex_mov_MOVDDUP", &mycode, LIBXSMM_X86_INSTR_MOVDDUP, 1 );
+  test_rex_vload_vstore( "rex_mov_MOVNTPS", &mycode, LIBXSMM_X86_INSTR_MOVNTPS, 2 );
+  test_rex_vload_vstore( "rex_mov_MOVLPS", &mycode, LIBXSMM_X86_INSTR_MOVLPS, 1 );
+  test_rex_vload_vstore( "rex_mov_MOVHPS", &mycode, LIBXSMM_X86_INSTR_MOVHPS, 1 );
 
+  test_rex_vcompute_2reg_general( "rex_reg_MOVAPS_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPS_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVAPS_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPS_ST, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVUPS_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPS_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVUPS_ST", &mycode, LIBXSMM_X86_INSTR_MOVUPS_ST, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVMSKPS", &mycode, LIBXSMM_X86_INSTR_MOVMSKPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_ANDPS", &mycode, LIBXSMM_X86_INSTR_ANDPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_ANDNPS", &mycode, LIBXSMM_X86_INSTR_ANDNPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_ORPS", &mycode, LIBXSMM_X86_INSTR_ORPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_XORPS", &mycode, LIBXSMM_X86_INSTR_XORPS, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_ADDPS", &mycode, LIBXSMM_X86_INSTR_ADDPS, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MULPS", &mycode, LIBXSMM_X86_INSTR_MULPS, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_SUBPS", &mycode, LIBXSMM_X86_INSTR_SUBPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_DIVPS", &mycode, LIBXSMM_X86_INSTR_DIVPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_RCPPS", &mycode, LIBXSMM_X86_INSTR_RCPPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_SQRTPS", &mycode, LIBXSMM_X86_INSTR_SQRTPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MAXPS", &mycode, LIBXSMM_X86_INSTR_MAXPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MINPS", &mycode, LIBXSMM_X86_INSTR_MINPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_RSQRTPS", &mycode, LIBXSMM_X86_INSTR_RSQRTPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_CMPPS", &mycode, LIBXSMM_X86_INSTR_CMPPS, 0x1 );
+  test_rex_vcompute_2reg_general( "rex_reg_SHUFPS", &mycode, LIBXSMM_X86_INSTR_SHUFPS, 0x1 );
+  test_rex_vcompute_2reg_general( "rex_reg_UNPCKHPS", &mycode, LIBXSMM_X86_INSTR_UNPCKHPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_UNPCKLPS", &mycode, LIBXSMM_X86_INSTR_UNPCKLPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVSS_LD", &mycode, LIBXSMM_X86_INSTR_MOVSS_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVSS_ST", &mycode, LIBXSMM_X86_INSTR_MOVSS_ST, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_ADDSS", &mycode, LIBXSMM_X86_INSTR_ADDSS, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MULSS", &mycode, LIBXSMM_X86_INSTR_MULSS, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_SUBSS", &mycode, LIBXSMM_X86_INSTR_SUBSS, 0x0 );
-  test_rex_vcompute_2reg_general( "rex_reg_SHUFPS", &mycode, LIBXSMM_X86_INSTR_SHUFPS, 0x1 );
+  test_rex_vcompute_2reg_general( "rex_reg_DIVSS", &mycode, LIBXSMM_X86_INSTR_DIVSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_RCPSS", &mycode, LIBXSMM_X86_INSTR_RCPSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_SQRTSS", &mycode, LIBXSMM_X86_INSTR_SQRTSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MAXSS", &mycode, LIBXSMM_X86_INSTR_MAXSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MINSS", &mycode, LIBXSMM_X86_INSTR_MINSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_RSQRTSS", &mycode, LIBXSMM_X86_INSTR_RSQRTSS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_CMPSS", &mycode, LIBXSMM_X86_INSTR_CMPSS, 0x1 );
+  test_rex_vcompute_2reg_general( "rex_reg_COMISS", &mycode, LIBXSMM_X86_INSTR_COMISS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_UCOMISS", &mycode, LIBXSMM_X86_INSTR_UCOMISS, 0x0 );
+
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPS_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPS_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPS_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPS_ST, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVUPS_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPS_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVUPS_ST", &mycode, LIBXSMM_X86_INSTR_MOVUPS_ST, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ANDPS", &mycode, LIBXSMM_X86_INSTR_ANDPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ANDNPS", &mycode, LIBXSMM_X86_INSTR_ANDNPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ORPS", &mycode, LIBXSMM_X86_INSTR_ORPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_XORPS", &mycode, LIBXSMM_X86_INSTR_XORPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDPS", &mycode, LIBXSMM_X86_INSTR_ADDPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MULPS", &mycode, LIBXSMM_X86_INSTR_MULPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_SUBPS", &mycode, LIBXSMM_X86_INSTR_SUBPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_DIVPS", &mycode, LIBXSMM_X86_INSTR_DIVPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_RCPPS", &mycode, LIBXSMM_X86_INSTR_RCPPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_SQRTPS", &mycode, LIBXSMM_X86_INSTR_SQRTPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MAXPS", &mycode, LIBXSMM_X86_INSTR_MAXPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MINPS", &mycode, LIBXSMM_X86_INSTR_MINPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_RSQRTPS", &mycode, LIBXSMM_X86_INSTR_RSQRTPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_CMPPS", &mycode, LIBXSMM_X86_INSTR_CMPPS, 0x1 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_SHUFPS", &mycode, LIBXSMM_X86_INSTR_SHUFPS, 0x1 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_UNPCKHPS", &mycode, LIBXSMM_X86_INSTR_UNPCKHPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_UNPCKLPS", &mycode, LIBXSMM_X86_INSTR_UNPCKLPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSS_LD", &mycode, LIBXSMM_X86_INSTR_MOVSS_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSS_ST", &mycode, LIBXSMM_X86_INSTR_MOVSS_ST, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDSS", &mycode, LIBXSMM_X86_INSTR_ADDSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MULSS", &mycode, LIBXSMM_X86_INSTR_MULSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_SUBSS", &mycode, LIBXSMM_X86_INSTR_SUBSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_DIVSS", &mycode, LIBXSMM_X86_INSTR_DIVSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_RCPSS", &mycode, LIBXSMM_X86_INSTR_RCPSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_SQRTSS", &mycode, LIBXSMM_X86_INSTR_SQRTSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MAXSS", &mycode, LIBXSMM_X86_INSTR_MAXSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MINSS", &mycode, LIBXSMM_X86_INSTR_MINSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_RSQRTSS", &mycode, LIBXSMM_X86_INSTR_RSQRTSS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_CMPSS", &mycode, LIBXSMM_X86_INSTR_CMPSS, 0x1 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_COMISS", &mycode, LIBXSMM_X86_INSTR_COMISS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_UCOMISS", &mycode, LIBXSMM_X86_INSTR_UCOMISS, 0x0 );
+
+  /* SSE2 tests */
+  test_rex_vload_vstore( "rex_mov_MOVAPD", &mycode, LIBXSMM_X86_INSTR_MOVAPD, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVUPD", &mycode, LIBXSMM_X86_INSTR_MOVUPD, 3 );
+  test_rex_vload_vstore( "rex_mov_MOVSD", &mycode, LIBXSMM_X86_INSTR_MOVSD, 3 );
+
+  test_rex_vcompute_2reg_general( "rex_reg_MOVAPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPD_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVAPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPD_ST, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVUPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPD_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVUPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVUPD_ST, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_ADDPD", &mycode, LIBXSMM_X86_INSTR_ADDPD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MULPD", &mycode, LIBXSMM_X86_INSTR_MULPD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_SUBPD", &mycode, LIBXSMM_X86_INSTR_SUBPD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVSD_LD", &mycode, LIBXSMM_X86_INSTR_MOVSD_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVSD_ST", &mycode, LIBXSMM_X86_INSTR_MOVSD_ST, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_ADDSD", &mycode, LIBXSMM_X86_INSTR_ADDSD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MULSD", &mycode, LIBXSMM_X86_INSTR_MULSD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_SUBSD", &mycode, LIBXSMM_X86_INSTR_SUBSD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_SHUFPD", &mycode, LIBXSMM_X86_INSTR_SHUFPD, 0x1 );
 
-  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDPS", &mycode, LIBXSMM_X86_INSTR_ADDPS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_MULPS", &mycode, LIBXSMM_X86_INSTR_MULPS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_SUBPS", &mycode, LIBXSMM_X86_INSTR_SUBPS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDSS", &mycode, LIBXSMM_X86_INSTR_ADDSS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_MULSS", &mycode, LIBXSMM_X86_INSTR_MULSS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_SUBSS", &mycode, LIBXSMM_X86_INSTR_SUBSS, 0x0 );
-  test_rex_vcompute_mem_1reg_general( "rex_mem_SHUFPS", &mycode, LIBXSMM_X86_INSTR_SHUFPS, 0x1 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPD_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPD_ST, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVUPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPD_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVUPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVUPD_ST, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_ADDPD", &mycode, LIBXSMM_X86_INSTR_ADDPD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_MULPD", &mycode, LIBXSMM_X86_INSTR_MULPD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_SUBPD", &mycode, LIBXSMM_X86_INSTR_SUBPD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSD_LD", &mycode, LIBXSMM_X86_INSTR_MOVSD_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSD_ST", &mycode, LIBXSMM_X86_INSTR_MOVSD_ST, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_ADDSD", &mycode, LIBXSMM_X86_INSTR_ADDSD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_MULSD", &mycode, LIBXSMM_X86_INSTR_MULSD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_SUBSD", &mycode, LIBXSMM_X86_INSTR_SUBSD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_SHUFPD", &mycode, LIBXSMM_X86_INSTR_SHUFPD, 0x1 );
+
+  /* SSE3/4 tests */
+  test_rex_vload_vstore( "rex_mov_MOVDDUP", &mycode, LIBXSMM_X86_INSTR_MOVDDUP, 1 );
 
   /* test VEX/GP instructions */
   test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ, 0 );
