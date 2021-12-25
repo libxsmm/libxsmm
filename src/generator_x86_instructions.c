@@ -1070,6 +1070,9 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_MOVLPD:
+    case LIBXSMM_X86_INSTR_MOVHPD:
+    case LIBXSMM_X86_INSTR_MOVNTPD:
     case LIBXSMM_X86_INSTR_MOVSD:
     case LIBXSMM_X86_INSTR_MOVSD_ST:
     case LIBXSMM_X86_INSTR_MOVDDUP:
@@ -1618,7 +1621,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_ST:
     case LIBXSMM_X86_INSTR_MOVMSKPS:
-    case LIBXSMM_X86_INSTR_MOVNTPS:
     case LIBXSMM_X86_INSTR_ANDPS:
     case LIBXSMM_X86_INSTR_ANDNPS:
     case LIBXSMM_X86_INSTR_ORPS:
@@ -1651,20 +1653,41 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_COMISS:
     case LIBXSMM_X86_INSTR_UCOMISS:
     case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_LD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_MOVMSKPD:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
     case LIBXSMM_X86_INSTR_XORPD:
     case LIBXSMM_X86_INSTR_MULPD:
     case LIBXSMM_X86_INSTR_ADDPD:
     case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD_LD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
     case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -2148,7 +2171,6 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_MOVUPS_LD:
     case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_MOVNTPS:
     case LIBXSMM_X86_INSTR_ANDPS:
     case LIBXSMM_X86_INSTR_ANDNPS:
     case LIBXSMM_X86_INSTR_ORPS:
@@ -2181,19 +2203,40 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_COMISS:
     case LIBXSMM_X86_INSTR_UCOMISS:
     case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_LD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
     case LIBXSMM_X86_INSTR_XORPD:
     case LIBXSMM_X86_INSTR_MULPD:
     case LIBXSMM_X86_INSTR_ADDPD:
     case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD_LD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
     case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -2588,7 +2631,6 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_ST:
     case LIBXSMM_X86_INSTR_MOVMSKPS:
-    case LIBXSMM_X86_INSTR_MOVNTPS:
     case LIBXSMM_X86_INSTR_ANDPS:
     case LIBXSMM_X86_INSTR_ANDNPS:
     case LIBXSMM_X86_INSTR_ORPS:
@@ -2624,16 +2666,38 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_MOVMSKPD:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
     case LIBXSMM_X86_INSTR_XORPD:
     case LIBXSMM_X86_INSTR_MULPD:
     case LIBXSMM_X86_INSTR_ADDPD:
     case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
     case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-    case LIBXSMM_X86_INSTR_MOVSD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
@@ -2802,16 +2866,37 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
     case LIBXSMM_X86_INSTR_XORPD:
     case LIBXSMM_X86_INSTR_MULPD:
     case LIBXSMM_X86_INSTR_ADDPD:
     case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
     case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-    case LIBXSMM_X86_INSTR_MOVSD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
