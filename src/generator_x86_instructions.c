@@ -1075,6 +1075,11 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_MOVNTPD:
     case LIBXSMM_X86_INSTR_MOVSD:
     case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_MOVNTDQ:
     case LIBXSMM_X86_INSTR_MOVDDUP:
       break;
     default:
@@ -1688,6 +1693,93 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_CMPSD:
     case LIBXSMM_X86_INSTR_COMISD:
     case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_PAND:
+    case LIBXSMM_X86_INSTR_PANDN:
+    case LIBXSMM_X86_INSTR_POR:
+    case LIBXSMM_X86_INSTR_PXOR:
+    case LIBXSMM_X86_INSTR_PACKSSWB:
+    case LIBXSMM_X86_INSTR_PACKSSDW:
+    case LIBXSMM_X86_INSTR_PACKUSWB:
+    case LIBXSMM_X86_INSTR_PADDB:
+    case LIBXSMM_X86_INSTR_PADDW:
+    case LIBXSMM_X86_INSTR_PADDD:
+    case LIBXSMM_X86_INSTR_PADDQ:
+    case LIBXSMM_X86_INSTR_PADDSB:
+    case LIBXSMM_X86_INSTR_PADDSW:
+    case LIBXSMM_X86_INSTR_PADDUSB:
+    case LIBXSMM_X86_INSTR_PADDUSW:
+    case LIBXSMM_X86_INSTR_PAVGB:
+    case LIBXSMM_X86_INSTR_PAVGW:
+    case LIBXSMM_X86_INSTR_PCMPEQB:
+    case LIBXSMM_X86_INSTR_PCMPEQW:
+    case LIBXSMM_X86_INSTR_PCMPEQD:
+    case LIBXSMM_X86_INSTR_PCMPGTB:
+    case LIBXSMM_X86_INSTR_PCMPGTW:
+    case LIBXSMM_X86_INSTR_PCMPGTD:
+    case LIBXSMM_X86_INSTR_PEXTRW:
+    case LIBXSMM_X86_INSTR_PINSRW:
+    case LIBXSMM_X86_INSTR_PMADDWD:
+    case LIBXSMM_X86_INSTR_PMAXSW:
+    case LIBXSMM_X86_INSTR_PMAXUB:
+    case LIBXSMM_X86_INSTR_PMINSW:
+    case LIBXSMM_X86_INSTR_PMINUB:
+    case LIBXSMM_X86_INSTR_PMOVMSKB:
+    case LIBXSMM_X86_INSTR_PMULHUW:
+    case LIBXSMM_X86_INSTR_PMULHW:
+    case LIBXSMM_X86_INSTR_PMULLW:
+    case LIBXSMM_X86_INSTR_PMULUDQ:
+    case LIBXSMM_X86_INSTR_PSADBW:
+    case LIBXSMM_X86_INSTR_PSHUFD:
+    case LIBXSMM_X86_INSTR_PSHUFHW:
+    case LIBXSMM_X86_INSTR_PSHUFLW:
+    case LIBXSMM_X86_INSTR_PSLLW:
+    case LIBXSMM_X86_INSTR_PSLLW_I:
+    case LIBXSMM_X86_INSTR_PSLLD:
+    case LIBXSMM_X86_INSTR_PSLLD_I:
+    case LIBXSMM_X86_INSTR_PSLLQ:
+    case LIBXSMM_X86_INSTR_PSLLQ_I:
+    case LIBXSMM_X86_INSTR_PSLLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRAW:
+    case LIBXSMM_X86_INSTR_PSRAW_I:
+    case LIBXSMM_X86_INSTR_PSRAD:
+    case LIBXSMM_X86_INSTR_PSRAD_I:
+    case LIBXSMM_X86_INSTR_PSRLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRLW:
+    case LIBXSMM_X86_INSTR_PSRLW_I:
+    case LIBXSMM_X86_INSTR_PSRLD:
+    case LIBXSMM_X86_INSTR_PSRLD_I:
+    case LIBXSMM_X86_INSTR_PSRLQ:
+    case LIBXSMM_X86_INSTR_PSRLQ_I:
+    case LIBXSMM_X86_INSTR_PSUBB:
+    case LIBXSMM_X86_INSTR_PSUBW:
+    case LIBXSMM_X86_INSTR_PSUBD:
+    case LIBXSMM_X86_INSTR_PSUBQ:
+    case LIBXSMM_X86_INSTR_PSUBSB:
+    case LIBXSMM_X86_INSTR_PSUBSW:
+    case LIBXSMM_X86_INSTR_PSUBUSB:
+    case LIBXSMM_X86_INSTR_PSUBUSW:
+    case LIBXSMM_X86_INSTR_PUNPCKHBW:
+    case LIBXSMM_X86_INSTR_PUNPCKHWD:
+    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLBW:
+    case LIBXSMM_X86_INSTR_PUNPCKLWD:
+    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_CVTDQ2PD:
+    case LIBXSMM_X86_INSTR_CVTDQ2PS:
+    case LIBXSMM_X86_INSTR_CVTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTPD2PS:
+    case LIBXSMM_X86_INSTR_CVTPS2DQ:
+    case LIBXSMM_X86_INSTR_CVTPS2PD:
+    case LIBXSMM_X86_INSTR_CVTSD2SS:
+    case LIBXSMM_X86_INSTR_CVTSS2SD:
+    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -1754,8 +1846,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       if ( ((i_vec_instr >> 28) & 0x3) == 0x2 ) {
         l_reg_number_src1 = i_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
+      } else if ( ((i_vec_instr >> 28) & 0x3) == 0x1 )  {
+        l_reg_number_src0 = i_reg_number_dst;
+        l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
@@ -2237,6 +2332,83 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_CMPSD:
     case LIBXSMM_X86_INSTR_COMISD:
     case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_PAND:
+    case LIBXSMM_X86_INSTR_PANDN:
+    case LIBXSMM_X86_INSTR_POR:
+    case LIBXSMM_X86_INSTR_PXOR:
+    case LIBXSMM_X86_INSTR_PACKSSWB:
+    case LIBXSMM_X86_INSTR_PACKSSDW:
+    case LIBXSMM_X86_INSTR_PACKUSWB:
+    case LIBXSMM_X86_INSTR_PADDB:
+    case LIBXSMM_X86_INSTR_PADDW:
+    case LIBXSMM_X86_INSTR_PADDD:
+    case LIBXSMM_X86_INSTR_PADDQ:
+    case LIBXSMM_X86_INSTR_PADDSB:
+    case LIBXSMM_X86_INSTR_PADDSW:
+    case LIBXSMM_X86_INSTR_PADDUSB:
+    case LIBXSMM_X86_INSTR_PADDUSW:
+    case LIBXSMM_X86_INSTR_PAVGB:
+    case LIBXSMM_X86_INSTR_PAVGW:
+    case LIBXSMM_X86_INSTR_PCMPEQB:
+    case LIBXSMM_X86_INSTR_PCMPEQW:
+    case LIBXSMM_X86_INSTR_PCMPEQD:
+    case LIBXSMM_X86_INSTR_PCMPGTB:
+    case LIBXSMM_X86_INSTR_PCMPGTW:
+    case LIBXSMM_X86_INSTR_PCMPGTD:
+    case LIBXSMM_X86_INSTR_PEXTRW:
+    case LIBXSMM_X86_INSTR_PINSRW:
+    case LIBXSMM_X86_INSTR_PMADDWD:
+    case LIBXSMM_X86_INSTR_PMAXSW:
+    case LIBXSMM_X86_INSTR_PMAXUB:
+    case LIBXSMM_X86_INSTR_PMINSW:
+    case LIBXSMM_X86_INSTR_PMINUB:
+    case LIBXSMM_X86_INSTR_PMOVMSKB:
+    case LIBXSMM_X86_INSTR_PMULHUW:
+    case LIBXSMM_X86_INSTR_PMULHW:
+    case LIBXSMM_X86_INSTR_PMULLW:
+    case LIBXSMM_X86_INSTR_PMULUDQ:
+    case LIBXSMM_X86_INSTR_PSADBW:
+    case LIBXSMM_X86_INSTR_PSHUFD:
+    case LIBXSMM_X86_INSTR_PSHUFHW:
+    case LIBXSMM_X86_INSTR_PSHUFLW:
+    case LIBXSMM_X86_INSTR_PSLLW:
+    case LIBXSMM_X86_INSTR_PSLLD:
+    case LIBXSMM_X86_INSTR_PSLLQ:
+    case LIBXSMM_X86_INSTR_PSRAW:
+    case LIBXSMM_X86_INSTR_PSRAD:
+    case LIBXSMM_X86_INSTR_PSRLW:
+    case LIBXSMM_X86_INSTR_PSRLD:
+    case LIBXSMM_X86_INSTR_PSRLQ:
+    case LIBXSMM_X86_INSTR_PSUBB:
+    case LIBXSMM_X86_INSTR_PSUBW:
+    case LIBXSMM_X86_INSTR_PSUBD:
+    case LIBXSMM_X86_INSTR_PSUBQ:
+    case LIBXSMM_X86_INSTR_PSUBSB:
+    case LIBXSMM_X86_INSTR_PSUBSW:
+    case LIBXSMM_X86_INSTR_PSUBUSB:
+    case LIBXSMM_X86_INSTR_PSUBUSW:
+    case LIBXSMM_X86_INSTR_PUNPCKHBW:
+    case LIBXSMM_X86_INSTR_PUNPCKHWD:
+    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLBW:
+    case LIBXSMM_X86_INSTR_PUNPCKLWD:
+    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_CVTDQ2PD:
+    case LIBXSMM_X86_INSTR_CVTDQ2PS:
+    case LIBXSMM_X86_INSTR_CVTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTPD2PS:
+    case LIBXSMM_X86_INSTR_CVTPS2DQ:
+    case LIBXSMM_X86_INSTR_CVTPS2PD:
+    case LIBXSMM_X86_INSTR_CVTSD2SS:
+    case LIBXSMM_X86_INSTR_CVTSS2SD:
+    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
