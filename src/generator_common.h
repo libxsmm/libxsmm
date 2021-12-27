@@ -822,6 +822,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int decompress_A;
   unsigned int vnni_cvt_output_ext_buf;
   unsigned int norm_to_normT_B_ext_buf;
+  unsigned int has_colbias_act_fused;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
