@@ -203,7 +203,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
                                                    const unsigned int          i_gp_reg_idx,
                                                    const unsigned int          i_scale,
                                                    const int                   i_displacement,
-                                                   const unsigned int          i_reg_number_dst )
+                                                   const unsigned int          i_reg_number_reg )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -212,7 +212,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
   unsigned char tbl_opext[2] = {0x38, 0x3a};
   unsigned int prefix_idx = ((i_instr & 0x00070000) >> 16) - 4;
   unsigned int opext = (i_instr & 0x00003000) >> 12;
-  unsigned int opext_idx = (i_instr & 0x00002000) >> 13;
+  unsigned int opext_idx = (i_instr & 0x00001000) >> 12;
   /* table for modrm mod settings */
   unsigned char tbl_scale[9] = { 0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
   /* storing pointer to modrm byte */
@@ -252,16 +252,22 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 
   /* encoding */
   /* A): writing prefixes */
+  /* operand size overwrite prefix */
+  if ( (i_instr & 0x0000c000) == 0x00004000 ) {
+    code[code_head++] = 0x66;
+  }
   /* instruction prefix */
   if ( prefix_idx != 0 ) {
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_dst > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) ) {
+  if ( (i_reg_number_reg > 7) || (i_gp_reg_base > 7) || ( (l_gp_reg_idx > 7) && (l_have_sib == 1) ) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
     /* R */
-    code[code_head  ]  = (unsigned char)(( i_reg_number_dst > 7 ) ? 0x04 : 0x00);
+    code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x04 : 0x00);
     /* B */
     code[code_head  ] |= (unsigned char)(( i_gp_reg_base > 7 ) ? 0x01 : 0x00);
+    /* W */
+    code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
     /* when have SIB, set Z */
     if ( l_have_sib == 1 ) {
       code[code_head  ] |= (unsigned char)(( l_gp_reg_idx > 7 ) ? 0x02 : 0x00);
@@ -283,7 +289,7 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 
   /* D) setting modrm, we are in reg-only addressing mode */
   modrm = code_head;
-  code[code_head  ]  = (unsigned char)(((unsigned char)(i_reg_number_dst << 3)) & 0x38);
+  code[code_head  ]  = (unsigned char)(((unsigned char)(i_reg_number_reg << 3)) & 0x38);
   if ( l_have_sib == 1 ) {
     code[code_head++] |= (unsigned char)0x04; /* set SIB mode*/
     /* set SIB */
@@ -314,8 +320,8 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_generated_code,
                                                const unsigned int          i_instr,
-                                               const unsigned int          i_reg_number_src,
-                                               const unsigned int          i_reg_number_srcdst )
+                                               const unsigned int          i_reg_number_rm,
+                                               const unsigned int          i_reg_number_reg )
 {
   unsigned int code_head = io_generated_code->code_size;
   unsigned char* code    = (unsigned char *)io_generated_code->generated_code;
@@ -324,20 +330,32 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   unsigned char tbl_opext[2] = {0x38, 0x3a};
   unsigned int prefix_idx = ((i_instr & 0x00070000) >> 16) - 4;
   unsigned int opext = (i_instr & 0x00003000) >> 12;
-  unsigned int opext_idx = (i_instr & 0x00002000) >> 13;
+  unsigned int opext_idx = (i_instr & 0x00001000) >> 12;
 
   /* A): writing prefixes */
-  /* instruction prefix */
+  /* operand size overwrite prefix */
+  if ( (i_instr & 0x0000c000) == 0x00004000 ) {
+    code[code_head++] = 0x66;
+  }
+   /* instruction prefix */
   if ( prefix_idx != 0 ) {
     code[code_head++] = tbl_prefix[prefix_idx];
   }
   /* REX prefix */
-  if ( (i_reg_number_src > 7) || (i_reg_number_srcdst > 7) ) {
-    /* R */
-    code[code_head  ]  = (unsigned char)(( i_reg_number_srcdst > 7 ) ? 0x04 : 0x00);
-    /* B is used and X is unused */
-    code[code_head  ] |= (unsigned char)(( i_reg_number_src > 7 ) ? 0x01 : 0x00);
-    /* start of REX prefix */
+  if ( (i_reg_number_rm > 7) || (i_reg_number_reg > 7) || ( (i_instr & 0x02000000) == 0x02000000 ) ) {
+    /* some instructions have an OP code to encode the register and skip the modrm byte, then the B field is used */
+    if ( (i_instr & 0x01000000) == 0x01000000 ) {
+      /* B is used and X is unused */
+      code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x01 : 0x00);
+    } else {
+      /* R */
+      code[code_head  ]  = (unsigned char)(( i_reg_number_reg > 7 ) ? 0x04 : 0x00);
+      /* B is used and X is unused */
+      code[code_head  ] |= (unsigned char)(( i_reg_number_rm > 7 ) ? 0x01 : 0x00);
+    }
+    /* W */
+    code[code_head  ] |= (unsigned char)(( (i_instr & 0x00800000) == 0x00800000 ) ? 0x08 : 0x00);
+     /* start of REX prefix */
     code[code_head++] |= 0x40;
   }
 
@@ -353,9 +371,14 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   code[code_head++] = (unsigned char) (i_instr & 0x000000ff);
 
   /* D) setting modrm, we are in reg-only addressing mode */
-  code[code_head  ]  = (unsigned char)0xc0;
-  code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_srcdst << 3)) & 0x38);
-  code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_src)       & 0x07);
+  /* some instructions have an OP code to encode the register and skip the modrm byte */
+  if ( (i_instr & 0x01000000) == 0x01000000 ) {
+    code[code_head-1] |= (unsigned char)(i_reg_number_reg & 0x07);
+  } else {
+    code[code_head  ]  = (unsigned char)0xc0;
+    code[code_head  ] |= (unsigned char)(((unsigned char)(i_reg_number_reg << 3)) & 0x38);
+    code[code_head++] |= (unsigned char)(((unsigned char) i_reg_number_rm)       & 0x07);
+  }
 
   io_generated_code->code_size = code_head;
 }
@@ -1024,27 +1047,56 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_VMOVQ_LD:
     case LIBXSMM_X86_INSTR_VMOVD_ST:
     case LIBXSMM_X86_INSTR_VMOVQ_ST:
-    case LIBXSMM_X86_INSTR_MOVAPD:
-    case LIBXSMM_X86_INSTR_MOVUPD:
+#if 0
+    case LIBXSMM_X86_INSTR_MOVAPS_LD:
+    case LIBXSMM_X86_INSTR_MOVUPS_LD:
+    case LIBXSMM_X86_INSTR_MOVSS_LD:
+#endif
     case LIBXSMM_X86_INSTR_MOVAPS:
     case LIBXSMM_X86_INSTR_MOVUPS:
-    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
+    case LIBXSMM_X86_INSTR_MOVUPS_ST:
+    case LIBXSMM_X86_INSTR_MOVLPS:
+    case LIBXSMM_X86_INSTR_MOVHPS:
+    case LIBXSMM_X86_INSTR_MOVNTPS:
     case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVSS_ST:
 #if 0
     case LIBXSMM_X86_INSTR_MOVAPD_LD:
     case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVUPS_LD:
     case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSS_LD:
 #endif
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPD_ST:
     case LIBXSMM_X86_INSTR_MOVUPD_ST:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
-    case LIBXSMM_X86_INSTR_MOVUPS_ST:
+    case LIBXSMM_X86_INSTR_MOVLPD:
+    case LIBXSMM_X86_INSTR_MOVHPD:
+    case LIBXSMM_X86_INSTR_MOVNTPD:
+    case LIBXSMM_X86_INSTR_MOVSD:
     case LIBXSMM_X86_INSTR_MOVSD_ST:
-    case LIBXSMM_X86_INSTR_MOVSS_ST:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_MOVNTDQ:
+    case LIBXSMM_X86_INSTR_LDDQU:
     case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_MOVSHDUP:
+    case LIBXSMM_X86_INSTR_MOVSLDUP:
+    case LIBXSMM_X86_INSTR_PMOVSXBW:
+    case LIBXSMM_X86_INSTR_PMOVSXBD:
+    case LIBXSMM_X86_INSTR_PMOVSXBQ:
+    case LIBXSMM_X86_INSTR_PMOVSXWD:
+    case LIBXSMM_X86_INSTR_PMOVSXWQ:
+    case LIBXSMM_X86_INSTR_PMOVSXDQ:
+    case LIBXSMM_X86_INSTR_PMOVZXBW:
+    case LIBXSMM_X86_INSTR_PMOVZXBD:
+    case LIBXSMM_X86_INSTR_PMOVZXBQ:
+    case LIBXSMM_X86_INSTR_PMOVZXWD:
+    case LIBXSMM_X86_INSTR_PMOVZXWQ:
+    case LIBXSMM_X86_INSTR_PMOVZXDQ:
+    case LIBXSMM_X86_INSTR_MOVNTDQA:
       break;
     default:
       fprintf(stderr, "libxsmm_instruction_vec_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -1585,36 +1637,237 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VPBROADCASTW_GPR:
     case LIBXSMM_X86_INSTR_VPBROADCASTD_GPR:
     case LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR:
-    case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
-    case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVUPD_ST:
     case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_LD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MOVMSKPS:
+    case LIBXSMM_X86_INSTR_ANDPS:
+    case LIBXSMM_X86_INSTR_ANDNPS:
+    case LIBXSMM_X86_INSTR_ORPS:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_DIVPS:
+    case LIBXSMM_X86_INSTR_RCPPS:
+    case LIBXSMM_X86_INSTR_SQRTPS:
+    case LIBXSMM_X86_INSTR_MAXPS:
+    case LIBXSMM_X86_INSTR_MINPS:
+    case LIBXSMM_X86_INSTR_RSQRTPS:
+    case LIBXSMM_X86_INSTR_CMPPS:
+    case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_UNPCKHPS:
+    case LIBXSMM_X86_INSTR_UNPCKLPS:
     case LIBXSMM_X86_INSTR_MOVSS_LD:
     case LIBXSMM_X86_INSTR_MOVSS_ST:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
-    case LIBXSMM_X86_INSTR_XORPD:
-    case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPD:
-    case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPD:
-    case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_SUBPD:
-    case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_MULSS:
-    case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_ADDSS:
-    case LIBXSMM_X86_INSTR_SUBSD:
     case LIBXSMM_X86_INSTR_SUBSS:
-    case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_DIVSS:
+    case LIBXSMM_X86_INSTR_RCPSS:
+    case LIBXSMM_X86_INSTR_SQRTSS:
+    case LIBXSMM_X86_INSTR_MAXSS:
+    case LIBXSMM_X86_INSTR_MINSS:
+    case LIBXSMM_X86_INSTR_RSQRTSS:
+    case LIBXSMM_X86_INSTR_CMPSS:
+    case LIBXSMM_X86_INSTR_COMISS:
+    case LIBXSMM_X86_INSTR_UCOMISS:
+    case LIBXSMM_X86_INSTR_MOVAPD_LD:
+    case LIBXSMM_X86_INSTR_MOVUPD_LD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
+    case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_MOVMSKPD:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
     case LIBXSMM_X86_INSTR_SHUFPD:
-       break;
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD_LD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_PAND:
+    case LIBXSMM_X86_INSTR_PANDN:
+    case LIBXSMM_X86_INSTR_POR:
+    case LIBXSMM_X86_INSTR_PXOR:
+    case LIBXSMM_X86_INSTR_PACKSSWB:
+    case LIBXSMM_X86_INSTR_PACKSSDW:
+    case LIBXSMM_X86_INSTR_PACKUSWB:
+    case LIBXSMM_X86_INSTR_PADDB:
+    case LIBXSMM_X86_INSTR_PADDW:
+    case LIBXSMM_X86_INSTR_PADDD:
+    case LIBXSMM_X86_INSTR_PADDQ:
+    case LIBXSMM_X86_INSTR_PADDSB:
+    case LIBXSMM_X86_INSTR_PADDSW:
+    case LIBXSMM_X86_INSTR_PADDUSB:
+    case LIBXSMM_X86_INSTR_PADDUSW:
+    case LIBXSMM_X86_INSTR_PAVGB:
+    case LIBXSMM_X86_INSTR_PAVGW:
+    case LIBXSMM_X86_INSTR_PCMPEQB:
+    case LIBXSMM_X86_INSTR_PCMPEQW:
+    case LIBXSMM_X86_INSTR_PCMPEQD:
+    case LIBXSMM_X86_INSTR_PCMPGTB:
+    case LIBXSMM_X86_INSTR_PCMPGTW:
+    case LIBXSMM_X86_INSTR_PCMPGTD:
+    case LIBXSMM_X86_INSTR_PEXTRW:
+    case LIBXSMM_X86_INSTR_PINSRW:
+    case LIBXSMM_X86_INSTR_PMADDWD:
+    case LIBXSMM_X86_INSTR_PMAXSW:
+    case LIBXSMM_X86_INSTR_PMAXUB:
+    case LIBXSMM_X86_INSTR_PMINSW:
+    case LIBXSMM_X86_INSTR_PMINUB:
+    case LIBXSMM_X86_INSTR_PMOVMSKB:
+    case LIBXSMM_X86_INSTR_PMULHUW:
+    case LIBXSMM_X86_INSTR_PMULHW:
+    case LIBXSMM_X86_INSTR_PMULLW:
+    case LIBXSMM_X86_INSTR_PMULUDQ:
+    case LIBXSMM_X86_INSTR_PSADBW:
+    case LIBXSMM_X86_INSTR_PSHUFD:
+    case LIBXSMM_X86_INSTR_PSHUFHW:
+    case LIBXSMM_X86_INSTR_PSHUFLW:
+    case LIBXSMM_X86_INSTR_PSLLW:
+    case LIBXSMM_X86_INSTR_PSLLW_I:
+    case LIBXSMM_X86_INSTR_PSLLD:
+    case LIBXSMM_X86_INSTR_PSLLD_I:
+    case LIBXSMM_X86_INSTR_PSLLQ:
+    case LIBXSMM_X86_INSTR_PSLLQ_I:
+    case LIBXSMM_X86_INSTR_PSLLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRAW:
+    case LIBXSMM_X86_INSTR_PSRAW_I:
+    case LIBXSMM_X86_INSTR_PSRAD:
+    case LIBXSMM_X86_INSTR_PSRAD_I:
+    case LIBXSMM_X86_INSTR_PSRLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRLW:
+    case LIBXSMM_X86_INSTR_PSRLW_I:
+    case LIBXSMM_X86_INSTR_PSRLD:
+    case LIBXSMM_X86_INSTR_PSRLD_I:
+    case LIBXSMM_X86_INSTR_PSRLQ:
+    case LIBXSMM_X86_INSTR_PSRLQ_I:
+    case LIBXSMM_X86_INSTR_PSUBB:
+    case LIBXSMM_X86_INSTR_PSUBW:
+    case LIBXSMM_X86_INSTR_PSUBD:
+    case LIBXSMM_X86_INSTR_PSUBQ:
+    case LIBXSMM_X86_INSTR_PSUBSB:
+    case LIBXSMM_X86_INSTR_PSUBSW:
+    case LIBXSMM_X86_INSTR_PSUBUSB:
+    case LIBXSMM_X86_INSTR_PSUBUSW:
+    case LIBXSMM_X86_INSTR_PUNPCKHBW:
+    case LIBXSMM_X86_INSTR_PUNPCKHWD:
+    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLBW:
+    case LIBXSMM_X86_INSTR_PUNPCKLWD:
+    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_CVTDQ2PD:
+    case LIBXSMM_X86_INSTR_CVTDQ2PS:
+    case LIBXSMM_X86_INSTR_CVTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTPD2PS:
+    case LIBXSMM_X86_INSTR_CVTPS2DQ:
+    case LIBXSMM_X86_INSTR_CVTPS2PD:
+    case LIBXSMM_X86_INSTR_CVTSD2SS:
+    case LIBXSMM_X86_INSTR_CVTSS2SD:
+    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
+    case LIBXSMM_X86_INSTR_ADDSUBPD:
+    case LIBXSMM_X86_INSTR_ADDSUBPS:
+    case LIBXSMM_X86_INSTR_HADDPD:
+    case LIBXSMM_X86_INSTR_HADDPS:
+    case LIBXSMM_X86_INSTR_HSUBPD:
+    case LIBXSMM_X86_INSTR_HSUBPS:
+    case LIBXSMM_X86_INSTR_PABSB:
+    case LIBXSMM_X86_INSTR_PABSW:
+    case LIBXSMM_X86_INSTR_PABSD:
+    case LIBXSMM_X86_INSTR_PALIGNR:
+    case LIBXSMM_X86_INSTR_PHADDW:
+    case LIBXSMM_X86_INSTR_PHADDD:
+    case LIBXSMM_X86_INSTR_PHADDSW:
+    case LIBXSMM_X86_INSTR_PHSUBW:
+    case LIBXSMM_X86_INSTR_PHSUBD:
+    case LIBXSMM_X86_INSTR_PHSUBSW:
+    case LIBXSMM_X86_INSTR_PMADDUBSW:
+    case LIBXSMM_X86_INSTR_PMULHRSW:
+    case LIBXSMM_X86_INSTR_PSHUFB:
+    case LIBXSMM_X86_INSTR_PSIGNB:
+    case LIBXSMM_X86_INSTR_PSIGNW:
+    case LIBXSMM_X86_INSTR_PSIGND:
+    case LIBXSMM_X86_INSTR_BLENDPD:
+    case LIBXSMM_X86_INSTR_BLENDPS:
+    case LIBXSMM_X86_INSTR_BLENDVPD:
+    case LIBXSMM_X86_INSTR_BLENDVPS:
+    case LIBXSMM_X86_INSTR_DPPD:
+    case LIBXSMM_X86_INSTR_DPPS:
+    case LIBXSMM_X86_INSTR_EXTRACTPS:
+    case LIBXSMM_X86_INSTR_INSERTPS:
+    case LIBXSMM_X86_INSTR_ROUNDPD:
+    case LIBXSMM_X86_INSTR_ROUNDPS:
+    case LIBXSMM_X86_INSTR_ROUNDSD:
+    case LIBXSMM_X86_INSTR_ROUNDSS:
+    case LIBXSMM_X86_INSTR_MOVNTDQA:
+    case LIBXSMM_X86_INSTR_PBLENDW:
+    case LIBXSMM_X86_INSTR_PBLENDVB:
+    case LIBXSMM_X86_INSTR_PCMPEQQ:
+    case LIBXSMM_X86_INSTR_PMOVSXBW:
+    case LIBXSMM_X86_INSTR_PMOVSXBD:
+    case LIBXSMM_X86_INSTR_PMOVSXBQ:
+    case LIBXSMM_X86_INSTR_PMOVSXWD:
+    case LIBXSMM_X86_INSTR_PMOVSXWQ:
+    case LIBXSMM_X86_INSTR_PMOVSXDQ:
+    case LIBXSMM_X86_INSTR_PMOVZXBW:
+    case LIBXSMM_X86_INSTR_PMOVZXBD:
+    case LIBXSMM_X86_INSTR_PMOVZXBQ:
+    case LIBXSMM_X86_INSTR_PMOVZXWD:
+    case LIBXSMM_X86_INSTR_PMOVZXWQ:
+    case LIBXSMM_X86_INSTR_PMOVZXDQ:
+    case LIBXSMM_X86_INSTR_PEXTRB:
+    case LIBXSMM_X86_INSTR_PEXTRD:
+    case LIBXSMM_X86_INSTR_PEXTRQ:
+    case LIBXSMM_X86_INSTR_PHMINPOSUW:
+    case LIBXSMM_X86_INSTR_PINSRB:
+    case LIBXSMM_X86_INSTR_PINSRD:
+    case LIBXSMM_X86_INSTR_PINSRQ:
+    case LIBXSMM_X86_INSTR_PMAXSB:
+    case LIBXSMM_X86_INSTR_PMAXSD:
+    case LIBXSMM_X86_INSTR_PMAXUW:
+    case LIBXSMM_X86_INSTR_PMAXUD:
+    case LIBXSMM_X86_INSTR_PMINSB:
+    case LIBXSMM_X86_INSTR_PMINSD:
+    case LIBXSMM_X86_INSTR_PMINUW:
+    case LIBXSMM_X86_INSTR_PMINUD:
+    case LIBXSMM_X86_INSTR_MPSADBW:
+    case LIBXSMM_X86_INSTR_PMULDQ:
+    case LIBXSMM_X86_INSTR_PMULLD:
+    case LIBXSMM_X86_INSTR_PACKUSDW:
+    case LIBXSMM_X86_INSTR_PTEST:
+    case LIBXSMM_X86_INSTR_PCMPGTQ:
+      break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
       exit(-1);
@@ -1680,8 +1933,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       if ( ((i_vec_instr >> 28) & 0x3) == 0x2 ) {
         l_reg_number_src1 = i_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
+      } else if ( ((i_vec_instr >> 28) & 0x3) == 0x1 )  {
+        l_reg_number_src0 = i_reg_number_dst;
+        l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
@@ -2093,35 +2349,229 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     case LIBXSMM_X86_INSTR_VMOVQ_LD:
     case LIBXSMM_X86_INSTR_VMOVD_ST:
     case LIBXSMM_X86_INSTR_VMOVQ_ST:
-    case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
-    case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVUPD_ST:
     case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_LD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
     case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_ANDPS:
+    case LIBXSMM_X86_INSTR_ANDNPS:
+    case LIBXSMM_X86_INSTR_ORPS:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_DIVPS:
+    case LIBXSMM_X86_INSTR_RCPPS:
+    case LIBXSMM_X86_INSTR_SQRTPS:
+    case LIBXSMM_X86_INSTR_MAXPS:
+    case LIBXSMM_X86_INSTR_MINPS:
+    case LIBXSMM_X86_INSTR_RSQRTPS:
+    case LIBXSMM_X86_INSTR_CMPPS:
+    case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_UNPCKHPS:
+    case LIBXSMM_X86_INSTR_UNPCKLPS:
     case LIBXSMM_X86_INSTR_MOVSS_LD:
     case LIBXSMM_X86_INSTR_MOVSS_ST:
-    case LIBXSMM_X86_INSTR_XORPD:
-    case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPD:
-    case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPD:
-    case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_SUBPD:
-    case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_MULSD:
     case LIBXSMM_X86_INSTR_MULSS:
-    case LIBXSMM_X86_INSTR_ADDSD:
     case LIBXSMM_X86_INSTR_ADDSS:
-    case LIBXSMM_X86_INSTR_SUBSD:
     case LIBXSMM_X86_INSTR_SUBSS:
-    case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_DIVSS:
+    case LIBXSMM_X86_INSTR_RCPSS:
+    case LIBXSMM_X86_INSTR_SQRTSS:
+    case LIBXSMM_X86_INSTR_MAXSS:
+    case LIBXSMM_X86_INSTR_MINSS:
+    case LIBXSMM_X86_INSTR_RSQRTSS:
+    case LIBXSMM_X86_INSTR_CMPSS:
+    case LIBXSMM_X86_INSTR_COMISS:
+    case LIBXSMM_X86_INSTR_UCOMISS:
+    case LIBXSMM_X86_INSTR_MOVAPD_LD:
+    case LIBXSMM_X86_INSTR_MOVUPD_LD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
+    case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
     case LIBXSMM_X86_INSTR_SHUFPD:
-       break;
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD_LD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_PAND:
+    case LIBXSMM_X86_INSTR_PANDN:
+    case LIBXSMM_X86_INSTR_POR:
+    case LIBXSMM_X86_INSTR_PXOR:
+    case LIBXSMM_X86_INSTR_PACKSSWB:
+    case LIBXSMM_X86_INSTR_PACKSSDW:
+    case LIBXSMM_X86_INSTR_PACKUSWB:
+    case LIBXSMM_X86_INSTR_PADDB:
+    case LIBXSMM_X86_INSTR_PADDW:
+    case LIBXSMM_X86_INSTR_PADDD:
+    case LIBXSMM_X86_INSTR_PADDQ:
+    case LIBXSMM_X86_INSTR_PADDSB:
+    case LIBXSMM_X86_INSTR_PADDSW:
+    case LIBXSMM_X86_INSTR_PADDUSB:
+    case LIBXSMM_X86_INSTR_PADDUSW:
+    case LIBXSMM_X86_INSTR_PAVGB:
+    case LIBXSMM_X86_INSTR_PAVGW:
+    case LIBXSMM_X86_INSTR_PCMPEQB:
+    case LIBXSMM_X86_INSTR_PCMPEQW:
+    case LIBXSMM_X86_INSTR_PCMPEQD:
+    case LIBXSMM_X86_INSTR_PCMPGTB:
+    case LIBXSMM_X86_INSTR_PCMPGTW:
+    case LIBXSMM_X86_INSTR_PCMPGTD:
+    case LIBXSMM_X86_INSTR_PEXTRW:
+    case LIBXSMM_X86_INSTR_PINSRW:
+    case LIBXSMM_X86_INSTR_PMADDWD:
+    case LIBXSMM_X86_INSTR_PMAXSW:
+    case LIBXSMM_X86_INSTR_PMAXUB:
+    case LIBXSMM_X86_INSTR_PMINSW:
+    case LIBXSMM_X86_INSTR_PMINUB:
+    case LIBXSMM_X86_INSTR_PMOVMSKB:
+    case LIBXSMM_X86_INSTR_PMULHUW:
+    case LIBXSMM_X86_INSTR_PMULHW:
+    case LIBXSMM_X86_INSTR_PMULLW:
+    case LIBXSMM_X86_INSTR_PMULUDQ:
+    case LIBXSMM_X86_INSTR_PSADBW:
+    case LIBXSMM_X86_INSTR_PSHUFD:
+    case LIBXSMM_X86_INSTR_PSHUFHW:
+    case LIBXSMM_X86_INSTR_PSHUFLW:
+    case LIBXSMM_X86_INSTR_PSLLW:
+    case LIBXSMM_X86_INSTR_PSLLD:
+    case LIBXSMM_X86_INSTR_PSLLQ:
+    case LIBXSMM_X86_INSTR_PSRAW:
+    case LIBXSMM_X86_INSTR_PSRAD:
+    case LIBXSMM_X86_INSTR_PSRLW:
+    case LIBXSMM_X86_INSTR_PSRLD:
+    case LIBXSMM_X86_INSTR_PSRLQ:
+    case LIBXSMM_X86_INSTR_PSUBB:
+    case LIBXSMM_X86_INSTR_PSUBW:
+    case LIBXSMM_X86_INSTR_PSUBD:
+    case LIBXSMM_X86_INSTR_PSUBQ:
+    case LIBXSMM_X86_INSTR_PSUBSB:
+    case LIBXSMM_X86_INSTR_PSUBSW:
+    case LIBXSMM_X86_INSTR_PSUBUSB:
+    case LIBXSMM_X86_INSTR_PSUBUSW:
+    case LIBXSMM_X86_INSTR_PUNPCKHBW:
+    case LIBXSMM_X86_INSTR_PUNPCKHWD:
+    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLBW:
+    case LIBXSMM_X86_INSTR_PUNPCKLWD:
+    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_CVTDQ2PD:
+    case LIBXSMM_X86_INSTR_CVTDQ2PS:
+    case LIBXSMM_X86_INSTR_CVTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTPD2PS:
+    case LIBXSMM_X86_INSTR_CVTPS2DQ:
+    case LIBXSMM_X86_INSTR_CVTPS2PD:
+    case LIBXSMM_X86_INSTR_CVTSD2SS:
+    case LIBXSMM_X86_INSTR_CVTSS2SD:
+    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
+    case LIBXSMM_X86_INSTR_ADDSUBPD:
+    case LIBXSMM_X86_INSTR_ADDSUBPS:
+    case LIBXSMM_X86_INSTR_HADDPD:
+    case LIBXSMM_X86_INSTR_HADDPS:
+    case LIBXSMM_X86_INSTR_HSUBPD:
+    case LIBXSMM_X86_INSTR_HSUBPS:
+    case LIBXSMM_X86_INSTR_LDDQU:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_MOVSHDUP:
+    case LIBXSMM_X86_INSTR_MOVSLDUP:
+    case LIBXSMM_X86_INSTR_PABSB:
+    case LIBXSMM_X86_INSTR_PABSW:
+    case LIBXSMM_X86_INSTR_PABSD:
+    case LIBXSMM_X86_INSTR_PALIGNR:
+    case LIBXSMM_X86_INSTR_PHADDW:
+    case LIBXSMM_X86_INSTR_PHADDD:
+    case LIBXSMM_X86_INSTR_PHADDSW:
+    case LIBXSMM_X86_INSTR_PHSUBW:
+    case LIBXSMM_X86_INSTR_PHSUBD:
+    case LIBXSMM_X86_INSTR_PHSUBSW:
+    case LIBXSMM_X86_INSTR_PMADDUBSW:
+    case LIBXSMM_X86_INSTR_PMULHRSW:
+    case LIBXSMM_X86_INSTR_PSHUFB:
+    case LIBXSMM_X86_INSTR_PSIGNB:
+    case LIBXSMM_X86_INSTR_PSIGNW:
+    case LIBXSMM_X86_INSTR_PSIGND:
+    case LIBXSMM_X86_INSTR_BLENDPD:
+    case LIBXSMM_X86_INSTR_BLENDPS:
+    case LIBXSMM_X86_INSTR_BLENDVPD:
+    case LIBXSMM_X86_INSTR_BLENDVPS:
+    case LIBXSMM_X86_INSTR_DPPD:
+    case LIBXSMM_X86_INSTR_DPPS:
+    case LIBXSMM_X86_INSTR_EXTRACTPS:
+    case LIBXSMM_X86_INSTR_INSERTPS:
+    case LIBXSMM_X86_INSTR_ROUNDPD:
+    case LIBXSMM_X86_INSTR_ROUNDPS:
+    case LIBXSMM_X86_INSTR_ROUNDSD:
+    case LIBXSMM_X86_INSTR_ROUNDSS:
+    case LIBXSMM_X86_INSTR_MOVNTDQA:
+    case LIBXSMM_X86_INSTR_PBLENDW:
+    case LIBXSMM_X86_INSTR_PBLENDVB:
+    case LIBXSMM_X86_INSTR_PCMPEQQ:
+    case LIBXSMM_X86_INSTR_PMOVSXBW:
+    case LIBXSMM_X86_INSTR_PMOVSXBD:
+    case LIBXSMM_X86_INSTR_PMOVSXBQ:
+    case LIBXSMM_X86_INSTR_PMOVSXWD:
+    case LIBXSMM_X86_INSTR_PMOVSXWQ:
+    case LIBXSMM_X86_INSTR_PMOVSXDQ:
+    case LIBXSMM_X86_INSTR_PMOVZXBW:
+    case LIBXSMM_X86_INSTR_PMOVZXBD:
+    case LIBXSMM_X86_INSTR_PMOVZXBQ:
+    case LIBXSMM_X86_INSTR_PMOVZXWD:
+    case LIBXSMM_X86_INSTR_PMOVZXWQ:
+    case LIBXSMM_X86_INSTR_PMOVZXDQ:
+    case LIBXSMM_X86_INSTR_PEXTRB:
+    case LIBXSMM_X86_INSTR_PEXTRD:
+    case LIBXSMM_X86_INSTR_PEXTRQ:
+    case LIBXSMM_X86_INSTR_PHMINPOSUW:
+    case LIBXSMM_X86_INSTR_PINSRB:
+    case LIBXSMM_X86_INSTR_PINSRD:
+    case LIBXSMM_X86_INSTR_PINSRQ:
+    case LIBXSMM_X86_INSTR_PMAXSB:
+    case LIBXSMM_X86_INSTR_PMAXSD:
+    case LIBXSMM_X86_INSTR_PMAXUW:
+    case LIBXSMM_X86_INSTR_PMAXUD:
+    case LIBXSMM_X86_INSTR_PMINSB:
+    case LIBXSMM_X86_INSTR_PMINSD:
+    case LIBXSMM_X86_INSTR_PMINUW:
+    case LIBXSMM_X86_INSTR_PMINUD:
+    case LIBXSMM_X86_INSTR_MPSADBW:
+    case LIBXSMM_X86_INSTR_PMULDQ:
+    case LIBXSMM_X86_INSTR_PMULLD:
+    case LIBXSMM_X86_INSTR_PACKUSDW:
+    case LIBXSMM_X86_INSTR_PTEST:
+    case LIBXSMM_X86_INSTR_PCMPGTQ:
+      break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
       exit(-1);
@@ -2510,29 +2960,78 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_VPDPWSSDS:
     case LIBXSMM_X86_INSTR_VPDPBUSD:
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
-    case LIBXSMM_X86_INSTR_MOVAPD:
-    case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPS:
     case LIBXSMM_X86_INSTR_MOVUPS:
-    case LIBXSMM_X86_INSTR_MOVSD:
-    case LIBXSMM_X86_INSTR_MOVSS:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
-    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
+    case LIBXSMM_X86_INSTR_MOVUPS_ST:
+    case LIBXSMM_X86_INSTR_MOVMSKPS:
+    case LIBXSMM_X86_INSTR_ANDPS:
+    case LIBXSMM_X86_INSTR_ANDNPS:
+    case LIBXSMM_X86_INSTR_ORPS:
     case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPD:
     case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPD:
     case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_SUBPD:
     case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_MULSD:
-    case LIBXSMM_X86_INSTR_MULSS:
-    case LIBXSMM_X86_INSTR_ADDSD:
-    case LIBXSMM_X86_INSTR_ADDSS:
-    case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_SUBSS:
+    case LIBXSMM_X86_INSTR_DIVPS:
+    case LIBXSMM_X86_INSTR_RCPPS:
+    case LIBXSMM_X86_INSTR_SQRTPS:
+    case LIBXSMM_X86_INSTR_MAXPS:
+    case LIBXSMM_X86_INSTR_MINPS:
+    case LIBXSMM_X86_INSTR_RSQRTPS:
+    case LIBXSMM_X86_INSTR_CMPPS:
     case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_UNPCKHPS:
+    case LIBXSMM_X86_INSTR_UNPCKLPS:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVSS_ST:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_SUBSS:
+    case LIBXSMM_X86_INSTR_DIVSS:
+    case LIBXSMM_X86_INSTR_RCPSS:
+    case LIBXSMM_X86_INSTR_SQRTSS:
+    case LIBXSMM_X86_INSTR_MAXSS:
+    case LIBXSMM_X86_INSTR_MINSS:
+    case LIBXSMM_X86_INSTR_RSQRTSS:
+    case LIBXSMM_X86_INSTR_CMPSS:
+    case LIBXSMM_X86_INSTR_COMISS:
+    case LIBXSMM_X86_INSTR_UCOMISS:
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
+    case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_MOVMSKPD:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
     case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
@@ -2662,29 +3161,76 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     case LIBXSMM_X86_INSTR_VPXORD:
     case LIBXSMM_X86_INSTR_VPORD:
     case LIBXSMM_X86_INSTR_VPADDD:
-    case LIBXSMM_X86_INSTR_MOVAPD:
-    case LIBXSMM_X86_INSTR_MOVUPD:
     case LIBXSMM_X86_INSTR_MOVAPS:
     case LIBXSMM_X86_INSTR_MOVUPS:
-    case LIBXSMM_X86_INSTR_MOVSD:
-    case LIBXSMM_X86_INSTR_MOVSS:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
-    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
+    case LIBXSMM_X86_INSTR_MOVUPS_ST:
+    case LIBXSMM_X86_INSTR_ANDPS:
+    case LIBXSMM_X86_INSTR_ANDNPS:
+    case LIBXSMM_X86_INSTR_ORPS:
     case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPD:
-    case LIBXSMM_X86_INSTR_MULSS:
     case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPD:
-    case LIBXSMM_X86_INSTR_ADDSS:
     case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_ADDSD:
-    case LIBXSMM_X86_INSTR_SUBPD:
-    case LIBXSMM_X86_INSTR_SUBSS:
     case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_MULSD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_DIVPS:
+    case LIBXSMM_X86_INSTR_RCPPS:
+    case LIBXSMM_X86_INSTR_SQRTPS:
+    case LIBXSMM_X86_INSTR_MAXPS:
+    case LIBXSMM_X86_INSTR_MINPS:
+    case LIBXSMM_X86_INSTR_RSQRTPS:
+    case LIBXSMM_X86_INSTR_CMPPS:
     case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_UNPCKHPS:
+    case LIBXSMM_X86_INSTR_UNPCKLPS:
+    case LIBXSMM_X86_INSTR_MOVSS:
+    case LIBXSMM_X86_INSTR_MOVSS_ST:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_SUBSS:
+    case LIBXSMM_X86_INSTR_DIVSS:
+    case LIBXSMM_X86_INSTR_RCPSS:
+    case LIBXSMM_X86_INSTR_SQRTSS:
+    case LIBXSMM_X86_INSTR_MAXSS:
+    case LIBXSMM_X86_INSTR_MINSS:
+    case LIBXSMM_X86_INSTR_RSQRTSS:
+    case LIBXSMM_X86_INSTR_CMPSS:
+    case LIBXSMM_X86_INSTR_COMISS:
+    case LIBXSMM_X86_INSTR_UCOMISS:
+    case LIBXSMM_X86_INSTR_MOVAPD:
+    case LIBXSMM_X86_INSTR_MOVUPD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
+    case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MOVSD:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
       break;
     default:
       fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
@@ -2840,118 +3386,41 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement ) {
-  /* @TODO add checks in debug mode */
+  switch ( i_prefetch_instr ) {
+    case LIBXSMM_X86_INSTR_PREFETCHT0:
+    case LIBXSMM_X86_INSTR_PREFETCHT1:
+    case LIBXSMM_X86_INSTR_PREFETCHT2:
+    case LIBXSMM_X86_INSTR_PREFETCHNTA:
+    case LIBXSMM_X86_INSTR_PREFETCHW:
+    case LIBXSMM_X86_INSTR_CLDEMOTE:
+    case LIBXSMM_X86_INSTR_CLFLUSH:
+    case LIBXSMM_X86_INSTR_CLFLUSHOPT:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: %u\n", i_prefetch_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
-    int l_instype = 0;
-    int l_forced_offset=0;
+    unsigned int l_reg_op_ext = 0;
 
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8 = ((i_gp_reg_base > 7) && (i_gp_reg_base <= 15) ? 1 : 0);
-    int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
-    int l_sse_preamble = 64;
-    int l_place1 = i + 2;
-    int l_opcode = 0;
-    int l_havepf = 0;
-
-    if ( l_maxsize - i < 20 )
-    {
-       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-       return;
-    }
-    if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) ||
-         ((int)i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) ||
-         (i_gp_reg_base > 15) ||
-         ((int)i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) )
-    {
-       fprintf(stderr, "libxsmm_instruction_prefetch: i_gp_reg_base error in libxsmm_instruction_prefetch\n");
-       exit(-1);
-    }
-    switch ( i_prefetch_instr ) {
-       case LIBXSMM_X86_INSTR_PREFETCHT0:
-          l_instype -= 8;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHT1:
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHT2:
-          l_instype += 8;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHNTA:
-          l_instype -= 16;
-          break;
-       case LIBXSMM_X86_INSTR_PREFETCHW:
-          l_opcode = -0xb;
-          l_instype -= 8;
-          break;
-       case LIBXSMM_X86_INSTR_CLDEMOTE:
-          l_opcode = 0x4;
-          l_instype -= 16;
-          break;
-       case LIBXSMM_X86_INSTR_CLFLUSHOPT:
-          l_havepf = 0x66;
-          l_opcode = 0x96;
-          l_instype += 0x28;
-          break;
-       case LIBXSMM_X86_INSTR_VPREFETCH0:
-          fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch0\n");
-          exit(-1);
-          break;
-       case LIBXSMM_X86_INSTR_VPREFETCH1:
-          fprintf(stderr, "libxsmm_instruction_prefetch: don't yet do vprefetch1\n");
-          exit(-1);
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_prefetch: Strange prefetch instruction: %u\n",i_prefetch_instr);
-          exit(-1);
-    }
-
-    if ( l_havepf ) {
-      buf[i++] = (unsigned char)l_havepf;
-      ++l_place1;
-    }
-
-    if ( l_gp8 || l_ix8 )
-    {
-      if (l_gp8) l_sse_preamble += 1;
-      if (l_ix8) l_sse_preamble += 2;
-      buf[i++] = (unsigned char)l_sse_preamble;
-      ++l_place1;
-    }
-
-    if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ){
-      LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
-      buf[i++] = 0x0f;
-      buf[i++] = (unsigned char)(0x18 + l_opcode);
-      buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
-      if ( l_regbas0 == 4 ) buf[i++]=0x24;
+    /* check if we have op-code extension in modrm/reg and correct operand count */
+    if ( ((i_prefetch_instr >> 24) & 0x04 ) == 0x04 ) {
+      if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 ) {
+        l_reg_op_ext = ((i_prefetch_instr >> 20) & 0x07);
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) must have only one operand!\n", i_prefetch_instr);
+        exit(-1);
+      }
     } else {
-      const int l_regidx = i_gp_reg_idx % 8;
-      int l_sca = 0;
-      if (i_scale == 2) l_sca = 0x40;
-      else if (i_scale == 4) l_sca = 0x80;
-      else if (i_scale == 8) l_sca = 0xc0;
-      buf[i++] = 0x0f;
-      buf[i++] = (unsigned char)(0x18 + l_opcode);
-      buf[i++] = (unsigned char)(0x14 + l_instype);
-      buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) has no op-code modrm/reg extension!\n", i_prefetch_instr);
+      exit(-1);
     }
 
-    if ( ( l_regbas0 == 5) && (i_displacement==0) )
-    {
-      /* Registers like rbp/r13 when you have a displacement of 0, we need
-       * force the single byte of zero to appear.
-       */
-      l_forced_offset = 1;
-    }
-
-    i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, l_forced_offset, 1, buf );
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+    libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
+                                                   i_prefetch_instr, i_gp_reg_base,
+                                                   i_gp_reg_idx, i_scale, i_displacement, l_reg_op_ext );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -2985,127 +3454,62 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
-                                      const unsigned int     i_alu_instr,
-                                      const unsigned int     i_gp_reg_base,
-                                      const unsigned int     i_gp_reg_idx,
-                                      const unsigned int     i_scale,
-                                      const int              i_displacement,
-                                      const unsigned int     i_gp_reg_number,
-                                      const unsigned int     i_is_store ) {
+                                      const unsigned int      i_alu_instr,
+                                      const unsigned int      i_gp_reg_base,
+                                      const unsigned int      i_gp_reg_idx,
+                                      const unsigned int      i_scale,
+                                      const int               i_displacement,
+                                      const unsigned int      i_gp_reg_number,
+                                      const unsigned int      i_is_store ) {
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_MOVQ:
+    case LIBXSMM_X86_INSTR_MOVD:
+    case LIBXSMM_X86_INSTR_MOVW:
+    case LIBXSMM_X86_INSTR_MOVB:
+#if 0
+    case LIBXSMM_X86_INSTR_MOVQ_LD:
+    case LIBXSMM_X86_INSTR_MOVD_LD:
+    case LIBXSMM_X86_INSTR_MOVW_LD:
+    case LIBXSMM_X86_INSTR_MOVB_LD:
+#endif
+    case LIBXSMM_X86_INSTR_MOVQ_ST:
+    case LIBXSMM_X86_INSTR_MOVD_ST:
+    case LIBXSMM_X86_INSTR_MOVW_ST:
+    case LIBXSMM_X86_INSTR_MOVB_ST:
+    case LIBXSMM_X86_INSTR_LEAW:
+    case LIBXSMM_X86_INSTR_LEAD:
+    case LIBXSMM_X86_INSTR_LEAQ:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
 
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 )
   {
-     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-     int i = io_generated_code->code_size;
-     int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
-     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0, l_forced_offset=0;
-     int l_force_rex = 0;
-     int l_sixsix_pre = 0;
+    unsigned int l_alu_instr = i_alu_instr;
 
-     switch ( i_alu_instr ) {
-       case LIBXSMM_X86_INSTR_MOVSLQ:
-          l_force_rex = 1;
-          if ( i_is_store == 1 )
-          {
-             fprintf(stderr, "libxsmm_instruction_alu_mem: only use LIBXSMM_X86_INSTR_MOVSLQ with loads\n");
-             exit(-1);
-          }
-          break;
-       case LIBXSMM_X86_INSTR_MOVQ:
-          l_force_rex = 1;
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          break;
-       case LIBXSMM_X86_INSTR_LEAQ:
-          l_force_rex = 1;
-          l_inst = 0x2A;
-          break;
-       case LIBXSMM_X86_INSTR_MOVL:
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          l_base = -8;
-          break;
-       case LIBXSMM_X86_INSTR_MOVW:
-          l_sixsix_pre = 1;
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x26;
-          } else {
-             l_inst = 0x28;
-          }
-          l_base = -8;
-          break;
-       case LIBXSMM_X86_INSTR_MOVB:
-          if ( i_is_store == 1 )
-          {
-             l_inst = 0x25;
-          } else {
-             l_inst = 0x27;
-          }
-          l_base = -8;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_alu_mem: Unknown instruction: %u\n", i_alu_instr);
-          exit(-1);
-     }
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVQ_LD : LIBXSMM_X86_INSTR_MOVQ_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVD:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVD_LD : LIBXSMM_X86_INSTR_MOVD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVW:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVW_LD : LIBXSMM_X86_INSTR_MOVW_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVB:
+        l_alu_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVB_LD : LIBXSMM_X86_INSTR_MOVB_ST;
+        break;
+    }
 
-     l_regbas0 = i_gp_reg_base % 8;
-     l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-     l_regnum  = i_gp_reg_number % 8;
-     l_nx8     = ((i_gp_reg_number>7)&&(i_gp_reg_number<=15)?1:0);
-
-     if (i_scale==2) l_sca=0x40;
-     else if (i_scale==4) l_sca=0x80;
-     else if (i_scale==8) l_sca=0xc0;
-
-     if ( l_sixsix_pre != 0 ) {
-       buf[i++] = (unsigned char)0x66;
-       l_place2++;
-     }
-
-     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
-     {
-         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 )
-         {
-            buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_nx8 * 0x04);
-         } else {
-            l_place2 = i+1;
-         }
-         buf[i++] = (unsigned char)(0x63 + l_inst);
-         buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regnum * 0x08);
-         if ( l_regbas0 == 4 ) /* rsp or r12 */
-         {
-            buf[i++] = 0x24;
-         }
-     } else {
-         int l_regidx  = i_gp_reg_idx  % 8;
-         int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
-         if ( ( l_force_rex != 0 ) || l_gp8 || l_nx8 || l_ix8 )
-         {
-            buf[i++] = (unsigned char)(0x48 + l_base + l_gp8 * 0x01 + l_ix8 * 0x02 + l_nx8 * 0x04);
-         } else {
-            l_place2 = i+1;
-         }
-         buf[i++] = (unsigned char)(0x63 + l_inst);
-         buf[i++] = (unsigned char)(0x04 + l_regnum * 0x08);
-         buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
-     }
-     if ( (l_regbas0 == 5) && (i_displacement==0) )
-     {
-         l_forced_offset = 1;
-     }
-     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, l_forced_offset, 1, buf );
-
-     io_generated_code->code_size = i;
+    libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
+                                                   l_alu_instr, i_gp_reg_base,
+                                                   i_gp_reg_idx, i_scale, i_displacement, i_gp_reg_number );
+  } else {
+    /* @TODO */
   }
 }
 
@@ -3115,133 +3519,136 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number,
                                       const long long         i_immediate ) {
-  /* @TODO add checks in debug mode */
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_ADDQ:
+    case LIBXSMM_X86_INSTR_ADDB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_ADDW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_ADDD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ADDQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ANDQ:
+    case LIBXSMM_X86_INSTR_ANDB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_ANDW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_ANDD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ANDQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_CMPQ:
+    case LIBXSMM_X86_INSTR_CMPB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_CMPW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_CMPD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_CMPQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_IMUL:
+    case LIBXSMM_X86_INSTR_IMULW_IMM16:
+    case LIBXSMM_X86_INSTR_IMULD_IMM32:
+    case LIBXSMM_X86_INSTR_IMULQ_IMM32:
+    case LIBXSMM_X86_INSTR_MOVQ:
+    case LIBXSMM_X86_INSTR_MOVB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_MOVW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_MOVD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_MOVQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ORB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_ORW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_ORD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_ORQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_SHLQ:
+    case LIBXSMM_X86_INSTR_SHLB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHLW_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHLD_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHLQ_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SARQ:
+    case LIBXSMM_X86_INSTR_SARB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SARW_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SARD_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SARQ_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHRQ:
+    case LIBXSMM_X86_INSTR_SHRB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHRW_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHRD_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SHRQ_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SUBQ:
+    case LIBXSMM_X86_INSTR_SUBB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_SUBW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_SUBD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_SUBQ_RM_IMM32:
+    case LIBXSMM_X86_INSTR_XORB_RM_IMM8:
+    case LIBXSMM_X86_INSTR_XORW_RM_IMM16:
+    case LIBXSMM_X86_INSTR_XORD_RM_IMM32:
+    case LIBXSMM_X86_INSTR_XORQ_RM_IMM32:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    int l_first = 0;
-    int l_second = 0;
-    int l_third = 0;
-    int l_reg0 = 0;
-    int l_extra = 0;
-    int l_unsignedadj = 0;
-    int l_r8adjment = 1;
-    int l_reg0multiplier = 1;
+    unsigned int l_reg_number_dst = 0;
+    unsigned int l_reg_number_src0 = i_gp_reg_number;
+    unsigned int l_alu_instr = i_alu_instr;
 
-    if (NULL == buf) {
-      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
-      return;
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_ADDQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_ADDQ_RM_IMM32;
+        break;
+      case LIBXSMM_X86_INSTR_ANDQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_ANDQ_RM_IMM32;
+        break;
+      case LIBXSMM_X86_INSTR_CMPQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_CMPQ_RM_IMM32;
+        break;
+      case LIBXSMM_X86_INSTR_IMUL:
+        l_alu_instr = LIBXSMM_X86_INSTR_IMULQ_IMM32;
+        break;
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_MOVQ_RM_IMM32;
+        break;
+      case LIBXSMM_X86_INSTR_SARQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_SARQ_RM_IMM8;
+        break;
+      case LIBXSMM_X86_INSTR_SHLQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_SHLQ_RM_IMM8;
+        break;
+      case LIBXSMM_X86_INSTR_SHRQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_SHRQ_RM_IMM8;
+        break;
+      case LIBXSMM_X86_INSTR_SUBQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_SUBQ_RM_IMM32;
+        break;
     }
 
-    switch ( i_alu_instr ) {
-       case LIBXSMM_X86_INSTR_ADDQ:
-          break;
-       case LIBXSMM_X86_INSTR_SALQ:
-          if ( (i_immediate < 0) || (i_immediate > 127) )
-          {
-             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
-                              "because other immediates are signed but salq is unsigned. So this code\n"
-                              "should be changed if you want an immediate in this range.\n");
-             exit(-1);
-          }
-          l_unsignedadj = 0x3e;
-          l_third += 0x20;
-          break;
-       case LIBXSMM_X86_INSTR_SHLQ:
-          if ( (i_immediate < 0) || (i_immediate > 127) )
-          {
-             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
-                              "because other immediates are signed but shlq is unsigned. So this code\n"
-                              "should be changed if you want an immediate in this range.\n");
-             exit(-1);
-          }
-          l_unsignedadj = 0x3e;
-          l_third += 0x20;
-          break;
-       case LIBXSMM_X86_INSTR_SARQ:
-          if ( (i_immediate < 0) || (i_immediate > 127) )
-          {
-             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
-                              "because other immediates are signed but sarq is unsigned. So this code\n"
-                              "should be changed if you want an immediate in this range.\n");
-             exit(-1);
-          }
-          l_unsignedadj = 0x3e;
-          l_third += 0x38;
-          break;
-       case LIBXSMM_X86_INSTR_SHRQ:
-          if ( (i_immediate < 0) || (i_immediate > 127) )
-          {
-             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
-                              "because other immediates are signed but shrq is unsigned. So this code\n"
-                              "should be changed if you want an immediate in this range.\n");
-             exit(-1);
-          }
-          l_unsignedadj = 0x3e;
-          l_third += 0x28;
-          break;
-       case LIBXSMM_X86_INSTR_IMUL:
-/* Note: we assume that if you call imul in alu_imm you mean: something like imul $3,%rax,%rax. That is, we assume that i_gp_reg_number is used twice */
-          l_unsignedadj = -0x18;
-          l_extra -= 0x18;
-          l_r8adjment = 0x05;
-          l_reg0multiplier = 9; /* We are adjusting by 1 and 8 at the same time */
-          break;
-       case LIBXSMM_X86_INSTR_SUBQ:
-          l_second += 0x28;
-          l_third += 0x28;
-          break;
-       case LIBXSMM_X86_INSTR_ANDQ:
-          l_second += 0x20;
-          l_third += 0x20;
-          break;
-       case LIBXSMM_X86_INSTR_MOVQ:
-          l_second += 0x46;
-          l_extra += 0x46;
-          break;
-       case LIBXSMM_X86_INSTR_CMPQ:
-          l_second += 0x38;
-          l_third += 0x38;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_alu_imm: Unknown instruction type: %u\n",i_alu_instr);
-          exit(-1);
+    /* check if we have op-code extension in modrm/reg */
+    if ( ((l_alu_instr >> 24) & 0x04 ) == 0x04 ) {
+      if ( ((l_alu_instr >> 28) & 0x3) == 0x1 ) {
+        l_reg_number_dst = ((l_alu_instr >> 20) & 0x07);
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_alu_imm: In case of a op-code modrm/reg extended instruction (%u) only one register operand is allowed!\n", l_alu_instr);
+        exit(-1);
+      }
     }
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <= 15) )
-    {
-       l_first += l_r8adjment;
-       l_reg0 = i_gp_reg_number - 8;
+
+    /* @TODO fix! for IMUL we have a ternay instrucation */
+    if ( l_alu_instr == LIBXSMM_X86_INSTR_IMULW_IMM16 ||
+         l_alu_instr == LIBXSMM_X86_INSTR_IMULD_IMM32 ||
+         l_alu_instr == LIBXSMM_X86_INSTR_IMULQ_IMM32 ) {
+      l_reg_number_dst = i_gp_reg_number;
+    }
+
+    /* generatoe the main instruction */
+    libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
+            l_reg_number_src0, l_reg_number_dst );
+
+    /* copy the immediate after the insturuction */
+    if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
+      unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+      unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
+      unsigned int l_immediate = (unsigned int)i_immediate;
+      unsigned int l_i = 0;
+      for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
+        code[io_generated_code->code_size++] = (unsigned char)l_immediate;
+        l_immediate = l_immediate >> 8;
+      }
     } else {
-       l_reg0 = i_gp_reg_number;
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
+      exit(-1);
     }
-    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
-         (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
-    {
-       /* one byte (even for 0!) - but never for MOVQ */
-       buf[i++] = (unsigned char)(0x48 + l_first);
-       buf[i++] = (unsigned char)(0x83 + l_unsignedadj);
-       buf[i++] = (unsigned char)(0xc0 + l_third + l_reg0*l_reg0multiplier);
-       buf[i++] = (unsigned char)(i_immediate);
-    } else {
-       /* four bytes */
-       unsigned char *l_cptr = (unsigned char *) &i_immediate;
-       buf[i++] = (unsigned char)(0x48 + l_first);
-       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ANDQ)) )
-       {
-          /* special case for %rax! */
-          buf[i++] = (unsigned char)(0x05 + l_second);
-       } else {
-          buf[i++] = (unsigned char)(0x81 + l_extra);
-          buf[i++] = (unsigned char)(0xc0 + l_third + l_reg0*l_reg0multiplier);
-       }
-       buf[i++] = l_cptr[0];
-       buf[i++] = l_cptr[1];
-       buf[i++] = l_cptr[2];
-       buf[i++] = l_cptr[3];
-    }
-
-    io_generated_code->code_size = i;
-    /* *loc = i; */
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3261,48 +3668,52 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
                                           const size_t            i_immediate ) {
-  /* @TODO add checks in debug mode */
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_MOVQ:
+    case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
+    case LIBXSMM_X86_INSTR_MOVW_R_IMM16:
+    case LIBXSMM_X86_INSTR_MOVD_R_IMM32:
+    case LIBXSMM_X86_INSTR_MOVQ_R_IMM64:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    unsigned char *l_cptr = (unsigned char *) &i_immediate;
-    int i = io_generated_code->code_size;
-    int l_first = 0;
-    int l_reg0 = 0;
+    unsigned int l_alu_instr = i_alu_instr;
 
-    if ( i_alu_instr != LIBXSMM_X86_INSTR_MOVQ )
-    {
-       fprintf(stderr,"How are you doing a 64-byte immediate on instruction: %u\n",i_alu_instr);
-       exit(-1);
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_MOVQ_R_IMM64;
+        break;
     }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 )
-    {
-       fprintf(stderr,"libxsmm_x86_instruction_alu_imm_i64 strange gp reg=%u\n",i_gp_reg_number);
-       exit(-1);
-    }
-    l_reg0 = i_gp_reg_number;
-    if ( i_gp_reg_number >= 8 )
-    {
-       l_first = 1;
-       l_reg0 -= 8;
-    }
-    buf[i++]= (unsigned char)(0x48 + l_first);
-    buf[i++]= (unsigned char)(0xb8 + l_reg0);
-    buf[i++] = l_cptr[0];
-    buf[i++] = l_cptr[1];
-    buf[i++] = l_cptr[2];
-    buf[i++] = l_cptr[3];
-    buf[i++] = l_cptr[4];
-    buf[i++] = l_cptr[5];
-    buf[i++] = l_cptr[6];
-    buf[i++] = l_cptr[7];
 
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+    /* generatoe the main instruction */
+    libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
+            0, i_gp_reg_number );
+
+    /* copy the immediate after the insturuction */
+    if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
+      unsigned char* code = (unsigned char *) io_generated_code->generated_code;
+      unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
+      unsigned int l_immediate = (unsigned int)i_immediate;
+      unsigned int l_i = 0;
+      for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
+        code[io_generated_code->code_size++] = (unsigned char)l_immediate;
+        l_immediate = l_immediate >> 8;
+      }
+    } else {
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
+      exit(-1);
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3330,199 +3741,211 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number_src,
                                       const unsigned int      i_gp_reg_number_dest) {
-  /* @TODO add checks in debug mode */
+  switch ( i_alu_instr ) {
+    case LIBXSMM_X86_INSTR_ADDQ:
+    case LIBXSMM_X86_INSTR_ADDB_RM_R:
+    case LIBXSMM_X86_INSTR_ADDW_RM_R:
+    case LIBXSMM_X86_INSTR_ADDD_RM_R:
+    case LIBXSMM_X86_INSTR_ADDQ_RM_R:
+    case LIBXSMM_X86_INSTR_ADDB_R_RM:
+    case LIBXSMM_X86_INSTR_ADDW_R_RM:
+    case LIBXSMM_X86_INSTR_ADDD_R_RM:
+    case LIBXSMM_X86_INSTR_ADDQ_R_RM:
+    case LIBXSMM_X86_INSTR_ANDQ:
+    case LIBXSMM_X86_INSTR_ANDB_RM_R:
+    case LIBXSMM_X86_INSTR_ANDW_RM_R:
+    case LIBXSMM_X86_INSTR_ANDD_RM_R:
+    case LIBXSMM_X86_INSTR_ANDQ_RM_R:
+    case LIBXSMM_X86_INSTR_ANDB_R_RM:
+    case LIBXSMM_X86_INSTR_ANDW_R_RM:
+    case LIBXSMM_X86_INSTR_ANDD_R_RM:
+    case LIBXSMM_X86_INSTR_ANDQ_R_RM:
+    case LIBXSMM_X86_INSTR_CMOVAW:
+    case LIBXSMM_X86_INSTR_CMOVAD:
+    case LIBXSMM_X86_INSTR_CMOVAQ:
+    case LIBXSMM_X86_INSTR_CMOVAEW:
+    case LIBXSMM_X86_INSTR_CMOVAED:
+    case LIBXSMM_X86_INSTR_CMOVAEQ:
+    case LIBXSMM_X86_INSTR_CMOVBW:
+    case LIBXSMM_X86_INSTR_CMOVBD:
+    case LIBXSMM_X86_INSTR_CMOVBQ:
+    case LIBXSMM_X86_INSTR_CMOVBEW:
+    case LIBXSMM_X86_INSTR_CMOVBED:
+    case LIBXSMM_X86_INSTR_CMOVBEQ:
+    case LIBXSMM_X86_INSTR_CMOVEW:
+    case LIBXSMM_X86_INSTR_CMOVED:
+    case LIBXSMM_X86_INSTR_CMOVEQ:
+    case LIBXSMM_X86_INSTR_CMOVGW:
+    case LIBXSMM_X86_INSTR_CMOVGD:
+    case LIBXSMM_X86_INSTR_CMOVGQ:
+    case LIBXSMM_X86_INSTR_CMOVGEW:
+    case LIBXSMM_X86_INSTR_CMOVGED:
+    case LIBXSMM_X86_INSTR_CMOVGEQ:
+    case LIBXSMM_X86_INSTR_CMOVLW:
+    case LIBXSMM_X86_INSTR_CMOVLD:
+    case LIBXSMM_X86_INSTR_CMOVLQ:
+    case LIBXSMM_X86_INSTR_CMOVLEW:
+    case LIBXSMM_X86_INSTR_CMOVLED:
+    case LIBXSMM_X86_INSTR_CMOVLEQ:
+    case LIBXSMM_X86_INSTR_CMOVNEW:
+    case LIBXSMM_X86_INSTR_CMOVNED:
+    case LIBXSMM_X86_INSTR_CMOVNEQ:
+    case LIBXSMM_X86_INSTR_CMOVNOW:
+    case LIBXSMM_X86_INSTR_CMOVNOD:
+    case LIBXSMM_X86_INSTR_CMOVNOQ:
+    case LIBXSMM_X86_INSTR_CMOVNPW:
+    case LIBXSMM_X86_INSTR_CMOVNPD:
+    case LIBXSMM_X86_INSTR_CMOVNPQ:
+    case LIBXSMM_X86_INSTR_CMOVNSW:
+    case LIBXSMM_X86_INSTR_CMOVNSD:
+    case LIBXSMM_X86_INSTR_CMOVNSQ:
+    case LIBXSMM_X86_INSTR_CMOVOW:
+    case LIBXSMM_X86_INSTR_CMOVOD:
+    case LIBXSMM_X86_INSTR_CMOVOQ:
+    case LIBXSMM_X86_INSTR_CMOVPW:
+    case LIBXSMM_X86_INSTR_CMOVPD:
+    case LIBXSMM_X86_INSTR_CMOVPQ:
+    case LIBXSMM_X86_INSTR_CMOVSW:
+    case LIBXSMM_X86_INSTR_CMOVSD:
+    case LIBXSMM_X86_INSTR_CMOVSQ:
+    case LIBXSMM_X86_INSTR_CMPQ:
+    case LIBXSMM_X86_INSTR_CMPB_RM_R:
+    case LIBXSMM_X86_INSTR_CMPW_RM_R:
+    case LIBXSMM_X86_INSTR_CMPD_RM_R:
+    case LIBXSMM_X86_INSTR_CMPQ_RM_R:
+    case LIBXSMM_X86_INSTR_CMPB_R_RM:
+    case LIBXSMM_X86_INSTR_CMPW_R_RM:
+    case LIBXSMM_X86_INSTR_CMPD_R_RM:
+    case LIBXSMM_X86_INSTR_CMPQ_R_RM:
+    case LIBXSMM_X86_INSTR_IMUL:
+    case LIBXSMM_X86_INSTR_IMULW:
+    case LIBXSMM_X86_INSTR_IMULD:
+    case LIBXSMM_X86_INSTR_IMULQ:
+    case LIBXSMM_X86_INSTR_LZCNTW:
+    case LIBXSMM_X86_INSTR_LZCNTD:
+    case LIBXSMM_X86_INSTR_LZCNTQ:
+    case LIBXSMM_X86_INSTR_MOVB_LD:
+    case LIBXSMM_X86_INSTR_MOVW_LD:
+    case LIBXSMM_X86_INSTR_MOVD_LD:
+    case LIBXSMM_X86_INSTR_MOVQ_LD:
+    case LIBXSMM_X86_INSTR_MOVB_ST:
+    case LIBXSMM_X86_INSTR_MOVW_ST:
+    case LIBXSMM_X86_INSTR_MOVD_ST:
+    case LIBXSMM_X86_INSTR_MOVQ_ST:
+    case LIBXSMM_X86_INSTR_NEGB:
+    case LIBXSMM_X86_INSTR_NEGW:
+    case LIBXSMM_X86_INSTR_NEGD:
+    case LIBXSMM_X86_INSTR_NEGQ:
+    case LIBXSMM_X86_INSTR_NOTB:
+    case LIBXSMM_X86_INSTR_NOTW:
+    case LIBXSMM_X86_INSTR_NOTD:
+    case LIBXSMM_X86_INSTR_NOTQ:
+    case LIBXSMM_X86_INSTR_ORB_RM_R:
+    case LIBXSMM_X86_INSTR_ORW_RM_R:
+    case LIBXSMM_X86_INSTR_ORD_RM_R:
+    case LIBXSMM_X86_INSTR_ORQ_RM_R:
+    case LIBXSMM_X86_INSTR_ORB_R_RM:
+    case LIBXSMM_X86_INSTR_ORW_R_RM:
+    case LIBXSMM_X86_INSTR_ORD_R_RM:
+    case LIBXSMM_X86_INSTR_ORQ_R_RM:
+    case LIBXSMM_X86_INSTR_POPW:
+    case LIBXSMM_X86_INSTR_POPQ:
+    case LIBXSMM_X86_INSTR_POPW_RM:
+    case LIBXSMM_X86_INSTR_POPQ_RM:
+    case LIBXSMM_X86_INSTR_POPCNT:
+    case LIBXSMM_X86_INSTR_POPCNTW:
+    case LIBXSMM_X86_INSTR_POPCNTD:
+    case LIBXSMM_X86_INSTR_POPCNTQ:
+    case LIBXSMM_X86_INSTR_PUSHW:
+    case LIBXSMM_X86_INSTR_PUSHQ:
+    case LIBXSMM_X86_INSTR_PUSHW_RM:
+    case LIBXSMM_X86_INSTR_PUSHQ_RM:
+    case LIBXSMM_X86_INSTR_SUBQ:
+    case LIBXSMM_X86_INSTR_SUBB_RM_R:
+    case LIBXSMM_X86_INSTR_SUBW_RM_R:
+    case LIBXSMM_X86_INSTR_SUBD_RM_R:
+    case LIBXSMM_X86_INSTR_SUBQ_RM_R:
+    case LIBXSMM_X86_INSTR_SUBB_R_RM:
+    case LIBXSMM_X86_INSTR_SUBW_R_RM:
+    case LIBXSMM_X86_INSTR_SUBD_R_RM:
+    case LIBXSMM_X86_INSTR_SUBQ_R_RM:
+    case LIBXSMM_X86_INSTR_TZCNT:
+    case LIBXSMM_X86_INSTR_TZCNTW:
+    case LIBXSMM_X86_INSTR_TZCNTD:
+    case LIBXSMM_X86_INSTR_TZCNTQ:
+    case LIBXSMM_X86_INSTR_XORB_RM_R:
+    case LIBXSMM_X86_INSTR_XORW_RM_R:
+    case LIBXSMM_X86_INSTR_XORD_RM_R:
+    case LIBXSMM_X86_INSTR_XORQ_RM_R:
+    case LIBXSMM_X86_INSTR_XORB_R_RM:
+    case LIBXSMM_X86_INSTR_XORW_R_RM:
+    case LIBXSMM_X86_INSTR_XORD_R_RM:
+    case LIBXSMM_X86_INSTR_XORQ_R_RM:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: %u\n", i_alu_instr);
+      exit(-1);
+      break;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    /* unsigned int l_maxsize = io_generated_code->buffer_size;*/
-    /* unsigned int l_maxsize = 1024; */
+    unsigned int l_alu_instr = i_alu_instr;
+    unsigned int l_gp_reg_number_src = i_gp_reg_number_src;
+    unsigned int l_gp_reg_number_dest = i_gp_reg_number_dest;
 
-    int l_second = 0;
-    int l_third = 0;
-    int l_extra_byte = 0;
-    int l_reg1 = i_gp_reg_number_src;
-    int l_reg0 = i_gp_reg_number_dest;
-
-    switch ( i_alu_instr ) {
-       case LIBXSMM_X86_INSTR_ADDQ:
-          break;
-       case LIBXSMM_X86_INSTR_SUBQ:
-          l_second += 0x28;
-          break;
-       case LIBXSMM_X86_INSTR_MOVQ:
-          l_second += 0x88;
-          break;
-       case LIBXSMM_X86_INSTR_CMPQ:
-          l_second += 0x38;
-          break;
-       case LIBXSMM_X86_INSTR_ANDQ:
-          l_second += 0x20;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVA:
-       case LIBXSMM_X86_INSTR_CMOVNBE:
-          l_second += 0x0e;
-          l_third += 0x03;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVAE:
-       case LIBXSMM_X86_INSTR_CMOVNB:
-       case LIBXSMM_X86_INSTR_CMOVNC:
-          l_second += 0x0e;
-          l_third -= 0x01;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVB:
-       case LIBXSMM_X86_INSTR_CMOVC:
-       case LIBXSMM_X86_INSTR_CMOVNAE:
-          l_second += 0x0e;
-          l_third -= 0x02;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVBE:
-       case LIBXSMM_X86_INSTR_CMOVNA:
-          l_second += 0x0e;
-          l_third += 0x02;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVE:
-       case LIBXSMM_X86_INSTR_CMOVZ:
-          l_second += 0x0e;
-          l_third += 0x00;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVG:
-       case LIBXSMM_X86_INSTR_CMOVNLE:
-          l_second += 0x0e;
-          l_third += 0x0b;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVGE:
-       case LIBXSMM_X86_INSTR_CMOVNL:
-          l_second += 0x0e;
-          l_third += 0x09;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVL:
-       case LIBXSMM_X86_INSTR_CMOVNGE:
-          l_second += 0x0e;
-          l_third += 0x08;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVLE:
-       case LIBXSMM_X86_INSTR_CMOVNG:
-          l_second += 0x0e;
-          l_third += 0x0a;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVNE:
-       case LIBXSMM_X86_INSTR_CMOVNZ:
-          l_second += 0x0e;
-          l_third += 0x01;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVNO:
-          l_second += 0x0e;
-          l_third -= 0x03;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-        case LIBXSMM_X86_INSTR_CMOVNP:
-        case LIBXSMM_X86_INSTR_CMOVPO:
-          l_second += 0x0e;
-          l_third += 0x07;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-        case LIBXSMM_X86_INSTR_CMOVNS:
-          l_second += 0x0e;
-          l_third += 0x05;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVO:
-          l_second += 0x0e;
-          l_third -= 0x04;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVP:
-       case LIBXSMM_X86_INSTR_CMOVPE:
-          l_second += 0x0e;
-          l_third += 0x06;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_CMOVS:
-          l_second += 0x0e;
-          l_third += 0x04;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_POPCNT:
-          l_second += 0x0e;
-          l_third += 0x74;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       case LIBXSMM_X86_INSTR_TZCNT:
-          l_second += 0x0e;
-          l_third += 0x78;
-          l_extra_byte = 1;
-          l_reg1 = i_gp_reg_number_dest;
-          l_reg0 = i_gp_reg_number_src;
-          break;
-       default:
-          fprintf(stderr, "libxsmm_instruction_alu_reg: Not sure what instruction you have in mind: %u\n",i_alu_instr);
-          exit(-1);
+    switch (i_alu_instr) {
+      case LIBXSMM_X86_INSTR_ADDQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_ADDQ_R_RM;
+        break;
+      case LIBXSMM_X86_INSTR_SUBQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_SUBQ_R_RM;
+        break;
+      case LIBXSMM_X86_INSTR_MOVQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_MOVQ_LD;
+        break;
+      case LIBXSMM_X86_INSTR_CMPQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_CMPQ_R_RM;
+        break;
+      case LIBXSMM_X86_INSTR_ANDQ:
+        l_alu_instr = LIBXSMM_X86_INSTR_ANDQ_R_RM;
+        break;
+      case LIBXSMM_X86_INSTR_POPCNT:
+        l_alu_instr = LIBXSMM_X86_INSTR_POPCNTQ;
+        break;
+      case LIBXSMM_X86_INSTR_TZCNT:
+        l_alu_instr = LIBXSMM_X86_INSTR_TZCNTQ;
+        break;
     }
-    {/* open new scope for additional variable declarations (C89) */
-      int l_regbas0 = l_reg0 % 8;
-      int l_gp8     = ((l_reg0 > 7)&&(l_reg0 <=15)?1:0);
-      int l_regnum  = l_reg1 % 8;
-      int l_nx8     = ((l_reg1 >7)&&(l_reg1<=15)?1:0);
 
-      if ( (i_alu_instr == LIBXSMM_X86_INSTR_POPCNT) || (i_alu_instr == LIBXSMM_X86_INSTR_TZCNT) ) {
-         buf[i++] = (unsigned char)(0xf3);
+    /* check that we have an UNDEF for 2 src operands */
+    if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
+      if ( i_gp_reg_number_src != LIBXSMM_X86_GP_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a 1 src operand instruction (%u), i_gp_reg_number_src needs to be LIBXSMM_X86_GP_REG_UNDEF!\n", i_alu_instr);
+        exit(-1);
       }
-      buf[i++] = (unsigned char)(0x48 + l_gp8 * 0x01 + l_nx8 * 0x04);
-      buf[i++] = (unsigned char)(0x01 + l_second);
-      if ( l_extra_byte )
-      {
-         buf[i++] = (unsigned char)(0x44 + l_third);
-      }
-      buf[i++] = (unsigned char)(0xc0 + l_regbas0 + 8*l_regnum);
-
-      io_generated_code->code_size = i;
-      /* *loc = i; */
+      l_gp_reg_number_src = 0;
     }
+
+    /* check if we need to flip operands */
+    if ( ((i_alu_instr >> 24) & 0x08 ) == 0x08 ) {
+      unsigned int tmp = l_gp_reg_number_src;
+      l_gp_reg_number_src  = l_gp_reg_number_dest;
+      l_gp_reg_number_dest = tmp;
+    }
+
+    /* check if we have op-code extension in modrm/reg */
+    if ( ((i_alu_instr >> 24) & 0x04 ) == 0x04 ) {
+      if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
+        l_gp_reg_number_dest = ((i_alu_instr >> 20) & 0x07);
+      } else {
+        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (%u) we need a single operand instruction!\n", i_alu_instr);
+        exit(-1);
+      }
+    }
+
+    /* generatoe the main instruction */
+    libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
+            l_gp_reg_number_src, l_gp_reg_number_dest );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -3548,34 +3971,9 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number ) {
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_push_reg: push instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_push_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0);
-
-    io_generated_code->code_size = i;
+    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_PUSHQ,
+                                     LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
     io_generated_code->sf_size += 8;
   } else {
     char l_new_code[512];
@@ -3599,34 +3997,9 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number ) {
-  /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_reg0 = 0;
-
-    if ( l_maxsize - i < 2 )
-    {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: pop instructions need up to 2 bytes\n");
-      exit(-1);
-    }
-    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
-      fprintf(stderr, "libxsmm_instruction_pop_reg: invalid register\n");
-      exit(-1);
-    }
-
-    /* determine register encoding */
-    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
-    {
-       l_reg0 = i_gp_reg_number - 8;
-       buf[i++] = (unsigned char)(0x41);
-    } else {
-       l_reg0 = i_gp_reg_number;
-    }
-    buf[i++] = (unsigned char)(0x50 + l_reg0 + 8);
-
-    io_generated_code->code_size = i;
+    libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_POPQ,
+                                     LIBXSMM_X86_GP_REG_UNDEF, i_gp_reg_number );
     io_generated_code->sf_size -= 8;
   } else {
     char l_new_code[512];
