@@ -1737,8 +1737,29 @@ int main( /*int argc, char* argv[]*/ ) {
   test_rex_vcompute_mem_1reg_general( "rex_mem_CVTTPD2DQ", &mycode, LIBXSMM_X86_INSTR_CVTTPD2DQ, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_CVTTPS2DQ", &mycode, LIBXSMM_X86_INSTR_CVTTPS2DQ, 0x0 );
 
-  /* SSE3/4 tests */
+  /* SSE3 tests */
+  test_rex_vload_vstore( "rex_mov_LDDQU", &mycode, LIBXSMM_X86_INSTR_LDDQU, 1 );
   test_rex_vload_vstore( "rex_mov_MOVDDUP", &mycode, LIBXSMM_X86_INSTR_MOVDDUP, 1 );
+  test_rex_vload_vstore( "rex_mov_MOVSHDUP", &mycode, LIBXSMM_X86_INSTR_MOVSHDUP, 1 );
+  test_rex_vload_vstore( "rex_mov_MOVSLDUP", &mycode, LIBXSMM_X86_INSTR_MOVSLDUP, 1 );
+
+  test_rex_vcompute_2reg_general( "rex_reg_ADDSUBPD", &mycode, LIBXSMM_X86_INSTR_ADDSUBPD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_ADDSUBPS", &mycode, LIBXSMM_X86_INSTR_ADDSUBPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_HADDPD", &mycode, LIBXSMM_X86_INSTR_HADDPD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_HADDPS", &mycode, LIBXSMM_X86_INSTR_HADDPS, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_HSUBPD", &mycode, LIBXSMM_X86_INSTR_HSUBPD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_HSUBPS", &mycode, LIBXSMM_X86_INSTR_HSUBPS, 0x0 );
+
+  test_rex_vcompute_mem_1reg_general( "rex_mem_LDDQU", &mycode, LIBXSMM_X86_INSTR_LDDQU, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVDDUP", &mycode, LIBXSMM_X86_INSTR_MOVDDUP, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSHDUP", &mycode, LIBXSMM_X86_INSTR_MOVSHDUP, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVSLDUP", &mycode, LIBXSMM_X86_INSTR_MOVSLDUP, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDSUBPD", &mycode, LIBXSMM_X86_INSTR_ADDSUBPD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_ADDSUBPS", &mycode, LIBXSMM_X86_INSTR_ADDSUBPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_HADDPD", &mycode, LIBXSMM_X86_INSTR_HADDPD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_HADDPS", &mycode, LIBXSMM_X86_INSTR_HADDPS, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_HSUBPD", &mycode, LIBXSMM_X86_INSTR_HSUBPD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_HSUBPS", &mycode, LIBXSMM_X86_INSTR_HSUBPS, 0x0 );
 
   /* test VEX/GP instructions */
   test_alu_reg( "alu_reg_ADDQ", &mycode, LIBXSMM_X86_INSTR_ADDQ, 0 );
