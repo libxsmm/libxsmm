@@ -37,7 +37,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF1632_FLAT, BF16_FLAT\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -52,7 +52,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF1632_FLAT, BF16_FLAT\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -350,8 +350,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < l_k; l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_d[(l_j * l_ldc) + l_i] = 0.0;
+                }
+                for (l_s = 0; l_s < l_k; l_s++) {
                   l_c_gold_d[(l_j * l_ldc) + l_i] += l_a_d[(l_r * l_lda * l_k) + ((l_s * l_lda) + l_i)] * l_b_d[(l_r * l_ldb * l_n) + ((l_j * l_ldb) + l_s)];
                 }
               }
@@ -453,8 +456,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < l_k; l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_d[(l_j * l_ldc) + l_i] = 0.0;
+                }
+                for (l_s = 0; l_s < l_k; l_s++) {
                   l_c_gold_d[(l_j * l_ldc) + l_i] += l_a_d[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
                                                      l_b_d[(l_r * l_ldb * l_k) + (l_s * l_ldb) + l_j];
                 }
@@ -557,8 +563,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < l_k; l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_f[(l_j * l_ldc) + l_i] = 0.0f;
+                }
+                for (l_s = 0; l_s < l_k; l_s++) {
                   l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
                                                      l_b_f[(l_r * l_ldb * l_n) + (l_j * l_ldb) + l_s];
                 }
@@ -661,8 +670,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < l_k; l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_f[(l_j * l_ldc) + l_i] = 0.0f;
+                }
+                for (l_s = 0; l_s < l_k; l_s++) {
                   l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i] *
                                                      l_b_f[(l_r * l_ldb * l_k) + (l_s * l_ldb) + l_j];
                 }
@@ -768,8 +780,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_w_i[(l_j * l_ldc) + l_i] = 0;
+                }
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                     l_c_gold_w_i[(l_j * l_ldc) + l_i] += l_a_w[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
                                                          l_b_w[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
@@ -883,8 +898,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_b_i[(l_j * l_ldc) + l_i] = 0;
+                }
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                     l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_ua_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
                                                          l_sb_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
@@ -998,8 +1016,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_b_i[(l_j * l_ldc) + l_i] = 0;
+                }
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                     l_c_gold_b_i[(l_j * l_ldc) + l_i] += l_sa_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
                                                          l_ub_b[(l_r * l_ldb * l_n) + (l_j * l_ldb) + (l_s*l_k_block) + l_k2];
@@ -1114,8 +1135,13 @@ int main(int argc, char* argv []) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
               for (l_i = 0; l_i < l_m; l_i++) {
-                int tmp = (int)l_c_gold_b_ub[(l_j * l_ldc) + l_i];
+                int tmp;
                 float ftmp;
+                if ( l_beta == 0 ) {
+                  tmp = 0;
+                } else {
+                  tmp = (int)l_c_gold_b_ub[(l_j * l_ldc) + l_i];
+                }
                 for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                     tmp += l_sa_b[(l_r * l_lda * l_k) + (l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
@@ -1236,8 +1262,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_bf_f[(l_j * l_ldc) + l_i] = 0.0f;
+                }
+                for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                     union libxsmm_bfloat16_hp tmp_a_f;
                     union libxsmm_bfloat16_hp tmp_b_f;
@@ -1363,7 +1392,11 @@ int main(int argc, char* argv []) {
             for (l_j = 0; l_j < l_n; l_j++) {
               for (l_i = 0; l_i < l_m; l_i++) {
                 union libxsmm_bfloat16_hp fprod;
-                fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
+                if ( l_beta == 0 ) {
+                  fprod.i[1] = 0;
+                } else {
+                  fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
+                }
                 fprod.i[0] = 0;
                 for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
                   for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
@@ -1494,8 +1527,11 @@ int main(int argc, char* argv []) {
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_r = 0; l_r < l_br; l_r++) {
             for (l_j = 0; l_j < l_n; l_j++) {
-              for (l_s = 0; l_s < l_k; l_s++) {
-                for (l_i = 0; l_i < l_m; l_i++) {
+              for (l_i = 0; l_i < l_m; l_i++) {
+                if ( l_beta == 0 ) {
+                  l_c_gold_bf_f[(l_j * l_ldc) + l_i] = 0.0f;
+                }
+                for (l_s = 0; l_s < l_k; l_s++) {
                   union libxsmm_bfloat16_hp tmp_a_f;
                   union libxsmm_bfloat16_hp tmp_b_f;
                   tmp_a_f.i[1] = l_a_bf[(l_r * l_lda * l_k) + (l_s * l_lda) + l_i];
@@ -1617,7 +1653,11 @@ int main(int argc, char* argv []) {
             for (l_j = 0; l_j < l_n; l_j++) {
               for (l_i = 0; l_i < l_m; l_i++) {
                 union libxsmm_bfloat16_hp fprod;
-                fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
+                if ( l_beta == 0 ) {
+                  fprod.i[1] = 0;
+                } else {
+                  fprod.i[1] = l_c_gold_bf[(l_j * l_ldc) + l_i];
+                }
                 fprod.i[0] = 0;
                 for (l_s = 0; l_s < l_k; l_s++) {
                   union libxsmm_bfloat16_hp tmp_a_f;
