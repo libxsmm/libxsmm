@@ -3704,11 +3704,11 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     if ( (l_alu_instr & 0x00080000 ) == 0x00080000 ) {
       unsigned char* code = (unsigned char *) io_generated_code->generated_code;
       unsigned int l_imm_bytes = 1 << ( (l_alu_instr >> 8) & 0x3 );
-      unsigned int l_immediate = (unsigned int)i_immediate;
+      size_t l_immediate = i_immediate;
       unsigned int l_i = 0;
       for ( l_i = 0; l_i < l_imm_bytes; ++l_i ) {
         code[io_generated_code->code_size++] = (unsigned char)l_immediate;
-        l_immediate = l_immediate >> 8;
+        l_immediate = (size_t)((size_t)l_immediate >> (size_t)8);
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
