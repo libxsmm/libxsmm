@@ -21,6 +21,15 @@ typedef enum libxsmm_x86_simd_name {
   LIBXSMM_X86_SIMD_NAME_ZMM = 0x2
 } libxsmm_x86_simd_name;
 
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_instr );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_regonly( const unsigned int i_instr );
+
 /**
  * Opens the inline assembly section / jit stream
  *
