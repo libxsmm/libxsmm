@@ -1366,20 +1366,17 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, 1, 0 );
         } else {
           if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vxor_instruction,
                 i_micro_kernel_config->vector_name,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
                 i_micro_kernel_config->vxor_instruction,
                 i_micro_kernel_config->vector_name,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                LIBXSMM_X86_VEC_REG_UNDEF,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           }
         }
@@ -1481,30 +1478,26 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
         /* and with naninf */
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VPANDD,
-                                                 1,
-                                                 LIBXSMM_X86_GP_REG_RSP,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 24,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_X,
-                                                 0 );
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VPANDD,
+                                                      i_micro_kernel_config->vector_name,
+                                                      LIBXSMM_X86_GP_REG_RSP,
+                                                      LIBXSMM_X86_GP_REG_UNDEF,
+                                                      0,
+                                                      24, 1,
+                                                      reg_X,
+                                                      0 );
 
         /* and with fixup */
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VPANDD,
-                                                 1,
-                                                 LIBXSMM_X86_GP_REG_RSP,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 16,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_X,
-                                                 1 );
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VPANDD,
+                                                      i_micro_kernel_config->vector_name,
+                                                      LIBXSMM_X86_GP_REG_RSP,
+                                                      LIBXSMM_X86_GP_REG_UNDEF,
+                                                      0,
+                                                      16, 1,
+                                                      reg_X,
+                                                      1 );
 
         /* compute naninf mask k7 */
         libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code,

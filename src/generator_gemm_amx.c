@@ -2039,7 +2039,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(i_xgemm_desc, &l_micro_kernel_config, m_blocking_info, n_blocking_info, & tile_config );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 1 );
 
   /* Setup stack frame...  */
   m_tiles = m_blocking_info[0].tiles;
@@ -2144,7 +2144,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code* io_generated_cod
   libxsmm_generator_gemm_amx_destroy_stack_frame( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
 }
 
 LIBXSMM_API_INTERN

@@ -109,21 +109,19 @@ LIBXSMM_API void* libxsmm_get_registry_begin(libxsmm_kernel_kind kind, const voi
 LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** key);
 
 /**
- * Register user-defined key-value.
+ * Register user-defined key-value; value can be queried (libxsmm_xdispatch).
  * Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
- * i.e., if it is a structured type (padded data may be uninitialized), it must
- * be initially zero-filled (memset) followed by an element-wise initialization.
- * The size of the key is limited (see documentation). The given value is copied
- * by LIBXSMM and may be initialized at registration-time or whenever queried.
- * Registered data is released at program termination but can be also released
- * if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
+ * i.e., a structured type (can be padded) must be initialized like a binary blob
+ * (memset) followed by an element-wise initialization. The size of the
+ * key is limited (see documentation). The given value is copied by LIBXSMM and
+ * can be initialized prior to registration or whenever queried. Registered data
+ * is released when the program terminates but can be also released if needed
+ * (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
  */
 LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
-  size_t value_size, const void* value_init, unsigned int* key_hash);
+  size_t value_size, const void* value_init);
 /** Query user-defined value from LIBXSMM's code registry. */
-LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size,
-  /** Optionally returns the hashed key. */
-  unsigned int* key_hash);
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
