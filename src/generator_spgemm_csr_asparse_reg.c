@@ -384,7 +384,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* Open asm */
-  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
   /* Copy the unique values into the data segment with 64-byte alignment */
   l_uoff = libxsmm_x86_instruction_add_data( io_generated_code,
@@ -662,7 +662,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                          l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->c1 );
 
   /* Close asm */
-  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
   libxsmm_x86_instruction_close_data( io_generated_code, &l_const_data_tracker );
 
 cleanup:

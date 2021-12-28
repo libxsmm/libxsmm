@@ -31,6 +31,7 @@ typedef enum libxsmm_x86_simd_name {
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_generated_code,
                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                               const unsigned int            skip_callee_save,
                                                unsigned int                  i_prefetch );
 
 /**
@@ -43,6 +44,7 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io_generated_code,
                                                 const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                const unsigned int            skip_callee_save,
                                                 unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN

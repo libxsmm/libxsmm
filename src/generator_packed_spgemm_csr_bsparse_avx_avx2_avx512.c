@@ -140,7 +140,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
   /* m loop */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_mloop, 0 );
@@ -208,7 +208,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 }
 
 LIBXSMM_API_INTERN

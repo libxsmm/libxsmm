@@ -673,7 +673,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
   /* loop over the sparse elements of C */
   for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
@@ -697,6 +697,6 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 }
 
