@@ -441,17 +441,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
                                                   i_n_blocking+1,
                                                   l_n );
       } else {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 i_micro_kernel_config->vmul_instruction,
-                                                 0,
-                                                 i_gp_reg_mapping->gp_reg_b,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 l_n * i_packed_width * i_micro_kernel_config->datatype_size_in,
-                                                 i_micro_kernel_config->vector_name,
-                                                 i_n_blocking,
-                                                 l_n );
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      i_micro_kernel_config->vmul_instruction,
+                                                      i_micro_kernel_config->vector_name,
+                                                      i_gp_reg_mapping->gp_reg_b,
+                                                      LIBXSMM_X86_GP_REG_UNDEF,
+                                                      0,
+                                                      l_n * i_packed_width * i_micro_kernel_config->datatype_size_in, 0,
+                                                      i_n_blocking,
+                                                      l_n );
       }
     } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
       if ( i_simd_packed_width > i_simd_packed_valid ) {

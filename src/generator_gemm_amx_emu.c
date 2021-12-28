@@ -98,14 +98,13 @@ void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned 
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_instruction_set,
-                                                   const unsigned int      i_vec_instr,
-                                                   const char              i_vector_name,
-                                                   const unsigned int      i_vec_reg_src_0,
-                                                   const unsigned int      i_vec_reg_src_1,
-                                                   const unsigned int      i_vec_reg_dst,
-                                                   const unsigned int      i_shuffle_operand,
-                                                   libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+                                                      const unsigned int      i_vec_instr,
+                                                      const char              i_vector_name,
+                                                      const unsigned int      i_vec_reg_src_0,
+                                                      const unsigned int      i_vec_reg_src_1,
+                                                      const unsigned int      i_vec_reg_dst,
+                                                      const unsigned int      i_shuffle_operand,
+                                                      libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
 
   LIBXSMM_UNUSED(i_vector_name);
   LIBXSMM_UNUSED(i_shuffle_operand);
@@ -134,28 +133,24 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
 
   /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      24,
-      i_micro_kernel_config->vector_name,
+      24, 1,
       i_vec_reg_src_0,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux0 );
 
   /* and with fixup */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      16,
-      i_micro_kernel_config->vector_name,
+      16, 1,
       i_vec_reg_src_0,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux1 );
 
@@ -224,28 +219,24 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
       0 );
 
   /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      24,
-      i_micro_kernel_config->vector_name,
+      24, 1,
       i_vec_reg_src_1,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux0 );
 
   /* and with fixup */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      16,
-      i_micro_kernel_config->vector_name,
+      16, 1,
       i_vec_reg_src_1,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux1 );
 
@@ -336,12 +327,12 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
+                                              const char              i_vector_name,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_gp_reg_idx,
                                               const unsigned int      i_scale,
                                               const int               i_displacement,
-                                              const char              i_vector_name,
+                                              const unsigned int      i_use_broadcast,
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1,
                                               libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
@@ -361,7 +352,7 @@ void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_gen
       i_vector_name,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux, 0, 1, 0 );
 
-  libxsmm_x86_instruction_vec_compute_convert_emu( io_generated_code, i_instruction_set, i_vec_instr, i_vector_name,
+  libxsmm_x86_instruction_vec_compute_convert_emu( io_generated_code, i_vec_instr, i_vector_name,
                                                    i_vec_reg_number_0,
                                                    i_micro_kernel_config->emulate_cvt2bf16fp32_vaux,
                                                    i_vec_reg_number_1,

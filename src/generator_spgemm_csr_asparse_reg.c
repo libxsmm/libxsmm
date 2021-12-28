@@ -620,14 +620,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                     l_rva, l_rvb, l_rvc + l_n );
         /* Otherwise load as part of the FMA */
         } else {
-          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                   l_micro_kernel_config.instruction_set,
-                                                   l_fma_insn, 0,
-                                                   l_gp_reg_mapping.gp_reg_b,
-                                                   LIBXSMM_X86_GP_REG_UNDEF,
-                                                   0, l_b_disp + l_n*l_vbytes,
-                                                   l_micro_kernel_config.vector_name,
-                                                   l_rva, l_rvc + l_n );
+          libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                        l_fma_insn,
+                                                        l_micro_kernel_config.vector_name,
+                                                        l_gp_reg_mapping.gp_reg_b,
+                                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                                        0, l_b_disp + l_n*l_vbytes, 0,
+                                                        l_rva, l_rvc + l_n );
         }
 
         /* See if we need to save the accumulator */

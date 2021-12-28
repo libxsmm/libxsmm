@@ -385,17 +385,15 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
 
           if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             if ( i_packed_mask == 0 ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       l_n );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            l_n );
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
@@ -413,17 +411,15 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
             }
           } else  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             if ( i_packed_mask == 0 ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       l_n );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            l_n );
             } else {
               libxsmm_x86_instruction_vec_mask_move( io_generated_code,
                                                      l_avx_mask_instr,
@@ -441,17 +437,15 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
           } else {
             if ( i_packed_mask == 0 ) {
               /* Mul with full vector load and adding result to final accumulator */
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       15 );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            15 );
 
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                         i_micro_kernel_config->vadd_instruction,

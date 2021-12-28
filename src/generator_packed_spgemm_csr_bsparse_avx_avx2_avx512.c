@@ -384,17 +384,15 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
                (i_column_idx[i_row_idx[l_k] + l_n] >= i_n_processed)                &&
                (i_column_idx[i_row_idx[l_k] + l_n] < i_n_limit) )                        {
             if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       1,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       (i_row_idx[l_k] + l_n) * i_micro_kernel_config->datatype_size_in,
-                                                       i_micro_kernel_config->vector_name,
-                                                       l_max_reg_block,
-                                                       ((i_column_idx[i_row_idx[l_k] + l_n] - i_n_processed)*i_packed_blocking) + l_p );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            (i_row_idx[l_k] + l_n) * i_micro_kernel_config->datatype_size_in, 1,
+                                                            l_max_reg_block,
+                                                            ((i_column_idx[i_row_idx[l_k] + l_n] - i_n_processed)*i_packed_blocking) + l_p );
             } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
