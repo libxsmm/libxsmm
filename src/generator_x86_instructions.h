@@ -426,22 +426,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1 );
 
-/**
- * Generates SSE shuffle instructions with 2 vector registers, memory operands are not supported as first operand
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_generated_code,
-                                                  const unsigned int      i_vec_instr,
-                                                  const char              i_vector_name,
-                                                  const unsigned int      i_vec_reg_number_0,
-                                                  const unsigned int      i_vec_reg_number_1,
-                                                  const unsigned int      i_shuffle_operand );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,

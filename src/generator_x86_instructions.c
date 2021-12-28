@@ -3406,48 +3406,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 #endif
 }
 
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_generated_code,
-                                                  const unsigned int      i_vec_instr,
-                                                  const char              i_vector_name,
-                                                  const unsigned int      i_vec_reg_number_0,
-                                                  const unsigned int      i_vec_reg_number_1,
-                                                  const unsigned int      i_shuffle_operand ) {
-  libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
-                                                           i_vec_reg_number_0, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_1,
-                                                           0, 0, 0, i_shuffle_operand );
-#if 0
-  switch ( i_vec_instr ) {
-    case LIBXSMM_X86_INSTR_SHUFPS:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-      break;
-    default:
-      fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_sse_reg: Unknown instruction type: %u\n", i_vec_instr);
-      exit(-1);
-      break;
-  }
-
-  if ( io_generated_code->code_type > 1 ) {
-    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
-                                                             i_vec_reg_number_0, LIBXSMM_X86_VEC_REG_UNDEF, i_vec_reg_number_1,
-                                                             0, 0, 0, i_shuffle_operand );
-  } else {
-    char l_new_code[512];
-    int l_max_code_length = 511;
-    int l_code_length = 0;
-    char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
-
-    if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
-    } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
-    }
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  }
-#endif
-}
-
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,
