@@ -199,16 +199,14 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
       unsigned int mask_id =  (tile1 >= 0) ? i_micro_kernel_config->mask_m_bf16 : i_micro_kernel_config->mask_m_fp32;
 
       if ((i_micro_kernel_config->m_remainder == 0) || (tile1 >= 0)) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                 0,
-                                                 gp_reg_gemm_scratch,
-                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_0,
-                                                 reg_1);
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                      i_micro_kernel_config->vector_name,
+                                                      gp_reg_gemm_scratch,
+                                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      reg_0,
+                                                      reg_1);
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -266,16 +264,14 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
       unsigned int mask_id =  (tile1 >= 0) ? i_micro_kernel_config->mask_m_bf16 : i_micro_kernel_config->mask_m_fp32;
 
       if ((i_micro_kernel_config->m_remainder == 0) || (tile1 >= 0)) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                 0,
-                                                 gp_reg_gemm_scratch,
-                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_0,
-                                                 reg_0);
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                      i_micro_kernel_config->vector_name,
+                                                      gp_reg_gemm_scratch,
+                                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      reg_0,
+                                                      reg_0);
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -613,16 +609,14 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
                 reg_0, i_micro_kernel_config->mask_m_fp32, 1, 0 );
 
             if (i_micro_kernel_config->m_remainder == 0) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                       0,
-                                                       gp_reg_gemm_scratch,
-                                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                       col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                       i_micro_kernel_config->vector_name,
-                                                       reg_0,
-                                                       reg_0);
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                            i_micro_kernel_config->vector_name,
+                                                            gp_reg_gemm_scratch,
+                                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                            col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                            reg_0,
+                                                            reg_0);
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                   i_micro_kernel_config->instruction_set,

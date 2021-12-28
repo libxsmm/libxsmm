@@ -2218,13 +2218,13 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc_const->prefetch );
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 1 );
 
   /* call Intel AMX kernel */
   libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, i_xgemm_desc_const );
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc_const->prefetch );
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1);
 }
 
 

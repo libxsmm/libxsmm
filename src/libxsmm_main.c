@@ -2277,7 +2277,7 @@ LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, signed
 }
 
 
-LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* desc, size_t desc_size, size_t user_size, unsigned int* hash)
+LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* desc, size_t desc_size, size_t user_size)
 {
   libxsmm_code_pointer flux_entry = { 0 };
   const int is_big_desc = LIBXSMM_DESCRIPTOR_ISBIG(desc->kind);
@@ -2297,7 +2297,6 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   unsigned char cache_index;
   const unsigned int ninit = LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED);
   internal_pad_descriptor(desc, size);
-  LIBXSMM_ASSERT(NULL != hash);
   if (0 == is_big_desc) {
     LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
     LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
@@ -2314,12 +2313,11 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   else
 #else
   internal_pad_descriptor(desc, size);
-  LIBXSMM_ASSERT(NULL != hash);
 #endif
   {
     unsigned int i, i0, mode = 0, diff = 1;
-    *hash = LIBXSMM_CRC32(LIBXSMM_HASH_SIZE)(LIBXSMM_HASH_SEED, desc);
-    i0 = i = LIBXSMM_MOD2(*hash, LIBXSMM_CAPACITY_REGISTRY);
+    unsigned int hash = LIBXSMM_CRC32(LIBXSMM_HASH_SIZE)(LIBXSMM_HASH_SEED, desc);
+    i0 = i = LIBXSMM_MOD2(hash, LIBXSMM_CAPACITY_REGISTRY);
     LIBXSMM_ASSERT(&desc->kind == &desc->gemm.pad && desc->kind == desc->gemm.pad);
     LIBXSMM_ASSERT(NULL != internal_registry);
     do { /* use calculated location and check if the requested code is already JITted */
@@ -2777,14 +2775,13 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
 
 
 LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
-  size_t value_size, const void* value_init, unsigned int* key_hash)
+  size_t value_size, const void* value_init)
 {
   static int error_once = 0;
   void* result;
   LIBXSMM_INIT /* verbosity */
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
     libxsmm_descriptor wrap;
-    unsigned int hash = 0;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
@@ -2793,8 +2790,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
     wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
-    dst = internal_find_code(&wrap, key_size, value_size, &hash).ptr;
-    if (NULL != key_hash) *key_hash = hash;
+    dst = internal_find_code(&wrap, key_size, value_size).ptr;
     if (NULL != dst) {
       size_t size;
       if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(dst, &size, NULL/*flags*/, NULL/*extra*/)
@@ -2832,7 +2828,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
 }
 
 
-LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size, unsigned int* key_hash)
+LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 {
   void* result;
   LIBXSMM_INIT /* verbosity */
@@ -2840,7 +2836,6 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size, unsigned i
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size)
 #endif
   {
-    unsigned int hash = 0;
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
@@ -2849,8 +2844,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size, unsigned i
     wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
-    result = internal_find_code(&wrap, key_size, 0/*user_size*/, &hash).ptr;
-    if (NULL != key_hash) *key_hash = hash;
+    result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
   else {
@@ -2869,7 +2863,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size, unsigned i
 
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 {
-  libxsmm_release_kernel(libxsmm_xdispatch(key, key_size, NULL/*key_hash*/));
+  libxsmm_release_kernel(libxsmm_xdispatch(key, key_size));
 }
 
 
@@ -2881,7 +2875,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
-    unsigned int hash;
     const int batch_reduce =
       LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
       LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
@@ -2901,7 +2894,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xgemm;
+    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
 #if defined(_DEBUG)
     if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && NULL != result.xmm) {
       LIBXSMM_STDIO_ACQUIRE();
@@ -4566,14 +4559,13 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
-    unsigned int hash;
     libxsmm_descriptor wrap;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
     LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
     wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MELTW);
-    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xmateltw;
+    result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateltw;
   }
   else {
     result.xmeltw = NULL;
@@ -4656,24 +4648,19 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
-    unsigned int hash;
     libxsmm_descriptor wrap;
-
     /* check if equation is ready for JIT */
-    if ( libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx) == 0 ) {
+    if (0 == libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx)) {
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
       LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
       LIBXSMM_ASSIGN127(&wrap.meqn.desc, descriptor);
       wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MEQN);
-      result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/, &hash).xmateqn;
-    } else {
-      result = NULL;
+      result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xmateqn;
     }
+    else result = NULL;
   }
-  else {
-    result = NULL;
-  }
+  else result = NULL;
   return result;
 }
 
@@ -5115,20 +5102,16 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** /*regval*/, const void* /*key*/, const int* /*keysize*/,
-  const int* /*valsize*/, const void* /*valinit*/, int* /*keyhash*/);
+  const int* /*valsize*/, const void* /*valinit*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** regval, const void* key, const int* keysize,
-  const int* valsize, const void* valinit, int* keyhash)
+  const int* valsize, const void* valinit)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != regval && NULL != key && NULL != keysize && NULL != valsize)
 #endif
   {
-    unsigned int hash = 0;
-    *regval = libxsmm_xregister(key, *keysize, *valsize, valinit, &hash);
-    if (NULL != keyhash) {
-      *keyhash = (hash & 0x7FFFFFFF/*sign-bit*/);
-    }
+    *regval = libxsmm_xregister(key, *keysize, *valsize, valinit);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -5141,19 +5124,15 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xregister)(void** regval, const void* k
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** /*regval*/, const void* /*key*/, const int* /*keysize*/, int* /*keyhash*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** regval, const void* key, const int* keysize, int* keyhash)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** /*regval*/, const void* /*key*/, const int* /*keysize*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdispatch)(void** regval, const void* key, const int* keysize)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != regval && NULL != key && NULL != keysize)
 #endif
   {
-    unsigned int hash = 0;
-    *regval = libxsmm_xdispatch(key, *keysize, &hash);
-    if (NULL != keyhash) {
-      *keyhash = (hash & 0x7FFFFFFF/*sign-bit*/);
-    }
+    *regval = libxsmm_xdispatch(key, *keysize);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */

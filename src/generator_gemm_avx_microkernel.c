@@ -109,15 +109,13 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
         }
       }
       /* issue mul-add */
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                            i_micro_kernel_config->vmul_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_n_blocking,
                                            l_n,
                                            i_n_blocking + l_n + 1 );
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                            i_micro_kernel_config->vadd_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_n_blocking + l_n + 1,
@@ -196,15 +194,13 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
           }
           /* issue mul+add */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                i_micro_kernel_config->vmul_instruction,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking,
                                                l_n,
                                                i_n_blocking + l_m + 1 );
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                i_micro_kernel_config->vadd_instruction,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking + l_m + 1,
@@ -234,15 +230,13 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
           }
           /* issue mul/add */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                i_micro_kernel_config->vmul_instruction,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking + l_m,
                                                l_n,
                                                i_n_blocking + l_m_blocking + l_m );
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                i_micro_kernel_config->vadd_instruction,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking + l_m_blocking + l_m,
