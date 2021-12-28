@@ -633,34 +633,6 @@ void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_arg_number,
                                               const unsigned int      i_gp_reg_number );
 
-/**
- * @TODO: clean-up
- * Opens the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*                   io_generated_code,
-                                                  const unsigned int                        i_gp_reg_a,
-                                                  const unsigned int                        i_gp_reg_lda,
-                                                  const unsigned int                        i_gp_reg_b,
-                                                  const unsigned int                        i_gp_reg_ldb,
-                                                  const unsigned int                        i_gp_reg_a_pf,
-                                                  const unsigned int                        i_gp_reg_b_pf,
-                                                  const char*                               i_arch );
-
-/**
- * @TODO: clean-up
- * Closes the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                   i_arch );
-
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
                                                      const unsigned int                        i_gp_struct_params,
@@ -679,32 +651,6 @@ void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*  
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
                                          libxsmm_const_data_tracker* io_const_data );
-
-/**
- * @TODO: clean-up
- * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*                   io_generated_code,
-                                                    const unsigned int                        i_gp_reg_a,
-                                                    const unsigned int                        i_gp_reg_lda,
-                                                    const unsigned int                        i_gp_reg_b,
-                                                    const unsigned int                        i_gp_reg_ldb,
-                                                    const char*                               i_arch );
-
-/**
- * @TODO: clean-up
- * Closes the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
-                                                     const char*                   i_arch );
 
 /**
  * Generates ld/stconfig/tilerelease instructions
