@@ -29,14 +29,10 @@ typedef enum libxsmm_x86_simd_name {
  * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_generated_code,
+                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                               unsigned int                  i_prefetch );
 
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_amx( libxsmm_generated_code*   io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          unsigned int                  i_prefetch );
 /**
  * Closes the inline assembly section / jit stream
  *
@@ -45,14 +41,18 @@ void libxsmm_x86_instruction_open_stream_amx( libxsmm_generated_code*   io_gener
  * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
-                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io_generated_code,
+                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_amx( libxsmm_generated_code*   io_generated_code,
-                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
+                                             const unsigned int      i_gp_struct_params,
+                                             const unsigned int      skip_callee_save );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      skip_callee_save );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
@@ -67,6 +67,10 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
                                                unsigned int                i_alignment,
                                                unsigned int                i_append_only,
                                                libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                         libxsmm_const_data_tracker* io_const_data );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     io_generated_code,
@@ -632,25 +636,6 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_arg_number,
                                               const unsigned int      i_gp_reg_number );
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
-                                                     const unsigned int                        i_gp_struct_params,
-                                                     int                                       skip_push);
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                      int                           skip_pop);
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_matequation( libxsmm_generated_code*                  io_generated_code,
-                                                      const unsigned int                        i_gp_struct_params );
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*       io_generated_code );
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
-                                         libxsmm_const_data_tracker* io_const_data );
 
 /**
  * Generates ld/stconfig/tilerelease instructions
