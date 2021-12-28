@@ -3110,7 +3110,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
   unsigned int gp_reg_bcast_loop = 0;
   unsigned int argop_cmp_imm = 0;
   unsigned int temp_gpr = LIBXSMM_X86_GP_REG_RBX;
-  unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
+  unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVD;
   unsigned int max_m_unrolling_index = (idx_tsize == 8) ? 2 * max_m_unrolling : max_m_unrolling;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
@@ -5269,7 +5269,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   unsigned int m, im, use_m_masking, m_trips, max_m_unrolling = 4, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0;
   unsigned int aux_vreg_offset = 16;
   unsigned int idx_tsize = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES) > 0 ) ? 8 : 4;
-  unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVL;
+  unsigned int ind_alu_mov_instr = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_MOVQ : LIBXSMM_X86_INSTR_MOVD;
   int pf_dist = 4, use_nts = 0, pf_instr = LIBXSMM_X86_INSTR_PREFETCHT1, pf_type = 1, load_acc = 1;
   unsigned int vstore_instr = 0;
   unsigned int NO_PF_LABEL_START = 0;
@@ -5508,14 +5508,12 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                         i_micro_kernel_config->vector_name,
                                         im, im+aux_vreg_offset, im );
         } else {
-          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-            i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
             LIBXSMM_X86_INSTR_VADDPS,
-            0,
+            i_micro_kernel_config->vector_name,
             i_gp_reg_mapping->gp_reg_in,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            im * vlen * i_micro_kernel_config->datatype_size_in,
-            i_micro_kernel_config->vector_name,
+            im * vlen * i_micro_kernel_config->datatype_size_in, 0,
             im,
             im );
         }
@@ -5575,14 +5573,12 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                       i_micro_kernel_config->vector_name,
                                       im, im+aux_vreg_offset, im );
       } else {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-          i_micro_kernel_config->instruction_set,
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
           LIBXSMM_X86_INSTR_VADDPS,
-          0,
+          i_micro_kernel_config->vector_name,
           i_gp_reg_mapping->gp_reg_in,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          im * vlen * i_micro_kernel_config->datatype_size_in,
-          i_micro_kernel_config->vector_name,
+          im * vlen * i_micro_kernel_config->datatype_size_in, 0,
           im,
           im );
       }
@@ -5759,14 +5755,12 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                           i_micro_kernel_config->vector_name,
                                           im, im+aux_vreg_offset, im );
           } else {
-            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
               LIBXSMM_X86_INSTR_VADDPS,
-              0,
+              i_micro_kernel_config->vector_name,
               i_gp_reg_mapping->gp_reg_in,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              im * vlen * i_micro_kernel_config->datatype_size_in,
-              i_micro_kernel_config->vector_name,
+              im * vlen * i_micro_kernel_config->datatype_size_in, 0,
               im,
               im );
           }
@@ -5859,14 +5853,12 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                         i_micro_kernel_config->vector_name,
                                         im, im+aux_vreg_offset, im );
         } else {
-          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-            i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
             LIBXSMM_X86_INSTR_VADDPS,
-            0,
+            i_micro_kernel_config->vector_name,
             i_gp_reg_mapping->gp_reg_in,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            im * vlen * i_micro_kernel_config->datatype_size_in,
-            i_micro_kernel_config->vector_name,
+            im * vlen * i_micro_kernel_config->datatype_size_in, 0,
             im,
             im );
         }

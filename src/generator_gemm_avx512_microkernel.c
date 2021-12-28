@@ -166,16 +166,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -185,8 +183,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -247,16 +244,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n-3,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -266,8 +261,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -346,16 +340,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n-6,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -365,8 +357,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -509,16 +500,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 0,
                 1+l_m,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 1+l_m,
@@ -528,8 +517,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               1+l_m,
@@ -647,16 +635,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -666,8 +652,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -728,16 +713,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n-3,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -747,8 +730,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -827,16 +809,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 l_n-6,
                 3,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 3,
@@ -846,8 +826,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               3,
@@ -991,16 +970,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         /* issue fma */
         if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 0,
                 1+l_n,
                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_micro_kernel_config->instruction_set,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                 i_micro_kernel_config->vmul_instruction,
                 i_micro_kernel_config->vector_name,
                 1+l_n,
@@ -1010,8 +987,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
             /* should not happen */
           }
         } else {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
               1+l_n,
@@ -1184,8 +1160,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
         }
 
         for ( l_n = 0; l_n < 3; l_n++ ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -1290,8 +1265,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
                                                         i_micro_kernel_config->vector_name, 3, 3, 16);
         }
         for ( l_n = 3; l_n < 6; l_n++ ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -1418,8 +1392,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           }
 
           /* issue fma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -1589,8 +1562,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
             }
           }
           /* issue fma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               1+l_m,
@@ -1775,8 +1747,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
         }
 
         for ( l_n = 0; l_n < 3; l_n++ ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -1881,8 +1852,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
                                                         i_micro_kernel_config->vector_name, 3, 3, 16);
         }
         for ( l_n = 3; l_n < 6; l_n++ ) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -2009,8 +1979,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
           }
 
           /* issue fma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               3,
@@ -2179,8 +2148,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
             }
           }
           /* issue fma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_micro_kernel_config->instruction_set,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               LIBXSMM_X86_INSTR_VFMADD231PS,
               i_micro_kernel_config->vector_name,
               1+l_n,
@@ -2227,8 +2195,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   /* xor additional accumulator, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           io_generated_code->arch,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                            i_micro_kernel_config->vxor_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
@@ -2427,15 +2394,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                               l_disp,
                                               i_micro_kernel_config->vector_name,
                                               3, 0, 1, 0 );
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VPMADDWD,
                                               i_micro_kernel_config->vector_name,
                                               l_k%2,
                                               3,
                                               3 );
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VPADDD,
                                               i_micro_kernel_config->vector_name,
                                               3,
@@ -2473,16 +2438,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
 
             /* 8 bit mix-sign Mul */
             if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0  ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       io_generated_code->arch,
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                        LIBXSMM_X86_INSTR_VPMADDUBSW,
                                                        i_micro_kernel_config->vector_name,
                                                        3,
                                                        l_k%2,
                                                        3 );
             } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       io_generated_code->arch,
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                        LIBXSMM_X86_INSTR_VPMADDUBSW,
                                                        i_micro_kernel_config->vector_name,
                                                        l_k%2,
@@ -2494,8 +2457,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
             }
 
             /* 16 bit mul with 1 */
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VPMADDWD,
                                               i_micro_kernel_config->vector_name,
                                               2,
@@ -2503,8 +2465,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                               3 );
 
             /* add to accumulator */
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VPADDD,
                                               i_micro_kernel_config->vector_name,
                                               3,
@@ -2532,8 +2493,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                 i_micro_kernel_config->vector_name,
                                                 3, 0, 1, 0 );
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                io_generated_code->arch,
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                 LIBXSMM_X86_INSTR_VPDPBUSD,
                                                 i_micro_kernel_config->vector_name,
                                                 l_k%2,
@@ -2564,8 +2524,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                   LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name,
                   2, 3, 2 );
 
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                io_generated_code->arch,
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                 LIBXSMM_X86_INSTR_VFMADD231PS,
                                                 i_micro_kernel_config->vector_name,
                                                 l_k%2,
@@ -2592,8 +2551,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                   3, 1);
 
               /* perform fma operations for multiplying "1" elements of A and B */
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                io_generated_code->arch,
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                 LIBXSMM_X86_INSTR_VFMADD231PS,
                                                 i_micro_kernel_config->vector_name,
                                                 l_k%2,
@@ -2619,8 +2577,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                   16);
 
               /* perform fma operations for multiplying "0" elements of A and B */
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                io_generated_code->arch,
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                 LIBXSMM_X86_INSTR_VFMADD231PS,
                                                 i_micro_kernel_config->vector_name,
                                                 3,
@@ -2678,8 +2635,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                 LIBXSMM_X86_INSTR_VPANDD, i_micro_kernel_config->vector_name,
                 2, 3, 2 );
 
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                              io_generated_code->arch,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                               LIBXSMM_X86_INSTR_VFMADD231PS,
                                               i_micro_kernel_config->vector_name,
                                               l_k%2,
@@ -2718,8 +2674,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       if ( (LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
            (LIBXSMM_GEMM_PRECISION_F64  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
            (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             io_generated_code->arch,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                              i_micro_kernel_config->vadd_instruction,
                                              i_micro_kernel_config->vector_name,
                                              i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
@@ -2727,8 +2682,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
       } else if ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
                   (LIBXSMM_GEMM_PRECISION_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             io_generated_code->arch,
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                              LIBXSMM_X86_INSTR_VPADDD,
                                              i_micro_kernel_config->vector_name,
                                              i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
@@ -2785,8 +2739,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
   /* xor additional accumulator, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           io_generated_code->arch,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                            i_micro_kernel_config->vxor_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
@@ -2919,8 +2872,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
   /* add additional accumulators, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           io_generated_code->arch,
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                            i_micro_kernel_config->vadd_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
