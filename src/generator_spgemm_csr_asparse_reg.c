@@ -531,11 +531,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
               l_acc_neg_tbl[l_n][l_acc_idx] = 1;
             /* Issue c = 0 */
             } else {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       l_micro_kernel_config.vxor_instruction,
-                                                       l_micro_kernel_config.vector_name,
-                                                       l_rvc + l_n, l_rvc + l_n, l_rvc + l_n );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        l_micro_kernel_config.vxor_instruction,
+                                                        l_micro_kernel_config.vector_name,
+                                                        l_rvc + l_n, l_rvc + l_n, l_rvc + l_n );
             }
 
             /* As we'll be writing to C later, consider pre-fetching into cache */
@@ -588,13 +587,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                 l_rva, 0, 0, 0 );
             /* Broadcast from a packed register */
             } else {
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       l_micro_kernel_config.instruction_set,
-                                                       LIBXSMM_X86_INSTR_VPERMD,
-                                                       l_micro_kernel_config.vector_name,
-                                                       l_u / l_values_per_reg,
-                                                       l_base_perm_reg + l_u % l_values_per_reg,
-                                                       l_rva );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        LIBXSMM_X86_INSTR_VPERMD,
+                                                        l_micro_kernel_config.vector_name,
+                                                        l_u / l_values_per_reg,
+                                                        l_base_perm_reg + l_u % l_values_per_reg,
+                                                        l_rva );
             }
 
             /* Update our records */
@@ -616,11 +614,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                               l_rvb, 0, 1, 0 );
           }
 
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                   l_micro_kernel_config.instruction_set,
-                                                   l_fma_insn,
-                                                   l_micro_kernel_config.vector_name,
-                                                   l_rva, l_rvb, l_rvc + l_n );
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                    l_fma_insn,
+                                                    l_micro_kernel_config.vector_name,
+                                                    l_rva, l_rvb, l_rvc + l_n );
         /* Otherwise load as part of the FMA */
         } else {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,

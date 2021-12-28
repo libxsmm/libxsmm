@@ -383,26 +383,6 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_imm8( libxsmm_generated_code* 
                                                         const unsigned int      i_reg_number_dst,
                                                         const unsigned short    i_imm8 );
 
-/**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 or 3 vector registers, memory operands are not supported as first operand
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_vec_reg_number_2 );
-
 
 /**
  * @param i_instruction_set requested instruction set to encode

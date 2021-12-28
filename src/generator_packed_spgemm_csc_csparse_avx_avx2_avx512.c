@@ -52,11 +52,10 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm
   l_simd_packed_iters = i_packed_width/l_simd_packed_width;
 
   /* set c accumulator to 0 */
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           i_micro_kernel_config->vxor_instruction,
-                                           i_micro_kernel_config->vector_name,
-                                           31, 31, 31 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                            i_micro_kernel_config->vxor_instruction,
+                                            i_micro_kernel_config->vector_name,
+                                            31, 31, 31 );
 
   /* k loop header */
   if ( i_xgemm_desc->k > 1 ) {
