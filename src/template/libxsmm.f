@@ -96,17 +96,6 @@
      &    LIBXSMM_DATATYPE_I8   = 6,                                    &
      &    LIBXSMM_DATATYPE_UNSUPPORTED = 7
 
-        !> Denotes the precision/data type of GEMM (for weak-typed
-        !> interface functions such as libxsmm_xmmdispatch).
-        INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,           &
-     &    LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,           &
-     &    LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,          &
-     &    LIBXSMM_GEMM_PRECISION_F16  = LIBXSMM_DATATYPE_F16,           &
-     &    LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,           &
-     &    LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,           &
-     &    LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
-
         !> Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Automatically select strategy (frontend).
@@ -1120,7 +1109,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      kernel%handle, LIBXSMM_GEMM_PRECISION_F64,                  &
+     &      kernel%handle, LIBXSMM_DATATYPE_F64,                  &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
@@ -1137,7 +1126,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      kernel%handle, LIBXSMM_GEMM_PRECISION_F32,                  &
+     &      kernel%handle, LIBXSMM_DATATYPE_F32,                  &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
@@ -1154,7 +1143,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch2(kernel%handle,                      &
-     &      LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,     &
+     &      LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I32,     &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE

@@ -708,7 +708,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
       gp_reg_bias = i_gp_reg_mapping->gp_reg_lda;
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, gp_reg_bias );
     }
-    if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->n_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
       /* Check if we have to save the tmp registers  */
       if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_0) && (i_micro_kernel_config->m_loop_exists == 1)  ) {
@@ -1303,7 +1303,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
   int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm         = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-  int has_scf           = ((LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) ? 1 : 0;
+  int has_scf           = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) ? 1 : 0;
   int has_A_pf_ptr      = (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) ? 1 : 0;
   int has_B_pf_ptr      = (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
       i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C || i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C ) ? 1 : 0;
@@ -1623,7 +1623,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
   /* Now alllocate in stack required GEMM scratch if necessary*/
-  if (LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     int expand_scratch_factor = (n_tiles == 1) ? 2 : 1;
     i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
     gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
@@ -1631,7 +1631,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
     gemm_scratch_size += scratch_pad_size;
   }
 
-  if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     i_micro_kernel_config->emulation_scratch_offset = 0;
     gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;

@@ -64,8 +64,8 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
       const unsigned int um = (unsigned int)m, un = (unsigned int)n, uk = (unsigned int)k;
       if ( um != info.m || un != info.n || uk != info.k
         || um != info.lda || uk != info.ldb || um != info.ldc
-        || LIBXSMM_GEMM_PRECISION(ITYPE) != info.iprecision
-        || LIBXSMM_GEMM_PRECISION(OTYPE) != info.oprecision)
+        || LIBXSMM_DATATYPE(ITYPE) != info.iprecision
+        || LIBXSMM_DATATYPE(OTYPE) != info.oprecision)
       {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
         fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel does not match!\n",
@@ -189,7 +189,7 @@ int main(void)
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
       libxsmm_descriptor_blob blob;
-      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION2(ITYPE,OTYPE),
+      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_DATATYPE2(ITYPE,OTYPE),
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
 
       fi.x = libxsmm_xmmdispatch(desc);

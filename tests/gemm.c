@@ -179,7 +179,7 @@ int main(void)
         if (NULL == kernel) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
-          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+          libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
             alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
           fprintf(stderr, "\n");
 # endif
@@ -225,7 +225,7 @@ int main(void)
             else {
               fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
             }
-            libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+            libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
               alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
             fprintf(stderr, "\n");
 #   endif
@@ -241,7 +241,7 @@ int main(void)
               if (1.0 < (1000.0 * diff_test.normf_rel)) {
 #     if defined(_DEBUG)
                 fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
-                libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+                libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
                   alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
                 fprintf(stderr, "\n");
 #     endif

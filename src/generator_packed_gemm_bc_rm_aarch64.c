@@ -152,7 +152,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
   unsigned int l_simd_packed_width = 0;
 
   /* select simd packing width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_simd_packed_width = 2;
   } else {
     l_simd_packed_width = 4;
