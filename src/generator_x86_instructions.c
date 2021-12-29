@@ -554,6 +554,10 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_CMPSD:
     case LIBXSMM_X86_INSTR_COMISD:
     case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVD_SSE_LD:
+    case LIBXSMM_X86_INSTR_MOVD_SSE_ST:
+    case LIBXSMM_X86_INSTR_MOVQ_SSE_LD:
+    case LIBXSMM_X86_INSTR_MOVQ_SSE_ST:
     case LIBXSMM_X86_INSTR_MOVDQA_LD:
     case LIBXSMM_X86_INSTR_MOVDQA_ST:
     case LIBXSMM_X86_INSTR_MOVDQU_LD:
@@ -762,6 +766,7 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_MOVHPD:
     case LIBXSMM_X86_INSTR_MOVNTPD:
     case LIBXSMM_X86_INSTR_MOVNTDQ:
+    case LIBXSMM_X86_INSTR_MOVNTDQA:
     case LIBXSMM_X86_INSTR_LDDQU:
       break;
     default:
@@ -1776,13 +1781,14 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         exit(-1);
       }
       l_reg_number_src1 = 0;
-    } else {
-      if ( i_reg_number_src1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 3 src operand instruction (%u), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+    } else if ( ((i_vec_instr >> 28) & 3) == 1 ) {
+      if ( i_reg_number_src0 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
-      } else {
-        l_reg_number_src1 = i_reg_number_src1;
       }
+      l_reg_number_src0 = 0;
+    } else {
+      l_reg_number_src1 = i_reg_number_src1;
     }
 
     /* check if we need to flip operands */

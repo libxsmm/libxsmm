@@ -842,7 +842,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI64X2", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X2, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI32X8", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI32X8, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VEXTRACTI64X4", &mycode, LIBXSMM_X86_INSTR_VEXTRACTI64X4, 1, 0x01, 32 );
-  test_evex_compute_3reg_general( "evex_reg_VINSERTI32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X4, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VINSERTI32X4", &mycode, LIBXSMM_X86_INSTR_VINSERTI32X4, 0, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VBLENDMPS", &mycode, LIBXSMM_X86_INSTR_VBLENDMPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VBLENDMPD", &mycode, LIBXSMM_X86_INSTR_VBLENDMPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPBLENDMB", &mycode, LIBXSMM_X86_INSTR_VPBLENDMB, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
@@ -1501,6 +1501,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_rex_vload_vstore( "rex_mov_MOVDQU_ST", &mycode, LIBXSMM_X86_INSTR_MOVDQU_ST, 2 );
   test_rex_vload_vstore( "rex_mov_MOVNTDQ", &mycode, LIBXSMM_X86_INSTR_MOVNTDQ, 2 );
 
+  test_rex_vcompute_2reg_general( "rex_reg_MOVD_SSE_LD", &mycode, LIBXSMM_X86_INSTR_MOVD_SSE_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVD_SSE_ST", &mycode, LIBXSMM_X86_INSTR_MOVD_SSE_ST, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVQ_SSE_LD", &mycode, LIBXSMM_X86_INSTR_MOVQ_SSE_LD, 0x0 );
+  test_rex_vcompute_2reg_general( "rex_reg_MOVQ_SSE_ST", &mycode, LIBXSMM_X86_INSTR_MOVQ_SSE_ST, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MOVAPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPD_LD, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MOVAPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPD_ST, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_MOVUPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPD_LD, 0x0 );
@@ -1625,6 +1629,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_rex_vcompute_2reg_general( "rex_reg_CVTTPD2DQ", &mycode, LIBXSMM_X86_INSTR_CVTTPD2DQ, 0x0 );
   test_rex_vcompute_2reg_general( "rex_reg_CVTTPS2DQ", &mycode, LIBXSMM_X86_INSTR_CVTTPS2DQ, 0x0 );
 
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVD_SSE_LD", &mycode, LIBXSMM_X86_INSTR_MOVD_SSE_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVD_SSE_ST", &mycode, LIBXSMM_X86_INSTR_MOVD_SSE_ST, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVQ_SSE_LD", &mycode, LIBXSMM_X86_INSTR_MOVQ_SSE_LD, 0x0 );
+  test_rex_vcompute_mem_1reg_general( "rex_mem_MOVQ_SSE_ST", &mycode, LIBXSMM_X86_INSTR_MOVQ_SSE_ST, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVAPD_LD, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_MOVAPD_ST", &mycode, LIBXSMM_X86_INSTR_MOVAPD_ST, 0x0 );
   test_rex_vcompute_mem_1reg_general( "rex_mem_MOVUPD_LD", &mycode, LIBXSMM_X86_INSTR_MOVUPD_LD, 0x0 );
