@@ -1159,7 +1159,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
   /* B is used and X is unused */
   code[p0   ] |= (unsigned char)(( i_vec_reg_number_0 < 8 ) ? 0x20 : 0x00);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_1];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 16) ? tbl_vex_vvvv[i_vec_reg_number_1] : tbl_vex_vvvv[0]);
   /* VL: 128bit,256bit */
   code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
@@ -1430,7 +1430,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
   /* B and X */
   code[p0   ] |= (unsigned char) tbl_evex_BX[i_vec_reg_number_0];
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_1];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ? tbl_evex_vvvv[i_vec_reg_number_1] : tbl_evex_vvvv[0]);
   code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_1];
   /* VL: 128bit,256bit,512bit or sae control */
   code[p2   ] |= (unsigned char)((i_sae_cntl == 0) ? tbl_vl[l_vl_idx] : (0x60 & (i_sae_cntl << 4)));
@@ -1745,9 +1745,9 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
     unsigned int l_encoder_arch = 2;
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
-    unsigned int l_reg_number_src0;
-    unsigned int l_reg_number_src1;
-    unsigned int l_reg_number_dst;
+    unsigned int l_reg_number_src0 = 0;
+    unsigned int l_reg_number_src1 = 0;
+    unsigned int l_reg_number_dst = 0;
 
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
@@ -1777,7 +1777,12 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
       }
       l_reg_number_src1 = 0;
     } else {
-      l_reg_number_src1 = i_reg_number_src1;
+      if ( i_reg_number_src1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 3 src operand instruction (%u), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        exit(-1);
+      } else {
+        l_reg_number_src1 = i_reg_number_src1;
+      }
     }
 
     /* check if we need to flip operands */
@@ -3257,7 +3262,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
     const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
-    unsigned int l_src1;
+    unsigned int l_src1 = 0;
 
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_mask_instr >> 28) & 3) == 2 ) {
@@ -3267,7 +3272,12 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
       }
       l_src1 = 0;
     } else {
-      l_src1 = i_mask_reg_number_src_1;
+      if ( i_mask_reg_number_src_1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 2 src operand instruction (%u), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
+        exit(-1);
+      } else {
+        l_src1 = i_mask_reg_number_src_1;
+      }
     }
 
     /* call vex encoder */
