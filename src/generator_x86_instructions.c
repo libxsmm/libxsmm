@@ -1431,12 +1431,12 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
 
   /* B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_2];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_2 < 32) ? tbl_evex_RRp[i_vec_reg_number_2] : tbl_evex_RRp[0]);
   /* B and X */
-  code[p0   ] |= (unsigned char) tbl_evex_BX[i_vec_reg_number_0];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_0 < 32) ?  tbl_evex_BX[i_vec_reg_number_0] :  tbl_evex_BX[0]);
   /* vvvv and V' */
   code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ? tbl_evex_vvvv[i_vec_reg_number_1] : tbl_evex_vvvv[0]);
-  code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_1];
+  code[p2   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ?   tbl_evex_vp[i_vec_reg_number_1] :   tbl_evex_vp[0]);
   /* VL: 128bit,256bit,512bit or sae control */
   code[p2   ] |= (unsigned char)((i_sae_cntl == 0) ? tbl_vl[l_vl_idx] : (0x60 & (i_sae_cntl << 4)));
   /* masking */
