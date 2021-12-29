@@ -35,6 +35,30 @@ typedef struct {
 #define LIBXSMM_ASPARSE_REG_FLAG_FIRST  0x1
 #define LIBXSMM_ASPARSE_REG_FLAG_LAST   0x2
 
+LIBXSMM_API_INTERN
+void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
+                                 const double*  i_values,
+                                 unsigned int*  o_unique,
+                                 double*        o_unique_values,
+                                 unsigned int*  o_unique_pos,
+                                 int*           o_unique_sgn );
+
+LIBXSMM_API_INTERN
+void libxsmm_asparse_reg_sequence( unsigned int i_m,
+                                   unsigned int i_m_blocking,
+                                   const unsigned int* i_row_idx,
+                                   const unsigned int* i_column_idx,
+                                   const unsigned int* i_unique_pos,
+                                   const int*          i_unique_sgn,
+                                   unsigned int i_max_ops,
+                                   libxsmm_asparse_reg_op* o_ops,
+                                   unsigned int* o_n_ops);
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_asparse_reg_pick_bcast_reg( const unsigned int* i_vals,
+                                                 unsigned int i_nvals,
+                                                 const libxsmm_asparse_reg_op* i_ops,
+                                                 unsigned int i_nops );
 
 LIBXSMM_API_INTERN
 void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
