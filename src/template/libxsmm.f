@@ -1109,7 +1109,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      kernel%handle, LIBXSMM_DATATYPE_F64,                  &
+     &      kernel%handle, LIBXSMM_DATATYPE_F64,                        &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
@@ -1126,7 +1126,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      kernel%handle, LIBXSMM_DATATYPE_F32,                  &
+     &      kernel%handle, LIBXSMM_DATATYPE_F32,                        &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
@@ -1143,7 +1143,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch2(kernel%handle,                      &
-     &      LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I32,     &
+     &      LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I32,                 &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
