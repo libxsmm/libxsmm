@@ -5068,7 +5068,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
     if (NULL != fn->xmm)
 #endif
     {
-      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TOOD fix prefetch */
+      /* @TODO fix prefetch */
+      LIBXSMM_UNUSED( pa );
+      LIBXSMM_UNUSED( pb );
+      LIBXSMM_UNUSED( pc );
+      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TODO fix prefetch */
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
