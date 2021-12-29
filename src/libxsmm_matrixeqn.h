@@ -31,6 +31,13 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_node_type {
   LIBXSMM_MATRIX_EQN_NODE_ARG     = 8
 } libxsmm_matrix_eqn_node_type;
 
+LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_fusion_pattern_type {
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE                    = 0,
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_UNARY             = 1,
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD       = 2,
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD_UNARY = 3
+} libxsmm_matrix_eqn_fusion_pattern_type;
+
 LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
   LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE   = 0,
   LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW    = 1,
@@ -108,6 +115,18 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_info {
   libxsmm_matrix_eqn_arg_v2     arg;
 } libxsmm_matrix_eqn_info;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_xgemm_fusion_info {
+  libxsmm_blasint   fused_sigmoid_op;
+  libxsmm_blasint   fused_relu_op;
+  libxsmm_blasint   fused_colbias_add_op;
+  libxsmm_blasint   colbias_pos_in_arg;
+  libxsmm_datatype  colbias_dtype;
+} libxsmm_matrix_eqn_xgemm_fusion_info;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_fusion_info {
+  libxsmm_matrix_eqn_xgemm_fusion_info   xgemm;
+} libxsmm_matrix_eqn_fusion_info;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_elem {
   struct libxsmm_matrix_eqn_elem* le;
   struct libxsmm_matrix_eqn_elem* ri;
@@ -121,6 +140,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_blasint                 max_tmp_size;
   libxsmm_blasint                 n_args;
   libxsmm_blasint                 tree_max_comp_tsize;
+  libxsmm_matrix_eqn_fusion_info  fusion_info;
 } libxsmm_matrix_eqn_elem;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn {
