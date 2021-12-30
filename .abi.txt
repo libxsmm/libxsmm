@@ -398,7 +398,6 @@ libxsmm_ptr_smm
 libxsmm_ptr_w0
 libxsmm_ptr_w1
 libxsmm_ptr_w2
-libxsmm_ptr_wimm
 libxsmm_ptr_z0
 libxsmm_ptr_z1
 libxsmm_ptr_z2
@@ -408,7 +407,6 @@ libxsmm_release_kernel
 libxsmm_release_kernel_
 libxsmm_release_scratch
 libxsmm_release_smmkernel
-libxsmm_release_wimmkernel
 libxsmm_remainder
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
