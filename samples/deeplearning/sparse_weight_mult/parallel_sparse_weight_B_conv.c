@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
             RSnum_blocks * sizeof(libxsmm_smmfunction), 64);
     for (blk_idx = 0; blk_idx < RSnum_blocks; ++blk_idx) {
         l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-            &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
+            &l_xgemm_blob, LIBXSMM_DATATYPE(float), NB / nb, KB, CB, CB,
             0, KB, alpha, beta, flags, prefetch);
         mykernel[blk_idx] =
             libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],

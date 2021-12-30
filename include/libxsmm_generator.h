@@ -51,26 +51,26 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descr
 
 /** Initialize GEMM descriptor (generic: double-precision alpha/beta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, int prefetch);
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, int prefetch);
 
 /** Initialize GEMM descriptor as used by low-level routines (generic). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch);
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch);
 /** Similar to libxsmm_gemm_descriptor_init2 with optional type-converted alpha/beta (dalpha/dbeta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch, double* dalpha, double* dbeta);
 

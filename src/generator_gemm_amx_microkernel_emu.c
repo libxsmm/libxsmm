@@ -497,7 +497,7 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
-  if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     libxsmm_x86_instruction_tile_move_emu( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,
@@ -507,7 +507,7 @@ void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
         (in_offset * i_xgemm_desc->ldc + im_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
         tile, i_micro_kernel_config, 0);
   } else {
-    if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       /* If we have some fusion, then we call the paired tilestore code generation with tile1 = -1 and we modify the tile1 manipulaiton  */
       if (fused_eltwise == 1) {
         paired_tilestore_emu( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, tile, -1, im_offset, in_offset, n_cols);
@@ -636,7 +636,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
   int i, im, in;
   int pf_dist = i_xgemm_desc->c3;
   int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1)) ? 1 : 0;
-  int use_paired_tilestores = ((LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
+  int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
   unsigned int gp_reg_a;
@@ -711,9 +711,9 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
   }
 
   /* Pick the proper tile compute instruction  */
-  if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPBF16PS;
-  } else if (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUUD;
     } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
@@ -731,7 +731,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
 
   /* Some checks for this functinality...  */
   if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
-    if (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in BF16...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;

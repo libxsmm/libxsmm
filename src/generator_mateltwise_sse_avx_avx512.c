@@ -285,7 +285,7 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
     l_mask = 0xffff;
   } else if ( i_precision == LIBXSMM_DATATYPE_F16 || i_precision == LIBXSMM_DATATYPE_BF16 || i_precision == LIBXSMM_DATATYPE_I16 ) {
     l_mask = 0xffffffff;
-  } else if ( i_precision == LIBXSMM_GEMM_PRECISION_I8 ) {
+  } else if ( i_precision == LIBXSMM_DATATYPE_I8 ) {
     l_mask = 0xffffffffffffffff;
   }
   /* shift right by "inverse" remainder */
@@ -313,7 +313,7 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
           LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
           i_gp_reg_tmp,
           i_mask_reg );
-    } else if ( i_precision == LIBXSMM_GEMM_PRECISION_I8 ) {
+    } else if ( i_precision == LIBXSMM_DATATYPE_I8 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
           LIBXSMM_X86_INSTR_KMOVQ_GPR_LD,
           i_gp_reg_tmp,

@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float),
+  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE(float),
     K, NB, C, 0, NB, NB, alpha, beta, flags, prefetch);
 
   /* sparse routine */

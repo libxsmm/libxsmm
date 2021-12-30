@@ -1346,6 +1346,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
 /* structure for storing the current gp reg mapping */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
+  unsigned int gp_reg_param_struct;
   unsigned int gp_reg_a;
   unsigned int gp_reg_a_base;
   unsigned int gp_reg_b;

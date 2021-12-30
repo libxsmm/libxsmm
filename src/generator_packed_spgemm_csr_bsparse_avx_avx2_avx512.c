@@ -41,7 +41,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
       l_max_reg_block = 28;
@@ -256,7 +256,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
       unsigned char l_data[32];
       unsigned int l_count;
 
-      if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < i_packed_remainder ) {
