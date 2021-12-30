@@ -17,6 +17,11 @@ LIBXSMM_API_INTERN
 void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
                                 int i_fp64,
                                 int* o_sparse,
+                                int* o_dense);
+LIBXSMM_API_INTERN
+void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
+                                int i_fp64,
+                                int* o_sparse,
                                 int* o_dense) {
   int vl = libxsmm_cpuid_vlen32( libxsmm_target_archid );
   if ( i_fp64 ) {

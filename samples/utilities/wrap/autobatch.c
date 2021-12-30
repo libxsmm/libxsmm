@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 # if defined(_OPENMP)
 #     pragma omp single nowait
 # endif /* enable batch-recording of the specified matrix multiplication */
-      libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(ITYPE),
+      libxsmm_mmbatch_begin(LIBXSMM_DATATYPE(ITYPE),
         &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
 #endif
 #if defined(_OPENMP)

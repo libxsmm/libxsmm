@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -401,7 +401,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, 0 == check ? -s : s);
         }
@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, 0 == check ? -s : s);
         }

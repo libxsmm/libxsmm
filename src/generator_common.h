@@ -598,6 +598,10 @@
 #define LIBXSMM_X86_INSTR_UCOMISS          0xa004102e
 
 /* SSE2 instructions */
+#define LIBXSMM_X86_INSTR_MOVD_SSE_LD      0xa005106e
+#define LIBXSMM_X86_INSTR_MOVD_SSE_ST      0xa005107e
+#define LIBXSMM_X86_INSTR_MOVQ_SSE_LD      0xa285106e
+#define LIBXSMM_X86_INSTR_MOVQ_SSE_ST      0xa285107e
 #define LIBXSMM_X86_INSTR_MOVAPD           0xa0051028
 #define LIBXSMM_X86_INSTR_MOVAPD_LD        0xa0051028
 #define LIBXSMM_X86_INSTR_MOVAPD_ST        0xa8051029
@@ -1342,6 +1346,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
 /* structure for storing the current gp reg mapping */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
+  unsigned int gp_reg_param_struct;
   unsigned int gp_reg_a;
   unsigned int gp_reg_a_base;
   unsigned int gp_reg_b;
