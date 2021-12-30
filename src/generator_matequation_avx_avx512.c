@@ -980,7 +980,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
           copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
         }
       }
-#if 1
+#if 0
       printf("\nJITing tree with scratch %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
@@ -1007,7 +1007,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
       libxsmm_generator_reoptimize_eqn(cur_eqn);
       memset(&(l_kernel_config.meltw_kernel_config), 0, sizeof(libxsmm_mateltwise_kernel_config));
-#if 1
+#if 0
       printf("\nJITing tree with regblocks %d and ldo is %d\n", eqn_tree_id, copy_mateqn_desc.ldo);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif

@@ -1036,6 +1036,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   unsigned int reserved_zmms      = 0;
   unsigned int reserved_mask_regs = 1;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_xgemm_desc);
 
   if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
     if (i_micro_kernel_config->vnni_format_C == 1) {
@@ -1597,7 +1598,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
-  unsigned int m_tiles, n_tiles;
   unsigned int n_gemm_code_blocks = 0;
 
   libxsmm_tile_config tile_config;
