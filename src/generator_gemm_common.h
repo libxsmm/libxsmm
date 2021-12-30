@@ -6,13 +6,49 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_GEMM_COMMON_H
 #define GENERATOR_GEMM_COMMON_H
 
 #include "generator_common.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_stack_frame_fill_stack_vars_v2( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config,
+    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_stack_frame_fill_stack_vars(libxsmm_generated_code*            io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generated_code*            io_generated_code,
+    const libxsmm_gemm_descriptor*      i_xgemm_desc,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
+                                                  const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                                  libxsmm_micro_kernel_config*        i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
+                                                  const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                                libxsmm_micro_kernel_config*        i_micro_kernel_config );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_setup_fusion_microkernel_properties(const libxsmm_gemm_descriptor*      i_xgemm_desc,
+                                                                libxsmm_micro_kernel_config*        i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*   io_micro_kernel_config,
