@@ -46,15 +46,14 @@
 int test(libxsmm_blasint /*m*/, libxsmm_blasint /*n*/, libxsmm_blasint /*k*/);
 int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 {
-  const OTYPE alpha = 1, beta = 0;
+  const int flags = LIBXSMM_GEMM_FLAG_BETA_0;
   LIBXSMM_MMFUNCTION_TYPE2(ITYPE,OTYPE) kernel;
   int result = EXIT_FAILURE;
 #if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
 # pragma omp single
 #endif
   kernel = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(m, n, k,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, &alpha, &beta,
-    NULL/*flags*/, NULL/*prefetch*/);
+    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, &flags);
   if (NULL != kernel) {
     libxsmm_mmkernel_info info;
     libxsmm_xmmfunction xmm;
@@ -93,7 +92,7 @@ int main(void)
 {
   union { libxsmm_xmmfunction x; void* p; } f[MAX_NKERNELS];
   const OTYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
-  const int prefetch = LIBXSMM_PREFETCH_AUTO;
+  const int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_registry_info registry_info;
   const int max_shape = LIBXSMM_MAX_M, flags = LIBXSMM_FLAGS;
   int result = EXIT_SUCCESS, nkernels = MAX_NKERNELS, ndup = 0, i;
@@ -175,7 +174,7 @@ int main(void)
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       f[i].x.LIBXSMM_TPREFIX2(ITYPE,OTYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(
-        m, n, k, &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta, &flags, &prefetch);
+        m, n, k, &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &flags);
     }
   }
 

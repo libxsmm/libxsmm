@@ -61,16 +61,11 @@ int main(int argc, char* argv[])
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-# if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-  const int prefetch = LIBXSMM_PREFETCH_AUTO;
-# else
-  const int prefetch = LIBXSMM_PREFETCH_NONE;
-# endif
   union { /* convert between fn.ptr and (data)pointer */
     LIBXSMM_MMFUNCTION_TYPE(TYPE) fun;
     const void* ptr;
   } xmm;
-  xmm.fun = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
+  xmm.fun = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &flags);
 #endif
 
   /* initialize data according to touch-first policy */
@@ -117,9 +112,6 @@ int main(int argc, char* argv[])
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
-#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size))/*,
-              a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(SYNC(p, nc, size))*/); /* @TODO fix prefetch */
 #else
       xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif
@@ -134,9 +126,6 @@ int main(int argc, char* argv[])
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
-#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)) /*,
-          a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size))*/); /* @TODO fix prefetch */
 #else
   xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif

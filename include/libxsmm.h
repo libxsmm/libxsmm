@@ -691,28 +691,6 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
-/**
- * Dispatched general dense matrix multiplication (I16 input, I32 result).
- * Matrix "a" must be given in VNNI-format, i.e., [K][M] -> [K/2][M][2] with
- * two entries of "K" in the inner-most dimension. General data conversion
- * from F32 is per, e.g., libxsmm_dnn_quantize.
- */
-LIBXSMM_API void libxsmm_wigemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-  const short* b, const libxsmm_blasint* ldb,
-  const int* beta, int* c, const libxsmm_blasint* ldc);
-/**
- * Dispatched general dense matrix multiplication (BF16 input, F32 result).
- * Matrix "a" must be given in VNNI-format, i.e., [K][M] -> [K/2][M][2] with
- * two entries of "K" in the inner-most dimension. General data conversion
- * from F32 is per, e.g., libxsmm_rne_convert_fp32_bf16.
- */
-LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-  const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 
@@ -812,6 +790,9 @@ public:
     LIBXSMM_MMCALL_ABC(m_function.xmm, a, b, c);
   }
   void operator()(const itype* a, const itype* b, otype* c, const itype* pa, const itype* pb, const otype* pc) const {
+    LIBXSMM_UNUSED( pa );
+    LIBXSMM_UNUSED( pb );
+    LIBXSMM_UNUSED( pc );
     LIBXSMM_MMCALL_PRF(m_function.xmm, a, b, c, pa, pb, pc);
   }
 };
@@ -960,42 +941,6 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
    const float* beta,       float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** Dispatched general dense matrix multiplication (low-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-                    const short* b, const libxsmm_blasint* ldb,
-   const int* beta,         int* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wigemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-                    const short* b, const libxsmm_blasint* ldb,
-   const int* beta,         int* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wigemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** Dispatched general dense matrix multiplication (low-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,                  float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_bsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,                  float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_bsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */

@@ -122,7 +122,7 @@ int main(void)
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
-      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]);
+      const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | ((beta[i] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
       const int smm = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       _MM_SET_EXCEPTION_STATE(0);
@@ -175,7 +175,7 @@ int main(void)
 #if (0 != LIBXSMM_JIT)
       if (0 != smm) { /* dispatch kernel and check that it is available */
         const LIBXSMM_MMFUNCTION_TYPE(ITYPE) kernel = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(mi, ni, ki,
-          lda + test, ldb + test, ldc + test, alpha + test, beta + test, &flags, NULL/*prefetch*/);
+          lda + test, ldb + test, ldc + test, &flags);
         if (NULL == kernel) {
 # if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
