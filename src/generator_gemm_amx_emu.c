@@ -1710,6 +1710,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
 #if defined(_WIN32) || defined(__CYGWIN__)
 #else
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
@@ -1906,6 +1907,49 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
 
   /* open asm */
   libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 1 );
+
+  /* implementing load from struct */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
+    if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
+         ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+      /* saving help1 as we are still before callee save handling */
+      libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_1 );
+      /* RDI holds the pointer to the strcut, so lets first move this one into help_1 */
+      libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
+      /* A pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, LIBXSMM_X86_GP_REG_RDI, 0 );
+      /* B pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, LIBXSMM_X86_GP_REG_RSI, 0 );
+      /* C pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 96, l_gp_reg_mapping.gp_reg_c, 0 );
+      /* batch reduce count & offsett arrays*/
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_reg_mapping.gp_reg_reduce_count, 0 );
+        if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+          libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                           l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, l_gp_reg_mapping.gp_reg_a_offset, 0 );
+          libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                           l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, l_gp_reg_mapping.gp_reg_b_offset, 0 );
+        }
+      }
+      /* check values for gemm_ext */
+      if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+        if ( (i_xgemm_desc->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+             (i_xgemm_desc->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
+          return;
+        }
+      }
+      /* restoring help1 */
+      libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_1 );
+    }
+  }
+
   /* Setup stack frame...  */
   libxsmm_generator_gemm_amx_setup_stack_frame_emu( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
   libxsmm_generator_gemm_amx_setup_fusion_infra_emu( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
