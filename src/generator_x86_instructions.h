@@ -29,14 +29,11 @@ typedef enum libxsmm_x86_simd_name {
  * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_generated_code,
+                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                               const unsigned int            skip_callee_save,
+                                               unsigned int                  i_prefetch );
 
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_amx( libxsmm_generated_code*   io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          unsigned int                  i_prefetch );
 /**
  * Closes the inline assembly section / jit stream
  *
@@ -45,14 +42,52 @@ void libxsmm_x86_instruction_open_stream_amx( libxsmm_generated_code*   io_gener
  * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
-                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io_generated_code,
+                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                const unsigned int            skip_callee_save,
+                                                unsigned int                  i_prefetch );
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_amx( libxsmm_generated_code*   io_generated_code,
-                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           unsigned int                  i_prefetch );
+void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
+                                             const unsigned int      i_gp_struct_params,
+                                             const unsigned int      skip_callee_save );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      skip_callee_save );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
+                                       unsigned int                i_reg,
+                                       unsigned int                i_off,
+                                       libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned char*        i_data,
+                                               unsigned int                i_ndata_bytes,
+                                               unsigned int                i_alignment,
+                                               unsigned int                i_append_only,
+                                               libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                         libxsmm_const_data_tracker* io_const_data );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned int          i_instr,
+                                                   const unsigned int          i_gp_reg_base,
+                                                   const unsigned int          i_gp_reg_idx,
+                                                   const unsigned int          i_scale,
+                                                   const int                   i_displacement,
+                                                   const unsigned int          i_reg_number_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_generated_code,
+                                               const unsigned int          i_instr,
+                                               const unsigned int          i_reg_number_rm,
+                                               const unsigned int          i_reg_number_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     io_generated_code,
@@ -354,65 +389,6 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_imm8( libxsmm_generated_code* 
                                                         const unsigned int      i_reg_number_dst,
                                                         const unsigned short    i_imm8 );
 
-/**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 or 3 vector registers, memory operands are not supported as first operand
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_vec_reg_number_2 );
-
-
-/**
- * @param i_instruction_set requested instruction set to encode
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (z)
- * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
- * @param i_vec_reg_number_2 the third vector register number (zmm: 0-31)
- * @param i_mask_reg_number the mask register (0-7)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
-                                              const unsigned int      i_gp_reg_base,
-                                              const unsigned int      i_gp_reg_idx,
-                                              const unsigned int      i_scale,
-                                              const int               i_displacement,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1 );
-
-/**
- * Generates SSE shuffle instructions with 2 vector registers, memory operands are not supported as first operand
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_vec_shuffle_sse_reg( libxsmm_generated_code* io_generated_code,
-                                                  const unsigned int      i_vec_instr,
-                                                  const char              i_vector_name,
-                                                  const unsigned int      i_vec_reg_number_0,
-                                                  const unsigned int      i_vec_reg_number_1,
-                                                  const unsigned int      i_shuffle_operand );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_generated_code,
@@ -662,75 +638,6 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_arg_number,
                                               const unsigned int      i_gp_reg_number );
-
-/**
- * @TODO: clean-up
- * Opens the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*                   io_generated_code,
-                                                  const unsigned int                        i_gp_reg_a,
-                                                  const unsigned int                        i_gp_reg_lda,
-                                                  const unsigned int                        i_gp_reg_b,
-                                                  const unsigned int                        i_gp_reg_ldb,
-                                                  const unsigned int                        i_gp_reg_a_pf,
-                                                  const unsigned int                        i_gp_reg_b_pf,
-                                                  const char*                               i_arch );
-
-/**
- * @TODO: clean-up
- * Closes the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
-                                                   const char*                   i_arch );
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_mateltwise( libxsmm_generated_code*                   io_generated_code,
-                                                     const unsigned int                        i_gp_struct_params,
-                                                     int                                       skip_push);
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_mateltwise( libxsmm_generated_code*       io_generated_code,
-                                                      int                           skip_pop);
-
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_matequation( libxsmm_generated_code*                  io_generated_code,
-                                                     const unsigned int                        i_gp_struct_params );
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_matequation( libxsmm_generated_code*       io_generated_code );
-
-/**
- * @TODO: clean-up
- * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*                   io_generated_code,
-                                                    const unsigned int                        i_gp_reg_a,
-                                                    const unsigned int                        i_gp_reg_lda,
-                                                    const unsigned int                        i_gp_reg_b,
-                                                    const unsigned int                        i_gp_reg_ldb,
-                                                    const char*                               i_arch );
-
-/**
- * @TODO: clean-up
- * Closes the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
-                                                     const char*                   i_arch );
 
 /**
  * Generates ld/stconfig/tilerelease instructions

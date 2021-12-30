@@ -134,26 +134,29 @@
         !> Enumerates the available target architectures and instruction
         !> set extensions as returned by libxsmm_get_target_archid().
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
-     &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_GENERIC         = 1002,                           &
-     &    LIBXSMM_X86_SSE3            = 1003,                           &
-     &    LIBXSMM_X86_SSE4            = 1004,                           &
-     &    LIBXSMM_X86_AVX             = 1005,                           &
-     &    LIBXSMM_X86_AVX2            = 1006,                           &
-     &    LIBXSMM_X86_AVX512_VL256    = 1007,                           &
-     &    LIBXSMM_X86_AVX512          = 1010,                           &
-     &    LIBXSMM_X86_AVX512_MIC      = 1011,                           &
-     &    LIBXSMM_X86_AVX512_KNM      = 1012,                           &
-     &    LIBXSMM_X86_AVX512_CORE     = 1020,                           &
-     &    LIBXSMM_X86_AVX512_CLX      = 1021,                           &
-     &    LIBXSMM_X86_AVX512_CPX      = 1022,                           &
-     &    LIBXSMM_X86_AVX512_SPR      = 1023,                           &
-     &    LIBXSMM_X86_ALLFEAT         = 1999,                           &
-     &    LIBXSMM_AARCH64_V81         = 2001,                           &
-     &    LIBXSMM_AARCH64_V82         = 2002,                           &
-     &    LIBXSMM_AARCH64_A64FX       = 2100,                           &
-     &    LIBXSMM_AARCH64_ALLFEAT     = 2999
+     &    LIBXSMM_TARGET_ARCH_UNKNOWN   = 0,                            &
+     &    LIBXSMM_TARGET_ARCH_GENERIC   = 1,                            &
+     &    LIBXSMM_X86_GENERIC           = 1002,                         &
+     &    LIBXSMM_X86_SSE3              = 1003,                         &
+     &    LIBXSMM_X86_SSE4              = 1004,                         &
+     &    LIBXSMM_X86_AVX               = 1005,                         &
+     &    LIBXSMM_X86_AVX2              = 1006,                         &
+     &    LIBXSMM_X86_AVX512_VL256      = 1007,                         &
+     &    LIBXSMM_X86_AVX512_VL256_CLX  = 1008,                         &
+     &    LIBXSMM_X86_AVX512_VL256_CPX  = 1009,                         &
+     &    LIBXSMM_X86_AVX512            = 1010,                         &
+     &    LIBXSMM_X86_AVX512_MIC        = 1011,                         &
+     &    LIBXSMM_X86_AVX512_KNM        = 1012,                         &
+     &    LIBXSMM_X86_AVX512_CORE       = 1020,                         &
+     &    LIBXSMM_X86_AVX512_CLX        = 1021,                         &
+     &    LIBXSMM_X86_AVX512_CPX        = 1022,                         &
+     &    LIBXSMM_X86_AVX512_SPR        = 1023,                         &
+     &    LIBXSMM_X86_ALLFEAT           = 1999,                         &
+     &    LIBXSMM_AARCH64_V81           = 2001,                         &
+     &    LIBXSMM_AARCH64_V82           = 2002,                         &
+     &    LIBXSMM_AARCH64_A64FX         = 2100,                         &
+     &    LIBXSMM_AARCH64_APPL_M1       = 2200,                         &
+     &    LIBXSMM_AARCH64_ALLFEAT       = 2999
 
         !> Generic function type (double-precision).
         TYPE, BIND(C) :: LIBXSMM_DMMFUNCTION
@@ -198,8 +201,9 @@
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
           !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
-          !> Location (m, n) of largest difference (linf_abs).
-          INTEGER(LIBXSMM_BLASINT_KIND) m, n
+          !> Values (v_ref, v_tst), location (m, n), and zero-based i-th of
+          !> r reductions (libxsmm_matdiff_reduce) of smallest R-squared.
+          INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
@@ -1350,56 +1354,50 @@
 
         !> Register user-defined key-value; value can be queried (libxsmm_xdispatch).
         !> Since the key-type is unknown to LIBXSMM, the key must be binary reproducible,
-        !> i.e., if it is a structured type (padded data may be uninitialized), it must
-        !> be initially zero-filled (libxsmm_xclear) followed by an element-wise setup.
-        !> The size of the key is limited (see documentation). The given value is copied
-        !> by LIBXSMM and may be initialized at registration-time or whenever queried.
-        !> Registered data is released at program termination but can be also released
-        !> if needed (libxsmm_xrelease), .e.g., for larger value for the same key.
+        !> i.e., a structured type (can be padded) must be initialized like a binary blob
+        !> (libxsmm_xclear) followed by an element-wise initialization. The size of the
+        !> key is limited (see documentation). The given value is copied by LIBXSMM and
+        !> can be initialized prior to registration or whenever queried. Registered data
+        !> is released when the program terminates but can be also released if needed
+        !> (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
-        FUNCTION libxsmm_xregister(key, keysize, valsize,               &
-     &  valinit, keyhash)
+        FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR),    INTENT(IN), VALUE     :: key
           INTEGER(C_INT), INTENT(IN)            :: keysize, valsize
           TYPE(C_PTR),    INTENT(IN),  OPTIONAL :: valinit
-          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xregister
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
           INTERFACE
             SUBROUTINE internal_xregister(regval,                       &
-     &      key, keysize, valsize, valinit, keyhash)                    &
+     &      key, keysize, valsize, valinit)                             &
      &      BIND(C, NAME="libxsmm_xregister_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key, valinit
               INTEGER(C_INT), INTENT(IN)  :: keysize, valsize
-              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
           CALL internal_xregister(libxsmm_xregister,                    &
-     &      key, keysize, valsize, valinit, keyhash)
+     &      key, keysize, valsize, valinit)
         END FUNCTION
 
         !> Query user-defined value from LIBXSMM's code registry.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
-        FUNCTION libxsmm_xdispatch(key, keysize, keyhash)
+        FUNCTION libxsmm_xdispatch(key, keysize)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
           INTEGER(C_INT), INTENT(IN) :: keysize
-          INTEGER(C_INT), INTENT(OUT), OPTIONAL :: keyhash
           TYPE(C_PTR) :: libxsmm_xdispatch
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xdispatch
           INTERFACE
-            SUBROUTINE internal_xdispatch(regval, key, keysize, keyhash)&
+            SUBROUTINE internal_xdispatch(regval, key, keysize)         &
      &      BIND(C, NAME="libxsmm_xdispatch_")
               IMPORT :: C_PTR, C_INT
               TYPE(C_PTR), INTENT(OUT) :: regval
               TYPE(C_PTR), INTENT(IN), VALUE :: key
               INTEGER(C_INT), INTENT(IN)  :: keysize
-              INTEGER(C_INT), INTENT(OUT) :: keyhash
             END SUBROUTINE
           END INTERFACE
-          CALL internal_xdispatch(libxsmm_xdispatch,                    &
-     &      key, keysize, keyhash)
+          CALL internal_xdispatch(libxsmm_xdispatch, key, keysize)
         END FUNCTION
 
         !> Auto-dispatched general dense MM (double-precision).

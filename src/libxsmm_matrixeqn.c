@@ -309,6 +309,8 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
         libxsmm_generator_assign_new_timestamp( cur_node->le, current_timestamp );
       }
     }
+    cur_node->visit_timestamp = *current_timestamp;
+    *current_timestamp = *current_timestamp + 1;
   } else {
     /* shouldn't happen */
   }
@@ -337,14 +339,14 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_unary_tmp(libxsmm
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_unary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
   cur_node->tmp.m  = cur_node->le->tmp.m;
   cur_node->tmp.n  = cur_node->le->tmp.n;
-  cur_node->tmp.ld  = cur_node->le->tmp.ld;
+  cur_node->tmp.ld  = cur_node->le->tmp.m;
   cur_node->tmp.dtype  = cur_node->info.u_op.dtype;
 }
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsmm_matrix_eqn_elem* cur_node);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
   cur_node->tmp.m  = cur_node->le->tmp.m;
-  cur_node->tmp.ld  = cur_node->le->tmp.ld;
+  cur_node->tmp.ld  = cur_node->le->tmp.m;
   if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
     cur_node->tmp.n  = cur_node->ri->tmp.n;
   } else {
@@ -357,7 +359,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp(libxs
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
   cur_node->tmp.m  = cur_node->r2->tmp.m;
   cur_node->tmp.n  = cur_node->r2->tmp.n;
-  cur_node->tmp.ld  = cur_node->r2->tmp.ld;
+  cur_node->tmp.ld  = cur_node->r2->tmp.m;
   if (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) {
     cur_node->tmp.m  = cur_node->r2->tmp.m;
     cur_node->tmp.n  = cur_node->r2->tmp.n;
@@ -371,7 +373,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_arg_node(libxsmm_matr
   /* Do not increase the timestamp, this node is just an arg so it's not part of the execution */
   cur_node->visit_timestamp = -1;
   cur_node->n_args = 1;
-  cur_node->max_tmp_size = cur_node->info.arg.ld * cur_node->info.arg.n;
+  cur_node->max_tmp_size = cur_node->info.arg.m * cur_node->info.arg.n;
   cur_node->tmp.m  = cur_node->info.arg.m;
   cur_node->tmp.n  = cur_node->info.arg.n;
   cur_node->tmp.ld  = cur_node->info.arg.ld;
@@ -690,7 +692,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
       } else if ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
         cur_node->tmp.m = cur_node->le->tmp.m;
         cur_node->tmp.n = 1;
-        cur_node->tmp.ld = cur_node->le->tmp.ld;
+        cur_node->tmp.ld = cur_node->le->tmp.m;
       }
     } else if ( is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0 ) {
       cur_node->tmp.m = 1;
@@ -703,7 +705,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     } else {
       cur_node->tmp.m = cur_node->le->tmp.m;
       cur_node->tmp.n = cur_node->le->tmp.n;
-      cur_node->tmp.ld = cur_node->le->tmp.ld;
+      cur_node->tmp.ld = cur_node->le->tmp.m;
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le);
@@ -715,7 +717,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     } else {
       cur_node->tmp.m = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
       cur_node->tmp.n = LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n);
-      cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld);
+      cur_node->tmp.ld = LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m);
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
@@ -723,7 +725,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
     cur_node->tmp.m = LIBXSMM_MAX(cur_node->r2->tmp.m, LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m));
     cur_node->tmp.n = LIBXSMM_MAX(cur_node->r2->tmp.n, LIBXSMM_MAX(cur_node->le->tmp.n, cur_node->ri->tmp.n));
-    cur_node->tmp.ld = LIBXSMM_MAX( cur_node->r2->tmp.ld, LIBXSMM_MAX(cur_node->le->tmp.ld, cur_node->ri->tmp.ld));
+    cur_node->tmp.ld = LIBXSMM_MAX( cur_node->r2->tmp.m, LIBXSMM_MAX(cur_node->le->tmp.m, cur_node->ri->tmp.m));
   }
 }
 

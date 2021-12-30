@@ -34,7 +34,8 @@ do
     for PREC_OUT in 2 4
     do
       ./eltwise_unary_dropout F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
-      ./eltwise_unary_dropout B 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+      ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+      ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
     done
   done
 done

@@ -224,6 +224,8 @@ int main(int argc, char* argv[])
     fullyconnected_desc.bc = (C[i  ] % bc == 0) ? bc : C[i  ];
     fullyconnected_desc.bk = (C[i+1] % bk == 0) ? bk : C[i+1];
     fullyconnected_desc.threads = nThreads;
+    fullyconnected_desc.compressed_A = 0;
+    fullyconnected_desc.sparsity_factor_A = 1;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
@@ -320,7 +322,7 @@ int main(int argc, char* argv[])
       if ( scratch != NULL ) {
         libxsmm_free( scratch );
       }
-      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
       init_buf( (float*)scratch, scratch_size/4, 0, 0 );
     }
     if ( libxsmm_dnn_optimizer_get_scratch_size( libxsmm_opt[i], &status ) > scratch_size ) {
@@ -329,7 +331,7 @@ int main(int argc, char* argv[])
       if ( scratch != NULL ) {
         libxsmm_free( scratch );
       }
-      scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+      scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
       init_buf( (float*)scratch, scratch_size/4, 0, 0 );
     }
   }
@@ -365,7 +367,7 @@ int main(int argc, char* argv[])
     if ( scratch != NULL ) {
       libxsmm_free( scratch );
     }
-    scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+    scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
   }
 

@@ -282,7 +282,11 @@ for (j = t-1; j >= 0; --j) {
     if (ltid == 0) _start = _rdtsc();
 #endif
     if ((C == K) && (bc == bk) && (bcbk_multiples_of_16 == 1)) {
+#if 0
       if (K % 2048 != 0) {
+#else
+      if ( 0 == 0 ) {
+#endif
         /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
         for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
           icb = ikic / (K/bk);

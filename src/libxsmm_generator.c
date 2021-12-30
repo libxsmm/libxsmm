@@ -334,7 +334,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo,
-  unsigned short flags, unsigned char param, unsigned char operation)
+  unsigned short flags, unsigned short param, unsigned char operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -346,7 +346,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   result.ptr->datatype2 = 0;
   result.ptr->flags = (unsigned short)flags;
   result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned char)param;
+  result.ptr->param = (unsigned short)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = 0;
@@ -361,7 +361,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
-  unsigned short flags, unsigned char param, unsigned char operation)
+  unsigned short flags, unsigned short param, unsigned char operation)
 {
   union {
     libxsmm_meltw_descriptor* ptr;
@@ -373,7 +373,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(in2_type, out2_type);
   result.ptr->flags = (unsigned short)flags;
   result.ptr->operation = (unsigned char)operation;
-  result.ptr->param = (unsigned char)param;
+  result.ptr->param = (unsigned short)param;
   result.ptr->ldi = ldi;
   result.ptr->ldo = ldo;
   result.ptr->ldi2 = ldi2;
@@ -417,6 +417,29 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 {
   const size_t gcd = libxsmm_gcd(a, b);
   return 0 != gcd ? ((a / gcd) * b) : 0;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_remainder(unsigned int a, unsigned int b,
+  const unsigned int* limit, const unsigned int* remainder)
+{
+  /* normalize such that a <= b */
+  unsigned int ci = ((b < a && 0 != b) ? LIBXSMM_UP(a, b) : b), c = a * ci;
+  /* sanitize limit argument */
+  if (NULL != limit && (0 == b || ((*limit / b) * b) < a)) limit = NULL;
+  if (1 <= a) {
+    unsigned int r = a - 1;
+    for (; ((NULL != remainder ? *remainder : 0) < r)
+        &&  (NULL == limit || ci <= *limit); ci += b)
+    {
+      const unsigned int ri = ci % a;
+      if (ri < r) {
+        c = ci;
+        r = ri;
+      }
+    }
+  }
+  return c;
 }
 
 
@@ -512,19 +535,25 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
   else {
     result = limit;
   }
-  if (0 != is_lower && limit < product) {
-    if (result < limit) {
-      result = internal_product_limit(product, 2 * limit - 1);
+  if (0 != is_lower) {
+    if (limit < product) {
+      if (result < limit) {
+        result = internal_product_limit(product, 2 * limit - 1);
+      }
+      if (result < limit) {
+        result = product;
+      }
+      LIBXSMM_ASSERT(limit <= result);
     }
-    if (result < limit) {
-      result = product;
+    else if (0 != product) {
+      result = LIBXSMM_UP(limit, product);
     }
-    LIBXSMM_ASSERT(limit <= result);
+    else result = 0;
   }
-  if (product < result) {
+  else if (product < result) {
     result = product;
   }
-  LIBXSMM_ASSERT(result <= product);
+  LIBXSMM_ASSERT(0 != is_lower || result <= product);
   return result;
 }
 

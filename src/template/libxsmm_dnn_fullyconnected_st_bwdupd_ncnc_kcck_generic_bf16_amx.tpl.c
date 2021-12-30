@@ -474,6 +474,8 @@ if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_UPD) || (kind == LIBXSMM_DNN_COMPUTE_KIND
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
+  upd_tile_config_kernel(NULL, NULL, NULL);
+
   if (use_2d_blocking == 1) {
     ifm2 = 0;
     ofm2 = 0;

@@ -84,91 +84,159 @@ libxsmm_barrier_init(handle->barrier, ltid);
 
 tile_config_kernel(NULL, NULL, NULL);
 
-if (BF > 1) {
-  for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
-    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
-        /* Initialize intermediate f32 tensor */
-        if ( ifm1 == 0 ) {
+if (handle->sparsity_factor_A == 1) {
+  if (BF > 1) {
+    for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
+      for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+        for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          /* Initialize intermediate f32 tensor */
+          if ( ifm1 == 0 ) {
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-          for ( mb2 = 0; mb2 <handle->bn; ++mb2 ) {
-            LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,handle->bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,handle->bn,handle->bk), handle->bk );
-          }
+            for ( mb2 = 0; mb2 <handle->bn; ++mb2 ) {
+              LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,handle->bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,handle->bn,handle->bk), handle->bk );
+            }
 #else
-          memset(&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), 0, handle->bn*handle->bk*sizeof(float));
+            memset(&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), 0, handle->bn*handle->bk*sizeof(float));
 #endif
-        }
+          }
 
 #ifdef WR_PREFETCH_OUTPUT
-        prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(float));
-        if ( ifm1 == BF-1  ) {
-          prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
-        }
+          prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(float));
+          if ( ifm1 == BF-1  ) {
+            prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
+          }
 #endif
-        if (mb1 == my_im_start) {
-          gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-          gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-          batchreduce_kernel_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-              &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
-              &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, &gemm_eltwise_params);
-        } else {
-          batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
+
+          batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
               &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
               &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
-        }
 
-        /* downconvert intermediate f32 tensor to bf 16 and store to final C */
-        if ( ifm1 == BF-1  ) {
-          eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
-          eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+          /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+          if ( ifm1 == BF-1  ) {
+            eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+            eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
-          eltwise_params.out.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+            eltwise_params.out.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
-          eltwise_kernel(&eltwise_params);
+            eltwise_kernel(&eltwise_params);
+          }
         }
+      }
+    }
+  } else {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+    LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,handle->bk), fp32_bias_scratch, handle->desc.K );
+#endif
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+#ifdef WR_PREFETCH_OUTPUT
+        prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
+#endif
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+        gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * handle->bk;
+#endif
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
+        gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+#endif
+        bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
+            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+            &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+#else
+        bf16_batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
+            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+            &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
+#endif
       }
     }
   }
 } else {
+  if (BF > 1) {
+    for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
+      for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+        for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          /* Initialize intermediate f32 tensor */
+          if ( ifm1 == 0 ) {
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-  LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,handle->bk), fp32_bias_scratch, handle->desc.K );
+            for ( mb2 = 0; mb2 <handle->bn; ++mb2 ) {
+              LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, ofm1, 0,handle->bk), &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, mb2, 0, nBlocksOFm,handle->bn,handle->bk), handle->bk );
+            }
+#else
+            memset(&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), 0, handle->bn*handle->bk*sizeof(float));
 #endif
-  for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
-    for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+          }
+
 #ifdef WR_PREFETCH_OUTPUT
-      prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
+          prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(float));
+          if ( ifm1 == BF-1  ) {
+            prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
+          }
+#endif
+          if (mb1 == my_im_start) {
+            gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+            gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+            batchreduce_kernel_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
+                &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
+                &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, &gemm_eltwise_params);
+          } else {
+            batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
+                &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
+                &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+          }
+
+          /* downconvert intermediate f32 tensor to bf 16 and store to final C */
+          if ( ifm1 == BF-1  ) {
+            eltwise_params.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+            eltwise_params.out.primary = &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+#if defined(LIBXSMM_DNN_FC_FWD_FUSE_RELU)
+            eltwise_params.out.secondary = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+#endif
+            eltwise_kernel(&eltwise_params);
+          }
+        }
+      }
+    }
+  } else {
+#ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
+    LIBXSMM_DNN_CONVERT_BUFFER_BF16_F32( &LIBXSMM_VLA_ACCESS(2, bias, 0, 0,handle->bk), fp32_bias_scratch, handle->desc.K );
+#endif
+    for (ofm1 = my_in_start; ofm1 < my_in_end; ++ofm1) {
+      for (mb1 = my_im_start; mb1 < my_im_end; ++mb1) {
+#ifdef WR_PREFETCH_OUTPUT
+        prefetchwt_chunk((char*)&LIBXSMM_VLA_ACCESS(4,  output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), handle->bn*handle->bk*sizeof(libxsmm_bfloat16));
 #endif
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
-      gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * handle->bk;
+        gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * handle->bk;
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
-      gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
+        gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
-      if (mb1 == my_im_start) {
-        gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-        gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-        bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-            &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
-      } else {
-        bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
-            &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-            &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
-      }
+        if (mb1 == my_im_start) {
+          gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+          gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+          bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
+              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+        } else {
+          bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
+              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+        }
 #else
-    if (mb1 == my_im_start) {
-      gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-      gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-      bf16_batchreduce_kernel_zerobeta_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-          &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
-    } else {
-      bf16_batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
-          &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
-    }
+        if (mb1 == my_im_start) {
+          gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+          gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+          bf16_batchreduce_kernel_zerobeta_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
+              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+        } else {
+          bf16_batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
+              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks);
+        }
 #endif
+      }
     }
   }
 }

@@ -225,7 +225,7 @@ void *create_handle(int N, int C, int K, int bn, int bc, int bk, int dtype, int 
   CHKERR_LIBXSMM_DNN( status );
   auto scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle, &status );
   CHKERR_LIBXSMM_DNN( status );
-  auto scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+  auto scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
   //std::cout << "Create Handle = " << libxsmm_handle << std::endl;
   return (void *)libxsmm_handle;

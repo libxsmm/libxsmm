@@ -157,9 +157,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
         }
       }
       else if (LIBXSMM_X86_GENERIC <= feature_cpu) {
-        /* assume FXSAVE, which should be fine
-         * 16 years after the first x86_64 OS
-         */
+        /* assume FXSAVE-enabled/manual state-saving OS,
+           as it was introduced 1999 even for 32bit */
         feature_os = LIBXSMM_X86_SSE42;
       }
       else feature_os = LIBXSMM_TARGET_ARCH_GENERIC;
@@ -270,6 +269,12 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_X86_AVX512_VL256: {
       target_arch = "avx512_vl256";
     } break;
+    case LIBXSMM_X86_AVX512_VL256_CLX: {
+      target_arch = "avx512_vl256_clx";
+    } break;
+    case LIBXSMM_X86_AVX512_VL256_CPX: {
+      target_arch = "avx512_vl256_cpx";
+    } break;
     case LIBXSMM_X86_AVX2: {
       target_arch = "hsw";
     } break;
@@ -282,16 +287,22 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_X86_SSE3: {
       target_arch = "sse3";
     } break;
-    case LIBXSMM_AARCH64_V81: {
+    case LIBXSMM_AARCH64_V81:
+    case LIBXSMM_AARCH64_V82: {
       target_arch = "aarch64";
     } break;
     case LIBXSMM_AARCH64_A64FX: {
       target_arch = "a64fx";
     } break;
+    case LIBXSMM_AARCH64_APPL_M1: {
+      target_arch = "appl_m1";
+    } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
-    default: if (LIBXSMM_X86_GENERIC <= id) {
+    default: if (LIBXSMM_X86_GENERIC <= id
+              && LIBXSMM_X86_ALLFEAT >= id)
+    {
       target_arch = "x86_64";
     }
     else {
@@ -323,7 +334,9 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   }
   else
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
-  if (LIBXSMM_AARCH64_V81 == id) {
+  if (LIBXSMM_AARCH64_V81 == id ||
+      LIBXSMM_AARCH64_V82 == id ||
+      LIBXSMM_AARCH64_APPL_M1 == id) {
     result = 4;
   }
   else if (LIBXSMM_AARCH64_A64FX == id) {

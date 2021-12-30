@@ -34,7 +34,7 @@ void libxsmm_generator_packed_gemm_ac_rm_aarch64( libxsmm_generated_code*       
   l_max_reg_block = 28;
 
   /* define gp register mapping */
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;

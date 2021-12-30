@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
-    float *naive_output_bp_tmp       = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+    float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_input_tmp,      nImg*nIfm*ifh*ifw, 0, 0);
     init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
   init_buf( scratch, scratch_size/4, 0, 0 );

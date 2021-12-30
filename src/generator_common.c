@@ -17,6 +17,9 @@
 #endif
 
 
+LIBXSMM_APIVAR_DEFINE(int internal_error_suppression_level);
+
+
 LIBXSMM_API_INLINE
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
@@ -460,9 +463,6 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JLE:
       libxsmm_strncpy(o_instr_name, "jle", i_instr_name_max_length, 3 );
       break;
-    case LIBXSMM_X86_INSTR_SALQ:
-      libxsmm_strncpy(o_instr_name, "salq", i_instr_name_max_length, 4 );
-      break;
     case LIBXSMM_X86_INSTR_SHLQ:
       libxsmm_strncpy(o_instr_name, "shlq", i_instr_name_max_length, 4 );
       break;
@@ -483,6 +483,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     case LIBXSMM_X86_INSTR_PREFETCHNTA:
       libxsmm_strncpy(o_instr_name, "prefetchnta", i_instr_name_max_length, 11 );
+      break;
+    case LIBXSMM_X86_INSTR_PREFETCHW:
+      libxsmm_strncpy(o_instr_name, "prefetchw", i_instr_name_max_length, 9 );
       break;
     case LIBXSMM_X86_INSTR_CLDEMOTE:
       libxsmm_strncpy(o_instr_name, "cldemote", i_instr_name_max_length, 8 );
@@ -799,6 +802,11 @@ void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_const_data_tracker( libxsmm_const_data_tracker* io_const_data_tracker ) {
+  memset( io_const_data_tracker, 0, sizeof(*io_const_data_tracker) );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                    const char*                     i_routine_name,
                                    const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
@@ -871,7 +879,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( io_generated_code->arch < LIBXSMM_X86_GENERIC ) {
@@ -910,15 +918,34 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_get_handle_error(void)
+{
+  return (0 == internal_error_suppression_level ? 1 : 0);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_set_handle_error(int enable)
+{
+  if (0 == enable) { /* disable */
+    LIBXSMM_EXPECT(1 <= LIBXSMM_ATOMIC_ADD_FETCH(
+      &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED));
+  }
+  else { /* enable */
+    LIBXSMM_EXPECT(0 <= LIBXSMM_ATOMIC_SUB_FETCH(
+      &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED));
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char* context,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
-    if (0 != emit_message) {
+    if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
-      if (0 != context && 0 != *context && '0' != *context) {
+      if (NULL != context && '\0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
       }
       else {
@@ -1111,6 +1138,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_NO_AVX512VL:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "the AVX512VL instruction set extension is currently not available (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_GP_TEMP_MAPPING:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GP Temp Register is used by other parts of the code (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_BITMASK_REQUIRED:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "eltwise kernels with bitmasks are require for the chosen eltwise op (error #%u)!", i_error_code );
       break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

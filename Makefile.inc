@@ -1424,6 +1424,9 @@ else # GCC assumed
       else
         CXXFLAGS += -std=c++11
       endif
+      ifneq (0,$(shell echo "$$((40000<=$(CC_VERSION_NUM)))"))
+        CFLAGS += -Wno-pass-failed
+      endif
     else ifneq (,$(filter-out 2 3,$(XSMM_GCC)))
       CXXFLAGS += -std=c++11
     endif
@@ -1669,7 +1672,7 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
-    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 60000<=$(GCC_VERSION_NUM)) || \
+    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 80000<=$(GCC_VERSION_NUM)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
           (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
@@ -1755,7 +1758,7 @@ ifeq (undefined,$(origin TARGET))
       endif
       # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
-      CTARGET := -march=native
+      CTARGET := -march=native -mtune=native
     endif
   endif # CTARGET
   endif # DBG
@@ -1788,6 +1791,12 @@ ifneq (0,$(INTEL))
   INTRINSICS ?= 2
 else ifneq (0,$(CLANG))
   INTRINSICS ?= 2
+else ifneq (,$(GCC_VERSION))
+  ifneq (0,$(shell echo "$$((100000<=$(GCC_VERSION_NUM)))"))
+  ifeq (/usr/bin/,$(call qdir,$(call which,$(CC))))
+    INTRINSICS ?= 2
+  endif
+  endif
 endif
 ifeq (x86_64,$(MNAME))
   INTRINSICS ?= 1006

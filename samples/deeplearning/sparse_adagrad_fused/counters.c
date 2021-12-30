@@ -73,7 +73,7 @@ void evsetup(const char *ename, int *fd, unsigned int event, unsigned int umask,
   hw.size = sizeof(hw);
   hw.type = type;
 #if 0
-  see /sys/devices/uncore_*/format/*
+  see /sys/devices/uncore_* /format/ *
   Although are events we are using here are configured in the same way,
   we should read the format.
 

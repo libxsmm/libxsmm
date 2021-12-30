@@ -271,11 +271,13 @@
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
-#if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER NULL
-#endif
 #if !defined(LIBXSMM_FUNCNAME)
-# define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+# if defined(LIBXSMM_CALLER)
+#   define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+# else
+#   define LIBXSMM_CALLER NULL
+#   define LIBXSMM_FUNCNAME ""
+# endif
 #endif
 #if !defined(LIBXSMM_CALLER_ID)
 # if defined(__GNUC__) || 1
@@ -405,16 +407,10 @@
 # endif
 #endif /*LIBXSMM_PRAGMA*/
 
-#if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP/*v4.0*/))
-# if defined(LIBXSMM_INTEL_COMPILER)
-#   if (1500 <= LIBXSMM_INTEL_COMPILER)
-#     define LIBXSMM_OPENMP_SIMD
-#   endif
-# elif defined(__GNUC__)
-#   if LIBXSMM_VERSION2(4, 9) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
-#     define LIBXSMM_OPENMP_SIMD
-#   endif
-# else
+#if !defined(LIBXSMM_OPENMP_SIMD)
+# if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
+#   define LIBXSMM_OPENMP_SIMD
+# elif defined(_OPENMP) && (201307/*v4.0*/ <= _OPENMP)
 #   define LIBXSMM_OPENMP_SIMD
 # endif
 #endif
@@ -451,7 +447,7 @@
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNMENT);
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
-# if defined(LIBXSMM_OPENMP_SIMD) && (201811 <= _OPENMP/*v5.0*/)
+# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP)
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(omp simd nontemporal(__VA_ARGS__))
 # else
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...)
@@ -497,7 +493,7 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#if defined(_OPENMP) && (200805 <= _OPENMP/*v3.0*/) \
+#if defined(_OPENMP) && (200805/*v3.0*/ <= _OPENMP) \
  && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
@@ -698,10 +694,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
 #endif
-#if !defined(NDEBUG)
-# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
-#else
+#if defined(NDEBUG)
+# define LIBXSMM_UNUSED_NDEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
 # define LIBXSMM_UNUSED_DEBUG(VARIABLE)
+#else
+# define LIBXSMM_UNUSED_NDEBUG(VARIABLE)
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
 #endif
 
 #if defined(_OPENMP)
@@ -838,17 +836,15 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && *MSG)
 #endif
 #if !defined(LIBXSMM_EXPECT_ELIDE)
-# define LIBXSMM_EXPECT_ELIDE(RESULT, EXPR) do { \
-    /*const*/ int libxsmm_expect_result_ = ((RESULT) == (EXPR)); \
-    LIBXSMM_UNUSED(libxsmm_expect_result_); \
+# define LIBXSMM_EXPECT_ELIDE(EXPR) do { \
+    /*const*/ int libxsmm_expect_elide_ = (EXPR); \
+    LIBXSMM_UNUSED(libxsmm_expect_elide_); \
   } while(0)
 #endif
 #if defined(NDEBUG)
 # define LIBXSMM_EXPECT LIBXSMM_EXPECT_ELIDE
-# define LIBXSMM_EXPECT_NOT LIBXSMM_EXPECT_ELIDE
 #else
-# define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
-# define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
+# define LIBXSMM_EXPECT LIBXSMM_ASSERT
 #endif
 #if defined(_DEBUG)
 # define LIBXSMM_EXPECT_DEBUG LIBXSMM_EXPECT

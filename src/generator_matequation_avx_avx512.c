@@ -54,78 +54,90 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      Const_0                                   <-- RBP-128
+   *      Param_struct_ptr15                        <-- RBP-8
+   *      Param_struct_ptr14                        <-- RBP-16
+   *      Param_struct_ptr13                        <-- RBP-24
+   *      Param_struct_ptr12                        <-- RBP-32
+   *      Param_struct_ptr11                        <-- RBP-40
+   *      Param_struct_ptr10                        <-- RBP-48
+   *      Param_struct_ptr9                         <-- RBP-56
+   *      Param_struct_ptr8                         <-- RBP-64
+   *      Param_struct_ptr7                         <-- RBP-72
+   *      Param_struct_ptr6                         <-- RBP-80
+   *      Param_struct_ptr5                         <-- RBP-88
+   *      Param_struct_ptr4                         <-- RBP-96
+   *      Param_struct_ptr3                         <-- RBP-104
+   *      Param_struct_ptr2                         <-- RBP-112
+   *      Param_struct_ptr1                         <-- RBP-120
+   *      Param_struct_ptr0                         <-- RBP-128
+   *      Scratch ptr in stack (to be filled)       <-- RBP-136
+   *      Address scratch ptrin stack (to be filled)<-- RBP-144
+   *      Saved equation output ptr                 <-- RBP-152
+   *      Const_0                                   <-- RBP-160
    *      ...
-   *      Const_9                                   <-- RBP-200
+   *      Const_9                                   <-- RBP-232
    *
    * * */
 
   switch ( stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
-      return -96;
+      return -128;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
-      return -88;
+      return -120;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2:
-      return -80;
+      return -112;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR3:
-      return -72;
+      return -104;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4:
-      return -64;
+      return -96;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5:
-      return -56;
+      return -88;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6:
-      return -48;
+      return -80;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7:
-      return -40;
+      return -72;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8:
-      return -32;
+      return -64;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9:
-      return -24;
+      return -56;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10:
-      return -16;
+      return -48;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11:
+      return -40;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12:
+      return -32;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR13:
+      return -24;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR14:
+      return -16;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR15:
       return -8;
     case LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR:
-      return -104;
-    case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
-      return -112;
-    case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
-      return -120;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
-      return -128;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
       return -136;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
+    case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
       return -144;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
+    case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
       return -152;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_0:
       return -160;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_1:
       return -168;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_2:
       return -176;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_3:
       return -184;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_4:
       return -192;
-    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+    case LIBXSMM_MEQN_STACK_VAR_CONST_5:
       return -200;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_6:
+      return -208;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_7:
+      return -216;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_8:
+      return -224;
+    case LIBXSMM_MEQN_STACK_VAR_CONST_9:
+      return -232;
     default:
       return 0;
   }
@@ -204,30 +216,35 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 200 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 232 );
 
   /* The stack at exit of setup looks like this:
    *
    *      Return address                            <-- RBP+8
    *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      Const_0                                   <-- RBP-128
+   *      Param_struct_ptr15                        <-- RBP-8
+   *      Param_struct_ptr14                        <-- RBP-16
+   *      Param_struct_ptr13                        <-- RBP-24
+   *      Param_struct_ptr12                        <-- RBP-32
+   *      Param_struct_ptr11                        <-- RBP-40
+   *      Param_struct_ptr10                        <-- RBP-48
+   *      Param_struct_ptr9                         <-- RBP-56
+   *      Param_struct_ptr8                         <-- RBP-64
+   *      Param_struct_ptr7                         <-- RBP-72
+   *      Param_struct_ptr6                         <-- RBP-80
+   *      Param_struct_ptr5                         <-- RBP-88
+   *      Param_struct_ptr4                         <-- RBP-96
+   *      Param_struct_ptr3                         <-- RBP-104
+   *      Param_struct_ptr2                         <-- RBP-112
+   *      Param_struct_ptr1                         <-- RBP-120
+   *      Param_struct_ptr0                         <-- RBP-128
+   *      Scratch ptr in stack (to be filled)       <-- RBP-136
+   *      Address scratch ptrin stack (to be filled)<-- RBP-144
+   *      Saved equation output ptr                 <-- RBP-152
+   *      Const_0                                   <-- RBP-160
    *      ...
-   *      Const_9                                   <-- RBP-200
+   *      Const_9                                   <-- RBP-232
+   *
    * * */
 
   if (allocate_scratch > 0) {
@@ -241,39 +258,48 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
-      scratch_size = tmp_size * 3 * n_tmp;
+      scratch_size = tmp_size * n_tmp;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with STACK-ALLOCATED TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0 );
+      }
     } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
-      unsigned int n_args = i_eqn->eqn_root->n_args;
+      libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 3 * 8;
+      addr_scratch_size = n_args * 8;
       /* make addr scratch size multiple of 64b */
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with REGISTER-BLOCK TEMPS (n_args = %d , addr_scratch_size = %.5g KB)\n", n_args, (1.0*addr_scratch_size)/1024.0 );
+      }
     } else if (i_strategy == JIT_STRATEGY_HYBRID) {
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      unsigned int tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
-      unsigned int n_args = i_eqn->eqn_root->n_args;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
-      scratch_size = tmp_size * 3 * n_tmp;
+      scratch_size = tmp_size * n_tmp;
       scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
       /* make addr scratch size multiple of 64b */
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 3 * 8;
+      addr_scratch_size = n_args * 8;
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, addr_scratch_size );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "JITing Matrix Equation with HYBRID STRATEGY for TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB , addr_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0, (1.0*addr_scratch_size)/1024.0 );
+      }
     }
   }
 
@@ -292,7 +318,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        16,
         temp_reg,
         0 );
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg );
@@ -303,36 +329,12 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
           i_micro_kernel_config->alu_mov_instruction,
           i_gp_reg_mapping->gp_reg_param_struct,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          16,
+          24,
           temp_reg,
           0 );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
     }
   }
-
-  /* The stack at exit of setup looks like this:
-   *
-   *      Return address                            <-- RBP+8
-   *      Entry/saved RBP                           <-- RBP
-   *      Param_struct_ptr11                        <-- RBP-8
-   *      Param_struct_ptr10                        <-- RBP-16
-   *      Param_struct_ptr9                         <-- RBP-24
-   *      Param_struct_ptr8                         <-- RBP-32
-   *      Param_struct_ptr7                         <-- RBP-40
-   *      Param_struct_ptr6                         <-- RBP-48
-   *      Param_struct_ptr5                         <-- RBP-56
-   *      Param_struct_ptr4                         <-- RBP-64
-   *      Param_struct_ptr3                         <-- RBP-72
-   *      Param_struct_ptr2                         <-- RBP-80
-   *      Param_struct_ptr1                         <-- RBP-88
-   *      Param_struct_ptr0                         <-- RBP-96
-   *      Scratch ptr in stack (to be filled)       <-- RBP-104
-   *      Address scratch ptrin stack (to be filled)<-- RBP-112
-   *      Saved equation output ptr                 <-- RBP-120
-   *      [ Potential  pad for 64b align ]
-   *      Scratch, 64b aligned
-   *      Callee-saved registers                    <-- RSP
-   * * */
 }
 
 LIBXSMM_API_INTERN
@@ -426,7 +428,6 @@ void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue
   *queue_size = *queue_size + 1;
 }
 
-LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags);
 LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
@@ -437,7 +438,6 @@ LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
   return result;
 }
 
-LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags);
 LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
@@ -451,7 +451,6 @@ LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   return result;
 }
 
-LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags);
 LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
@@ -468,7 +467,6 @@ LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) 
   return result;
 }
 
-LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
@@ -481,7 +479,6 @@ LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags 
   return result;
 }
 
-LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
@@ -502,7 +499,6 @@ LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flag
   return result;
 }
 
-LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node);
 LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
@@ -582,7 +578,6 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
   }
 }
 
-LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
 LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
   if (node->tmp.dtype != LIBXSMM_DATATYPE_F32) {
     *result = 0;
@@ -663,7 +658,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_decompose_equation_tree( eqn, jiting_queue, &queue_size );
 
   /* Open asm */
-  libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* Setup the stack */
   libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
@@ -676,7 +671,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     if (eqn_tree_id == (queue_size - 1)) {
       libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, temp_reg);
     } else {
-      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * 3 * l_kernel_config.tmp_size, temp_reg);
+      libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, temp_reg);
       copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
     }
 
@@ -684,7 +679,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         l_kernel_config.alu_mov_instruction,
         l_gp_reg_mapping.gp_reg_param_struct,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        8,
+        16,
         temp_reg,
         1 );
 
@@ -696,6 +691,9 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       printf("\nJITing tree with scratch %d\n", eqn_tree_id);
       libxsmm_matrix_eqn_trv_dbg_print( cur_eqn->eqn_root, 0);
 #endif
+      if (eqn_tree_id < queue_size - 1) {
+        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
+      }
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
@@ -710,7 +708,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
         copy_mateqn_desc.n = cur_eqn->eqn_root->tmp.n;
       }
       if (eqn_tree_id < queue_size - 1) {
-        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
+        copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
       }
       /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
       if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
@@ -732,7 +730,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
 
   /* Close asm */
-  libxsmm_x86_instruction_close_stream_matequation( io_generated_code );
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
 
   free(jiting_queue);
 }
