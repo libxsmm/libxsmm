@@ -23,8 +23,11 @@
 
 # include <generator_aarch64_instructions.h>
 
+#if 0
+/*__APPLE__*/
 unsigned int libxsmm_ninit;
 int libxsmm_verbosity;
+#endif
 
 typedef void (*reset_func)(float* in);
 

@@ -123,11 +123,15 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
          io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
       libxsmm_generator_spgemm_csr_asparse_reg_x86( io_generated_code, i_xgemm_desc,
                                                     i_row_idx, i_column_idx, i_values );
-    /* aarch64 */
+    /* aarch64 with SVE */
+    } else if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
+                                                            i_row_idx, i_column_idx, i_values );
+    /* aarch64 without SVE */
     } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
                 io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
-      libxsmm_generator_spgemm_csr_asparse_reg_aarch64( io_generated_code, i_xgemm_desc,
-                                                        i_row_idx, i_column_idx, i_values );
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( io_generated_code, i_xgemm_desc,
+                                                             i_row_idx, i_column_idx, i_values );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
@@ -171,12 +175,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = NULL;
-  l_generated_code.buffer_size = 0;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 0;
-  l_generated_code.last_error = 0;
-  l_generated_code.sf_size = 0;
+  LIBXSMM_MEMZERO127(&l_generated_code);
 
   /* add signature to code string */
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );

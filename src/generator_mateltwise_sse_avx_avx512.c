@@ -285,7 +285,7 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
     l_mask = 0xffff;
   } else if ( i_precision == LIBXSMM_DATATYPE_F16 || i_precision == LIBXSMM_DATATYPE_BF16 || i_precision == LIBXSMM_DATATYPE_I16 ) {
     l_mask = 0xffffffff;
-  } else if ( i_precision == LIBXSMM_GEMM_PRECISION_I8 ) {
+  } else if ( i_precision == LIBXSMM_DATATYPE_I8 ) {
     l_mask = 0xffffffffffffffff;
   }
   /* shift right by "inverse" remainder */
@@ -313,7 +313,7 @@ void libxsmm_generator_mateltwise_initialize_avx512_mask( libxsmm_generated_code
           LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
           i_gp_reg_tmp,
           i_mask_reg );
-    } else if ( i_precision == LIBXSMM_GEMM_PRECISION_I8 ) {
+    } else if ( i_precision == LIBXSMM_DATATYPE_I8 ) {
       libxsmm_x86_instruction_mask_move( io_generated_code,
           LIBXSMM_X86_INSTR_KMOVQ_GPR_LD,
           i_gp_reg_tmp,
@@ -520,7 +520,7 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_kernel_config, i_mateltwise_desc);
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_mateltwise( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* being BLAS aligned, for empty kermls, do nothing */
   if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX) ) ) {
@@ -574,6 +574,6 @@ void libxsmm_generator_mateltwise_sse_avx_avx512_kernel( libxsmm_generated_code*
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_mateltwise( io_generated_code, 1);
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
 }
 

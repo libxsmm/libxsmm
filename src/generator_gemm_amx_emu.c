@@ -98,14 +98,13 @@ void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned 
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int      i_instruction_set,
-                                                   const unsigned int      i_vec_instr,
-                                                   const char              i_vector_name,
-                                                   const unsigned int      i_vec_reg_src_0,
-                                                   const unsigned int      i_vec_reg_src_1,
-                                                   const unsigned int      i_vec_reg_dst,
-                                                   const unsigned int      i_shuffle_operand,
-                                                   libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
+                                                      const unsigned int      i_vec_instr,
+                                                      const char              i_vector_name,
+                                                      const unsigned int      i_vec_reg_src_0,
+                                                      const unsigned int      i_vec_reg_src_1,
+                                                      const unsigned int      i_vec_reg_dst,
+                                                      const unsigned int      i_shuffle_operand,
+                                                      libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
 
   LIBXSMM_UNUSED(i_vector_name);
   LIBXSMM_UNUSED(i_shuffle_operand);
@@ -134,28 +133,24 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
 
   /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      24,
-      i_micro_kernel_config->vector_name,
+      24, 1,
       i_vec_reg_src_0,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux0 );
 
   /* and with fixup */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      16,
-      i_micro_kernel_config->vector_name,
+      16, 1,
       i_vec_reg_src_0,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux1 );
 
@@ -224,28 +219,24 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
       0 );
 
   /* and with naninf */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      24,
-      i_micro_kernel_config->vector_name,
+      24, 1,
       i_vec_reg_src_1,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux0 );
 
   /* and with fixup */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-      i_micro_kernel_config->instruction_set,
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
       LIBXSMM_X86_INSTR_VPANDD,
-      1,
+      i_micro_kernel_config->vector_name,
       LIBXSMM_X86_GP_REG_RSP,
       LIBXSMM_X86_GP_REG_UNDEF,
       0,
-      16,
-      i_micro_kernel_config->vector_name,
+      16, 1,
       i_vec_reg_src_1,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux1 );
 
@@ -336,12 +327,12 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
+                                              const char              i_vector_name,
                                               const unsigned int      i_gp_reg_base,
                                               const unsigned int      i_gp_reg_idx,
                                               const unsigned int      i_scale,
                                               const int               i_displacement,
-                                              const char              i_vector_name,
+                                              const unsigned int      i_use_broadcast,
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1,
                                               libxsmm_micro_kernel_config*  i_micro_kernel_config ) {
@@ -361,7 +352,7 @@ void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_gen
       i_vector_name,
       i_micro_kernel_config->emulate_cvt2bf16fp32_vaux, 0, 1, 0 );
 
-  libxsmm_x86_instruction_vec_compute_convert_emu( io_generated_code, i_instruction_set, i_vec_instr, i_vector_name,
+  libxsmm_x86_instruction_vec_compute_convert_emu( io_generated_code, i_vec_instr, i_vector_name,
                                                    i_vec_reg_number_0,
                                                    i_micro_kernel_config->emulate_cvt2bf16fp32_vaux,
                                                    i_vec_reg_number_1,
@@ -717,7 +708,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
       gp_reg_bias = i_gp_reg_mapping->gp_reg_lda;
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, gp_reg_bias );
     }
-    if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->n_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
       /* Check if we have to save the tmp registers  */
       if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_0) && (i_micro_kernel_config->m_loop_exists == 1)  ) {
@@ -1312,7 +1303,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
   int is_offset_brgemm  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm         = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-  int has_scf           = ((LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) ? 1 : 0;
+  int has_scf           = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) ? 1 : 0;
   int has_A_pf_ptr      = (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) ? 1 : 0;
   int has_B_pf_ptr      = (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C || i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
       i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C || i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C ) ? 1 : 0;
@@ -1632,7 +1623,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
   libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
   /* Now alllocate in stack required GEMM scratch if necessary*/
-  if (LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     int expand_scratch_factor = (n_tiles == 1) ? 2 : 1;
     i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
     gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
@@ -1640,7 +1631,7 @@ void libxsmm_generator_gemm_amx_setup_stack_frame_emu( libxsmm_generated_code*  
     gemm_scratch_size += scratch_pad_size;
   }
 
-  if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     i_micro_kernel_config->emulation_scratch_offset = 0;
     gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
@@ -1719,6 +1710,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
 #if defined(_WIN32) || defined(__CYGWIN__)
 #else
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
@@ -1914,7 +1906,50 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
   }
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 1 );
+
+  /* implementing load from struct */
+  if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
+    if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
+         ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+      /* saving help1 as we are still before callee save handling */
+      libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_1 );
+      /* RDI holds the pointer to the strcut, so lets first move this one into help_1 */
+      libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1 );
+      /* A pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, LIBXSMM_X86_GP_REG_RDI, 0 );
+      /* B pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, LIBXSMM_X86_GP_REG_RSI, 0 );
+      /* C pointer */
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 96, l_gp_reg_mapping.gp_reg_c, 0 );
+      /* batch reduce count & offsett arrays*/
+      if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_reg_mapping.gp_reg_reduce_count, 0 );
+        if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
+          libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                           l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, l_gp_reg_mapping.gp_reg_a_offset, 0 );
+          libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                           l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, l_gp_reg_mapping.gp_reg_b_offset, 0 );
+        }
+      }
+      /* check values for gemm_ext */
+      if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+        if ( (i_xgemm_desc->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+             (i_xgemm_desc->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) || (i_xgemm_desc->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_GEMM_CONFIG );
+          return;
+        }
+      }
+      /* restoring help1 */
+      libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_1 );
+    }
+  }
+
   /* Setup stack frame...  */
   libxsmm_generator_gemm_amx_setup_stack_frame_emu( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config, m_tiles, n_tiles );
   libxsmm_generator_gemm_amx_setup_fusion_infra_emu( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
@@ -1951,7 +1986,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code* io_generated
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_amx_destroy_stack_frame_emu( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config );
   /* close asm */
-  libxsmm_x86_instruction_close_stream_amx( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
 }
 
 
