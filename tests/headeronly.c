@@ -26,8 +26,7 @@ int main(void)
 {
   const int m = LIBXSMM_MAX_M, n = LIBXSMM_MAX_N, k = LIBXSMM_MAX_K;
   const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fa = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)(m, n, k,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-    NULL/*flags*/, NULL/*prefetch*/);
+    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*flags*/);
   const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;
 

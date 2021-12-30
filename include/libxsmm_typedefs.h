@@ -84,12 +84,6 @@
 /* Construct a type-id from built-in input/output types (float, double, etc.). */
 #define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
 
-/* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
-/* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
-  LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
-
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #if !defined(LIBXSMM_DESCRIPTOR_MAXSIZE)
 # define LIBXSMM_DESCRIPTOR_MAXSIZE 96
@@ -102,7 +96,6 @@
 #   define LIBXSMM_DESCRIPTOR_SIGSIZE 32
 # endif
 #endif
-
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
@@ -148,17 +141,6 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_I8,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
-
-/** Denotes the precision/data type of GEMM. */
-typedef enum libxsmm_gemm_precision {
-  LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,
-  LIBXSMM_GEMM_PRECISION_F16  = LIBXSMM_DATATYPE_F16,
-  LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,
-  LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,
-  LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
-} libxsmm_gemm_precision;
 
 typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_NONE                                             =  0,
@@ -974,7 +956,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mmkernel_info {
   /** Input/output data-type */
-  libxsmm_gemm_precision iprecision, oprecision;
+  libxsmm_datatype iprecision, oprecision;
   /** Prefetch strategy. */
   libxsmm_gemm_prefetch_type prefetch;
   /** Leading dimensions. */

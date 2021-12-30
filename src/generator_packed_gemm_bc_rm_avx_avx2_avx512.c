@@ -69,7 +69,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( lib
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* for this kernel we need to overwrite the A and B load instructions */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
     l_micro_kernel_config.b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
   } else {
@@ -192,7 +192,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
   unsigned int l_simd_packed_width = 0;
 
   /* select simd packing width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -340,7 +340,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
       unsigned char l_data[32];
       unsigned int l_count;
 
-      if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < i_simd_packed_valid ) {

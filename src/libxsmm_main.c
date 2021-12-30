@@ -421,7 +421,7 @@ LIBXSMM_API_INLINE void internal_update_mmstatistic(const libxsmm_gemm_descripto
   LIBXSMM_ASSERT(NULL != desc);
   if (1 < desc->m && 1 < desc->n) { /* only record matrix-matrix multiplication */
     const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
-    const int idx = (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_OUT(desc->datatype) ? 0 : 1);
+    const int idx = (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT(desc->datatype) ? 0 : 1);
     int bucket;
     if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
       bucket = 0;
@@ -541,7 +541,7 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 
 #if !defined(_WIN32)
 LIBXSMM_API_INLINE void internal_register_static_code(
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_xmmfunction xgemm, libxsmm_code_pointer* registry)
 {
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
@@ -1726,23 +1726,23 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_I16:  return "i16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
     default: {
-      if (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP(datatype) &&
-          LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT(datatype))
+      if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
+          LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i16i32";
       }
-      else if (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(datatype))
+      else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i16f32";
       }
-      else if (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT(datatype))
+      else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP(datatype) &&
+               LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i8i32";
       }
-      else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(datatype))
+      else if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "bf16f32";
       }
@@ -1824,7 +1824,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #if !defined(__MIC__)
   const char * /*const*/ target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   /* large enough temporary buffer for generated code */
-  char jit_buffer[LIBXSMM_CODE_MAXSIZE], jit_name[256] = { 0 };
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE], jit_name[384] = { 0 };
   libxsmm_generated_code generated_code;
   libxsmm_kernel_xinfo extra;
 
@@ -1858,8 +1858,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         extra.nflops = 2 * m * n * k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
         if ((LIBXSMM_X86_AVX2 < libxsmm_target_archid) && (libxsmm_target_archid <= LIBXSMM_X86_ALLFEAT) &&
-           (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype) ||
-            LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype)) &&
+           (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype) ||
+            LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.gemm->datatype)) &&
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
@@ -1974,8 +1974,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_csr && 0 != request->descriptor.pspgemm_csr->gemm);
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_csr->row_ptr && 0 != request->descriptor.pspgemm_csr->column_idx && 0 != request->descriptor.pspgemm_csr->values);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csr->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csr->gemm->datatype))
+      if (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csr->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csr->gemm->datatype))
       {
         const unsigned int nnz = (request->descriptor.pspgemm_csr->gemm->lda == 0) ?
             request->descriptor.pspgemm_csr->row_ptr[request->descriptor.pspgemm_csr->gemm->m] : request->descriptor.pspgemm_csr->row_ptr[request->descriptor.pspgemm_csr->gemm->k];
@@ -2005,8 +2005,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_csc && 0 != request->descriptor.pspgemm_csc->gemm);
       LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_csc->row_idx && 0 != request->descriptor.pspgemm_csc->column_ptr && 0 != request->descriptor.pspgemm_csc->values);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csc->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csc->gemm->datatype))
+      if (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csc->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csc->gemm->datatype))
       {
         const unsigned int nnz = (request->descriptor.pspgemm_csc->gemm->lda == 0) ?
             request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->k] : request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->n];
@@ -2035,8 +2035,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_PGEMMRMAC: { /* packed GEMM, B regular matrix, row-major */
       LIBXSMM_ASSERT(NULL != request->descriptor.pgemmacrm && 0 != request->descriptor.pgemmacrm->gemm);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmacrm->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmacrm->gemm->datatype))
+      if (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmacrm->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmacrm->gemm->datatype))
       {
         extra.nflops = 2 * request->descriptor.pgemmacrm->packed_width * request->descriptor.pgemmacrm->gemm->m * request->descriptor.pgemmacrm->gemm->n * request->descriptor.pgemmacrm->gemm->k;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_gemm_ac_rm, &generated_code, request->descriptor.pgemmacrm->gemm, request->descriptor.pgemmacrm->packed_width);
@@ -2061,8 +2061,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_PGEMMRMBC: { /* packed GEMM, A regular matrix, row-major */
       LIBXSMM_ASSERT(NULL != request->descriptor.pgemmbcrm && 0 != request->descriptor.pgemmbcrm->gemm);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmbcrm->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmbcrm->gemm->datatype))
+      if (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmbcrm->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmbcrm->gemm->datatype))
       {
         extra.nflops = 2 * request->descriptor.pgemmbcrm->packed_width * request->descriptor.pgemmbcrm->gemm->m * request->descriptor.pgemmbcrm->gemm->n * request->descriptor.pgemmbcrm->gemm->k;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_gemm_bc_rm, &generated_code, request->descriptor.pgemmbcrm->gemm, request->descriptor.pgemmbcrm->packed_width);
@@ -2088,8 +2088,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.sreg && 0 != request->descriptor.sreg->gemm);
       LIBXSMM_ASSERT(NULL != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.sreg->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.sreg->gemm->datatype))
+      if (LIBXSMM_DATATYPE_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.sreg->gemm->datatype) ||
+          LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.sreg->gemm->datatype))
       {
         const unsigned int nnz = request->descriptor.sreg->row_ptr[request->descriptor.sreg->gemm->m];
         extra.nflops = 2 * libxsmm_cpuid_vlen32(libxsmm_target_archid)/2 * request->descriptor.sreg->gemm->n * nnz;
@@ -2590,8 +2590,8 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     if (libxsmm_verbosity < 0) {
       fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
     }
-    info->iprecision = LIBXSMM_GEMM_PRECISION_F32;
-    info->oprecision = LIBXSMM_GEMM_PRECISION_F32;
+    info->iprecision = LIBXSMM_DATATYPE_F32;
+    info->oprecision = LIBXSMM_DATATYPE_F32;
     info->prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
     info->flags = LIBXSMM_GEMM_FLAG_NONE;
     info->lda = info->ldb = info->ldc = 1;
@@ -2602,8 +2602,8 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
-      info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype);
-      info->oprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype);
+      info->iprecision = (libxsmm_datatype)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype);
+      info->oprecision = (libxsmm_datatype)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype);
       info->prefetch = (libxsmm_gemm_prefetch_type)desc->gemm.desc.prefetch;
       info->flags = desc->gemm.desc.flags;
       info->lda = desc->gemm.desc.lda;
@@ -4960,11 +4960,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     libxsmm_descriptor_blob blob;
     libxsmm_code_pointer result;
 #if !defined(NDEBUG)
-    const libxsmm_gemm_precision itype = (NULL != iprec ? ((libxsmm_gemm_precision)*iprec) : LIBXSMM_GEMM_PRECISION_F64);
-    const libxsmm_gemm_precision otype = (NULL != oprec ? ((libxsmm_gemm_precision)*oprec) : itype);
+    const libxsmm_datatype itype = (NULL != iprec ? ((libxsmm_datatype)*iprec) : LIBXSMM_DATATYPE_F64);
+    const libxsmm_datatype otype = (NULL != oprec ? ((libxsmm_datatype)*oprec) : itype);
     const libxsmm_blasint kk = *(NULL != k ? k : m), nn = (NULL != n ? *n : kk);
 #else
-    const libxsmm_gemm_precision itype = (libxsmm_gemm_precision)*iprec, otype = (libxsmm_gemm_precision)*oprec;
+    const libxsmm_datatype itype = (libxsmm_datatype)*iprec, otype = (libxsmm_datatype)*oprec;
     const libxsmm_blasint kk = *k, nn = *n;
 #endif
     LIBXSMM_PRAGMA_FORCEINLINE
@@ -5068,7 +5068,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
     if (NULL != fn->xmm)
 #endif
     {
-      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TOOD fix prefetch */
+      /* @TODO fix prefetch */
+      LIBXSMM_UNUSED( pa );
+      LIBXSMM_UNUSED( pb );
+      LIBXSMM_UNUSED( pc );
+      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TODO fix prefetch */
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */

@@ -33,8 +33,6 @@ libxsmm_bmmdispatch_reducebatch_strd
 libxsmm_bmmdispatch_reducebatch_strd_meltwfused
 libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll
 libxsmm_bmmdispatch_reducebatch_strd_unroll
-libxsmm_bsgemm
-libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_bsmmdispatch
 libxsmm_bsmmdispatch_reducebatch_addr
@@ -400,7 +398,6 @@ libxsmm_ptr_smm
 libxsmm_ptr_w0
 libxsmm_ptr_w1
 libxsmm_ptr_w2
-libxsmm_ptr_wimm
 libxsmm_ptr_z0
 libxsmm_ptr_z1
 libxsmm_ptr_z2
@@ -410,7 +407,6 @@ libxsmm_release_kernel
 libxsmm_release_kernel_
 libxsmm_release_scratch
 libxsmm_release_smmkernel
-libxsmm_release_wimmkernel
 libxsmm_remainder
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
@@ -531,17 +527,7 @@ libxsmm_uubimmdispatch_reducebatch_offs
 libxsmm_uubimmdispatch_reducebatch_offs_unroll
 libxsmm_uubimmdispatch_reducebatch_strd
 libxsmm_uubimmdispatch_reducebatch_strd_unroll
-libxsmm_wigemm
-libxsmm_wigemm0
-libxsmm_wigemm1
-libxsmm_wigemm2
-libxsmm_wigemm3
-libxsmm_wigemm_
 libxsmm_wigemm_descriptor_init
-libxsmm_wimmavailable
-libxsmm_wimmcall
-libxsmm_wimmcall_abc
-libxsmm_wimmcall_prf
 libxsmm_wimmdispatch
 libxsmm_wimmdispatch_reducebatch_addr
 libxsmm_wimmdispatch_reducebatch_addr_unroll

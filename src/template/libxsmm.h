@@ -433,7 +433,7 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs_meltwfused libxsmm_bmmdispatch_
  * index_stride==0: pointers to pointers of elements, e.g., double** for the C matrices.
  * index_stride!=0: pointer to elements, e.g., const double* for the A and B matrices.
  */
-LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_API void libxsmm_mmbatch(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc,
@@ -459,7 +459,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Process a series of matrix multiplications (batch). See also libxsmm_mmbatch. */
-LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
@@ -469,7 +469,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_p
   libxsmm_blasint batchsize);
 
 /** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
@@ -516,7 +516,7 @@ LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(const char transa_array[], const cha
  * non-NULL values match. Otherwise (NULL) the respective argument is
  * considered a "free value", i.e., every value can match; libxsmmext required.
  */
-LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
+LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_datatype precision, const int* flags,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta);
@@ -661,7 +661,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
 
 /** Initialize GEMM-handle; allows to better amortize setup overhead. */
 LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, int flags, /*unsigned*/int ntasks);
@@ -674,13 +674,13 @@ LIBXSMM_API void libxsmm_gemm_task(const libxsmm_gemm_handle* handle, void* scra
   const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** General dense matrix multiplication (sequential). */
-LIBXSMM_API void libxsmm_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_API void libxsmm_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
-LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
@@ -697,28 +697,6 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
-/**
- * Dispatched general dense matrix multiplication (I16 input, I32 result).
- * Matrix "a" must be given in VNNI-format, i.e., [K][M] -> [K/2][M][2] with
- * two entries of "K" in the inner-most dimension. General data conversion
- * from F32 is per, e.g., libxsmm_dnn_quantize.
- */
-LIBXSMM_API void libxsmm_wigemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-  const short* b, const libxsmm_blasint* ldb,
-  const int* beta, int* c, const libxsmm_blasint* ldc);
-/**
- * Dispatched general dense matrix multiplication (BF16 input, F32 result).
- * Matrix "a" must be given in VNNI-format, i.e., [K][M] -> [K/2][M][2] with
- * two entries of "K" in the inner-most dimension. General data conversion
- * from F32 is per, e.g., libxsmm_rne_convert_fp32_bf16.
- */
-LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-  const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 $MNK_INTERFACE_LIST
@@ -726,17 +704,17 @@ $MNK_INTERFACE_LIST
 
 #if defined(__cplusplus)
 
-/** Map built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
-template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum          { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<double>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<float>             { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<int>               { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum</*signed*/short>   { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<libxsmm_bfloat16>  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<Eigen::bfloat16>   { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<signed char>       { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<unsigned char>     { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<char>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+/** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
+template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<unsigned char>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<char>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
 /** Determine default output type based on the input-type. */
 template<typename INP_TYPE> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output   { typedef INP_TYPE type; };
@@ -755,28 +733,28 @@ public:
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS) {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, m, k, m,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch) {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, m, k, m,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta) {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, m, k, m,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta, int prefetch) {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, m, k, m,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -785,7 +763,7 @@ public:
   {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -794,7 +772,7 @@ public:
   {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -803,7 +781,7 @@ public:
   {
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
-      libxsmm_gemm_precision_enum<itype>::value, libxsmm_gemm_precision_enum<otype>::value, m, n, k, lda, ldb, ldc,
+      libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -818,6 +796,9 @@ public:
     LIBXSMM_MMCALL_ABC(m_function.xmm, a, b, c);
   }
   void operator()(const itype* a, const itype* b, otype* c, const itype* pa, const itype* pb, const otype* pc) const {
+    LIBXSMM_UNUSED( pa );
+    LIBXSMM_UNUSED( pb );
+    LIBXSMM_UNUSED( pc );
     LIBXSMM_MMCALL_PRF(m_function.xmm, a, b, c, pa, pb, pc);
   }
 };
@@ -966,42 +947,6 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
    const float* beta,       float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** Dispatched general dense matrix multiplication (low-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-                    const short* b, const libxsmm_blasint* ldb,
-   const int* beta,         int* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wigemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const int* alpha, const short* a, const libxsmm_blasint* lda,
-                    const short* b, const libxsmm_blasint* ldb,
-   const int* beta,         int* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_wigemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** Dispatched general dense matrix multiplication (low-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,                  float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_bsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
-                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,                  float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_bsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */

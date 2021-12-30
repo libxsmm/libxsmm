@@ -125,7 +125,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
   if ( (( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX )
                 ||( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX )
               )
-              && LIBXSMM_GEMM_PRECISION_BF16 == a_in_type ) {
+              && LIBXSMM_DATATYPE_BF16== a_in_type ) {
     /* some checks as we cannot mask everything */
     if ( (k % 2 != 0) && ((gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -137,7 +137,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
       ldb = ldb/2;
     }
   } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
-              ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && LIBXSMM_GEMM_PRECISION_BF16 == a_in_type ) {
+              ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && LIBXSMM_DATATYPE_BF16 == a_in_type ) {
     /* some checks as we cannot mask everything */
     if ( (k % 2 != 0) && ((gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -223,7 +223,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  if ( (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
     l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
@@ -238,7 +238,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
-    if ( (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_R8;
       l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R9;
       l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
@@ -256,7 +256,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_offset = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_X86_GP_REG_R9;
-    if ( (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RAX;
     } else {
       l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
@@ -569,8 +569,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       }
 
       if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
-           ( ( LIBXSMM_GEMM_PRECISION_BF16 == cur_op->le->tmp.dtype ) ||
-             ( LIBXSMM_GEMM_PRECISION_I8 == cur_op->le->tmp.dtype ) ) &&
+           ( ( LIBXSMM_DATATYPE_BF16 == cur_op->le->tmp.dtype ) ||
+             ( LIBXSMM_DATATYPE_I8 == cur_op->le->tmp.dtype ) ) &&
            ((desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
         libxsmm_generator_matequation_gemm_set_reg_mapping_amx( desc, &l_gp_reg_mapping );
         /* Since this is a GEMM, store calle-save regs  */
