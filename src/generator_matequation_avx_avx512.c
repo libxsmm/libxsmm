@@ -697,7 +697,7 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
     cur_node->fusion_info.xgemm.fused_colbias_add_op = 1;
     cur_node->fusion_info.xgemm.colbias_pos_in_arg = find_in_pos_for_colbias(cur_node->up);
     cur_node->fusion_info.xgemm.colbias_dtype = find_dtype_for_colbias(cur_node->up);
-    *timestamp++;
+    (*timestamp)++;
     if (*timestamp < last_timestamp) {
       new_arg_node->up = cur_node->up->up;
       if (cur_node->up->up->le == cur_node->up) {
@@ -719,7 +719,7 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
     cur_node->fusion_info.xgemm.fused_colbias_add_op = 1;
     cur_node->fusion_info.xgemm.colbias_pos_in_arg = find_in_pos_for_colbias(cur_node->up);
     cur_node->fusion_info.xgemm.colbias_dtype = find_dtype_for_colbias(cur_node->up);
-    *timestamp += 2;
+    (*timestamp) += 2;
     if (*timestamp < last_timestamp) {
       new_arg_node->up = cur_node->up->up->up;
       if (cur_node->up->up->up->le == cur_node->up->up) {
@@ -738,7 +738,7 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
     if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
       cur_node->fusion_info.xgemm.fused_sigmoid_op = 1;
     }
-    *timestamp++;
+    (*timestamp)++;
     if (*timestamp < last_timestamp) {
       new_arg_node->up = cur_node->up->up;
       if (cur_node->up->up->le == cur_node->up) {
@@ -768,9 +768,10 @@ void apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type 
 LIBXSMM_API_INTERN
 void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size ) {
   libxsmm_matrix_eqn_elem *root = eqn->eqn_root;
-  unsigned int last_timestamp = eqn->eqn_root->visit_timestamp, timestamp = 0;
+  unsigned int last_timestamp = eqn->eqn_root->visit_timestamp;
+  unsigned int timestamp = 0;
 
-  for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
+  for (timestamp = 0; timestamp <= last_timestamp;) {
     libxsmm_matrix_eqn_elem *cur_node = find_op_at_timestamp(root, timestamp);
     if (timestamp == last_timestamp) {
       enqueue_equation(eqn, jiting_queue, queue_size);
@@ -819,6 +820,7 @@ void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm
       new_eqn->is_constructed = 1;
       enqueue_equation(new_eqn, jiting_queue, queue_size);
     }
+    timestamp++;
   }
 }
 

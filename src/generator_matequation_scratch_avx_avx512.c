@@ -184,6 +184,22 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     desc->c2 = br_config.br_stride_b_hint;
   }
 
+  /* Add fusion-related setup of descriptor */
+  if (cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) {
+    desc->meltw_operation     = LIBXSMM_MELTW_OPERATION_BINARY;
+    desc->meltw_param         = LIBXSMM_MELTW_TYPE_BINARY_ADD;
+    desc->meltw_flags         = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
+    desc->meltw_datatype_aux  = cur_op->fusion_info.xgemm.colbias_dtype;
+  }
+  if (cur_op->fusion_info.xgemm.fused_relu_op == 1) {
+    desc->eltw_cp_op    = LIBXSMM_MELTW_OPERATION_UNARY;
+    desc->eltw_cp_param = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+  }
+  if (cur_op->fusion_info.xgemm.fused_sigmoid_op == 1) {
+    desc->eltw_cp_op    = LIBXSMM_MELTW_OPERATION_UNARY;
+    desc->eltw_cp_param = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+  }
+
   *out_desc = desc;
 }
 
@@ -522,11 +538,34 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.b_op.op_arg_pos*32,
+              cur_op->info.t_op.op_arg_pos*32,
               temp_reg,
               0 );
         }
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0, temp_reg);
+      }
+
+      /* Setup stack for fusion related params  */
+      if (cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) {
+        if (cur_op->fusion_info.xgemm.colbias_pos_in_arg >= 0) {
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              i_gp_reg_mapping->gp_reg_param_struct,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              8,
+              temp_reg,
+              0 );
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              temp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              cur_op->fusion_info.xgemm.colbias_pos_in_arg*24,
+              temp_reg,
+              0 );
+        } else {
+          libxsmm_generator_meqn_getaddr_stack_tmp_i( io_generated_code, (-1-cur_op->fusion_info.xgemm.colbias_pos_in_arg) * i_micro_kernel_config->tmp_size, temp_reg);
+        }
+        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg);
       }
 
       if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&

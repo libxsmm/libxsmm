@@ -19,6 +19,10 @@
 # include <omp.h>
 #endif
 
+float fsigmoid(float x) {
+  return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
+}
+
 float upconvert_bf16(libxsmm_bfloat16 x) {
   union libxsmm_bfloat16_hp bf16_hp;
   bf16_hp.i[1] = x;
@@ -187,9 +191,33 @@ void eqn3_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   }
 }
 
+void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
+              float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
+              float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
+              float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc, libxsmm_blasint stride_a,
+              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b,
+              float *colbias ) {
+
+  /* Result =  sigmoid( Sum(Ci x Di) + colbias + 1.0) */
+
+  libxsmm_blasint i, j;
+  float tmp[m_C * n_D];
+
+  gemm_fp32(C, D, tmp, 0,
+            m_C, n_D, n_C,
+            ldc, ldd, m_C,
+            brgemm_count, stride_a, stride_b);
+
+  for (j = 0; j < n; j++) {
+    for (i = 0; i < m; i++) {
+      Out[i + j * ld] = fsigmoid(tmp[j *m_C + i] + colbias[i] + 1.0);
+    }
+  }
+}
+
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3;
-  libxsmm_matrix_eqn_function func0, func1, func2, func3;
+  libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4;
+  libxsmm_matrix_eqn_function func0, func1, func2, func3, func4;
   libxsmm_blasint i, j, k, l, it;
   libxsmm_matrix_eqn_param eqn_param;
   unsigned long long l_start, l_end;
@@ -617,7 +645,7 @@ int main( int argc, char* argv[] ) {
     printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
 
 
-   printf("\n\nNow testing equation 3...\n\n");
+    printf("\n\nNow testing equation 3...\n\n");
 
     /* Result = Sum(Ci x Di) + gelu(A) */
     arg_set_attr0.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
@@ -699,6 +727,89 @@ int main( int argc, char* argv[] ) {
     l_start = libxsmm_timer_tick();
     for (it = 0; it < iters; it++) {
       func3(&eqn_param);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
+    printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
+
+
+    printf("\n\nNow testing equation 4...\n\n");
+
+    /* sigmoid( Sum(Ci x Di) + colbias + 1.0) */
+
+    libxsmm_bfloat16 *colbias = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*m_i[2],   64);
+    float *colbias_f32 = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
+    libxsmm_rne_convert_fp32_bf16( arg[2], colbias, m_i[2] );
+    libxsmm_convert_bf16_f32(colbias, colbias_f32, m_i[2] );
+
+
+    my_eqn4 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, LIBXSMM_DATATYPE_F32, -1 );
+    libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[2], 1, m_i[2], 42, in_dt, arg_singular_attr );
+    libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_BF16, 7);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+    libxsmm_matrix_eqn_tree_print( my_eqn4 );
+    func4 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn4 );
+    bf16_arg_array[42].primary = colbias;
+
+    func4(&eqn_param);
+
+    eqn4_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
+        arg[0], m_i[0], n_i[0], ld_i[0],
+        arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
+        arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+
+    libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
+
+    /* compare */
+    printf("##########################################\n");
+    printf("#   Correctness  - Output                #\n");
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1], 1, arg[ref_id], arg[n_tensors-1], 0, 0);
+
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    /* Now benchmarking the equations */
+    if (datatype_mode == 0 || datatype_mode == 1) {
+      eqn4_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
+          arg[0], m_i[0], n_i[0], ld_i[0],
+          arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
+          arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+    } else if (datatype_mode == 2) {
+    } else if (datatype_mode == 3) {
+    }
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      if (datatype_mode == 0 || datatype_mode == 1) {
+        eqn4_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
+            arg[0], m_i[0], n_i[0], ld_i[0],
+            arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
+            arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+      } else if (datatype_mode == 2) {
+      } else if (datatype_mode == 3) {
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+
+    func4(&eqn_param);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      func4(&eqn_param);
     }
     l_end = libxsmm_timer_tick();
     l_total2 = libxsmm_timer_duration(l_start, l_end);
