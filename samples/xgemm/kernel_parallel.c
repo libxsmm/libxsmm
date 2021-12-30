@@ -287,6 +287,9 @@ int main(int argc, char* argv []) {
       l_gemm_def.m = l_m;
       l_gemm_def.n = l_n;
       l_gemm_def.k = l_k;
+      l_gemm_def.in_type = LIBXSMM_DATATYPE_F64;
+      l_gemm_def.out_type = LIBXSMM_DATATYPE_F64;
+      l_gemm_def.comp_type = LIBXSMM_DATATYPE_F64;
       l_gemm_def.lda = l_lda;
       l_gemm_def.ldb = l_ldb;
       l_gemm_def.ldc = l_ldc;
@@ -294,6 +297,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.beta = l_beta;
       l_gemm_def.trans_a = l_trans_a;
       l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.vnni_a = 0;
       l_gemm_def.aligned_a = l_aligned_a;
       l_gemm_def.aligned_c = l_aligned_c;
       l_gemm_def.prefetch = l_prefetch;
@@ -334,7 +338,7 @@ int main(int argc, char* argv []) {
           }
         }
 
-        l_runtime_libxsmm = run_jit_double( &l_gemm_def, l_a_d, l_b_d, l_c_d, l_file_input );
+        l_runtime_libxsmm = run_jit_weakly_typed( &l_gemm_def, l_a_d, l_b_d, l_c_d, l_file_input );
 
         libxsmm_free(l_a_d);
         libxsmm_free(l_b_d);
@@ -367,6 +371,9 @@ int main(int argc, char* argv []) {
       l_gemm_def.m = l_m;
       l_gemm_def.n = l_n;
       l_gemm_def.k = l_k;
+      l_gemm_def.in_type = LIBXSMM_DATATYPE_F64;
+      l_gemm_def.out_type = LIBXSMM_DATATYPE_F64;
+      l_gemm_def.comp_type = LIBXSMM_DATATYPE_F64;
       l_gemm_def.lda = l_lda;
       l_gemm_def.ldb = l_ldb;
       l_gemm_def.ldc = l_ldc;
@@ -374,6 +381,7 @@ int main(int argc, char* argv []) {
       l_gemm_def.beta = l_beta;
       l_gemm_def.trans_a = l_trans_a;
       l_gemm_def.trans_b = l_trans_b;
+      l_gemm_def.vnni_a = 0;
       l_gemm_def.aligned_a = l_aligned_a;
       l_gemm_def.aligned_c = l_aligned_c;
       l_gemm_def.prefetch = l_prefetch;
@@ -414,7 +422,7 @@ int main(int argc, char* argv []) {
           }
         }
 
-        l_runtime_libxsmm = run_jit_double( &l_gemm_def, l_a_d, l_b_d, l_c_d, l_file_input );
+        l_runtime_libxsmm = run_jit_weakly_typed( &l_gemm_def, l_a_d, l_b_d, l_c_d, l_file_input );
 
         libxsmm_free(l_a_d);
         libxsmm_free(l_b_d);
