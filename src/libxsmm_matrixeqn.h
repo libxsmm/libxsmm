@@ -123,6 +123,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_xgemm_fu
   libxsmm_datatype  colbias_dtype;
 } libxsmm_matrix_eqn_xgemm_fusion_info;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_fusion_knobs {
+  libxsmm_blasint   may_fuse_xgemm;
+} libxsmm_matrix_eqn_fusion_knobs;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_fusion_info {
   libxsmm_matrix_eqn_xgemm_fusion_info   xgemm;
 } libxsmm_matrix_eqn_fusion_info;
