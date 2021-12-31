@@ -1575,13 +1575,13 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 1 );
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, 0, 0 );
 
   /* call Intel AMX kernel */
   libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, i_xgemm_desc_const );
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1);
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 0 );
 }
 
 
@@ -1624,11 +1624,10 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   /* Setup stack frame...  */
   l_micro_kernel_config.m_tiles = m_blocking_info[0].tiles;
   l_micro_kernel_config.n_tiles = n_blocking_info[0].tiles;
-  libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
 
   /* implementing load from struct */
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
-      (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))) {
+       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))) {
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
          ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
       /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
@@ -1645,7 +1644,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
       /* batch reduce count & offsett arrays*/
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET)) {
         libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, i_gp_reg_mapping->gp_reg_reduce_count, 0 );
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, i_gp_reg_mapping->gp_reg_reduce_count, 0 );
         if ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET ) {
           libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_gp_reg_mapping->gp_reg_a_offset, 0 );
@@ -1761,7 +1760,6 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
-  libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
 }
 
 LIBXSMM_API_INTERN
