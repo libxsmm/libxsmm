@@ -724,10 +724,6 @@ int main(int argc, char* argv []) {
   int l_reps;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   gemm_def l_gemm_def;
-  /* scaling factor */
-#if 0
-  float l_scf = 1.0;
-#endif
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
