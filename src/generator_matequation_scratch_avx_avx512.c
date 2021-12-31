@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_frontend.h"
 #include "generator_matequation_avx_avx512.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
@@ -175,7 +174,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     NULL != shape_flags.lda ? *(shape_flags.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? shape_flags.m : shape_flags.k),
     NULL != shape_flags.ldb ? *(shape_flags.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? shape_flags.k : shape_flags.n),
     NULL != shape_flags.ldc ? *(shape_flags.ldc) : shape_flags.m, LIBXSMM_ALPHA, !((*(shape_flags.flags) & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
-    gemm_flags, libxsmm_get_gemm_xprefetch(shape_flags.prefetch));
+    gemm_flags, 0);
 
   /* add more BRGEMM related fields */
   if ( (br_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (br_config.br_unroll_hint != 0) ) {
