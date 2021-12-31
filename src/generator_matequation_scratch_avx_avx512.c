@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm.h>
 #include "generator_matequation_avx_avx512.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_unary_binary_avx_avx512.h"
