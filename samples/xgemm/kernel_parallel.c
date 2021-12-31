@@ -1025,13 +1025,21 @@ int main(int argc, char* argv []) {
     {
       char *l_a, *l_b, *l_c, *l_c_perf, *l_c_gold;
       l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
-      l_b      = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+      if (l_gemm_def.trans_b == 0) {
+        l_b      = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+      } else {
+        l_b      = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+      }
       l_c      = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
       l_c_perf = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
       l_c_gold = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
 
       init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k );
-      init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n );
+      if (l_gemm_def.trans_b == 0) {
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n );
+      } else {
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k );
+      }
       if ( l_beta == 0 ) {
         init_garbage_matrix( l_gemm_def.out_type, l_c,      1, l_ldc, l_n );
         init_garbage_matrix( l_gemm_def.out_type, l_c_perf, 1, l_ldc, l_n );
