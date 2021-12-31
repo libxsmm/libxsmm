@@ -98,11 +98,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ) {
     unsigned int lda           = i_xgemm_desc->lda;
-//    unsigned int l_offsets[16] = {0     ,  1*lda,  2*lda,  3*lda,
-//                                  4*lda ,  5*lda,  6*lda,  7*lda,
-//                                  8*lda ,  9*lda, 10*lda, 11*lda,
-//                                  12*lda, 13*lda, 14*lda, 15*lda };
-    unsigned int l_offsets[16] = {15*lda, 14*lda, 13*lda, 12*lda, 11*lda, 10*lda, 9*lda, 8*lda, 7*lda, 6*lda, 5*lda, 4*lda, 3*lda, 2*lda, 1*lda, 0*lda };
+    unsigned int l_offsets[16] = {0     ,  1*lda,  2*lda,  3*lda,
+                                  4*lda ,  5*lda,  6*lda,  7*lda,
+                                  8*lda ,  9*lda, 10*lda, 11*lda,
+                                  12*lda, 13*lda, 14*lda, 15*lda };
+//    unsigned int l_offsets[16] = {15*lda, 14*lda, 13*lda, 12*lda, 11*lda, 10*lda, 9*lda, 8*lda, 7*lda, 6*lda, 5*lda, 4*lda, 3*lda, 2*lda, 1*lda, 0*lda };
 
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (const unsigned char *)l_offsets,
@@ -2395,13 +2395,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ) {
     unsigned int lda           = i_xgemm_desc->lda;
-/*
     unsigned int l_offsets[16] = {0     ,  1*lda,  2*lda,  3*lda,
                                   4*lda ,  5*lda,  6*lda,  7*lda,
                                   8*lda ,  9*lda, 10*lda, 11*lda,
                                   12*lda, 13*lda, 14*lda, 15*lda };
-*/
-    unsigned int l_offsets[16] = {15*lda, 14*lda, 13*lda, 12*lda, 11*lda, 10*lda, 9*lda, 8*lda, 7*lda, 6*lda, 5*lda, 4*lda, 3*lda, 2*lda, 1*lda, 0*lda };
+    //unsigned int l_offsets[16] = {15*lda, 14*lda, 13*lda, 12*lda, 11*lda, 10*lda, 9*lda, 8*lda, 7*lda, 6*lda, 5*lda, 4*lda, 3*lda, 2*lda, 1*lda, 0*lda };
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (const unsigned char *)l_offsets,
                                                          "my_gather_offsets",
