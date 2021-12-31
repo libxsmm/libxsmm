@@ -531,7 +531,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 #endif
 
-  gemm_param.op.primary = &l_br;
+  gemm_param.op.tertiary = &l_br;
   gemm_param.c.primary = (void*)o_c;
   gemm_param.c.tertiary = (void*)(( i_gemm_def->unsigned_c != 0 ) ? &(i_gemm_def->scf) : NULL);
   /* run correctness */
