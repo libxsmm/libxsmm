@@ -16,10 +16,12 @@
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_x86_save_callee_regs(libxsmm_generated_code*   io_generated_code);
+void libxsmm_generator_x86_save_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_save_bitmask);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_x86_restore_callee_regs(libxsmm_generated_code*   io_generated_code );
+void libxsmm_generator_x86_restore_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_restore_bitmask);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                        io_generated_code,

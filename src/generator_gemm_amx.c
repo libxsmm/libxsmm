@@ -1624,7 +1624,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   /* Setup stack frame...  */
   l_micro_kernel_config.m_tiles = m_blocking_info[0].tiles;
   l_micro_kernel_config.n_tiles = n_blocking_info[0].tiles;
-  libxsmm_generator_x86_save_callee_regs( io_generated_code );
+  libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
 
   /* implementing load from struct */
   if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
@@ -1761,7 +1761,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   /* Properly destroy stack frame...  */
   libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
-  libxsmm_generator_x86_restore_callee_regs( io_generated_code );
+  libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
 }
 
 LIBXSMM_API_INTERN

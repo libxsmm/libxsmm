@@ -208,7 +208,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor* i_xgemm_desc, libxsmm_gp_reg_mapping*  i_gp_reg_mapping ) {
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   /* define gp register mapping */
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  memset( &l_gp_reg_mapping, 0, sizeof(libxsmm_gp_reg_mapping) );
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
@@ -278,7 +278,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_reg_mapping_amx( libxsmm_gemm_descriptor* i_xgemm_desc, libxsmm_gp_reg_mapping*  i_gp_reg_mapping ) {
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   /* define gp register mapping */
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  memset( &l_gp_reg_mapping, 0, sizeof(libxsmm_gp_reg_mapping) );
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RSI;
 #else
@@ -583,13 +583,13 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       } else {
         libxsmm_generator_matequation_gemm_set_reg_mapping( desc, &l_gp_reg_mapping );
         /* Since this is a GEMM, store calle-save regs  */
-        libxsmm_generator_x86_save_callee_regs( io_generated_code );
+        libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
         libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         /* Call GEMM JITer  */
         libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
         /* Since this is a GEMM, restore calle-save regs  */
         libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
-        libxsmm_generator_x86_restore_callee_regs( io_generated_code );
+        libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
       }
 
       /* Restore RSI as struct param ptr */
