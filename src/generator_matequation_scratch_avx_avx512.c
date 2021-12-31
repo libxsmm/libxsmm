@@ -575,11 +575,13 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
            ((desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
         libxsmm_generator_matequation_gemm_set_reg_mapping_amx( desc, &l_gp_reg_mapping );
         /* Since this is a GEMM, store calle-save regs  */
+        libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
         libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         /* Call GEMM JITer  */
         libxsmm_generator_gemm_amx_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
         /* Since this is a GEMM, restore calle-save regs  */
         libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+        libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
       } else {
         libxsmm_generator_matequation_gemm_set_reg_mapping( desc, &l_gp_reg_mapping );
         /* Since this is a GEMM, store calle-save regs  */

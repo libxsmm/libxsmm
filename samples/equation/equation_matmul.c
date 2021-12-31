@@ -459,7 +459,7 @@ int main( int argc, char* argv[] ) {
   }
 
   brcount = blocks_i[2];
-  op_arg_arr[7].primary = (void*)&brcount;
+  op_arg_arr[7].tertiary = (void*)&brcount;
   eqn_param.ops_args = op_arg_arr;
 
   my_eqn1 = libxsmm_matrix_eqn_create();
@@ -555,7 +555,7 @@ int main( int argc, char* argv[] ) {
     arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(libxsmm_bfloat16);
 
     brcount = blocks_i[2];
-    op_arg_arr[7].primary = (void*)&brcount;
+    op_arg_arr[7].tertiary = (void*)&brcount;
     eqn_param.ops_args = op_arg_arr;
 
     /* Create copy of C in VNNI format */
@@ -659,7 +659,7 @@ int main( int argc, char* argv[] ) {
     arg_set_attr1.set_stride_hint = ld_i[3] * n_i[3] * sizeof(libxsmm_bfloat16);
 
     brcount = blocks_i[2];
-    op_arg_arr[7].primary = (void*)&brcount;
+    op_arg_arr[7].tertiary = (void*)&brcount;
     eqn_param.ops_args = op_arg_arr;
 
     my_eqn3 = libxsmm_matrix_eqn_create();
