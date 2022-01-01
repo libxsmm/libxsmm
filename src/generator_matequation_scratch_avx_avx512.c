@@ -531,7 +531,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.b_op.op_arg_pos*32,
+              cur_op->info.b_op.op_arg_pos*32+16,
               temp_reg,
               0 );
         } else {
@@ -539,11 +539,11 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
               i_micro_kernel_config->alu_mov_instruction,
               temp_reg,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              cur_op->info.t_op.op_arg_pos*32,
+              cur_op->info.t_op.op_arg_pos*32+16,
               temp_reg,
               0 );
         }
-        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0, temp_reg);
+        libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2, temp_reg);
       }
 
       /* Setup stack for fusion related params  */
