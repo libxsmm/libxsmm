@@ -693,6 +693,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
   void* quaternary;
 } libxsmm_matrix_op_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_arg_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ld;                  /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_datatype type;                /* datatype of input */
+} libxsmm_meqn_arg_shape;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */

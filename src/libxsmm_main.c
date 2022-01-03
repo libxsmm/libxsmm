@@ -4726,6 +4726,16 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn(
 }
 
 
+LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
+  const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape ) {
+  libxsmm_descriptor_blob blob;
+  const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
+    out_shape.type, out_shape.m, out_shape.n, (out_shape.ld == NULL) ? out_shape.m : *(out_shape.ld), (unsigned int)idx );
+
+  return libxsmm_dispatch_matrix_eqn_desc( desc );
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csr(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
