@@ -1015,7 +1015,11 @@ int main(int argc, char* argv []) {
     l_gemm_def.ldb = l_ldb;
     l_gemm_def.ldc = l_ldc;
 
-    l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+    if (l_gemm_def.trans_a == 0) {
+      l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+    } else {
+      l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_m * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+    }
     if (l_gemm_def.trans_b == 0) {
       l_b      = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
     } else {
