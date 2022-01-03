@@ -40,19 +40,19 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_unary_op {
   libxsmm_meltw_unary_type  type;
-  libxsmm_meltw_unary_flags flags;
+  libxsmm_bitfield          flags;
   libxsmm_datatype          dtype;
 } libxsmm_matrix_eqn_unary_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_binary_op {
   libxsmm_meltw_binary_type  type;
-  libxsmm_meltw_binary_flags flags;
+  libxsmm_bitfield           flags;
   libxsmm_datatype           dtype;
 } libxsmm_matrix_eqn_binary_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_ternary_op {
   libxsmm_meltw_ternary_type  type;
-  libxsmm_meltw_ternary_flags flags;
+  libxsmm_bitfield            flags;
   libxsmm_datatype            dtype;
 } libxsmm_matrix_eqn_ternary_op;
 
