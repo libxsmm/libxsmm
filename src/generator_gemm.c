@@ -183,7 +183,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA_TRANS );
       return;
     }
-    if (LIBXSMM_GEMM_PRECISION_F32 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) {
+    if (LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
