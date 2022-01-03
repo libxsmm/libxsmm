@@ -20,7 +20,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_bitfield flags) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) {
     result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
@@ -33,7 +33,7 @@ libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags fla
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_bitfield flags, unsigned int side) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if (side == RIGHT) {
     if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) {
@@ -57,7 +57,7 @@ libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags f
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_bitfield flags, unsigned int side) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if (side == RIGHT2) {
     if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) {
