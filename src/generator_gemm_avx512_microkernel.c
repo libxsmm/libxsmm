@@ -12,8 +12,6 @@
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
 
-#define ENABLE_TRANSPOSE_A_IN_MICROKERNEL
-
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code*            io_generated_code,
                                                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -32,7 +30,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
-
 
 #if !defined(NDEBUG)
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) ) {
@@ -62,7 +59,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
   }
 #endif
 
-#ifdef ENABLE_TRANSPOSE_A_IN_MICROKERNEL
   /* sanity check for not supported configurations */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0 ) {
     if ( (i_xgemm_desc->prefetch != 0) ||
@@ -72,7 +68,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       return;
     }
   }
-#endif
 
   if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256)
          ) && (io_generated_code->arch < LIBXSMM_X86_AVX512)
@@ -93,8 +88,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
     return;
   }
 
-#ifdef ENABLE_TRANSPOSE_A_IN_MICROKERNEL
   /* for trans_a = 1 via gather set masking register */
+  unsigned int l_gather_offsets        = l_m_blocking + 1; // zmm register for storing offsets for gathers
+  unsigned int l_gather_mask_notavx512 = 2; // extra mask register storing the negation of avx512 mask for tail gathers
+  unsigned int l_gather_mask_allzeros  = 3; // extra mask register storing all ones for full gathers
+  unsigned int l_gather_mask_reg_start = 4; // gather-based case uses up to 2 masks currently
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ) {
     unsigned int lda           = i_xgemm_desc->lda;
@@ -102,16 +100,32 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
                                   4*lda ,  5*lda,  6*lda,  7*lda,
                                   8*lda ,  9*lda, 10*lda, 11*lda,
                                   12*lda, 13*lda, 14*lda, 15*lda };
-//    unsigned int l_offsets[16] = {15*lda, 14*lda, 13*lda, 12*lda, 11*lda, 10*lda, 9*lda, 8*lda, 7*lda, 6*lda, 5*lda, 4*lda, 3*lda, 2*lda, 1*lda, 0*lda };
 
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (const unsigned char *)l_offsets,
                                                          "my_gather_offsets",
                                                          i_micro_kernel_config->vector_name,
-                                                         3 );
+                                                         l_gather_offsets );
 
+    /* Creating a mask which is a negation of AVX512 mask (to be used negated for tail gathers) */
+    libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                              LIBXSMM_X86_INSTR_KNOTD,
+                                              LIBXSMM_X86_AVX512_MASK,
+                                              LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                              l_gather_mask_notavx512,
+                                              0 /* dummy imm8 argument */);
+
+    /* Creating a mask full of zeros which is used negated for full gathers */
+    libxsmm_x86_instruction_alu_imm( io_generated_code,
+                                     LIBXSMM_X86_INSTR_MOVQ,
+                                     i_gp_reg_mapping->gp_reg_help_1,
+                                     0x0 /*0xffff*/ );
+
+    libxsmm_x86_instruction_mask_move( io_generated_code,
+        LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
+        i_gp_reg_mapping->gp_reg_help_1,
+        l_gather_mask_allzeros );
   }
-#endif
 
   /* Special case that arises in GEMMS from Resnet50 layers  */
   if (i_n_blocking == 7 && l_m_blocking == 4) {
@@ -185,22 +199,24 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
       } else { // trans_a != 0
         // Setting a temporary mask which will be reset by gather
-        libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                 LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2 /* gather mask register */,
-                                                 0 /* dummy imm8 argument */);
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_KNOTD,
+                                                  ( ( l_m == (l_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros ,
+                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                  l_gather_mask_reg_start,
+                                                  0 /* dummy imm8 argument */);
+//                                                  ( ( l_m == (l_m_blocking - 1) ) ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros ,
+//                                                  ( ( l_m == (l_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros ,
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           (i_xgemm_desc->lda) * (i_micro_kernel_config->vector_length) * l_m * i_micro_kernel_config->datatype_size_in /* absolute offset to add*/,
                                           i_micro_kernel_config->vector_name /* register type for the load target*/ ,
                                           3,
-                                          2 /* mask register */, 0, 0 );
+                                          l_gather_mask_reg_start, 0, 0 );
       } // else-if for trans_a
 
       // FIXME: Decide what to do here for prefetch
@@ -298,22 +314,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
       } else { // trans_a != 0
         // Setting a temporary mask which will be reset by gather
-        libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                 LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2 /* gather mask register */,
-                                                 0 /* dummy imm8 argument */);
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_KNOTD,
+                                                  ( ( l_m == (l_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros ,
+                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                  l_gather_mask_reg_start,
+                                                  0 /* dummy imm8 argument */);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           (i_xgemm_desc->lda) * (i_micro_kernel_config->vector_length) * l_m * i_micro_kernel_config->datatype_size_in /* absolute offset to add*/,
                                           i_micro_kernel_config->vector_name /* register type for the load target */ ,
                                           3,
-                                          2 /* mask register*/, 0, 0 );
+                                          l_gather_mask_reg_start, 0, 0 );
       } // else-if for trans_a
 
       for ( l_n = 3; l_n < 6; l_n++ ) {
@@ -406,22 +422,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
       } else { // trans_a != 0
         // Setting a temporary mask which will be reset by gather
-        libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                 LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2 /* gather mask register */,
-                                                 0 /* dummy imm8 argument */);
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_KNOTD,
+                                                  ( ( l_m == (l_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros ,
+                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                  l_gather_mask_reg_start,
+                                                  0 /* dummy imm8 argument */);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           (i_xgemm_desc->lda) * (i_micro_kernel_config->vector_length) * l_m * i_micro_kernel_config->datatype_size_in /* absolute offset to add*/,
                                           i_micro_kernel_config->vector_name /* register type for the load target */ ,
                                           3,
-                                          2 /* mask register */, 0, 0 );
+                                          l_gather_mask_reg_start, 0, 0 );
       } // else-if for trans_a
 
       for ( l_n = 6; l_n < 7; l_n++ ) {
@@ -483,22 +499,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
             1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
       } else { // trans_a != 0
         // Setting a temporary mask which will be reset by gather
-        libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                 LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2 + (l_m % 2) /* gather mask register */,
-                                                 0 /* dummy imm8 argument */);
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_KNOTD,
+                                                  ( ( l_m == (l_m_blocking - 1) ) && i_micro_kernel_config->use_masking_a_c ) ? l_gather_mask_notavx512 : l_gather_mask_allzeros,
+                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                  l_gather_mask_reg_start + (l_m % 2) /* gather mask register */,
+                                                  0 /* dummy imm8 argument */);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           (i_xgemm_desc->lda) * (i_micro_kernel_config->vector_length) * l_m * i_micro_kernel_config->datatype_size_in /* absolute offset to add*/,
                                           i_micro_kernel_config->vector_name /* register type for the load target */ ,
                                           1+l_m,
-                                          2 + (l_m % 2) /* mask register */, 0, 0 );
+                                          l_gather_mask_reg_start + (l_m % 2) /* mask register */, 0, 0 );
       } // else-if for trans_a
 
       // TODO: Decide how to handle all this extra stuff below for gather-based transpose
@@ -2317,7 +2333,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   }
 #endif
 
-#ifdef ENABLE_TRANSPOSE_A_IN_MICROKERNEL
   /* sanity check for not supported configurations */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) != 0 ) {
     if ( (i_xgemm_desc->prefetch != 0) ||
@@ -2327,7 +2342,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       return;
     }
   }
-#endif
 
   /* compute number of n accumulators to hide FMA latencies */
   if (i_n_blocking >= 12) {
@@ -2390,8 +2404,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     l_vec_name_ld_a = 'y';
   }
 
-#ifdef ENABLE_TRANSPOSE_A_IN_MICROKERNEL
   /* for trans_a = 1 via gather set masking register */
+  unsigned int l_gather_offsets        = 3; // zmm for storing offsets for the gather [not sure about this number being correct]
+  unsigned int l_gather_mask_notavx512 = 2; // extra mask register storing the negation of avx512 mask for tail gathers
+  unsigned int l_gather_mask_allzeros  = 3; // extra mask register storing all ones for full gathers
+  unsigned int l_gather_mask_reg_start = 4; // gather-based case uses up to 2 masks currently
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) > 0) ) {
     unsigned int lda           = i_xgemm_desc->lda;
@@ -2404,9 +2421,28 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                          (const unsigned char *)l_offsets,
                                                          "my_gather_offsets",
                                                          i_micro_kernel_config->vector_name,
-                                                         3 );
+                                                         l_gather_offsets );
+
+    /* Creating a mask which is a negation of AVX512 mask (to be used negated for tail gathers) */
+    libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                              LIBXSMM_X86_INSTR_KNOTD,
+                                              LIBXSMM_X86_AVX512_MASK,
+                                              LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                              l_gather_mask_notavx512,
+                                              0 /* dummy imm8 argument */);
+
+    /* Creating a mask full of zeros which is used negated for full gathers */
+    libxsmm_x86_instruction_alu_imm( io_generated_code,
+                                     LIBXSMM_X86_INSTR_MOVQ,
+                                     i_gp_reg_mapping->gp_reg_help_1,
+                                     0x0 /*0xffff*/ );
+
+    libxsmm_x86_instruction_mask_move( io_generated_code,
+        LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
+        i_gp_reg_mapping->gp_reg_help_1,
+        l_gather_mask_allzeros );
   }
-#endif
+
 
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
@@ -2424,22 +2460,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                           i_micro_kernel_config->use_masking_a_c, 1, 0 );
       } else { // trans_a != 0
         // Setting a temporary mask which will be reset by gather
-        libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                 LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
-                                                 LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2 /* gather mask register */,
-                                                 0 /* dummy imm8 argument */);
+        libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_KNOTD,
+                                                  l_gather_mask_notavx512 /*LIBXSMM_X86_AVX512_MASK*/ /* not sure about this */,
+                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                  l_gather_mask_reg_start,
+                                                  0 /* dummy imm8 argument */);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           l_k * i_micro_kernel_config->datatype_size_in /* absolute offset to add?*/,
                                           l_vec_name_ld_a /* should be where to load?*/ ,
                                           0,
-                                          2 /* mask register */, 0, 0 );
+                                          l_gather_mask_reg_start, 0, 0 );
       } // else-if for trans_a
       // TODO: Need to check that this gets modified or disabled for the gather-based transpose
       /* current A prefetch, next rows for the current column */
@@ -2466,22 +2502,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                             i_micro_kernel_config->use_masking_a_c, 1, 0 );
         } else { // trans_a != 0
           // Setting a temporary mask which will be reset by gather
-          libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
-                                                   LIBXSMM_X86_INSTR_KNOTD,
-                                                   1 /* avx512 mask register */,
-                                                   LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                   2 /* gather mask register */,
-                                                   0 /* dummy imm8 argument */);
+          libxsmm_x86_instruction_mask_compute_reg( io_generated_code,
+                                                    LIBXSMM_X86_INSTR_KNOTD,
+                                                    l_gather_mask_notavx512 /*LIBXSMM_X86_AVX512_MASK */ /* not sure about this */,
+                                                    LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
+                                                    l_gather_mask_reg_start + 1,
+                                                    0 /* dummy imm8 argument */);
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             io_generated_code->arch,
                                             LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                             i_gp_reg_mapping->gp_reg_a,
-                                            3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                            l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                             (l_k + 1) * i_micro_kernel_config->datatype_size_in /* absolute offset to add?*/,
                                             l_vec_name_ld_a /* should be where to load?*/ ,
                                             1,
-                                            2 /* mask register */, 0, 0 );
+                                            l_gather_mask_reg_start + 1, 0, 0 );
         }
         // TODO: Need to check that this gets modified or disabled for the gather-based transpose
         /* current A prefetch, next rows for the current column */
@@ -2510,20 +2546,20 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
         // Setting a temporary mask which will be reset by gather
         libxsmm_x86_instruction_mask_compute_reg(io_generated_code,
                                                  LIBXSMM_X86_INSTR_KNOTD,
-                                                 1 /* avx512 mask register */,
+                                                 l_gather_mask_notavx512 /*LIBXSMM_X86_AVX512_MASK */ /* not sure about this */,
                                                  LIBXSMM_X86_VEC_REG_UNDEF /* dummy src_1 argument in case of KNOT */,
-                                                 2+(l_k+1)%2 /* gather mask register */,
+                                                 l_gather_mask_reg_start + (l_k+1)%2 /* gather mask register */,
                                                  0 /* dummy imm8 argument */);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           io_generated_code->arch,
                                           LIBXSMM_X86_INSTR_VGATHERDPS /*i_micro_kernel_config->a_vgather_instruction in the future?*/,
                                           i_gp_reg_mapping->gp_reg_a,
-                                          3 /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
+                                          l_gather_offsets /* zmm with offsets */, i_micro_kernel_config->datatype_size_in /* 1, if scale with bytes, or sizeof(datatype) if we scale with elements */,
                                           (l_k + 1) * i_micro_kernel_config->datatype_size_in /* absolute offset to add?*/,
                                           l_vec_name_ld_a /* should be where to load?*/ ,
                                           (l_k+1)%2,
-                                          2+(l_k+1)%2 /* mask register */, 0, 0 );
+                                          l_gather_mask_reg_start + (l_k+1)%2 /* mask register */, 0, 0 );
       }
       // TODO: Need to check that this gets modified or disabled for the gather-based transpose
       /* current A prefetch, next rows for the current column */
