@@ -148,6 +148,41 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc_opa, 0 );
 
+  /* block according to the number of available registers or given limits */
+  if ( l_xgemm_desc_opa->n == 7 && io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
+    libxsmm_compute_equalized_blocking( l_xgemm_desc_opa->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+  } else {
+    unsigned int max_n_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
+#if 1
+    if (3 < max_n_blocking)
+#endif
+    {
+      const unsigned int init_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
+      const unsigned int init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, l_micro_kernel_config.vector_length);
+/* ************************ To DO refactor the if condition code ********************************/
+      if(io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX
+          || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX){
+        while ((init_m_blocks * max_n_blocking + max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
+          max_n_blocking--;
+        }
+      } else {
+        while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
+          max_n_blocking--;
+        }
+      }
+    }
+    if ( max_n_blocking == 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+      return;
+    }
+    libxsmm_compute_equalized_blocking( l_xgemm_desc_opa->n, max_n_blocking, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+  }
+  /* check that l_n_N1 is non-zero */
+  if ( l_n_N[0] == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
+  }
+
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
@@ -195,41 +230,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
         return;
       }
     }
-  }
-
-  /* block according to the number of available registers or given limits */
-  if ( l_xgemm_desc_opa->n == 7 && io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE && io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
-    libxsmm_compute_equalized_blocking( l_xgemm_desc_opa->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
-  } else {
-    unsigned int max_n_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_max_n_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
-#if 1
-    if (3 < max_n_blocking)
-#endif
-    {
-      const unsigned int init_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch );
-      const unsigned int init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, l_micro_kernel_config.vector_length);
-/* ************************ To DO refactor the if condition code ********************************/
-      if(io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX
-          || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX){
-        while ((init_m_blocks * max_n_blocking + max_n_blocking + 1) > l_micro_kernel_config.vector_reg_count) {
-          max_n_blocking--;
-        }
-      } else {
-        while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > l_micro_kernel_config.vector_reg_count) {
-          max_n_blocking--;
-        }
-      }
-    }
-    if ( max_n_blocking == 0 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-      return;
-    }
-    libxsmm_compute_equalized_blocking( l_xgemm_desc_opa->n, max_n_blocking, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
-  }
-  /* check that l_n_N1 is non-zero */
-  if ( l_n_N[0] == 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
-    return;
   }
 
 #ifndef NO_TRANSPOSE_PART
