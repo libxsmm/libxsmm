@@ -387,16 +387,17 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_xmmfunction rls_tr = { NULL };
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
-  libxsmm_gemm_shape_flags l_shapeflags;
+  libxsmm_gemm_shape l_shape;
   libxsmm_gemm_batch_reduce_config l_brconfig;
   libxsmm_gemm_ext_unary_argops l_argops;
   libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  libxsmm_bitfield l_prefetch_flags = 0;
 #if defined(USE_GEMM_EXT_FRONTEND)
   libxsmm_gemm_ext_param gemm_param;
 #else
   libxsmm_gemm_param gemm_param;
 #endif
-  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   double l_jittime, l_runtime;
   size_t l_t, l_r;
   char** l_a_addr = (char**)malloc(i_gemm_def->br_count*sizeof(char*));
@@ -448,18 +449,16 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
 
   /* setting update GEMM struct */
-  l_shapeflags.m = i_gemm_def->m;
-  l_shapeflags.n = i_gemm_def->n;
-  l_shapeflags.k = i_gemm_def->k;
-  l_shapeflags.lda = (void*)&(i_gemm_def->lda);
-  l_shapeflags.ldb = (void*)&(i_gemm_def->ldb);
-  l_shapeflags.ldc = (void*)&(i_gemm_def->ldc);
-  l_shapeflags.a_in_type = i_gemm_def->in_type;
-  l_shapeflags.b_in_type = i_gemm_def->in_type;
-  l_shapeflags.out_type = i_gemm_def->out_type;
-  l_shapeflags.comp_type = i_gemm_def->comp_type;
-  l_shapeflags.flags = &l_flags;
-  l_shapeflags.prefetch = (void*)&(i_gemm_def->prefetch);
+  l_shape.m = i_gemm_def->m;
+  l_shape.n = i_gemm_def->n;
+  l_shape.k = i_gemm_def->k;
+  l_shape.lda = (void*)&(i_gemm_def->lda);
+  l_shape.ldb = (void*)&(i_gemm_def->ldb);
+  l_shape.ldc = (void*)&(i_gemm_def->ldc);
+  l_shape.a_in_type = i_gemm_def->in_type;
+  l_shape.b_in_type = i_gemm_def->in_type;
+  l_shape.out_type = i_gemm_def->out_type;
+  l_shape.comp_type = i_gemm_def->comp_type;
 
   /* setting BRGEMM config strucut */
   if (i_gemm_def->br_type == 1) {
@@ -484,28 +483,25 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_unroll_hint = 0;
   }
 
+  /* setting prefetch flags */
+  l_prefetch_flags = i_gemm_def->prefetch;
+
   /* setting ext strcuts to 0 */
   memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
   memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
+  l_start = libxsmm_timer_tick();
   if (i_gemm_def->tc_config) {
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
-  }
-
-  l_start = libxsmm_timer_tick();
-  if (i_gemm_def->tc_config) {
-    l_shapeflags.flags = &l_cfg_flags;
-    cfg_tr.gemm = libxsmm_dispatch_gemm_v2( l_shapeflags, l_brconfig );
-    l_shapeflags.flags = &l_rls_flags;
-    rls_tr.gemm = libxsmm_dispatch_gemm_v2( l_shapeflags, l_brconfig );
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    l_shapeflags.flags = &l_flags;
+    cfg_tr.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
+    rls_tr.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
-  l_test_jit.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shapeflags, l_brconfig, l_argops, l_postops );
+  l_test_jit.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
 #else
-  l_test_jit.gemm = libxsmm_dispatch_gemm_v2( l_shapeflags, l_brconfig );
+  l_test_jit.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 #endif
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == 0) {
