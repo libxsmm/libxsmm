@@ -1049,7 +1049,6 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
         i_gp_reg_mapping->gp_reg_b, l_b_offset );
 
-    // FIXME: Currently both cases do the same, should this be changed?
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction,
           i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size_in)) );
@@ -1822,7 +1821,7 @@ void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*     
     l_mask = 0xffff;
   }
 
-  /* shift right by "inverse" remainder*/
+  /* shift right by "inverse" remainder */
   l_mask = l_mask >> i_mask_count;
 
   /* move mask to GP register */
