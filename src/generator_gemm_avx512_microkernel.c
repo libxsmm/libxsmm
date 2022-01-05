@@ -2405,7 +2405,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   }
 
   /* for trans_a = 1 via gather set masking register */
-  unsigned int l_gather_offsets        = 3; // zmm for storing offsets for the gather [not sure about this number being correct]
+  unsigned int l_gather_offsets        = 2; // zmm for storing offsets for the gather [not sure about this number being always correct]
   unsigned int l_gather_mask_notavx512 = 2; // extra mask register storing the negation of avx512 mask for tail gathers
   unsigned int l_gather_mask_allzeros  = 3; // extra mask register storing all ones for full gathers
   unsigned int l_gather_mask_reg_start = 4; // gather-based case uses up to 2 masks currently
