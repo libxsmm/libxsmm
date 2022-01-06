@@ -528,104 +528,106 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
   i_micro_kernel_config->fused_eltwise           = 0;
   i_micro_kernel_config->has_colbias_act_fused   = 0;
 
-  i_micro_kernel_config->overwrite_C = ((i_xgemm_desc->internal_flags_2 & 0x4) > 0) ? 0 : 1;
+  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+    i_micro_kernel_config->overwrite_C = ((i_xgemm_desc->internal_flags_2 & 0x4) > 0) ? 0 : 1;
 
-  if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
-    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
-      i_micro_kernel_config->has_colbias_act_fused = 1;
-      if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0){
-        i_micro_kernel_config->fused_relu = 1;
-      } else {
-        i_micro_kernel_config->fused_relu_nobitmask = 1;
-      }
-    }
-
-    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
-      i_micro_kernel_config->has_colbias_act_fused = 1;
-      i_micro_kernel_config->fused_sigmoid = 1;
-    }
-
-    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI) {
-      i_micro_kernel_config->vnni_format_C = 1;
-      if (i_micro_kernel_config->overwrite_C == 0) {
-        i_micro_kernel_config->vnni_cvt_output_ext_buf = 1;
-      }
-    }
-
-    if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) {
-      i_micro_kernel_config->has_colbias_act_fused = 1;
-      i_micro_kernel_config->fused_relu_bwd = 1;
-    }
-  }
-
-  if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_BINARY) {
-    if (i_xgemm_desc->meltw_param == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
-      if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0 ) ||
-          ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0 )) {
+    if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
         i_micro_kernel_config->has_colbias_act_fused = 1;
-        if (i_xgemm_desc->meltw_datatype_aux == LIBXSMM_DATATYPE_BF16) {
-          i_micro_kernel_config->fused_bcolbias = 1;
+        if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0){
+          i_micro_kernel_config->fused_relu = 1;
+        } else {
+          i_micro_kernel_config->fused_relu_nobitmask = 1;
         }
-        if (i_xgemm_desc->meltw_datatype_aux == LIBXSMM_DATATYPE_F32) {
-          i_micro_kernel_config->fused_scolbias = 1;
+      }
+
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
+        i_micro_kernel_config->has_colbias_act_fused = 1;
+        i_micro_kernel_config->fused_sigmoid = 1;
+      }
+
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI) {
+        i_micro_kernel_config->vnni_format_C = 1;
+        if (i_micro_kernel_config->overwrite_C == 0) {
+          i_micro_kernel_config->vnni_cvt_output_ext_buf = 1;
+        }
+      }
+
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) {
+        i_micro_kernel_config->has_colbias_act_fused = 1;
+        i_micro_kernel_config->fused_relu_bwd = 1;
+      }
+    }
+
+    if (i_xgemm_desc->meltw_operation == LIBXSMM_MELTW_OPERATION_BINARY) {
+      if (i_xgemm_desc->meltw_param == LIBXSMM_MELTW_TYPE_BINARY_ADD) {
+        if (((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0 ) ||
+            ((i_xgemm_desc->meltw_flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0 )) {
+          i_micro_kernel_config->has_colbias_act_fused = 1;
+          if (i_xgemm_desc->meltw_datatype_aux == LIBXSMM_DATATYPE_BF16) {
+            i_micro_kernel_config->fused_bcolbias = 1;
+          }
+          if (i_xgemm_desc->meltw_datatype_aux == LIBXSMM_DATATYPE_F32) {
+            i_micro_kernel_config->fused_scolbias = 1;
+          }
         }
       }
     }
-  }
 
-  if (i_xgemm_desc->eltw_ap_op == LIBXSMM_MELTW_OPERATION_UNARY) {
-    if ((i_xgemm_desc->internal_flags_2 & 0x1) > 0){
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 1;
-      }
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 2;
-      }
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 4;
-      }
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 8;
-      }
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 16;
-      }
-      if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32) {
-        i_micro_kernel_config->decompress_A = 1;
-        i_micro_kernel_config->sparsity_factor_A = 32;
+    if (i_xgemm_desc->eltw_ap_op == LIBXSMM_MELTW_OPERATION_UNARY) {
+      if ((i_xgemm_desc->internal_flags_2 & 0x1) > 0){
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 1;
+        }
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 2;
+        }
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 4;
+        }
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 8;
+        }
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 16;
+        }
+        if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32) {
+          i_micro_kernel_config->decompress_A = 1;
+          i_micro_kernel_config->sparsity_factor_A = 32;
+        }
       }
     }
-  }
 
-  if (i_xgemm_desc->eltw_bp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
-    if (i_xgemm_desc->eltw_bp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
-      if ((i_xgemm_desc->internal_flags_2 & 0x2) > 0){
-        i_micro_kernel_config->norm_to_normT_B_ext_buf = 1;
-        i_micro_kernel_config->stride_b_trans = i_xgemm_desc->ldbp;
+    if (i_xgemm_desc->eltw_bp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
+      if (i_xgemm_desc->eltw_bp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
+        if ((i_xgemm_desc->internal_flags_2 & 0x2) > 0){
+          i_micro_kernel_config->norm_to_normT_B_ext_buf = 1;
+          i_micro_kernel_config->stride_b_trans = i_xgemm_desc->ldbp;
+        }
       }
     }
-  }
 
-  i_micro_kernel_config->fused_eltwise = (i_micro_kernel_config->has_colbias_act_fused == 1) ? 1: 0;
-  if (i_micro_kernel_config->decompress_A == 1) {
-    i_micro_kernel_config->fused_eltwise = 1;
-  }
+    i_micro_kernel_config->fused_eltwise = (i_micro_kernel_config->has_colbias_act_fused == 1) ? 1: 0;
+    if (i_micro_kernel_config->decompress_A == 1) {
+      i_micro_kernel_config->fused_eltwise = 1;
+    }
 
-  if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
-    i_micro_kernel_config->fused_eltwise = 1;
-  }
+    if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
+      i_micro_kernel_config->fused_eltwise = 1;
+    }
 
-  if (i_micro_kernel_config->norm_to_normT_B_ext_buf == 1) {
-    i_micro_kernel_config->fused_eltwise = 1;
-  }
+    if (i_micro_kernel_config->norm_to_normT_B_ext_buf == 1) {
+      i_micro_kernel_config->fused_eltwise = 1;
+    }
 
-  if (i_micro_kernel_config->fused_relu_bwd == 1) {
-    i_micro_kernel_config->fused_eltwise = 1;
+    if (i_micro_kernel_config->fused_relu_bwd == 1) {
+      i_micro_kernel_config->fused_eltwise = 1;
+    }
   }
 }
 
@@ -832,9 +834,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const unsigned int             i_use_masking_a_c ) {
   memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
-  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
-  }
+  libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
   if ( (i_arch <= LIBXSMM_TARGET_ARCH_GENERIC) || (i_arch > LIBXSMM_X86_ALLFEAT) ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
@@ -1366,9 +1366,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
     const unsigned int             i_arch,
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const unsigned int             i_use_masking_a_c ) {
-  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
-  }
+  libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
   if ( (i_arch <= LIBXSMM_TARGET_ARCH_GENERIC) || (i_arch > LIBXSMM_X86_ALLFEAT) ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
@@ -1469,9 +1467,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     const unsigned int             i_arch,
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const unsigned int             i_use_masking_a_c ) {
-  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-    libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
-  }
+  libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(i_xgemm_desc, io_micro_kernel_config);
   if ( ( i_arch <= LIBXSMM_TARGET_ARCH_GENERIC ) || ( i_arch > LIBXSMM_X86_ALLFEAT ) ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
