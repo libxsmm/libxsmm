@@ -15,7 +15,6 @@
 #include <libxsmm_cpuid.h>
 #include "libxsmm_main.h"
 #include "libxsmm_matrixeqn.h"
-#include "generator_common_x86.h"
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -1785,8 +1784,7 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
   LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19,
-  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20,
-  trans_a_ptr                                    = 21
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20
 } libxsmm_gemm_stack_var;
 
 #if 0
