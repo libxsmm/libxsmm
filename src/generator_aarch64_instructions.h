@@ -370,10 +370,12 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0 2
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 1 /* all sve instructions have src0 currently */
 /* define unpredicated SVE instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_AND_V          0x04203003 /* binary and, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ADD_V          0x04200003 /* integer add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c02 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
+#define LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V        0x04209402 /* logical shift right by immediate, unpredicated (predicated exists as well) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000003 /* add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000403 /* subtract, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000803 /* multiply, vectors, unpredicated */
