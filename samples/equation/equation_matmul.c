@@ -228,6 +228,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_blasint m_i[128], n_i[128], ld_i[128], blocks_i[128];
+  libxsmm_meqn_arg_shape  arg_shape[128];
   libxsmm_matrix_arg_attributes arg_set_attr0, arg_set_attr1;
   libxsmm_matrix_arg_attributes arg_singular_attr;
   float *arg[128];
@@ -267,6 +268,17 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 3) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_F32;
+  }
+
+  for (j = 0; j < n_tensors; j++) {
+    arg_shape[j].m = m_i[j];
+    arg_shape[j].n = n_i[j];
+    arg_shape[j].ld = &ld_i[j];
+    if (j == n_tensors-1) {
+      arg_shape[j].type = out_dt;
+    } else {
+      arg_shape[j].type = in_dt;
+    }
   }
 
   for (i = 0; i < n_tensors; i++) {
@@ -326,15 +338,14 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[1], n_i[1], ld_i[1], 1, in_dt, arg_singular_attr);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, arg_shape[0], arg_singular_attr, 0);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, arg_shape[1], arg_singular_attr, 1);
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_MATMUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_singular_attr);
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_singular_attr);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, arg_shape[2], arg_singular_attr, 2);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn0, arg_shape[3], arg_singular_attr, 3);
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
-
-  func0 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn0 );
+  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape[n_tensors-1] );
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;
@@ -437,7 +448,7 @@ int main( int argc, char* argv[] ) {
   }
   arg_array[1].primary = copy_B;
   bf16_arg_array[1].primary = copy_B;
-
+  arg_shape[1].type = LIBXSMM_DATATYPE_F32;
   /* Result = gelu(A) * tanh( B + Sum Ci x Di ) */
 
   arg_set_attr0.type = LIBXSMM_MATRIX_ARG_TYPE_SET;
@@ -465,16 +476,17 @@ int main( int argc, char* argv[] ) {
   my_eqn1 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, arg_shape[0], arg_singular_attr, 0);
   libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
   libxsmm_matrix_eqn_push_back_ternary_op_v2( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32, 7);
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
-  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, m_i[1], n_i[1], ld_i[1], 1, LIBXSMM_DATATYPE_F32, arg_singular_attr );
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, arg_shape[2], arg_set_attr0, 2);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, arg_shape[3], arg_set_attr1, 3);
+  libxsmm_matrix_eqn_push_back_arg_v2( my_eqn1, arg_shape[1], arg_singular_attr, 1);
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
-
-  func1 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn1 );
+  func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape[n_tensors-1] );
   func1(&eqn_param);
+  /* Recover type of arg1  */
+  arg_shape[1].type = in_dt;
 
   if (datatype_mode == 0 || datatype_mode == 1) {
     eqn1_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -545,16 +557,23 @@ int main( int argc, char* argv[] ) {
     float *colbias_f32_fused = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
     memcpy(colbias_f32_fused, arg[2], m_i[2] * sizeof(float));
 
+    libxsmm_meqn_arg_shape  colbias_shape_fused;
+    colbias_shape_fused.m = m_i[2];
+    colbias_shape_fused.n = 1;
+    colbias_shape_fused.ld = &m_i[2];
+    colbias_shape_fused.type = in_dt;
+
     my_eqn5 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, m_i[2], 1, m_i[2], 42, in_dt, arg_singular_attr );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, colbias_shape_fused, arg_singular_attr, 42);
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_BINARY_BRGEMM, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, 7);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, arg_shape[2], arg_set_attr0, 2);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, arg_shape[3], arg_set_attr1, 3);
     libxsmm_matrix_eqn_tree_print( my_eqn5 );
-    func5 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn5 );
+    func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape[n_tensors-1] );
+
     arg_array[42].primary = colbias_f32_fused;
     func5(&eqn_param);
 
@@ -615,7 +634,6 @@ int main( int argc, char* argv[] ) {
     printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
   }
 
-
   if ((datatype_mode == 1) && (n_i[2] % 2 == 0)) {
     printf("\n\nNow testing equation 2...\n\n");
 
@@ -652,14 +670,13 @@ int main( int argc, char* argv[] ) {
     my_eqn2 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn2, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, arg_shape[0], arg_singular_attr, 0);
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn2, LIBXSMM_MELTW_TYPE_UNARY_TANH, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32, 7);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, arg_shape[2], arg_set_attr0, 2);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn2, arg_shape[3], arg_set_attr1, 3);
     libxsmm_matrix_eqn_tree_print( my_eqn2 );
-
-    func2 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn2 );
+    func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape[n_tensors-1] );
     func2(&eqn_param);
 
     eqn2_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -741,14 +758,13 @@ int main( int argc, char* argv[] ) {
     my_eqn3 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16, -1 );
     libxsmm_matrix_eqn_push_back_ternary_op_v2( my_eqn3, LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_BF16, 7);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, arg_shape[2], arg_set_attr0, 2);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, arg_shape[3], arg_set_attr1, 3);
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, m_i[0], n_i[0], ld_i[0], 0, in_dt, arg_singular_attr );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn3, arg_shape[0], arg_singular_attr, 0);
     libxsmm_matrix_eqn_tree_print( my_eqn3 );
-
-    func3 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn3 );
+    func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape[n_tensors-1] );
     func3(&eqn_param);
 
     eqn3_f32( arg[ref_id], m_i[n_tensors-1], n_i[n_tensors-1], ld_i[n_tensors-1],
@@ -819,17 +835,22 @@ int main( int argc, char* argv[] ) {
     libxsmm_rne_convert_fp32_bf16( arg[2], colbias, m_i[2] );
     libxsmm_convert_bf16_f32(colbias, colbias_f32, m_i[2] );
 
+    libxsmm_meqn_arg_shape  colbias_shape_bf16;
+    colbias_shape_bf16.m = m_i[2];
+    colbias_shape_bf16.n = 1;
+    colbias_shape_bf16.ld = &m_i[2];
+    colbias_shape_bf16.type = in_dt;
 
     my_eqn4 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[2], 1, m_i[2], 42, in_dt, arg_singular_attr );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, colbias_shape_bf16, arg_singular_attr, 42);
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_BF16, 7);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[2], n_i[2], ld_i[2], 2, in_dt, arg_set_attr0);
-    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, m_i[3], n_i[3], ld_i[3], 3, in_dt, arg_set_attr1 );
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, arg_shape[2], arg_set_attr0, 2);
+    libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, arg_shape[3], arg_set_attr1, 3);
     libxsmm_matrix_eqn_tree_print( my_eqn4 );
-    func4 = libxsmm_dispatch_matrix_eqn( m_i[n_tensors-1], n_i[n_tensors-1], &ld_i[n_tensors-1], out_dt, my_eqn4 );
+    func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape[n_tensors-1] );
     bf16_arg_array[42].primary = colbias;
 
     func4(&eqn_param);

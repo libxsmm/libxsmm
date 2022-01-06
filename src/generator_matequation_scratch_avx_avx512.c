@@ -45,11 +45,10 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*   io_generated_code, libxsmm_matrix_eqn_elem *cur_op,  libxsmm_gemm_descriptor **out_desc ) {
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
-  libxsmm_gemm_shape_flags shape_flags;
+  libxsmm_gemm_shape gemm_shape;
+  int  gemm_flags = LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
   libxsmm_gemm_batch_reduce_config br_config;
   libxsmm_blasint m = 0, n = 0, k = 0, lda = 0, ldb = 0, ldc = 0;
-  int prefetch = 0;
-  int gemm_flags = LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
   libxsmm_datatype a_in_type, b_in_type;
 
   m = cur_op->tmp.m;
@@ -151,18 +150,16 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     }
   }
 
-  shape_flags.m = m;
-  shape_flags.n = n;
-  shape_flags.k = k;
-  shape_flags.lda = &lda;
-  shape_flags.ldb = &ldb;
-  shape_flags.ldc = &ldc;
-  shape_flags.a_in_type = a_in_type;
-  shape_flags.b_in_type = b_in_type;
-  shape_flags.out_type = cur_op->tmp.dtype;
-  shape_flags.comp_type = cur_op->tmp.dtype;
-  shape_flags.flags = &gemm_flags;
-  shape_flags.prefetch = &prefetch;
+  gemm_shape.m = m;
+  gemm_shape.n = n;
+  gemm_shape.k = k;
+  gemm_shape.lda = &lda;
+  gemm_shape.ldb = &ldb;
+  gemm_shape.ldc = &ldc;
+  gemm_shape.a_in_type = a_in_type;
+  gemm_shape.b_in_type = b_in_type;
+  gemm_shape.out_type = cur_op->tmp.dtype;
+  gemm_shape.comp_type = cur_op->tmp.dtype;
 
 #if 1
   printf("Dispsatching GEMM %d %d %d %d %d %d %d\n", m, n, k, lda, ldb, ldc, gemm_flags);
@@ -177,11 +174,11 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     gemm_flags = (gemm_flags & remove_flag) | LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
   }
 
-  desc = libxsmm_gemm_descriptor_dinit2(&blob, shape_flags.a_in_type, shape_flags.out_type,
-    shape_flags.m, shape_flags.n, shape_flags.k,
-    NULL != shape_flags.lda ? *(shape_flags.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? shape_flags.m : shape_flags.k),
-    NULL != shape_flags.ldb ? *(shape_flags.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? shape_flags.k : shape_flags.n),
-    NULL != shape_flags.ldc ? *(shape_flags.ldc) : shape_flags.m, LIBXSMM_ALPHA, !((*(shape_flags.flags) & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
     gemm_flags, 0);
 
   /* add more BRGEMM related fields */

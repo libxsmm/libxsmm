@@ -47,14 +47,14 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_unary_op {
   libxsmm_meltw_unary_type  type;
-  libxsmm_meltw_unary_flags flags;
+  libxsmm_bitfield          flags;
   libxsmm_datatype          dtype;
   libxsmm_blasint           op_arg_pos;
 } libxsmm_matrix_eqn_unary_op;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_binary_op {
   libxsmm_meltw_binary_type         type;
-  libxsmm_meltw_binary_flags        flags;
+  libxsmm_bitfield                  flags;
   libxsmm_datatype                  dtype;
   libxsmm_blasint                   op_arg_pos;
   libxsmm_blasint                   is_brgemm;
@@ -62,7 +62,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_ternary_op {
   libxsmm_meltw_ternary_type        type;
-  libxsmm_meltw_ternary_flags       flags;
+  libxsmm_bitfield                  flags;
   libxsmm_datatype                  dtype;
   libxsmm_blasint                   op_arg_pos;
   libxsmm_blasint                   is_brgemm;
@@ -172,13 +172,13 @@ LIBXSMM_API_INTERN int is_unary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int is_binary_opcode_reduce_to_scalar (unsigned int opcode);
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags);
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_bitfield flags);
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side);
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_bitfield flags, unsigned int side);
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side);
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_bitfield flags, unsigned int side);
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_bcast_tmp(libxsmm_matrix_eqn *eqn);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn_elem* cur_node);

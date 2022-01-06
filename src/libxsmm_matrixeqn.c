@@ -20,7 +20,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags flags) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_bitfield flags) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) {
     result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW;
@@ -33,7 +33,7 @@ libxsmm_matrix_eqn_bcast_type get_bcast_type_unary(libxsmm_meltw_unary_flags fla
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags flags, unsigned int side) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_bitfield flags, unsigned int side) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if (side == RIGHT) {
     if ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_1) > 0) {
@@ -57,7 +57,7 @@ libxsmm_matrix_eqn_bcast_type get_bcast_type_binary(libxsmm_meltw_binary_flags f
 }
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_meltw_ternary_flags flags, unsigned int side) {
+libxsmm_matrix_eqn_bcast_type get_bcast_type_ternary(libxsmm_bitfield flags, unsigned int side) {
   libxsmm_matrix_eqn_bcast_type  result = LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE;
   if (side == RIGHT2) {
     if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2) > 0) {
@@ -1181,7 +1181,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, con
   return 0;
 }
 
-LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_datatype dtype, libxsmm_matrix_arg_attributes arg_attr ) {
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_blasint idx, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr, const libxsmm_blasint in_pos) {
   union libxsmm_matrix_eqn_info info;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
@@ -1193,11 +1193,11 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_blasint idx, 
     return 2;
   }
 
-  info.arg.m = m;
-  info.arg.n = n;
-  info.arg.ld = ld;
+  info.arg.m = arg_shape.m;
+  info.arg.n = arg_shape.n;
+  info.arg.ld = ( arg_shape.ld != NULL) ? *(arg_shape.ld) : arg_shape.m;
   info.arg.in_pos = in_pos;
-  info.arg.dtype = dtype;
+  info.arg.dtype = arg_shape.type;
   info.arg.arg_attr = arg_attr;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_ARG, info );
 #if 0
@@ -1209,6 +1209,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_blasint idx, 
 
   return 0;
 }
+
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype ) {
   union libxsmm_matrix_eqn_info info;
@@ -1223,7 +1224,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx
   }
 
   info.u_op.type  = type;
-  info.u_op.flags = flags;
+  info.u_op.flags = (libxsmm_bitfield)flags;
   info.u_op.dtype = dtype;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_UNARY, info );
 #if 0
@@ -1236,7 +1237,8 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx
   return 0;
 }
 
-LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos ) {
+
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_bitfield flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos ) {
   union libxsmm_matrix_eqn_info info;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
@@ -1263,7 +1265,6 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2( const libxsmm_blasint 
   return 0;
 }
 
-
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype ) {
   union libxsmm_matrix_eqn_info info;
 
@@ -1277,9 +1278,8 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
   }
 
   info.b_op.type  = type;
-  info.b_op.flags = flags;
+  info.b_op.flags = (libxsmm_bitfield)flags;
   info.b_op.dtype = dtype;
-  info.b_op.is_brgemm  = 0;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_BINARY, info );
 #if 0
   printf("added binary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
@@ -1291,7 +1291,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
   return 0;
 }
 
-LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos) {
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_bitfield flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos) {
   union libxsmm_matrix_eqn_info info;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM) ||
                             (type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS) ||
@@ -1341,7 +1341,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
   }
 
   info.t_op.type  = type;
-  info.t_op.flags = flags;
+  info.t_op.flags = (libxsmm_bitfield)flags;
   info.t_op.dtype = dtype;
   info.t_op.is_brgemm  = 0;
 
@@ -1356,7 +1356,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
   return 0;
 }
 
-LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos) {
+LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_bitfield flags, const libxsmm_datatype dtype, libxsmm_blasint op_arg_pos ) {
   union libxsmm_matrix_eqn_info info;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ||
                             (type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS) ||
