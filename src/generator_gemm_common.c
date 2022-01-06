@@ -518,7 +518,7 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
   i_micro_kernel_config->fused_relu_nobitmask    = 0;
   i_micro_kernel_config->fused_relu_bwd          = 0;
   i_micro_kernel_config->fused_sigmoid           = 0;
-  i_micro_kernel_config->overwrite_C             = 0;
+  i_micro_kernel_config->overwrite_C             = 1;
   i_micro_kernel_config->vnni_format_C           = 0;
   i_micro_kernel_config->decompress_A            = 0;
   i_micro_kernel_config->sparsity_factor_A       = 1;
