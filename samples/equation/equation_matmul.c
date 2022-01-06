@@ -196,7 +196,7 @@ void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
               float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc, libxsmm_blasint stride_a,
               float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b,
-              float *colbias ) {
+              float *colbias, int relu_sigmoid_fusion_mode ) {
 
   /* Result =  sigmoid( Sum(Ci x Di) + colbias + 1.0) */
 
@@ -208,9 +208,23 @@ void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
             ldc, ldd, m_C,
             brgemm_count, stride_a, stride_b);
 
-  for (j = 0; j < n; j++) {
-    for (i = 0; i < m; i++) {
-      Out[i + j * ld] = fsigmoid(tmp[j *m_C + i] + colbias[i] + 1.0);
+  if (relu_sigmoid_fusion_mode == 0) {
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        Out[i + j * ld] = tmp[j *m_C + i] + colbias[i] + 1.0;
+      }
+    }
+  } else if (relu_sigmoid_fusion_mode == 1) {
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        Out[i + j * ld] = LIBXSMM_MAX(0.0, tmp[j *m_C + i] + colbias[i] + 1.0);
+      }
+    }
+  } else if (relu_sigmoid_fusion_mode == 2) {
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        Out[i + j * ld] = fsigmoid(tmp[j *m_C + i] + colbias[i] + 1.0);
+      }
     }
   }
 }
@@ -237,6 +251,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg bf16_arg_array[128];
   libxsmm_blasint n_tensors, ref_id;
   libxsmm_matrix_op_arg op_arg_arr[9];
+  int relu_sigmoid_fusion_mode = 0;
   unsigned long long  brcount;
   i = 1;
   n_tensors = atoi(argv[i++]);
@@ -248,6 +263,7 @@ int main( int argc, char* argv[] ) {
     blocks_i[j] = atoi(argv[i++]);
   }
   datatype_mode = atoi(argv[i++]);
+  relu_sigmoid_fusion_mode = atoi(argv[i++]);
   iters = atoi(argv[i]);
 
 #if defined(__SSE3__)
@@ -564,7 +580,13 @@ int main( int argc, char* argv[] ) {
     colbias_shape_fused.type = in_dt;
 
     my_eqn5 = libxsmm_matrix_eqn_create();
-    libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    if (relu_sigmoid_fusion_mode == 0) {
+      /* Do nothing  */
+    } else if (relu_sigmoid_fusion_mode == 1) {
+      libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    } else if (relu_sigmoid_fusion_mode == 2) {
+      libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    }
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn5, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_arg_v2( my_eqn5, colbias_shape_fused, arg_singular_attr, 42);
@@ -581,7 +603,7 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
 
     /* compare */
     printf("##########################################\n");
@@ -603,7 +625,7 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -614,7 +636,7 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
@@ -842,7 +864,13 @@ int main( int argc, char* argv[] ) {
     colbias_shape_bf16.type = in_dt;
 
     my_eqn4 = libxsmm_matrix_eqn_create();
-    libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    if (relu_sigmoid_fusion_mode == 0) {
+      /* Do nothing  */
+    } else if (relu_sigmoid_fusion_mode == 1) {
+      libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    } else if (relu_sigmoid_fusion_mode == 2) {
+      libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
+    }
     libxsmm_matrix_eqn_push_back_binary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_unary_op_v2( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32, -1 );
     libxsmm_matrix_eqn_push_back_arg_v2( my_eqn4, colbias_shape_bf16, arg_singular_attr, 42);
@@ -859,7 +887,7 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
 
     libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
 
@@ -883,7 +911,7 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -894,7 +922,7 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
