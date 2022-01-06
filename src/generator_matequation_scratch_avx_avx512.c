@@ -169,6 +169,14 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
 #endif
 
   /* build descriptor */
+  /* Add fusion-related setup of descriptor */
+  if ((cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) ||
+      (cur_op->fusion_info.xgemm.fused_relu_op == 1) ||
+      (cur_op->fusion_info.xgemm.fused_sigmoid_op == 1)) {
+    int remove_flag = 0xffffffff ^ LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+    gemm_flags = (gemm_flags & remove_flag) | LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
+  }
+
   desc = libxsmm_gemm_descriptor_dinit2(&blob, shape_flags.a_in_type, shape_flags.out_type,
     shape_flags.m, shape_flags.n, shape_flags.k,
     NULL != shape_flags.lda ? *(shape_flags.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? shape_flags.m : shape_flags.k),
@@ -185,7 +193,6 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     desc->c2 = br_config.br_stride_b_hint;
   }
 
-  /* Add fusion-related setup of descriptor */
   if (cur_op->fusion_info.xgemm.fused_colbias_add_op == 1) {
     desc->meltw_operation     = LIBXSMM_MELTW_OPERATION_BINARY;
     desc->meltw_param         = LIBXSMM_MELTW_TYPE_BINARY_ADD;

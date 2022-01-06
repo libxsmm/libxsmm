@@ -428,7 +428,8 @@ libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node,
 LIBXSMM_API_INTERN
 int is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node) {
   int result = 0;
-  if ((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) {
+  if (((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) ||
+      ((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_F32) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F32))) {
     result = 1;
   }
   return result;
@@ -919,7 +920,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
 
   /* Turn on fusion knobs give arch  */
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
     fusion_knobs.may_fuse_xgemm = 1;
   }
   libxsmm_generator_decompose_equation_tree_x86( eqn, jiting_queue, &queue_size, &fusion_knobs);
