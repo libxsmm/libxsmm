@@ -369,7 +369,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 88 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 96 );
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ||
        ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
@@ -396,7 +396,9 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Eltwise output_ptr                        <-- RBP-64
    *      Eltwise buf1_ptr                          <-- RBP-72
    *      Eltwise buf2_ptr                          <-- RBP-80
-   *      Batch-reduce count                        <-- RBP-88, RSP
+   *      Batch-reduce count                        <-- RBP-88
+   *
+   *      trans_a_ptr                               <-- RNP-96, RSP
    *
    */
 
