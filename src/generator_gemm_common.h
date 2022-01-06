@@ -15,6 +15,13 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
+    libxsmm_micro_kernel_config*        i_micro_kernel_config,
+    unsigned int                        reserved_zmms,
+    unsigned int                        reserved_mask_regs,
+    unsigned int                        temp_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_setup_stack_frame_fill_stack_vars_v2( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gemm_descriptor*      i_xgemm_desc,
     libxsmm_micro_kernel_config*        i_micro_kernel_config,

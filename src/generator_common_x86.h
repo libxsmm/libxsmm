@@ -80,13 +80,6 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx( libxsmm_generate
     int                                            rbp_offs_half );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_micro_kernel_config*  i_micro_kernel_config,
-    unsigned int                  reserved_zmms,
-    unsigned int                  reserved_mask_regs,
-    unsigned int                  temp_reg );
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
     const unsigned int                             i_vec_x2,
