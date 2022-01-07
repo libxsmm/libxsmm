@@ -263,7 +263,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         /* let's recheck CPU to even emulation AVX512_BF16 */
         io_generated_code->arch = libxsmm_cpuid();
         l_xgemm_desc_mod.c3 = 0;
-        libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );
+        libxsmm_generator_gemm_amx_kernel_emu_wrapper( io_generated_code, &l_xgemm_desc_mod );
       }
     } else {
       if (l_emu_amx != 0) {
