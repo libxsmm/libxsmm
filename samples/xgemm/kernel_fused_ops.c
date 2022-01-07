@@ -169,14 +169,30 @@ void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbi
   unsigned int n = i_gemm_def->n;
   libxsmm_blasint i, j;
   if ((i_gemm_def->in_type   == LIBXSMM_DATATYPE_F32) &&
-      (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) &&
-      (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
+      (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) ) {
     float* f_c_gold  = (float*)l_c_gold;
     float* f_colbias = (float*)l_colbias;
 
     for (j = 0; j < n; j++) {
       for (i = 0; i < m; i++) {
         f_c_gold[i + j * ldc] = f_c_gold[i + j * ldc] + f_colbias[i];
+      }
+    }
+  } else if ((i_gemm_def->in_type   == LIBXSMM_DATATYPE_BF16) &&
+             (i_gemm_def->out_type  == LIBXSMM_DATATYPE_BF16) ) {
+    libxsmm_bfloat16* h_c_gold  = (libxsmm_bfloat16*)l_c_gold;
+    libxsmm_bfloat16* h_colbias = (libxsmm_bfloat16*)l_colbias;
+    for (j = 0; j < n; j++) {
+      for (i = 0; i < m; i++) {
+        union libxsmm_bfloat16_hp tmp_c;
+        union libxsmm_bfloat16_hp tmp_colb;
+        float res = 0.0;
+        tmp_c.i[0] = 0;
+        tmp_c.i[1] = h_c_gold[i + j * ldc];
+        tmp_colb.i[0] = 0;
+        tmp_colb.i[1] = h_colbias[i];
+        res = tmp_c.f + tmp_colb.f;
+        libxsmm_rne_convert_fp32_bf16( &res, &h_c_gold[i + j * ldc], 1 );
       }
     }
   }
@@ -510,7 +526,14 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
         tmp_gold.i[1] = h_data_gold[(l_j * ld) + l_i];
         tmp_gold.i[0] = 0;
         l_fabs = fabs((double)tmp_gold.f - (double)tmp_c.f);
+#if 1
         if (max_error < l_fabs) max_error = l_fabs;
+#else
+        if (max_error < l_fabs) {
+          max_error = l_fabs;
+          printf("vals are %.5g and %.5g\n",(double)tmp_gold.f,(double)tmp_c.f);
+        }
+#endif
       }
     }
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
@@ -659,7 +682,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   if (i_gemm_def->binary_postop == COLBIAS_ADD) {
     l_postops.d_in_type      = i_gemm_def->out_type;
-    l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0;
+    l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
     l_postops.ldd            = NULL;
   }
@@ -1159,6 +1182,16 @@ int main(int argc, char* argv []) {
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
   } else {
     fprintf(stderr, "Unsupported precision %s!\n", l_precision);
+    exit(EXIT_FAILURE);
+  }
+
+  /* Test if valid precision for fusion ops  */
+  if ( !((strcmp(l_precision, "SP") == 0) ||
+        (strcmp(l_precision, "BF16F32") == 0) ||
+        (strcmp(l_precision, "BF16") == 0) ||
+        (strcmp(l_precision, "BF16F32_FLAT") == 0) ||
+        (strcmp(l_precision, "BF16_FLAT") == 0)) ) {
+    fprintf(stderr, "Unsupported precision for fused xgemm kernel %s!\n", l_precision);
     exit(EXIT_FAILURE);
   }
 
