@@ -499,6 +499,25 @@ void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
   }
 }
 
+void fused_matmul( gemm_def* i_gemm_def, void* l_a, void* l_b, void* l_c_gold, fusion_args *ref_fusion_arguments ) {
+
+  /* Run matmul */
+  ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
+
+  /* Perform binary postop if requested */
+  if (i_gemm_def->binary_postop == COLBIAS_ADD) {
+    apply_colbias_add(i_gemm_def, l_c_gold, ref_fusion_arguments->colbias);
+  }
+  /* Perform unary postop if requested */
+  if (i_gemm_def->unary_postop == RELU_NOBITMASK) {
+    apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, 0);
+  } else if (i_gemm_def->unary_postop == RELU_BITMASK) {
+    apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, 1);
+  } else if (i_gemm_def->unary_postop == SIGMOID) {
+    apply_sigmoid(i_gemm_def, l_c_gold);
+  }
+}
+
 double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
   double max_error = 0.0;
@@ -1249,6 +1268,7 @@ int main(int argc, char* argv []) {
     double error_bitmask = 0.0;
     char *l_a, *l_b, *l_c, *l_c_perf, *l_c_gold, *l_colbias, *l_relu_bitmask, *l_relu_bitmask_gold;
     fusion_args fusion_arguments;
+    fusion_args ref_fusion_arguments;
 
     if ( l_file_input != 0 ) {
       char l_line[512];
@@ -1282,6 +1302,8 @@ int main(int argc, char* argv []) {
     l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)l_ldc/8) * (size_t)l_n, 64);
     fusion_arguments.colbias      = l_colbias;
     fusion_arguments.relu_bitmask = l_relu_bitmask;
+    ref_fusion_arguments.colbias      = l_colbias;
+    ref_fusion_arguments.relu_bitmask = l_relu_bitmask_gold;
 
     init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k );
     if (l_gemm_def.trans_b == 0) {
@@ -1304,19 +1326,7 @@ int main(int argc, char* argv []) {
     memcpy(l_relu_bitmask_gold, l_relu_bitmask, (l_ldc/8) * l_n * sizeof(char));
 
     /* run gold solution */
-    ref_matmul( &l_gemm_def, l_a, l_b, l_c_gold );
-    /* Perform binary postop if requested */
-    if (l_binary_postop == COLBIAS_ADD) {
-      apply_colbias_add(&l_gemm_def, l_c_gold, l_colbias);
-    }
-    /* Perform unary postop if requested */
-    if (l_unary_postop == RELU_NOBITMASK) {
-      apply_relu(&l_gemm_def, l_c_gold, l_relu_bitmask_gold, 0);
-    } else if (l_unary_postop == RELU_BITMASK) {
-      apply_relu(&l_gemm_def, l_c_gold, l_relu_bitmask_gold, 1);
-    } else if (l_unary_postop == SIGMOID) {
-      apply_sigmoid(&l_gemm_def, l_c_gold);
-    }
+    fused_matmul( &l_gemm_def, l_a, l_b, l_c_gold, &ref_fusion_arguments );
 
     /* run LIBXSMM solution */
     l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments);
