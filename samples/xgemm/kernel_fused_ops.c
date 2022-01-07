@@ -563,6 +563,40 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
   return max_error;
 }
 
+void check_matrix_norms( libxsmm_datatype dtype, void* data_gold, void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n  ) {
+  libxsmm_matdiff_info norms, diff;
+  libxsmm_matdiff_clear(&norms);
+  libxsmm_matdiff_clear(&diff);
+  float *gold_c = (float*) libxsmm_aligned_malloc( ld * n * sizeof(float), 64);
+  float *comp_c = (float*) libxsmm_aligned_malloc( ld * n * sizeof(float), 64);
+
+  if (dtype == LIBXSMM_DATATYPE_F32) {
+    memcpy(gold_c, data_gold, ld * n * sizeof(float));
+    memcpy(comp_c, data     , ld * n * sizeof(float));
+  }
+  if (dtype == LIBXSMM_DATATYPE_BF16) {
+    libxsmm_convert_bf16_f32( data_gold, gold_c, ld*n );
+    libxsmm_convert_bf16_f32( data     , comp_c, ld*n );
+  }
+
+  /* compare */
+  libxsmm_matdiff(&norms, LIBXSMM_DATATYPE_F32, ld*n, 1, gold_c, comp_c, 0, 0);
+  printf("\n##########################################\n");
+  printf("#   Correctness norm-checking   #\n");
+  printf("##########################################\n");
+  printf("L1 reference  : %.25g\n", norms.l1_ref);
+  printf("L1 test       : %.25g\n", norms.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms.linf_rel);
+  printf("Check-norm    : %.24f\n", norms.normf_rel);
+  libxsmm_matdiff_reduce(&diff, &norms);
+
+  libxsmm_free(gold_c);
+  libxsmm_free(comp_c);
+}
+
 double jit_matmul( const gemm_def*    i_gemm_def,
                    const void*        i_a,
                    const void*        i_b,
@@ -1300,6 +1334,8 @@ int main(int argc, char* argv []) {
       if (l_unary_postop == RELU_BITMASK) {
         printf("max. error relu bitmask: %f\n", error_bitmask);
       }
+
+      check_matrix_norms( l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n );
 
     } else {
       if ( l_run_check == 1 ) {
