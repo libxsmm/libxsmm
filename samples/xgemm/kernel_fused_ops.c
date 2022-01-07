@@ -601,7 +601,7 @@ void check_matrix_norms( libxsmm_datatype dtype, void* data_gold, void* data, li
   /* compare */
   libxsmm_matdiff(&norms, LIBXSMM_DATATYPE_F32, ld*n, 1, gold_c, comp_c, 0, 0);
   printf("\n##########################################\n");
-  printf("#   Correctness norm-checking   #\n");
+  printf("#       Correctness norm-checking        #\n");
   printf("##########################################\n");
   printf("L1 reference  : %.25g\n", norms.l1_ref);
   printf("L1 test       : %.25g\n", norms.l1_tst);
