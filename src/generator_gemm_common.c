@@ -2274,7 +2274,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 i_micro_kernel_config->c_vmove_instruction,
                 i_gp_reg_mapping->gp_reg_help_0,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                ((l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+                ((l_m * (i_micro_kernel_config->vector_length))) * 4,
                 i_micro_kernel_config->vector_name,
                 l_vec_reg_acc_start + l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
           } else {
@@ -2297,7 +2297,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                   LIBXSMM_X86_INSTR_VMOVDQU16,
                   i_gp_reg_mapping->gp_reg_help_0,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  (l_m * (i_micro_kernel_config->vector_length)) * (i_micro_kernel_config->datatype_size_out),
+                  (l_m * (i_micro_kernel_config->vector_length)) * 2,
                   ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
                   l_vec_reg_acc_start + l_m, 2, 1, 0 );
             } else {
