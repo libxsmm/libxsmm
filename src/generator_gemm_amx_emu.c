@@ -1119,6 +1119,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code* 
   unsigned int reserved_mask_regs = 1;
   unsigned int emulate_cvt2bf16fp32 = (libxsmm_cpuid() < LIBXSMM_X86_AVX512_CPX) ? 1 : 0;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(i_xgemm_desc);
 
   i_micro_kernel_config->emulate_cvt2bf16fp32 = emulate_cvt2bf16fp32;
 
@@ -1328,8 +1329,6 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
                                                                            libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
                                                                            const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
-  libxsmm_loop_label_tracker l_loop_label_tracker;
-  libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
