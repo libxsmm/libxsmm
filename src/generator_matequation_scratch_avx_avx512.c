@@ -20,6 +20,7 @@
 #include "generator_mateltwise_transform_common.h"
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
+#include "generator_gemm_amx_emu.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
@@ -470,6 +471,12 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   unsigned int timestamp = 0;
   unsigned int last_timestamp;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
+  int l_emu_amx = 0;
+  const char *const l_env_emu_amx = getenv("EMULATE_AMX");
+  if ( 0 == l_env_emu_amx ) {
+  } else {
+    l_emu_amx = atoi(l_env_emu_amx);
+  }
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
@@ -573,7 +580,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16, temp_reg);
       }
 
-      if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
+      if ( (( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) || (l_emu_amx > 0)) &&
            ( ( LIBXSMM_DATATYPE_BF16 == cur_op->le->tmp.dtype ) ||
              ( LIBXSMM_DATATYPE_I8 == cur_op->le->tmp.dtype ) ) &&
            ((desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
@@ -582,7 +589,12 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         libxsmm_generator_x86_save_gpr_regs( io_generated_code, 0xf008  );
         libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         /* Call GEMM JITer  */
-        libxsmm_generator_gemm_amx_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
+        if (l_emu_amx > 0) {
+          desc->c3 = 0;
+          libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
+        } else {
+          libxsmm_generator_gemm_amx_kernel( io_generated_code, io_loop_label_tracker, &l_gp_reg_mapping, desc );
+        }
         /* Since this is a GEMM, restore calle-save regs  */
         libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
         libxsmm_generator_x86_restore_gpr_regs( io_generated_code, 0xf008 );
