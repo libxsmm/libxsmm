@@ -15,6 +15,158 @@
 #include "generator_common_x86.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_datatype                   colbias_precision,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking ) {
+  unsigned int l_n = 0, l_m = 0;
+
+  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
+  for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      if (colbias_precision == LIBXSMM_DATATYPE_BF16) {
+        if (l_n == 0) {
+          /* Load bias vector */
+          /* load 16 bit values into xmm portion of the register */
+          if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU16,
+                i_gp_reg_mapping->gp_reg_help_0,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (l_m * (i_micro_kernel_config->vector_length)) * 2,
+                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                l_vec_reg_acc_start + l_m, 2, 1, 0 );
+          } else {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                i_micro_kernel_config->c_vmove_instruction,
+                i_gp_reg_mapping->gp_reg_help_0,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                (l_m * (i_micro_kernel_config->vector_length)) * 2,
+                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
+                l_vec_reg_acc_start + l_m, 0, 1, 0 );
+          }
+          /* convert 16 bit values into 32 bit (integer convert) */
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+              LIBXSMM_X86_INSTR_VPMOVSXWD,
+              i_micro_kernel_config->vector_name,
+              l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m );
+
+          /* shift 16 bits to the left to generate valid FP32 numbers */
+          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
+              LIBXSMM_X86_INSTR_VPSLLD_I,
+              i_micro_kernel_config->vector_name,
+              l_vec_reg_acc_start + l_m,
+              l_vec_reg_acc_start + l_m,
+              16);
+        } else {
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
+              ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+              l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
+      } else if (colbias_precision == LIBXSMM_DATATYPE_F32) {
+        if (l_n == 0) {
+          /* Load bias vector */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_micro_kernel_config->instruction_set,
+              i_micro_kernel_config->c_vmove_instruction,
+              i_gp_reg_mapping->gp_reg_help_0,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              ((l_m * (i_micro_kernel_config->vector_length))) * 4,
+              i_micro_kernel_config->vector_name,
+              l_vec_reg_acc_start + l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+        } else {
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
+      } else {
+        /* shouldn't happen */
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+        return;
+      }
+    }
+  }
+  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_datatype                   colbias_precision,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking ) {
+  unsigned int l_n = 0, l_m = 0;
+
+  libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+  libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
+  for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+    /* Load bias vector */
+    if (colbias_precision == LIBXSMM_DATATYPE_BF16) {
+      /* load 16 bit values into xmm portion of the register */
+      if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VMOVDQU16,
+            i_gp_reg_mapping->gp_reg_help_0,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (l_m * (i_micro_kernel_config->vector_length)) * 2,
+            ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+            0, 2, 1, 0 );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_micro_kernel_config->instruction_set,
+            i_micro_kernel_config->c_vmove_instruction,
+            i_gp_reg_mapping->gp_reg_help_0,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            (l_m * (i_micro_kernel_config->vector_length)) * 2,
+            ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
+            0, 0, 1, 0 );
+      }
+      /* convert 16 bit values into 32 bit (integer convert) */
+      libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+          LIBXSMM_X86_INSTR_VPMOVSXWD,
+          i_micro_kernel_config->vector_name,
+          0, 0 );
+
+      /* shift 16 bits to the left to generate valid FP32 numbers */
+      libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
+          LIBXSMM_X86_INSTR_VPSLLD_I,
+          i_micro_kernel_config->vector_name,
+          0,
+          0,
+          16);
+    } else if (colbias_precision == LIBXSMM_DATATYPE_F32) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          i_micro_kernel_config->c_vmove_instruction,
+          i_gp_reg_mapping->gp_reg_help_0,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          ((l_m * (i_micro_kernel_config->vector_length))) * 4,
+          i_micro_kernel_config->vector_name,
+          0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
+    } else {
+      /* shouldn't happen */
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+
+    /* Add colbias */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
+          l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+    }
+  }
+  libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     libxsmm_micro_kernel_config*        i_micro_kernel_config,
     unsigned int                        reserved_zmms,
@@ -2124,49 +2276,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       }
       /* Check if we have to add bias  */
       if (i_micro_kernel_config->fused_bcolbias == 1) {
-        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
-        libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-        for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          /* Load bias vector */
-          /* load 16 bit values into xmm portion of the register */
-          if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                LIBXSMM_X86_INSTR_VMOVDQU16,
-                i_gp_reg_mapping->gp_reg_help_0,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                (l_m * (i_micro_kernel_config->vector_length)) * (i_micro_kernel_config->datatype_size_out),
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
-                0, 2, 1, 0 );
-          } else {
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->c_vmove_instruction,
-                i_gp_reg_mapping->gp_reg_help_0,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                (l_m * (i_micro_kernel_config->vector_length)) * (i_micro_kernel_config->datatype_size_out),
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
-                0, 0, 1, 0 );
-          }
-          /* convert 16 bit values into 32 bit (integer convert) */
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-              LIBXSMM_X86_INSTR_VPMOVSXWD,
-              i_micro_kernel_config->vector_name,
-              0, 0 );
-
-          /* shift 16 bits to the left to generate valid FP32 numbers */
-          libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-              LIBXSMM_X86_INSTR_VPSLLD_I,
-              i_micro_kernel_config->vector_name,
-              0,
-              0,
-              16);
-          for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+        libxsmm_generator_gemm_add_colbias_to_2D_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+            LIBXSMM_DATATYPE_BF16, l_vec_reg_acc_start, l_m_blocking, i_n_blocking );
       }
     /* pure int8 kernel */
     } else if ( ( ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT)) ||
@@ -2241,96 +2352,17 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       }
       /* Check if we have to add bias  */
       if (i_micro_kernel_config->fused_scolbias == 1) {
-        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
-        libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-        for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          /* Load bias vector */
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              i_micro_kernel_config->c_vmove_instruction,
-              i_gp_reg_mapping->gp_reg_help_0,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              ((l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
-              i_micro_kernel_config->vector_name,
-              0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-          for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VADDPS, i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+        libxsmm_generator_gemm_add_colbias_to_2D_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+            LIBXSMM_DATATYPE_F32, l_vec_reg_acc_start, l_m_blocking, i_n_blocking );
       }
     }
   } else {
     if (i_micro_kernel_config->fused_scolbias == 1) {
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
-      libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-          if (l_n == 0) {
-            /* Load bias vector */
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->c_vmove_instruction,
-                i_gp_reg_mapping->gp_reg_help_0,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                ((l_m * (i_micro_kernel_config->vector_length))) * 4,
-                i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-          } else {
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-      }
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+      libxsmm_generator_gemm_load_colbias_to_2D_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+            LIBXSMM_DATATYPE_F32, l_vec_reg_acc_start, l_m_blocking, i_n_blocking );
     } else if (i_micro_kernel_config->fused_bcolbias == 1) {
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
-      libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-        for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-          if (l_n == 0) {
-            /* Load bias vector */
-            /* load 16 bit values into xmm portion of the register */
-            if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
-              libxsmm_x86_instruction_vec_move( io_generated_code,
-                  i_micro_kernel_config->instruction_set,
-                  LIBXSMM_X86_INSTR_VMOVDQU16,
-                  i_gp_reg_mapping->gp_reg_help_0,
-                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  (l_m * (i_micro_kernel_config->vector_length)) * 2,
-                  ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
-                  l_vec_reg_acc_start + l_m, 2, 1, 0 );
-            } else {
-              libxsmm_x86_instruction_vec_move( io_generated_code,
-                  i_micro_kernel_config->instruction_set,
-                  i_micro_kernel_config->c_vmove_instruction,
-                  i_gp_reg_mapping->gp_reg_help_0,
-                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  (l_m * (i_micro_kernel_config->vector_length)) * (i_micro_kernel_config->datatype_size_out),
-                  ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
-                  l_vec_reg_acc_start + l_m, 0, 1, 0 );
-            }
-            /* convert 16 bit values into 32 bit (integer convert) */
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-                LIBXSMM_X86_INSTR_VPMOVSXWD,
-                i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m );
-
-            /* shift 16 bits to the left to generate valid FP32 numbers */
-            libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code,
-                LIBXSMM_X86_INSTR_VPSLLD_I,
-                i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m,
-                l_vec_reg_acc_start + l_m,
-                16);
-          } else {
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
-                l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-          }
-        }
-      }
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+      libxsmm_generator_gemm_load_colbias_to_2D_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+            LIBXSMM_DATATYPE_BF16, l_vec_reg_acc_start, l_m_blocking, i_n_blocking );
     } else {
       /* overwriting C, so let's xout accumulator */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {

@@ -15,6 +15,24 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_datatype                   colbias_precision,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    libxsmm_datatype                   colbias_precision,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     libxsmm_micro_kernel_config*        i_micro_kernel_config,
     unsigned int                        reserved_zmms,
