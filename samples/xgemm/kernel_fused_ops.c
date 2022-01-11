@@ -67,6 +67,14 @@ float fsigmoid(float x) {
 
 void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
+  if ( (type != 2) && (use_bitmask > 0)) {
+    memset(out_mask, 0, ldo_mask*N);
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
+      }
+    }
+  }
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       if ( type == 0 ) {
@@ -76,15 +84,20 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       } else if ( type == 2 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
       }
-      if ( (type != 2) && (use_bitmask > 0)) {
-        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
-      }
     }
   }
 }
 
 void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
+  if ( (type != 2) && (use_bitmask > 0)) {
+    memset(out_mask, 0, ldo_mask*N);
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
+      }
+    }
+  }
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       if ( type == 0 ) {
@@ -106,9 +119,6 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         in_f = alpha * (expf(in_f)-1.0);
         libxsmm_rne_convert_fp32_bf16( &in_f, &res, 1 );
         out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? res : in[(j*ldi) + i];
-      }
-      if ( (type != 2) && (use_bitmask > 0)) {
-        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
@@ -203,10 +213,10 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
         if ( dtype == LIBXSMM_DATATYPE_F64 ) {
           d_data[(l_r * ld * n) + (l_j * ld) + l_i] = libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)(0.05 - libxsmm_rng_f64()/10.0);
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
+          tmp.f = (float)(0.05 - libxsmm_rng_f64()/10.0);
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
