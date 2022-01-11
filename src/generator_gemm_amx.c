@@ -1085,7 +1085,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   if (i_micro_kernel_config->fused_sigmoid == 1) {
     reserved_zmms       += 15;
     reserved_mask_regs  += 2;
-    libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code, i_micro_kernel_config, reserved_zmms, reserved_mask_regs, temp_reg );
+    libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512( io_generated_code, i_micro_kernel_config, reserved_zmms, reserved_mask_regs, temp_reg );
   }
 
   i_micro_kernel_config->reserved_zmms      = reserved_zmms;

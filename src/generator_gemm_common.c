@@ -93,13 +93,22 @@ void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generate
       out_vreg, 0, 1, 0 );
 
   /* Apply sigmoid  */
-  libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
-      i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
-      i_micro_kernel_config_mod->mask_hi, i_micro_kernel_config_mod->mask_lo,
-      i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
-      i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
-      i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-      i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves );
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+    libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
+        i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
+        i_micro_kernel_config_mod->mask_hi, i_micro_kernel_config_mod->mask_lo,
+        i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
+        i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
+        i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
+        i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves );
+  } else {
+    libxsmm_generator_sigmoid_ps_rational_78_avx( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
+        i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
+        i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
+        i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
+        i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
+        i_micro_kernel_config_mod->vec_neg_ones);
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -154,13 +163,15 @@ void libxsmm_generator_gemm_dump_2D_block_and_prepare_sigmoid_fusion( libxsmm_ge
     const unsigned int                 i_n_blocking,
     const unsigned int                 scratch_gpr,
     const unsigned int                 aux_gpr) {
+  unsigned int n_avail_vregs = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 32 : 16;
+  unsigned int n_avail_masks = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 8 : 16;
   /* First dump the accumulators to scratch and then setup sigmoid coeffcients to be reused */
   libxsmm_x86_instruction_push_reg( io_generated_code, scratch_gpr);
   libxsmm_x86_instruction_push_reg( io_generated_code, aux_gpr );
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, scratch_gpr);
   libxsmm_generator_gemm_store_2D_regblock_to_scratch( io_generated_code, i_micro_kernel_config,
       scratch_gpr, l_vec_reg_acc_start, l_m_blocking, i_n_blocking);
-  libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code, i_micro_kernel_config, 32, 8, aux_gpr );
+  libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512( io_generated_code, i_micro_kernel_config, n_avail_vregs, n_avail_masks, aux_gpr );
 }
 
 LIBXSMM_API_INTERN
@@ -358,7 +369,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
+void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512( libxsmm_generated_code*                        io_generated_code,
     libxsmm_micro_kernel_config*        i_micro_kernel_config,
     unsigned int                        reserved_zmms,
     unsigned int                        reserved_mask_regs,
@@ -390,6 +401,16 @@ void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsm
         LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
         i_micro_kernel_config->vector_name,
         i_micro_kernel_config->vec_c0, 0, 1, 1 );
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+      libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &pade78_sigm_array[8], "pade78_sigm_array2_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c0);
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VMOVUPS,
+          temp_reg,
+          LIBXSMM_X86_GP_REG_UNDEF, 0, 32,
+          i_micro_kernel_config->vector_name,
+          i_micro_kernel_config->vec_c0, 0, 1, 1 );
+    }
 
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS, temp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
         0, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c0, 0, 1, 0 );
@@ -413,8 +434,10 @@ void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsm
         36, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_ones, 0, 1, 0 );
     libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS, temp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
         40, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_neg_ones, 0, 1, 0 );
-    libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS, temp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
-        44, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_halves, 0, 1, 0 );
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VBROADCASTSS, temp_reg, LIBXSMM_X86_GP_REG_UNDEF, 0,
+          44, i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_halves, 0, 1, 0 );
+    }
 
     i_micro_kernel_config->mask_hi  = reserved_mask_regs - 1;
     i_micro_kernel_config->mask_lo  = reserved_mask_regs - 2;
