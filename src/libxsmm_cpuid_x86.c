@@ -59,6 +59,32 @@
 
 #define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
 
+#if defined(__linux__)
+#include <unistd.h>
+#include <sys/syscall.h>
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable()
+{
+  unsigned long bitmask = 0;
+  long status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
+  if (0 != status) return -1;
+  if (bitmask & (1<<18)) return 0;
+
+  status = syscall(SYS_arch_prctl, 0x1023, 18);
+  if (0 != status) return -1; /* setup failed */
+  status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
+
+  /* setup failed */
+  if (0 != status || !(bitmask & (1<18))) return -1;
+
+  /* setup successfull */
+  return 0;
+}
+#else
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable()
+{
+  return -1;
+}
+#endif
 
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
@@ -132,6 +158,16 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           else feature_cpu = LIBXSMM_X86_SSE42;
         }
         else feature_cpu = LIBXSMM_X86_SSE3;
+      }
+      /* enable AMX state in the OS on SPR and later */
+      if ( feature_cpu >= LIBXSMM_X86_AVX512_SPR ) {
+        const int amx_avail = libxsmm_cpuid_x86_amx_enable();
+        if ( amx_avail != 0 ) {
+          feature_cpu = LIBXSMM_X86_AVX512_CLX;
+# if !defined(NDEBUG)
+          fprintf(stderr, "LIBXSMM WARNING: AMX state allcation in the OS failed!\n");
+# endif
+        }
       }
 # if !defined(LIBXSMM_INTRINSICS_DEBUG)
       LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= LIBXSMM_MAX(LIBXSMM_X86_GENERIC, feature_cpu), "missed detecting ISA extensions");

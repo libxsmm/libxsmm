@@ -45,6 +45,7 @@
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 
 #if defined(LIBXSMM_PLATFORM_X86)
+LIBXSMM_API_INTERN int lixsmm_cpuid_x86_amx_enable();
 /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_info {
   int constant_tsc; /** Timer stamp counter is monotonic. */
