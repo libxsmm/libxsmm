@@ -162,8 +162,8 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
   gemm_shape.out_type = cur_op->tmp.dtype;
   gemm_shape.comp_type = cur_op->tmp.dtype;
 
-#if 1
-  printf("Dispsatching GEMM %d %d %d %d %d %d %d\n", m, n, k, lda, ldb, ldc, gemm_flags);
+#if 0
+  printf("Dispatching GEMM %d %d %d %d %d %d %d\n", m, n, k, lda, ldb, ldc, gemm_flags);
 #endif
 
   /* build descriptor */
