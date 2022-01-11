@@ -84,12 +84,6 @@
 /* Construct a type-id from built-in input/output types (float, double, etc.). */
 #define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
 
-/* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
-/* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
-  LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
-
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #if !defined(LIBXSMM_DESCRIPTOR_MAXSIZE)
 # define LIBXSMM_DESCRIPTOR_MAXSIZE 96
@@ -103,6 +97,8 @@
 # endif
 #endif
 
+/* special type for bitfield flags */
+typedef unsigned int libxsmm_bitfield;
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
@@ -148,17 +144,6 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_I8,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
-
-/** Denotes the precision/data type of GEMM. */
-typedef enum libxsmm_gemm_precision {
-  LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,
-  LIBXSMM_GEMM_PRECISION_F16  = LIBXSMM_DATATYPE_F16,
-  LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,
-  LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,
-  LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
-} libxsmm_gemm_precision;
 
 typedef enum libxsmm_meltw_operation {
   LIBXSMM_MELTW_OPERATION_NONE                                             =  0,
@@ -381,6 +366,27 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
   libxsmm_meltw_flags               elt_meltwfused;
 } libxsmm_xmelt_flags;
 
+/** Flag enumeration which can be binary ORed, for very simple dispatch interface */
+typedef enum libxsmm_basic_gemm_flags {
+  LIBXSMM_BASIC_GEMM_FLAG_NONE = 0,
+  /** Transpose matrix A. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_A = 1,
+  /** Transpose matrix B. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_B = 2,
+  /** Transpose matrix A and B. */
+  LIBXSMM_BASIC_GEMM_FLAG_TRANS_AB = LIBXSMM_BASIC_GEMM_FLAG_TRANS_A | LIBXSMM_BASIC_GEMM_FLAG_TRANS_B,
+  /** Beta=0|1 */
+  LIBXSMM_BASIC_GEMM_FLAG_BETA_0 = 4,
+  /** Generate aligned load instructions. */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_A = 8,
+  /** Aligned load/store instructions. */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C = 16,
+  /** Aligned C matrix, but using NTS Hint when storing */
+  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C,
+  /** Marker flag; do not use. */
+  LIBXSMM_BASIC_GEMM_FLAG_INVALID = 524288
+} libxsmm_basic_gemm_flags;
+
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_NONE = 0,
@@ -450,8 +456,12 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_OFFSET_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED         = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
+  /** use GEMMM ABI */
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI = 131072,
+  /** use XGEMM_EXT ABI */
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI = 262144,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 131072
+  LIBXSMM_GEMM_FLAG_INVALID = 524288
 } libxsmm_gemm_flags;
 
 /** Flag enumeration which can be binary ORed. */
@@ -494,6 +504,14 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_GEMM_PREFETCH_BL1                = 16,
   LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32
 } libxsmm_gemm_prefetch_type;
+
+/** Enumeration of the batchreduce type. */
+typedef enum libxsmm_gemm_batch_reduce_type {
+  LIBXSMM_GEMM_BATCH_REDUCE_NONE    = 0,
+  LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS = 1,
+  LIBXSMM_GEMM_BATCH_REDUCE_OFFSET  = 2,
+  LIBXSMM_GEMM_BATCH_REDUCE_STRIDE  = 4
+} libxsmm_gemm_batch_reduce_type;
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_matcopy_flags {
@@ -661,12 +679,59 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* tertiary;
 } libxsmm_matrix_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_v2 {
+  void* primary;
+  void* secondary;
+  void* tertiary;
+  void* quaternary;
+} libxsmm_matrix_arg_v2;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
   void* primary;
   void* secondary;
   void* tertiary;
   void* quaternary;
 } libxsmm_matrix_op_arg;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_arg_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ld;                  /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_datatype type;                /* datatype of input */
+} libxsmm_meqn_arg_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_unary_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_binary_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
+  libxsmm_blasint* ldi3;                /* leading dimension of third input, if NULL induced from K,N */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_ternary_shape;
 
 /** argument struct for matrix-eltwise: opreduce vecs indexed */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs_idx_param {
@@ -730,6 +795,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_opred
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_unary)(const libxsmm_meltw_unary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_binary)(const libxsmm_meltw_binary_param* in_struct);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_meltwfunction_ternary)(const libxsmm_meltw_ternary_param* in_struct);
+/* matrix equation function */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
   void (*xmeltw)(const void* in_struct);
@@ -740,22 +807,89 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmeltwfunction {
 } libxsmm_xmeltwfunction;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (int8, int32 accumulate). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_ssbimmfunction)(const          char* a, const          char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(const unsigned char* a, const          char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c, ...);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_ssbimmfunction)(const          char* a, const          char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(const unsigned char* a, const          char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c);
+
+/* argument strcuts for generalized interface */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_param {
+  libxsmm_matrix_op_arg op;  /* op state & parameters */
+  libxsmm_matrix_arg_v2 a;   /* a matrix  */
+  libxsmm_matrix_arg_v2 b;   /* b matrix  */
+  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+} libxsmm_gemm_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_param {
+  libxsmm_matrix_op_arg op;  /* op state & parameters */
+  libxsmm_matrix_arg_v2 a;   /* a matrix  */
+  libxsmm_matrix_arg_v2 b;   /* b matrix  */
+  libxsmm_matrix_arg_v2 c;   /* c matrix  */
+  libxsmm_matrix_arg_v2 d;   /* additional tensor for binary op on c */
+  libxsmm_matrix_arg_v2 ap;  /* a after applying unary op */
+  libxsmm_matrix_arg_v2 bp;  /* b after applying unary op */
+  libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
+} libxsmm_gemm_ext_param;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
+  libxsmm_blasint m;                    /* number of rows of A and C */
+  libxsmm_blasint n;                    /* number of cols of C and B */
+  libxsmm_blasint k;                    /* number of cols of A and number of rows of B */
+  libxsmm_blasint* lda;                 /* leading dimension of A, if NULL induced from M,K */
+  libxsmm_blasint* ldb;                 /* leading dimension of B, if NULL induced from K,N */
+  libxsmm_blasint* ldc;                 /* leading dimension of C, if NULL induced from M,N */
+  libxsmm_datatype a_in_type;           /* datatype of A */
+  libxsmm_datatype b_in_type;           /* datatype of B */
+  libxsmm_datatype out_type;            /* datatype of C */
+  libxsmm_datatype comp_type;           /* datatype of inner product */
+} libxsmm_gemm_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
+  libxsmm_gemm_batch_reduce_type br_type;  /* specifying the type of the BRGEMM operation */
+  unsigned long long br_stride_a_hint;     /* mandatory hint for strided BRGEMM */
+  unsigned long long br_stride_b_hint;     /* mandatory hint for strided BRGEMM */
+  unsigned char br_unroll_hint;            /* optional hint containing the BR count */
+} libxsmm_gemm_batch_reduce_config;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_unary_argops {
+  libxsmm_blasint* ldap;                      /* leading dimensions of Ap */
+  libxsmm_meltw_unary_flags ap_unary_flags;   /* flags for Ap = unary( A ) */
+  libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
+  libxsmm_blasint store_ap;                   /* nonzero for storing Ap */
+  libxsmm_blasint* ldbp;                      /* leading dimensions of Bp */
+  libxsmm_meltw_unary_flags bp_unary_flags;   /* flags for Bp = unary( B ) */
+  libxsmm_meltw_unary_type bp_unary_type;     /* op type for Bp = unary( B ) */
+  libxsmm_blasint store_bp;                   /* nonzero for storing Bp */
+  libxsmm_blasint* ldcp;                      /* leading dimensions of Cp */
+  libxsmm_meltw_unary_flags cp_unary_flags;   /* flags for Cp = unary( C ) */
+  libxsmm_meltw_unary_type cp_unary_type;     /* op type for Cp = unary( C ) */
+  libxsmm_blasint store_cp;                   /* nonzero for storing Cp */
+} libxsmm_gemm_ext_unary_argops;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_binary_postops {
+  libxsmm_blasint* ldd;                       /* leading dimensions of D */
+  libxsmm_datatype d_in_type;                 /* datatype of D */
+  libxsmm_meltw_binary_flags d_binary_flags;  /* flags for C = binary( C, D ) */
+  libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+} libxsmm_gemm_ext_binary_postops;
+
+/* generalized and extended functions for everything that is not a basic GEMM as defined above */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction)    ( const libxsmm_gemm_param*     in_struct );
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction_ext)( const libxsmm_gemm_ext_param* in_struct );
+
+/* @TODO: all these dispatchs are deprecated */
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (int8, int32 accumulate, int8 downconvert). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sububmmfunction)(const          char* a, const unsigned char* b, unsigned char* c, float* scf, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sububmmfunction)(const          char* a, const unsigned char* b, unsigned char* c, float* scf);
 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction_reducebatch_addr)(const double** a, const double** b, double* c, const unsigned long long* count, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction_reducebatch_addr)(const float** a, const float** b, float* c, const unsigned long long* count, ...);
@@ -798,8 +932,9 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reduce
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
-  void (*xmm)(const void* a, const void* b, void* c, ...);
-  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
+  void (*xmm)(const void* a, const void* b, void* c);
+  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count);
+  void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_bsmmfunction bsmm; libxsmm_bmmfunction bmm;
   libxsmm_ssbimmfunction ssbimm; libxsmm_usbimmfunction usbimm; libxsmm_subimmfunction subimm; libxsmm_uubimmfunction uubimm; libxsmm_sububmmfunction sububmm;
   libxsmm_dmmfunction_reducebatch_addr dmra; libxsmm_smmfunction_reducebatch_addr smra; libxsmm_bsmmfunction_reducebatch_addr bsmra; libxsmm_bmmfunction_reducebatch_addr bmra;
@@ -814,15 +949,13 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_bmmfunction_reducebatch_strd_meltwfused bmrs_meltwfused;
   libxsmm_bmmfunction_reducebatch_offs_meltwfused bmro_meltwfused;
   libxsmm_bsmmfunction_reducebatch_strd_meltwfused bsmrs_meltwfused;
+  libxsmm_gemmfunction gemm; libxsmm_gemmfunction_ext gemm_ext;
 } libxsmm_xmmfunction;
-
-/* matrix equation function */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_matrix_eqn_function)(const libxsmm_matrix_eqn_param* in_struct);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mmkernel_info {
   /** Input/output data-type */
-  libxsmm_gemm_precision iprecision, oprecision;
+  libxsmm_datatype iprecision, oprecision;
   /** Prefetch strategy. */
   libxsmm_gemm_prefetch_type prefetch;
   /** Leading dimensions. */

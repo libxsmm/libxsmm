@@ -199,16 +199,14 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
       unsigned int mask_id =  (tile1 >= 0) ? i_micro_kernel_config->mask_m_bf16 : i_micro_kernel_config->mask_m_fp32;
 
       if ((i_micro_kernel_config->m_remainder == 0) || (tile1 >= 0)) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                 0,
-                                                 gp_reg_gemm_scratch,
-                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_0,
-                                                 reg_1);
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                      i_micro_kernel_config->vector_name,
+                                                      gp_reg_gemm_scratch,
+                                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      reg_0,
+                                                      reg_1);
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -266,16 +264,14 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
       unsigned int mask_id =  (tile1 >= 0) ? i_micro_kernel_config->mask_m_bf16 : i_micro_kernel_config->mask_m_fp32;
 
       if ((i_micro_kernel_config->m_remainder == 0) || (tile1 >= 0)) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_micro_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                 0,
-                                                 gp_reg_gemm_scratch,
-                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                 i_micro_kernel_config->vector_name,
-                                                 reg_0,
-                                                 reg_0);
+        libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                      LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                      i_micro_kernel_config->vector_name,
+                                                      gp_reg_gemm_scratch,
+                                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      reg_0,
+                                                      reg_0);
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
@@ -541,7 +537,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
-  if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     libxsmm_x86_instruction_tile_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,
@@ -551,7 +547,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
         (in_offset * i_xgemm_desc->ldc + im_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
         tile);
   } else {
-    if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       /* If we have some fusion, then we call the paired tilestore code generation with tile1 = -1 and we modify the tile1 manipulaiton  */
       if (fused_eltwise == 1) {
         paired_tilestore( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, tile, -1, im_offset, in_offset, n_cols);
@@ -613,16 +609,14 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
                 reg_0, i_micro_kernel_config->mask_m_fp32, 1, 0 );
 
             if (i_micro_kernel_config->m_remainder == 0) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
-                                                       0,
-                                                       gp_reg_gemm_scratch,
-                                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                       col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
-                                                       i_micro_kernel_config->vector_name,
-                                                       reg_0,
-                                                       reg_0);
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
+                                                            i_micro_kernel_config->vector_name,
+                                                            gp_reg_gemm_scratch,
+                                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                            col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                            reg_0,
+                                                            reg_0);
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                   i_micro_kernel_config->instruction_set,
@@ -902,7 +896,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int i, im, in;
   int pf_dist = i_xgemm_desc->c3;
   int emit_tilestores = ((i_brgemm_loop == (i_xgemm_desc->c3 - 1)) && (is_last_k == 1) && (fully_unrolled_brloop == 1)) ? 1 : 0;
-  int use_paired_tilestores = ((LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
+  int use_paired_tilestores = ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) && (m_tiles % 2 == 0) && (i_micro_kernel_config->vnni_format_C == 0)) ? 1 : 0;
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
   unsigned int gp_reg_a;
@@ -977,9 +971,9 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   }
 
   /* Pick the proper tile compute instruction  */
-  if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     tile_compute_instr = LIBXSMM_X86_INSTR_TDPBF16PS;
-  } else if (LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUUD;
     } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
@@ -997,7 +991,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
 
   /* Some checks for this functinality...  */
   if (i_micro_kernel_config->vnni_cvt_output_ext_buf == 1) {
-    if (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+    if (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in BF16...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;

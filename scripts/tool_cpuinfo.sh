@@ -24,9 +24,9 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
     NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
   elif [ -e /proc/cpuinfo ]; then
     NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-    if [ "" = "${NS}" ] || [ "" = "${NS}" ]; then NS=1; fi
+    if [ "" = "${NS}" ]; then NS=1; fi
     NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$(${GREP} "core id" /proc/cpuinfo  | ${WC} -l | ${TR} -d " ")
+    NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   elif [ "Darwin" = "$(uname)" ]; then
     NS=$(sysctl hw.packages    | ${CUT} -d: -f2 | ${TR} -d " ")
     NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | ${TR} -d " ")

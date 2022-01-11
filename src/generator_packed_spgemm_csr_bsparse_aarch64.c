@@ -41,7 +41,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_simd_packed_width = 2;
     l_max_reg_block = 28;
   } else {

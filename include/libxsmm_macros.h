@@ -271,11 +271,13 @@
 /* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
 #endif /*__cplusplus*/
-#if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER NULL
-#endif
 #if !defined(LIBXSMM_FUNCNAME)
-# define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+# if defined(LIBXSMM_CALLER)
+#   define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+# else
+#   define LIBXSMM_CALLER NULL
+#   define LIBXSMM_FUNCNAME ""
+# endif
 #endif
 #if !defined(LIBXSMM_CALLER_ID)
 # if defined(__GNUC__) || 1
@@ -692,10 +694,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
 #endif
-#if !defined(NDEBUG)
-# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
-#else
+#if defined(NDEBUG)
+# define LIBXSMM_UNUSED_NDEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
 # define LIBXSMM_UNUSED_DEBUG(VARIABLE)
+#else
+# define LIBXSMM_UNUSED_NDEBUG(VARIABLE)
+# define LIBXSMM_UNUSED_DEBUG(VARIABLE) LIBXSMM_UNUSED(VARIABLE)
 #endif
 
 #if defined(_OPENMP)

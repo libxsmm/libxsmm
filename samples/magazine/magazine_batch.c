@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   }
 
   start = libxsmm_timer_tick();
-  USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_GEMM_PRECISION(TYPE),
+  USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
     &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
     0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, xsize);
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());

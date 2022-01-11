@@ -169,6 +169,135 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_close_data( libxsmm_generated_code*     io_generated_code,
+                                             libxsmm_const_data_tracker* io_const_data ) {
+  unsigned int l_i;
+  unsigned char* l_code_buffer = (unsigned char*) io_generated_code->generated_code;
+  unsigned int l_code_size = io_generated_code->code_size;
+  unsigned int l_data_size = io_const_data->const_data_size;
+  unsigned int l_max_size = io_generated_code->buffer_size;
+
+  /* Handle any constant data */
+  if ( l_data_size > 0 ) {
+    /* Round up to a page boundary */
+    l_code_size = LIBXSMM_UP( l_code_size, LIBXSMM_PAGE_MINSIZE ); /* Check me */
+
+    /* Ensure we have space in the code stream */
+    if ( l_max_size < l_data_size + l_code_size ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Copy the data into the buffer */
+    memcpy( l_code_buffer + l_code_size, io_const_data->const_data, l_data_size );
+
+    /* Update the data size including unused space (page-size alignment */
+    io_generated_code->data_size = l_code_size + l_data_size - io_generated_code->code_size;
+
+    /* Fill in the load address */
+    for ( l_i = 0; l_i < io_const_data->const_data_nload_insns; l_i++ ) {
+      unsigned int l_adr_off = io_const_data->const_data_pc_load_insns[l_i];
+      unsigned int l_off, l_gp, l_pc_off, l_insn;
+
+      /* Read the user-provided offset and destination GP */
+      memcpy( &l_off, l_code_buffer + l_adr_off, sizeof(l_off) );
+
+      /* Extract the GP from the top 5 bits */
+      l_gp = l_off >> 27;
+
+      /* Compute the PC offset */
+      l_pc_off = l_code_size - l_adr_off + (0x1fffff & l_off);
+
+      /* Construct the final ADR instruction */
+      l_insn  = (0x1 << 28) | (0x1f & l_gp);
+      l_insn |= ((0x1ffffc & l_pc_off) << 3) | ((0x3 & l_pc_off) << 29);
+      memcpy( l_code_buffer + l_adr_off, &l_insn, sizeof(l_insn) );
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_adr_data( libxsmm_generated_code*     io_generated_code,
+                                           unsigned int                i_reg,
+                                           unsigned int                i_off,
+                                           libxsmm_const_data_tracker* io_const_data ) {
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size / 4;
+    unsigned int* code     = (unsigned int*) io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size + 4 < io_generated_code->code_size ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* Ensure we have space in the fixup buffer */
+    if ( 128 == io_const_data->const_data_nload_insns ) {
+      fprintf( stderr, "libxsmm_aarch64_instruction_adr_data out of fixup space!\n" );
+      exit(-1);
+    }
+
+    /* Save the offset and register in the code */
+    code[code_head] = ((0x1f & i_reg) << 27) | (0x1fffff & i_off);
+
+    /* Save the adr offset */
+    io_const_data->const_data_pc_load_insns[io_const_data->const_data_nload_insns++] = io_generated_code->code_size;
+
+    /* Advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    fprintf(stderr, "libxsmm_aarch64_instruction_adr_data: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     io_generated_code,
+                                                   const unsigned char*        i_data,
+                                                   unsigned int                i_ndata_bytes,
+                                                   unsigned int                i_alignment,
+                                                   unsigned int                i_append_only,
+                                                   libxsmm_const_data_tracker* io_const_data ) {
+  i_alignment = LIBXSMM_MAX( i_alignment, 1 );
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char* l_data = (unsigned char*) io_const_data->const_data;
+    unsigned int l_dsize = io_const_data->const_data_size;
+    unsigned int l_doff, l_npad;
+
+    /* See if we already have the data */
+    if ( !i_append_only ) {
+      for ( l_doff = 0; l_doff < l_dsize; l_doff += i_alignment ) {
+        if ( i_ndata_bytes <= l_dsize - l_doff && !memcmp( l_data + l_doff, i_data, i_ndata_bytes) ) {
+          return l_doff;
+        }
+      }
+    }
+
+    /* Determine how much padding is needed */
+    l_npad = LIBXSMM_UP( l_dsize, i_alignment) - l_dsize;
+
+    /* Ensure we have enough space */
+    if ( l_dsize + l_npad + i_ndata_bytes > sizeof(io_const_data->const_data) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return ~0;
+    }
+
+    /* Copy the data */
+    memcpy( l_data + l_dsize + l_npad, i_data, i_ndata_bytes );
+
+    /* Update the size */
+    io_const_data->const_data_size += l_npad + i_ndata_bytes;
+
+    /* Return the offset of the new data in the buffer */
+    return l_dsize + l_npad;
+  } else {
+    fprintf(stderr, "libxsmm_aarch64_instruction_add_data: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           io_generated_code,
                                              const unsigned int                i_vmove_instr,
                                              const unsigned char               i_gp_reg_addr,
@@ -281,6 +410,8 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
   switch ( i_vmove_instr ) {
     case LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G:
     case LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_DUP_HALF:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_DUP_FULL:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -299,6 +430,10 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     code[code_head] |= (unsigned int)( (i_vmove_instr & 0x8) == 0x8 ? ((0x1f & i_gp_reg) << 5) : ((0x1f & i_vec_reg) << 5) );
     /* setting Q */
     code[code_head] |= (unsigned int)( ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) ? 0x40000000 : 0x0 );
+
+    if (i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_DUP_FULL) {
+      code[code_head] |= (unsigned int) 0x40000000;
+    }
 
     /* setting imm5 */
     if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_B ) {
@@ -327,14 +462,14 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*               io_generated_code,
-                                                    const unsigned int                    i_vmove_instr,
-                                                    const unsigned char                   i_gp_reg_addr,
-                                                    const unsigned char                   i_gp_reg_offset,
-                                                    const unsigned char                   i_vec_reg,
-                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
+void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*               io_generated_code,
+                                                      const unsigned int                    i_vmove_instr,
+                                                      const unsigned char                   i_gp_reg_addr,
+                                                      const unsigned char                   i_gp_reg_offset,
+                                                      const unsigned char                   i_vec_reg,
+                                                      const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: at least ARM V81 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
   }
 
@@ -343,7 +478,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     case LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected instruction number: %u\n", i_vmove_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: unexpected instruction number: %u\n", i_vmove_instr);
       exit(-1);
   }
 
@@ -372,7 +507,88 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     io_generated_code->code_size += 4;
   } else {
     /* assembly not supported right now */
-    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: inline/pure assembly print is not supported!\n");
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*           io_generated_code,
+                                                    const unsigned int                i_vmove_instr,
+                                                    const unsigned char               i_gp_reg_addr,
+                                                    const unsigned char               i_gp_reg_offset,
+                                                    const short                       i_offset,
+                                                    const unsigned char               i_vec_reg,
+                                                    const short                       i_index,
+                                                    const libxsmm_aarch64_asimd_width i_asimdwidth ) {
+  LIBXSMM_UNUSED( i_offset );
+
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: at least ARM V81 needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  switch ( i_vmove_instr ) {
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_LD1_R_POST:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected instruction number: %u\n", i_vmove_instr);
+      exit(-1);
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+    unsigned int l_q = 0, l_s = 0, l_sz = 0;
+
+    /* fix bits */
+    code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
+    /* setting Rt */
+    code[code_head] |= (unsigned int)(0x1f & i_vec_reg);
+    /* setting Rn */
+    code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
+    /* setting Rm */
+    if ( (0x3 & i_vmove_instr) == 0x3 ) {
+      code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
+    }
+
+    switch ( i_asimdwidth ) {
+      case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
+        l_q = 0x1 & (i_index >> 1);
+        l_s = 0x1 & (i_index >> 0);
+
+        if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 4 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
+          exit(-1);
+        }
+        break;
+      case LIBXSMM_AARCH64_ASIMD_WIDTH_D:
+        l_q = 0x1 & i_index;
+        l_sz = 0x1;
+
+        if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 8 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
+          exit(-1);
+        }
+        break;
+      default:
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected asimdwidth number: %u\n", i_asimdwidth);
+        exit(-1);
+    }
+
+    /* setting Q */
+    code[code_head] |= (unsigned int)(l_q << 30);
+    /* setting S */
+    code[code_head] |= (unsigned int)(l_s << 12);
+    /* setting size */
+    code[code_head] |= (unsigned int)(l_sz << 10);
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: inline/pure assembly print is not supported!\n");
     exit(-1);
   }
 }
@@ -504,6 +720,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V:
@@ -639,10 +856,13 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF:
        break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %u\n", i_vmove_instr);
@@ -699,12 +919,19 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         code[code_head] |= (unsigned int)((0x7 & i_offset) << 10);
         code[code_head] |= (unsigned int)((0x3f & (i_offset >> 3)) << 16);
       } else {
-        if ( i_offset < -8 || i_offset > 7 ) {
-          fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: for LD1W/D, ST1W/D offset is out of range!\n");
+        short l_offset = i_offset;
+
+        /* TODO: Make this generic */
+        if ( LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF == i_vmove_instr ) {
+          l_offset /= 16;
+        }
+
+        if ( l_offset < -8 || l_offset > 7 ) {
+          fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST[NT]1W/D, offset is out of range!\n");
           exit(-1);
         }
 
-        code[code_head] |= (unsigned int)((0xf & i_offset) << 16);
+        code[code_head] |= (unsigned int)((0xf & l_offset) << 16);
       }
     }
 
@@ -723,6 +950,62 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*            io_generated_code,
+                                               const unsigned int                 i_prefetch_instr,
+                                               const unsigned char                i_gp_reg_addr,
+                                               const unsigned char                i_gp_reg_offset,
+                                               const short                        i_offset,
+                                               const unsigned char                i_pred_reg,
+                                               const libxsmm_aarch64_sve_prefetch i_prefetch ) {
+  LIBXSMM_UNUSED( i_gp_reg_offset );
+
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: at least ARM A64FX needs to be specified as target arch!\n");
+    exit(-1);
+  }
+
+  switch ( i_prefetch_instr ) {
+    case LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF:
+      break;
+    default:
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: unexpected instruction number: %u\n", i_prefetch_instr);
+      exit(-1);
+  }
+
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* fix bits */
+    code[code_head]  = (unsigned int)(0xffffff00 & i_prefetch_instr);
+    /* fix prfop */
+    code[code_head] |= (unsigned int)(0xf & i_prefetch);
+    /* setting Rn */
+    code[code_head] |= (unsigned int)((0x1f & i_gp_reg_addr) << 5);
+    /* setting p reg */
+    code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
+
+    /* setting imm6 */
+    if ( (i_prefetch_instr & 0x4) == 0x4 ) {
+      if ( (i_offset < -32) || (i_offset > 31) ) {
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: offset out of range: %d!\n", i_offset);
+        exit(-1);
+      }
+
+      code[code_head] |= (unsigned int)(i_offset << 16);
+    }
+
+    /* advance code head */
+    io_generated_code->code_size += 4;
+  } else {
+    /* assembly not supported right now */
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: inline/pure assembly print is not supported!\n");
+    exit(-1);
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_generated_code,
                                               const unsigned int             i_vec_instr,
                                               const unsigned char            i_vec_reg_src_0,
@@ -731,8 +1014,6 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned char            i_vec_reg_dst,
                                               const unsigned char            i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
-  LIBXSMM_UNUSED( i_index );
-
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
@@ -740,6 +1021,12 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   switch ( i_vec_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V:
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
       break;
     default:
@@ -753,16 +1040,33 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_vec_instr);
-    /* setting Rd */
+    /* setting Zda */
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
-    /* setting Rn */
+    /* setting Zn */
     code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_0) << 5);
-    /* setting Rm */
-    code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
-    if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V ) {
-      /* setting type */
+    /* setting Zm and optional index; TODO: make this generic */
+    if ( (0x3 & i_vec_instr) == 0x3 ) {
+      if ( i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I &&
+           i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I &&
+           i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I ) {
+        code[code_head] |= (unsigned int)((0x1f & i_vec_reg_src_1) << 16);
+      } else {
+        if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_S ) {
+          code[code_head] |= (unsigned int)((0x7 & i_vec_reg_src_1) << 16);
+          code[code_head] |= (unsigned int)((0x3 & i_index) << 19);
+        } else if ( i_type == LIBXSMM_AARCH64_SVE_TYPE_D ) {
+          code[code_head] |= (unsigned int)((0xf & i_vec_reg_src_1) << 16);
+          code[code_head] |= (unsigned int)((0x1 & i_index) << 20);
+        }
+      }
+    }
+
+    /* setting type */
+    if ( (0x10 & i_vec_instr) != 0x10 ) {
       code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
-      /* setting p reg */
+    }
+    /* setting p reg */
+    if ( (0x80 & i_vec_instr) == 0x80 ) {
       code[code_head] |= (unsigned int)((0x7 & i_pred_reg) << 10);
     }
 

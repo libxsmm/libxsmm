@@ -182,7 +182,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         if (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
           int temp_scratch_id = eqn->eqn_root->reg_score;
           unsigned short bin_flags = 0;
-          libxsmm_meltw_ternary_flags flags  = cur_op->info.t_op.flags;
+          libxsmm_bitfield flags  = cur_op->info.t_op.flags;
           if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) {
             bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
           } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) {
@@ -228,7 +228,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         } else if (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MULADD) {
           int temp_scratch_id = eqn->eqn_root->reg_score;
           unsigned short bin_flags = 0;
-          libxsmm_meltw_ternary_flags flags  = cur_op->info.t_op.flags;
+          libxsmm_bitfield flags  = cur_op->info.t_op.flags;
           if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) {
             bin_flags |= (unsigned short) LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0;
           } else if ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) {

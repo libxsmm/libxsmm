@@ -428,7 +428,7 @@ void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue
   *queue_size = *queue_size + 1;
 }
 
-LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
+LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_bitfield flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) ||
@@ -438,7 +438,7 @@ LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_meltw_unary_flags flags) {
   return result;
 }
 
-LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
+LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_bitfield flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) ||
@@ -451,7 +451,7 @@ LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_meltw_binary_flags flags) {
   return result;
 }
 
-LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) {
+LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_bitfield flags) {
   int result = 0;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) ||
@@ -467,7 +467,7 @@ LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_meltw_ternary_flags flags) 
   return result;
 }
 
-LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0) ||
@@ -479,7 +479,7 @@ LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_meltw_unary_flags 
   return result;
 }
 
-LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flags flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) ||
@@ -499,7 +499,7 @@ LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_meltw_binary_flag
   return result;
 }
 
-LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_meltw_ternary_flags flags, libxsmm_matrix_eqn_elem *node) {
+LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node) {
   int result = 1;
   if ( ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0) > 0) ||
        ((flags & LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0) > 0) ||
@@ -658,7 +658,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_decompose_equation_tree( eqn, jiting_queue, &queue_size );
 
   /* Open asm */
-  libxsmm_x86_instruction_open_stream_matequation( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct);
+  libxsmm_x86_instruction_open_stream_v2( io_generated_code, l_gp_reg_mapping.gp_reg_param_struct, 1 );
 
   /* Setup the stack */
   libxsmm_generator_matequation_setup_stack_frame( io_generated_code, i_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, eqn, strategy);
@@ -730,7 +730,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   libxsmm_generator_matequation_destroy_stack_frame(  io_generated_code,  &l_kernel_config, &l_gp_reg_mapping, strategy);
 
   /* Close asm */
-  libxsmm_x86_instruction_close_stream_matequation( io_generated_code );
+  libxsmm_x86_instruction_close_stream_v2( io_generated_code, 1 );
 
   free(jiting_queue);
 }
