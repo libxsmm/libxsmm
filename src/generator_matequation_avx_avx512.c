@@ -919,8 +919,8 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
 
   jiting_queue = (libxsmm_matrix_eqn**) malloc(max_queue_size * sizeof(libxsmm_matrix_eqn*));
 
-  /* Turn on fusion knobs give arch  */
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+  /* Turn on fusion knobs given arch  */
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX) {
     fusion_knobs.may_fuse_xgemm = 1;
   }
   libxsmm_generator_decompose_equation_tree_x86( eqn, jiting_queue, &queue_size, &fusion_knobs);

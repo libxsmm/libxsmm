@@ -212,6 +212,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
+    /* For now disable fusion for < AVX archs  */
+    if ( (io_generated_code->arch < LIBXSMM_X86_AVX) &&
+         ((i_xgemm_desc->meltw_operation != LIBXSMM_MELTW_OPERATION_NONE) ||
+          (i_xgemm_desc->eltw_ap_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+          (i_xgemm_desc->eltw_bp_op != LIBXSMM_MELTW_OPERATION_NONE) ||
+          (i_xgemm_desc->eltw_cp_op != LIBXSMM_MELTW_OPERATION_NONE) ) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+      return;
+    }
     libxsmm_generator_gemm_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
   }
 
