@@ -64,7 +64,7 @@
 # define LIBXSMM_MALLOC_MMAP_HOOK
 #endif
 /* map memory for scratch buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
+#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
 # define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
 /* align even if interceptor is disabled at runtime */
