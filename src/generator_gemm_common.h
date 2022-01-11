@@ -15,6 +15,65 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const unsigned int                 zero_vreg,
+    const unsigned int                 inout_vreg,
+    const unsigned int                 store_bitmask,
+    const unsigned int                 gpr_bitmask,
+    const unsigned int                 store_bitmask_offset,
+    const unsigned int                 is_32_bit_relu);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generated_code*             io_generated_code,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config_mod,
+    const unsigned int                 scratch_gpr,
+    const unsigned int                 in_vreg,
+    const unsigned int                 out_vreg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_restore_2D_regblock_from_scratch( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const unsigned int                 scratch_gpr,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_store_2D_regblock_to_scratch( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const unsigned int                 scratch_gpr,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_dump_2D_block_and_prepare_sigmoid_fusion( libxsmm_generated_code*             io_generated_code,
+    libxsmm_micro_kernel_config*       i_micro_kernel_config,
+    const unsigned int                 l_vec_reg_acc_start,
+    const unsigned int                 l_m_blocking,
+    const unsigned int                 i_n_blocking,
+    const unsigned int                 scratch_gpr,
+    const unsigned int                 aux_gpr);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_prepare_relu_fusion( libxsmm_generated_code*             io_generated_code,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const unsigned int                 zero_vreg,
+    const unsigned int                 store_bitmask,
+    const unsigned int                 bitmask_gpr);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_cleanup_relu_fusion( libxsmm_generated_code*             io_generated_code,
+    const unsigned int                 store_bitmask,
+    const unsigned int                 bitmask_gpr);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_cleanup_sigmoid_fusion( libxsmm_generated_code*             io_generated_code,
+    const unsigned int                 scratch_gpr,
+    const unsigned int                 aux_gpr );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*             io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
