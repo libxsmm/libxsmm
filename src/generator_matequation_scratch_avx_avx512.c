@@ -386,9 +386,9 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
     }
   }
 
-  if (((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->up->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
+  if (((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->up->info.b_op.is_matmul == 1)) ||
       ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->up->info.b_op.is_brgemm == 1)) ||
-      ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
+      ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.is_matmul == 1)) ||
       ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->up->info.t_op.is_brgemm == 1))) {
     if (ptr_id == 0) {
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4, temp_reg );
@@ -441,9 +441,9 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
     }
   }
 
-  if (((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
+  if (((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.is_matmul == 1)) ||
       ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_node->info.b_op.is_brgemm == 1)) ||
-      ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
+      ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.is_matmul == 1)) ||
       ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_node->info.t_op.is_brgemm == 1))) {
     libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12, temp_reg );
   } else {
@@ -513,9 +513,9 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     /* printf("Node at timestamp %d has input precision %d and  output precision %d\n", timestamp, libxsmm_typesize(in_precision), libxsmm_typesize(out_precision)); */
 #endif
 
-    if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL)) ||
+    if (((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_matmul == 1)) ||
         ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.is_brgemm == 1)) ||
-        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL)) ||
+        ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_matmul == 1)) ||
         ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
       libxsmm_gemm_descriptor *desc = NULL;
       libxsmm_gp_reg_mapping l_gp_reg_mapping;

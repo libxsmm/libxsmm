@@ -57,6 +57,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_bitfield                  flags;
   libxsmm_datatype                  dtype;
   libxsmm_blasint                   op_arg_pos;
+  libxsmm_blasint                   is_matmul;
   libxsmm_blasint                   is_brgemm;
 } libxsmm_matrix_eqn_binary_op;
 
@@ -65,6 +66,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_m
   libxsmm_bitfield                  flags;
   libxsmm_datatype                  dtype;
   libxsmm_blasint                   op_arg_pos;
+  libxsmm_blasint                   is_matmul;
   libxsmm_blasint                   is_brgemm;
 } libxsmm_matrix_eqn_ternary_op;
 

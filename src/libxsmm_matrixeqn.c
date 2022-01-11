@@ -107,7 +107,7 @@ LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_unary_input(libxsmm_matrix_eqn_
 LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_matrix_eqn_elem* cur_node);
 LIBXSMM_API_INTERN libxsmm_blasint can_overwrite_binary_input(libxsmm_matrix_eqn_elem* cur_node) {
   libxsmm_blasint result = 1;
-  if ((cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) || (cur_node->info.b_op.is_brgemm == 1)) {
+  if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
     result = 0;
   }
   if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
@@ -346,7 +346,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsm
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_binary_tmp(libxsmm_matrix_eqn_elem* cur_node) {
   cur_node->tmp.m  = cur_node->le->tmp.m;
   cur_node->tmp.ld  = cur_node->le->tmp.m;
-  if ((cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) ||
+  if ((cur_node->info.b_op.is_matmul == 1) ||
       (cur_node->info.b_op.is_brgemm == 1)) {
     cur_node->tmp.n  = cur_node->ri->tmp.n;
   } else {
@@ -360,7 +360,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_configure_ternary_tmp(libxs
   cur_node->tmp.m  = cur_node->r2->tmp.m;
   cur_node->tmp.n  = cur_node->r2->tmp.n;
   cur_node->tmp.ld  = cur_node->r2->tmp.m;
-  if ((cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
+  if ((cur_node->info.t_op.is_matmul == 1) ||
       (cur_node->info.t_op.is_brgemm == 1)) {
     cur_node->tmp.m  = cur_node->r2->tmp.m;
     cur_node->tmp.n  = cur_node->r2->tmp.n;
@@ -414,7 +414,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_binary_node(libxsmm_m
   cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args;
   cur_node->max_tmp_size = LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size);
   /* Max tmp size has to be adjusted if it is a MATMUL op  */
-  if ((cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) || (cur_node->info.b_op.is_brgemm == 1)) {
+  if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
     libxsmm_blasint matmul_out_size = cur_node->le->tmp.m * cur_node->ri->tmp.n;
     cur_node->max_tmp_size = LIBXSMM_MAX(matmul_out_size, cur_node->max_tmp_size);
   }
@@ -466,7 +466,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_
   cur_node->n_args = cur_node->le->n_args + cur_node->ri->n_args + cur_node->r2->n_args;
   cur_node->max_tmp_size = LIBXSMM_MAX( LIBXSMM_MAX(cur_node->le->max_tmp_size, cur_node->ri->max_tmp_size), cur_node->r2->max_tmp_size);
   if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL))) {
+    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.is_matmul == 1))) {
       cur_node->tmp.id = -(cur_node->r2->info.arg.in_pos + 1);
     } else {
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -505,7 +505,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_
     }
     cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( 1, cur_node->le->tree_max_comp_tsize )));
   } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL))) {
+    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.is_matmul == 1))) {
       cur_node->tmp.id = -(cur_node->r2->info.arg.in_pos + 1);
     } else {
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -522,7 +522,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_
     }
     cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( cur_node->r2->tree_max_comp_tsize, LIBXSMM_MAX( 1, 1 )));
   } else if ( (cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL))) {
+    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.is_matmul == 1))) {
       cur_node->tmp.id = -(cur_node->r2->info.arg.in_pos + 1);
     } else {
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -530,7 +530,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_exec_plan_visit_ternary_node(libxsmm_
     if (cur_node->le->tmp.id >= 0) tmp_storage_pool[cur_node->le->tmp.id] = 0;
     cur_node->tree_max_comp_tsize = LIBXSMM_MAX( LIBXSMM_TYPESIZE( cur_node->info.t_op.dtype ), LIBXSMM_MAX( 1, LIBXSMM_MAX( 1, cur_node->le->tree_max_comp_tsize )));
   } else if ( (cur_node->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
-    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL))) {
+    if ((use_r2_as_output > 0) && ((cur_node->info.t_op.is_brgemm == 1) || (cur_node->info.t_op.is_matmul == 1))) {
       cur_node->tmp.id = -(cur_node->r2->info.arg.in_pos + 1);
     } else {
       cur_node->tmp.id = reserve_tmp_storage( n_max_tmp, tmp_storage_pool );
@@ -731,7 +731,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
       cur_node->tmp.m = 1;
       cur_node->tmp.n = 1;
       cur_node->tmp.ld = 1;
-    } else if (cur_node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) {
+    } else if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
       cur_node->tmp.m = cur_node->le->tmp.m;
       cur_node->tmp.n = cur_node->ri->tmp.n;
       cur_node->tmp.ld = cur_node->le->tmp.m;
@@ -744,7 +744,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->le );
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->ri);
     libxsmm_matrix_eqn_adjust_tmp_sizes( cur_node->r2);
-    if ((cur_node->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) || (cur_node->info.t_op.is_brgemm == 1)) {
+    if ((cur_node->info.t_op.is_matmul == 1) || (cur_node->info.t_op.is_brgemm == 1)) {
       cur_node->tmp.m = cur_node->r2->tmp.m;
       cur_node->tmp.n = cur_node->r2->tmp.n;
       cur_node->tmp.ld = cur_node->r2->tmp.ld;
@@ -1280,6 +1280,8 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
   info.b_op.type  = type;
   info.b_op.flags = (libxsmm_bitfield)flags;
   info.b_op.dtype = dtype;
+  info.b_op.is_matmul  = 0;
+  info.b_op.is_brgemm  = 0;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_BINARY, info );
 #if 0
   printf("added binary node: %lld %i %i %i\n", libxsmm_matrix_eqns[idx]->eqn_cur, type, flags, dtype );
@@ -1302,6 +1304,15 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_blasint
                             (type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS) ||
                             (type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
 
+  unsigned int is_matmul = ((type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
+
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
     return 1;
@@ -1315,6 +1326,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_blasint
   info.b_op.flags = flags;
   info.b_op.dtype = dtype;
   info.b_op.op_arg_pos = op_arg_pos;
+  info.b_op.is_matmul  = is_matmul;
   info.b_op.is_brgemm  = is_brgemm;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_BINARY, info );
 #if 0
@@ -1343,6 +1355,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
   info.t_op.type  = type;
   info.t_op.flags = (libxsmm_bitfield)flags;
   info.t_op.dtype = dtype;
+  info.t_op.is_matmul  = 0;
   info.t_op.is_brgemm  = 0;
 
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_TERNARY, info );
@@ -1367,6 +1380,14 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_blasin
                             (type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS) ||
                             (type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
 
+  unsigned int is_matmul = ((type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_TRANS_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_B_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS) ||
+                            (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -1381,6 +1402,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_blasin
   info.t_op.flags = flags;
   info.t_op.dtype = dtype;
   info.t_op.op_arg_pos = op_arg_pos;
+  info.t_op.is_matmul  = is_matmul;
   info.t_op.is_brgemm  = is_brgemm;
   libxsmm_matrix_eqns[idx]->eqn_cur = libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqns[idx]->eqn_cur, LIBXSMM_MATRIX_EQN_NODE_TERNARY, info );
 #if 0

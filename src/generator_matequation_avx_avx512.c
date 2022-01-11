@@ -439,27 +439,13 @@ LIBXSMM_API_INTERN
 int is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_node) {
   int result = 0;
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-    if ((cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS) ||
-        (cur_node->info.b_op.type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS)) {
+    if ( (cur_node->info.b_op.is_matmul  == 1) ||
+         (cur_node->info.b_op.is_brgemm  == 1)) {
       result = 1;
     }
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
-    if ((cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS_B_TRANS) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_B_TRANS) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS) ||
-        (cur_node->info.t_op.type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS_B_TRANS)) {
+    if ( (cur_node->info.t_op.is_matmul == 1) ||
+         (cur_node->info.t_op.is_brgemm == 1) ) {
       result = 1;
     }
   } else {
@@ -485,17 +471,9 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn
       result = 1;
     }
   }
-  if (node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
-    if ( (node->info.b_op.type  == LIBXSMM_MELTW_TYPE_BINARY_MATMUL) ||
-         (node->info.b_op.is_brgemm  == 1)) {
-      result = 1;
-    }
-  }
-  if (node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) {
-    if ( (node->info.t_op.type  == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) ||
-         (node->info.t_op.is_brgemm == 1) ) {
-      result = 1;
-    }
+
+  if (is_xgemm_node(node) > 0) {
+    result = 1;
   }
 
   /* Allow to break this in order to enable potential fusion of colbias add in BRGEMM */
@@ -975,7 +953,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
       if (eqn_tree_id < queue_size - 1) {
         if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
-            ((cur_eqn->eqn_root->info.t_op.type == LIBXSMM_MELTW_TYPE_TERNARY_MATMUL) || (cur_eqn->eqn_root->info.t_op.is_brgemm == 1))) {
+            ((cur_eqn->eqn_root->info.t_op.is_matmul == 1) || (cur_eqn->eqn_root->info.t_op.is_brgemm == 1))) {
           copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.ld;
         } else {
           copy_mateqn_desc.ldo = cur_eqn->eqn_root->tmp.m;
