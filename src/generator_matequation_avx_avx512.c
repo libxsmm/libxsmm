@@ -688,6 +688,9 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
                                                unsigned int                           last_timestamp ) {
   if (fusion_pattern == LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD) {
     /* Collapse parent ADD node and enhance info in GEMM node */
+    if (libxsmm_verbosity < 0) {
+      fprintf( stderr, "Fusing XGEMM with column-bias ADD\n");
+    }
     cur_node->fusion_info.xgemm.fused_colbias_add_op = 1;
     cur_node->fusion_info.xgemm.colbias_pos_in_arg = find_in_pos_for_colbias(cur_node->up);
     cur_node->fusion_info.xgemm.colbias_dtype = find_dtype_for_colbias(cur_node->up);
@@ -706,9 +709,15 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
     /* Collapse parent ADD node & UNARY NODE and enhance info in GEMM node */
     if (cur_node->up->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
       cur_node->fusion_info.xgemm.fused_relu_op = 1;
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing XGEMM with column-bias ADD and unary RELU\n");
+      }
     }
     if (cur_node->up->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
       cur_node->fusion_info.xgemm.fused_sigmoid_op = 1;
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing XGEMM with column-bias ADD and unary SIGMOID\n");
+      }
     }
     cur_node->fusion_info.xgemm.fused_colbias_add_op = 1;
     cur_node->fusion_info.xgemm.colbias_pos_in_arg = find_in_pos_for_colbias(cur_node->up);
@@ -728,9 +737,15 @@ void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern
     /* Collapse parent UNARY node and enhance info in GEMM node */
     if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
       cur_node->fusion_info.xgemm.fused_relu_op = 1;
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing XGEMM with unary RELU\n");
+      }
     }
     if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID) {
       cur_node->fusion_info.xgemm.fused_sigmoid_op = 1;
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing XGEMM with unary SIGMOID\n");
+      }
     }
     (*timestamp)++;
     if (*timestamp < last_timestamp) {
