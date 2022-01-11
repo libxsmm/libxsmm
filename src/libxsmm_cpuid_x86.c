@@ -161,7 +161,13 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
       }
       /* enable AMX state in the OS on SPR and later */
       if ( feature_cpu >= LIBXSMM_X86_AVX512_SPR ) {
-        libxsmm_cpuid_x86_amx_enable();
+        const int amx_avail = libxsmm_cpuid_x86_amx_enable();
+        if ( amx_avail != 0 ) {
+          feature_cpu = LIBXSMM_X86_AVX512_CLX;
+# if !defined(NDEBUG)
+          fprintf(stderr, "LIBXSMM WARNING: AMX state allcation in the OS failed!\n");
+# endif
+        }
       }
 # if !defined(LIBXSMM_INTRINSICS_DEBUG)
       LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= LIBXSMM_MAX(LIBXSMM_X86_GENERIC, feature_cpu), "missed detecting ISA extensions");
