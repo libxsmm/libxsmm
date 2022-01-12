@@ -595,10 +595,13 @@ ifneq (0,$(FORTRAN))
         GFC := $(FC)
       else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
         GFC := $(FC)
-      else ifneq (pgfortran,$(CC_NAME))
+      else ifneq (pgfortran,$(FC_NAME))
         ifneq (,$(findstring gfortran,$(FC_NAME)))
           GFC := $(FC)
         endif
+      endif
+      ifeq ($(strip $(FC)),$(strip $(GFC)))
+        FC_NAME := gfortran
       endif
     else
       FORTRAN ?= 0
