@@ -64,7 +64,7 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
 # include <sys/syscall.h>
 # include <unistd.h>
 # if !defined(LIBXSMM_BUILD) || (1 >= (LIBXSMM_BUILD))
-LIBXSMM_EXTERN long syscall(long number, ...);
+LIBXSMM_EXTERN long syscall(long number, ...) LIBXSMM_THROW;
 # endif
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 {
