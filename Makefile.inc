@@ -2304,13 +2304,13 @@ else ifneq (0,$(BLAS)) # generic
       BLASREF ?= 1
     endif
     BLASREF ?= 0
-    ifneq (0,$(BLASREF)) # BLAS (reference)
-    ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
-    ifneq (0,$(PGI))
-      BLAS_FLAGS += -D__CBLAS
-    endif
-    endif
-    endif
+    #ifneq (0,$(BLASREF)) # BLAS (reference)
+    #ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
+    #ifneq (0,$(PGI))
+      #BLAS_FLAGS += -D__CBLAS
+    #endif
+    #endif
+    #endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
       ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
