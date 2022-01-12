@@ -59,10 +59,11 @@
 
 #define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
 
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
 #if defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
-LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable()
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 {
   unsigned long bitmask = 0;
   long status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
@@ -80,7 +81,7 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable()
   return 0;
 }
 #else
-LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable()
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 {
   return -1;
 }
