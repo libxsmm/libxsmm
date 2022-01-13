@@ -20,6 +20,8 @@
 #define TYPE_LEAKY_RELU 1
 #define TYPE_ELU 2
 
+#define PRINT_CORRECT_MASKS 0
+
 float upconvert_bf16(libxsmm_bfloat16 x) {
   union libxsmm_bfloat16_hp bf16_hp;
   bf16_hp.i[1] = x;
@@ -336,14 +338,14 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < M/8; ++j ) {
+        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if 0
+#if PRINT_CORRECT_MASKS
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
@@ -491,14 +493,14 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     }
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < M/8; ++j ) {
+        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if 0
+#if PRINT_CORRECT_MASKS
           else {
-            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
@@ -648,14 +650,14 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < M/8; ++j ) {
+        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if 0
+#if PRINT_CORRECT_MASKS
           else {
-            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
@@ -797,14 +799,14 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < M/8; ++j ) {
+        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if 0
+#if PRINT_CORRECT_MASKS
           else {
-            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
