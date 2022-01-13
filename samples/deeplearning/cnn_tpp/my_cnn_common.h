@@ -24,7 +24,7 @@
 #define HWKC 2
 #define CHWK 3
 #define HWCK 4
-
+#define  LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 
 #define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
@@ -827,8 +827,8 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
     l_shape.n = res.fwd_gemm_pixels;
 
     if ((res.avoid_fmas_in_rim == 0) && (res.R > 1 || res.S > 1)) {
-      res.A_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
-      res.B_offsets = (unsigned long long*) malloc(n_blocks * sizeof(unsigned long long));
+      res.A_offsets = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+      res.B_offsets = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
       for (ifm = 0; ifm < res.blocksifm_blocking; ifm++) {
         for (kj = 0; kj < res.R; kj++) {
           for (ki = 0; ki < res.S; ki++) {
