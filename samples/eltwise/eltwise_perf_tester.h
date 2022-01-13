@@ -83,7 +83,7 @@ double getBenchmarkDuration(){
   double l_gflops[MAX_BENCHMARK_ARCHITECTURES]; \
   double l_gbandwidth[MAX_BENCHMARK_ARCHITECTURES]; \
   const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES]; \
-  const char* l_arch; \
+  const char* l_arch = NULL; \
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */ \
   for (int l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) { \
     if (l_targetRuntimeSeconds > 0){\

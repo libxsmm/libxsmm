@@ -2,7 +2,6 @@
 
 export LIBXSMM_TARGET=A64FX
 
-# broadcast isn't working/implemented yet
 # all kernels, which haven't been implemented for SVE, are commented out
 
 #. ./kernel_test/unary_trans_08b_eqld.sh
@@ -33,8 +32,8 @@ export LIBXSMM_TARGET=A64FX
 . ./kernel_test/unary_x2_32b_gtld.sh
 . ./kernel_test/unary_negate_32b_eqld.sh
 . ./kernel_test/unary_negate_32b_gtld.sh
-#. ./kernel_test/unary_exp_32b_eqld.sh
-#. ./kernel_test/unary_exp_32b_gtld.sh
+. ./kernel_test/unary_exp_32b_eqld.sh
+. ./kernel_test/unary_exp_32b_gtld.sh
 . ./kernel_test/unary_inc_32b_eqld.sh
 . ./kernel_test/unary_inc_32b_gtld.sh
 . ./kernel_test/unary_rcp_32b_eqld.sh
@@ -59,13 +58,13 @@ export LIBXSMM_TARGET=A64FX
 #. ./kernel_test/unary_gelu_32b_gtld.sh
 #. ./kernel_test/unary_gelu_inv_32b_eqld.sh
 #. ./kernel_test/unary_gelu_inv_32b_gtld.sh
-#. ./kernel_test/unary_tanh_32b_eqld.sh
-#. ./kernel_test/unary_tanh_32b_gtld.sh
-#. ./kernel_test/unary_tanh_inv_32b_eqld.sh
-#. ./kernel_test/unary_tanh_inv_32b_gtld.sh
-#. ./kernel_test/unary_sigmoid_32b_eqld.sh
-#. ./kernel_test/unary_sigmoid_32b_gtld.sh
-#. ./kernel_test/unary_sigmoid_inv_32b_eqld.sh
-#. ./kernel_test/unary_sigmoid_inv_32b_gtld.sh
+. ./kernel_test/unary_tanh_32b_eqld.sh
+. ./kernel_test/unary_tanh_32b_gtld.sh
+. ./kernel_test/unary_tanh_inv_32b_eqld.sh
+. ./kernel_test/unary_tanh_inv_32b_gtld.sh
+. ./kernel_test/unary_sigmoid_32b_eqld.sh
+. ./kernel_test/unary_sigmoid_32b_gtld.sh
+. ./kernel_test/unary_sigmoid_inv_32b_eqld.sh
+. ./kernel_test/unary_sigmoid_inv_32b_gtld.sh
 
 unset LIBXSMM_TARGET
