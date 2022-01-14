@@ -70,6 +70,7 @@ typedef struct my_cnn_config {
   libxsmm_blasint pad_w_out;
   libxsmm_blasint threads;
   libxsmm_blasint  overwrite_output;
+  libxsmm_blasint  avoid_bwd_wt_trans;
   my_eltwise_fuse  fuse_type;
   libxsmm_datatype datatype_in;
   libxsmm_datatype datatype_out;
@@ -162,8 +163,12 @@ typedef struct my_cnn_config {
   libxsmm_meltwfunction_unary  relu_kernel_f32;
   libxsmm_meltwfunction_binary colbias_add_kernel_f32;
 
+  /* Hoisting the compute kernels for BWD  */
+
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
+  unsigned long long *A_offsets_bwd;
+  unsigned long long *B_offsets_bwd;
 
   /* barrier */
   libxsmm_barrier* barrier;
@@ -176,6 +181,27 @@ typedef struct my_cnn_config {
   size_t fwd_lp_output_full_scratch_offset;
   size_t fwd_lp_output_block_scratch_offset;
   size_t fwd_scratch_size;
+
+  size_t bwd_filter_trans_scratch_size;
+  size_t bwd_packing_padding_scratch_size;
+  size_t bwd_lp_input_full_scratch_size;
+  size_t bwd_filter_trans_scratch_offset;
+  size_t bwd_packing_padding_scratch_offset;
+  size_t bwd_lp_input_full_scratch_offset;
+  size_t bwd_scratch_size;
+
+  size_t upd_packing_padding_scratch_size;
+  size_t upd_lp_output_full_scratch_size;
+  size_t upd_lp_input_full_scratch_size;
+  size_t upd_filter_scratch_size;
+  size_t upd_lp_filter_full_scratch_size;
+  size_t upd_packing_padding_scratch_offset;
+  size_t upd_lp_output_full_scratch_offset;
+  size_t upd_lp_input_full_scratch_offset;
+  size_t upd_lp_filter_full_scratch_offset;
+  size_t upd_filter_scratch_offset;
+  size_t upd_scratch_size;
+
   size_t scratch_size;
 
 } my_cnn_config;
@@ -642,12 +668,213 @@ void my_convolution_setup_fwd_scratch( my_cnn_config* cfg ) {
     cfg->fwd_lp_output_block_scratch_size;
 }
 
-my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
+/**********************************************************/
+/* Helper functions for BWD convolutions' parameter setup */
+/**********************************************************/
+LIBXSMM_API_INLINE int my_convolution_setup_fallback_loops_bwd( my_cnn_config* cfg ) {
+  int result = 0;
+  /* FIXME: Fallback if MB is not divisible by number of threads */
+  if (cfg->N % cfg->threads != 0) {
+    result = 1;
+  }
+  if (cfg->R == 1 && cfg->S == 1 && (cfg->pad_h != 0 ||  cfg->pad_w != 0)) {
+    result = 1;
+  }
+  if ((cfg->R > 1 && cfg->pad_h == 0) || (cfg->S > 1 && cfg->pad_w == 0)) {
+    result = 1;
+  }
+  if ((cfg->R > 1 && (cfg->pad_h_out == 0 || cfg->pad_h_in == 0)) ||
+      (cfg->S > 1 && (cfg->pad_w_out == 0 || cfg->pad_w_in == 0))    ) {
+    result = 1;
+  }
+  if ((cfg->R > 1 && cfg->u > 1) || (cfg->S > 1 && cfg->v > 1)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_bwd_ofw_rb( my_cnn_config* cfg ) {
+  int result = my_convolution_setup_fwd_ofw_rb(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_bwd_ofh_rb( my_cnn_config* cfg ) {
+  int result = my_convolution_setup_fwd_ofh_rb(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_bwd_pixels_gemm( my_cnn_config* cfg ) {
+  int result = cfg->bwd_ofw_rb * cfg->bwd_ofh_rb;
+  /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
+  if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
+    if (cfg->R != 1 || cfg->R != 1) {
+      if (cfg->ofw < 24) {
+        result = (cfg->bwd_ofw_rb+2*cfg->pad_w) * (cfg->bwd_ofh_rb-2) + 2 * (cfg->bwd_ofw_rb+cfg->pad_w);
+      }
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_bwd_block_H( my_cnn_config* cfg ) {
+  int result = 0;
+  result = my_convolution_setup_fwd_block_H(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_loop_order_bwd( my_cnn_config* cfg ) {
+  int result = 0;
+  result = my_convolution_setup_loop_order_fwd(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_block_bwd_IFM( my_cnn_config* cfg ) {
+  int result = 0;
+  result = LIBXSMM_MIN(cfg->blocksifm, 16);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_block_bwd_OFM( my_cnn_config* cfg ) {
+  int result = 8;
+  while (result % cfg->blocksofm_blocking != 0) {
+    result++;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_pack_input_bwd( my_cnn_config* cfg ) {
+  int result = 0;
+  if ((cfg->u != 1) && (cfg->bwd_ofh_rb != 1)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_use_ifm_parallelization( my_cnn_config* cfg ) {
+  int result = 0;
+  if (cfg->ofw <= 7) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_avoid_rim_fmas_bwd( my_cnn_config* cfg ) {
+  int result = my_convolution_setup_avoid_rim_fmas_fwd(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_blocksofm_blocking( my_cnn_config* cfg ) {
+  int result = 0;
+  if (cfg->R == 1 && cfg->S == 1) {
+    result = cfg->blocksofm;
+  } else {
+    result = 1;
+    if (cfg->R == 3 && cfg->S == 3 && cfg->ofh == 7 && cfg->ofw == 7) {
+      result = 2;
+    }
+  }
+
+  if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
+    result = cfg->blocksofm;
+  }
+
+  if (cfg->blocksofm % result != 0) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_init_bwd_gemm_flags( my_cnn_config* cfg ) {
+  int result = 0;
+  if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
+    result = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_spread_input_bwd( my_cnn_config* cfg ) {
+  int result = 0;
+  if (((cfg->u != 1) || (cfg->v != 1)) && (cfg->bwd_ofh_rb == 1)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_avoid_acc_load_bwd( my_cnn_config* cfg ) {
+  int result = 0;
+  if (cfg->overwrite_output > 0) {
+    if ((cfg->R == 1) && (cfg->S == 1)) {
+      if (cfg->blocksofm_blocking == cfg->blocksofm) {
+        result = 1;
+      }
+    } else {
+      if ((cfg->blocksofm_blocking == cfg->blocksofm) && (cfg->avoid_fmas_in_rim == 0)) {
+        result = 1;
+      }
+    }
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE void my_convolution_setup_bwd_scratch( my_cnn_config* cfg ) {
+  /* transpose of weights */
+  cfg->bwd_filter_trans_scratch_size = (size_t)cfg->C * cfg->K *
+    cfg->R * cfg->S *
+    libxsmm_dnn_typesize(cfg->datatype_in);
+
+  cfg->bwd_packing_padding_scratch_size = 0;
+  /* packing of input */
+  if ( cfg->pack_input_bwd != 0 ) {
+    cfg->bwd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
+      cfg->ofhp * cfg->ofwp *
+      libxsmm_dnn_typesize(cfg->datatype_in);
+  }
+  /* logical padding with copying in the fly */
+  if ( cfg->use_fallback_bwd_loops != 0 ) {
+    cfg->bwd_packing_padding_scratch_size = (size_t)cfg->threads * cfg->ifmblock *
+      (cfg->H + 2*cfg->pad_h) *
+      (cfg->W + 2*cfg->pad_w) *
+      libxsmm_dnn_typesize(cfg->datatype_in);
+  }
+  /* input bufffer in high precision when we use BF16 */
+  if ( cfg->datatype_in == LIBXSMM_DATATYPE_BF16 ) {
+    cfg->bwd_lp_input_full_scratch_size = (size_t) LIBXSMM_MAX(cfg->threads * cfg->bwd_gemm_pixels * cfg->ifmblock * libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32), cfg->N * cfg->C * cfg->ifwp * cfg->ifhp * libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32));
+    /* logical padding with copying in the fly */
+    if ( cfg->use_fallback_bwd_loops != 0 ) {
+      cfg->bwd_packing_padding_scratch_size = (size_t)cfg->threads * cfg->ifmblock *
+        (cfg->H + 2*cfg->pad_h) *
+        (cfg->W + 2*cfg->pad_w) *
+        libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32);
+    }
+  } else {
+    cfg->bwd_lp_input_full_scratch_size = 0;
+  }
+  /* align sizes to full cacheline */
+  cfg->bwd_filter_trans_scratch_size += ( cfg->bwd_filter_trans_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->bwd_filter_trans_scratch_size % LIBXSMM_CACHELINE);
+  cfg->bwd_packing_padding_scratch_size += ( cfg->bwd_packing_padding_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->bwd_packing_padding_scratch_size % LIBXSMM_CACHELINE);
+  cfg->bwd_lp_input_full_scratch_size += ( cfg->bwd_lp_input_full_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->bwd_lp_input_full_scratch_size % LIBXSMM_CACHELINE);
+
+  /* set offsets */
+  cfg->bwd_filter_trans_scratch_offset = 0;
+  cfg->bwd_packing_padding_scratch_offset = cfg->bwd_filter_trans_scratch_size;
+  cfg->bwd_lp_input_full_scratch_offset = cfg->bwd_packing_padding_scratch_offset +
+    cfg->bwd_packing_padding_scratch_size;
+
+  /* set overall scratch size for forward */
+  cfg->bwd_scratch_size = cfg->bwd_filter_trans_scratch_size +
+    cfg->bwd_packing_padding_scratch_size +
+    cfg->bwd_lp_input_full_scratch_size;
+}
+
+my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
     libxsmm_blasint stride_h, libxsmm_blasint stride_w,
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
     libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output) {
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans) {
   my_cnn_config res;
   libxsmm_blasint _ldi = bc, _ldo = bk;
   libxsmm_blasint ldx;
@@ -700,6 +927,7 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
   res.fm_lp_block = 1;
   res.blocksifm_blocking = 1;
   res.blocksofm_blocking = 1;
+  res.avoid_bwd_wt_trans = avoid_bwd_wt_trans;
   res.overwrite_output   = overwrite_output;
   res.fuse_type          = fuse_type;
   res.bc = bc;
@@ -730,7 +958,7 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
   res.use_fallback_fwd_loops  = my_convolution_setup_fallback_loops_fwd(&res);
   res.fwd_padding_copy        = my_convolution_setup_fwd_padding_copy(&res);
 
-  if ( res.datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_meltw_unary_shape unary_shape;
     libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
@@ -941,6 +1169,50 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
       }
     }
   }
+
+  /* BWD parameter setup  */
+  res.bwd_ofw_rb = my_convolution_setup_bwd_ofw_rb(&res);
+  res.bwd_ofh_rb = my_convolution_setup_bwd_ofh_rb(&res);
+  res.bwd_gemm_pixels = my_convolution_setup_bwd_pixels_gemm(&res);
+  res.pack_input_bwd = my_convolution_setup_pack_input_bwd(&res);
+  res.spread_input_bwd = my_convolution_setup_spread_input_bwd(&res);
+  res.blocksofm_blocking = my_convolution_setup_blocksofm_blocking(&res);
+  res.avoid_acc_load_bwd = my_convolution_setup_avoid_acc_load_bwd(&res);
+  res.use_ifm_parallelization = my_convolution_setup_use_ifm_parallelization(&res);
+  res.block_bwd_ofm = my_convolution_setup_block_bwd_OFM(&res);
+  res.block_bwd_ifm = my_convolution_setup_block_bwd_IFM(&res);
+  res.block_bwd_oj = my_convolution_setup_bwd_block_H(&res);
+  res.use_fallback_bwd_loops = my_convolution_setup_fallback_loops_bwd(&res);
+  res.bwd_flags = my_convolution_setup_init_bwd_gemm_flags(&res);
+
+#if 0
+  typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
+  const libxsmm_blasint ldB = (libxsmm_blasint)cfg->ofmblock;
+  const libxsmm_blasint ldA = (libxsmm_blasint)cfg->ifmblock;
+  const libxsmm_blasint ldC = (cfg->spread_input_bwd == 1) ? (libxsmm_blasint)(cfg->ifmblock * cfg->v) : (libxsmm_blasint)cfg->ifmblock;
+  const float  beta = (cfg->avoid_acc_load_bwd ? 0.f : 1.f);
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+  int brgemm_pf_oob = 0;
+  const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+  if ( 0 == env_brgemm_pf_oob ) {
+  } else {
+    brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+  }
+  if (brgemm_pf_oob > 0) {
+    prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+  }
+  /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+  gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(cfg->ifmblock, cfg->bwd_ofh_rb*cfg->bwd_ofw_rb, cfg->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+  gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(cfg->ifmblock, cfg->bwd_ofh_rb*(cfg->bwd_ofw_rb-1), cfg->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+
+  const libxsmm_blasint ldC = (libxsmm_blasint)(cfg->v*cfg->ifmblock);
+  /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+  gemm_function gemm_kernel = libxsmm_smmdispatch(cfg->ifmblock, cfg->ofw, cfg->ofmblock, NULL, NULL, &ldC, NULL, NULL, NULL, NULL);
+
+  /* Transpose kernel used for filter transpose in bwd pass  */
+  cfg->tr_kernel = libxsmm_dispatch_meltw_unary(64, 16, &(_ldi), &(_ldo), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+#endif
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);

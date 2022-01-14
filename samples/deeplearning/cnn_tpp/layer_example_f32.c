@@ -23,7 +23,7 @@
 #include "../common/dnn_common.h"
 #include "my_cnn_common.h"
 #include "my_cnn_fwd_custom_custom_f32.h"
-
+//#include "my_cnn_bwd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {
@@ -325,8 +325,8 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  my_cnn_cfg = setup_my_cnn_fwd(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
-      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output);
+  my_cnn_cfg = setup_my_cnn(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
+      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, 0 );
 
   /* Copy input/output/weight tensors to correct format */
  tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
