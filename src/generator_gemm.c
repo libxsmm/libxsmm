@@ -171,7 +171,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check LDA */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_A) == LIBXSMM_GEMM_FLAG_TRANS_A ) {
-    // Neither non-FP32 nor BRGEMM are supported for the trans_a = 1 case
+    /* Neither non-FP32 nor BRGEMM are supported for the trans_a = 1 case */
     if ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS               ) ||
         (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET                ) ||
         (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE                )

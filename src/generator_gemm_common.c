@@ -806,7 +806,6 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     }
   }
 
-  /* Allocate scratch for stashing 32 zmms  */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) &&
        ((LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0)  ) {
     transpose_scratch_size = i_xgemm_desc->m * i_xgemm_desc->k * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_xgemm_desc->datatype));

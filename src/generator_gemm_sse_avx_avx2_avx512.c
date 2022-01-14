@@ -235,13 +235,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_gemm_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
   }
 
-  // Local variables used only for older gemm setup (not LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI)
+  /* Local variables used only for older gemm setup (not LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) */
   unsigned int l_trans_a_stack_size = 0;
-  unsigned int l_transpose_stack_register = LIBXSMM_X86_GP_REG_UNDEF; // for saving start of the A transpose allocated on the stack
+  unsigned int l_transpose_stack_register = LIBXSMM_X86_GP_REG_UNDEF; /* for saving start of the A transpose allocated on the stack */
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) != LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
-      // Aligning the stack at 64-byte boundary
+      /* Aligning the stack at 64-byte boundary */
       unsigned int temp_reg = LIBXSMM_X86_GP_REG_R12;
       libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, temp_reg);
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, 0x000000000000003F );
@@ -331,7 +331,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     /* stack management at the end for meltw kernel */
     libxsmm_generator_meltw_destroy_stack_frame( io_generated_code, l_mateltwise_desc, &l_mateltwise_kernel_config );
 
-    // popping back R9, R8, RDI and RDX after transpose
+    /* popping back R9, R8, RDI and RDX after transpose */
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R9 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R8 );
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
@@ -344,7 +344,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     } else {
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR, LIBXSMM_X86_GP_REG_RDI );
     }
-  } // if A needs to be transposed
+  } /* if A needs to be transposed */
 
   /* calling gemm kernel with the modified pointer to the first matrix (now trans_a on the stack) should go here */
   /* at this point RDI must point to the first matrix (A or its transpose) in both trans_a = 0 and trans_a = 1 cases */
@@ -629,7 +629,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       l_m_blocking = libxsmm_generator_gemm_sse_avx_avx2_avx512_update_m_blocking( &l_micro_kernel_config, l_xgemm_desc_opa, io_generated_code->arch, l_m_blocking );
     }
     libxsmm_generator_gemm_footer_nloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, l_n_blocking, l_n_done );
-  } // while l_n_done
+  } /* while l_n_done */
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
