@@ -22,11 +22,15 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
   int my_img_end = LIBXSMM_MIN((ltid+1) * imgpt, cfg.N);
   int my_ofm_start = 0;
   int my_ofm_end = cfg.blocksofm;
+  int fuse_colbias  = ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) ? 1 : 0;
+  int fuse_relu     = ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) ? 1 : 0;
 
   /* Batch reduce related variables */
   unsigned long long n_blocks;
-  libxsmm_gemm_param gemm_param;
+  libxsmm_gemm_param      gemm_param;
+  libxsmm_gemm_ext_param  gemm_param_ext;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_binary_param binary_param;
 
   /* offset output pointer in case of physical output padding */
   float* out = (float*)out_act_ptr + ((size_t)cfg.pad_h_out * cfg.ofwp + cfg.pad_w_out) * cfg.ofmblock;
@@ -36,9 +40,12 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
   const int IFH = (cfg.fwd_padding_copy == 1) ? cfg.ifhp + 2*cfg.pad_h : ( (cfg.pack_input == 1) ? cfg.ofhp : cfg.ifhp );
   LIBXSMM_VLA_DECL(5, float, input, input_ptr, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
   LIBXSMM_VLA_DECL(6, const float, weight, (float*)wt_ptr, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+  LIBXSMM_VLA_DECL(2, float, colbias, (float*)bias_ptr, cfg.ofmblock);
 
   gemm_param.a.secondary = (void*)cfg.A_offsets;
   gemm_param.b.secondary = (void*)cfg.B_offsets;
+  gemm_param_ext.a.secondary = (void*)cfg.A_offsets;
+  gemm_param_ext.b.secondary = (void*)cfg.B_offsets;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -142,13 +149,12 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
         img = imgofm1ofh / (cfg.blocksofm*cfg.ofh);
         oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))/cfg.blocksofm;
         ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))%cfg.blocksofm;
-
+        if ( (cfg.avoid_acc_load == 0) && (cfg.overwrite_output > 0) ) {
+          /* set output feature map to zero */
+          unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+          cfg.ofw_x_ofmblock_zero_kernel_f32( &unary_param );
+        }
         for (ifmb = 0; ifmb < cfg.blocksifm; ifmb += cfg.block_fwd_ifm) {
-          if ( (ifmb == 0) && (cfg.overwrite_output > 0) && (cfg.avoid_acc_load == 0) && (cfg.overwrite_output > 0) ) {
-            /* set output feature map to zero */
-            unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-            cfg.ofw_x_ofmblock_zero_kernel_f32( &unary_param );
-          }
           for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+cfg.block_fwd_ifm, cfg.blocksifm); ifm1 += cfg.blocksifm_blocking) {
             for (oi = 0; oi < cfg.ofw; oi += cfg.fwd_ofw_rb) {
               for (kj = 0; kj < cfg.R; kj++) {
@@ -190,6 +196,23 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
                     gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
                     cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
                   }
+
+                  if (fuse_relu || fuse_colbias) {
+                    if ( (kj == cfg.R-1) && (ki == cfg.S-1) && (ifm1 + cfg.blocksifm_blocking >= cfg.blocksifm) ) {
+                      /* Apply b2b kernels */
+                      if (fuse_colbias) {
+                        binary_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        binary_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(2, colbias, ofm1, 0, cfg.ofmblock);
+                        binary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        cfg.colbias_add_kernel_f32( &binary_param );
+                      }
+                      if (fuse_relu) {
+                        unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        cfg.relu_kernel_f32( &unary_param );
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -201,13 +224,12 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
         img = imgofm1ofh / (cfg.blocksofm*cfg.ofh);
         ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))/cfg.ofh;
         oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))%cfg.ofh;
-
+        if ((cfg.overwrite_output > 0) && (cfg.avoid_acc_load == 0)) {
+          /* set output feature map to zero */
+          unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+          cfg.ofw_x_ofmblock_zero_kernel_f32( &unary_param );
+        }
         for (ifmb = 0; ifmb < cfg.blocksifm; ifmb += cfg.block_fwd_ifm) {
-          if ( (ifmb == 0) && (cfg.overwrite_output > 0) && (cfg.avoid_acc_load == 0)) {
-            /* set output feature map to zero */
-            unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-            cfg.ofw_x_ofmblock_zero_kernel_f32( &unary_param );
-          }
           for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+cfg.block_fwd_ifm, cfg.blocksifm); ifm1 += cfg.blocksifm_blocking) {
             for (oi = 0; oi < cfg.ofw; oi += cfg.fwd_ofw_rb) {
               /* Prepare batch-reduce kernel arguments */
@@ -222,21 +244,35 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
               oj_use = oj;
 
               n_blocks = cfg.blocksifm_blocking * cfg.R * cfg.S;
-              gemm_param.op.tertiary = &n_blocks;
-              gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-              gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
-              gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-              if (cfg.R == 1 && cfg.S == 1) {
-                cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+              if ((fuse_relu || fuse_colbias) && (ifm1 + cfg.blocksifm_blocking >= cfg.blocksifm)) {
+                gemm_param_ext.op.tertiary = &n_blocks;
+                gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                if (fuse_colbias) {
+                  gemm_param_ext.d.primary = (void*)&LIBXSMM_VLA_ACCESS(2, colbias, ofm1, 0, cfg.ofmblock);
+                }
+                if (cfg.R == 1 && cfg.S == 1) {
+                  cfg.fwd_compute_kernel_strd_fused_f32.gemm_ext( &gemm_param_ext );
+                } else {
+                  cfg.fwd_compute_kernel_offs_fused_f32.gemm_ext( &gemm_param_ext );
+                }
               } else {
-                cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                gemm_param.op.tertiary = &n_blocks;
+                gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                if (cfg.R == 1 && cfg.S == 1) {
+                  cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+                } else {
+                  cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                }
               }
             }
           }
         }
       }
     }
-
   } else {
     if (cfg.loop_order == 0) {
       if ( cfg.avoid_fmas_in_rim == 1) {
@@ -296,6 +332,23 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
                               gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
                               cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
                             }
+
+                            if (fuse_relu || fuse_colbias) {
+                              if ( (kj1 == cfg.R-1) && (ki1 == cfg.S-1) && (ifm1 + cfg.blocksifm_blocking >= cfg.blocksifm) ) {
+                                /* Apply b2b kernels */
+                                if (fuse_colbias) {
+                                  binary_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                                  binary_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(2, colbias, ofm1, 0, cfg.ofmblock);
+                                  binary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                                  cfg.colbias_add_kernel_f32( &binary_param );
+                                }
+                                if (fuse_relu) {
+                                  unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                                  unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                                  cfg.relu_kernel_f32 ( &unary_param );
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -333,14 +386,29 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
                         oj_use = oj;
 
                         n_blocks = cfg.blocksifm_blocking * cfg.R * cfg.S;
-                        gemm_param.op.tertiary = &n_blocks;
-                        gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-                        gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
-                        gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-                        if (cfg.R == 1 && cfg.S == 1) {
-                          cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+                        if ((fuse_relu || fuse_colbias) && (ifm1 + cfg.blocksifm_blocking >= cfg.blocksifm) ) {
+                          gemm_param_ext.op.tertiary = &n_blocks;
+                          gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                          gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                          gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                          if (fuse_colbias) {
+                            gemm_param_ext.d.primary = (void*)&LIBXSMM_VLA_ACCESS(2, colbias, ofm1, 0, cfg.ofmblock);
+                          }
+                          if (cfg.R == 1 && cfg.S == 1) {
+                            cfg.fwd_compute_kernel_strd_fused_f32.gemm_ext( &gemm_param_ext );
+                          } else {
+                            cfg.fwd_compute_kernel_offs_fused_f32.gemm_ext( &gemm_param_ext );
+                          }
                         } else {
-                          cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                          gemm_param.op.tertiary = &n_blocks;
+                          gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                          gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                          gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                          if (cfg.R == 1 && cfg.S == 1) {
+                            cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+                          } else {
+                            cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                          }
                         }
                       }
                     }
@@ -379,14 +447,29 @@ void my_cnn_fwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* in_ac
                       oj_use = oj;
 
                       n_blocks = cfg.blocksifm_blocking * cfg.R * cfg.S;
-                      gemm_param.op.tertiary = &n_blocks;
-                      gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-                      gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
-                      gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-                      if (cfg.R == 1 && cfg.S == 1) {
-                        cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+                      if ((fuse_relu || fuse_colbias) && (ifm1 + cfg.blocksifm_blocking >= cfg.blocksifm) ) {
+                        gemm_param_ext.op.tertiary = &n_blocks;
+                        gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                        gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                        gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        if (fuse_colbias) {
+                          gemm_param_ext.d.primary = (void*)&LIBXSMM_VLA_ACCESS(2, colbias, ofm1, 0, cfg.ofmblock);
+                        }
+                        if (cfg.R == 1 && cfg.S == 1) {
+                          cfg.fwd_compute_kernel_strd_fused_f32.gemm_ext( &gemm_param_ext );
+                        } else {
+                          cfg.fwd_compute_kernel_offs_fused_f32.gemm_ext( &gemm_param_ext );
+                        }
                       } else {
-                        cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                        gemm_param.op.tertiary = &n_blocks;
+                        gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                        gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                        gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_use, oi_use, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        if (cfg.R == 1 && cfg.S == 1) {
+                          cfg.fwd_compute_kernel_strd_f32.gemm( &gemm_param );
+                        } else {
+                          cfg.fwd_compute_kernel_offs_f32.gemm( &gemm_param );
+                        }
                       }
                     }
                   }

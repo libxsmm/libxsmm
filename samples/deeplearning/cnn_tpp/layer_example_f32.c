@@ -104,8 +104,21 @@ int main(int argc, char* argv[])
   if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
   if (argc > i) overwrite_output = atoi(argv[i++]);
+  if (argc > i) fuse_type = atoi(argv[i++]);
   if (argc > i) bc = atoi(argv[i++]);
   if (argc > i) bk = atoi(argv[i++]);
+
+  if ( fuse_type == 0 ) {
+    my_fuse = MY_ELTWISE_FUSE_NONE;
+  } else if ( fuse_type == 1 ) {
+    my_fuse = MY_ELTWISE_FUSE_BIAS;
+  } else if ( fuse_type == 2 ) {
+    my_fuse = MY_ELTWISE_FUSE_RELU;
+  } else if ( fuse_type == 4 ) {
+    my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
+  } else {
+    /* cannot happen */
+  }
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");
@@ -215,8 +228,8 @@ int main(int argc, char* argv[])
   dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   doutput_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);   /* initialize data */
 
-   /* initialize data */
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   } else {
@@ -266,6 +279,7 @@ int main(int argc, char* argv[])
   zero_buf(naive_output_nhwc,    nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_input_nhwc,     nImg*nIfm*ifhp*ifwp);
   naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
+  init_buf(bias_libxsmm,         nOfm, 0, 0);
 
   /* first touch LIBXSMM */
   zero_buf( input_libxsmm    , nImg*nIfm*ifhp*ifwp );
@@ -284,7 +298,7 @@ int main(int argc, char* argv[])
       if (overwrite_output > 0 ) {
         zero_buf(naive_output,    nImg*nOfm*ofhp*ofwp);
       }
-      naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter, NULL);
+      naive_fused_conv_fp(&naive_param, naive_input, naive_output, naive_filter, bias_libxsmm, (libxsmm_blasint)my_fuse);
     }
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       if (overwrite_output > 0 ) {
@@ -310,19 +324,6 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
-
-
-  if ( fuse_type == 0 ) {
-    my_fuse = MY_ELTWISE_FUSE_NONE;
-  } else if ( fuse_type == 1 ) {
-    my_fuse = MY_ELTWISE_FUSE_BIAS;
-  } else if ( fuse_type == 2 ) {
-    my_fuse = MY_ELTWISE_FUSE_RELU;
-  } else if ( fuse_type == 4 ) {
-    my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
-  } else {
-    /* cannot happen */
-  }
 
   my_cnn_cfg = setup_my_cnn_fwd(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
       pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output);
@@ -433,7 +434,7 @@ int main(int argc, char* argv[])
   libxsmm_free(dfilter_libxsmm);
   libxsmm_free(doutput_libxsmm);
   libxsmm_free(filtertr_libxsmm);
-
+  libxsmm_free(bias_libxsmm);
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
     if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {

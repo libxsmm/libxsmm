@@ -150,7 +150,6 @@ typedef struct my_cnn_config {
   /* Hoisting the compute kernels for FWD  */
   libxsmm_xmmfunction fwd_compute_kernel_strd_fused_f32;
   libxsmm_xmmfunction fwd_compute_kernel_strd_f32;
-  libxsmm_xmmfunction fwd_compute_kernel2_strd_fused_f32;
   libxsmm_xmmfunction fwd_compute_kernel2_strd_f32;
   libxsmm_xmmfunction fwd_compute_kernel_offs_fused_f32;
   libxsmm_xmmfunction fwd_compute_kernel_offs_f32;
@@ -160,6 +159,8 @@ typedef struct my_cnn_config {
   libxsmm_meltwfunction_unary ifmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ofw_x_ofmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ofh_x_ofw_x_ofmblock_zero_kernel_f32;
+  libxsmm_meltwfunction_unary  relu_kernel_f32;
+  libxsmm_meltwfunction_binary colbias_add_kernel_f32;
 
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
@@ -731,6 +732,7 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
 
   if ( res.datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
     libxsmm_meltw_unary_shape unary_shape;
+    libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
     libxsmm_blasint stride_out;
     libxsmm_gemm_shape l_shape;
@@ -796,36 +798,23 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
     }
 
     /* Stride-based kernels  */
-    if (fuse_type == MY_ELTWISE_FUSE_NONE) {
-      res.fwd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-      if (  res.fwd_compute_kernel_strd_f32.gemm  == NULL ) {
-        fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_f32 failed. Bailing...!\n");
-        exit(-1);
-      }
-    } else {
-      res.fwd_compute_kernel_strd_fused_f32.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
-          l_argops, l_postops );
-      if (  res.fwd_compute_kernel_strd_fused_f32.gemm_ext == NULL ) {
-        fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_fused_f32 failed. Bailing...!\n");
-        exit(-1);
-      }
+    res.fwd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.fwd_compute_kernel_strd_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+    res.fwd_compute_kernel_strd_fused_f32.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
+        l_argops, l_postops );
+    if (  res.fwd_compute_kernel_strd_fused_f32.gemm_ext == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_fused_f32 failed. Bailing...!\n");
+      exit(-1);
     }
     if (res.avoid_fmas_in_rim > 0) {
-      if (fuse_type == MY_ELTWISE_FUSE_NONE) {
-        l_shape.n =  res.fwd_ofh_rb*(res.fwd_ofw_rb-1);
-        res.fwd_compute_kernel2_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-        if (  res.fwd_compute_kernel2_strd_f32.gemm  == NULL ) {
-          fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_f32 failed. Bailing...!\n");
-          exit(-1);
-        }
-      } else {
-        l_shape.n =  res.fwd_ofh_rb*(res.fwd_ofw_rb-1);
-        res.fwd_compute_kernel2_strd_fused_f32.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
-            l_argops, l_postops );
-        if (  res.fwd_compute_kernel2_strd_fused_f32.gemm_ext == NULL ) {
-          fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_fused_f32 failed. Bailing...!\n");
-          exit(-1);
-        }
+      l_shape.n =  res.fwd_ofh_rb*(res.fwd_ofw_rb-1);
+      res.fwd_compute_kernel2_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.fwd_compute_kernel2_strd_f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_strd_f32 failed. Bailing...!\n");
+        exit(-1);
       }
     }
 
@@ -857,25 +846,22 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
       l_brconfig.br_stride_a_hint = 0;
       l_brconfig.br_stride_b_hint = 0;
 
-      if (fuse_type == MY_ELTWISE_FUSE_NONE) {
-        res.fwd_compute_kernel_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-        if (  res.fwd_compute_kernel_offs_f32.gemm  == NULL ) {
-          fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_offs_f32 failed. Bailing...!\n");
-          exit(-1);
-        }
-      } else {
-        res.fwd_compute_kernel_offs_fused_f32.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
-            l_argops, l_postops );
-        if (  res.fwd_compute_kernel_offs_fused_f32.gemm_ext  == NULL ) {
-          fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_offs_fused_f32 failed. Bailing...!\n");
-          exit(-1);
-        }
+      res.fwd_compute_kernel_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.fwd_compute_kernel_offs_f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_offs_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+      res.fwd_compute_kernel_offs_fused_f32.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
+          l_argops, l_postops );
+      if (  res.fwd_compute_kernel_offs_fused_f32.gemm_ext  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP fwd_compute_kernel_offs_fused_f32 failed. Bailing...!\n");
+        exit(-1);
       }
     }
 
     /* Eltwise TPPs */
-    stride_in   = res.ifmblock * res.v;
-    stride_out  = res.ifmblock;
+    stride_in             = res.ifmblock * res.v;
+    stride_out            = res.ifmblock;
     unary_shape.m         = res.ifmblock;
     unary_shape.n         = res.ofw;
     unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
@@ -889,39 +875,70 @@ my_cnn_config setup_my_cnn_fwd(libxsmm_blasint N, libxsmm_blasint H, libxsmm_bla
       exit(-1);
     }
 
-    stride_in   = res.ifmblock;
-    stride_out  = res.ifmblock;
+    stride_in             = res.ifmblock;
+    stride_out            = res.ifmblock;
     unary_shape.m         = res.ifmblock;
     unary_shape.n         = 1;
     res.ifmblock_copy_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ifmblock_copy_kernel_f32  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP ifmblock_copy_kernel_f32 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for TPP ifmblock_copy_kernel_f32 failed. Bailing...!\n");
       exit(-1);
     }
 
     res.ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ifmblock_zero_kernel_f32  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP ifmblock_zero_kernel_f32 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for TPP ifmblock_zero_kernel_f32 failed. Bailing...!\n");
       exit(-1);
     }
 
-    stride_in   = res.ofwp * res.ofmblock;
-    stride_out  = res.ofw * res.ofmblock;
+    stride_in             = res.ofwp * res.ofmblock;
+    stride_out            = res.ofw * res.ofmblock;
     unary_shape.m         = res.ofw * res.ofmblock;
     unary_shape.n         = 1;
     res.ofw_x_ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ofw_x_ofmblock_zero_kernel_f32  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for TPP ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
       exit(-1);
     }
 
-    stride_out  = res.ofwp * res.ofmblock;
+    stride_out            = res.ofwp * res.ofmblock;
     unary_shape.m         = res.ofw * res.ofmblock;
     unary_shape.n         = res.ofh;
     res.ofh_x_ofw_x_ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ofh_x_ofw_x_ofmblock_zero_kernel_f32  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP ofh_x_ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for TPP ofh_x_ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
       exit(-1);
+    }
+
+
+    if ((fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+      stride_in             = res.ofmblock;
+      stride_out            = res.ofmblock;
+      unary_shape.m         = res.ofmblock;
+      unary_shape.n         = res.fwd_ofw_rb;
+      res.relu_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+      if (  res.relu_kernel_f32  == NULL ) {
+        fprintf( stderr, "JIT for TPP relu_kernel_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    if ((fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+      stride_in              = res.ofmblock;
+      stride_out             = res.ofmblock;
+      binary_shape.m         = res.ofmblock;
+      binary_shape.n         = res.fwd_ofw_rb;
+      binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+      binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+      binary_shape.ldi       = &stride_in;
+      binary_shape.ldi2      = &stride_in;
+      binary_shape.ldo       = &stride_out;
+      res.colbias_add_kernel_f32 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) ;
+      if (  res.colbias_add_kernel_f32  == NULL ) {
+        fprintf( stderr, "JIT for TPP colbias_add_kernel_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
     }
   }
 
