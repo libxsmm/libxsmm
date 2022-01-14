@@ -1,1 +1,1 @@
-enable_gemm_in_eqs-1.17-2153
+dev/kvoronin/stack_transpose_gemm-1.17-2164

@@ -1787,7 +1787,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
   LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19,
-  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20,
+  LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR           = 21
 } libxsmm_gemm_stack_var;
 
 #if 0
