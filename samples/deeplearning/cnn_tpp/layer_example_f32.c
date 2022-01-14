@@ -23,7 +23,7 @@
 #include "../common/dnn_common.h"
 #include "my_cnn_common.h"
 #include "my_cnn_fwd_custom_custom_f32.h"
-//#include "my_cnn_bwd_custom_custom_f32.h"
+#include "my_cnn_bwd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {
@@ -335,9 +335,10 @@ int main(int argc, char* argv[])
 
   /* let's allocate  scratch */
  my_convolution_setup_fwd_scratch( &my_cnn_cfg );
+ my_convolution_setup_bwd_scratch( &my_cnn_cfg );
 
-  if ( my_cnn_cfg.fwd_scratch_size > 0 ) {
-    size_t alloc_size = my_cnn_cfg.fwd_scratch_size;
+ if ( (my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size) > 0 ) {
+    size_t alloc_size = my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size;
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -403,6 +404,81 @@ int main(int argc, char* argv[])
     printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
         ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+  }
+
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_NEQ(0, check) ) {
+    printf("##########################################\n");
+    printf("#   Correctness - BWD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* let's do some additional init such that we can run passes standalone */
+    tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
+
+#if 0
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_trans_reg_filter( libxsmm_handle ) );
+#endif
+
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, NULL,  doutput_libxsmm, dinput_libxsmm,
+          relumask_libxsmm, 0, tid, scratch );
+    }
+
+    /* copy out data */
+    tensor_copy_NCHWc_to_NCHW (dinput_libxsmm, naive_libxsmm_input, nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
+
+    /* compare */
+    libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_bwd);
+  }
+
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    printf("##########################################\n");
+    printf("#   Performance - BWD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+
+#if defined(_OPENMP)
+#     pragma omp parallel  private(i)
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      for (i = 0; i < iters; ++i) {
+        my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, NULL,  doutput_libxsmm, dinput_libxsmm,
+            relumask_libxsmm, 0, tid, scratch );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+    printf("bp time = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
   }
 
   /* deallocate data */

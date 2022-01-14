@@ -164,6 +164,12 @@ typedef struct my_cnn_config {
   libxsmm_meltwfunction_binary colbias_add_kernel_f32;
 
   /* Hoisting the compute kernels for BWD  */
+  libxsmm_xmmfunction bwd_compute_kernel_strd_f32;
+  libxsmm_xmmfunction bwd_compute_kernel2_strd_f32;
+  libxsmm_xmmfunction bwd_compute_kernel_offs_f32;
+  libxsmm_xmmfunction bwd_compute_kernel_fallback_f32;
+
+  libxsmm_meltwfunction_unary tr_kernel;
 
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
@@ -879,6 +885,7 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
   libxsmm_blasint _ldi = bc, _ldo = bk;
   libxsmm_blasint ldx;
   libxsmm_blasint ldA;
+  libxsmm_blasint ldB;
   libxsmm_blasint ldC;
   int  beta_int;
   float beta;
@@ -1185,34 +1192,123 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
   res.use_fallback_bwd_loops = my_convolution_setup_fallback_loops_bwd(&res);
   res.bwd_flags = my_convolution_setup_init_bwd_gemm_flags(&res);
 
-#if 0
-  typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
-  const libxsmm_blasint ldB = (libxsmm_blasint)cfg->ofmblock;
-  const libxsmm_blasint ldA = (libxsmm_blasint)cfg->ifmblock;
-  const libxsmm_blasint ldC = (cfg->spread_input_bwd == 1) ? (libxsmm_blasint)(cfg->ifmblock * cfg->v) : (libxsmm_blasint)cfg->ifmblock;
-  const float  beta = (cfg->avoid_acc_load_bwd ? 0.f : 1.f);
-  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-  int brgemm_pf_oob = 0;
-  const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
-  if ( 0 == env_brgemm_pf_oob ) {
-  } else {
-    brgemm_pf_oob = atoi(env_brgemm_pf_oob);
-  }
-  if (brgemm_pf_oob > 0) {
-    prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
-  }
-  /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-  gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch_addr(cfg->ifmblock, cfg->bwd_ofh_rb*cfg->bwd_ofw_rb, cfg->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
-  gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch_addr(cfg->ifmblock, cfg->bwd_ofh_rb*(cfg->bwd_ofw_rb-1), cfg->ofmblock, &ldA, &ldB, &ldC, NULL, &beta, &l_flags, &prefetch_mode);
+  if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_meltw_unary_shape unary_shape;
+    libxsmm_meltw_binary_shape binary_shape;
+    libxsmm_blasint stride_in;
+    libxsmm_blasint stride_out;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+    libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    libxsmm_bitfield l_prefetch_flags = 0;
+    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    int brgemm_pf_oob = 0;
+    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
 
-  const libxsmm_blasint ldC = (libxsmm_blasint)(cfg->v*cfg->ifmblock);
-  /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-  gemm_function gemm_kernel = libxsmm_smmdispatch(cfg->ifmblock, cfg->ofw, cfg->ofmblock, NULL, NULL, &ldC, NULL, NULL, NULL, NULL);
+    ldB = (libxsmm_blasint)res.ofmblock;
+    ldA = (libxsmm_blasint)res.ifmblock;
+    ldC = (res.spread_input_bwd == 1) ? (libxsmm_blasint)(res.ifmblock * res.v) : (libxsmm_blasint)res.ifmblock;
+    beta = (res.avoid_acc_load_bwd ? 0.f : 1.f);
 
-  /* Transpose kernel used for filter transpose in bwd pass  */
-  cfg->tr_kernel = libxsmm_dispatch_meltw_unary(64, 16, &(_ldi), &(_ldo), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
-#endif
+    l_flags |= res.bwd_flags;
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    if ( 0 == env_brgemm_pf_oob ) {
+    } else {
+      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+    }
+    if (brgemm_pf_oob > 0) {
+      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+    }
+    l_prefetch_flags = prefetch_mode;
+
+    /* Strided kernel  */
+    libxsmm_blasint stride_a = res.R * res.S * res.ifmblock * res.ofmblock * sizeof(float);
+    libxsmm_blasint stride_b = res.ofwp * res.ofhp * res.ofmblock * sizeof(float);
+
+    l_shape.m = res.ifmblock;
+    l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
+    l_shape.k = res.ofmblock;
+    l_shape.lda = (void*)&ldA;
+    l_shape.ldb = (void*)&ldB;
+    l_shape.ldc = (void*)&ldC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    l_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = stride_a;
+    l_brconfig.br_stride_b_hint = stride_b;
+    l_brconfig.br_unroll_hint   = res.blocksofm_blocking;
+
+    /* Stride-based kernels  */
+    res.bwd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.bwd_compute_kernel_strd_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel_strd_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    if (res.avoid_fmas_in_rim > 0) {
+      l_shape.n =  res.bwd_ofh_rb*(res.bwd_ofw_rb-1);
+      res.bwd_compute_kernel2_strd_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.bwd_compute_kernel2_strd_f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel2_strd_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    /* Offset-based kernel */
+    int n_blocks = res.R * res.S * res.blocksofm_blocking;
+    int i = 0, ofm, ki, kj;
+    l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
+
+    if ((res.avoid_fmas_in_rim == 0) && (res.R > 1 || res.S > 1)) {
+      res.A_offsets_bwd= (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+      res.B_offsets_bwd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+      for (ofm = 0; ofm < res.blocksofm_blocking; ofm++) {
+        for (kj = 0; kj < res.R; kj++) {
+          for (ki = 0; ki < res.S; ki++) {
+            res.A_offsets_bwd[i] = (ofm * res.R * res.S * res.ifmblock * res.ofmblock +
+                kj * res.S * res.ifmblock * res.ofmblock +
+                ki * res.ifmblock * res.ofmblock) * sizeof(float);
+            res.B_offsets_bwd[i] = (ofm * res.ofhp * res.ofwp * res.ofmblock +
+                kj * res.ofwp * res.ofmblock +
+                ki * res.ofmblock) * sizeof(float);
+            i++;
+          }
+        }
+      }
+
+      l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
+      l_brconfig.br_stride_a_hint = 0;
+      l_brconfig.br_stride_b_hint = 0;
+
+      res.bwd_compute_kernel_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.bwd_compute_kernel_offs_f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel_offs_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    /* Regular GEMM for fallback codepath */
+    ldC = (libxsmm_blasint)(res.v*res.ifmblock);
+    l_shape.m = res.ifmblock;
+    l_shape.n = res.ofw;
+    l_shape.k = res.ofmblock;
+    l_shape.lda = NULL;
+    l_shape.ldb = NULL;
+    l_shape.ldc = (void*)&ldC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    l_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
+
+    res.bwd_compute_kernel_fallback_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    _ldi = 64;
+    _ldo = 64;
+
+    res.tr_kernel = libxsmm_dispatch_meltw_unary(64, 16, &(_ldi), &(_ldo), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  }
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
