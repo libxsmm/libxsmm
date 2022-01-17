@@ -114,6 +114,13 @@ SHARED ?= 0
 # >0: enable intercepted malloc
 MALLOC ?= 0
 
+# 1: align if interceptor is disabled (moderated malloc)
+# 0: disable moderating memory allocations
+ALIGN ?= 1
+ifeq (0,$(ALIGN))
+  DFLAGS += -DLIBXSMM_MALLOC_UNMOD
+endif
+
 # Determines the kind of routine called for intercepted GEMMs
 # >=1 and odd : sequential and non-tiled (small problem sizes only)
 # >=2 and even: parallelized and tiled (all problem sizes)

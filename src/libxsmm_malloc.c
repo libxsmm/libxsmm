@@ -181,7 +181,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_LOCK_PAGES 1
 #endif
 #if !defined(LIBXSMM_MALLOC_LOCK_ALL) && \
-     defined(LIBXSMM_MALLOC_ALIGN_ALL) && 0
+    !defined(LIBXSMM_MALLOC_UNMOD) && 0
 # define LIBXSMM_MALLOC_LOCK_ALL
 #endif
 /* record real allocation size */
@@ -216,7 +216,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define INTERNAL_MALLOC_LOCK_PAGES(BUFFER, SIZE)
 #endif
 
-#if defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#if !defined(LIBXSMM_MALLOC_UNMOD)
 # define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) libxsmm_alignment(SIZE, ALIGNMENT)
 #else
 # define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) (ALIGNMENT)
@@ -276,7 +276,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       libxsmm_free(PTR); \
     } \
   }
-#elif defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#elif !defined(LIBXSMM_MALLOC_UNMOD)
 # define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     LIBXSMM_UNUSED(FLAGS); LIBXSMM_UNUSED(CALLER); \
     INTERNAL_MEMALIGN_REAL(RESULT, ALIGNMENT, SIZE); \
@@ -872,7 +872,7 @@ LIBXSMM_API_INTERN void* internal_memalign_twiddle(size_t alignment, size_t size
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
 
-#if (defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#if (defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || !defined(LIBXSMM_MALLOC_UNMOD)
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t /*alignment*/, size_t /*size*/, const void* /*caller*/);
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t alignment, size_t size, const void* caller)
 {
@@ -971,7 +971,7 @@ LIBXSMM_API void __wrap_free(void* ptr)
 }
 #endif
 
-#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL))
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || !defined(LIBXSMM_MALLOC_UNMOD))
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_THROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_THROW
 {

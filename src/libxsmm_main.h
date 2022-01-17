@@ -67,9 +67,9 @@
 #if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
 # define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
-/* align even if interceptor is disabled at runtime */
-#if !defined(LIBXSMM_MALLOC_ALIGN_ALL) && 1
-# define LIBXSMM_MALLOC_ALIGN_ALL
+/* align if interceptor is disabled (moderated malloc) */
+#if !defined(LIBXSMM_MALLOC_UNMOD) && 0
+# define LIBXSMM_MALLOC_UNMOD
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC) && 1
 # if defined(LIBXSMM_PLATFORM_X86) && defined(LIBXSMM_INTRINSICS_INCLUDE) && \
@@ -112,7 +112,7 @@
 # define LIBXSMM_MALLOC_HOOK
 #endif
 #if !defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS) && defined(LIBXSMM_MALLOC_HOOK) && \
-    (defined(LIBXSMM_MALLOC_ALIGN_ALL) || (defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)))
+   (!defined(LIBXSMM_MALLOC_UNMOD) || (defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)))
 # define LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 #endif
 
