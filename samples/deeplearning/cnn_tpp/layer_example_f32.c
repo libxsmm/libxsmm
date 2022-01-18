@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   int bc = 64, bk = 64;
   int overwrite_output = 1;
+  int avoid_bwd_wt_trans = 0;
   naive_conv_t naive_param;
   void* scratch;
   int fuse_type = 0;
@@ -103,10 +104,11 @@ int main(int argc, char* argv[])
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
-  if (argc > i) overwrite_output = atoi(argv[i++]);
   if (argc > i) fuse_type = atoi(argv[i++]);
   if (argc > i) bc = atoi(argv[i++]);
   if (argc > i) bk = atoi(argv[i++]);
+  if (argc > i) overwrite_output   = atoi(argv[i++]);
+  if (argc > i) avoid_bwd_wt_trans = atoi(argv[i++]);
 
   if ( fuse_type == 0 ) {
     my_fuse = MY_ELTWISE_FUSE_NONE;
@@ -326,12 +328,15 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
 
   my_cnn_cfg = setup_my_cnn(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
-      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, 0 );
+      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans );
 
   /* Copy input/output/weight tensors to correct format */
  tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
  tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
  tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+ if (avoid_bwd_wt_trans > 0) {
+  tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+ }
 
   /* let's allocate  scratch */
  my_convolution_setup_fwd_scratch( &my_cnn_cfg );
@@ -414,10 +419,6 @@ int main(int argc, char* argv[])
     tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
     tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
 
-#if 0
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_trans_reg_filter( libxsmm_handle ) );
-#endif
-
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
 #     pragma omp parallel
@@ -428,7 +429,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, NULL,  doutput_libxsmm, dinput_libxsmm,
+      my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
           relumask_libxsmm, 0, tid, scratch );
     }
 
@@ -464,7 +465,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, NULL,  doutput_libxsmm, dinput_libxsmm,
+        my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
             relumask_libxsmm, 0, tid, scratch );
       }
     }
