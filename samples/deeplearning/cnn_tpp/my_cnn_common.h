@@ -1106,7 +1106,7 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     unary_shape.ldo       = &stride_out;
     res.strided_copy_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.strided_copy_kernel_f32  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP strided_copy_kernel_f32 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for TPP strided_copy_kernel_f32 failed. Bailing...!\n");
       exit(-1);
     }
 
@@ -1304,10 +1304,24 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
 
     res.bwd_compute_kernel_fallback_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-    _ldi = 64;
-    _ldo = 64;
 
-    res.tr_kernel = libxsmm_dispatch_meltw_unary(64, 16, &(_ldi), &(_ldo), LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    /* Eltwise TPPs */
+    stride_in             = res.ofmblock;
+    stride_out            = res.ifmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ifmblock;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    unary_shape.ldi       = &stride_in;
+    unary_shape.ldo       = &stride_out;
+
+    res.tr_kernel= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.tr_kernel  == NULL ) {
+      fprintf( stderr, "JIT for TPP tr_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
+
   }
 
   /* setting up the barrier */

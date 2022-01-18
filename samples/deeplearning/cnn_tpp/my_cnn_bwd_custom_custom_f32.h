@@ -11,6 +11,9 @@
 void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt_ptr,  const float* dout_act_ptr, float* din_act_ptr,
     unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const int ltid = my_tid - start_tid;
+  libxsmm_gemm_param        gemm_param;
+  libxsmm_meltw_unary_param unary_param;
+
   if (cfg.use_fallback_bwd_loops == 0) {
     int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
     /* computing first logical thread */
@@ -22,8 +25,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
     int my_ifm_end = cfg.blocksifm;
 
     /* Batch reduce related variables */
-    unsigned long long n_blocks;
-    libxsmm_gemm_param      gemm_param;
+    unsigned long long        n_blocks;
 
     /* number of tasks for transpose that could be run in parallel */
     int transpose_work = cfg.blocksifm * cfg.blocksofm * cfg.R * cfg.S;
@@ -55,50 +57,14 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
 
     /* transpose filters, if requested */
     if ( cfg.avoid_bwd_wt_trans == 0 ) {
-      /* Special case of 64x64 transpose with JITed transpose */
-      if (cfg.ifmblock == 64 && cfg.ofmblock == 64) {
-        libxsmm_meltwfunction_unary tr_kernel = cfg.tr_kernel;
-        libxsmm_meltw_unary_param trans_param;
-        for (task = transpose_thr_begin; task < transpose_thr_end; ++task) {
-          ifm1 = task/(cfg.blocksofm * cfg.R * cfg.S);
-          ofm1 = (task%(cfg.blocksofm * cfg.R * cfg.S))/(cfg.R * cfg.S);
-          kj =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))/cfg.S;
-          ki =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))%cfg.S;
-          trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-          trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 0, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
-          tr_kernel( &trans_param );
-          trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 16, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-          trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 16, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
-          tr_kernel( &trans_param );
-          trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 32, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-          trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 32, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
-          tr_kernel( &trans_param );
-          trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 48, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-          trans_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 48, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
-          tr_kernel( &trans_param );
-        }
-      } else {
-        /* number of tasks for transpose that could be run in parallel */
-        transpose_work = cfg.blocksifm * cfg.blocksofm;
-        /* compute chunk size */
-        transpose_chunksize = (transpose_work % cfg.threads == 0) ? (transpose_work / cfg.threads) : ((transpose_work / cfg.threads) + 1);
-        /* compute thr_begin and thr_end */
-        transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
-        transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
-        for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-          ofm1 = ifm1ofm1 / cfg.blocksifm;
-          ifm1 = ifm1ofm1 % cfg.blocksifm;
-          for (kj=0; kj < cfg.R; kj++) {
-            for (ki=0; ki < cfg.S; ki++) {
-              for (ofm2 = 0; ofm2 < cfg.ofmblock; ++ofm2) {
-                for (ifm2 = 0; ifm2 < cfg.ifmblock; ++ifm2) {
-                  LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj , cfg.S-1-ki, ofm2, ifm2, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock) =
-                    LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-                }
-              }
-            }
-          }
-        }
+      for (task = transpose_thr_begin; task < transpose_thr_end; ++task) {
+        ifm1 = task/(cfg.blocksofm * cfg.R * cfg.S);
+        ofm1 = (task%(cfg.blocksofm * cfg.R * cfg.S))/(cfg.R * cfg.S);
+        kj =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))/cfg.S;
+        ki =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))%cfg.S;
+        unary_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+        unary_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 0, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
+        cfg.tr_kernel( &unary_param );
       }
       /* wait for transpose to finish */
       libxsmm_barrier_wait(cfg.barrier, ltid);
@@ -148,6 +114,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
 
                   if ( (ofmb == 0) && (cfg.overwrite_output > 0) && cfg.avoid_acc_load_bwd == 0 && ojb == 0) {
                     /* set output feature map to zero */
+                    /* Zero TPP  */
                     for (oj = 0; oj < cfg.ofh; ++oj) {
                       float* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, oj, 0, 0,  cfg.blocksifm, IFH, IFW, cfg.ifmblock));
                       for (oi = 0; oi < cfg.ofw; ++oi) {
@@ -215,6 +182,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+cfg.block_bwd_ifm, my_ifm_end); ifm1++ ) {
 
                   if ( (ofmb == 0) && (cfg.overwrite_output > 0) && cfg.avoid_acc_load_bwd == 0 && ojb == 0) {
+                    /* Zero TPP  */
                     /* set output feature map to zero */
                     for (oj = 0; oj < cfg.ofh; ++oj) {
                       float* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, oj, 0, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock));
@@ -265,7 +233,9 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
               for (oi = 0; oi < cfg.ofw; oi += cfg.bwd_ofw_rb) {
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+cfg.block_bwd_ifm, my_ifm_end); ifm1++ ) {
                   for (ofmb = 0; ofmb < cfg.blocksofm; ofmb += cfg.block_bwd_ofm) {
+
                     if ( (ofmb == 0) && (cfg.overwrite_output > 0) && cfg.avoid_acc_load_bwd == 0 && ojb == 0 && oj == 0 && oi == 0) {
+                      /* Zero TPP */
                       /* set output feature map to zero */
                       for (oj = 0; oj < cfg.ofh; ++oj) {
                         float* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, oj, 0, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock));
@@ -278,6 +248,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
                         }
                       }
                     }
+
                     for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+cfg.block_bwd_ofm, cfg.blocksofm); ofm1 += cfg.blocksofm_blocking) {
                       /* Prepare batch-reduce kernel arguments */
                       ij_use = (cfg.spread_input_bwd == 1) ? oj * cfg.u : oj;
@@ -312,11 +283,13 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
           for (oj = 0; oj < cfg.ifhp; oj++) {
             for (oi = 0; oi < cfg.ifwp; oi++) {
               if (oi % cfg.v != 0 || oj % cfg.u != 0) {
+                /* Zero TPP  */
                 LIBXSMM_PRAGMA_SIMD
                   for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
                     LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock) = (float)0;
                   }
               } else {
+                /* Copy TPP  */
                 LIBXSMM_PRAGMA_SIMD
                   for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
                     LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock) = LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, oj/cfg.u, oi/cfg.v, ifm2, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
@@ -333,6 +306,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
           for (oj = 0; oj < cfg.ifhp; oj++) {
             for (oi = 0; oi < cfg.ifwp; oi++) {
               if (oi % cfg.v != 0 || oj % cfg.u != 0) {
+                /* Zero TPP  */
                 LIBXSMM_PRAGMA_SIMD
                   for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
                     LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock) = (float)0;
@@ -344,7 +318,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
       }
     }
   } else {
-    int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1;
+    int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1, task;
     /* number of tasks that could be run in parallel */
     const int work = cfg.N * cfg.blocksifm;
     /* compute chunk size */
@@ -354,7 +328,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
     const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
     /* number of tasks for transpose that could be run in parallel */
-    int transpose_work = cfg.blocksifm * cfg.blocksofm;
+    int transpose_work = cfg.blocksifm * cfg.blocksofm * cfg.R * cfg.S;
     /* compute chunk size */
     const int transpose_chunksize = (transpose_work % cfg.threads == 0) ? (transpose_work / cfg.threads) : ((transpose_work / cfg.threads) + 1);
     /* compute thr_begin and thr_end */
@@ -368,48 +342,42 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
     LIBXSMM_VLA_DECL(6, float, wt, (float*)wt_ptr, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
     LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)((char*)scratch + cfg.bwd_filter_trans_scratch_offset), cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
     /* define weight pointer which has the correct format */
-    float* weight_base = 0;
-    libxsmm_gemm_param      gemm_param;
+    float* weight_base = (cfg.avoid_bwd_wt_trans > 0 ) ? (float*)tr_wt_ptr : (float*)((char*)scratch + cfg.bwd_filter_trans_scratch_offset);
 
     /* padding via stack allocated buffers */
     const int padded_w = cfg.W + (2 * cfg.pad_w);
     const int padded_h = cfg.H + (2 * cfg.pad_h);
     const int size_tls1 = padded_h * padded_w * cfg.ifmblock;
     float *const del_input_scratch_padding = (float*)((char*)scratch + cfg.bwd_packing_padding_scratch_offset) + ltid * size_tls1;
-    for ( ii = 0; ii < size_tls1; ++ii ) { del_input_scratch_padding[ii] = (float)0; }
+
+    LIBXSMM_VLA_DECL(5, float, del_input, (float*)din_act_ptr, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
+    LIBXSMM_VLA_DECL(3, float, del_input_padded, del_input_scratch_padding, padded_w, cfg.ifmblock);
+    LIBXSMM_VLA_DECL(5, const float, output, out, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+    LIBXSMM_VLA_DECL(6, const float, weight, weight_base, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
+
+    /* Zero TPP  */
+    for ( ii = 0; ii < size_tls1; ++ii ) {
+      del_input_scratch_padding[ii] = (float)0;
+    }
 
     /* lazy barrier init */
     libxsmm_barrier_init(cfg.barrier, ltid);
 
     /* transpose filters, if requested */
-    if ( cfg.avoid_bwd_wt_trans > 0 ) {
-      weight_base = (float*)tr_wt_ptr;
-    } else {
-      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-        ofm1 = ifm1ofm1 / cfg.blocksifm;
-        ifm1 = ifm1ofm1 % cfg.blocksifm;
-        for (kj=0; kj < cfg.R; kj++) {
-          for (ki=0; ki < cfg.S; ki++) {
-            for (ofm2 = 0; ofm2 < cfg.ofmblock; ++ofm2) {
-              for (ifm2 = 0; ifm2 < cfg.ifmblock; ++ifm2) {
-                LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj , cfg.S-1-ki, ofm2, ifm2, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock) =
-                  LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-              }
-            }
-          }
-        }
+    if ( cfg.avoid_bwd_wt_trans == 0 ) {
+      for (task = transpose_thr_begin; task < transpose_thr_end; ++task) {
+        ifm1 = task/(cfg.blocksofm * cfg.R * cfg.S);
+        ofm1 = (task%(cfg.blocksofm * cfg.R * cfg.S))/(cfg.R * cfg.S);
+        kj =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))/cfg.S;
+        ki =   ((task%(cfg.blocksofm * cfg.R * cfg.S))%(cfg.R * cfg.S))%cfg.S;
+        unary_param.in.primary  = &LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+        unary_param.out.primary = &LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, cfg.R-1-kj, cfg.S-1-ki, 0, 0, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
+        cfg.tr_kernel( &unary_param );
       }
       weight_base = (float*)((char*)scratch + cfg.bwd_filter_trans_scratch_offset);
-
       /* wait for transpose to finish */
       libxsmm_barrier_wait(cfg.barrier, ltid);
     }
-
-    {/* open new scope for additional variable declarations (C89) */
-    LIBXSMM_VLA_DECL(5, float, del_input, (float*)din_act_ptr, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-    LIBXSMM_VLA_DECL(3, float, del_input_padded, del_input_scratch_padding, padded_w, cfg.ifmblock);
-    LIBXSMM_VLA_DECL(5, const float, output, out, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-    LIBXSMM_VLA_DECL(6, const float, weight, weight_base, cfg.blocksofm, cfg.R, cfg.S, cfg.ofmblock, cfg.ifmblock);
 
     for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       img = imgifm1 / cfg.blocksifm;
@@ -422,6 +390,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
         /* reset result buffer to zero when intent is to overwrite when first block
            of input channels should be convoluted */
         if ( cfg.overwrite_output > 0 ) {
+          /* Zero TPP  */
           float* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock));
           LIBXSMM_PRAGMA_SIMD
           for (ij = 0; ij < cfg.ifhp*cfg.ifwp*cfg.ifmblock; ij++) {
@@ -451,6 +420,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
             for ( ii = 0; ii < cfg.ifwp; ii++ ) {
               if ( (ij < cfg.pad_h_in) || (ij >= (cfg.H+cfg.pad_h_in)) ||
                    (ii < cfg.pad_w_in) || (ii >= (cfg.W+cfg.pad_w_in)) ) {
+                /* Zero TPP  */
                 for (ifm2 = 0; ifm2 < cfg.ifmblock; ++ifm2) {
                   LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, ii, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock) = (float)0;
                 }
@@ -462,6 +432,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
         /* reset result buffer to zero when intent is to overwrite when first block
            of input channels should be convoluted */
         if ( cfg.overwrite_output > 0 ) {
+          /* Zero TPP  */
           LIBXSMM_PRAGMA_SIMD
           for (ij = 0; ij < size_tls1; ++ij) {
             del_input_scratch_padding[ij] = (float)0;
@@ -497,6 +468,7 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
         /* input padding copy back */
         for (ij = 0; ij < cfg.H; ij++) {
           for (ii = 0; ii < cfg.W; ii++) {
+            /* Copy TPP  */
             LIBXSMM_PRAGMA_SIMD
             for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
               LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, ii, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock) =
@@ -506,8 +478,6 @@ void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt
         }
       }
     } /* end of imgifm1 loop */
-
-    } /* end of new scope for additional variable declarations (C89) */
   }
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
