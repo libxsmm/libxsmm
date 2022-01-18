@@ -688,7 +688,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
     fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
-      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION);
+      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
