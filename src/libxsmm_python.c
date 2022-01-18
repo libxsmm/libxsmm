@@ -114,8 +114,7 @@ LIBXSMM_API PyMODINIT_FUNC initlibxsmm(void)
     "Library targeting Intel Architecture for small, dense or "
     "sparse matrix multiplications, and small convolutions."));
   PyModule_AddIntConstant(pymod, "VERSION_API", LIBXSMM_VERSION2(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR));
-  PyModule_AddIntConstant(pymod, "VERSION_ALL", LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR,
-                                                                LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+  PyModule_AddIntConstant(pymod, "VERSION_ALL", LIBXSMM_VERSION);
   PyModule_AddIntConstant(pymod, "VERSION_MAJOR", LIBXSMM_VERSION_MAJOR);
   PyModule_AddIntConstant(pymod, "VERSION_MINOR", LIBXSMM_VERSION_MINOR);
   PyModule_AddIntConstant(pymod, "VERSION_UPDATE", LIBXSMM_VERSION_UPDATE);
