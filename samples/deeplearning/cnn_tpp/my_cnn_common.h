@@ -1302,6 +1302,7 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
     l_shape.comp_type = LIBXSMM_DATATYPE_F32;
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
     res.bwd_compute_kernel_fallback_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 
