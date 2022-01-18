@@ -2490,7 +2490,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
     char pending_size_buffer[32];
     libxsmm_format_value(pending_size_buffer, sizeof(pending_size_buffer),
       internal_malloc_public_cur + internal_malloc_local_cur, "KM", "B", 10);
-    fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory by %" PRIuPTR " allocation%s!\n",
+    fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory from %" PRIuPTR " allocation%s!\n",
       pending_size_buffer, (uintptr_t)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
   }
   if (NULL != pools) {
