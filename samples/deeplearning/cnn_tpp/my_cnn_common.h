@@ -621,7 +621,7 @@ int my_convolution_setup_init_fwd_gemm_flags( my_cnn_config* cfg ) {
 
 int my_convolution_setup_fwd_padding_copy( my_cnn_config* cfg ) {
   int result = 0;
-  if ( (cfg->pad_h != cfg->pad_h_in) && (cfg->pad_w != cfg->pad_w_in) ) {
+  if ( (cfg->pad_h != cfg->pad_h_in) || (cfg->pad_w != cfg->pad_w_in) ) {
     result = 1;
   }
   return result;
