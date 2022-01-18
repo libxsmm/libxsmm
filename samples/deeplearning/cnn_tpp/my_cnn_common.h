@@ -170,6 +170,9 @@ typedef struct my_cnn_config {
   libxsmm_xmmfunction bwd_compute_kernel_fallback_f32;
 
   libxsmm_meltwfunction_unary tr_kernel;
+  libxsmm_meltwfunction_unary ofh_x_ofw_x_ifmblock_zero_kernel_f32;
+  libxsmm_meltwfunction_unary paddedH_x_paddedW_x_ifmblock_zero_kernel_f32;
+  libxsmm_meltwfunction_unary ifhp_x_ifwp_x_ifmblock_zero_kernel_f32;
 
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
@@ -1323,8 +1326,39 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       exit(-1);
     }
 
-  }
+    stride_out            = (res.pack_input_bwd == 1) ? res.ofw * res.ifmblock : res.ifwp * res.ifmblock;
+    stride_in             = stride_out;
+    unary_shape.m         = res.ofw * res.ifmblock;
+    unary_shape.n         = res.ofh;
+    res.ofh_x_ofw_x_ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
 
+    if (  res.ofh_x_ofw_x_ifmblock_zero_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP ofh_x_ofw_x_ifmblock_zero_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.m         = (res.W + (2 * res.pad_w)) * (res.H + (2 * res.pad_h)) * res.ifmblock;
+    unary_shape.n         = 1;
+    stride_out            = unary_shape.m;
+    stride_in             = stride_out;
+    res.paddedH_x_paddedW_x_ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.paddedH_x_paddedW_x_ifmblock_zero_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP paddedH_x_paddedW_x_ifmblock_zero_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.m         = res.ifwp * res.ifhp * res.ifmblock;
+    unary_shape.n         = 1;
+    stride_out            = unary_shape.m;
+    stride_in             = stride_out;
+    res.ifhp_x_ifwp_x_ifmblock_zero_kernel_f32= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.ifhp_x_ifwp_x_ifmblock_zero_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP ifhp_x_ifwp_x_ifmblock_zero_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+  }
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
 
