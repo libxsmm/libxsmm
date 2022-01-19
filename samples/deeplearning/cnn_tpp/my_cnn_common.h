@@ -1190,97 +1190,16 @@ LIBXSMM_API_INLINE void my_convolution_setup_upd_scratch( my_cnn_config* cfg ) {
     cfg->upd_lp_filter_full_scratch_size;
 }
 
-my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
-    libxsmm_blasint stride_h, libxsmm_blasint stride_w,
-    libxsmm_blasint pad_h, libxsmm_blasint pad_w,
-    libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
-    libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans) {
-  my_cnn_config res;
-  libxsmm_blasint _ldi = bc, _ldo = bk;
-  libxsmm_blasint ldx;
-  libxsmm_blasint ldA, LDA;
-  libxsmm_blasint ldB, LDB;
-  libxsmm_blasint ldC, LDC;
-  int  beta_int;
-  float beta;
-  int l_flags;
-  int l_tc_flags;
-
-  /* init libxsmm */
-  LIBXSMM_INIT
-
-  /* Generic parameter setup  */
-  res.N = N;
-  res.H = H;
-  res.W = W;
-  res.C = C;
-  res.K = K;
-  res.R = R;
-  res.S = S;
-  res.u = stride_h;
-  res.v = stride_w;
-  res.pad_h = pad_h;
-  res.pad_w = pad_w;
-  res.pad_h_in = pad_h_in;
-  res.pad_w_in = pad_w_in;
-  res.pad_h_out = pad_h_out;
-  res.pad_w_out = pad_w_out;
-  res.threads = threads;
-  res.target_archid = libxsmm_target_archid;
-  res.datatype_in   = LIBXSMM_DATATYPE_F32;
-  res.datatype_out  = LIBXSMM_DATATYPE_F32;
-  res.ifhp = res.H + 2*res.pad_h_in;
-  res.ifwp = res.W + 2*res.pad_w_in;
-  res.ofh = (res.H + 2*res.pad_h - res.R) / res.u + 1;
-  res.ofw = (res.W + 2*res.pad_w - res.S) / res.v + 1;
-  res.ofhp = res.ofh + 2*res.pad_h_out;
-  res.ofwp = res.ofw + 2*res.pad_w_out;
-  res.ifmblock = 1;
-  res.ofmblock = 1;
-  res.blocksifm = res.C;
-  res.blocksofm = res.K;
-  res.fwd_ofw_rb = 1;
-  res.fwd_ofh_rb = 1;
-  res.bwd_ofw_rb = 1;
-  res.bwd_ofh_rb = 1;
-  res.upd_ofw_rb = 1;
-  res.upd_ofh_rb = 1;
-  res.fm_lp_block = 1;
-  res.blocksifm_blocking = 1;
-  res.blocksofm_blocking = 1;
-  res.avoid_bwd_wt_trans = avoid_bwd_wt_trans;
-  res.overwrite_output   = overwrite_output;
-  res.fuse_type          = fuse_type;
-  res.bc = bc;
-  res.bk = bk;
-
-  /* Use helper functions to setup convolutions */
-  res.ifmblock      = my_convolution_setup_ifmblock(&res);
-  res.ofmblock      = my_convolution_setup_ofmblock(&res);
-  res.fm_lp_block   = my_convolution_setup_fm_lp_block(&res);
-  res.blocksifm     = my_convolution_setup_blocksifm(&res);
-  res.blocksofm     = my_convolution_setup_blocksofm(&res);
-
-  /* FWD parameter setup  */
-  res.fwd_ofw_rb              = my_convolution_setup_fwd_ofw_rb(&res);
-  res.pack_input              = my_convolution_setup_pack_input_fwd(&res);
-  res.fwd_ofh_rb              = my_convolution_setup_fwd_ofh_rb(&res);
-  res.fwd_gemm_pixels         = my_convolution_setup_fwd_pixels_gemm(&res);
-  res.block_fwd_oj            = my_convolution_setup_fwd_block_H(&res);
-  res.loop_order              = my_convolution_setup_loop_order_fwd(&res);
-  res.blocksifm_blocking      = my_convolution_setup_blocksifm_blocking(&res);
-  res.block_fwd_ofm           = my_convolution_setup_block_fwd_OFM(&res);
-  res.block_fwd_ifm           = my_convolution_setup_block_fwd_IFM(&res);
-  res.avoid_fmas_in_rim       = my_convolution_setup_avoid_rim_fmas_fwd(&res);
-  res.use_ofm_parallelization = my_convolution_setup_use_ofm_parallelization(&res);
-  res.shuffle_filter_accesses = my_convolution_setup_shuffle_filter_accesses(&res);
-  res.avoid_acc_load          = my_convolution_setup_avoid_acc_load(&res);
-  res.fwd_flags               = my_convolution_setup_init_fwd_gemm_flags(&res);
-  res.use_fallback_fwd_loops  = my_convolution_setup_fallback_loops_fwd(&res);
-  res.fwd_padding_copy        = my_convolution_setup_fwd_padding_copy(&res);
-
+void my_cnn_generate_fwd_kernels( my_cnn_config* inout_cfg) {
+  my_cnn_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_blasint ldx;
+    libxsmm_blasint ldA, LDA;
+    libxsmm_blasint ldB, LDB;
+    libxsmm_blasint ldC, LDC;
+    int  beta_int;
+    float beta;
+    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
     libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
@@ -1337,13 +1256,13 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
     memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
-    if ((fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
       l_postops.d_in_type      = LIBXSMM_DATATYPE_F32;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
       l_postops.ldd            = NULL;
     }
-    if ((fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
     }
 
@@ -1461,7 +1380,7 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     }
 
 
-    if ((fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
       stride_in             = res.ofmblock;
       stride_out            = res.ofmblock;
       unary_shape.m         = res.ofmblock;
@@ -1473,7 +1392,7 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       }
     }
 
-    if ((fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
       stride_in              = res.ofmblock;
       stride_out             = res.ofmblock;
       binary_shape.m         = res.ofmblock;
@@ -1491,23 +1410,19 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       }
     }
   }
+  *inout_cfg = res;
+}
 
-  /* BWD parameter setup  */
-  res.bwd_ofw_rb = my_convolution_setup_bwd_ofw_rb(&res);
-  res.bwd_ofh_rb = my_convolution_setup_bwd_ofh_rb(&res);
-  res.bwd_gemm_pixels = my_convolution_setup_bwd_pixels_gemm(&res);
-  res.pack_input_bwd = my_convolution_setup_pack_input_bwd(&res);
-  res.spread_input_bwd = my_convolution_setup_spread_input_bwd(&res);
-  res.blocksofm_blocking = my_convolution_setup_blocksofm_blocking(&res);
-  res.avoid_acc_load_bwd = my_convolution_setup_avoid_acc_load_bwd(&res);
-  res.use_ifm_parallelization = my_convolution_setup_use_ifm_parallelization(&res);
-  res.block_bwd_ofm = my_convolution_setup_block_bwd_OFM(&res);
-  res.block_bwd_ifm = my_convolution_setup_block_bwd_IFM(&res);
-  res.block_bwd_oj = my_convolution_setup_bwd_block_H(&res);
-  res.use_fallback_bwd_loops = my_convolution_setup_fallback_loops_bwd(&res);
-  res.bwd_flags = my_convolution_setup_init_bwd_gemm_flags(&res);
-
+void my_cnn_generate_bwd_kernels( my_cnn_config* inout_cfg) {
+  my_cnn_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_blasint ldx;
+    libxsmm_blasint ldA, LDA;
+    libxsmm_blasint ldB, LDB;
+    libxsmm_blasint ldC, LDC;
+    int  beta_int;
+    float beta;
+    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
     libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
@@ -1671,22 +1586,19 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       exit(-1);
     }
   }
+  *inout_cfg = res;
+}
 
-  /* UPD parameter setup */
-  res.upd_linearized_tasklist = my_convolution_setup_linearized_tasklist_upd(&res);
-  res.upd_avoid_rim_fmas = my_convolution_setup_avoid_rim_fmas_upd(&res);
-  res.upd_pack_input = my_convolution_setup_pack_input_upd(&res);
-  res.upd_use_batchreduce = my_convolution_setup_use_batchreduce_upd(&res);
-  res.upd_ofw_rb = my_convolution_setup_upd_ofw_rb(&res);
-  res.upd_ofh_rb = my_convolution_setup_upd_ofh_rb(&res);
-  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
-  res.weight_copies = my_convolution_setup_weight_copies_upd(&res);
-  res.block_upd_ofm = my_convolution_setup_block_upd_OFM(&res);
-  res.block_upd_ifm = my_convolution_setup_block_upd_IFM(&res);
-  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
-  res.upd_padding_copy = my_convolution_setup_upd_padding_copy(&res);
-
+void my_cnn_generate_upd_kernels( my_cnn_config* inout_cfg) {
+  my_cnn_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_blasint ldx;
+    libxsmm_blasint ldA, LDA;
+    libxsmm_blasint ldB, LDB;
+    libxsmm_blasint ldC, LDC;
+    int  beta_int;
+    float beta;
+    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
     libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
@@ -1907,9 +1819,125 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
         }
       }
     }
-
-
   }
+  *inout_cfg = res;
+}
+
+my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
+    libxsmm_blasint stride_h, libxsmm_blasint stride_w,
+    libxsmm_blasint pad_h, libxsmm_blasint pad_w,
+    libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
+    libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans) {
+  my_cnn_config res;
+
+  /* init libxsmm */
+  LIBXSMM_INIT
+
+  /* Generic parameter setup  */
+  res.N = N;
+  res.H = H;
+  res.W = W;
+  res.C = C;
+  res.K = K;
+  res.R = R;
+  res.S = S;
+  res.u = stride_h;
+  res.v = stride_w;
+  res.pad_h = pad_h;
+  res.pad_w = pad_w;
+  res.pad_h_in = pad_h_in;
+  res.pad_w_in = pad_w_in;
+  res.pad_h_out = pad_h_out;
+  res.pad_w_out = pad_w_out;
+  res.threads = threads;
+  res.target_archid = libxsmm_target_archid;
+  res.datatype_in   = LIBXSMM_DATATYPE_F32;
+  res.datatype_out  = LIBXSMM_DATATYPE_F32;
+  res.ifhp = res.H + 2*res.pad_h_in;
+  res.ifwp = res.W + 2*res.pad_w_in;
+  res.ofh = (res.H + 2*res.pad_h - res.R) / res.u + 1;
+  res.ofw = (res.W + 2*res.pad_w - res.S) / res.v + 1;
+  res.ofhp = res.ofh + 2*res.pad_h_out;
+  res.ofwp = res.ofw + 2*res.pad_w_out;
+  res.ifmblock = 1;
+  res.ofmblock = 1;
+  res.blocksifm = res.C;
+  res.blocksofm = res.K;
+  res.fwd_ofw_rb = 1;
+  res.fwd_ofh_rb = 1;
+  res.bwd_ofw_rb = 1;
+  res.bwd_ofh_rb = 1;
+  res.upd_ofw_rb = 1;
+  res.upd_ofh_rb = 1;
+  res.fm_lp_block = 1;
+  res.blocksifm_blocking = 1;
+  res.blocksofm_blocking = 1;
+  res.avoid_bwd_wt_trans = avoid_bwd_wt_trans;
+  res.overwrite_output   = overwrite_output;
+  res.fuse_type          = fuse_type;
+  res.bc = bc;
+  res.bk = bk;
+
+  /* Use helper functions to setup convolutions */
+  res.ifmblock      = my_convolution_setup_ifmblock(&res);
+  res.ofmblock      = my_convolution_setup_ofmblock(&res);
+  res.fm_lp_block   = my_convolution_setup_fm_lp_block(&res);
+  res.blocksifm     = my_convolution_setup_blocksifm(&res);
+  res.blocksofm     = my_convolution_setup_blocksofm(&res);
+
+  /* FWD parameter setup  */
+  res.fwd_ofw_rb              = my_convolution_setup_fwd_ofw_rb(&res);
+  res.pack_input              = my_convolution_setup_pack_input_fwd(&res);
+  res.fwd_ofh_rb              = my_convolution_setup_fwd_ofh_rb(&res);
+  res.fwd_gemm_pixels         = my_convolution_setup_fwd_pixels_gemm(&res);
+  res.block_fwd_oj            = my_convolution_setup_fwd_block_H(&res);
+  res.loop_order              = my_convolution_setup_loop_order_fwd(&res);
+  res.blocksifm_blocking      = my_convolution_setup_blocksifm_blocking(&res);
+  res.block_fwd_ofm           = my_convolution_setup_block_fwd_OFM(&res);
+  res.block_fwd_ifm           = my_convolution_setup_block_fwd_IFM(&res);
+  res.avoid_fmas_in_rim       = my_convolution_setup_avoid_rim_fmas_fwd(&res);
+  res.use_ofm_parallelization = my_convolution_setup_use_ofm_parallelization(&res);
+  res.shuffle_filter_accesses = my_convolution_setup_shuffle_filter_accesses(&res);
+  res.avoid_acc_load          = my_convolution_setup_avoid_acc_load(&res);
+  res.fwd_flags               = my_convolution_setup_init_fwd_gemm_flags(&res);
+  res.use_fallback_fwd_loops  = my_convolution_setup_fallback_loops_fwd(&res);
+  res.fwd_padding_copy        = my_convolution_setup_fwd_padding_copy(&res);
+  /* Generate FWD kernels  */
+  my_cnn_generate_fwd_kernels(&res);
+
+  /* BWD parameter setup  */
+  res.bwd_ofw_rb = my_convolution_setup_bwd_ofw_rb(&res);
+  res.bwd_ofh_rb = my_convolution_setup_bwd_ofh_rb(&res);
+  res.bwd_gemm_pixels = my_convolution_setup_bwd_pixels_gemm(&res);
+  res.pack_input_bwd = my_convolution_setup_pack_input_bwd(&res);
+  res.spread_input_bwd = my_convolution_setup_spread_input_bwd(&res);
+  res.blocksofm_blocking = my_convolution_setup_blocksofm_blocking(&res);
+  res.avoid_acc_load_bwd = my_convolution_setup_avoid_acc_load_bwd(&res);
+  res.use_ifm_parallelization = my_convolution_setup_use_ifm_parallelization(&res);
+  res.block_bwd_ofm = my_convolution_setup_block_bwd_OFM(&res);
+  res.block_bwd_ifm = my_convolution_setup_block_bwd_IFM(&res);
+  res.block_bwd_oj = my_convolution_setup_bwd_block_H(&res);
+  res.use_fallback_bwd_loops = my_convolution_setup_fallback_loops_bwd(&res);
+  res.bwd_flags = my_convolution_setup_init_bwd_gemm_flags(&res);
+  /* Generate BWD kernels  */
+  my_cnn_generate_bwd_kernels(&res);
+
+  /* UPD parameter setup */
+  res.upd_linearized_tasklist = my_convolution_setup_linearized_tasklist_upd(&res);
+  res.upd_avoid_rim_fmas = my_convolution_setup_avoid_rim_fmas_upd(&res);
+  res.upd_pack_input = my_convolution_setup_pack_input_upd(&res);
+  res.upd_use_batchreduce = my_convolution_setup_use_batchreduce_upd(&res);
+  res.upd_ofw_rb = my_convolution_setup_upd_ofw_rb(&res);
+  res.upd_ofh_rb = my_convolution_setup_upd_ofh_rb(&res);
+  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
+  res.weight_copies = my_convolution_setup_weight_copies_upd(&res);
+  res.block_upd_ofm = my_convolution_setup_block_upd_OFM(&res);
+  res.block_upd_ifm = my_convolution_setup_block_upd_IFM(&res);
+  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
+  res.upd_padding_copy = my_convolution_setup_upd_padding_copy(&res);
+  /* Generate UPD kernels  */
+  my_cnn_generate_upd_kernels(&res);
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
