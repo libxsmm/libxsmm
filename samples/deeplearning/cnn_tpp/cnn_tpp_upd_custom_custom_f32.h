@@ -464,7 +464,9 @@ void cnn_tpp_upd_exec( cnn_tpp_config cfg, const float* in_act_ptr, const float*
     if ((reduce_thr_end - reduce_thr_begin) == reduce_chunksize) {
       cfg.wt_reduce_kernel0_f32( &unary_param );
     } else {
-      cfg.wt_reduce_kernel1_f32( &unary_param );
+      if ((reduce_thr_end - reduce_thr_begin) > 0) {
+        cfg.wt_reduce_kernel1_f32( &unary_param );
+      }
     }
   }
   libxsmm_barrier_wait(cfg.barrier, ltid);
