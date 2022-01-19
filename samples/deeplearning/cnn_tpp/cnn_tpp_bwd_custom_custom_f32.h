@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-void my_cnn_bwd_exec( my_cnn_config cfg, const float* wt_ptr, const float* tr_wt_ptr,  const float* dout_act_ptr, float* din_act_ptr,
+void cnn_tpp_bwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* tr_wt_ptr,  const float* dout_act_ptr, float* din_act_ptr,
     unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const int ltid = my_tid - start_tid;
   libxsmm_gemm_param        gemm_param;

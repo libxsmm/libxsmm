@@ -21,10 +21,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
-#include "my_cnn_common.h"
-#include "my_cnn_fwd_custom_custom_f32.h"
-#include "my_cnn_bwd_custom_custom_f32.h"
-#include "my_cnn_upd_custom_custom_f32.h"
+#include "cnn_tpp_common.h"
+#include "cnn_tpp_fwd_custom_custom_f32.h"
+#include "cnn_tpp_bwd_custom_custom_f32.h"
+#include "cnn_tpp_upd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   float *bias_libxsmm, *delbias_libxsmm;
   unsigned char *relumask_libxsmm;
   my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
-  my_cnn_config my_cnn_cfg;
+  cnn_tpp_config cnn_tpp_cfg;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
@@ -328,24 +328,19 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  my_cnn_cfg = setup_my_cnn(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
+  cnn_tpp_cfg = setup_cnn_tpp(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
       pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans );
 
   /* Copy input/output/weight tensors to correct format */
- tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
- tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
- tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
- if (avoid_bwd_wt_trans > 0) {
-  tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
- }
+  tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+  tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+  tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+  if (avoid_bwd_wt_trans > 0) {
+    tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+  }
 
- /* let's allocate  scratch */
- my_convolution_setup_fwd_scratch( &my_cnn_cfg );
- my_convolution_setup_bwd_scratch( &my_cnn_cfg );
- my_convolution_setup_upd_scratch( &my_cnn_cfg );
-
- if ( (my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size + my_cnn_cfg.upd_scratch_size) > 0 ) {
-    size_t alloc_size = my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size + my_cnn_cfg.upd_scratch_size;
+  if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
+    size_t alloc_size = cnn_tpp_cfg.scratch_size;
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -364,11 +359,11 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+      cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
           bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
     /* copy out data */
-    tensor_copy_NCHWc_to_NCHW (output_libxsmm, naive_libxsmm_output, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
+    tensor_copy_NCHWc_to_NCHW (output_libxsmm, naive_libxsmm_output, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
 
     /* compare */
     libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0);
@@ -387,8 +382,8 @@ int main(int argc, char* argv[])
     printf("#   Correctness - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
     /* let's do some additional init such that we can run passes standalone */
-    tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
-    tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
 
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
@@ -400,12 +395,12 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+      cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
           relumask_libxsmm, 0, tid, scratch );
     }
 
     /* copy out data */
-    tensor_copy_NCHWc_to_NCHW (dinput_libxsmm, naive_libxsmm_input, nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
+    tensor_copy_NCHWc_to_NCHW (dinput_libxsmm, naive_libxsmm_input, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
 
     /* compare */
     libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0);
@@ -423,9 +418,9 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     printf("#   Correctness - UPD (custom-Storage)   #\n");
     printf("##########################################\n");
-    tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
-    tensor_copy_NCHW_to_NCHWc (naive_output_wu,   doutput_libxsmm, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
-    tensor_copy_KCRS_to_KCRSck(naive_filter     , dfilter_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_output_wu,   doutput_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+    tensor_copy_KCRS_to_KCRSck(naive_filter     , dfilter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
 
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
@@ -437,11 +432,11 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_cnn_upd_exec( my_cnn_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+      cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
           NULL, 0, tid, scratch );
     }
 
-    tensor_copy_KCRSck_to_KCRS(dfilter_libxsmm , naive_libxsmm_filter, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+    tensor_copy_KCRSck_to_KCRS(dfilter_libxsmm , naive_libxsmm_filter, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
 
     /* compare */
     libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
@@ -471,7 +466,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+        cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
             bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
@@ -505,7 +500,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_cnn_bwd_exec( my_cnn_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+        cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
             relumask_libxsmm, 0, tid, scratch );
       }
     }
@@ -538,7 +533,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_cnn_upd_exec( my_cnn_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+        cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
             NULL, 0, tid, scratch );
       }
     }
