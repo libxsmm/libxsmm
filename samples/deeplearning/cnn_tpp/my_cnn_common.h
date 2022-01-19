@@ -182,6 +182,9 @@ typedef struct my_cnn_config {
   libxsmm_xmmfunction upd_compute_kernel_flat_linearized_tasklist_offs_f32;
   libxsmm_xmmfunction upd_compute_kernel_hybrid_linearized_tasklist_offs_f32;
 
+  libxsmm_meltwfunction_unary wt_reduce_kernel0_f32;
+  libxsmm_meltwfunction_unary wt_reduce_kernel1_f32;
+
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
   unsigned long long *A_offsets_bwd;
@@ -1847,6 +1850,43 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel_hybrid_linearized_tasklist_offs_f32 failed. Bailing...!\n");
       exit(-1);
     }
+
+    /* Eltwise TPPs */
+    /* Reduction kernels.. we generate 2 variants depending on threads/available work */
+    if (res.weight_copies > 1) {
+      const int fm_blocking = (res.ofmblock % 16 == 0) ? 16 : res.ofmblock;
+      const int reduce_work = res.blocksofm * res.blocksifm * res.R * res.S * (res.ofmblock/fm_blocking) * res.ifmblock;
+      const int reduce_chunksize = (reduce_work % res.threads == 0) ? (reduce_work / res.threads) : (reduce_work / res.threads) + 1;
+      const int chunk0 = reduce_chunksize * fm_blocking;
+      const int chunk1 = (reduce_work - (reduce_work/reduce_chunksize) * reduce_chunksize) * fm_blocking;
+      stride_in             = res.K * res.C * res.R * res.S;
+      stride_out            = chunk0;
+      unary_shape.m         = chunk0;
+      unary_shape.n         = res.weight_copies;
+      unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+      unary_shape.ldi       = &stride_in;
+      unary_shape.ldo       = &stride_out;
+
+      res.wt_reduce_kernel0_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
+      if (  res.wt_reduce_kernel0_f32  == NULL ) {
+        fprintf( stderr, "JIT for TPP wt_reduce_kernel0_f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+
+      if (chunk1 > 0) {
+        stride_out            = chunk1;
+        unary_shape.m         = chunk1;
+        res.wt_reduce_kernel1_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
+        if (  res.wt_reduce_kernel1_f32  == NULL ) {
+          fprintf( stderr, "JIT for TPP wt_reduce_kernel1_f32 failed. Bailing...!\n");
+          exit(-1);
+        }
+      }
+    }
+
+
   }
 
   /* setting up the barrier */

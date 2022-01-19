@@ -486,46 +486,16 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
     const int reduce_chunksize = (reduce_work % cfg.threads == 0) ? (reduce_work / cfg.threads) : (reduce_work / cfg.threads) + 1;
     const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
     const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
     /* Perform reduction here  */
     libxsmm_barrier_wait(cfg.barrier, ltid);
-
-    for ( ij = reduce_thr_begin; ij < reduce_thr_end; ij++ ) {
-      float *weight_ptr_glb = (float*) dfilter_ptr;
-#if 1
-      float weight_sum[64];
-      int wtcnt = 0;
-      assert( cfg.ofmblock <= 64 );
-
-      LIBXSMM_PRAGMA_SIMD
-        for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-          weight_sum[wtcnt] = 0.0f;
-        }
-
-      for ( ii = 0; ii < cfg.weight_copies; ii++ ) {
-        float *weight_ptr_src = (float*) ((char*)scratch + cfg.upd_filter_scratch_offset) + ii * cfg.C * cfg.K * cfg.R * cfg.S + ij * fm_blocking;
-        LIBXSMM_PRAGMA_SIMD
-          for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-            weight_sum[wtcnt] += weight_ptr_src[wtcnt];
-          }
-      }
-
-      LIBXSMM_PRAGMA_SIMD
-        for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-          weight_ptr_glb[(ij*fm_blocking) + wtcnt] = weight_sum[wtcnt];
-        }
-#else
-      __m512 weight_sum = _mm512_setzero_ps();
-      for ( ii = 0; ii < cfg.weight_copies; ii++ ) {
-        float *weight_ptr_src = (float*)cfg.scratch7 + ii * cfg.C * cfg.K * cfg.R * cfg.S + ij * 16;
-        weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr_src));
-      }
-      _mm512_storeu_ps(&weight_ptr_glb[ij*16], weight_sum);
-#endif
+    unary_param.in.primary  = (void*)((float*) ((char*)scratch + cfg.upd_filter_scratch_offset) + reduce_thr_begin * fm_blocking);
+    unary_param.out.primary = (void*)((float*) dfilter_ptr + reduce_thr_begin * fm_blocking);
+    if ((reduce_thr_end - reduce_thr_begin) == reduce_chunksize) {
+      cfg.wt_reduce_kernel0_f32( &unary_param );
+    } else {
+      cfg.wt_reduce_kernel1_f32( &unary_param );
     }
   }
-
   libxsmm_barrier_wait(cfg.barrier, ltid);
-
 }
 
