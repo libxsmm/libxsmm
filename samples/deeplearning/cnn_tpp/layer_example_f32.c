@@ -201,7 +201,20 @@ int main(int argc, char* argv[])
   if (overwrite_output > 0 ) {
     printf("Using Overwrite Option\n");
   }
-
+  if (avoid_bwd_wt_trans > 0) {
+    printf("External transpose of weights\n");
+  }
+  if ( fuse_type == 0 ) {
+    my_fuse = MY_ELTWISE_FUSE_NONE;
+  } else if ( fuse_type == 1 ) {
+    printf("Fusion of bias\n");
+  } else if ( fuse_type == 2 ) {
+    printf("Fusion of relu\n");
+  } else if ( fuse_type == 4 ) {
+    printf("Fusion of bias+relu\n");
+  } else {
+    /* cannot happen */
+  }
   /* allocate data */
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   naive_input_save      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
