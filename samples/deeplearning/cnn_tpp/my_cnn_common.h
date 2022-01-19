@@ -174,11 +174,24 @@ typedef struct my_cnn_config {
   libxsmm_meltwfunction_unary paddedH_x_paddedW_x_ifmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ifhp_x_ifwp_x_ifmblock_zero_kernel_f32;
 
+  /* Hoisting the compute kernels for UPD  */
+  libxsmm_xmmfunction upd_compute_kernel_no_linearized_tasklist_f32;
+  libxsmm_xmmfunction upd_compute_kernel_linearized_tasklist_f32;
+  libxsmm_xmmfunction upd_compute_kernel_linearized_tasklist_offs_f32;
+  libxsmm_xmmfunction upd_compute_kernel2_linearized_tasklist_offs_f32;
+  libxsmm_xmmfunction upd_compute_kernel_flat_linearized_tasklist_offs_f32;
+  libxsmm_xmmfunction upd_compute_kernel_hybrid_linearized_tasklist_offs_f32;
+
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
   unsigned long long *A_offsets_bwd;
   unsigned long long *B_offsets_bwd;
-
+  unsigned long long *A_offsets_upd;
+  unsigned long long *B_offsets_upd;
+  unsigned long long *A_offsets2_upd;
+  unsigned long long *B_offsets2_upd;
+  unsigned long long *A_offsets3_upd;
+  unsigned long long *B_offsets3_upd;
   /* barrier */
   libxsmm_barrier* barrier;
 
@@ -878,6 +891,300 @@ LIBXSMM_API_INLINE void my_convolution_setup_bwd_scratch( my_cnn_config* cfg ) {
     cfg->bwd_lp_input_full_scratch_size;
 }
 
+/**********************************************************/
+/* Helper functions for UPD convolutions' parameter setup */
+/**********************************************************/
+LIBXSMM_API_INLINE int my_convolution_setup_loop_order_upd( my_cnn_config* cfg ) {
+  int result = 1;
+  if (cfg->ofh == 28 && cfg->R == 1 && cfg->u == 1 && cfg->C == 128 && cfg->K == 512) {
+    result = 0;
+  }
+  if (cfg->ofh == 28 && cfg->R == 3 && cfg->u == 1 && cfg->C == 128 && cfg->K == 128) {
+    result = 0;
+  }
+  if (cfg->ofw == 28 && cfg->R == 1 && cfg->C == 256 && cfg->K == 512) {
+    result = 0;
+  }
+  if (cfg->ofw == 14 && !(cfg->R == 1 && cfg->C == 1024 && cfg->K == 256)) {
+    result = 0;
+  }
+  if (cfg->ofw == 7) {
+    result = 0;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_pack_input_upd( my_cnn_config* cfg ) {
+  int result = 0;
+  /* Pack input only for very small images, 1x1 convs, with large K to amortize the relevant overhead */
+  if ((cfg->ofh <= 7) && (cfg->R == 1) && (cfg->S == 1) && (cfg->u != 1) && (cfg->v != 1) && (cfg->K >= 2048)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_avoid_rim_fmas_upd( my_cnn_config* cfg ) {
+  int result = 0;
+  /* Avoid rim FMAs only for small images  */
+  if ( (cfg->ofh <= 7) && (cfg->R == 3) && (cfg->S == 3) && (cfg->pad_w == 1) && (cfg->pad_h == 1)) {
+    result = 1;
+  }
+  if (cfg->N != cfg->threads) {
+    result = 0;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_upd_ofw_rb( my_cnn_config* cfg ) {
+  int result = 1;
+  result = cfg->ofw;
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_upd_ofh_rb( my_cnn_config* cfg ) {
+  int result = 1;
+  /* Restrict the reduction chain which is ofw_rb*ofh_rb*/
+  if (cfg->ofh <= 28 ) {
+    result = cfg->ofh;
+  }
+  /* In the following scenario with strided convolutions and non batch reduce kernel make sure we have ofh_rb = 1  */
+  if ((cfg->u != 1) && (cfg->v != 1) && (cfg->upd_use_batchreduce == 0) && (cfg->upd_pack_input == 0)) {
+    result = 1;
+  }
+  /* If using linearized taskview and have strided convs, make sure ofh_rb is 1.. */
+  if (cfg->upd_linearized_tasklist == 1 && cfg->upd_avoid_rim_fmas == 0 && cfg->upd_pack_input == 0 && cfg->u != 1) {
+    result = 1;
+  }
+  if (cfg->upd_linearized_tasklist == 1 && cfg->upd_use_batchreduce == 0 && (cfg->R != 1 || cfg->S != 1)) {
+    result = 1;
+  }
+  if (cfg->upd_linearized_tasklist == 0 && cfg->upd_use_batchreduce == 0 && (cfg->R != 1 || cfg->S != 1)) {
+    result = 1;
+  }
+  if (cfg->ofw == 56 && cfg->R == 1) {
+    result = 2;
+  }
+  if (cfg->upd_linearized_tasklist == 1 && cfg->upd_use_batchreduce == 1 && cfg->upd_avoid_rim_fmas == 1) {
+    result = cfg->ofh;
+  }
+
+  if ((cfg->N != cfg->threads) && (cfg->R > 1 || cfg->S > 1 ) && (cfg->u > 1 || cfg->v > 1 )) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_block_upd_IFM( my_cnn_config* cfg ) {
+  int result = 1;
+  if (cfg->ofh == 56 && cfg->R == 1 && cfg->S == 1 && cfg->u == 1 && cfg->v == 1) {
+    result = 4;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_block_upd_OFM( my_cnn_config* cfg ) {
+  int result = 1;
+  LIBXSMM_UNUSED(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_img_batchreduce_block( my_cnn_config* cfg ) {
+  int result = 1;
+  LIBXSMM_UNUSED(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_use_batchreduce_upd( my_cnn_config* cfg ) {
+  int result = 1;
+  /* If W is large, no need for batchreduce kernel */
+  if (cfg->ofw >= 56) {
+    result = 0;
+  }
+  /* If we have packed the input, then disable batch-reduce GEMM */
+  if (cfg->upd_pack_input == 1) {
+    result = 0;
+  }
+  if (cfg->upd_linearized_tasklist == 1 && cfg->upd_avoid_rim_fmas == 0) {
+    result = 0;
+  }
+  if (cfg->upd_linearized_tasklist == 1 && cfg->upd_avoid_rim_fmas == 1) {
+    result = 1;
+  }
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_weight_copies_upd( my_cnn_config* cfg ) {
+  int result = cfg->threads;
+  if (cfg->ofw <= 14) {
+    result = 9;
+  }
+  if (cfg->ofw == 14 && cfg->N == 92 && cfg->threads == 92) {
+    result = 23;
+  }
+  if (cfg->ofw == 7 && cfg->N == 92 && cfg->threads == 92 && cfg->R == 3 && cfg->S == 3 && cfg->u == 1 && cfg->v == 1) {
+    result = 23;
+  }
+  while (cfg->threads % result != 0) {
+    result--;
+  }
+  /* FIXME: Hardcoded logic for N=27, N=26 */
+  if (cfg->N == 27 && cfg->threads == 27 && cfg->R == 1 && cfg->ofw == 14 && cfg->u == 1) {
+    result = 7;
+  }
+  if (((cfg->ofh == 14) || (cfg->ofw == 7 && cfg->u == 2)) && cfg->N == 26 && cfg->threads == 26) {
+    result = 13;
+  }
+  if ((cfg->N != cfg->threads) && !(cfg->upd_linearized_tasklist == 0 && cfg->upd_use_batchreduce == 0)) {
+    result = cfg->N;
+  }
+  /* Make sure a single copy when we use linearized-task view */
+  if (cfg->upd_linearized_tasklist == 1) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_linearized_tasklist_upd( my_cnn_config* cfg ) {
+  int result = 0;
+  /* Use linearized task-list (i.e. no reduction) only if small images and large filters */
+  if (cfg->ofh <= 10 && cfg->ofw <= 10) {
+    result = 1;
+  }
+  if (cfg->ofw == 7 && cfg->N == 92 && cfg->threads == 92 && cfg->R == 3 && cfg->S == 3 && cfg->u == 1 && cfg->v == 1) {
+    result = 0;
+  }
+  if (cfg->ofh == 14  && cfg->ofw == 14 && cfg->N == 23 && cfg->threads == 23) {
+    result = 1;
+  }
+#if 0
+  if ((cfg->blocksofm * cfg->blocksifm * cfg->R * cfg->S > (cfg->threads * 4)) && (cfg->ofh <= 56)) {
+    result = 1;
+  }
+#endif
+  if (cfg->u == 2 && cfg->v == 2 && cfg->K == 512) {
+    result = 0;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_init_upd_gemm_flags( my_cnn_config* cfg ) {
+  int result = 0;
+  LIBXSMM_UNUSED(cfg);
+  return result;
+}
+
+LIBXSMM_API_INLINE int my_convolution_setup_upd_padding_copy( my_cnn_config* cfg ) {
+  int result = 0;
+  if ( (cfg->pad_h != cfg->pad_h_in) || (cfg->pad_w != cfg->pad_w_in) ) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INLINE void my_convolution_setup_upd_scratch( my_cnn_config* cfg ) {
+  cfg->upd_packing_padding_scratch_size = 0;
+  /* packing of input */
+  if ( cfg->upd_pack_input != 0 ) {
+    cfg->upd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
+      cfg->H/cfg->u *
+      cfg->W/cfg->v *
+      libxsmm_dnn_typesize(cfg->datatype_in);
+  }
+  /* logical padding with copying in the fly */
+  if ( cfg->upd_padding_copy != 0 ) {
+    cfg->upd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
+      (cfg->H + 2*cfg->pad_h) *
+      (cfg->W + 2*cfg->pad_w) *
+      libxsmm_dnn_typesize(cfg->datatype_in);
+  }
+  /* output/input buffer to transpose when we use bf16 */
+  if ( cfg->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
+    if  (cfg->target_archid >= LIBXSMM_X86_AVX512_SPR) {
+      int OFHP = (cfg->upd_padding_copy == 1) ? cfg->ofhp + 2 * cfg->pad_h : cfg->ofhp;
+      int IFHP = (cfg->upd_padding_copy == 1) ? cfg->ifhp + 2 * cfg->pad_h : cfg->ifhp;
+
+      if (cfg->upd_linearized_pixels == 1) {
+        cfg->upd_lp_output_full_scratch_size = (size_t) (cfg->N * cfg->output_pixels * cfg->K * sizeof(cfg->datatype_in));
+        cfg->upd_lp_input_full_scratch_size = (size_t) (cfg->N * cfg->input_pixels * cfg->C * sizeof(cfg->datatype_in));
+      }
+
+      if (cfg->upd_linearized_pixels == 0) {
+        cfg->upd_lp_output_full_scratch_size = (size_t) (cfg->N * OFHP * cfg->ofwp_extended * cfg->K * sizeof(cfg->datatype_in));
+        cfg->upd_lp_input_full_scratch_size = (size_t) (cfg->N * IFHP * cfg->ifwp_extended * cfg->C * sizeof(cfg->datatype_in));
+      }
+    } else {
+      const int multiple_target = 2;
+      int IFHP = (cfg->upd_padding_copy == 1) ? cfg->ifhp + 2 * cfg->pad_h : cfg->ifhp;
+      int IFWP = (cfg->upd_padding_copy == 1) ? cfg->ifwp + 2 * cfg->pad_w : cfg->ifwp;
+      int OFHP = (cfg->upd_padding_copy == 1) ? cfg->ofhp + 2 * cfg->pad_h : cfg->ofhp;
+      int OFWP = (cfg->upd_padding_copy == 1) ? cfg->ofwp + 2 * cfg->pad_w : cfg->ofwp;
+
+      if (cfg->upd_linearized_pixels == 1) {
+        int compute_pixels = cfg->ofw * cfg->ofh + 2 * cfg->pad_w * (cfg->ofh-1);
+        int remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
+        int accum_length_pixels = compute_pixels + remainder_pixels;
+
+        int max_init_offset = 2 * cfg->pad_h * IFWP + 2 * cfg->pad_w;
+        int max_compute_offset_input = max_init_offset + accum_length_pixels;
+        int input_compute_pad = (max_compute_offset_input > IFWP*IFHP) ? max_compute_offset_input - IFWP*IFHP : 0;
+        int input_pixels = IFWP * IFHP + input_compute_pad;
+
+        if (cfg->upd_pack_input_upfront == 1) {
+          input_pixels = accum_length_pixels;
+        }
+
+        cfg->upd_lp_output_full_scratch_size = (size_t) (cfg->N * accum_length_pixels * cfg->K * sizeof(cfg->datatype_in));
+        cfg->upd_lp_input_full_scratch_size = (size_t) (cfg->N * input_pixels * cfg->C * sizeof(cfg->datatype_in));
+      }
+
+      if (cfg->upd_linearized_pixels == 0) {
+        int remainder_pixels = (cfg->ofw % multiple_target == 0) ? 0 : (cfg->ofw/multiple_target+1)*multiple_target - cfg->ofw;
+        int ofwp_extended = OFWP + remainder_pixels;
+        int ifwp_extended = IFWP + remainder_pixels;
+
+        cfg->upd_lp_output_full_scratch_size = (size_t) (cfg->N * OFHP * ofwp_extended * cfg->K * sizeof(cfg->datatype_in));
+        cfg->upd_lp_input_full_scratch_size = (size_t) (cfg->N * IFHP * ifwp_extended * cfg->C * sizeof(cfg->datatype_in));
+      }
+    }
+    cfg->upd_lp_filter_full_scratch_size = (size_t)cfg->R * cfg->S * cfg->C * cfg->K * cfg->threads *
+      libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
+  } else {
+    cfg->upd_lp_output_full_scratch_size = 0;
+    cfg->upd_lp_input_full_scratch_size = 0;
+    cfg->upd_lp_filter_full_scratch_size = 0;
+  }
+  /* filter scratch */
+  cfg->upd_filter_scratch_size = (size_t) cfg->R * cfg->S * cfg->C * cfg->K * LIBXSMM_MAX(cfg->threads, cfg->N) * sizeof(float);
+
+  /* align sizes to full cacheline */
+  cfg->upd_packing_padding_scratch_size += ( cfg->upd_packing_padding_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->upd_packing_padding_scratch_size % LIBXSMM_CACHELINE);
+  cfg->upd_lp_output_full_scratch_size += ( cfg->upd_lp_output_full_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->upd_lp_output_full_scratch_size % LIBXSMM_CACHELINE);
+  cfg->upd_lp_input_full_scratch_size += ( cfg->upd_lp_input_full_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->upd_lp_input_full_scratch_size % LIBXSMM_CACHELINE);
+  cfg->upd_filter_scratch_size += ( cfg->upd_filter_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->upd_filter_scratch_size % LIBXSMM_CACHELINE);
+  cfg->upd_lp_filter_full_scratch_size += ( cfg->upd_lp_filter_full_scratch_size % LIBXSMM_CACHELINE == 0 ) ? 0 :
+    LIBXSMM_CACHELINE - (cfg->upd_lp_filter_full_scratch_size % LIBXSMM_CACHELINE);
+
+  /* calculate offsets */
+  cfg->upd_packing_padding_scratch_offset = 0;
+  cfg->upd_lp_output_full_scratch_offset = cfg->upd_packing_padding_scratch_size;
+  cfg->upd_lp_input_full_scratch_offset = cfg->upd_lp_output_full_scratch_offset + cfg->upd_lp_output_full_scratch_size;
+  cfg->upd_filter_scratch_offset = cfg->upd_lp_input_full_scratch_offset + cfg->upd_lp_input_full_scratch_size;
+  cfg->upd_lp_filter_full_scratch_offset = cfg->upd_filter_scratch_offset + cfg->upd_filter_scratch_size;
+
+  /* set overall scratch size for update */
+  cfg->upd_scratch_size = cfg->upd_packing_padding_scratch_size +
+    cfg->upd_lp_output_full_scratch_size +
+    cfg->upd_lp_input_full_scratch_size +
+    cfg->upd_filter_scratch_size +
+    cfg->upd_lp_filter_full_scratch_size;
+}
+
 my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
     libxsmm_blasint stride_h, libxsmm_blasint stride_w,
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
@@ -887,9 +1194,9 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
   my_cnn_config res;
   libxsmm_blasint _ldi = bc, _ldo = bk;
   libxsmm_blasint ldx;
-  libxsmm_blasint ldA;
-  libxsmm_blasint ldB;
-  libxsmm_blasint ldC;
+  libxsmm_blasint ldA, LDA;
+  libxsmm_blasint ldB, LDB;
+  libxsmm_blasint ldC, LDC;
   int  beta_int;
   float beta;
   int l_flags;
@@ -1359,6 +1666,189 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       exit(-1);
     }
   }
+
+  /* UPD parameter setup */
+  res.upd_linearized_tasklist = my_convolution_setup_linearized_tasklist_upd(&res);
+  res.upd_avoid_rim_fmas = my_convolution_setup_avoid_rim_fmas_upd(&res);
+  res.upd_pack_input = my_convolution_setup_pack_input_upd(&res);
+  res.upd_use_batchreduce = my_convolution_setup_use_batchreduce_upd(&res);
+  res.upd_ofw_rb = my_convolution_setup_upd_ofw_rb(&res);
+  res.upd_ofh_rb = my_convolution_setup_upd_ofh_rb(&res);
+  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
+  res.weight_copies = my_convolution_setup_weight_copies_upd(&res);
+  res.block_upd_ofm = my_convolution_setup_block_upd_OFM(&res);
+  res.block_upd_ifm = my_convolution_setup_block_upd_IFM(&res);
+  res.upd_loop_order = my_convolution_setup_loop_order_upd(&res);
+  res.upd_padding_copy = my_convolution_setup_upd_padding_copy(&res);
+
+  if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
+    libxsmm_meltw_unary_shape unary_shape;
+    libxsmm_meltw_binary_shape binary_shape;
+    libxsmm_blasint stride_in;
+    libxsmm_blasint stride_out;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+    libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    libxsmm_bitfield l_prefetch_flags = 0;
+    int prefetch_mode = (res.u == 2 || (res.R == 3 && res.ofw == 7) ) ? libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE) : libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BL1);
+    int brgemm_pf_oob = 0;
+    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+    const int img_work = res.N;
+    const int img_chunksize = (img_work % res.threads == 0) ? (img_work / res.threads) : (img_work / res.threads) + 1;
+    int n_blocks;
+    const int IFWP = (res.upd_padding_copy == 1) ? res.ifwp + 2*res.pad_w :  res.ifwp;
+    const int IFW =  (res.upd_pack_input == 1) ? res.ifwp/res.v : IFWP;
+    const int IFHP = (res.upd_padding_copy == 1) ? res.ifhp + 2*res.pad_h :  res.ifhp;
+    libxsmm_blasint img_block_size = res.N;
+    LDA = res.ofmblock;
+    LDB = (res.upd_pack_input == 1) ? res.ifmblock : res.v * res.ifmblock;
+    LDC = res.ofmblock;
+
+    if ( 0 == env_brgemm_pf_oob ) {
+    } else {
+      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+    }
+    if (brgemm_pf_oob > 0) {
+      prefetch_mode = prefetch_mode | libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+    }
+    l_prefetch_flags = prefetch_mode;
+
+    /* Regular GEMM  -- no tasklist*/
+    l_shape.m = res.ofmblock;
+    l_shape.n = res.ifmblock;
+    l_shape.k = res.upd_ofw_rb * res.upd_ofh_rb;
+    l_shape.lda = (void*)&LDA;
+    l_shape.ldb = (void*)&LDB;
+    l_shape.ldc = (void*)&LDC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
+    l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    l_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
+
+    beta = ((img_chunksize == 1) && (res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    res.upd_compute_kernel_no_linearized_tasklist_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel_no_linearized_tasklist_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel_no_linearized_tasklist_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    /* Regular GEMM  -- tasklist */
+    beta = ((res.N == 1) && (res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    res.upd_compute_kernel_linearized_tasklist_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel_linearized_tasklist_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel_linearized_tasklist_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    /* Offset BRGEMM -- tasklist */
+    libxsmm_blasint img_br, j_br, i = 0;
+    n_blocks = LIBXSMM_MAX(res.N * res.upd_ofh_rb, res.ofh);
+    res.A_offsets_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+    res.B_offsets_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+    res.A_offsets2_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+    res.B_offsets2_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+    res.A_offsets3_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+    res.B_offsets3_upd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+
+    if (res.upd_linearized_tasklist == 1) {
+      i = 0;
+      for (img_br = 0; img_br < img_block_size; img_br++) {
+        for (j_br = 0; j_br < res.upd_ofh_rb; j_br++) {
+          res.A_offsets_upd[i] = ((img_br * res.blocksofm * res.ofhp * res.ofwp * res.ofmblock) +
+                                 (j_br * res.ofwp * res.ofmblock)) * sizeof(float);
+          res.B_offsets_upd[i] = ((img_br * res.blocksifm * IFHP * IFWP * res.ifmblock) +
+                                 (j_br * res.u * IFWP * res.ifmblock)) * sizeof(float);
+          i++;
+        }
+      }
+
+      i = 0;
+      for (img_br = 0; img_br < img_block_size; img_br++) {
+        for (j_br = 1; j_br < res.upd_ofh_rb; j_br++) {
+          res.A_offsets2_upd[i] = ((img_br * res.blocksofm * res.ofhp * res.ofwp * res.ofmblock) +
+                                 (j_br * res.ofwp * res.ofmblock)) * sizeof(float);
+          res.B_offsets2_upd[i] = ((img_br * res.blocksifm * IFHP * IFWP * res.ifmblock) +
+                                 (j_br * res.u * IFWP * res.ifmblock)) * sizeof(float);
+          i++;
+        }
+      }
+
+      i = 0;
+      for (img_br = 0; img_br < img_block_size; img_br++) {
+        for (j_br = 0; j_br < res.upd_ofh_rb-1; j_br++) {
+          res.A_offsets3_upd[i] = ((img_br * res.blocksofm * res.ofhp * res.ofwp * res.ofmblock) +
+                                 (j_br * res.ofwp * res.ofmblock)) * sizeof(float);
+          res.B_offsets3_upd[i] = ((img_br * res.blocksifm * IFHP * IFWP * res.ifmblock) +
+                                 (j_br * res.u * IFWP * res.ifmblock)) * sizeof(float);
+          i++;
+        }
+      }
+    } else {
+      if (res.N != res.threads) {
+        for (j_br = 0; j_br < res.ofh; j_br++) {
+          res.A_offsets_upd[i] = (j_br * res.ofwp * res.ofmblock) * sizeof(float);
+          res.B_offsets_upd[i] = (j_br * res.u * IFW * res.ifmblock) * sizeof(float);
+          i++;
+        }
+      } else {
+        for (img_br = 0; img_br < img_block_size; img_br++) {
+          for (j_br = 0; j_br < res.upd_ofh_rb; j_br++) {
+            res.A_offsets_upd[i] = ((img_br * res.blocksofm * res.ofhp * res.ofwp * res.ofmblock) +
+                                   (j_br * res.ofwp * res.ofmblock)) * sizeof(float);
+            res.B_offsets_upd[i] = ((img_br * res.blocksifm * IFHP * IFWP * res.ifmblock) +
+                                   (j_br * res.u * IFWP * res.ifmblock)) * sizeof(float);
+            i++;
+          }
+        }
+      }
+    }
+
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
+    l_brconfig.br_stride_a_hint = 0;
+    l_brconfig.br_stride_b_hint = 0;
+
+    beta = ((res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    l_shape.k = res.upd_ofw_rb;
+    res.upd_compute_kernel_linearized_tasklist_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel_linearized_tasklist_offs_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel_linearized_tasklist_offs_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    l_shape.k = res.upd_ofw_rb-1;
+    res.upd_compute_kernel2_linearized_tasklist_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel2_linearized_tasklist_offs_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel2_linearized_tasklist_offs_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    beta = 0.f;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    l_shape.k = res.upd_ofw_rb;
+    res.upd_compute_kernel_flat_linearized_tasklist_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel_flat_linearized_tasklist_offs_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel_flat_linearized_tasklist_offs_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    beta = ((res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    res.upd_compute_kernel_hybrid_linearized_tasklist_offs_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel_hybrid_linearized_tasklist_offs_f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel_hybrid_linearized_tasklist_offs_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+  }
+
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
 

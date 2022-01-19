@@ -24,6 +24,7 @@
 #include "my_cnn_common.h"
 #include "my_cnn_fwd_custom_custom_f32.h"
 #include "my_cnn_bwd_custom_custom_f32.h"
+#include "my_cnn_upd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {
@@ -338,12 +339,13 @@ int main(int argc, char* argv[])
   tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
  }
 
-  /* let's allocate  scratch */
+ /* let's allocate  scratch */
  my_convolution_setup_fwd_scratch( &my_cnn_cfg );
  my_convolution_setup_bwd_scratch( &my_cnn_cfg );
+ my_convolution_setup_upd_scratch( &my_cnn_cfg );
 
- if ( (my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size) > 0 ) {
-    size_t alloc_size = my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size;
+ if ( (my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size + my_cnn_cfg.upd_scratch_size) > 0 ) {
+    size_t alloc_size = my_cnn_cfg.fwd_scratch_size + my_cnn_cfg.bwd_scratch_size + my_cnn_cfg.upd_scratch_size;
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -378,37 +380,6 @@ int main(int argc, char* argv[])
     printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
     printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
-
-    printf("##########################################\n");
-    printf("#   Performance - FWD (custom-Storage)   #\n");
-    printf("##########################################\n");
-    /* run LIBXSMM convolution for performance */
-    l_start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#     pragma omp parallel private(i)
-#endif
-    {
-#if defined(_OPENMP)
-      const int tid = omp_get_thread_num();
-#else
-      const int tid = 0;
-#endif
-      for (i = 0; i < iters; ++i) {
-        my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
-            bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
-      }
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
-
-    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
-    printf("fp time = %.5g\n", ((double)(l_total/iters)));
-    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
-
-    printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
   }
 
   if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_NEQ(0, check) ) {
@@ -448,6 +419,75 @@ int main(int argc, char* argv[])
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
   }
 
+  if ((type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#   Correctness - UPD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_output_wu,   doutput_libxsmm, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
+    tensor_copy_KCRS_to_KCRSck(naive_filter     , dfilter_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      my_cnn_upd_exec( my_cnn_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+          NULL, 0, tid, scratch );
+    }
+
+    tensor_copy_KCRSck_to_KCRS(dfilter_libxsmm , naive_libxsmm_filter, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+
+    /* compare */
+    libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_upd);
+  }
+
+  if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#   Performance - FWD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      for (i = 0; i < iters; ++i) {
+        my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+            bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+    printf("fp time = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+  }
+
   if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
@@ -480,6 +520,39 @@ int main(int argc, char* argv[])
     printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
         ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+  }
+  if (type == 'A' || type == 'U') {
+    printf("##########################################\n");
+    printf("#   Performance - UPD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      for (i = 0; i < iters; ++i) {
+        my_cnn_upd_exec( my_cnn_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+            NULL, 0, tid, scratch );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+    printf("wu time = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
   }
 
   /* deallocate data */
