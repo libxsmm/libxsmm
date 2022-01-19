@@ -84,13 +84,16 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned ch
                             env_cpuid == libxsmm_stristr(env_cpuid, "spr") ||
                             env_cpuid == libxsmm_stristr(env_cpuid, "amx") );
     is_env_cpuid_avx2 = ( env_cpuid == libxsmm_stristr(env_cpuid, "hsw") ||
-                          env_cpuid == libxsmm_stristr(env_cpuid, "avx2") );
+                          env_cpuid == libxsmm_stristr(env_cpuid, "avx2") ||
+                          env_cpuid == libxsmm_stristr(env_cpuid, "avx512_vl256_clx") ||
+                          env_cpuid == libxsmm_stristr(env_cpuid, "avx512_vl256_cpx") ||
+                          env_cpuid == libxsmm_stristr(env_cpuid, "avx512_vl256") );
   }
 
-  if ( ((cpuid >= LIBXSMM_X86_AVX512_MIC) && (cpuid <= LIBXSMM_X86_ALLFEAT)) || ( is_env_cpuid_avx512 != 0 ) ) {
-    w = 16;
-  } else if ( (cpuid == LIBXSMM_X86_AVX2) || ( is_env_cpuid_avx2 != 0  ) ) {
+  if ( (cpuid == LIBXSMM_X86_AVX2) || ( is_env_cpuid_avx2 != 0  ) ) {
     w = 8;
+  } else if ( ((cpuid >= LIBXSMM_X86_AVX512_MIC) && (cpuid <= LIBXSMM_X86_ALLFEAT)) || ( is_env_cpuid_avx512 != 0 ) ) {
+    w = 16;
   } else {
     w = 4;
   }
