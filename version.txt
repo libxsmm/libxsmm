@@ -1,1 +1,1 @@
-enable_gemm_in_eqs-1.17-2158
+dev/kvoronin/batchnormalization_tpp-1.17-2170

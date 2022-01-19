@@ -2345,7 +2345,7 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
 }
 
 LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
-                                     const float* beta_ptr, const float* gamma_ptr, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr)
+                                     const float* beta_ptr, const float* gamma_ptr, float eps, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr)
 {
   const int nImg = param->N;
   const int nFm = param->C;
@@ -2357,7 +2357,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   const int ofw = ifw/sw;
   const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
-  const float sqrt_eps = 1e-7f;
+  //const float sqrt_eps = 1e-7f;
 
   int img, fm, hi, wi, ho, wo;
 
@@ -2393,7 +2393,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;
-      tbrstd = (float)(1.0/sqrt(tvariance + sqrt_eps));
+      tbrstd = (float)(1.0/sqrt(tvariance + eps));//sqrt_eps));
       expectval_ptr[fm] = tbmean;
       rcpstddev_ptr[fm] = tbrstd;
       variance_ptr[fm] = tvariance;
