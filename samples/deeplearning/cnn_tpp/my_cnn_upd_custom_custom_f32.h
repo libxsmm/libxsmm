@@ -34,28 +34,22 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
   if (cfg.upd_padding_copy == 1) {
     LIBXSMM_VLA_DECL(5, float, input_src, (float*)in_act_ptr, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
     int imgpt = LIBXSMM_UPDIV(cfg.N, cfg.threads);
-
     my_img_start = LIBXSMM_MIN(ltid * imgpt, cfg.N);
     my_img_end = LIBXSMM_MIN((ltid+1) * imgpt, cfg.N);
     my_ifm_start = 0;
     my_ifm_end = cfg.blocksifm;
-
     for (img = my_img_start; img < my_img_end; img++) {
       for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
         /* copy the inner part */
         for (ij = 0; ij < cfg.ifhp+(2*cfg.pad_h); ij++) {
           for (ii = 0; ii < cfg.ifwp+(2*cfg.pad_w); ii++) {
             if ( (ij >= cfg.pad_h) && (ii >= cfg.pad_w) && (ij < cfg.ifhp+cfg.pad_h) && (ii < cfg.ifwp+cfg.pad_w) ) {
-              LIBXSMM_PRAGMA_SIMD
-              for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock) =
-                  LIBXSMM_VLA_ACCESS(5,  input_src,  img, ifm1, ij-cfg.pad_h, ii-cfg.pad_w, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-              }
+              unary_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input_src,  img, ifm1, ij-cfg.pad_h, ii-cfg.pad_w, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
+              unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, 0, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock);
+              cfg.ifmblock_copy_kernel_f32( &unary_param );
             } else {
-              LIBXSMM_PRAGMA_SIMD
-              for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock) = (float)0;
-              }
+              unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, 0, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock);
+              cfg.ifmblock_zero_kernel_f32( &unary_param );
             }
           }
         }
@@ -63,7 +57,6 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
     }
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
-
 
   if (cfg.upd_use_batchreduce == 0 && cfg.upd_linearized_tasklist == 0) {
     /* Parallelize over minibatch */
@@ -73,7 +66,8 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
     my_img_end = ((ltid + 1) * img_chunksize < img_work) ? ((ltid + 1) * img_chunksize) : img_work;
 
     if (!((img_chunksize == 1) && (cfg.upd_ofh_rb == cfg.ofh) && (cfg.upd_ofw_rb == cfg.ofw))) {
-      memset(weight_ptr, 0, cfg.C * cfg.K * cfg.R * cfg.S * sizeof(float));
+      unary_param.out.primary = (void*)weight_ptr;
+      cfg.zero_weights_kernel_f32( &unary_param );
     }
 
     if (cfg.upd_loop_order == 0) {
@@ -141,7 +135,6 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
       const int work_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
       int work_item;
       int Cb = cfg.blocksifm;
-
       int R = cfg.R;
       int S = cfg.S;
 
@@ -161,14 +154,10 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
           for (img = img_copy_start; img < img_copy_end; img++) {
             for (ifm1 = 0; ifm1 < cfg.blocksifm; ifm1++) {
               for (oj = 0; oj < cfg.ofh; oj++) {
-                for (oi = 0; oi < cfg.ofw; oi++) {
-                  ij = oj * cfg.u;
-                  ii = oi * cfg.v;
-                  LIBXSMM_PRAGMA_SIMD
-                    for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                      LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, oj, oi, ifm2, cfg.blocksifm, IFH, IFW, cfg.ifmblock) = LIBXSMM_VLA_ACCESS(5, input_src, img, ifm1, ij, ii, ifm2, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock);
-                    }
-                }
+                ij = oj * cfg.u;
+                unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input_src, img, ifm1, ij, 0, 0, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock);
+                unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, oj, 0, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                cfg.strided_copy_kernel_f32( &unary_param );
               }
             }
           }
@@ -182,13 +171,8 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
             ifm1 = (work_item%(Cb*R*S))/(R*S);
             kj = ((work_item%(Cb*R*S))%(R*S))/S;
             ki = ((work_item%(Cb*R*S))%(R*S))%S;
-
-            for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-              LIBXSMM_PRAGMA_SIMD
-                for (ofm2 = 0; ofm2 < cfg.ofmblock; ofm2++) {
-                  LIBXSMM_VLA_ACCESS(6, weight_global, ofm1, ifm1, kj, ki, ifm2, ofm2, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock) = (float)0;
-                }
-            }
+            unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight_global, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+            cfg.zero_ifmblock_x_ofmblock_kernel_f32( &unary_param );
           }
         }
 
@@ -335,18 +319,13 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
           const int img_chunk = (cfg.N % cfg.threads == 0) ? cfg.N/cfg.threads : (cfg.N/cfg.threads) + 1;
           const int img_copy_start = LIBXSMM_MIN(ltid*img_chunk, cfg.N);
           const int img_copy_end = LIBXSMM_MIN((ltid+1)*img_chunk, cfg.N);
-
           for (img = img_copy_start; img < img_copy_end; img++) {
             for (ifm1 = 0; ifm1 < cfg.blocksifm; ifm1++) {
               for (oj = 0; oj < cfg.ofh; oj++) {
-                for (oi = 0; oi < cfg.ofw; oi++) {
-                  ij = oj * cfg.u;
-                  ii = oi * cfg.v;
-                  LIBXSMM_PRAGMA_SIMD
-                    for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                      LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, oj, oi, ifm2, cfg.blocksifm, IFH, IFW, cfg.ifmblock) = LIBXSMM_VLA_ACCESS(5, input_src, img, ifm1, ij, ii, ifm2, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-                    }
-                }
+                ij = oj * cfg.u;
+                unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input_src, img, ifm1, ij, 0, 0, cfg.blocksifm, IFHP, IFWP, cfg.ifmblock);
+                unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, oj, 0, 0, cfg.blocksifm, IFH, IFW, cfg.ifmblock);
+                cfg.strided_copy_kernel_f32( &unary_param );
               }
             }
           }
@@ -364,12 +343,8 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
             {
               float *weight_ptr_current = (cfg.weight_copies > 1) ? (float*) ((char*)scratch + cfg.upd_filter_scratch_offset) + img * cfg.C * cfg.K * cfg.R * cfg.S : (float*)dfilter_ptr;
               LIBXSMM_VLA_DECL(6, float, weight_current, (float*)weight_ptr_current, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
-              for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                LIBXSMM_PRAGMA_SIMD
-                  for (ofm2 = 0; ofm2 < cfg.ofmblock; ofm2++) {
-                    LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, ifm2, ofm2, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock) = (float)0;
-                  }
-              }
+              unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+              cfg.zero_ifmblock_x_ofmblock_kernel_f32( &unary_param );
             }
           }
         }
@@ -403,17 +378,13 @@ void my_cnn_upd_exec( my_cnn_config cfg, const float* in_act_ptr, const float* d
             for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
               for (kj = my_R_start; kj < my_R_end; ++kj) {
                 for (ki = 0; ki < cfg.S; ++ki) {
-                  for (ofm2 = 0; ofm2 < cfg.ofmblock; ofm2++ ) {
-                    for (ifm2 = 0; ifm2 < cfg.ifmblock; ifm2++) {
-                      LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, ifm2, ofm2, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock) = (float)0;
-                    }
-                  }
+                  unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock, cfg.ofmblock);
+                  cfg.zero_ifmblock_x_ofmblock_kernel_f32( &unary_param );
                 }
               }
             }
           }
         }
-
         if (cfg.upd_loop_order == 0) {
           for (img = my_img_start; img < my_img_end; img += img_block_size) {
             for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {

@@ -182,6 +182,8 @@ typedef struct my_cnn_config {
   libxsmm_xmmfunction upd_compute_kernel_flat_linearized_tasklist_offs_f32;
   libxsmm_xmmfunction upd_compute_kernel_hybrid_linearized_tasklist_offs_f32;
 
+  libxsmm_meltwfunction_unary zero_weights_kernel_f32;
+  libxsmm_meltwfunction_unary zero_ifmblock_x_ofmblock_kernel_f32;
   libxsmm_meltwfunction_unary wt_reduce_kernel0_f32;
   libxsmm_meltwfunction_unary wt_reduce_kernel1_f32;
 
@@ -1852,6 +1854,31 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
     }
 
     /* Eltwise TPPs */
+    stride_in             = res.K * res.C * res.R * res.S;
+    stride_out            = res.K * res.C * res.R * res.S;
+    unary_shape.m         = res.K * res.C * res.R * res.S;
+    unary_shape.n         = 1;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    unary_shape.ldi       = &stride_in;
+    unary_shape.ldo       = &stride_out;
+
+    res.zero_weights_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_weights_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_weights_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock * res.ofmblock;
+    stride_out            = res.ifmblock * res.ofmblock;
+    unary_shape.m         = res.ifmblock * res.ofmblock;
+    res.zero_ifmblock_x_ofmblock_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_ifmblock_x_ofmblock_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_ifmblock_x_ofmblock_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
     /* Reduction kernels.. we generate 2 variants depending on threads/available work */
     if (res.weight_copies > 1) {
       const int fm_blocking = (res.ofmblock % 16 == 0) ? 16 : res.ofmblock;
@@ -1863,11 +1890,6 @@ my_cnn_config setup_my_cnn(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint
       stride_out            = chunk0;
       unary_shape.m         = chunk0;
       unary_shape.n         = res.weight_copies;
-      unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-      unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-      unary_shape.ldi       = &stride_in;
-      unary_shape.ldo       = &stride_out;
 
       res.wt_reduce_kernel0_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
       if (  res.wt_reduce_kernel0_f32  == NULL ) {
