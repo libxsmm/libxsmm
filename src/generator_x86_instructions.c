@@ -197,6 +197,619 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
 }
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr ) {
+  unsigned int l_return = 1;
+
+  switch ( i_instr ) {
+    case LIBXSMM_X86_INSTR_VSHUFPS:
+    case LIBXSMM_X86_INSTR_VSHUFPD:
+    case LIBXSMM_X86_INSTR_VPSHUFB:
+    case LIBXSMM_X86_INSTR_VPSHUFD:
+    case LIBXSMM_X86_INSTR_VPSHUFHW:
+    case LIBXSMM_X86_INSTR_VPSHUFLW:
+    case LIBXSMM_X86_INSTR_VUNPCKLPD:
+    case LIBXSMM_X86_INSTR_VUNPCKLPS:
+    case LIBXSMM_X86_INSTR_VUNPCKHPD:
+    case LIBXSMM_X86_INSTR_VUNPCKHPS:
+    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
+    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_VEXTRACTF128:
+    case LIBXSMM_X86_INSTR_VEXTRACTI128:
+    case LIBXSMM_X86_INSTR_VPERMW:
+    case LIBXSMM_X86_INSTR_VPERMD:
+    case LIBXSMM_X86_INSTR_VPERMQ_I:
+    case LIBXSMM_X86_INSTR_VPERMPD:
+    case LIBXSMM_X86_INSTR_VPERMPS:
+    case LIBXSMM_X86_INSTR_VPERMPD_I:
+    case LIBXSMM_X86_INSTR_VPERMILPS:
+    case LIBXSMM_X86_INSTR_VPERMILPS_I:
+    case LIBXSMM_X86_INSTR_VPERM2F128:
+    case LIBXSMM_X86_INSTR_VPERM2I128:
+    case LIBXSMM_X86_INSTR_VPERMILPD_VEX:
+    case LIBXSMM_X86_INSTR_VPERMILPD_VEX_I:
+    case LIBXSMM_X86_INSTR_VPERMILPD:
+    case LIBXSMM_X86_INSTR_VPERMILPD_I:
+    case LIBXSMM_X86_INSTR_VPERMT2B:
+    case LIBXSMM_X86_INSTR_VPERMT2W:
+    case LIBXSMM_X86_INSTR_VPERMT2D:
+    case LIBXSMM_X86_INSTR_VPERMT2Q:
+    case LIBXSMM_X86_INSTR_VBLENDPD:
+    case LIBXSMM_X86_INSTR_VBLENDPS:
+    case LIBXSMM_X86_INSTR_VBLENDVPD:
+    case LIBXSMM_X86_INSTR_VBLENDVPS:
+    case LIBXSMM_X86_INSTR_VPBLENDD:
+    case LIBXSMM_X86_INSTR_VPBLENDW:
+    case LIBXSMM_X86_INSTR_VPBLENDVB:
+    case LIBXSMM_X86_INSTR_VSHUFF32X4:
+    case LIBXSMM_X86_INSTR_VSHUFF64X2:
+    case LIBXSMM_X86_INSTR_VSHUFI32X4:
+    case LIBXSMM_X86_INSTR_VSHUFI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X4:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
+    case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
+    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
+    case LIBXSMM_X86_INSTR_VINSERTI32X4:
+    case LIBXSMM_X86_INSTR_VBLENDMPS:
+    case LIBXSMM_X86_INSTR_VBLENDMPD:
+    case LIBXSMM_X86_INSTR_VPBLENDMB:
+    case LIBXSMM_X86_INSTR_VPBLENDMW:
+    case LIBXSMM_X86_INSTR_VPBLENDMD:
+    case LIBXSMM_X86_INSTR_VPBLENDMQ:
+    case LIBXSMM_X86_INSTR_VEXPANDPD:
+    case LIBXSMM_X86_INSTR_VEXPANDPS:
+    case LIBXSMM_X86_INSTR_VPEXPANDQ:
+    case LIBXSMM_X86_INSTR_VPEXPANDD:
+    case LIBXSMM_X86_INSTR_VPEXPANDW:
+    case LIBXSMM_X86_INSTR_VPEXPANDB:
+    case LIBXSMM_X86_INSTR_VFMADD132PS:
+    case LIBXSMM_X86_INSTR_VFMADD132PD:
+    case LIBXSMM_X86_INSTR_VFMADD213PS:
+    case LIBXSMM_X86_INSTR_VFMADD213PD:
+    case LIBXSMM_X86_INSTR_VFMADD231PS:
+    case LIBXSMM_X86_INSTR_VFMADD231PD:
+    case LIBXSMM_X86_INSTR_VFMSUB132PS:
+    case LIBXSMM_X86_INSTR_VFMSUB132PD:
+    case LIBXSMM_X86_INSTR_VFMSUB213PS:
+    case LIBXSMM_X86_INSTR_VFMSUB213PD:
+    case LIBXSMM_X86_INSTR_VFMSUB231PS:
+    case LIBXSMM_X86_INSTR_VFMSUB231PD:
+    case LIBXSMM_X86_INSTR_VFNMADD132PS:
+    case LIBXSMM_X86_INSTR_VFNMADD132PD:
+    case LIBXSMM_X86_INSTR_VFNMADD213PS:
+    case LIBXSMM_X86_INSTR_VFNMADD213PD:
+    case LIBXSMM_X86_INSTR_VFNMADD231PS:
+    case LIBXSMM_X86_INSTR_VFNMADD231PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB132PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB132PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB213PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB213PD:
+    case LIBXSMM_X86_INSTR_VFNMSUB231PS:
+    case LIBXSMM_X86_INSTR_VFNMSUB231PD:
+    case LIBXSMM_X86_INSTR_VFMADD132SD:
+    case LIBXSMM_X86_INSTR_VFMADD213SD:
+    case LIBXSMM_X86_INSTR_VFMADD231SD:
+    case LIBXSMM_X86_INSTR_VFMADD132SS:
+    case LIBXSMM_X86_INSTR_VFMADD213SS:
+    case LIBXSMM_X86_INSTR_VFMADD231SS:
+    case LIBXSMM_X86_INSTR_VFMSUB132SD:
+    case LIBXSMM_X86_INSTR_VFMSUB213SD:
+    case LIBXSMM_X86_INSTR_VFMSUB231SD:
+    case LIBXSMM_X86_INSTR_VFMSUB132SS:
+    case LIBXSMM_X86_INSTR_VFMSUB213SS:
+    case LIBXSMM_X86_INSTR_VFMSUB231SS:
+    case LIBXSMM_X86_INSTR_VFNMADD132SD:
+    case LIBXSMM_X86_INSTR_VFNMADD213SD:
+    case LIBXSMM_X86_INSTR_VFNMADD231SD:
+    case LIBXSMM_X86_INSTR_VFNMADD132SS:
+    case LIBXSMM_X86_INSTR_VFNMADD213SS:
+    case LIBXSMM_X86_INSTR_VFNMADD231SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB132SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB213SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB231SD:
+    case LIBXSMM_X86_INSTR_VFNMSUB132SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB213SS:
+    case LIBXSMM_X86_INSTR_VFNMSUB231SS:
+    case LIBXSMM_X86_INSTR_VROUNDPD:
+    case LIBXSMM_X86_INSTR_VROUNDSD:
+    case LIBXSMM_X86_INSTR_VROUNDPS:
+    case LIBXSMM_X86_INSTR_VROUNDSS:
+    case LIBXSMM_X86_INSTR_VRCPPS:
+    case LIBXSMM_X86_INSTR_VRCPSS:
+    case LIBXSMM_X86_INSTR_VRSQRTPS:
+    case LIBXSMM_X86_INSTR_VRSQRTSS:
+    case LIBXSMM_X86_INSTR_VRANGEPS:
+    case LIBXSMM_X86_INSTR_VRANGEPD:
+    case LIBXSMM_X86_INSTR_VRANGESS:
+    case LIBXSMM_X86_INSTR_VRANGESD:
+    case LIBXSMM_X86_INSTR_VREDUCEPS:
+    case LIBXSMM_X86_INSTR_VREDUCEPD:
+    case LIBXSMM_X86_INSTR_VREDUCESS:
+    case LIBXSMM_X86_INSTR_VREDUCESD:
+    case LIBXSMM_X86_INSTR_VRCP14PS:
+    case LIBXSMM_X86_INSTR_VRCP14PD:
+    case LIBXSMM_X86_INSTR_VRCP14SS:
+    case LIBXSMM_X86_INSTR_VRCP14SD:
+    case LIBXSMM_X86_INSTR_VRNDSCALEPS:
+    case LIBXSMM_X86_INSTR_VRNDSCALEPD:
+    case LIBXSMM_X86_INSTR_VRNDSCALESS:
+    case LIBXSMM_X86_INSTR_VRNDSCALESD:
+    case LIBXSMM_X86_INSTR_VRSQRT14PS:
+    case LIBXSMM_X86_INSTR_VRSQRT14PD:
+    case LIBXSMM_X86_INSTR_VRSQRT14SS:
+    case LIBXSMM_X86_INSTR_VRSQRT14SD:
+    case LIBXSMM_X86_INSTR_VSCALEFPS:
+    case LIBXSMM_X86_INSTR_VSCALEFPD:
+    case LIBXSMM_X86_INSTR_VSCALEFSS:
+    case LIBXSMM_X86_INSTR_VSCALEFSD:
+    case LIBXSMM_X86_INSTR_VCMPPS:
+    case LIBXSMM_X86_INSTR_VCMPSS:
+    case LIBXSMM_X86_INSTR_VCMPPD:
+    case LIBXSMM_X86_INSTR_VCMPSD:
+    case LIBXSMM_X86_INSTR_VPCMPB:
+    case LIBXSMM_X86_INSTR_VPCMPUB:
+    case LIBXSMM_X86_INSTR_VPCMPW:
+    case LIBXSMM_X86_INSTR_VPCMPUW:
+    case LIBXSMM_X86_INSTR_VPCMPD:
+    case LIBXSMM_X86_INSTR_VPCMPUD:
+    case LIBXSMM_X86_INSTR_VPCMPQ:
+    case LIBXSMM_X86_INSTR_VPCMPUQ:
+    case LIBXSMM_X86_INSTR_VPCMPEQB:
+    case LIBXSMM_X86_INSTR_VPCMPEQW:
+    case LIBXSMM_X86_INSTR_VPCMPEQD:
+    case LIBXSMM_X86_INSTR_VPCMPEQQ:
+    case LIBXSMM_X86_INSTR_VPCMPGTB:
+    case LIBXSMM_X86_INSTR_VPCMPGTW:
+    case LIBXSMM_X86_INSTR_VPCMPGTD:
+    case LIBXSMM_X86_INSTR_VPCMPGTQ:
+    case LIBXSMM_X86_INSTR_VPCMPESTRI:
+    case LIBXSMM_X86_INSTR_VPCMPESTRM:
+    case LIBXSMM_X86_INSTR_VPCMPISTRI:
+    case LIBXSMM_X86_INSTR_VPCMPISTRM:
+    case LIBXSMM_X86_INSTR_VCVTPS2PD:
+    case LIBXSMM_X86_INSTR_VCVTPH2PS:
+    case LIBXSMM_X86_INSTR_VCVTPS2PH:
+    case LIBXSMM_X86_INSTR_VCVTDQ2PS:
+    case LIBXSMM_X86_INSTR_VCVTPS2DQ:
+    case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
+    case LIBXSMM_X86_INSTR_VPSLLD_I:
+    case LIBXSMM_X86_INSTR_VPSRAD_I:
+    case LIBXSMM_X86_INSTR_VPSRLD_I:
+    case LIBXSMM_X86_INSTR_VPSLLVW:
+    case LIBXSMM_X86_INSTR_VPSLLVD:
+    case LIBXSMM_X86_INSTR_VPSLLVQ:
+    case LIBXSMM_X86_INSTR_VPSRAVW:
+    case LIBXSMM_X86_INSTR_VPSRAVD:
+    case LIBXSMM_X86_INSTR_VPSRAVQ:
+    case LIBXSMM_X86_INSTR_VPSRLVW:
+    case LIBXSMM_X86_INSTR_VPSRLVD:
+    case LIBXSMM_X86_INSTR_VPSRLVQ:
+    case LIBXSMM_X86_INSTR_VXORPD:
+    case LIBXSMM_X86_INSTR_VADDPD:
+    case LIBXSMM_X86_INSTR_VMULPD:
+    case LIBXSMM_X86_INSTR_VSUBPD:
+    case LIBXSMM_X86_INSTR_VDIVPD:
+    case LIBXSMM_X86_INSTR_VMINPD:
+    case LIBXSMM_X86_INSTR_VMAXPD:
+    case LIBXSMM_X86_INSTR_VSQRTPD:
+    case LIBXSMM_X86_INSTR_VADDSD:
+    case LIBXSMM_X86_INSTR_VMULSD:
+    case LIBXSMM_X86_INSTR_VSUBSD:
+    case LIBXSMM_X86_INSTR_VDIVSD:
+    case LIBXSMM_X86_INSTR_VMINSD:
+    case LIBXSMM_X86_INSTR_VMAXSD:
+    case LIBXSMM_X86_INSTR_VSQRTSD:
+    case LIBXSMM_X86_INSTR_VXORPS:
+    case LIBXSMM_X86_INSTR_VADDPS:
+    case LIBXSMM_X86_INSTR_VMULPS:
+    case LIBXSMM_X86_INSTR_VSUBPS:
+    case LIBXSMM_X86_INSTR_VDIVPS:
+    case LIBXSMM_X86_INSTR_VMINPS:
+    case LIBXSMM_X86_INSTR_VMAXPS:
+    case LIBXSMM_X86_INSTR_VSQRTPS:
+    case LIBXSMM_X86_INSTR_VMULSS:
+    case LIBXSMM_X86_INSTR_VADDSS:
+    case LIBXSMM_X86_INSTR_VSUBSS:
+    case LIBXSMM_X86_INSTR_VDIVSS:
+    case LIBXSMM_X86_INSTR_VMINSS:
+    case LIBXSMM_X86_INSTR_VMAXSS:
+    case LIBXSMM_X86_INSTR_VSQRTSS:
+    case LIBXSMM_X86_INSTR_VPXORD:
+    case LIBXSMM_X86_INSTR_VPORD:
+    case LIBXSMM_X86_INSTR_VPANDD:
+    case LIBXSMM_X86_INSTR_VPANDQ:
+    case LIBXSMM_X86_INSTR_VPADDQ:
+    case LIBXSMM_X86_INSTR_VPADDB:
+    case LIBXSMM_X86_INSTR_VPADDW:
+    case LIBXSMM_X86_INSTR_VPADDD:
+    case LIBXSMM_X86_INSTR_VPMADDWD:
+    case LIBXSMM_X86_INSTR_VPMADDUBSW:
+    case LIBXSMM_X86_INSTR_VPADDSW:
+    case LIBXSMM_X86_INSTR_VPADDSB:
+    case LIBXSMM_X86_INSTR_VPSUBD:
+    case LIBXSMM_X86_INSTR_VPMAXSD:
+    case LIBXSMM_X86_INSTR_VPMAXSW:
+    case LIBXSMM_X86_INSTR_VPMINSD:
+    case LIBXSMM_X86_INSTR_VPDPBUSD:
+    case LIBXSMM_X86_INSTR_VPDPBUSDS:
+    case LIBXSMM_X86_INSTR_VPDPWSSD:
+    case LIBXSMM_X86_INSTR_VPDPWSSDS:
+    case LIBXSMM_X86_INSTR_VDPBF16PS:
+    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
+    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
+    case LIBXSMM_X86_INSTR_VMOVAPD_LD:
+    case LIBXSMM_X86_INSTR_VMOVAPS_LD:
+    case LIBXSMM_X86_INSTR_VMOVUPD_LD:
+    case LIBXSMM_X86_INSTR_VMOVUPS_LD:
+    case LIBXSMM_X86_INSTR_VMOVSS_LD:
+    case LIBXSMM_X86_INSTR_VMOVSD_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQA32_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQA64_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU8_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU16_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU32_LD:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
+    case LIBXSMM_X86_INSTR_VMOVAPD_ST:
+    case LIBXSMM_X86_INSTR_VMOVAPS_ST:
+    case LIBXSMM_X86_INSTR_VMOVUPD_ST:
+    case LIBXSMM_X86_INSTR_VMOVUPS_ST:
+    case LIBXSMM_X86_INSTR_VMOVSS_ST:
+    case LIBXSMM_X86_INSTR_VMOVSD_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQA32_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQA64_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU8_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU16_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU32_ST:
+    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
+    case LIBXSMM_X86_INSTR_VMOVDDUP:
+    case LIBXSMM_X86_INSTR_VPMOVDB:
+    case LIBXSMM_X86_INSTR_VPMOVWB:
+    case LIBXSMM_X86_INSTR_VPMOVDW:
+    case LIBXSMM_X86_INSTR_VPMOVSDB:
+    case LIBXSMM_X86_INSTR_VPMOVSWB:
+    case LIBXSMM_X86_INSTR_VPMOVUSDB:
+    case LIBXSMM_X86_INSTR_VPMOVUSWB:
+    case LIBXSMM_X86_INSTR_VPMOVSXBD:
+    case LIBXSMM_X86_INSTR_VPMOVSXWD:
+    case LIBXSMM_X86_INSTR_VPMOVZXWD:
+    case LIBXSMM_X86_INSTR_VPMOVZXBD:
+    case LIBXSMM_X86_INSTR_VMOVD_LD:
+    case LIBXSMM_X86_INSTR_VMOVQ_LD:
+    case LIBXSMM_X86_INSTR_VMOVD_ST:
+    case LIBXSMM_X86_INSTR_VMOVQ_ST:
+    case LIBXSMM_X86_INSTR_MOVAPS_LD:
+    case LIBXSMM_X86_INSTR_MOVUPS_LD:
+    case LIBXSMM_X86_INSTR_MOVSS_LD:
+    case LIBXSMM_X86_INSTR_MOVAPS_ST:
+    case LIBXSMM_X86_INSTR_MOVUPS_ST:
+    case LIBXSMM_X86_INSTR_MOVSS_ST:
+    case LIBXSMM_X86_INSTR_ANDPS:
+    case LIBXSMM_X86_INSTR_ANDNPS:
+    case LIBXSMM_X86_INSTR_ORPS:
+    case LIBXSMM_X86_INSTR_XORPS:
+    case LIBXSMM_X86_INSTR_MULPS:
+    case LIBXSMM_X86_INSTR_ADDPS:
+    case LIBXSMM_X86_INSTR_SUBPS:
+    case LIBXSMM_X86_INSTR_DIVPS:
+    case LIBXSMM_X86_INSTR_RCPPS:
+    case LIBXSMM_X86_INSTR_SQRTPS:
+    case LIBXSMM_X86_INSTR_MAXPS:
+    case LIBXSMM_X86_INSTR_MINPS:
+    case LIBXSMM_X86_INSTR_RSQRTPS:
+    case LIBXSMM_X86_INSTR_CMPPS:
+    case LIBXSMM_X86_INSTR_SHUFPS:
+    case LIBXSMM_X86_INSTR_UNPCKHPS:
+    case LIBXSMM_X86_INSTR_UNPCKLPS:
+    case LIBXSMM_X86_INSTR_MULSS:
+    case LIBXSMM_X86_INSTR_ADDSS:
+    case LIBXSMM_X86_INSTR_SUBSS:
+    case LIBXSMM_X86_INSTR_DIVSS:
+    case LIBXSMM_X86_INSTR_RCPSS:
+    case LIBXSMM_X86_INSTR_SQRTSS:
+    case LIBXSMM_X86_INSTR_MAXSS:
+    case LIBXSMM_X86_INSTR_MINSS:
+    case LIBXSMM_X86_INSTR_RSQRTSS:
+    case LIBXSMM_X86_INSTR_CMPSS:
+    case LIBXSMM_X86_INSTR_COMISS:
+    case LIBXSMM_X86_INSTR_UCOMISS:
+    case LIBXSMM_X86_INSTR_MOVAPD_LD:
+    case LIBXSMM_X86_INSTR_MOVUPD_LD:
+    case LIBXSMM_X86_INSTR_MOVSD_LD:
+    case LIBXSMM_X86_INSTR_MOVAPD_ST:
+    case LIBXSMM_X86_INSTR_MOVUPD_ST:
+    case LIBXSMM_X86_INSTR_MOVSD_ST:
+    case LIBXSMM_X86_INSTR_ANDPD:
+    case LIBXSMM_X86_INSTR_ANDNPD:
+    case LIBXSMM_X86_INSTR_ORPD:
+    case LIBXSMM_X86_INSTR_XORPD:
+    case LIBXSMM_X86_INSTR_MULPD:
+    case LIBXSMM_X86_INSTR_ADDPD:
+    case LIBXSMM_X86_INSTR_SUBPD:
+    case LIBXSMM_X86_INSTR_DIVPD:
+    case LIBXSMM_X86_INSTR_RCPPD:
+    case LIBXSMM_X86_INSTR_SQRTPD:
+    case LIBXSMM_X86_INSTR_MAXPD:
+    case LIBXSMM_X86_INSTR_MINPD:
+    case LIBXSMM_X86_INSTR_RSQRTPD:
+    case LIBXSMM_X86_INSTR_CMPPD:
+    case LIBXSMM_X86_INSTR_SHUFPD:
+    case LIBXSMM_X86_INSTR_UNPCKHPD:
+    case LIBXSMM_X86_INSTR_UNPCKLPD:
+    case LIBXSMM_X86_INSTR_MULSD:
+    case LIBXSMM_X86_INSTR_ADDSD:
+    case LIBXSMM_X86_INSTR_SUBSD:
+    case LIBXSMM_X86_INSTR_DIVSD:
+    case LIBXSMM_X86_INSTR_RCPSD:
+    case LIBXSMM_X86_INSTR_SQRTSD:
+    case LIBXSMM_X86_INSTR_MAXSD:
+    case LIBXSMM_X86_INSTR_MINSD:
+    case LIBXSMM_X86_INSTR_RSQRTSD:
+    case LIBXSMM_X86_INSTR_CMPSD:
+    case LIBXSMM_X86_INSTR_COMISD:
+    case LIBXSMM_X86_INSTR_UCOMISD:
+    case LIBXSMM_X86_INSTR_MOVD_SSE_LD:
+    case LIBXSMM_X86_INSTR_MOVD_SSE_ST:
+    case LIBXSMM_X86_INSTR_MOVQ_SSE_LD:
+    case LIBXSMM_X86_INSTR_MOVQ_SSE_ST:
+    case LIBXSMM_X86_INSTR_MOVDQA_LD:
+    case LIBXSMM_X86_INSTR_MOVDQA_ST:
+    case LIBXSMM_X86_INSTR_MOVDQU_LD:
+    case LIBXSMM_X86_INSTR_MOVDQU_ST:
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+    case LIBXSMM_X86_INSTR_MOVSHDUP:
+    case LIBXSMM_X86_INSTR_MOVSLDUP:
+    case LIBXSMM_X86_INSTR_PAND:
+    case LIBXSMM_X86_INSTR_PANDN:
+    case LIBXSMM_X86_INSTR_POR:
+    case LIBXSMM_X86_INSTR_PXOR:
+    case LIBXSMM_X86_INSTR_PACKSSWB:
+    case LIBXSMM_X86_INSTR_PACKSSDW:
+    case LIBXSMM_X86_INSTR_PACKUSWB:
+    case LIBXSMM_X86_INSTR_PADDB:
+    case LIBXSMM_X86_INSTR_PADDW:
+    case LIBXSMM_X86_INSTR_PADDD:
+    case LIBXSMM_X86_INSTR_PADDQ:
+    case LIBXSMM_X86_INSTR_PADDSB:
+    case LIBXSMM_X86_INSTR_PADDSW:
+    case LIBXSMM_X86_INSTR_PADDUSB:
+    case LIBXSMM_X86_INSTR_PADDUSW:
+    case LIBXSMM_X86_INSTR_PAVGB:
+    case LIBXSMM_X86_INSTR_PAVGW:
+    case LIBXSMM_X86_INSTR_PCMPEQB:
+    case LIBXSMM_X86_INSTR_PCMPEQW:
+    case LIBXSMM_X86_INSTR_PCMPEQD:
+    case LIBXSMM_X86_INSTR_PCMPGTB:
+    case LIBXSMM_X86_INSTR_PCMPGTW:
+    case LIBXSMM_X86_INSTR_PCMPGTD:
+    case LIBXSMM_X86_INSTR_PEXTRW:
+    case LIBXSMM_X86_INSTR_PINSRW:
+    case LIBXSMM_X86_INSTR_PMADDWD:
+    case LIBXSMM_X86_INSTR_PMAXSW:
+    case LIBXSMM_X86_INSTR_PMAXUB:
+    case LIBXSMM_X86_INSTR_PMINSW:
+    case LIBXSMM_X86_INSTR_PMINUB:
+    case LIBXSMM_X86_INSTR_PMULHUW:
+    case LIBXSMM_X86_INSTR_PMULHW:
+    case LIBXSMM_X86_INSTR_PMULLW:
+    case LIBXSMM_X86_INSTR_PMULUDQ:
+    case LIBXSMM_X86_INSTR_PSADBW:
+    case LIBXSMM_X86_INSTR_PSHUFD:
+    case LIBXSMM_X86_INSTR_PSHUFHW:
+    case LIBXSMM_X86_INSTR_PSHUFLW:
+    case LIBXSMM_X86_INSTR_PSLLW:
+    case LIBXSMM_X86_INSTR_PSLLD:
+    case LIBXSMM_X86_INSTR_PSLLQ:
+    case LIBXSMM_X86_INSTR_PSRAW:
+    case LIBXSMM_X86_INSTR_PSRAD:
+    case LIBXSMM_X86_INSTR_PSRLW:
+    case LIBXSMM_X86_INSTR_PSRLD:
+    case LIBXSMM_X86_INSTR_PSRLQ:
+    case LIBXSMM_X86_INSTR_PSUBB:
+    case LIBXSMM_X86_INSTR_PSUBW:
+    case LIBXSMM_X86_INSTR_PSUBD:
+    case LIBXSMM_X86_INSTR_PSUBQ:
+    case LIBXSMM_X86_INSTR_PSUBSB:
+    case LIBXSMM_X86_INSTR_PSUBSW:
+    case LIBXSMM_X86_INSTR_PSUBUSB:
+    case LIBXSMM_X86_INSTR_PSUBUSW:
+    case LIBXSMM_X86_INSTR_PUNPCKHBW:
+    case LIBXSMM_X86_INSTR_PUNPCKHWD:
+    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLBW:
+    case LIBXSMM_X86_INSTR_PUNPCKLWD:
+    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
+    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
+    case LIBXSMM_X86_INSTR_CVTDQ2PD:
+    case LIBXSMM_X86_INSTR_CVTDQ2PS:
+    case LIBXSMM_X86_INSTR_CVTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTPD2PS:
+    case LIBXSMM_X86_INSTR_CVTPS2DQ:
+    case LIBXSMM_X86_INSTR_CVTPS2PD:
+    case LIBXSMM_X86_INSTR_CVTSD2SS:
+    case LIBXSMM_X86_INSTR_CVTSS2SD:
+    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
+    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
+    case LIBXSMM_X86_INSTR_ADDSUBPD:
+    case LIBXSMM_X86_INSTR_ADDSUBPS:
+    case LIBXSMM_X86_INSTR_HADDPD:
+    case LIBXSMM_X86_INSTR_HADDPS:
+    case LIBXSMM_X86_INSTR_HSUBPD:
+    case LIBXSMM_X86_INSTR_HSUBPS:
+    case LIBXSMM_X86_INSTR_PABSB:
+    case LIBXSMM_X86_INSTR_PABSW:
+    case LIBXSMM_X86_INSTR_PABSD:
+    case LIBXSMM_X86_INSTR_PALIGNR:
+    case LIBXSMM_X86_INSTR_PHADDW:
+    case LIBXSMM_X86_INSTR_PHADDD:
+    case LIBXSMM_X86_INSTR_PHADDSW:
+    case LIBXSMM_X86_INSTR_PHSUBW:
+    case LIBXSMM_X86_INSTR_PHSUBD:
+    case LIBXSMM_X86_INSTR_PHSUBSW:
+    case LIBXSMM_X86_INSTR_PMADDUBSW:
+    case LIBXSMM_X86_INSTR_PMULHRSW:
+    case LIBXSMM_X86_INSTR_PSHUFB:
+    case LIBXSMM_X86_INSTR_PSIGNB:
+    case LIBXSMM_X86_INSTR_PSIGNW:
+    case LIBXSMM_X86_INSTR_PSIGND:
+    case LIBXSMM_X86_INSTR_BLENDPD:
+    case LIBXSMM_X86_INSTR_BLENDPS:
+    case LIBXSMM_X86_INSTR_BLENDVPD:
+    case LIBXSMM_X86_INSTR_BLENDVPS:
+    case LIBXSMM_X86_INSTR_DPPD:
+    case LIBXSMM_X86_INSTR_DPPS:
+    case LIBXSMM_X86_INSTR_EXTRACTPS:
+    case LIBXSMM_X86_INSTR_INSERTPS:
+    case LIBXSMM_X86_INSTR_ROUNDPD:
+    case LIBXSMM_X86_INSTR_ROUNDPS:
+    case LIBXSMM_X86_INSTR_ROUNDSD:
+    case LIBXSMM_X86_INSTR_ROUNDSS:
+    case LIBXSMM_X86_INSTR_PBLENDW:
+    case LIBXSMM_X86_INSTR_PBLENDVB:
+    case LIBXSMM_X86_INSTR_PCMPEQQ:
+    case LIBXSMM_X86_INSTR_PMOVSXBW:
+    case LIBXSMM_X86_INSTR_PMOVSXBD:
+    case LIBXSMM_X86_INSTR_PMOVSXBQ:
+    case LIBXSMM_X86_INSTR_PMOVSXWD:
+    case LIBXSMM_X86_INSTR_PMOVSXWQ:
+    case LIBXSMM_X86_INSTR_PMOVSXDQ:
+    case LIBXSMM_X86_INSTR_PMOVZXBW:
+    case LIBXSMM_X86_INSTR_PMOVZXBD:
+    case LIBXSMM_X86_INSTR_PMOVZXBQ:
+    case LIBXSMM_X86_INSTR_PMOVZXWD:
+    case LIBXSMM_X86_INSTR_PMOVZXWQ:
+    case LIBXSMM_X86_INSTR_PMOVZXDQ:
+    case LIBXSMM_X86_INSTR_PEXTRB:
+    case LIBXSMM_X86_INSTR_PEXTRD:
+    case LIBXSMM_X86_INSTR_PEXTRQ:
+    case LIBXSMM_X86_INSTR_PHMINPOSUW:
+    case LIBXSMM_X86_INSTR_PINSRB:
+    case LIBXSMM_X86_INSTR_PINSRD:
+    case LIBXSMM_X86_INSTR_PINSRQ:
+    case LIBXSMM_X86_INSTR_PMAXSB:
+    case LIBXSMM_X86_INSTR_PMAXSD:
+    case LIBXSMM_X86_INSTR_PMAXUW:
+    case LIBXSMM_X86_INSTR_PMAXUD:
+    case LIBXSMM_X86_INSTR_PMINSB:
+    case LIBXSMM_X86_INSTR_PMINSD:
+    case LIBXSMM_X86_INSTR_PMINUW:
+    case LIBXSMM_X86_INSTR_PMINUD:
+    case LIBXSMM_X86_INSTR_MPSADBW:
+    case LIBXSMM_X86_INSTR_PMULDQ:
+    case LIBXSMM_X86_INSTR_PMULLD:
+    case LIBXSMM_X86_INSTR_PACKUSDW:
+    case LIBXSMM_X86_INSTR_PTEST:
+    case LIBXSMM_X86_INSTR_PCMPGTQ:
+      break;
+    default:
+      l_return = 0;
+  }
+
+  return l_return;
+}
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_instr ) {
+  unsigned int l_return = 1;
+
+  switch ( i_instr ) {
+    case LIBXSMM_X86_INSTR_VPBROADCASTD:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX:
+    case LIBXSMM_X86_INSTR_VPBROADCASTB:
+    case LIBXSMM_X86_INSTR_VPBROADCASTW:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD:
+    case LIBXSMM_X86_INSTR_VBROADCASTSS:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD_VEX:
+    case LIBXSMM_X86_INSTR_VBROADCASTI128:
+    case LIBXSMM_X86_INSTR_VBROADCASTI32X2:
+    case LIBXSMM_X86_INSTR_VBROADCASTI32X4:
+    case LIBXSMM_X86_INSTR_VBROADCASTI64X2:
+    case LIBXSMM_X86_INSTR_VBROADCASTI32X8:
+    case LIBXSMM_X86_INSTR_VBROADCASTI64X4:
+    case LIBXSMM_X86_INSTR_VMOVNTPD:
+    case LIBXSMM_X86_INSTR_VMOVNTPS:
+    case LIBXSMM_X86_INSTR_VMOVNTDQ:
+    case LIBXSMM_X86_INSTR_VGATHERDPS:
+    case LIBXSMM_X86_INSTR_VGATHERDPD:
+    case LIBXSMM_X86_INSTR_VGATHERQPS:
+    case LIBXSMM_X86_INSTR_VGATHERQPD:
+    case LIBXSMM_X86_INSTR_VPGATHERDD:
+    case LIBXSMM_X86_INSTR_VPGATHERDQ:
+    case LIBXSMM_X86_INSTR_VPGATHERQD:
+    case LIBXSMM_X86_INSTR_VPGATHERQQ:
+    case LIBXSMM_X86_INSTR_VSCATTERDPS:
+    case LIBXSMM_X86_INSTR_VSCATTERDPD:
+    case LIBXSMM_X86_INSTR_VSCATTERQPS:
+    case LIBXSMM_X86_INSTR_VSCATTERQPD:
+    case LIBXSMM_X86_INSTR_VPSCATTERDD:
+    case LIBXSMM_X86_INSTR_VPSCATTERDQ:
+    case LIBXSMM_X86_INSTR_VPSCATTERQD:
+    case LIBXSMM_X86_INSTR_VPSCATTERQQ:
+    case LIBXSMM_X86_INSTR_V4FMADDPS:
+    case LIBXSMM_X86_INSTR_V4FNMADDPS:
+    case LIBXSMM_X86_INSTR_V4FMADDSS:
+    case LIBXSMM_X86_INSTR_V4FNMADDSS:
+    case LIBXSMM_X86_INSTR_VP4DPWSSDS:
+    case LIBXSMM_X86_INSTR_VP4DPWSSD:
+    case LIBXSMM_X86_INSTR_MOVLPS:
+    case LIBXSMM_X86_INSTR_MOVHPS:
+    case LIBXSMM_X86_INSTR_MOVNTPS:
+    case LIBXSMM_X86_INSTR_MOVLPD:
+    case LIBXSMM_X86_INSTR_MOVHPD:
+    case LIBXSMM_X86_INSTR_MOVNTPD:
+    case LIBXSMM_X86_INSTR_MOVNTDQ:
+    case LIBXSMM_X86_INSTR_MOVNTDQA:
+    case LIBXSMM_X86_INSTR_LDDQU:
+      break;
+    default:
+      l_return = 0;
+  }
+
+  return l_return;
+}
+
+LIBXSMM_API_INTERN
+unsigned int libxsmm_x86_instruction_vec_is_regonly( const unsigned int i_instr ) {
+  unsigned int l_return = 1;
+
+  switch ( i_instr ) {
+    case LIBXSMM_X86_INSTR_VMOVMSKPD:
+    case LIBXSMM_X86_INSTR_VMOVMSKPS:
+    case LIBXSMM_X86_INSTR_VPMOVMSKB:
+    case LIBXSMM_X86_INSTR_VPBROADCASTB_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTW_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTD_GPR:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR:
+    case LIBXSMM_X86_INSTR_MOVMSKPS:
+    case LIBXSMM_X86_INSTR_MOVMSKPD:
+    case LIBXSMM_X86_INSTR_PMOVMSKB:
+    case LIBXSMM_X86_INSTR_PSLLW_I:
+    case LIBXSMM_X86_INSTR_PSLLD_I:
+    case LIBXSMM_X86_INSTR_PSLLQ_I:
+    case LIBXSMM_X86_INSTR_PSLLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRAW_I:
+    case LIBXSMM_X86_INSTR_PSRAD_I:
+    case LIBXSMM_X86_INSTR_PSRLDQ_I:
+    case LIBXSMM_X86_INSTR_PSRLW_I:
+    case LIBXSMM_X86_INSTR_PSRLD_I:
+    case LIBXSMM_X86_INSTR_PSRLQ_I:
+      break;
+    default:
+      l_return = 0;
+  }
+
+  return l_return;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     io_generated_code,
                                                    const unsigned int          i_instr,
                                                    const unsigned int          i_gp_reg_base,
@@ -551,7 +1164,7 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
   /* B is used and X is unused */
   code[p0   ] |= (unsigned char)(( i_vec_reg_number_0 < 8 ) ? 0x20 : 0x00);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_1];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 16) ? tbl_vex_vvvv[i_vec_reg_number_1] : tbl_vex_vvvv[0]);
   /* VL: 128bit,256bit */
   code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
@@ -832,12 +1445,12 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
 
   /* B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_2];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_2 < 32) ? tbl_evex_RRp[i_vec_reg_number_2] : tbl_evex_RRp[0]);
   /* B and X */
-  code[p0   ] |= (unsigned char) tbl_evex_BX[i_vec_reg_number_0];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_0 < 32) ?  tbl_evex_BX[i_vec_reg_number_0] :  tbl_evex_BX[0]);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_1];
-  code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_1];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ? tbl_evex_vvvv[i_vec_reg_number_1] : tbl_evex_vvvv[0]);
+  code[p2   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ?   tbl_evex_vp[i_vec_reg_number_1] :   tbl_evex_vp[0]);
   /* VL: 128bit,256bit,512bit or sae control */
   code[p2   ] |= (unsigned char)((i_sae_cntl == 0) ? tbl_vl[l_vl_idx] : (0x60 & (i_sae_cntl << 4)));
   /* masking */
@@ -970,152 +1583,6 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store )
 {
-  unsigned int l_vmove_instr;
-
-  /* check if passed in a correct instruction */
-  switch ( i_vmove_instr ) {
-    case LIBXSMM_X86_INSTR_VMOVAPD:
-    case LIBXSMM_X86_INSTR_VMOVAPS:
-    case LIBXSMM_X86_INSTR_VMOVUPD:
-    case LIBXSMM_X86_INSTR_VMOVUPS:
-    case LIBXSMM_X86_INSTR_VMOVSS:
-    case LIBXSMM_X86_INSTR_VMOVSD:
-    case LIBXSMM_X86_INSTR_VMOVDQA32:
-    case LIBXSMM_X86_INSTR_VMOVDQA64:
-    case LIBXSMM_X86_INSTR_VMOVDQU8:
-    case LIBXSMM_X86_INSTR_VMOVDQU16:
-    case LIBXSMM_X86_INSTR_VMOVDQU32:
-    case LIBXSMM_X86_INSTR_VMOVDQU64:
-#if 0
-    case LIBXSMM_X86_INSTR_VMOVAPD_LD:
-    case LIBXSMM_X86_INSTR_VMOVAPS_LD:
-    case LIBXSMM_X86_INSTR_VMOVUPD_LD:
-    case LIBXSMM_X86_INSTR_VMOVUPS_LD:
-    case LIBXSMM_X86_INSTR_VMOVSS_LD:
-    case LIBXSMM_X86_INSTR_VMOVSD_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQA32_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQA64_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU8_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU16_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU32_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
-#endif
-    case LIBXSMM_X86_INSTR_VMOVAPD_ST:
-    case LIBXSMM_X86_INSTR_VMOVAPS_ST:
-    case LIBXSMM_X86_INSTR_VMOVUPD_ST:
-    case LIBXSMM_X86_INSTR_VMOVUPS_ST:
-    case LIBXSMM_X86_INSTR_VMOVSS_ST:
-    case LIBXSMM_X86_INSTR_VMOVSD_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQA32_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQA64_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU8_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU16_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU32_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
-    case LIBXSMM_X86_INSTR_VPBROADCASTD:
-    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
-    case LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX:
-    case LIBXSMM_X86_INSTR_VPBROADCASTB:
-    case LIBXSMM_X86_INSTR_VPBROADCASTW:
-    case LIBXSMM_X86_INSTR_VBROADCASTSD:
-    case LIBXSMM_X86_INSTR_VBROADCASTSS:
-    case LIBXSMM_X86_INSTR_VBROADCASTSD_VEX:
-    case LIBXSMM_X86_INSTR_VMOVNTPD:
-    case LIBXSMM_X86_INSTR_VMOVNTPS:
-    case LIBXSMM_X86_INSTR_VMOVNTDQ:
-    case LIBXSMM_X86_INSTR_VPMOVDW:
-    case LIBXSMM_X86_INSTR_VPMOVDB:
-    case LIBXSMM_X86_INSTR_VPMOVSDB:
-    case LIBXSMM_X86_INSTR_VPMOVUSDB:
-    case LIBXSMM_X86_INSTR_VPMOVSXWD:
-    case LIBXSMM_X86_INSTR_VPMOVZXWD:
-    case LIBXSMM_X86_INSTR_VPMOVSXBD:
-    case LIBXSMM_X86_INSTR_VPMOVZXBD:
-    case LIBXSMM_X86_INSTR_VPMOVUSWB:
-    case LIBXSMM_X86_INSTR_VPMOVSWB:
-    case LIBXSMM_X86_INSTR_VPMOVWB:
-    case LIBXSMM_X86_INSTR_VMOVDDUP:
-    case LIBXSMM_X86_INSTR_VBROADCASTI128:
-    case LIBXSMM_X86_INSTR_VBROADCASTI32X2:
-    case LIBXSMM_X86_INSTR_VBROADCASTI32X4:
-    case LIBXSMM_X86_INSTR_VBROADCASTI64X2:
-    case LIBXSMM_X86_INSTR_VBROADCASTI32X8:
-    case LIBXSMM_X86_INSTR_VBROADCASTI64X4:
-    case LIBXSMM_X86_INSTR_VGATHERDPS:
-    case LIBXSMM_X86_INSTR_VGATHERDPD:
-    case LIBXSMM_X86_INSTR_VGATHERQPS:
-    case LIBXSMM_X86_INSTR_VGATHERQPD:
-    case LIBXSMM_X86_INSTR_VPGATHERDD:
-    case LIBXSMM_X86_INSTR_VPGATHERDQ:
-    case LIBXSMM_X86_INSTR_VPGATHERQD:
-    case LIBXSMM_X86_INSTR_VPGATHERQQ:
-    case LIBXSMM_X86_INSTR_VSCATTERDPS:
-    case LIBXSMM_X86_INSTR_VSCATTERDPD:
-    case LIBXSMM_X86_INSTR_VSCATTERQPS:
-    case LIBXSMM_X86_INSTR_VSCATTERQPD:
-    case LIBXSMM_X86_INSTR_VPSCATTERDD:
-    case LIBXSMM_X86_INSTR_VPSCATTERDQ:
-    case LIBXSMM_X86_INSTR_VPSCATTERQD:
-    case LIBXSMM_X86_INSTR_VPSCATTERQQ:
-    case LIBXSMM_X86_INSTR_VMOVD_LD:
-    case LIBXSMM_X86_INSTR_VMOVQ_LD:
-    case LIBXSMM_X86_INSTR_VMOVD_ST:
-    case LIBXSMM_X86_INSTR_VMOVQ_ST:
-#if 0
-    case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVUPS_LD:
-    case LIBXSMM_X86_INSTR_MOVSS_LD:
-#endif
-    case LIBXSMM_X86_INSTR_MOVAPS:
-    case LIBXSMM_X86_INSTR_MOVUPS:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
-    case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_MOVLPS:
-    case LIBXSMM_X86_INSTR_MOVHPS:
-    case LIBXSMM_X86_INSTR_MOVNTPS:
-    case LIBXSMM_X86_INSTR_MOVSS:
-    case LIBXSMM_X86_INSTR_MOVSS_ST:
-#if 0
-    case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-#endif
-    case LIBXSMM_X86_INSTR_MOVAPD:
-    case LIBXSMM_X86_INSTR_MOVUPD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
-    case LIBXSMM_X86_INSTR_MOVUPD_ST:
-    case LIBXSMM_X86_INSTR_MOVLPD:
-    case LIBXSMM_X86_INSTR_MOVHPD:
-    case LIBXSMM_X86_INSTR_MOVNTPD:
-    case LIBXSMM_X86_INSTR_MOVSD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
-    case LIBXSMM_X86_INSTR_MOVDQA_LD:
-    case LIBXSMM_X86_INSTR_MOVDQA_ST:
-    case LIBXSMM_X86_INSTR_MOVDQU_LD:
-    case LIBXSMM_X86_INSTR_MOVDQU_ST:
-    case LIBXSMM_X86_INSTR_MOVNTDQ:
-    case LIBXSMM_X86_INSTR_LDDQU:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
-    case LIBXSMM_X86_INSTR_MOVSHDUP:
-    case LIBXSMM_X86_INSTR_MOVSLDUP:
-    case LIBXSMM_X86_INSTR_PMOVSXBW:
-    case LIBXSMM_X86_INSTR_PMOVSXBD:
-    case LIBXSMM_X86_INSTR_PMOVSXBQ:
-    case LIBXSMM_X86_INSTR_PMOVSXWD:
-    case LIBXSMM_X86_INSTR_PMOVSXWQ:
-    case LIBXSMM_X86_INSTR_PMOVSXDQ:
-    case LIBXSMM_X86_INSTR_PMOVZXBW:
-    case LIBXSMM_X86_INSTR_PMOVZXBD:
-    case LIBXSMM_X86_INSTR_PMOVZXBQ:
-    case LIBXSMM_X86_INSTR_PMOVZXWD:
-    case LIBXSMM_X86_INSTR_PMOVZXWQ:
-    case LIBXSMM_X86_INSTR_PMOVZXDQ:
-    case LIBXSMM_X86_INSTR_MOVNTDQA:
-      break;
-    default:
-      fprintf(stderr, "libxsmm_instruction_vec_move: unexpected instruction number: %u\n", i_vmove_instr);
-      exit(-1);
-  }
 
   /* check for correct streaming stores */
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
@@ -1139,172 +1606,77 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
   /* select the code generator REX/VEX/EVEX */
   if ( io_generated_code->code_type > 1 ) {
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
+    unsigned int l_vmove_instr;
+
+    /* as LD/ST semantics have different op codes we need some fix-ups here */
+    switch (i_vmove_instr) {
+      case LIBXSMM_X86_INSTR_VMOVAPD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPD_LD : LIBXSMM_X86_INSTR_VMOVAPD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVUPD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPD_LD : LIBXSMM_X86_INSTR_VMOVUPD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVAPS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPS_LD : LIBXSMM_X86_INSTR_VMOVAPS_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVUPS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPS_LD : LIBXSMM_X86_INSTR_VMOVUPS_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVSD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSD_LD : LIBXSMM_X86_INSTR_VMOVSD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVSS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSS_LD : LIBXSMM_X86_INSTR_VMOVSS_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQA32:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA32_LD : LIBXSMM_X86_INSTR_VMOVDQA32_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQA64:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA64_LD : LIBXSMM_X86_INSTR_VMOVDQA64_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQU8:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU8_LD : LIBXSMM_X86_INSTR_VMOVDQU8_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQU16:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU16_LD : LIBXSMM_X86_INSTR_VMOVDQU16_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQU32:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU32_LD : LIBXSMM_X86_INSTR_VMOVDQU32_ST;
+        break;
+      case LIBXSMM_X86_INSTR_VMOVDQU64:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU64_LD : LIBXSMM_X86_INSTR_VMOVDQU64_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVAPD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVAPD_LD : LIBXSMM_X86_INSTR_MOVAPD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVUPD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVUPD_LD : LIBXSMM_X86_INSTR_MOVUPD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVAPS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVAPS_LD : LIBXSMM_X86_INSTR_MOVAPS_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVUPS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVUPS_LD : LIBXSMM_X86_INSTR_MOVUPS_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVSD:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVSD_LD : LIBXSMM_X86_INSTR_MOVSD_ST;
+        break;
+      case LIBXSMM_X86_INSTR_MOVSS:
+        l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVSS_LD : LIBXSMM_X86_INSTR_MOVSS_ST;
+        break;
+      default:
+        l_vmove_instr = i_vmove_instr;
+        break;
     }
 
-     /* LD/ST insturction have only 2 operanads */
-    if ( ((i_vmove_instr >> 28) & 0x3) == 2 ) {
-      unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
-      unsigned int l_encoder_arch = 2;
-      unsigned int l_encoder_instr = ((i_vmove_instr >> 30) & 0x03);
-
-      /* determine encoder */
-      if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
-        l_encoder_arch = 1;
-      } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
-        l_encoder_arch = 0;
-      }
-      if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
-        l_encoder = 2;
-      } else if ( (l_encoder_arch >= 1) && ((l_encoder_instr == 1) || (l_encoder_instr == 0)) ) {
-        l_encoder = 1;
-      } else {
-        l_encoder = 0;
-      }
-
-      /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
-       * will error out in the encoder if instruction doesn't have VEX encoding
-       * Core will always take AVX512VL route */
-      if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
-           ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
-        l_encoder = 1;
-      }
-
-      /* as LD/ST semantics have different op codes we need some fix-ups here */
-      switch (i_vmove_instr) {
-        case LIBXSMM_X86_INSTR_VMOVAPD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPD_LD : LIBXSMM_X86_INSTR_VMOVAPD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVUPD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPD_LD : LIBXSMM_X86_INSTR_VMOVUPD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVAPS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVAPS_LD : LIBXSMM_X86_INSTR_VMOVAPS_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVUPS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVUPS_LD : LIBXSMM_X86_INSTR_VMOVUPS_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVSD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSD_LD : LIBXSMM_X86_INSTR_VMOVSD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVSS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVSS_LD : LIBXSMM_X86_INSTR_VMOVSS_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQA32:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA32_LD : LIBXSMM_X86_INSTR_VMOVDQA32_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQA64:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQA64_LD : LIBXSMM_X86_INSTR_VMOVDQA64_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQU8:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU8_LD : LIBXSMM_X86_INSTR_VMOVDQU8_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQU16:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU16_LD : LIBXSMM_X86_INSTR_VMOVDQU16_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQU32:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU32_LD : LIBXSMM_X86_INSTR_VMOVDQU32_ST;
-          break;
-        case LIBXSMM_X86_INSTR_VMOVDQU64:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_VMOVDQU64_LD : LIBXSMM_X86_INSTR_VMOVDQU64_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVAPD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVAPD_LD : LIBXSMM_X86_INSTR_MOVAPD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVUPD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVUPD_LD : LIBXSMM_X86_INSTR_MOVUPD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVAPS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVAPS_LD : LIBXSMM_X86_INSTR_MOVAPS_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVUPS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVUPS_LD : LIBXSMM_X86_INSTR_MOVUPS_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVSD:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVSD_LD : LIBXSMM_X86_INSTR_MOVSD_ST;
-          break;
-        case LIBXSMM_X86_INSTR_MOVSS:
-          l_vmove_instr = (i_is_store == 0) ? LIBXSMM_X86_INSTR_MOVSS_LD : LIBXSMM_X86_INSTR_MOVSS_ST;
-          break;
-        default:
-          l_vmove_instr = i_vmove_instr;
-          break;
-      }
-
-      if ( l_encoder == 2 ) {
-        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-        /* ceck for gather/scatter */
-        if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
-          if (i_reg_idx > 32) {
-            fprintf(stderr, "libxsmm_instruction_vec_move: SIB addressing mode is required for instruction number: %u\n", i_vmove_instr);
-            exit(-1);
-          }
-          if ( (i_use_zero_masking != 0) || (0 == i_mask_reg_number) ) {
-            fprintf(stderr, "libxsmm_instruction_vec_move: merge masking with a valid mask registers (>k0) is required for instrucion number: %u\n", i_vmove_instr);
-            exit(-1);
-          }
-        }
-
-        /* set simd name */
-        switch(i_vector_name) {
-          case 'x':
-            l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-            break;
-          case 'y':
-            l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
-            break;
-          case 'z':
-            l_simd_name = LIBXSMM_X86_SIMD_NAME_ZMM;
-            break;
-          default:
-            fprintf(stderr, "libxsmm_x86_instruction_vec_move: unsupported vlen: %c\n", i_vector_name);
-            break;
-        }
-
-        libxsmm_x86_instruction_evex_compute_2reg_mem ( io_generated_code,
-              l_vmove_instr, 0, i_gp_reg_base,
-              i_reg_idx, i_scale, i_displacement, l_simd_name,
-              0, i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
-      } else if ( l_encoder == 1 ) {
-        libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-        /* we need to patch some instructions for VEX from the EVEX header */
-        switch (l_vmove_instr) {
-          case LIBXSMM_X86_INSTR_VBROADCASTSD:
-            l_vmove_instr = LIBXSMM_X86_INSTR_VBROADCASTSD_VEX;
-            break;
-          default:
-            break;
-        }
-
-        /* set simd name */
-        switch(i_vector_name) {
-          case 'x':
-            l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-            break;
-          case 'y':
-            l_simd_name = LIBXSMM_X86_SIMD_NAME_YMM;
-            break;
-          default:
-            fprintf(stderr, "libxsmm_x86_instruction_vec_move: unsupported vlen: %c\n", i_vector_name);
-            break;
-        }
-
-        libxsmm_x86_instruction_vex_compute_2reg_mem ( io_generated_code,
-              l_vmove_instr, i_gp_reg_base,
-              i_reg_idx, i_scale, i_displacement, l_simd_name,
-              0, i_vec_reg_number_0 );
-      } else {
-        libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
-              l_vmove_instr, i_gp_reg_base,
-              i_reg_idx, i_scale, i_displacement, i_vec_reg_number_0 );
-      }
-    } else {
-      printf("WARNING: You are calling vec_move with a 3-operand instruction. Are you sure you know what you're doing?\n");
-      exit(-1);
+    if ( ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) && ( l_vmove_instr == LIBXSMM_X86_INSTR_VBROADCASTSD ) ) {
+      l_vmove_instr = LIBXSMM_X86_INSTR_VBROADCASTSD_VEX;
     }
+
+    /* uses short-cut encoder */
+    libxsmm_x86_instruction_vec_compute_mem_1reg_mask( io_generated_code, l_vmove_instr, i_vector_name,
+                                                       i_gp_reg_base, i_reg_idx, i_scale, i_displacement, 0,
+                                                       i_vec_reg_number_0, i_mask_reg_number, i_use_zero_masking );
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -1374,517 +1746,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_cntl,
                                                              const unsigned char     i_sae_cntl,
-                                                             const unsigned short    i_imm8 )
-{
-  /* check if passed in a correct instruction */
-  switch ( i_vec_instr ) {
-    /* shuffle,extract,blend,unpack,permute */
-    case LIBXSMM_X86_INSTR_VSHUFPS:
-    case LIBXSMM_X86_INSTR_VSHUFPD:
-    case LIBXSMM_X86_INSTR_VPSHUFB:
-    case LIBXSMM_X86_INSTR_VPSHUFD:
-    case LIBXSMM_X86_INSTR_VPSHUFHW:
-    case LIBXSMM_X86_INSTR_VPSHUFLW:
-    case LIBXSMM_X86_INSTR_VUNPCKLPD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPS:
-    case LIBXSMM_X86_INSTR_VUNPCKHPD:
-    case LIBXSMM_X86_INSTR_VUNPCKHPS:
-    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_VPERMD:
-    case LIBXSMM_X86_INSTR_VPERMQ_I:
-    case LIBXSMM_X86_INSTR_VPERMPS:
-    case LIBXSMM_X86_INSTR_VPERMPD_I:
-    case LIBXSMM_X86_INSTR_VPERMILPS:
-    case LIBXSMM_X86_INSTR_VPERMILPS_I:
-    case LIBXSMM_X86_INSTR_VPERM2F128:
-    case LIBXSMM_X86_INSTR_VPERM2I128:
-    case LIBXSMM_X86_INSTR_VEXTRACTF128:
-    case LIBXSMM_X86_INSTR_VEXTRACTI128:
-    case LIBXSMM_X86_INSTR_VPERMILPD_VEX:
-    case LIBXSMM_X86_INSTR_VPERMILPD_VEX_I:
-    case LIBXSMM_X86_INSTR_VBLENDPD:
-    case LIBXSMM_X86_INSTR_VBLENDPS:
-    case LIBXSMM_X86_INSTR_VBLENDVPD:
-    case LIBXSMM_X86_INSTR_VBLENDVPS:
-    case LIBXSMM_X86_INSTR_VPBLENDD:
-    case LIBXSMM_X86_INSTR_VPBLENDW:
-    case LIBXSMM_X86_INSTR_VPBLENDVB:
-    case LIBXSMM_X86_INSTR_VMOVMSKPD:
-    case LIBXSMM_X86_INSTR_VMOVMSKPS:
-    case LIBXSMM_X86_INSTR_VPMOVMSKB:
-    case LIBXSMM_X86_INSTR_VSHUFF32X4:
-    case LIBXSMM_X86_INSTR_VSHUFF64X2:
-    case LIBXSMM_X86_INSTR_VSHUFI32X4:
-    case LIBXSMM_X86_INSTR_VSHUFI64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
-    case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTI32X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
-    case LIBXSMM_X86_INSTR_VINSERTI32X4:
-    case LIBXSMM_X86_INSTR_VBLENDMPS:
-    case LIBXSMM_X86_INSTR_VBLENDMPD:
-    case LIBXSMM_X86_INSTR_VPBLENDMB:
-    case LIBXSMM_X86_INSTR_VPBLENDMW:
-    case LIBXSMM_X86_INSTR_VPBLENDMD:
-    case LIBXSMM_X86_INSTR_VPBLENDMQ:
-    case LIBXSMM_X86_INSTR_VEXPANDPD:
-    case LIBXSMM_X86_INSTR_VEXPANDPS:
-    case LIBXSMM_X86_INSTR_VPEXPANDQ:
-    case LIBXSMM_X86_INSTR_VPEXPANDD:
-    case LIBXSMM_X86_INSTR_VPEXPANDW:
-    case LIBXSMM_X86_INSTR_VPEXPANDB:
-    case LIBXSMM_X86_INSTR_VPERMW:
-    case LIBXSMM_X86_INSTR_VPERMPD:
-    case LIBXSMM_X86_INSTR_VPERMT2B:
-    case LIBXSMM_X86_INSTR_VPERMT2W:
-    case LIBXSMM_X86_INSTR_VPERMT2D:
-    case LIBXSMM_X86_INSTR_VPERMT2Q:
-    case LIBXSMM_X86_INSTR_VPERMILPD:
-    case LIBXSMM_X86_INSTR_VPERMILPD_I:
-    case LIBXSMM_X86_INSTR_VFMADD132PS:
-    case LIBXSMM_X86_INSTR_VFMADD132PD:
-    case LIBXSMM_X86_INSTR_VFMADD213PS:
-    case LIBXSMM_X86_INSTR_VFMADD213PD:
-    case LIBXSMM_X86_INSTR_VFMADD231PS:
-    case LIBXSMM_X86_INSTR_VFMADD231PD:
-    case LIBXSMM_X86_INSTR_VFMSUB132PS:
-    case LIBXSMM_X86_INSTR_VFMSUB132PD:
-    case LIBXSMM_X86_INSTR_VFMSUB213PS:
-    case LIBXSMM_X86_INSTR_VFMSUB213PD:
-    case LIBXSMM_X86_INSTR_VFMSUB231PS:
-    case LIBXSMM_X86_INSTR_VFMSUB231PD:
-    case LIBXSMM_X86_INSTR_VFNMADD132PS:
-    case LIBXSMM_X86_INSTR_VFNMADD132PD:
-    case LIBXSMM_X86_INSTR_VFNMADD213PS:
-    case LIBXSMM_X86_INSTR_VFNMADD213PD:
-    case LIBXSMM_X86_INSTR_VFNMADD231PS:
-    case LIBXSMM_X86_INSTR_VFNMADD231PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB132PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB132PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB213PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB213PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB231PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB231PD:
-    case LIBXSMM_X86_INSTR_VFMADD132SD:
-    case LIBXSMM_X86_INSTR_VFMADD213SD:
-    case LIBXSMM_X86_INSTR_VFMADD231SD:
-    case LIBXSMM_X86_INSTR_VFMADD132SS:
-    case LIBXSMM_X86_INSTR_VFMADD213SS:
-    case LIBXSMM_X86_INSTR_VFMADD231SS:
-    case LIBXSMM_X86_INSTR_VFMSUB132SD:
-    case LIBXSMM_X86_INSTR_VFMSUB213SD:
-    case LIBXSMM_X86_INSTR_VFMSUB231SD:
-    case LIBXSMM_X86_INSTR_VFMSUB132SS:
-    case LIBXSMM_X86_INSTR_VFMSUB213SS:
-    case LIBXSMM_X86_INSTR_VFMSUB231SS:
-    case LIBXSMM_X86_INSTR_VFNMADD132SD:
-    case LIBXSMM_X86_INSTR_VFNMADD213SD:
-    case LIBXSMM_X86_INSTR_VFNMADD231SD:
-    case LIBXSMM_X86_INSTR_VFNMADD132SS:
-    case LIBXSMM_X86_INSTR_VFNMADD213SS:
-    case LIBXSMM_X86_INSTR_VFNMADD231SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB132SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB213SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB231SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB132SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB213SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB231SS:
-    case LIBXSMM_X86_INSTR_VROUNDPD:
-    case LIBXSMM_X86_INSTR_VROUNDSD:
-    case LIBXSMM_X86_INSTR_VROUNDPS:
-    case LIBXSMM_X86_INSTR_VROUNDSS:
-    case LIBXSMM_X86_INSTR_VRCPPS:
-    case LIBXSMM_X86_INSTR_VRCPSS:
-    case LIBXSMM_X86_INSTR_VRSQRTPS:
-    case LIBXSMM_X86_INSTR_VRSQRTSS:
-    case LIBXSMM_X86_INSTR_VRANGEPS:
-    case LIBXSMM_X86_INSTR_VRANGEPD:
-    case LIBXSMM_X86_INSTR_VRANGESS:
-    case LIBXSMM_X86_INSTR_VRANGESD:
-    case LIBXSMM_X86_INSTR_VREDUCEPS:
-    case LIBXSMM_X86_INSTR_VREDUCEPD:
-    case LIBXSMM_X86_INSTR_VREDUCESS:
-    case LIBXSMM_X86_INSTR_VREDUCESD:
-    case LIBXSMM_X86_INSTR_VRCP14PS:
-    case LIBXSMM_X86_INSTR_VRCP14PD:
-    case LIBXSMM_X86_INSTR_VRCP14SS:
-    case LIBXSMM_X86_INSTR_VRCP14SD:
-    case LIBXSMM_X86_INSTR_VRNDSCALEPS:
-    case LIBXSMM_X86_INSTR_VRNDSCALEPD:
-    case LIBXSMM_X86_INSTR_VRNDSCALESS:
-    case LIBXSMM_X86_INSTR_VRNDSCALESD:
-    case LIBXSMM_X86_INSTR_VRSQRT14PS:
-    case LIBXSMM_X86_INSTR_VRSQRT14PD:
-    case LIBXSMM_X86_INSTR_VRSQRT14SS:
-    case LIBXSMM_X86_INSTR_VRSQRT14SD:
-    case LIBXSMM_X86_INSTR_VSCALEFPS:
-    case LIBXSMM_X86_INSTR_VSCALEFPD:
-    case LIBXSMM_X86_INSTR_VSCALEFSS:
-    case LIBXSMM_X86_INSTR_VSCALEFSD:
-    case LIBXSMM_X86_INSTR_VCMPPS:
-    case LIBXSMM_X86_INSTR_VCMPSS:
-    case LIBXSMM_X86_INSTR_VCMPPD:
-    case LIBXSMM_X86_INSTR_VCMPSD:
-    case LIBXSMM_X86_INSTR_VPCMPB:
-    case LIBXSMM_X86_INSTR_VPCMPUB:
-    case LIBXSMM_X86_INSTR_VPCMPW:
-    case LIBXSMM_X86_INSTR_VPCMPUW:
-    case LIBXSMM_X86_INSTR_VPCMPD:
-    case LIBXSMM_X86_INSTR_VPCMPUD:
-    case LIBXSMM_X86_INSTR_VPCMPQ:
-    case LIBXSMM_X86_INSTR_VPCMPUQ:
-    case LIBXSMM_X86_INSTR_VPCMPEQB:
-    case LIBXSMM_X86_INSTR_VPCMPEQW:
-    case LIBXSMM_X86_INSTR_VPCMPEQD:
-    case LIBXSMM_X86_INSTR_VPCMPEQQ:
-    case LIBXSMM_X86_INSTR_VPCMPGTB:
-    case LIBXSMM_X86_INSTR_VPCMPGTW:
-    case LIBXSMM_X86_INSTR_VPCMPGTD:
-    case LIBXSMM_X86_INSTR_VPCMPGTQ:
-    case LIBXSMM_X86_INSTR_VPCMPESTRI:
-    case LIBXSMM_X86_INSTR_VPCMPESTRM:
-    case LIBXSMM_X86_INSTR_VPCMPISTRI:
-    case LIBXSMM_X86_INSTR_VPCMPISTRM:
-    case LIBXSMM_X86_INSTR_VCVTPS2PD:
-    case LIBXSMM_X86_INSTR_VCVTPH2PS:
-    case LIBXSMM_X86_INSTR_VCVTPS2PH:
-    case LIBXSMM_X86_INSTR_VCVTDQ2PS:
-    case LIBXSMM_X86_INSTR_VCVTPS2DQ:
-    case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
-    case LIBXSMM_X86_INSTR_VPMOVDW:
-    case LIBXSMM_X86_INSTR_VPMOVSXWD:
-    case LIBXSMM_X86_INSTR_VPMOVDB:
-    case LIBXSMM_X86_INSTR_VPMOVSDB:
-    case LIBXSMM_X86_INSTR_VPMOVUSDB:
-    case LIBXSMM_X86_INSTR_VPMOVZXWD:
-    case LIBXSMM_X86_INSTR_VPMOVSXBD:
-    case LIBXSMM_X86_INSTR_VPMOVZXBD:
-    case LIBXSMM_X86_INSTR_VPMOVUSWB:
-    case LIBXSMM_X86_INSTR_VPMOVSWB:
-    case LIBXSMM_X86_INSTR_VPMOVWB:
-    case LIBXSMM_X86_INSTR_VPSLLD_I:
-    case LIBXSMM_X86_INSTR_VPSRAD_I:
-    case LIBXSMM_X86_INSTR_VPSRLD_I:
-    case LIBXSMM_X86_INSTR_VPSLLVW:
-    case LIBXSMM_X86_INSTR_VPSLLVD:
-    case LIBXSMM_X86_INSTR_VPSLLVQ:
-    case LIBXSMM_X86_INSTR_VPSRAVW:
-    case LIBXSMM_X86_INSTR_VPSRAVD:
-    case LIBXSMM_X86_INSTR_VPSRAVQ:
-    case LIBXSMM_X86_INSTR_VPSRLVW:
-    case LIBXSMM_X86_INSTR_VPSRLVD:
-    case LIBXSMM_X86_INSTR_VPSRLVQ:
-    case LIBXSMM_X86_INSTR_VXORPD:
-    case LIBXSMM_X86_INSTR_VADDPD:
-    case LIBXSMM_X86_INSTR_VMULPD:
-    case LIBXSMM_X86_INSTR_VSUBPD:
-    case LIBXSMM_X86_INSTR_VDIVPD:
-    case LIBXSMM_X86_INSTR_VMINPD:
-    case LIBXSMM_X86_INSTR_VMAXPD:
-    case LIBXSMM_X86_INSTR_VSQRTPD:
-    case LIBXSMM_X86_INSTR_VADDSD:
-    case LIBXSMM_X86_INSTR_VMULSD:
-    case LIBXSMM_X86_INSTR_VSUBSD:
-    case LIBXSMM_X86_INSTR_VDIVSD:
-    case LIBXSMM_X86_INSTR_VMINSD:
-    case LIBXSMM_X86_INSTR_VMAXSD:
-    case LIBXSMM_X86_INSTR_VSQRTSD:
-    case LIBXSMM_X86_INSTR_VXORPS:
-    case LIBXSMM_X86_INSTR_VADDPS:
-    case LIBXSMM_X86_INSTR_VMULPS:
-    case LIBXSMM_X86_INSTR_VSUBPS:
-    case LIBXSMM_X86_INSTR_VDIVPS:
-    case LIBXSMM_X86_INSTR_VMINPS:
-    case LIBXSMM_X86_INSTR_VMAXPS:
-    case LIBXSMM_X86_INSTR_VSQRTPS:
-    case LIBXSMM_X86_INSTR_VMULSS:
-    case LIBXSMM_X86_INSTR_VADDSS:
-    case LIBXSMM_X86_INSTR_VSUBSS:
-    case LIBXSMM_X86_INSTR_VDIVSS:
-    case LIBXSMM_X86_INSTR_VMINSS:
-    case LIBXSMM_X86_INSTR_VMAXSS:
-    case LIBXSMM_X86_INSTR_VSQRTSS:
-    case LIBXSMM_X86_INSTR_VPXORD:
-    case LIBXSMM_X86_INSTR_VPORD:
-    case LIBXSMM_X86_INSTR_VPANDD:
-    case LIBXSMM_X86_INSTR_VPANDQ:
-    case LIBXSMM_X86_INSTR_VPADDQ:
-    case LIBXSMM_X86_INSTR_VPADDB:
-    case LIBXSMM_X86_INSTR_VPADDW:
-    case LIBXSMM_X86_INSTR_VPADDD:
-    case LIBXSMM_X86_INSTR_VPMADDWD:
-    case LIBXSMM_X86_INSTR_VPMADDUBSW:
-    case LIBXSMM_X86_INSTR_VPADDSW:
-    case LIBXSMM_X86_INSTR_VPADDSB:
-    case LIBXSMM_X86_INSTR_VPSUBD:
-    case LIBXSMM_X86_INSTR_VPMAXSD:
-    case LIBXSMM_X86_INSTR_VPMAXSW:
-    case LIBXSMM_X86_INSTR_VPMINSD:
-    case LIBXSMM_X86_INSTR_VPDPBUSD:
-    case LIBXSMM_X86_INSTR_VPDPBUSDS:
-    case LIBXSMM_X86_INSTR_VPDPWSSD:
-    case LIBXSMM_X86_INSTR_VPDPWSSDS:
-    case LIBXSMM_X86_INSTR_VDPBF16PS:
-    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
-    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU32_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU32_ST:
-    case LIBXSMM_X86_INSTR_VMOVDQU16_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU16_ST:
-    case LIBXSMM_X86_INSTR_VMOVUPS:
-    case LIBXSMM_X86_INSTR_VMOVD_LD:
-    case LIBXSMM_X86_INSTR_VMOVQ_LD:
-    case LIBXSMM_X86_INSTR_VMOVD_ST:
-    case LIBXSMM_X86_INSTR_VMOVQ_ST:
-    case LIBXSMM_X86_INSTR_VPBROADCASTB_GPR:
-    case LIBXSMM_X86_INSTR_VPBROADCASTW_GPR:
-    case LIBXSMM_X86_INSTR_VPBROADCASTD_GPR:
-    case LIBXSMM_X86_INSTR_VPBROADCASTQ_GPR:
-    case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVUPS_LD:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
-    case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_MOVMSKPS:
-    case LIBXSMM_X86_INSTR_ANDPS:
-    case LIBXSMM_X86_INSTR_ANDNPS:
-    case LIBXSMM_X86_INSTR_ORPS:
-    case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_DIVPS:
-    case LIBXSMM_X86_INSTR_RCPPS:
-    case LIBXSMM_X86_INSTR_SQRTPS:
-    case LIBXSMM_X86_INSTR_MAXPS:
-    case LIBXSMM_X86_INSTR_MINPS:
-    case LIBXSMM_X86_INSTR_RSQRTPS:
-    case LIBXSMM_X86_INSTR_CMPPS:
-    case LIBXSMM_X86_INSTR_SHUFPS:
-    case LIBXSMM_X86_INSTR_UNPCKHPS:
-    case LIBXSMM_X86_INSTR_UNPCKLPS:
-    case LIBXSMM_X86_INSTR_MOVSS_LD:
-    case LIBXSMM_X86_INSTR_MOVSS_ST:
-    case LIBXSMM_X86_INSTR_MULSS:
-    case LIBXSMM_X86_INSTR_ADDSS:
-    case LIBXSMM_X86_INSTR_SUBSS:
-    case LIBXSMM_X86_INSTR_DIVSS:
-    case LIBXSMM_X86_INSTR_RCPSS:
-    case LIBXSMM_X86_INSTR_SQRTSS:
-    case LIBXSMM_X86_INSTR_MAXSS:
-    case LIBXSMM_X86_INSTR_MINSS:
-    case LIBXSMM_X86_INSTR_RSQRTSS:
-    case LIBXSMM_X86_INSTR_CMPSS:
-    case LIBXSMM_X86_INSTR_COMISS:
-    case LIBXSMM_X86_INSTR_UCOMISS:
-    case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
-    case LIBXSMM_X86_INSTR_MOVUPD_ST:
-    case LIBXSMM_X86_INSTR_MOVMSKPD:
-    case LIBXSMM_X86_INSTR_ANDPD:
-    case LIBXSMM_X86_INSTR_ANDNPD:
-    case LIBXSMM_X86_INSTR_ORPD:
-    case LIBXSMM_X86_INSTR_XORPD:
-    case LIBXSMM_X86_INSTR_MULPD:
-    case LIBXSMM_X86_INSTR_ADDPD:
-    case LIBXSMM_X86_INSTR_SUBPD:
-    case LIBXSMM_X86_INSTR_DIVPD:
-    case LIBXSMM_X86_INSTR_RCPPD:
-    case LIBXSMM_X86_INSTR_SQRTPD:
-    case LIBXSMM_X86_INSTR_MAXPD:
-    case LIBXSMM_X86_INSTR_MINPD:
-    case LIBXSMM_X86_INSTR_RSQRTPD:
-    case LIBXSMM_X86_INSTR_CMPPD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-    case LIBXSMM_X86_INSTR_UNPCKHPD:
-    case LIBXSMM_X86_INSTR_UNPCKLPD:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
-    case LIBXSMM_X86_INSTR_MULSD:
-    case LIBXSMM_X86_INSTR_ADDSD:
-    case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_DIVSD:
-    case LIBXSMM_X86_INSTR_RCPSD:
-    case LIBXSMM_X86_INSTR_SQRTSD:
-    case LIBXSMM_X86_INSTR_MAXSD:
-    case LIBXSMM_X86_INSTR_MINSD:
-    case LIBXSMM_X86_INSTR_RSQRTSD:
-    case LIBXSMM_X86_INSTR_CMPSD:
-    case LIBXSMM_X86_INSTR_COMISD:
-    case LIBXSMM_X86_INSTR_UCOMISD:
-    case LIBXSMM_X86_INSTR_MOVDQA_LD:
-    case LIBXSMM_X86_INSTR_MOVDQA_ST:
-    case LIBXSMM_X86_INSTR_MOVDQU_LD:
-    case LIBXSMM_X86_INSTR_MOVDQU_ST:
-    case LIBXSMM_X86_INSTR_PAND:
-    case LIBXSMM_X86_INSTR_PANDN:
-    case LIBXSMM_X86_INSTR_POR:
-    case LIBXSMM_X86_INSTR_PXOR:
-    case LIBXSMM_X86_INSTR_PACKSSWB:
-    case LIBXSMM_X86_INSTR_PACKSSDW:
-    case LIBXSMM_X86_INSTR_PACKUSWB:
-    case LIBXSMM_X86_INSTR_PADDB:
-    case LIBXSMM_X86_INSTR_PADDW:
-    case LIBXSMM_X86_INSTR_PADDD:
-    case LIBXSMM_X86_INSTR_PADDQ:
-    case LIBXSMM_X86_INSTR_PADDSB:
-    case LIBXSMM_X86_INSTR_PADDSW:
-    case LIBXSMM_X86_INSTR_PADDUSB:
-    case LIBXSMM_X86_INSTR_PADDUSW:
-    case LIBXSMM_X86_INSTR_PAVGB:
-    case LIBXSMM_X86_INSTR_PAVGW:
-    case LIBXSMM_X86_INSTR_PCMPEQB:
-    case LIBXSMM_X86_INSTR_PCMPEQW:
-    case LIBXSMM_X86_INSTR_PCMPEQD:
-    case LIBXSMM_X86_INSTR_PCMPGTB:
-    case LIBXSMM_X86_INSTR_PCMPGTW:
-    case LIBXSMM_X86_INSTR_PCMPGTD:
-    case LIBXSMM_X86_INSTR_PEXTRW:
-    case LIBXSMM_X86_INSTR_PINSRW:
-    case LIBXSMM_X86_INSTR_PMADDWD:
-    case LIBXSMM_X86_INSTR_PMAXSW:
-    case LIBXSMM_X86_INSTR_PMAXUB:
-    case LIBXSMM_X86_INSTR_PMINSW:
-    case LIBXSMM_X86_INSTR_PMINUB:
-    case LIBXSMM_X86_INSTR_PMOVMSKB:
-    case LIBXSMM_X86_INSTR_PMULHUW:
-    case LIBXSMM_X86_INSTR_PMULHW:
-    case LIBXSMM_X86_INSTR_PMULLW:
-    case LIBXSMM_X86_INSTR_PMULUDQ:
-    case LIBXSMM_X86_INSTR_PSADBW:
-    case LIBXSMM_X86_INSTR_PSHUFD:
-    case LIBXSMM_X86_INSTR_PSHUFHW:
-    case LIBXSMM_X86_INSTR_PSHUFLW:
-    case LIBXSMM_X86_INSTR_PSLLW:
-    case LIBXSMM_X86_INSTR_PSLLW_I:
-    case LIBXSMM_X86_INSTR_PSLLD:
-    case LIBXSMM_X86_INSTR_PSLLD_I:
-    case LIBXSMM_X86_INSTR_PSLLQ:
-    case LIBXSMM_X86_INSTR_PSLLQ_I:
-    case LIBXSMM_X86_INSTR_PSLLDQ_I:
-    case LIBXSMM_X86_INSTR_PSRAW:
-    case LIBXSMM_X86_INSTR_PSRAW_I:
-    case LIBXSMM_X86_INSTR_PSRAD:
-    case LIBXSMM_X86_INSTR_PSRAD_I:
-    case LIBXSMM_X86_INSTR_PSRLDQ_I:
-    case LIBXSMM_X86_INSTR_PSRLW:
-    case LIBXSMM_X86_INSTR_PSRLW_I:
-    case LIBXSMM_X86_INSTR_PSRLD:
-    case LIBXSMM_X86_INSTR_PSRLD_I:
-    case LIBXSMM_X86_INSTR_PSRLQ:
-    case LIBXSMM_X86_INSTR_PSRLQ_I:
-    case LIBXSMM_X86_INSTR_PSUBB:
-    case LIBXSMM_X86_INSTR_PSUBW:
-    case LIBXSMM_X86_INSTR_PSUBD:
-    case LIBXSMM_X86_INSTR_PSUBQ:
-    case LIBXSMM_X86_INSTR_PSUBSB:
-    case LIBXSMM_X86_INSTR_PSUBSW:
-    case LIBXSMM_X86_INSTR_PSUBUSB:
-    case LIBXSMM_X86_INSTR_PSUBUSW:
-    case LIBXSMM_X86_INSTR_PUNPCKHBW:
-    case LIBXSMM_X86_INSTR_PUNPCKHWD:
-    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKLBW:
-    case LIBXSMM_X86_INSTR_PUNPCKLWD:
-    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_CVTDQ2PD:
-    case LIBXSMM_X86_INSTR_CVTDQ2PS:
-    case LIBXSMM_X86_INSTR_CVTPD2DQ:
-    case LIBXSMM_X86_INSTR_CVTPD2PS:
-    case LIBXSMM_X86_INSTR_CVTPS2DQ:
-    case LIBXSMM_X86_INSTR_CVTPS2PD:
-    case LIBXSMM_X86_INSTR_CVTSD2SS:
-    case LIBXSMM_X86_INSTR_CVTSS2SD:
-    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
-    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
-    case LIBXSMM_X86_INSTR_ADDSUBPD:
-    case LIBXSMM_X86_INSTR_ADDSUBPS:
-    case LIBXSMM_X86_INSTR_HADDPD:
-    case LIBXSMM_X86_INSTR_HADDPS:
-    case LIBXSMM_X86_INSTR_HSUBPD:
-    case LIBXSMM_X86_INSTR_HSUBPS:
-    case LIBXSMM_X86_INSTR_PABSB:
-    case LIBXSMM_X86_INSTR_PABSW:
-    case LIBXSMM_X86_INSTR_PABSD:
-    case LIBXSMM_X86_INSTR_PALIGNR:
-    case LIBXSMM_X86_INSTR_PHADDW:
-    case LIBXSMM_X86_INSTR_PHADDD:
-    case LIBXSMM_X86_INSTR_PHADDSW:
-    case LIBXSMM_X86_INSTR_PHSUBW:
-    case LIBXSMM_X86_INSTR_PHSUBD:
-    case LIBXSMM_X86_INSTR_PHSUBSW:
-    case LIBXSMM_X86_INSTR_PMADDUBSW:
-    case LIBXSMM_X86_INSTR_PMULHRSW:
-    case LIBXSMM_X86_INSTR_PSHUFB:
-    case LIBXSMM_X86_INSTR_PSIGNB:
-    case LIBXSMM_X86_INSTR_PSIGNW:
-    case LIBXSMM_X86_INSTR_PSIGND:
-    case LIBXSMM_X86_INSTR_BLENDPD:
-    case LIBXSMM_X86_INSTR_BLENDPS:
-    case LIBXSMM_X86_INSTR_BLENDVPD:
-    case LIBXSMM_X86_INSTR_BLENDVPS:
-    case LIBXSMM_X86_INSTR_DPPD:
-    case LIBXSMM_X86_INSTR_DPPS:
-    case LIBXSMM_X86_INSTR_EXTRACTPS:
-    case LIBXSMM_X86_INSTR_INSERTPS:
-    case LIBXSMM_X86_INSTR_ROUNDPD:
-    case LIBXSMM_X86_INSTR_ROUNDPS:
-    case LIBXSMM_X86_INSTR_ROUNDSD:
-    case LIBXSMM_X86_INSTR_ROUNDSS:
-    case LIBXSMM_X86_INSTR_MOVNTDQA:
-    case LIBXSMM_X86_INSTR_PBLENDW:
-    case LIBXSMM_X86_INSTR_PBLENDVB:
-    case LIBXSMM_X86_INSTR_PCMPEQQ:
-    case LIBXSMM_X86_INSTR_PMOVSXBW:
-    case LIBXSMM_X86_INSTR_PMOVSXBD:
-    case LIBXSMM_X86_INSTR_PMOVSXBQ:
-    case LIBXSMM_X86_INSTR_PMOVSXWD:
-    case LIBXSMM_X86_INSTR_PMOVSXWQ:
-    case LIBXSMM_X86_INSTR_PMOVSXDQ:
-    case LIBXSMM_X86_INSTR_PMOVZXBW:
-    case LIBXSMM_X86_INSTR_PMOVZXBD:
-    case LIBXSMM_X86_INSTR_PMOVZXBQ:
-    case LIBXSMM_X86_INSTR_PMOVZXWD:
-    case LIBXSMM_X86_INSTR_PMOVZXWQ:
-    case LIBXSMM_X86_INSTR_PMOVZXDQ:
-    case LIBXSMM_X86_INSTR_PEXTRB:
-    case LIBXSMM_X86_INSTR_PEXTRD:
-    case LIBXSMM_X86_INSTR_PEXTRQ:
-    case LIBXSMM_X86_INSTR_PHMINPOSUW:
-    case LIBXSMM_X86_INSTR_PINSRB:
-    case LIBXSMM_X86_INSTR_PINSRD:
-    case LIBXSMM_X86_INSTR_PINSRQ:
-    case LIBXSMM_X86_INSTR_PMAXSB:
-    case LIBXSMM_X86_INSTR_PMAXSD:
-    case LIBXSMM_X86_INSTR_PMAXUW:
-    case LIBXSMM_X86_INSTR_PMAXUD:
-    case LIBXSMM_X86_INSTR_PMINSB:
-    case LIBXSMM_X86_INSTR_PMINSD:
-    case LIBXSMM_X86_INSTR_PMINUW:
-    case LIBXSMM_X86_INSTR_PMINUD:
-    case LIBXSMM_X86_INSTR_MPSADBW:
-    case LIBXSMM_X86_INSTR_PMULDQ:
-    case LIBXSMM_X86_INSTR_PMULLD:
-    case LIBXSMM_X86_INSTR_PACKUSDW:
-    case LIBXSMM_X86_INSTR_PTEST:
-    case LIBXSMM_X86_INSTR_PCMPGTQ:
-      break;
-    default:
-      fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
-      exit(-1);
+                                                             const unsigned short    i_imm8 ) {
+  if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )  == 0) &&
+       (libxsmm_x86_instruction_vec_is_regonly( i_vec_instr ) == 0)    ) {
+    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
+    exit(-1);
   }
 
   /* check that we are not masking 'y' */
@@ -1898,9 +1764,9 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
     unsigned int l_encoder_arch = 2;
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
-    unsigned int l_reg_number_src0;
-    unsigned int l_reg_number_src1;
-    unsigned int l_reg_number_dst;
+    unsigned int l_reg_number_src0 = 0;
+    unsigned int l_reg_number_src1 = 0;
+    unsigned int l_reg_number_dst = 0;
 
     /* check if we have enough code buffer space left */
     if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
@@ -1929,6 +1795,12 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         exit(-1);
       }
       l_reg_number_src1 = 0;
+    } else if ( ((i_vec_instr >> 28) & 3) == 1 ) {
+      if ( i_reg_number_src0 != LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        exit(-1);
+      }
+      l_reg_number_src0 = 0;
     } else {
       l_reg_number_src1 = i_reg_number_src1;
     }
@@ -2024,15 +1896,16 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[16];
+    unsigned int l_imm8 = (unsigned int)i_imm8;
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( io_generated_code->arch > LIBXSMM_X86_SSE42 ) {
       if ( ( ((i_vec_instr >> 16) & 0x08) == 0x08 ) && (i_imm8 != LIBXSMM_X86_IMM_UNDEF) ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%u, %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_src1, i_vector_name, i_reg_number_dst );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%u, %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, l_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_src1, i_vector_name, i_reg_number_dst );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_src1, i_vector_name, i_reg_number_dst );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, l_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_src1, i_vector_name, i_reg_number_dst );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
@@ -2044,9 +1917,9 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     } else {
       if ( ( ((i_vec_instr >> 16) & 0x08) == 0x08 ) && (i_imm8 != LIBXSMM_X86_IMM_UNDEF) ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_dst );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, l_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_dst );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_dst );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, l_imm8, i_vector_name, i_reg_number_src0, i_vector_name, i_reg_number_dst );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
@@ -2165,465 +2038,10 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_rnd_exp_cntl,
                                                              const unsigned short    i_imm8 )
 {
-  /* check if passed in a correct instruction */
-  switch ( i_vec_instr ) {
-    /* shuffle,extract,blend,unpack,permute */
-    case LIBXSMM_X86_INSTR_VSHUFPS:
-    case LIBXSMM_X86_INSTR_VSHUFPD:
-    case LIBXSMM_X86_INSTR_VPSHUFB:
-    case LIBXSMM_X86_INSTR_VPSHUFD:
-    case LIBXSMM_X86_INSTR_VPSHUFHW:
-    case LIBXSMM_X86_INSTR_VPSHUFLW:
-    case LIBXSMM_X86_INSTR_VSHUFF32X4:
-    case LIBXSMM_X86_INSTR_VSHUFF64X2:
-    case LIBXSMM_X86_INSTR_VSHUFI32X4:
-    case LIBXSMM_X86_INSTR_VSHUFI64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTF128:
-    case LIBXSMM_X86_INSTR_VEXTRACTI128:
-    case LIBXSMM_X86_INSTR_VEXTRACTF32X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTF64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
-    case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTI32X4:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X2:
-    case LIBXSMM_X86_INSTR_VEXTRACTI32X8:
-    case LIBXSMM_X86_INSTR_VEXTRACTI64X4:
-    case LIBXSMM_X86_INSTR_VINSERTI32X4:
-    case LIBXSMM_X86_INSTR_VBLENDMPS:
-    case LIBXSMM_X86_INSTR_VBLENDMPD:
-    case LIBXSMM_X86_INSTR_VPBLENDMB:
-    case LIBXSMM_X86_INSTR_VPBLENDMW:
-    case LIBXSMM_X86_INSTR_VPBLENDMD:
-    case LIBXSMM_X86_INSTR_VPBLENDMQ:
-    case LIBXSMM_X86_INSTR_VEXPANDPD:
-    case LIBXSMM_X86_INSTR_VEXPANDPS:
-    case LIBXSMM_X86_INSTR_VPEXPANDQ:
-    case LIBXSMM_X86_INSTR_VPEXPANDD:
-    case LIBXSMM_X86_INSTR_VPEXPANDW:
-    case LIBXSMM_X86_INSTR_VPEXPANDB:
-    case LIBXSMM_X86_INSTR_VUNPCKLPD:
-    case LIBXSMM_X86_INSTR_VUNPCKLPS:
-    case LIBXSMM_X86_INSTR_VUNPCKHPD:
-    case LIBXSMM_X86_INSTR_VUNPCKHPS:
-    case LIBXSMM_X86_INSTR_VPUNPCKLWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKHWD:
-    case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_VPUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_VPERM2F128:
-    case LIBXSMM_X86_INSTR_VPERM2I128:
-    case LIBXSMM_X86_INSTR_VPERMW:
-    case LIBXSMM_X86_INSTR_VPERMD:
-    case LIBXSMM_X86_INSTR_VPERMQ_I:
-    case LIBXSMM_X86_INSTR_VPERMT2B:
-    case LIBXSMM_X86_INSTR_VPERMT2W:
-    case LIBXSMM_X86_INSTR_VPERMT2D:
-    case LIBXSMM_X86_INSTR_VPERMT2Q:
-    case LIBXSMM_X86_INSTR_VFMADD132PS:
-    case LIBXSMM_X86_INSTR_VFMADD132PD:
-    case LIBXSMM_X86_INSTR_VFMADD213PS:
-    case LIBXSMM_X86_INSTR_VFMADD213PD:
-    case LIBXSMM_X86_INSTR_VFMADD231PS:
-    case LIBXSMM_X86_INSTR_VFMADD231PD:
-    case LIBXSMM_X86_INSTR_VFMSUB132PS:
-    case LIBXSMM_X86_INSTR_VFMSUB132PD:
-    case LIBXSMM_X86_INSTR_VFMSUB213PS:
-    case LIBXSMM_X86_INSTR_VFMSUB213PD:
-    case LIBXSMM_X86_INSTR_VFMSUB231PS:
-    case LIBXSMM_X86_INSTR_VFMSUB231PD:
-    case LIBXSMM_X86_INSTR_VFNMADD132PS:
-    case LIBXSMM_X86_INSTR_VFNMADD132PD:
-    case LIBXSMM_X86_INSTR_VFNMADD213PS:
-    case LIBXSMM_X86_INSTR_VFNMADD213PD:
-    case LIBXSMM_X86_INSTR_VFNMADD231PS:
-    case LIBXSMM_X86_INSTR_VFNMADD231PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB132PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB132PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB213PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB213PD:
-    case LIBXSMM_X86_INSTR_VFNMSUB231PS:
-    case LIBXSMM_X86_INSTR_VFNMSUB231PD:
-    case LIBXSMM_X86_INSTR_VFMADD132SD:
-    case LIBXSMM_X86_INSTR_VFMADD213SD:
-    case LIBXSMM_X86_INSTR_VFMADD231SD:
-    case LIBXSMM_X86_INSTR_VFMADD132SS:
-    case LIBXSMM_X86_INSTR_VFMADD213SS:
-    case LIBXSMM_X86_INSTR_VFMADD231SS:
-    case LIBXSMM_X86_INSTR_VFMSUB132SD:
-    case LIBXSMM_X86_INSTR_VFMSUB213SD:
-    case LIBXSMM_X86_INSTR_VFMSUB231SD:
-    case LIBXSMM_X86_INSTR_VFMSUB132SS:
-    case LIBXSMM_X86_INSTR_VFMSUB213SS:
-    case LIBXSMM_X86_INSTR_VFMSUB231SS:
-    case LIBXSMM_X86_INSTR_VFNMADD132SD:
-    case LIBXSMM_X86_INSTR_VFNMADD213SD:
-    case LIBXSMM_X86_INSTR_VFNMADD231SD:
-    case LIBXSMM_X86_INSTR_VFNMADD132SS:
-    case LIBXSMM_X86_INSTR_VFNMADD213SS:
-    case LIBXSMM_X86_INSTR_VFNMADD231SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB132SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB213SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB231SD:
-    case LIBXSMM_X86_INSTR_VFNMSUB132SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB213SS:
-    case LIBXSMM_X86_INSTR_VFNMSUB231SS:
-    case LIBXSMM_X86_INSTR_VRANGEPS:
-    case LIBXSMM_X86_INSTR_VRANGEPD:
-    case LIBXSMM_X86_INSTR_VRANGESS:
-    case LIBXSMM_X86_INSTR_VRANGESD:
-    case LIBXSMM_X86_INSTR_VREDUCEPS:
-    case LIBXSMM_X86_INSTR_VREDUCEPD:
-    case LIBXSMM_X86_INSTR_VREDUCESS:
-    case LIBXSMM_X86_INSTR_VREDUCESD:
-    case LIBXSMM_X86_INSTR_VRCP14PS:
-    case LIBXSMM_X86_INSTR_VRCP14PD:
-    case LIBXSMM_X86_INSTR_VRCP14SS:
-    case LIBXSMM_X86_INSTR_VRCP14SD:
-    case LIBXSMM_X86_INSTR_VRNDSCALEPS:
-    case LIBXSMM_X86_INSTR_VRNDSCALEPD:
-    case LIBXSMM_X86_INSTR_VRNDSCALESS:
-    case LIBXSMM_X86_INSTR_VRNDSCALESD:
-    case LIBXSMM_X86_INSTR_VRSQRT14PS:
-    case LIBXSMM_X86_INSTR_VRSQRT14PD:
-    case LIBXSMM_X86_INSTR_VRSQRT14SS:
-    case LIBXSMM_X86_INSTR_VRSQRT14SD:
-    case LIBXSMM_X86_INSTR_VSCALEFPS:
-    case LIBXSMM_X86_INSTR_VSCALEFPD:
-    case LIBXSMM_X86_INSTR_VSCALEFSS:
-    case LIBXSMM_X86_INSTR_VSCALEFSD:
-    case LIBXSMM_X86_INSTR_VCMPPS:
-    case LIBXSMM_X86_INSTR_VCMPSS:
-    case LIBXSMM_X86_INSTR_VCMPPD:
-    case LIBXSMM_X86_INSTR_VCMPSD:
-    case LIBXSMM_X86_INSTR_VPCMPB:
-    case LIBXSMM_X86_INSTR_VPCMPUB:
-    case LIBXSMM_X86_INSTR_VPCMPW:
-    case LIBXSMM_X86_INSTR_VPCMPUW:
-    case LIBXSMM_X86_INSTR_VPCMPD:
-    case LIBXSMM_X86_INSTR_VPCMPUD:
-    case LIBXSMM_X86_INSTR_VPCMPQ:
-    case LIBXSMM_X86_INSTR_VPCMPUQ:
-    case LIBXSMM_X86_INSTR_VPCMPEQB:
-    case LIBXSMM_X86_INSTR_VPCMPEQW:
-    case LIBXSMM_X86_INSTR_VPCMPEQD:
-    case LIBXSMM_X86_INSTR_VPCMPEQQ:
-    case LIBXSMM_X86_INSTR_VPCMPGTB:
-    case LIBXSMM_X86_INSTR_VPCMPGTW:
-    case LIBXSMM_X86_INSTR_VPCMPGTD:
-    case LIBXSMM_X86_INSTR_VPCMPGTQ:
-    case LIBXSMM_X86_INSTR_VPCMPESTRI:
-    case LIBXSMM_X86_INSTR_VPCMPESTRM:
-    case LIBXSMM_X86_INSTR_VPCMPISTRI:
-    case LIBXSMM_X86_INSTR_VPCMPISTRM:
-    case LIBXSMM_X86_INSTR_VCVTPS2PD:
-    case LIBXSMM_X86_INSTR_VCVTPH2PS:
-    case LIBXSMM_X86_INSTR_VCVTPS2PH:
-    case LIBXSMM_X86_INSTR_VCVTDQ2PS:
-    case LIBXSMM_X86_INSTR_VCVTPS2DQ:
-    case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
-    case LIBXSMM_X86_INSTR_VPMOVDW:
-    case LIBXSMM_X86_INSTR_VPMOVSXWD:
-    case LIBXSMM_X86_INSTR_VPMOVDB:
-    case LIBXSMM_X86_INSTR_VPMOVSDB:
-    case LIBXSMM_X86_INSTR_VPMOVUSDB:
-    case LIBXSMM_X86_INSTR_VPMOVZXWD:
-    case LIBXSMM_X86_INSTR_VPMOVSXBD:
-    case LIBXSMM_X86_INSTR_VPMOVZXBD:
-    case LIBXSMM_X86_INSTR_VPMOVUSWB:
-    case LIBXSMM_X86_INSTR_VPMOVSWB:
-    case LIBXSMM_X86_INSTR_VPMOVWB:
-    case LIBXSMM_X86_INSTR_VPSLLD_I:
-    case LIBXSMM_X86_INSTR_VPSRAD_I:
-    case LIBXSMM_X86_INSTR_VPSRLD_I:
-    case LIBXSMM_X86_INSTR_VPSLLVW:
-    case LIBXSMM_X86_INSTR_VPSLLVD:
-    case LIBXSMM_X86_INSTR_VPSLLVQ:
-    case LIBXSMM_X86_INSTR_VPSRAVW:
-    case LIBXSMM_X86_INSTR_VPSRAVD:
-    case LIBXSMM_X86_INSTR_VPSRAVQ:
-    case LIBXSMM_X86_INSTR_VPSRLVW:
-    case LIBXSMM_X86_INSTR_VPSRLVD:
-    case LIBXSMM_X86_INSTR_VPSRLVQ:
-    case LIBXSMM_X86_INSTR_VXORPD:
-    case LIBXSMM_X86_INSTR_VADDPD:
-    case LIBXSMM_X86_INSTR_VMULPD:
-    case LIBXSMM_X86_INSTR_VSUBPD:
-    case LIBXSMM_X86_INSTR_VDIVPD:
-    case LIBXSMM_X86_INSTR_VMAXPD:
-    case LIBXSMM_X86_INSTR_VADDSD:
-    case LIBXSMM_X86_INSTR_VMULSD:
-    case LIBXSMM_X86_INSTR_VSUBSD:
-    case LIBXSMM_X86_INSTR_VXORPS:
-    case LIBXSMM_X86_INSTR_VADDPS:
-    case LIBXSMM_X86_INSTR_VMULPS:
-    case LIBXSMM_X86_INSTR_VSUBPS:
-    case LIBXSMM_X86_INSTR_VDIVPS:
-    case LIBXSMM_X86_INSTR_VMAXPS:
-    case LIBXSMM_X86_INSTR_VMULSS:
-    case LIBXSMM_X86_INSTR_VADDSS:
-    case LIBXSMM_X86_INSTR_VSUBSS:
-    case LIBXSMM_X86_INSTR_VPXORD:
-    case LIBXSMM_X86_INSTR_VPORD:
-    case LIBXSMM_X86_INSTR_VPANDD:
-    case LIBXSMM_X86_INSTR_VPANDQ:
-    case LIBXSMM_X86_INSTR_VPADDQ:
-    case LIBXSMM_X86_INSTR_VPADDB:
-    case LIBXSMM_X86_INSTR_VPADDW:
-    case LIBXSMM_X86_INSTR_VPADDD:
-    case LIBXSMM_X86_INSTR_VPMADDWD:
-    case LIBXSMM_X86_INSTR_VPMADDUBSW:
-    case LIBXSMM_X86_INSTR_VPADDSW:
-    case LIBXSMM_X86_INSTR_VPADDSB:
-    case LIBXSMM_X86_INSTR_VPSUBD:
-    case LIBXSMM_X86_INSTR_VPMAXSD:
-    case LIBXSMM_X86_INSTR_VPMAXSW:
-    case LIBXSMM_X86_INSTR_VPMINSD:
-    case LIBXSMM_X86_INSTR_V4FMADDPS:
-    case LIBXSMM_X86_INSTR_V4FNMADDPS:
-    case LIBXSMM_X86_INSTR_V4FMADDSS:
-    case LIBXSMM_X86_INSTR_V4FNMADDSS:
-    case LIBXSMM_X86_INSTR_VP4DPWSSDS:
-    case LIBXSMM_X86_INSTR_VP4DPWSSD:
-    case LIBXSMM_X86_INSTR_VPDPBUSD:
-    case LIBXSMM_X86_INSTR_VPDPBUSDS:
-    case LIBXSMM_X86_INSTR_VPDPWSSD:
-    case LIBXSMM_X86_INSTR_VPDPWSSDS:
-    case LIBXSMM_X86_INSTR_VDPBF16PS:
-    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
-    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_LD:
-    case LIBXSMM_X86_INSTR_VMOVDQU64_ST:
-    case LIBXSMM_X86_INSTR_VMOVD_LD:
-    case LIBXSMM_X86_INSTR_VMOVQ_LD:
-    case LIBXSMM_X86_INSTR_VMOVD_ST:
-    case LIBXSMM_X86_INSTR_VMOVQ_ST:
-    case LIBXSMM_X86_INSTR_MOVAPS_LD:
-    case LIBXSMM_X86_INSTR_MOVUPS_LD:
-    case LIBXSMM_X86_INSTR_MOVAPS_ST:
-    case LIBXSMM_X86_INSTR_MOVUPS_ST:
-    case LIBXSMM_X86_INSTR_ANDPS:
-    case LIBXSMM_X86_INSTR_ANDNPS:
-    case LIBXSMM_X86_INSTR_ORPS:
-    case LIBXSMM_X86_INSTR_XORPS:
-    case LIBXSMM_X86_INSTR_MULPS:
-    case LIBXSMM_X86_INSTR_ADDPS:
-    case LIBXSMM_X86_INSTR_SUBPS:
-    case LIBXSMM_X86_INSTR_DIVPS:
-    case LIBXSMM_X86_INSTR_RCPPS:
-    case LIBXSMM_X86_INSTR_SQRTPS:
-    case LIBXSMM_X86_INSTR_MAXPS:
-    case LIBXSMM_X86_INSTR_MINPS:
-    case LIBXSMM_X86_INSTR_RSQRTPS:
-    case LIBXSMM_X86_INSTR_CMPPS:
-    case LIBXSMM_X86_INSTR_SHUFPS:
-    case LIBXSMM_X86_INSTR_UNPCKHPS:
-    case LIBXSMM_X86_INSTR_UNPCKLPS:
-    case LIBXSMM_X86_INSTR_MOVSS_LD:
-    case LIBXSMM_X86_INSTR_MOVSS_ST:
-    case LIBXSMM_X86_INSTR_MULSS:
-    case LIBXSMM_X86_INSTR_ADDSS:
-    case LIBXSMM_X86_INSTR_SUBSS:
-    case LIBXSMM_X86_INSTR_DIVSS:
-    case LIBXSMM_X86_INSTR_RCPSS:
-    case LIBXSMM_X86_INSTR_SQRTSS:
-    case LIBXSMM_X86_INSTR_MAXSS:
-    case LIBXSMM_X86_INSTR_MINSS:
-    case LIBXSMM_X86_INSTR_RSQRTSS:
-    case LIBXSMM_X86_INSTR_CMPSS:
-    case LIBXSMM_X86_INSTR_COMISS:
-    case LIBXSMM_X86_INSTR_UCOMISS:
-    case LIBXSMM_X86_INSTR_MOVAPD_LD:
-    case LIBXSMM_X86_INSTR_MOVUPD_LD:
-    case LIBXSMM_X86_INSTR_MOVAPD_ST:
-    case LIBXSMM_X86_INSTR_MOVUPD_ST:
-    case LIBXSMM_X86_INSTR_ANDPD:
-    case LIBXSMM_X86_INSTR_ANDNPD:
-    case LIBXSMM_X86_INSTR_ORPD:
-    case LIBXSMM_X86_INSTR_XORPD:
-    case LIBXSMM_X86_INSTR_MULPD:
-    case LIBXSMM_X86_INSTR_ADDPD:
-    case LIBXSMM_X86_INSTR_SUBPD:
-    case LIBXSMM_X86_INSTR_DIVPD:
-    case LIBXSMM_X86_INSTR_RCPPD:
-    case LIBXSMM_X86_INSTR_SQRTPD:
-    case LIBXSMM_X86_INSTR_MAXPD:
-    case LIBXSMM_X86_INSTR_MINPD:
-    case LIBXSMM_X86_INSTR_RSQRTPD:
-    case LIBXSMM_X86_INSTR_CMPPD:
-    case LIBXSMM_X86_INSTR_SHUFPD:
-    case LIBXSMM_X86_INSTR_UNPCKHPD:
-    case LIBXSMM_X86_INSTR_UNPCKLPD:
-    case LIBXSMM_X86_INSTR_MOVSD_LD:
-    case LIBXSMM_X86_INSTR_MOVSD_ST:
-    case LIBXSMM_X86_INSTR_MULSD:
-    case LIBXSMM_X86_INSTR_ADDSD:
-    case LIBXSMM_X86_INSTR_SUBSD:
-    case LIBXSMM_X86_INSTR_DIVSD:
-    case LIBXSMM_X86_INSTR_RCPSD:
-    case LIBXSMM_X86_INSTR_SQRTSD:
-    case LIBXSMM_X86_INSTR_MAXSD:
-    case LIBXSMM_X86_INSTR_MINSD:
-    case LIBXSMM_X86_INSTR_RSQRTSD:
-    case LIBXSMM_X86_INSTR_CMPSD:
-    case LIBXSMM_X86_INSTR_COMISD:
-    case LIBXSMM_X86_INSTR_UCOMISD:
-    case LIBXSMM_X86_INSTR_MOVDQA_LD:
-    case LIBXSMM_X86_INSTR_MOVDQA_ST:
-    case LIBXSMM_X86_INSTR_MOVDQU_LD:
-    case LIBXSMM_X86_INSTR_MOVDQU_ST:
-    case LIBXSMM_X86_INSTR_PAND:
-    case LIBXSMM_X86_INSTR_PANDN:
-    case LIBXSMM_X86_INSTR_POR:
-    case LIBXSMM_X86_INSTR_PXOR:
-    case LIBXSMM_X86_INSTR_PACKSSWB:
-    case LIBXSMM_X86_INSTR_PACKSSDW:
-    case LIBXSMM_X86_INSTR_PACKUSWB:
-    case LIBXSMM_X86_INSTR_PADDB:
-    case LIBXSMM_X86_INSTR_PADDW:
-    case LIBXSMM_X86_INSTR_PADDD:
-    case LIBXSMM_X86_INSTR_PADDQ:
-    case LIBXSMM_X86_INSTR_PADDSB:
-    case LIBXSMM_X86_INSTR_PADDSW:
-    case LIBXSMM_X86_INSTR_PADDUSB:
-    case LIBXSMM_X86_INSTR_PADDUSW:
-    case LIBXSMM_X86_INSTR_PAVGB:
-    case LIBXSMM_X86_INSTR_PAVGW:
-    case LIBXSMM_X86_INSTR_PCMPEQB:
-    case LIBXSMM_X86_INSTR_PCMPEQW:
-    case LIBXSMM_X86_INSTR_PCMPEQD:
-    case LIBXSMM_X86_INSTR_PCMPGTB:
-    case LIBXSMM_X86_INSTR_PCMPGTW:
-    case LIBXSMM_X86_INSTR_PCMPGTD:
-    case LIBXSMM_X86_INSTR_PEXTRW:
-    case LIBXSMM_X86_INSTR_PINSRW:
-    case LIBXSMM_X86_INSTR_PMADDWD:
-    case LIBXSMM_X86_INSTR_PMAXSW:
-    case LIBXSMM_X86_INSTR_PMAXUB:
-    case LIBXSMM_X86_INSTR_PMINSW:
-    case LIBXSMM_X86_INSTR_PMINUB:
-    case LIBXSMM_X86_INSTR_PMOVMSKB:
-    case LIBXSMM_X86_INSTR_PMULHUW:
-    case LIBXSMM_X86_INSTR_PMULHW:
-    case LIBXSMM_X86_INSTR_PMULLW:
-    case LIBXSMM_X86_INSTR_PMULUDQ:
-    case LIBXSMM_X86_INSTR_PSADBW:
-    case LIBXSMM_X86_INSTR_PSHUFD:
-    case LIBXSMM_X86_INSTR_PSHUFHW:
-    case LIBXSMM_X86_INSTR_PSHUFLW:
-    case LIBXSMM_X86_INSTR_PSLLW:
-    case LIBXSMM_X86_INSTR_PSLLD:
-    case LIBXSMM_X86_INSTR_PSLLQ:
-    case LIBXSMM_X86_INSTR_PSRAW:
-    case LIBXSMM_X86_INSTR_PSRAD:
-    case LIBXSMM_X86_INSTR_PSRLW:
-    case LIBXSMM_X86_INSTR_PSRLD:
-    case LIBXSMM_X86_INSTR_PSRLQ:
-    case LIBXSMM_X86_INSTR_PSUBB:
-    case LIBXSMM_X86_INSTR_PSUBW:
-    case LIBXSMM_X86_INSTR_PSUBD:
-    case LIBXSMM_X86_INSTR_PSUBQ:
-    case LIBXSMM_X86_INSTR_PSUBSB:
-    case LIBXSMM_X86_INSTR_PSUBSW:
-    case LIBXSMM_X86_INSTR_PSUBUSB:
-    case LIBXSMM_X86_INSTR_PSUBUSW:
-    case LIBXSMM_X86_INSTR_PUNPCKHBW:
-    case LIBXSMM_X86_INSTR_PUNPCKHWD:
-    case LIBXSMM_X86_INSTR_PUNPCKHDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKHQDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKLBW:
-    case LIBXSMM_X86_INSTR_PUNPCKLWD:
-    case LIBXSMM_X86_INSTR_PUNPCKLDQ:
-    case LIBXSMM_X86_INSTR_PUNPCKLQDQ:
-    case LIBXSMM_X86_INSTR_CVTDQ2PD:
-    case LIBXSMM_X86_INSTR_CVTDQ2PS:
-    case LIBXSMM_X86_INSTR_CVTPD2DQ:
-    case LIBXSMM_X86_INSTR_CVTPD2PS:
-    case LIBXSMM_X86_INSTR_CVTPS2DQ:
-    case LIBXSMM_X86_INSTR_CVTPS2PD:
-    case LIBXSMM_X86_INSTR_CVTSD2SS:
-    case LIBXSMM_X86_INSTR_CVTSS2SD:
-    case LIBXSMM_X86_INSTR_CVTTPD2DQ:
-    case LIBXSMM_X86_INSTR_CVTTPS2DQ:
-    case LIBXSMM_X86_INSTR_ADDSUBPD:
-    case LIBXSMM_X86_INSTR_ADDSUBPS:
-    case LIBXSMM_X86_INSTR_HADDPD:
-    case LIBXSMM_X86_INSTR_HADDPS:
-    case LIBXSMM_X86_INSTR_HSUBPD:
-    case LIBXSMM_X86_INSTR_HSUBPS:
-    case LIBXSMM_X86_INSTR_LDDQU:
-    case LIBXSMM_X86_INSTR_MOVDDUP:
-    case LIBXSMM_X86_INSTR_MOVSHDUP:
-    case LIBXSMM_X86_INSTR_MOVSLDUP:
-    case LIBXSMM_X86_INSTR_PABSB:
-    case LIBXSMM_X86_INSTR_PABSW:
-    case LIBXSMM_X86_INSTR_PABSD:
-    case LIBXSMM_X86_INSTR_PALIGNR:
-    case LIBXSMM_X86_INSTR_PHADDW:
-    case LIBXSMM_X86_INSTR_PHADDD:
-    case LIBXSMM_X86_INSTR_PHADDSW:
-    case LIBXSMM_X86_INSTR_PHSUBW:
-    case LIBXSMM_X86_INSTR_PHSUBD:
-    case LIBXSMM_X86_INSTR_PHSUBSW:
-    case LIBXSMM_X86_INSTR_PMADDUBSW:
-    case LIBXSMM_X86_INSTR_PMULHRSW:
-    case LIBXSMM_X86_INSTR_PSHUFB:
-    case LIBXSMM_X86_INSTR_PSIGNB:
-    case LIBXSMM_X86_INSTR_PSIGNW:
-    case LIBXSMM_X86_INSTR_PSIGND:
-    case LIBXSMM_X86_INSTR_BLENDPD:
-    case LIBXSMM_X86_INSTR_BLENDPS:
-    case LIBXSMM_X86_INSTR_BLENDVPD:
-    case LIBXSMM_X86_INSTR_BLENDVPS:
-    case LIBXSMM_X86_INSTR_DPPD:
-    case LIBXSMM_X86_INSTR_DPPS:
-    case LIBXSMM_X86_INSTR_EXTRACTPS:
-    case LIBXSMM_X86_INSTR_INSERTPS:
-    case LIBXSMM_X86_INSTR_ROUNDPD:
-    case LIBXSMM_X86_INSTR_ROUNDPS:
-    case LIBXSMM_X86_INSTR_ROUNDSD:
-    case LIBXSMM_X86_INSTR_ROUNDSS:
-    case LIBXSMM_X86_INSTR_MOVNTDQA:
-    case LIBXSMM_X86_INSTR_PBLENDW:
-    case LIBXSMM_X86_INSTR_PBLENDVB:
-    case LIBXSMM_X86_INSTR_PCMPEQQ:
-    case LIBXSMM_X86_INSTR_PMOVSXBW:
-    case LIBXSMM_X86_INSTR_PMOVSXBD:
-    case LIBXSMM_X86_INSTR_PMOVSXBQ:
-    case LIBXSMM_X86_INSTR_PMOVSXWD:
-    case LIBXSMM_X86_INSTR_PMOVSXWQ:
-    case LIBXSMM_X86_INSTR_PMOVSXDQ:
-    case LIBXSMM_X86_INSTR_PMOVZXBW:
-    case LIBXSMM_X86_INSTR_PMOVZXBD:
-    case LIBXSMM_X86_INSTR_PMOVZXBQ:
-    case LIBXSMM_X86_INSTR_PMOVZXWD:
-    case LIBXSMM_X86_INSTR_PMOVZXWQ:
-    case LIBXSMM_X86_INSTR_PMOVZXDQ:
-    case LIBXSMM_X86_INSTR_PEXTRB:
-    case LIBXSMM_X86_INSTR_PEXTRD:
-    case LIBXSMM_X86_INSTR_PEXTRQ:
-    case LIBXSMM_X86_INSTR_PHMINPOSUW:
-    case LIBXSMM_X86_INSTR_PINSRB:
-    case LIBXSMM_X86_INSTR_PINSRD:
-    case LIBXSMM_X86_INSTR_PINSRQ:
-    case LIBXSMM_X86_INSTR_PMAXSB:
-    case LIBXSMM_X86_INSTR_PMAXSD:
-    case LIBXSMM_X86_INSTR_PMAXUW:
-    case LIBXSMM_X86_INSTR_PMAXUD:
-    case LIBXSMM_X86_INSTR_PMINSB:
-    case LIBXSMM_X86_INSTR_PMINSD:
-    case LIBXSMM_X86_INSTR_PMINUW:
-    case LIBXSMM_X86_INSTR_PMINUD:
-    case LIBXSMM_X86_INSTR_MPSADBW:
-    case LIBXSMM_X86_INSTR_PMULDQ:
-    case LIBXSMM_X86_INSTR_PMULLD:
-    case LIBXSMM_X86_INSTR_PACKUSDW:
-    case LIBXSMM_X86_INSTR_PTEST:
-    case LIBXSMM_X86_INSTR_PCMPGTQ:
-      break;
-    default:
-      fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
-      exit(-1);
+  if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )     == 0) &&
+       (libxsmm_x86_instruction_vec_is_regmemonly( i_vec_instr ) == 0)    ) {
+    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
+    exit(-1);
   }
 
   /* check that we are not masking 'y' */
@@ -2632,14 +2050,8 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     exit(-1);
   }
 
-  /* check for currently support archs in this encoder */
-  if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
-    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: target error!\n");
-    exit(-1);
-  }
-
   /* select the code generator REX/VEX/EVEX */
-  if ( (i_vec_instr >= 16777216) && (io_generated_code->code_type > 1) ) {
+  if ( io_generated_code->code_type > 1 ) {
     unsigned int l_encoder; /* 2=EVEX, 1=VEX, 0=REX */
     unsigned int l_encoder_arch = 2;
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
@@ -2709,6 +2121,18 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     /* encode main instruction */
     if ( l_encoder == 2 ) {
       libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
+
+      /* ceck for gather/scatter */
+      if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
+        if (i_gp_reg_idx > 32) {
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: SIB addressing mode is required for instruction number: %u\n", i_vec_instr);
+          exit(-1);
+        }
+        if ( (i_mask_rnd_exp_cntl != 0) || (0 == i_mask_reg_number) ) {
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: merge masking with a valid mask registers (>k0) is required for instrucion number: %u\n", i_vec_instr);
+          exit(-1);
+        }
+      }
 
       /* set simd name */
       switch(i_vector_name) {
@@ -3859,7 +3283,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
     const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
-    unsigned int l_src1;
+    unsigned int l_src1 = 0;
 
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_mask_instr >> 28) & 3) == 2 ) {
@@ -3869,7 +3293,12 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
       }
       l_src1 = 0;
     } else {
-      l_src1 = i_mask_reg_number_src_1;
+      if ( i_mask_reg_number_src_1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
+        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 2 src operand instruction (%u), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
+        exit(-1);
+      } else {
+        l_src1 = i_mask_reg_number_src_1;
+      }
     }
 
     /* call vex encoder */
@@ -5257,4 +4686,3 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
-
