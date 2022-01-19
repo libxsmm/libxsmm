@@ -147,8 +147,13 @@ void cnn_tpp_fwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* in_
     if ( cfg.avoid_fmas_in_rim == 1) {
       for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
         img = imgofm1ofh / (cfg.blocksofm*cfg.ofh);
-        oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))/cfg.blocksofm;
-        ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))%cfg.blocksofm;
+        if (cfg.N > 1) {
+          oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))/cfg.blocksofm;
+          ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))%cfg.blocksofm;
+        } else {
+          oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))%cfg.ofh;
+          ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofh))/cfg.ofh;
+        }
         if ( (cfg.avoid_acc_load == 0) && (cfg.overwrite_output > 0) ) {
           /* set output feature map to zero */
           unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
