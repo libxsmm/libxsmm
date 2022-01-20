@@ -29,12 +29,14 @@
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
 
+/* currently unused
 typedef enum my_pass {
   MY_PASS_FWD   = 1,
   MY_PASS_BWD_D = 2,
   MY_PASS_BWD_W = 4,
   MY_PASS_BWD   = 6
 } my_pass;
+*/
 
 #endif /* either REFACTORED_FWD or REFACTORED_BWD */
 
