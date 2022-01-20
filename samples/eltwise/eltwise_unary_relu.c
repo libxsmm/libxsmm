@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -19,6 +19,7 @@
 #define TYPE_RELU 0
 #define TYPE_LEAKY_RELU 1
 #define TYPE_ELU 2
+/* GELU is being tested by eltwise_unary_simple.c */
 
 #define PRINT_CORRECT_MASKS 0
 
