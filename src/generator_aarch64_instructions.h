@@ -230,7 +230,8 @@
 #define LIBXSMM_AARCH64_INSTR_GP_MOVN            0x12800000
 #define LIBXSMM_AARCH64_INSTR_GP_CBNZ            0x35000000
 #define LIBXSMM_AARCH64_INSTR_GP_CBZ             0x34000000
-/* define GP meta instructions which will to sequenes of aarch64 instructions */
+/* define GP meta instructions, which are instructions with an immediate offset, */
+/* which are split into multiple instructions, if the immediate would be out of bounds */
 #define LIBXSMM_AARCH64_INSTR_GP_META_ADD        0x00001000
 #define LIBXSMM_AARCH64_INSTR_GP_META_SUB        0x00001001
 
@@ -357,18 +358,18 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF    0x8540c086 /* load 4 bytes, broadcast to all active elements; set inactive to zero */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF    0x85c0e086 /* load 8 bytes, broadcast to all active elements; set inactive to zero */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF   0xa5802086
-#define LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF     0x85c04085
+#define LIBXSMM_AARCH64_INSTR_SVE_PRFW_I_OFF     0x85c04085 /* prefetch instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PRFD_I_OFF     0x85c06085
 /* define SVE move instructions, (using libxsmm_aarch64_instruction_sve_compute, because they have a libxsmm_aarch64_sve_type parameter) */
 #define LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P        0x0528a082 /* mov/cpy scalar from register and broadcast value into all active elements; predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P        0x0520c083 /* mov; merge to vector registers into one, merging is decided by predicate register */
 /* define SVE compute instructions */
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
-#define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED 0x80
-#define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED 0x40
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED  0x80
+#define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED     0x40
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE 0x20
-#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0 2
-#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 1 /* all sve instructions have src0 currently */
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0       0x02 /* currently set for all instructions, so maybe could be replaced/removed */
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1       0x01
 /* define unpredicated SVE instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_AND_V          0x04203003 /* binary and, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003 /* exclusive or, vectors, unpredicated */
@@ -383,6 +384,15 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001803 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
+
+#define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
+
+/* zip & unzip (instructions exist for predicates (P) and vectors (V)) */
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E        0x05204803 /* unzip even elements from two predicates */
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O        0x05204c03 /* unzip  odd elements from two predicates */
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H        0x05204403 /* zip two predicates, store high bits */
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L        0x05204003 /* zip two predicates, store  low bits */
+
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
@@ -397,6 +407,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS  0x659ca082 /* convert 32 bit fp to 32 bit signed int, SS = single -> single */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004093 /* 0x10 belongs to the instruction, not to the flags! */
                                                             /* compare greater than, store result into predicate register (dst is predicate register!) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V      0x65102092 /* compare greather than zero, predicated, dst is result predicate register, 0-15 */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */

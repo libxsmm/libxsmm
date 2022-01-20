@@ -7,7 +7,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
+/* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.), Antonio Noack(Univ. Jena)
 ******************************************************************************/
 
 #include "generator_aarch64_instructions.h"
@@ -897,10 +897,12 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   /* this is a check whether the instruction is valid; it could removed for better performance */
   switch ( i_vec_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_ORR_P:
     case LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_AND_V:
     case LIBXSMM_AARCH64_INSTR_SVE_EOR_V:
     case LIBXSMM_AARCH64_INSTR_SVE_ORR_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_ADD_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSUB_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V:
@@ -925,6 +927,11 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
+    case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
+    case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:
+    case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
