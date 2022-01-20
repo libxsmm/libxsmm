@@ -37,7 +37,7 @@
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
 #define _MM_MUL_FP32 _mm512_mul_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
-#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) { \
+#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) do { \
   __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf; \
   __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf; \
   r0 = _mm512_loadu_ps(ptr_A); \
@@ -149,9 +149,9 @@
   _mm512_storeu_ps(ptr_B + 13*ldB, rd); \
   _mm512_storeu_ps(ptr_B + 14*ldB, re); \
   _mm512_storeu_ps(ptr_B + 15*ldB, rf); \
-}
+} while(0)
 
-#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) { \
+#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) do { \
   __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf; \
   __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf; \
   __m512i vload_1 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A))); \
@@ -271,9 +271,9 @@
   _mm512_storeu_ps(ptr_B + 13*ldB, rd); \
   _mm512_storeu_ps(ptr_B + 14*ldB, re); \
   _mm512_storeu_ps(ptr_B + 15*ldB, rf);}}}}}}} \
-}
+} while(0)
 
-#define COMPRESS_FP32(v, k, m, cnt) { \
+#define COMPRESS_FP32(v, k, m, cnt) do { \
   _mm512_mask_compressstoreu_ps(values_ptr + (cnt), m, v); \
   { \
     __m256i vk1 = _mm256_set1_epi16((short)(k)); \
@@ -285,18 +285,18 @@
     _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx_2); \
     cnt = (unsigned short)((cnt) + _mm_popcnt_u32(((m)>>8)&0xFF)); \
   } \
-}
+} while(0)
 
-#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) { \
+#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) do { \
   const __m512i vlo = _mm512_unpacklo_epi16(vzero, v); \
   const __m512i vhi = _mm512_unpackhi_epi16(vzero, v); \
   const __m512i permmask1 = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0); \
   const __m512i permmask2 = _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4); \
   vlo_final = _mm512_castsi512_ps(_mm512_permutex2var_epi64(vlo, permmask1, vhi)); \
   vhi_final = _mm512_castsi512_ps(_mm512_permutex2var_epi64(vlo, permmask2, vhi)); \
-}
+} while(0)
 
-#define COMPRESS_BFLOAT16(vlo, vhi, v) { \
+#define COMPRESS_BFLOAT16(vlo, vhi, v) do { \
   const __m512i permmask1 = _mm512_set_epi64(13, 12, 9, 8, 5, 4, 1, 0); \
   const __m512i permmask2 = _mm512_set_epi64(15, 14, 11, 10, 7, 6, 3, 2); \
   const __m512i va = _mm512_castps_si512(vlo), vb = _mm512_castps_si512(vhi); \
@@ -304,7 +304,7 @@
   const __m512i vtmp2 =  _mm512_permutex2var_epi64(va, permmask2, vb); \
   const __m512i a = _mm512_srli_epi32(vtmp1, 16), b = _mm512_srli_epi32(vtmp2, 16); \
   v = _mm512_packus_epi32(a, b); \
-}
+} while(0)
 
 #endif
 

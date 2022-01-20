@@ -19,19 +19,19 @@
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
 #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
-#   define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) do { \
       unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
       (EAX) = (int)libxsmm_xgetbv_; \
       (EDX) = (int)(libxsmm_xgetbv_ >> 32); \
-    }
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+    } while(0)
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) do { \
       int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
       __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
       (EAX) = (unsigned int)libxsmm_cpuid_x86_[0]; \
       (EBX) = (unsigned int)libxsmm_cpuid_x86_[1]; \
       (ECX) = (unsigned int)libxsmm_cpuid_x86_[2]; \
       (EDX) = (unsigned int)libxsmm_cpuid_x86_[3]; \
-    }
+    } while(0)
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
       LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */

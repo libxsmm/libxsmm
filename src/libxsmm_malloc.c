@@ -223,7 +223,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)
-# define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) { \
+# define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     const int internal_memalign_hook_recursive_ = LIBXSMM_ATOMIC_ADD_FETCH( \
       &internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
     if ( 1 < internal_memalign_hook_recursive_ /* protect against recursion */ \
@@ -244,7 +244,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       } \
     } \
     LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
-  }
+  } while(0)
 # define INTERNAL_REALLOC_HOOK(RESULT, FLAGS, PTR, SIZE, CALLER) \
   if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
     /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
@@ -265,7 +265,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     } \
     (RESULT) = (PTR); \
   }
-# define INTERNAL_FREE_HOOK(PTR, CALLER) { \
+# define INTERNAL_FREE_HOOK(PTR, CALLER) do { \
     LIBXSMM_UNUSED(CALLER); \
     if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
       /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
@@ -275,7 +275,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     else { /* recognize pointers not issued by LIBXSMM */ \
       libxsmm_free(PTR); \
     } \
-  }
+  } while(0)
 #elif defined(LIBXSMM_MALLOC_MOD)
 # define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     LIBXSMM_UNUSED(FLAGS); LIBXSMM_UNUSED(CALLER); \
@@ -296,16 +296,16 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(WIN32)
 # if defined(MAP_32BIT)
 #   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-    if (MAP_FAILED == (BUFFER) && 0 != (MAP_32BIT & (MFLAGS))) { \
+    if (MAP_FAILED == (BUFFER) && 0 != (MAP_32BIT & (MFLAGS))) do { \
       (BUFFER) = internal_xmalloc_xmap(ENV, SIZE, (MFLAGS) & ~MAP_32BIT, REPTR); \
       if (MAP_FAILED != (BUFFER)) (MAPSTATE) = 0; \
-    }
+    } while(0)
 # else
 #   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR)
 # endif
 
 # define INTERNAL_XMALLOC(I, ENTRYPOINT, ENVVAR, ENVDEF, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-  if ((ENTRYPOINT) <= (I) && (MAP_FAILED == (BUFFER) || NULL == (BUFFER))) { \
+  if ((ENTRYPOINT) <= (I) && (MAP_FAILED == (BUFFER) || NULL == (BUFFER))) do { \
     static const char* internal_xmalloc_env_ = NULL; \
     LIBXSMM_ASSERT(NULL != (ENVVAR) && '\0' != *(ENVVAR)); \
     if (NULL == internal_xmalloc_env_) { \
@@ -315,9 +315,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     (BUFFER) = internal_xmalloc_xmap(internal_xmalloc_env_, SIZE, MFLAGS, REPTR); \
     INTERNAL_XMALLOC_MAP32(internal_xmalloc_env_, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR); \
     if (MAP_FAILED != (BUFFER)) (ENTRYPOINT) = (I); \
-  }
+  } while(0)
 
-# define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) { \
+# define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) do { \
   const size_t internal_xmalloc_watermark_ = (WATERMARK) + (SIZE) / 2; /* accept data-race */ \
   if (internal_xmalloc_watermark_ < (LIMIT)) { \
     static size_t internal_xmalloc_watermark_verbose_ = 0; \
@@ -333,7 +333,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       internal_xmalloc_watermark_verbose_ = internal_xmalloc_watermark_; \
     } \
   } \
-}
+} while(0)
 
 # define INTERNAL_XMALLOC_KIND(KIND, NAME, FLAG, FLAGS, MFLAGS, WATERMARK, LIMIT, INFO, SIZE, BUFFER) \
   if (0 != ((KIND) & (MFLAGS))) { \

@@ -55,20 +55,20 @@
   const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDI) + (INDEX_J))); \
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 
-#define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+#define LIBXSMM_MZERO_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
   libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mzero_call_args_.out.primary = (DST); \
   (KERNEL).function(&libxsmm_mzero_call_args_); \
   LIBXSMM_UNUSED(LDO); \
-}
-#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+} while(0)
+#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
   libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mcopy_call_args_.out.primary = (DST); \
   (KERNEL).function(&libxsmm_mcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
-}
+} while(0)
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
@@ -76,15 +76,15 @@
         TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 
 /* call JIT-kernel (transpose) */
-#define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
+#define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) do { \
   libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
   libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_tcopy_call_args_.out.primary = (DST); \
   (KERNEL).function(&libxsmm_tcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
-}
+} while(0)
 
-#define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1) do { \
   libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
   for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
     LIBXSMM_PRAGMA_NONTEMPORAL(OUT) \
@@ -93,9 +93,9 @@
         libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
     } \
   } \
-}
+} while(0)
 
-#define LIBXSMM_XCOPY_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) do { \
   switch(TYPESIZE) { \
     case 2: { \
       LIBXSMM_XCOPY_LOOP(short, 2, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
@@ -121,9 +121,9 @@
       } \
     } \
   } \
-}
+} while(0)
 
-#define LIBXSMM_ITRANS_LOOP(TYPE, INOUT, LD, M) { \
+#define LIBXSMM_ITRANS_LOOP(TYPE, INOUT, LD, M) do { \
   libxsmm_blasint libxsmm_itrans_loop_i_, libxsmm_itrans_loop_j_; \
   LIBXSMM_ASSERT(NULL != (INOUT) && (M) <= (LD)); \
   for (libxsmm_itrans_loop_i_ = 0; libxsmm_itrans_loop_i_ < (M); ++libxsmm_itrans_loop_i_) { \
@@ -133,9 +133,9 @@
       LIBXSMM_ISWAP(*libxsmm_itrans_loop_a_, *libxsmm_itrans_loop_b_); \
     } \
   } \
-}
+}while(0)
 
-#define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M) { \
+#define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M) do { \
   switch(TYPESIZE) { \
     case 2: { \
       LIBXSMM_ITRANS_LOOP(short, INOUT, LD, M); \
@@ -165,7 +165,7 @@
       } \
     } \
   } \
-}
+} while(0)
 
 #define LIBXSMM_MZERO_KERNEL_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_TILE(XKERNEL, TYPESIZE, OUT, IN, LDI, LDO, N0, N1, M0, M1)
@@ -183,7 +183,7 @@
 # define LIBXSMM_XCOPY_PRECOND(COND) COND
 #endif
 
-#define LIBXSMM_XCOPY_TILES(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY_TILES(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) do { \
   libxsmm_blasint libxsmm_xcopy_i_ = M0, libxsmm_xcopy_j_ = N0; \
   LIBXSMM_ASSERT_MSG(0 < (TILE_M) && 0 < (TILE_N), "XCOPY cannot make progress"); \
   if (NULL != (KERNEL).ptr) { /* inner tiles with JIT */ \
@@ -224,7 +224,7 @@
         libxsmm_xcopy_j_, N1); \
     } \
   } \
-}
+} while(0)
 
 #define LIBXSMM_MZERO_KERNEL_TILES(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) \
   LIBXSMM_XCOPY_TILES(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_N, TILE_M, N0, N1, M0, M1)
