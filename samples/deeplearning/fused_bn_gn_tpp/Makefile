@@ -5,9 +5,9 @@ INCDIR = .
 BLDDIR = obj
 OUTDIR = .
 
-CXXFLAGS = $(NULL) -g -O0
-CFLAGS = $(NULL) -g -O0
-DFLAGS = $(NULL) -g -O0
+CXXFLAGS = $(NULL)
+CFLAGS = $(NULL)
+DFLAGS = $(NULL)
 
 BLAS = 0
 OMP = 1
