@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
 # if defined(MKLJIT)
           kernel(jitter[j], a, b, c);
 # else
-          if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c, a, b, c);
+          if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c/*, a, b, c*/); /* @TODO fix prefetch */
 # endif
           result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(double), rnd[j].m, rnd[j].n, NULL, c, &rnd[j].m, &rnd[j].m);
         }

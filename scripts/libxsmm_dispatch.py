@@ -84,7 +84,7 @@ if __name__ == "__main__":
                     )
                     print(
                         "  internal_register_static_code("
-                        + "LIBXSMM_GEMM_PRECISION_F64, "
+                        + "LIBXSMM_DATATYPE_F64, "
                         + mnksig
                         + ", func, new_registry);"
                     )
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                     )
                     print(
                         "  internal_register_static_code("
-                        + "LIBXSMM_GEMM_PRECISION_F32, "
+                        + "LIBXSMM_DATATYPE_F32, "
                         + mnksig
                         + ", func, new_registry);"
                     )

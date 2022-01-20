@@ -25,8 +25,8 @@ void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
   const int my_LDA = *LDA;
   const int my_LDB = *LDB;
   const int my_LDC = *LDC;
-  const float my_alpha = *alpha;
-  const float my_beta = *beta;
+  const float my_alpha = (float)*alpha;
+  const float my_beta = (float)*beta;
   int m = 0, n = 0, k = 0;
 
   for ( n = 0; n < my_N; ++n ) {
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
-      kernel( a, &b[ldb*i], &c2[ldc*i], NULL, NULL, NULL );
+      kernel( a, &b[ldb*i], &c2[ldc*i] );
     }
     l_end = libxsmm_timer_tick();
   }

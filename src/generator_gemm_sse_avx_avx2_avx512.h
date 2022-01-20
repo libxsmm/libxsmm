@@ -15,8 +15,13 @@
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( libxsmm_generated_code*        io_generated_code,
+                                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
+
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxsmm_generated_code*        io_generated_code,
-                                                                            const libxsmm_gemm_descriptor* i_xgemm_desc );
+                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                           const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsmm_generated_code*            io_generated_code,
                                                                            libxsmm_loop_label_tracker*        io_loop_label_tracker,

@@ -107,7 +107,7 @@ void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, un
     for (b = 32; b < 64; ++b ) {
       for (v = 0; v < 32; ++v ) {
         for (w = 0; w < 8; ++w ) {
-          libxsmm_aarch64_instruction_asimd_struct_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, v, simd[w] );
+          libxsmm_aarch64_instruction_asimd_struct_r_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, v, simd[w] );
         }
       }
     }
@@ -116,7 +116,7 @@ void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, un
       for (o = 32; o < 64; ++o ) {
         for (v = 0; v < 32; ++v ) {
           for (w = 0; w < 8; ++w ) {
-            libxsmm_aarch64_instruction_asimd_struct_move( mycode, instr, b, o, v, simd[w] );
+            libxsmm_aarch64_instruction_asimd_struct_r_move( mycode, instr, b, o, v, simd[w] );
           }
         }
       }
