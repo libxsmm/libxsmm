@@ -22,6 +22,9 @@
 
 #define COMPUTE_FP64_REFERENCE
 
+#define TRUE_PARALLEL_BWD
+#define TRUE_PARALLEL_FWD
+
 //#define DEBUGGING
 
 #if defined(REFACTORED_BWD) || defined(REFACTORED_FWD)
@@ -357,7 +360,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint CP, libxsmm_
 
 // FIXME: Remove omp pragmas from the copy-pasted code, need to use tid to have a reasonable kernel
 // FIXME: Set const modifiers properly? Cannot put const as then reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); complains
-void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, int start_tid, int my_tid ) {
+void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, int start_tid, int my_tid, void *scratch ) {
 
   const libxsmm_blasint N  = cfg.N;
   const libxsmm_blasint CP = cfg.CP;
@@ -367,35 +370,87 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
+#ifdef TRUE_PARALLEL_FWD
+  /* number of tasks that could be run in parallel for 1d blocking */
+  // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_dN = CP * N;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize_dN = (work_dN % cfg.threads == 0) ?
+    (work_dN / cfg.threads) : ((work_dN / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin_dN = (ltid * chunksize_dN < work_dN) ? (ltid * chunksize_dN) : work_dN;
+  const libxsmm_blasint thr_end_dN = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
+
+  /* number of tasks that could be run in parallel for 1d blocking */
+  // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_C = CP;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize_C = (work_C % cfg.threads == 0) ?
+    (work_C / cfg.threads) : ((work_C / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin_C = (ltid * chunksize_C < work_C) ? (ltid * chunksize_C) : work_C;
+  const libxsmm_blasint thr_end_C = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
+#endif
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
-
-//#if 0
-  const float scale = 1.0f /((float)N * HW);
-  LIBXSMM_ALIGNED(float sum_X_X2[CP*2*CB], 64);
 
   LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);            /* [N, CP, HW, CB] */
   LIBXSMM_VLA_DECL(4, float, out, pout, CP, HW, CB);            /* [N, CP, HW, CB] */
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);                /* [CP, CB] */
   LIBXSMM_VLA_DECL(2, float, beta, pbeta, CB);                  /* [CP, CB] */
 
+  const float scale = 1.0f /((float)N * HW);
+
+#ifdef TRUE_PARALLEL_FWD
+  LIBXSMM_VLA_DECL(3, float, sum_X_X2, ((float*)scratch), CP, CB);  /* [2, CP, CB] */
+  LIBXSMM_ASSUME_ALIGNED(sum_X_X2_, 64);
+  const libxsmm_blasint sum_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * 2 * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(3, float, sum_N,  ((float*)scratch) + sum_N_offset, N, CB);  /* [CP, N, CB] */
+  LIBXSMM_ASSUME_ALIGNED(sum_N_, 64);
+  const libxsmm_blasint sumsq_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + sum_N_offset + CP * N * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(3, float, sumsq_N,  ((float*)scratch) + sumsq_N_offset, N, CB);  /* [CP, N, CB] */
+  LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
+#else
+  LIBXSMM_ALIGNED(float sum_X_X2[CP*2*CB], 64); // should get replaced with scratch
   LIBXSMM_ALIGNED(float sum_N[CP*N*CB], 64);
   LIBXSMM_ALIGNED(float sumsq_N[CP*N*CB], 64);
+#endif
 
+//#if 0
+
+
+#ifdef TRUE_PARALLEL_FWD
+  {
+#else
   #pragma omp parallel
   {
+#endif
     LIBXSMM_ALIGNED(float s[CB], 64);
     LIBXSMM_ALIGNED(float b[CB], 64);
     int n, cp;
 
+#ifdef TRUE_PARALLEL_FWD
+    int cpxnt;
+    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      { // stupid block to keep indentation
+        n  = cpxnt%N;
+        cp = cpxnt/N;
+#else
     #pragma omp for nowait collapse(2)
     for (cp = 0; cp < CP; cp++) {
       for(n = 0; n < N; n++){
+#endif
 
         int hwb;
-        float *sum_ncp_ptr = &sum_N[cp*N*CB + n*CB];
+
+#ifdef TRUE_PARALLEL_FWD
+        float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, n, 0, N, CB);
+        float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, CB);
+#else
+        float *sum_ncp_ptr   = &sum_N[cp*N*CB + n*CB];
         float *sumsq_ncp_ptr = &sumsq_N[cp*N*CB + n*CB];
+#endif
 
         libxsmm_meltw_unary_param all_zero_param;
         all_zero_param.out.primary = sum_ncp_ptr;
@@ -412,11 +467,11 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
         libxsmm_meltw_binary_param add_param;
 
         libxsmm_meltw_unary_param reduce_HW_params;       /*Private params and tmp array */
-        LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*CB], 64);
+        LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*CB], 64); // FIXME: needs to be moved to scratch memory!
         reduce_HW_params.out.primary   = lcl_sum_X_X2;                                                         /* [2*CB]  */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
 
-          reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+          reduce_HW_params.in.primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           cfg.reduce_HW_kernel(&reduce_HW_params);                                                       /* [HW, CB] -----> [2 * CB] */
 
           add_param.in0.primary = sum_ncp_ptr;
@@ -438,16 +493,32 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
       }
     }
 
+#ifdef TRUE_PARALLEL_FWD
+    libxsmm_barrier_wait(cfg.barrier, ltid); // valid replacement? what exactly ltid argument does?
+#else
     #pragma omp barrier
+#endif
 
+#ifdef TRUE_PARALLEL_FWD
+    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+#else
     #pragma omp for
     for (cp = 0; cp < CP; cp++) {
+#endif
 
+#ifdef TRUE_PARALLEL_FWD
+      libxsmm_meltw_unary_param all_zero_param;
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+#else
       libxsmm_meltw_unary_param all_zero_param;
       all_zero_param.out.primary = &sum_X_X2[cp*CB];
       cfg.all_zero_kernel(&all_zero_param);
       all_zero_param.out.primary = &sum_X_X2[CP*CB + cp*CB];
       cfg.all_zero_kernel(&all_zero_param);
+#endif
 
       /* #pragma omp simd */
       /* for (int cb = 0; cb < CB; cb++) {  */
@@ -459,6 +530,17 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
       int cb, ni;
       for(ni = 0; ni < N; ni++){
 
+#ifdef TRUE_PARALLEL_FWD
+        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);//sum_X_X2_[cp*CB];
+        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, CB);
+        add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);//sum_X_X2_[cp*CB];
+        cfg.add_kernel(&add_param);
+
+        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);//sum_X_X2_[CP*CB + cp*CB];
+        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, CB);
+        add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);//sum_X_X2_[CP*CB + cp*CB];
+        cfg.add_kernel(&add_param);
+#else
         add_param.in0.primary = &sum_X_X2[cp*CB];
         add_param.in1.primary = &sum_N[cp*N*CB + ni*CB];
         add_param.out.primary = &sum_X_X2[cp*CB];
@@ -468,7 +550,7 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
         add_param.in1.primary = &sumsq_N[cp*N*CB + ni*CB];
         add_param.out.primary = &sum_X_X2[CP*CB + cp*CB];
         cfg.add_kernel(&add_param);
-
+#endif
         /* #pragma omp simd */
         /* for (int cb = 0; cb < CB; cb++) { */
         /*   sum_X_X2[cp*CB + cb] += sum_N[cp*N*CB + n*CB + cb]; */
@@ -477,14 +559,32 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, float *pinp, float *pgamma, float *pb
       }
 
       for(cb = 0; cb < CB; cb++){
+#ifdef TRUE_PARALLEL_FWD
+        mean[cp*CB + cb] = (LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, cb, CP, CB)) * scale;                 /* E[X] */
+        var[cp*CB + cb] = ((LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, cb, CP, CB)) * scale) - (mean[cp*CB + cb]*mean[cp*CB + cb]);
+#else
         mean[cp*CB + cb] = sum_X_X2[cp*CB + cb] * scale;                                                  /* E[X] */
         var[cp*CB + cb] = (sum_X_X2[CP*CB + cp*CB + cb] * scale) - (mean[cp*CB + cb]*mean[cp*CB + cb]);
+#endif
       }
     }
 
+    // FIXME: Why there was no barrier in the older implementation here?
+#ifdef TRUE_PARALLEL_FWD
+    libxsmm_barrier_wait(cfg.barrier, ltid); // valid replacement? what exactly ltid argument does?
+#endif
+
+#ifdef TRUE_PARALLEL_FWD
+    //int cpxnt;
+    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      { // stupid block to keep indentation
+        n  = cpxnt%N;
+        cp = cpxnt/N;
+#else
     #pragma omp for nowait collapse(2)
     for (cp = 0; cp < CP; cp++){
       for(n = 0; n < N; n++){                                                             /* Parallelize over batches and CP*/
+#endif
 
         libxsmm_matrix_arg arg_array[5];                                                         /* private eqn args and params*/
         libxsmm_matrix_eqn_param eqn_param;
@@ -792,8 +892,9 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint CP, libxsmm_
 
 // FIXME: Remove omp pragmas from the copy-pasted code, need to use tid to have a reasonable kernel
 // FIXME: Set const modifiers properly?
+// FIXME: Add a "my_pass" type of input argument to distinguish between backward over weights vs backward over data
 void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta, float eps,
-                     int start_tid, int my_tid) {
+                     int start_tid, int my_tid, void *scratch) {
 
   const libxsmm_blasint N  = cfg.N;
   const libxsmm_blasint CP = cfg.CP;
@@ -803,6 +904,27 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
+#ifdef TRUE_PARALLEL_BWD
+  /* number of tasks that could be run in parallel for 1d blocking */
+  // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_dN = N * CP;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize_dN = (work_dN % cfg.threads == 0) ?
+    (work_dN / cfg.threads) : ((work_dN / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin_dN = (ltid * chunksize_dN < work_dN) ? (ltid * chunksize_dN) : work_dN;
+  const libxsmm_blasint thr_end_dN = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
+
+  /* number of tasks that could be run in parallel for 1d blocking */
+  // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_C = CP;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize_C = (work_C % cfg.threads == 0) ?
+    (work_C / cfg.threads) : ((work_C / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin_C = (ltid * chunksize_C < work_C) ? (ltid * chunksize_C) : work_C;
+  const libxsmm_blasint thr_end_C = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
+#endif
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -818,20 +940,39 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
   /* LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB); */
   /* LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB); */
 
-  LIBXSMM_ALIGNED(float dgamma_N[CP*N*CB], 64);
+#ifdef TRUE_PARALLEL_BWD
+  const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);// ((CP*N*CB) + 64 - 1) / 64;
+  LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, CB);  /* [CP, N, CB] */
+  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
+  LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, CB);  /* [CP, N, CB] */
+  LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
+#else
+  LIBXSMM_ALIGNED(float dgamma_N[CP*N*CB], 64); // should get replaced with scratch
   LIBXSMM_ALIGNED(float dbeta_N[CP*N*CB], 64);
+#endif
 
-
+#ifdef TRUE_PARALLEL_BWD
+  {
+#else
   #pragma omp parallel
   {
-    LIBXSMM_ALIGNED(float a[CB], 64);
+#endif
+    LIBXSMM_ALIGNED(float a[CB], 64); // should also get replaced with scratch I guess
     LIBXSMM_ALIGNED(float b[CB], 64);
     LIBXSMM_ALIGNED(float c[CB], 64);
     int n, cp;
 
+#ifdef TRUE_PARALLEL_BWD
+    int cpxnt;
+    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      { // stupid block to keep indentation
+        n  = cpxnt%N;
+        cp = cpxnt/N;
+#else
     #pragma omp for nowait collapse(2)
     for (cp = 0; cp < CP; cp++) {
       for (n = 0; n < N; n++) {
+#endif
 
         int hwb, cb;
         libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
@@ -840,8 +981,13 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
         LIBXSMM_ALIGNED(float lcl_dgamma_ptr[CB], 64);
         LIBXSMM_ALIGNED(float lcl_dbeta_ptr[CB], 64);
 
+#ifdef TRUE_PARALLEL_BWD
+        float *dgamma_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, n, 0, N, CB);
+        float *dbeta_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, CB);
+#else
         float *dgamma_ncp_ptr = &dgamma_N[cp*N*CB + n*CB];
         float *dbeta_ncp_ptr = &dbeta_N[cp*N*CB + n*CB];
+#endif
 
         libxsmm_meltw_unary_param all_zero_param;
         all_zero_param.out.primary = lcl_dgamma_ptr;
@@ -896,10 +1042,18 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
       }
     }
 
+#ifdef TRUE_PARALLEL_BWD
+    libxsmm_barrier_wait(cfg.barrier, ltid); // valid replacement? what exactly ltid argument does?
+#else
     #pragma omp barrier
+#endif
 
+#ifdef TRUE_PARALLEL_BWD
+    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+#else
     #pragma omp for
     for (cp = 0; cp < CP; cp++) {
+#endif
       libxsmm_meltw_unary_param all_zero_param;
       all_zero_param.out.primary = &pdgamma[cp*CB];
       cfg.all_zero_kernel(&all_zero_param);
@@ -917,12 +1071,20 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
       for(ni = 0; ni < N; ni++){
 
         add_param.in0.primary = &pdgamma[cp*CB];
+#ifdef TRUE_PARALLEL_BWD
+        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, CB);
+#else
         add_param.in1.primary = &dgamma_N[cp*N*CB + ni*CB];
+#endif
         add_param.out.primary = &pdgamma[cp*CB];
         cfg.add_kernel(&add_param);
 
         add_param.in0.primary = &pdbeta[cp*CB];
+#ifdef TRUE_PARALLEL_BWD
+        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, CB);
+#else
         add_param.in1.primary = &dbeta_N[cp*N*CB + ni*CB];
+#endif
         add_param.out.primary = &pdbeta[cp*CB];
         cfg.add_kernel(&add_param);
 
@@ -936,10 +1098,20 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
 //#if 0
 
+#ifdef TRUE_PARALLEL_BWD
+    libxsmm_barrier_wait(cfg.barrier, ltid); // valid replacement? what exactly ltid argument does?
+#endif
+
+#ifdef TRUE_PARALLEL_BWD
+    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      { // stupid block to keep indentation
+        n  = cpxnt%N;
+        cp = cpxnt/N;
+#else
     #pragma omp for nowait collapse(2)                                                                  /* Parallelize over batches and CP*/
     for (cp = 0; cp < CP; cp++) {
       for(n = 0; n < N; n++){
-
+#endif
         libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
         libxsmm_matrix_eqn_param eqn_param;
         int hwb, cb;
@@ -1690,6 +1862,8 @@ int main( int argc, char* argv[] ) {
 #endif
 
 #if defined(REFACTORED_BWD) || defined(REFACTORED_FWD)
+  void *scratch;
+
   naive_fusedbatchnorm_t naive_param;
 //LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
 //                                     const float* beta_ptr, const float* gamma_ptr, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr)
@@ -1781,6 +1955,15 @@ int main( int argc, char* argv[] ) {
   naive_param.stride_w = 1;
   naive_param.norm_type = 0; /* full batchnorm */
   naive_param.fuse_type = 0; /* nothing fused */
+
+  /* let's allocate and bind scratch */
+  //if ( my_fc_fwd.scratch_size > 0 || my_fc_bwd.scratch_size > 0 ) {
+    //size_t alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
+    size_t alloc_size = ( 100 * N * CP * CB + 1000) * sizeof(float); // need to be fixed later
+    scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
+    init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
+  //}
+
 #endif
 
   inp = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*CB,   2097152);
@@ -1986,7 +2169,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid);
+      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch);
       //my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
       //    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
@@ -2076,9 +2259,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid);
-      //my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-      //    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch);
     }
 #else
   tpp_batchnorm_fwd_fp32(N, CP, HW, CB, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, all_zero_kernel, add_kernel, copy_kernel);
@@ -2095,9 +2276,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid );
-      //my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-      //    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch );
     }
 #else
     tpp_batchnorm_fwd_fp32(N, CP, HW, CB, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, all_zero_kernel, add_kernel, copy_kernel);
@@ -2186,7 +2365,7 @@ int main( int argc, char* argv[] ) {
       //my_bn_bwd_exec( my_bn_bwd, dbg_eqn_dout, inp, mean, var, gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid );
       my_bn_bwd_exec_dbg( my_bn_bwd, dbg_eqn_dout, inp, mean, var, gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid, func11, func12, func16, all_zero_kernel, add_kernel, copy_kernel );
 #else
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
 #endif
     }
 #else
@@ -2308,7 +2487,7 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  return 0;
+//  return 0;
 
   for (i = 0; i < 1024 * 1024; i++ ) {
     sum += cache_fl[i];
@@ -2334,7 +2513,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 #else
   tpp_batchnorm_bwd_fp32(N, CP, HW, CB, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func16, eps, all_zero_kernel, add_kernel, copy_kernel);
@@ -2351,7 +2530,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 #else
     tpp_batchnorm_bwd_fp32(N, CP, HW, CB, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func16, eps, all_zero_kernel, add_kernel, copy_kernel);
