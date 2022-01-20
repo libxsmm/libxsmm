@@ -1005,7 +1005,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
 
           /* blend exp-fma result with input reg based on elu mask */
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
-                                                   i_micro_kernel_config->tmp_vreg2, cur_vreg, 0, cur_vreg,
+                                                   cur_vreg, i_micro_kernel_config->tmp_vreg2, 0, cur_vreg,
                                                    l_blend_reg, l_sve_type );
         } else {
           /* shouldn't happen */
