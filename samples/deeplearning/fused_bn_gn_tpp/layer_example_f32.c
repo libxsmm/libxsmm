@@ -25,8 +25,6 @@
 #define TRUE_PARALLEL_BWD
 #define TRUE_PARALLEL_FWD
 
-//#define DEBUGGING
-
 #if defined(REFACTORED_BWD) || defined(REFACTORED_FWD)
 
 /* include c-based dnn library */
@@ -957,7 +955,7 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
   #pragma omp parallel
   {
 #endif
-    LIBXSMM_ALIGNED(float a[CB], 64); // should also get replaced with scratch I guess
+    LIBXSMM_ALIGNED(float a[CB], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
     LIBXSMM_ALIGNED(float b[CB], 64);
     LIBXSMM_ALIGNED(float c[CB], 64);
     int n, cp;
@@ -1081,7 +1079,7 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
         add_param.in0.primary = &pdbeta[cp*CB];
 #ifdef TRUE_PARALLEL_BWD
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, CB);
+        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, CB);
 #else
         add_param.in1.primary = &dbeta_N[cp*N*CB + ni*CB];
 #endif
@@ -1147,198 +1145,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
 
 }
-
-//void tpp_batchnorm_bwd_fp32(int N, int CP, int HW, int CB, int num_HW_blocks, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
-//    libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function din_func, float eps,
-//    libxsmm_meltwfunction_unary all_zero_kernel, libxsmm_meltwfunction_binary add_kernel, libxsmm_meltwfunction_unary copy_kernel) {
-
-#ifdef DEBUGGING
-void my_bn_bwd_exec_dbg( my_bn_bwd_config cfg, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta, float eps,
-                     int start_tid, int my_tid,
-    libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function din_func,
-    libxsmm_meltwfunction_unary all_zero_kernel, libxsmm_meltwfunction_binary add_kernel, libxsmm_meltwfunction_unary copy_kernel) {
-
-  const libxsmm_blasint N  = cfg.N;
-  const libxsmm_blasint CP = cfg.CP;
-  const libxsmm_blasint HW = cfg.HW;
-  const libxsmm_blasint CB = cfg.CB;
-  const libxsmm_blasint num_HW_blocks = cfg.num_HW_blocks;
-
-  /* computing first logical thread */
-  const libxsmm_blasint ltid = my_tid - start_tid;
-
-  /* lazy barrier init */
-  libxsmm_barrier_init(cfg.barrier, ltid);
-
-//#if 0
-
-  const float scale = 1.0f / ((float)N*HW);                   /* Scaling parameter*/
-
-  LIBXSMM_VLA_DECL(4, float, din, pdin, CP, HW, CB);          /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);          /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(4, float, dout, pdout, CP, HW, CB);        /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);              /* [CP, CB] */
-  /* LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB); */
-  /* LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB); */
-
-  LIBXSMM_ALIGNED(float dgamma_N[CP*N*CB], 64);
-  LIBXSMM_ALIGNED(float dbeta_N[CP*N*CB], 64);
-
-
-  #pragma omp parallel
-  {
-    LIBXSMM_ALIGNED(float a[CB], 64);
-    LIBXSMM_ALIGNED(float b[CB], 64);
-    LIBXSMM_ALIGNED(float c[CB], 64);
-    int n, cp;
-
-    #pragma omp for nowait collapse(2)
-    for (cp = 0; cp < CP; cp++) {
-      for (n = 0; n < N; n++) {
-
-        int hwb, cb;
-        libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
-        libxsmm_matrix_eqn_param eqn_param;
-
-        LIBXSMM_ALIGNED(float lcl_dgamma_ptr[CB], 64);
-        LIBXSMM_ALIGNED(float lcl_dbeta_ptr[CB], 64);
-
-        float *dgamma_ncp_ptr = &dgamma_N[cp*N*CB + n*CB];
-        float *dbeta_ncp_ptr = &dbeta_N[cp*N*CB + n*CB];
-
-        libxsmm_meltw_unary_param all_zero_param;
-        all_zero_param.out.primary = lcl_dgamma_ptr;
-        all_zero_kernel(&all_zero_param);
-        all_zero_param.out.primary = lcl_dbeta_ptr;
-        all_zero_kernel(&all_zero_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   lcl_dgamma_ptr[cb] = 0.0f; */
-        /*   lcl_dbeta_ptr[cb] = 0.0f; */
-        /* } */
-
-        for(cb = 0; cb < CB; cb++){
-          a[cb] = 1.0f / ((float)sqrt(var[cp*CB + cb] + eps));
-          b[cb] = -a[cb]*mean[cp*CB + cb];
-        }
-
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[4].primary = lcl_dgamma_ptr;
-        arg_array[5].primary = lcl_dbeta_ptr;
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = lcl_dgamma_ptr;
-          dgamma_func(&eqn_param);                                                             /* dgamma += (a * inp + b) * dout */
-
-          eqn_param.output.primary = lcl_dbeta_ptr;
-          dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-        }
-
-        libxsmm_meltw_unary_param copy_param;
-        copy_param.in.primary = lcl_dgamma_ptr;
-        copy_param.out.primary = dgamma_ncp_ptr;
-        copy_kernel(&copy_param);
-
-        copy_param.in.primary = lcl_dbeta_ptr;
-        copy_param.out.primary = dbeta_ncp_ptr;
-        copy_kernel(&copy_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb]; */
-        /*   dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb]; */
-        /* } */
-      }
-    }
-
-    #pragma omp barrier
-
-    #pragma omp for
-    for (cp = 0; cp < CP; cp++) {
-      libxsmm_meltw_unary_param all_zero_param;
-      all_zero_param.out.primary = &pdgamma[cp*CB];
-      all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &pdbeta[cp*CB];
-      all_zero_kernel(&all_zero_param);
-
-      /* #pragma omp simd */
-      /* for (int cb = 0; cb < CB; cb++) { */
-      /*   pdgamma[cp*CB + cb] = 0.0f; */
-      /*   pdbeta[cp*CB + cb] = 0.0f; */
-      /* } */
-
-      libxsmm_meltw_binary_param add_param;
-      int ni;
-      for(ni = 0; ni < N; ni++){
-
-        add_param.in0.primary = &pdgamma[cp*CB];
-        add_param.in1.primary = &dgamma_N[cp*N*CB + ni*CB];
-        add_param.out.primary = &pdgamma[cp*CB];
-        add_kernel(&add_param);
-
-        add_param.in0.primary = &pdbeta[cp*CB];
-        add_param.in1.primary = &dbeta_N[cp*N*CB + ni*CB];
-        add_param.out.primary = &pdbeta[cp*CB];
-        add_kernel(&add_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   pdgamma[cp*CB + cb] += dgamma_N[cp*N*CB + n*CB + cb];  */
-        /*   pdbeta[cp*CB + cb] += dbeta_N[cp*N*CB + n*CB + cb];  */
-        /* } */
-      }
-    }
-
-//#if 0
-
-    #pragma omp for nowait collapse(2)                                                                  /* Parallelize over batches and CP*/
-    for (cp = 0; cp < CP; cp++) {
-      for(n = 0; n < N; n++){
-
-        libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
-        libxsmm_matrix_eqn_param eqn_param;
-        int hwb, cb;
-
-        for(cb = 0; cb < CB; cb++){
-          a[cb] = pgamma[cp*CB + cb] / ((float)sqrt(var[cp*CB + cb] + eps));                            /* a = gamma_ptr[CB] * brstd_ptr[CB] */
-          b[cb] = -a[cb] * scale * pdgamma[cp*CB + cb] / ((float)sqrt(var[cp*CB + cb] + eps));          /* b = gamma_ptr[CB] * brstd_ptr[CB] * del_gamma_ptr[v] * brstd_ptr[CB] * recp_nhw */
-          c[cb] = -b[cb] * mean[cp*CB + cb] - a[cb] * scale * pdbeta[cp*CB + cb] ;                      /* c = -gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * del_beta_ptr[CB] + gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * bmean_ptr[CB] * del_gamma_ptr[CB] * brstd_ptr[CB]) */
-        }
-
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-        arg_array[7].primary = c;
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          din_func(&eqn_param);                                                                        /* din = dout * a + b * inp + c */
-        }
-      }
-    }
-//#endif // for #if 0
-
-  }
-
-//#endif // for #if 0
-
-  libxsmm_barrier_wait(cfg.barrier, ltid);
-
-}
-
-#endif // for #ifdef DEBUGGING
 
 #endif // for #ifdef REFACTORED_BWD
 
@@ -1902,12 +1708,6 @@ int main( int argc, char* argv[] ) {
 
 #endif
 
-#ifdef DEBUGGING
-  float *dbg_eqn_dinp, *dbg_eqn_dout;//, *dbg_mean, *dbg_var, *dbg_gamma;
-  float *dbg_eqn_dgamma, *dbg_eqn_dbeta;
-  //my_bn_bwd_exec( my_bn_bwd, dbg_eqn_dout, inp, dbg_mean, dbg_var, dbg_gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid );
-#endif
-
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
   int N = 28;
   int CP = 2;
@@ -1983,17 +1783,6 @@ int main( int argc, char* argv[] ) {
   eqn_out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*CB,   2097152);
   cache_fl  = (float*) libxsmm_aligned_malloc( sizeof(float)*1024*1024,   2097152);
 
-#ifdef DEBUGGING
-  dbg_eqn_dinp = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*CB,   2097152);
-  dbg_eqn_dout = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*CB,   2097152);
-  //dbg_mean = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-  //dbg_var = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-  //dbg_gamma = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-  dbg_eqn_dgamma = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-  dbg_eqn_dbeta = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-  //my_bn_bwd_exec( my_bn_bwd, dbg_eqn_dout, inp, dbg_mean, dbg_var, dbg_gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid );
-#endif
-
   bf16_inp = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*CB,   2097152);
   bf16_out = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*CB,   2097152);
   bf16_dinp = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*CB,   2097152);
@@ -2067,12 +1856,6 @@ int main( int argc, char* argv[] ) {
     naive_zeros[i] = 0.0f;
     naive_zeros_fp64[i] = 0.0;
 #endif
-
-#ifdef DEBUGGING
-    dbg_eqn_dinp[i] = eqn_dinp[i];
-    dbg_eqn_dout[i] = eqn_dout[i];
-#endif
-
   }
 
   for ( i = 0; i < CP*CB; ++i ) {
@@ -2084,14 +1867,6 @@ int main( int argc, char* argv[] ) {
     eqn_dgamma[i] = dgamma[i];
     libxsmm_rne_convert_fp32_bf16( &gamma[i], &bf16_gamma[i], 1 );
     libxsmm_rne_convert_fp32_bf16( &beta[i], &bf16_beta[i], 1 );
-
-#ifdef DEBUGGING
-    //dbg_mean = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-    //dbg_var = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*CB,   2097152);
-    //dbg_gamma[i] = gamma[i];
-    dbg_eqn_dgamma[i] = eqn_dgamma[i];
-    dbg_eqn_dbeta[i]  = eqn_dbeta[i];
-#endif
 
 #ifdef COMPUTE_FP64_REFERENCE
     gamma_fp64[i] = gamma[i];
@@ -2170,8 +1945,6 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch);
-      //my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
-      //    bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
 #else
   tpp_batchnorm_fwd_fp32(N, CP, HW, CB, num_HW_blocks, inp, gamma, beta, mean, var, eqn_out, eps, func10, reduce_HW_kernel, all_zero_kernel, add_kernel, copy_kernel);
@@ -2361,12 +2134,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-#ifdef DEBUGGING
-      //my_bn_bwd_exec( my_bn_bwd, dbg_eqn_dout, inp, mean, var, gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid );
-      my_bn_bwd_exec_dbg( my_bn_bwd, dbg_eqn_dout, inp, mean, var, gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid, func11, func12, func16, all_zero_kernel, add_kernel, copy_kernel );
-#else
       my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
-#endif
     }
 #else
   tpp_batchnorm_bwd_fp32(N, CP, HW, CB, num_HW_blocks, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func11, func12, func16, eps, all_zero_kernel, add_kernel, copy_kernel);
@@ -2376,8 +2144,6 @@ int main( int argc, char* argv[] ) {
   tensor_copy_NCHWc_to_NCHW (inp,   naive_inp   ,  N, CP*CB, HW, 1, CB);
   tensor_copy_NCHWc_to_NCHW (out,   naive_out   ,  N, CP*CB, HW, 1, CB);
   tensor_copy_NCHWc_to_NCHW (dout,  naive_dout  ,  N, CP*CB, HW, 1, CB);
-  //tensor_copy_NCHWc_to_NCHW (beta,  naive_beta  ,  1, CP*CB,  1, 1, CB); // done earlier = for fwd
-  //tensor_copy_NCHWc_to_NCHW (gamma, naive_gamma ,  1, CP*CB,  1, 1, CB); // done earlier = for fwd
   //LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const float* input_ptr, float* dinput_ptr, const float* output_ptr, float* doutput_ptr, float* dinput_add_ptr,
   //                                   const float* beta_ptr, float* del_beta_ptr, const float* gamma_ptr, float* del_gamma_ptr,
   //                                   const float* expectval_ptr, const float* rcpstddev_ptr)
@@ -2387,9 +2153,6 @@ int main( int argc, char* argv[] ) {
 
   /* when not debugging */
   tensor_copy_NCHW_to_NCHWc (naive_dinp  , dinp  ,  N, CP*CB, HW, 1, CB);
-//  tensor_copy_NCHW_to_NCHWc (naive_dbeta , dbeta ,  1, CP*CB, 1, 1, CB); // not needed, can use naive_dbeta and naive_dgamma immediately as beta and gamma?
-//  tensor_copy_NCHW_to_NCHWc (naive_dgamma, dgamma,  1, CP*CB, 1, 1, CB);
-
 
 #ifdef COMPUTE_FP64_REFERENCE
   buf_extend_fp32_to_fp64 (naive_inp,  naive_inp_fp64,  N*CP*CB*HW);
@@ -2587,15 +2350,30 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(naive_zeros);
 #endif
 
-#ifdef DEBUGGING
-  libxsmm_free(dbg_eqn_dinp);
-  libxsmm_free(dbg_eqn_dout);
-  //libxsmm_free(dbg_mean);
-  //libxsmm_free(dbg_var);
-  //libxsmm_free(dbg_gamma);
-  libxsmm_free(dbg_eqn_dgamma);
-  libxsmm_free(dbg_eqn_dbeta);
-  //my_bn_bwd_exec( my_bn_bwd, dbg_eqn_dout, inp, dbg_mean, dbg_var, dbg_gamma, dbg_eqn_dinp, dbg_eqn_dgamma, dbg_eqn_dbeta, eps, 0, tid );
+#ifdef COMPUTE_FP64_REFERENCE
+  libxsmm_free(naive_inp_fp64);
+  libxsmm_free(naive_out_fp64);
+  libxsmm_free(naive_rcpstdev_fp64);
+  libxsmm_free(naive_zeros_fp64);
+  libxsmm_free(naive_dinp_fp64);
+  libxsmm_free(naive_dout_fp64);
+  libxsmm_free(naive_dbeta_fp64);
+  libxsmm_free(naive_dgamma_fp64);
+
+  libxsmm_free(beta_fp64);
+  libxsmm_free(gamma_fp64);
+  libxsmm_free(mean_fp64);
+  libxsmm_free(var_fp64);
+
+  libxsmm_free(dbeta_fp64);
+  libxsmm_free(dgamma_fp64);
+
+  libxsmm_free(naive_out_fp64_downscaled_to_fp32);
+  libxsmm_free(out_fp64_downscaled_to_fp32);
+  libxsmm_free(naive_dinp_fp64_downscaled_to_fp32);
+  libxsmm_free(dinp_fp64_downscaled_to_fp32);
+  libxsmm_free(dgamma_fp64_downscaled_to_fp32);
+  libxsmm_free(dbeta_fp64_downscaled_to_fp32);
 #endif
 
 
