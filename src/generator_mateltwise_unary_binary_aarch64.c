@@ -965,7 +965,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
 
             /* now we blend both together */
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
-                                                     i_micro_kernel_config->tmp_vreg2, cur_vreg, 0, cur_vreg,
+                                                     cur_vreg, i_micro_kernel_config->tmp_vreg2, 0, cur_vreg,
                                                      l_blend_reg, l_sve_type );
           } else {
             /* should not happen */
@@ -1878,7 +1878,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
 
       if( l_is_sve ){
 
-        /* not masks are needed for sve */
+        /* no masks are needed for sve */
 
       } else {
 
@@ -1932,8 +1932,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_H ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
           l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_S ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF :
                                                      LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
-                                              i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->fam_lu_vreg_alpha,
-                                              l_pred_reg, l_sve_type );
+                                              i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->fam_lu_vreg_alpha,
+                                              l_pred_reg );
       } else {
         libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
                                                          i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->fam_lu_vreg_alpha,
@@ -1981,8 +1981,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
         l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_H ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
         l_sve_type == LIBXSMM_AARCH64_SVE_TYPE_S ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF :
                                                    LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
-                                            i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->fam_lu_vreg_alpha,
-                                            l_pred_reg, l_sve_type );
+                                            i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_micro_kernel_config->fam_lu_vreg_alpha,
+                                            l_pred_reg );
     } else {
       libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R,
                                                        i_gp_reg_aux1, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->fam_lu_vreg_alpha,
@@ -1995,31 +1995,35 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->mask_helper1_vreg =  i_micro_kernel_config->reserved_zmms + 1;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
 
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
-                                                   LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
+    if(l_is_sve){
+      /* no masks are needed in SVE */
+    } else {
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
+                                                     LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
 
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp0, 0x200000001 );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp1, 0x800000004 );
+      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp0, 0x200000001 );
+      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp1, 0x800000004 );
 
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16,
-                                               i_gp_reg_tmp0, i_gp_reg_tmp1 );
+      libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 16,
+                                                 i_gp_reg_tmp0, i_gp_reg_tmp1 );
 
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
-                                            LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
-                                            i_micro_kernel_config->mask_helper0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                              LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
+                                              i_micro_kernel_config->mask_helper0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
 
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp0, 0x2000000010 );
-    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp1, 0x8000000040 );
+      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp0, 0x2000000010 );
+      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp1, 0x8000000040 );
 
-    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0,
-                                               i_gp_reg_tmp0, i_gp_reg_tmp1 );
+      libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, 0,
+                                                 i_gp_reg_tmp0, i_gp_reg_tmp1 );
 
-    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
-                                            LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
-                                            i_micro_kernel_config->mask_helper1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+      libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                              LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
+                                              i_micro_kernel_config->mask_helper1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
 
-    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                   LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                     LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
+    }
 
     if (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) {
       i_micro_kernel_config->reserved_zmms += 10;
@@ -2072,7 +2076,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   }
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_INC) {
-    if (!l_is_sve){
+    if (!l_is_sve){/* sve has an inc instruction */
       i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( io_generated_code, i_micro_kernel_config->vec_ones, i_gp_reg_tmp0,

@@ -413,6 +413,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
 
+/* table access instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_TBL            0x05203003 /* src0[src1], out of bounds -> zero, not vector length agnostic */
+#define LIBXSMM_AARCH64_INSTR_SVE_TBX            0x05202c03 /* src0[src1], out of bounds -> merge, not vector length agnostic */
+
 /* define SVE predicate instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_PTRUE          0x2518e001
 #define LIBXSMM_AARCH64_INSTR_SVE_WHILELT        0x25201403

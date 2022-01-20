@@ -1061,6 +1061,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L:
+    case LIBXSMM_AARCH64_INSTR_SVE_TBL:
+    case LIBXSMM_AARCH64_INSTR_SVE_TBX:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
