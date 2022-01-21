@@ -1238,9 +1238,9 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ofmblock;
     l_shape.n = res.fwd_gemm_pixels;
     l_shape.k = res.ifmblock;
-    l_shape.lda = (void*)&ldA;
-    l_shape.ldb = (void*)&ldx;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.lda = &ldA;
+    l_shape.ldb = &ldx;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1451,9 +1451,9 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ifmblock;
     l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
     l_shape.k = res.ofmblock;
-    l_shape.lda = (void*)&ldA;
-    l_shape.ldb = (void*)&ldB;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.lda = &ldA;
+    l_shape.ldb = &ldB;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1519,7 +1519,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.k = res.ofmblock;
     l_shape.lda = NULL;
     l_shape.ldb = NULL;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1623,9 +1623,9 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ofmblock;
     l_shape.n = res.ifmblock;
     l_shape.k = res.upd_ofw_rb * res.upd_ofh_rb;
-    l_shape.lda = (void*)&LDA;
-    l_shape.ldb = (void*)&LDB;
-    l_shape.ldc = (void*)&LDC;
+    l_shape.lda = &LDA;
+    l_shape.ldb = &LDB;
+    l_shape.ldc = &LDC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
