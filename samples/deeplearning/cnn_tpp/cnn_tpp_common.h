@@ -71,6 +71,7 @@ typedef struct cnn_tpp_config {
   libxsmm_blasint threads;
   libxsmm_blasint  overwrite_output;
   libxsmm_blasint  avoid_bwd_wt_trans;
+  libxsmm_blasint  zero_fwd_output_rim;
   my_eltwise_fuse  fuse_type;
   libxsmm_datatype datatype_in;
   libxsmm_datatype datatype_out;
@@ -158,6 +159,7 @@ typedef struct cnn_tpp_config {
   libxsmm_meltwfunction_unary strided_copy_kernel_f32;
   libxsmm_meltwfunction_unary ifmblock_copy_kernel_f32;
   libxsmm_meltwfunction_unary ifmblock_zero_kernel_f32;
+  libxsmm_meltwfunction_unary ofmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ofw_x_ofmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ofh_x_ofw_x_ofmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary  relu_kernel_f32;
@@ -1357,6 +1359,16 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
 
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = 1;
+    res.ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.ofmblock_zero_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP ofmblock_zero_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
     stride_in             = res.ofwp * res.ofmblock;
     stride_out            = res.ofw * res.ofmblock;
     unary_shape.m         = res.ofw * res.ofmblock;
@@ -1817,7 +1829,7 @@ cnn_tpp_config setup_cnn_tpp(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasi
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
     libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans) {
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans, libxsmm_blasint zero_fwd_output_rim) {
   cnn_tpp_config res;
 
   /* init libxsmm */
@@ -1864,6 +1876,7 @@ cnn_tpp_config setup_cnn_tpp(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasi
   res.blocksofm_blocking = 1;
   res.avoid_bwd_wt_trans = avoid_bwd_wt_trans;
   res.overwrite_output   = overwrite_output;
+  res.zero_fwd_output_rim= zero_fwd_output_rim;
   res.fuse_type          = fuse_type;
   res.bc = bc;
   res.bk = bk;

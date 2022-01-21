@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
   naive_conv_t naive_param;
   void* scratch = NULL;
   int fuse_type = 0;
+  int zero_output_rims_fwd = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -110,6 +111,7 @@ int main(int argc, char* argv[])
   if (argc > i) bk = atoi(argv[i++]);
   if (argc > i) overwrite_output   = atoi(argv[i++]);
   if (argc > i) avoid_bwd_wt_trans = atoi(argv[i++]);
+  if (argc > i) zero_output_rims_fwd = atoi(argv[i++]);
 
   LIBXSMM_UNUSED(format);
   LIBXSMM_UNUSED(delbias_libxsmm);
@@ -131,6 +133,11 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  if ((type != 'F') && (zero_output_rims_fwd > 0)) {
+    printf("Supporting zero_output rims only for fwd pass...\n");
+    return 0;
+  }
+
   stride_w = stride;
   stride_h = stride;
   pad_w = padw;
@@ -149,6 +156,11 @@ int main(int argc, char* argv[])
     pad_w_in = pad_w;
     pad_h_out = pad_h;
     pad_w_out = pad_w;
+  }
+
+  if (zero_output_rims_fwd > 0) {
+    pad_h_out = zero_output_rims_fwd;
+    pad_w_out = zero_output_rims_fwd;
   }
 
   /* deriving some values for naive code */
@@ -345,11 +357,15 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
 
   cnn_tpp_cfg = setup_cnn_tpp(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
-      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans );
+      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans, zero_output_rims_fwd );
 
   /* Copy input/output/weight tensors to correct format */
   tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
   tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+  /* In this case put garbage in libxsmm_output rim to make sure zero riming works as expected  */
+  if (zero_output_rims_fwd > 0) {
+    tensor_pollute_rim_NCHWc(output_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock, pad_h_out, pad_w_out, 42.0);
+  }
   tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
   if (avoid_bwd_wt_trans > 0) {
     tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);

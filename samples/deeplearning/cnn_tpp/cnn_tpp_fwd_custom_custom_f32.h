@@ -487,6 +487,45 @@ void cnn_tpp_fwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* in_
     }
   }
 
+  if (cfg.zero_fwd_output_rim > 0) {
+    /* number of tasks that could be run in parallel */
+    const int work = cfg.N * cfg.blocksofm * cfg.ofhp;
+    /* compute chunk size */
+    const int chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
+    /* compute thr_begin and thr_end */
+    const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+    const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+    int imgofm1ofh;
+    LIBXSMM_VLA_DECL(5, float, full_output, (float*)out_act_ptr, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+
+    for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
+      img = imgofm1ofh / (cfg.blocksofm*cfg.ofhp);
+      if (cfg.N > 1) {
+        oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofhp))/cfg.blocksofm;
+        ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofhp))%cfg.blocksofm;
+      } else {
+        oj = (imgofm1ofh % (cfg.blocksofm*cfg.ofhp))%cfg.ofhp;
+        ofm1 = (imgofm1ofh % (cfg.blocksofm*cfg.ofhp))/cfg.ofhp;
+      }
+
+      if ( (oj < cfg.pad_h_out) || (oj >= (cfg.H+cfg.pad_h_out))) {
+        for (oi = 0; oi < cfg.ofwp; oi++) {
+          unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, full_output, img, ofm1, oj, oi, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+          cfg.ofmblock_zero_kernel_f32( &unary_param );
+        }
+      } else {
+        for (oi = 0; oi < cfg.pad_w_out; oi++) {
+          unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, full_output, img, ofm1, oj, oi, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+          cfg.ofmblock_zero_kernel_f32( &unary_param );
+        }
+        for (oi = cfg.W + cfg.pad_w_out; oi < cfg.W + 2*cfg.pad_w_out; oi++) {
+          unary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(  5, full_output, img, ofm1, oj, oi, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+          cfg.ofmblock_zero_kernel_f32( &unary_param );
+        }
+      }
+    }
+  }
+
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
