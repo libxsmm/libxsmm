@@ -215,12 +215,7 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pgamm
   LIBXSMM_VLA_DECL(3, float, sumsq_N, ((float*)scratch) + sumsq_N_offset, N, CB);  /* [CP, N, CB] */
   LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
 
-#ifdef TRUE_PARALLEL_FWD
-  {
-#else
-  #pragma omp parallel
-  {
-#endif
+  { /* stupid block to keep indentation */
     LIBXSMM_ALIGNED(float s[CB], 64);
     LIBXSMM_ALIGNED(float b[CB], 64);
     int n, cp;
@@ -522,12 +517,7 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, const float *pdout, const float *pinp
   LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, CB);  /* [CP, N, CB] */
   LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
 
-#ifdef TRUE_PARALLEL_BWD
-  {
-#else
-  #pragma omp parallel
-  {
-#endif
+  { /* stupid block to keep indentation */
     LIBXSMM_ALIGNED(float a[CB], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
     LIBXSMM_ALIGNED(float b[CB], 64);
     LIBXSMM_ALIGNED(float c[CB], 64);
