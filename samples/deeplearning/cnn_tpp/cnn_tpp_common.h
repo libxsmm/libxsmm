@@ -395,7 +395,7 @@ int cnn_tpp_setup_pack_input_fwd( cnn_tpp_config* cfg ) {
 int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
   int result = 1;
   /* Multiple rows for "small" images and 1x1 convolutions */
-  if ((cfg->ofh <= 14) && (cfg->R == 1) && (cfg->S == 1)) {
+  if ((cfg->ofh <= 14) && (cfg->R == 1) && (cfg->S == 1) && (cfg->pad_w_out == 0) && (cfg->pad_h_out == 0)) {
     result = cfg->ofh;
   }
 
