@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
   float *bias_libxsmm, *delbias_libxsmm;
-  unsigned char *relumask_libxsmm;
+  unsigned char *relumask_libxsmm = NULL;
   my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
   cnn_tpp_config cnn_tpp_cfg;
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   int overwrite_output = 1;
   int avoid_bwd_wt_trans = 0;
   naive_conv_t naive_param;
-  void* scratch;
+  void* scratch = NULL;
   int fuse_type = 0;
 
   /* some parameters we can overwrite via cli,
@@ -110,6 +110,9 @@ int main(int argc, char* argv[])
   if (argc > i) bk = atoi(argv[i++]);
   if (argc > i) overwrite_output   = atoi(argv[i++]);
   if (argc > i) avoid_bwd_wt_trans = atoi(argv[i++]);
+
+  LIBXSMM_UNUSED(format);
+  LIBXSMM_UNUSED(delbias_libxsmm);
 
   if ( fuse_type == 0 ) {
     my_fuse = MY_ELTWISE_FUSE_NONE;
@@ -529,6 +532,7 @@ int main(int argc, char* argv[])
         ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
   }
+
   if (type == 'A' || type == 'U') {
     printf("##########################################\n");
     printf("#   Performance - UPD (custom-Storage)   #\n");

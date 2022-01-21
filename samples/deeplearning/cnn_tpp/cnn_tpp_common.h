@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
-
+#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -655,22 +655,22 @@ void cnn_tpp_setup_fwd_scratch( cnn_tpp_config* cfg ) {
     cfg->fwd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
       cfg->H/cfg->u *
       cfg->W/cfg->v *
-      libxsmm_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* logical padding with copying in the fly */
   if ( cfg->fwd_padding_copy != 0 ) {
     cfg->fwd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
       (cfg->H + 2*cfg->pad_h) *
       (cfg->W + 2*cfg->pad_w) *
-      libxsmm_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* output buffer in high precision when we use BF16 */
   if ( ( cfg->datatype_in == LIBXSMM_DATATYPE_BF16 ) ||
       ( cfg->datatype_in == LIBXSMM_DATATYPE_I8 )      ) {
-    cfg->fwd_lp_output_full_scratch_size = (size_t) LIBXSMM_MAX(cfg->threads * cfg->fwd_gemm_pixels * cfg->ofmblock * libxsmm_typesize(LIBXSMM_DATATYPE_F32), cfg->N * cfg->K * cfg->ofwp * cfg->ofhp * libxsmm_typesize(LIBXSMM_DATATYPE_F32));
+    cfg->fwd_lp_output_full_scratch_size = (size_t) LIBXSMM_MAX(cfg->threads * cfg->fwd_gemm_pixels * cfg->ofmblock * LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32), cfg->N * cfg->K * cfg->ofwp * cfg->ofhp * LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
     cfg->fwd_lp_output_block_scratch_size = (size_t)cfg->threads * cfg->fwd_ofw_rb *
       cfg->fwd_ofh_rb * cfg->ofmblock *
-      libxsmm_typesize(LIBXSMM_DATATYPE_F32);
+      LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32);
   } else {
     cfg->fwd_lp_output_full_scratch_size = 0;
     cfg->fwd_lp_output_block_scratch_size = 0;
@@ -847,31 +847,31 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bwd_scratch( cnn_tpp_config* cfg ) {
   /* transpose of weights */
   cfg->bwd_filter_trans_scratch_size = (size_t)cfg->C * cfg->K *
     cfg->R * cfg->S *
-    libxsmm_dnn_typesize(cfg->datatype_in);
+    LIBXSMM_TYPESIZE(cfg->datatype_in);
 
   cfg->bwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( cfg->pack_input_bwd != 0 ) {
     cfg->bwd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
       cfg->ofhp * cfg->ofwp *
-      libxsmm_dnn_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* logical padding with copying in the fly */
   if ( cfg->use_fallback_bwd_loops != 0 ) {
     cfg->bwd_packing_padding_scratch_size = (size_t)cfg->threads * cfg->ifmblock *
       (cfg->H + 2*cfg->pad_h) *
       (cfg->W + 2*cfg->pad_w) *
-      libxsmm_dnn_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* input bufffer in high precision when we use BF16 */
   if ( cfg->datatype_in == LIBXSMM_DATATYPE_BF16 ) {
-    cfg->bwd_lp_input_full_scratch_size = (size_t) LIBXSMM_MAX(cfg->threads * cfg->bwd_gemm_pixels * cfg->ifmblock * libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32), cfg->N * cfg->C * cfg->ifwp * cfg->ifhp * libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32));
+    cfg->bwd_lp_input_full_scratch_size = (size_t) LIBXSMM_MAX(cfg->threads * cfg->bwd_gemm_pixels * cfg->ifmblock * LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32), cfg->N * cfg->C * cfg->ifwp * cfg->ifhp * LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32));
     /* logical padding with copying in the fly */
     if ( cfg->use_fallback_bwd_loops != 0 ) {
       cfg->bwd_packing_padding_scratch_size = (size_t)cfg->threads * cfg->ifmblock *
         (cfg->H + 2*cfg->pad_h) *
         (cfg->W + 2*cfg->pad_w) *
-        libxsmm_dnn_typesize(LIBXSMM_DATATYPE_F32);
+        LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32);
     }
   } else {
     cfg->bwd_lp_input_full_scratch_size = 0;
@@ -1095,17 +1095,17 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
     cfg->upd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
       cfg->H/cfg->u *
       cfg->W/cfg->v *
-      libxsmm_dnn_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* logical padding with copying in the fly */
   if ( cfg->upd_padding_copy != 0 ) {
     cfg->upd_packing_padding_scratch_size = (size_t)cfg->N * cfg->C *
       (cfg->H + 2*cfg->pad_h) *
       (cfg->W + 2*cfg->pad_w) *
-      libxsmm_dnn_typesize(cfg->datatype_in);
+      LIBXSMM_TYPESIZE(cfg->datatype_in);
   }
   /* output/input buffer to transpose when we use bf16 */
-  if ( cfg->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 ) {
+  if ( cfg->datatype_in == LIBXSMM_DATATYPE_BF16 ) {
     if  (cfg->target_archid >= LIBXSMM_X86_AVX512_SPR) {
       int OFHP = (cfg->upd_padding_copy == 1) ? cfg->ofhp + 2 * cfg->pad_h : cfg->ofhp;
       int IFHP = (cfg->upd_padding_copy == 1) ? cfg->ifhp + 2 * cfg->pad_h : cfg->ifhp;
@@ -1154,7 +1154,7 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
       }
     }
     cfg->upd_lp_filter_full_scratch_size = (size_t)cfg->R * cfg->S * cfg->C * cfg->K * cfg->threads *
-      libxsmm_dnn_typesize(LIBXSMM_DNN_DATATYPE_F32);
+      LIBXSMM_TYPESIZE(LIBXSMM_DATATYPE_F32);
   } else {
     cfg->upd_lp_output_full_scratch_size = 0;
     cfg->upd_lp_input_full_scratch_size = 0;
@@ -1194,12 +1194,9 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
   cnn_tpp_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint ldx;
-    libxsmm_blasint ldA, LDA;
-    libxsmm_blasint ldB, LDB;
-    libxsmm_blasint ldC, LDC;
-    int  beta_int;
+    libxsmm_blasint ldA;
+    libxsmm_blasint ldC;
     float beta;
-    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
     libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
@@ -1241,9 +1238,9 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ofmblock;
     l_shape.n = res.fwd_gemm_pixels;
     l_shape.k = res.ifmblock;
-    l_shape.lda = (void*)&ldA;
-    l_shape.ldb = (void*)&ldx;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.lda = &ldA;
+    l_shape.ldb = &ldx;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1416,15 +1413,11 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
 void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
   cnn_tpp_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
-    libxsmm_blasint ldx;
-    libxsmm_blasint ldA, LDA;
-    libxsmm_blasint ldB, LDB;
-    libxsmm_blasint ldC, LDC;
-    int  beta_int;
+    libxsmm_blasint ldA;
+    libxsmm_blasint ldB;
+    libxsmm_blasint ldC;
     float beta;
-    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
-    libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
     libxsmm_blasint stride_out;
     libxsmm_gemm_shape l_shape;
@@ -1458,9 +1451,9 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ifmblock;
     l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
     l_shape.k = res.ofmblock;
-    l_shape.lda = (void*)&ldA;
-    l_shape.ldb = (void*)&ldB;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.lda = &ldA;
+    l_shape.ldb = &ldB;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1526,7 +1519,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.k = res.ofmblock;
     l_shape.lda = NULL;
     l_shape.ldb = NULL;
-    l_shape.ldc = (void*)&ldC;
+    l_shape.ldc = &ldC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
@@ -1592,15 +1585,11 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
 void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
   cnn_tpp_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
-    libxsmm_blasint ldx;
-    libxsmm_blasint ldA, LDA;
-    libxsmm_blasint ldB, LDB;
-    libxsmm_blasint ldC, LDC;
-    int  beta_int;
+    libxsmm_blasint LDA;
+    libxsmm_blasint LDB;
+    libxsmm_blasint LDC;
     float beta;
-    int l_tc_flags;
     libxsmm_meltw_unary_shape unary_shape;
-    libxsmm_meltw_binary_shape binary_shape;
     libxsmm_blasint stride_in;
     libxsmm_blasint stride_out;
     libxsmm_gemm_shape l_shape;
@@ -1634,9 +1623,9 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.m = res.ofmblock;
     l_shape.n = res.ifmblock;
     l_shape.k = res.upd_ofw_rb * res.upd_ofh_rb;
-    l_shape.lda = (void*)&LDA;
-    l_shape.ldb = (void*)&LDB;
-    l_shape.ldc = (void*)&LDC;
+    l_shape.lda = &LDA;
+    l_shape.ldb = &LDB;
+    l_shape.ldc = &LDC;
     l_shape.a_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;

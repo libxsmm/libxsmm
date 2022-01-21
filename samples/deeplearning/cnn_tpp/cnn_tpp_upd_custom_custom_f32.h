@@ -10,7 +10,7 @@
 ******************************************************************************/
 void cnn_tpp_upd_exec( cnn_tpp_config cfg, const float* in_act_ptr, const float* dout_act_ptr, float* dfilter_ptr,
     unsigned char* bias_ptr, int start_tid, int my_tid, void* scratch ) {
-  int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1, ifm2 = 0, ofm2 = 0, oj, oi, ii, ij, kj, ki, ind, j_br, img_br, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
+  int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1,  oj, oi, ii, ij, kj, ki, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
   /* computing first logical thread */
   const int ltid = my_tid - start_tid;
   float *const out = (float*)dout_act_ptr + ((size_t)cfg.pad_h_out * cfg.ofwp + cfg.pad_w_out) * cfg.ofmblock;
