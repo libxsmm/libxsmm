@@ -15,7 +15,7 @@ void cnn_tpp_bwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* tr_
   libxsmm_meltw_unary_param unary_param;
 
   if (cfg.use_fallback_bwd_loops == 0) {
-    int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
+    int img, ofm1, ifm1, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, task;
     /* computing first logical thread */
     int imgpt = LIBXSMM_UPDIV(cfg.N, cfg.threads);
     int threads_per_image = cfg.threads / cfg.N;
@@ -277,7 +277,7 @@ void cnn_tpp_bwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* tr_
       }
     }
   } else {
-    int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1, task;
+    int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, task;
     /* number of tasks that could be run in parallel */
     const int work = cfg.N * cfg.blocksifm;
     /* compute chunk size */
