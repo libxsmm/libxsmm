@@ -384,13 +384,13 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
+    for ( j = 0; j < ldi; ++j ) {
       in[(i*ldi)+j] = (unsigned short)(((i*ldi)+j)%112);
     }
   }
   /* to vnni */
   for ( j = 0; j < N/2; ++j ) {
-    for ( i = 0; i < M ; ++i ) {
+    for ( i = 0; i < ldi ; ++i ) {
       for( j2 = 0; j2 < 2; ++j2 ) {
         in_vnni[(j*ldi*2)+(i*2)+j2] = in[(((j*2)+j2)*ldi)+i];
       }
@@ -403,6 +403,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   }
   for ( i = 0; i < M*ldo; ++i ) {
     out_gold[i] = 0;
+    out_vnni[i] = 0;
   }
 
   /* compute out_gold */
