@@ -133,7 +133,7 @@
       LIBXSMM_ISWAP(*libxsmm_itrans_loop_a_, *libxsmm_itrans_loop_b_); \
     } \
   } \
-}while(0)
+} while(0)
 
 #define LIBXSMM_ITRANS(TYPESIZE, INOUT, LD, M) do { \
   switch(TYPESIZE) { \
