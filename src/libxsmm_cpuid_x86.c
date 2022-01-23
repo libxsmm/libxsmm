@@ -19,19 +19,19 @@
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
 #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
-#   define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) do { \
       unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
       (EAX) = (int)libxsmm_xgetbv_; \
       (EDX) = (int)(libxsmm_xgetbv_ >> 32); \
-    }
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+    } while(0)
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) do { \
       int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
       __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
       (EAX) = (unsigned int)libxsmm_cpuid_x86_[0]; \
       (EBX) = (unsigned int)libxsmm_cpuid_x86_[1]; \
       (ECX) = (unsigned int)libxsmm_cpuid_x86_[2]; \
       (EDX) = (unsigned int)libxsmm_cpuid_x86_[3]; \
-    }
+    } while(0)
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
       LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */
@@ -164,13 +164,15 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
         else feature_cpu = LIBXSMM_X86_SSE3;
       }
       /* enable AMX state in the OS on SPR and later */
-      if ( feature_cpu >= LIBXSMM_X86_AVX512_SPR ) {
-        const int amx_avail = libxsmm_cpuid_x86_amx_enable();
-        if ( amx_avail != 0 ) {
+      if (feature_cpu >= LIBXSMM_X86_AVX512_SPR) {
+        if (0 != libxsmm_cpuid_x86_amx_enable()) {
+          static int error_once = 0;
+          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
+            fprintf(stderr, "LIBXSMM WARNING: AMX state allocation in the OS failed!\n");
+          }
           feature_cpu = LIBXSMM_X86_AVX512_CLX;
-# if !defined(NDEBUG)
-          fprintf(stderr, "LIBXSMM WARNING: AMX state allcation in the OS failed!\n");
-# endif
         }
       }
 # if !defined(LIBXSMM_INTRINSICS_DEBUG)

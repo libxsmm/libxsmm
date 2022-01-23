@@ -284,6 +284,20 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_col_teams = 6;
     res.fwd_row_teams = 4;
   }
+  if (res.C == 4096 && res.K == 4096 && res.threads == 8) {
+    res.fwd_bf = 8/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 4;
+    res.fwd_row_teams = 2;
+  }
+  if (res.C == 1024 && res.K == 1024 && res.threads == 8) {
+    res.fwd_bf = 1/*((res.C/res.bc) % 1 == 0) ? 1 : 1*/;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 4;
+    res.fwd_row_teams = 2;
+  }
+
+
 
 #endif
 

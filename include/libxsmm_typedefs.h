@@ -877,7 +877,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(con
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c);
 
-/* argument strcuts for generalized interface */
+/* argument structs for generalized interface */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
   libxsmm_matrix_arg_v2 a;   /* a matrix  */
