@@ -200,10 +200,12 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
   if (cur_op->fusion_info.xgemm.fused_relu_op == 1) {
     desc->eltw_cp_op    = LIBXSMM_MELTW_OPERATION_UNARY;
     desc->eltw_cp_param = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+    desc->eltw_cp_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   }
   if (cur_op->fusion_info.xgemm.fused_sigmoid_op == 1) {
     desc->eltw_cp_op    = LIBXSMM_MELTW_OPERATION_UNARY;
     desc->eltw_cp_param = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+    desc->eltw_cp_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   }
 
   *out_desc = desc;
