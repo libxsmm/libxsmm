@@ -33,7 +33,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm
   unsigned int l_simd_packed_width = 0;
 
   /* select simd packing width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -52,11 +52,10 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm
   l_simd_packed_iters = i_packed_width/l_simd_packed_width;
 
   /* set c accumulator to 0 */
-  libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           i_micro_kernel_config->vxor_instruction,
-                                           i_micro_kernel_config->vector_name,
-                                           31, 31, 31 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                            i_micro_kernel_config->vxor_instruction,
+                                            i_micro_kernel_config->vector_name,
+                                            31, 31, 31 );
 
   /* k loop header */
   if ( i_xgemm_desc->k > 1 ) {
@@ -83,16 +82,14 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_single( libxsmm
                                     0, 0, 1, 0 );
 
   /* FMA with fused load of a */
-  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                           i_micro_kernel_config->instruction_set,
-                                           LIBXSMM_X86_INSTR_VFMADD231PS,
-                                           0,
-                                           i_gp_reg_mapping->gp_reg_a,
-                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                           i_micro_kernel_config->datatype_size_in*i_packed_width*i_row_idx[i_column_idx[i_n]+i_m],
-                                           i_micro_kernel_config->vector_name,
-                                           0,
-                                           31 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                LIBXSMM_X86_INSTR_VFMADD231PS,
+                                                i_micro_kernel_config->vector_name,
+                                                i_gp_reg_mapping->gp_reg_a,
+                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                i_micro_kernel_config->datatype_size_in*i_packed_width*i_row_idx[i_column_idx[i_n]+i_m], 0,
+                                                0,
+                                                31 );
 
   /* packed loop footer */
   if ( l_simd_packed_iters > 1 ) {
@@ -218,7 +215,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( libxsmm
   unsigned int l_simd_packed_width = 0;
 
   /* select simd packing width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -279,16 +276,14 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512_16accs( libxsmm
 
   /* FMA with fused load of a */
   for ( l_i = i_m; l_i < (i_m + i_m_blocking); ++l_i ) {
-    libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                             i_micro_kernel_config->instruction_set,
-                                             LIBXSMM_X86_INSTR_VFMADD231PS,
-                                             0,
-                                             i_gp_reg_mapping->gp_reg_a,
-                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                             i_micro_kernel_config->datatype_size_in*i_packed_width*i_row_idx[i_column_idx[i_n]+l_i],
-                                             i_micro_kernel_config->vector_name,
-                                             31,
-                                             l_i%16 );
+    libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                  LIBXSMM_X86_INSTR_VFMADD231PS,
+                                                  i_micro_kernel_config->vector_name,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                  i_micro_kernel_config->datatype_size_in*i_packed_width*i_row_idx[i_column_idx[i_n]+l_i], 0,
+                                                  31,
+                                                  l_i%16 );
   }
 
   /* packed loop footer */
@@ -618,7 +613,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
   LIBXSMM_UNUSED(i_values);
 
   /* select packed width */
-  if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       if ( i_packed_width % 16 != 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -678,7 +673,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
   /* loop over the sparse elements of C */
   for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
@@ -702,6 +697,6 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 }
 

@@ -86,25 +86,18 @@
 #define LIBXSMM_TPREFIX(TYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), FUNCTION)
 #define LIBXSMM_TPREFIX_doubledouble d
 #define LIBXSMM_TPREFIX_floatfloat s
-#define LIBXSMM_TPREFIX_shortfloat ws
-#define LIBXSMM_TPREFIX_shortint wi
-#define LIBXSMM_TPREFIX_libxsmm_bfloat16float bs
 /** Defaults if only the input type is specified. */
 #define LIBXSMM_TPREFIX_double LIBXSMM_TPREFIX_doubledouble
 #define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
-#define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
 #define LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_XFLAGS_, ITYPE) /* ignore OTYPE for now */
 #define LIBXSMM_GEMM_XFLAGS_double 0
 #define LIBXSMM_GEMM_XFLAGS_float 0
-#define LIBXSMM_GEMM_XFLAGS_libxsmm_bfloat16 LIBXSMM_GEMM_FLAG_VNNI_A
-#define LIBXSMM_GEMM_XFLAGS_int 0
-#define LIBXSMM_GEMM_XFLAGS_short 0
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE3(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
-#define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch))
+#define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch_v2))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_USEOMP(LIBXSMM_XGEMM_SYMBOL(TYPE))
@@ -136,8 +129,6 @@
 #define LIBXSMM_EQUAL_doubledouble 1
 #define LIBXSMM_EQUAL_floatdouble 0
 #define LIBXSMM_EQUAL_doublefloat 0
-#define LIBXSMM_EQUAL_shortdouble 0
-#define LIBXSMM_EQUAL_shortfloat 0
 
 #if defined(LIBXSMM_BLAS_CONST)
 # undef LIBXSMM_BLAS_CONST
@@ -241,7 +232,7 @@
   | (~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B) & (DEFAULT))
 
 /** Inlinable GEMM exercising the compiler's code generation (macro template). TODO: only NN is supported and SP/DP matrices. */
-#define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
   const char libxsmm_inline_xgemm_transa_ = (char)(NULL != ((void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
@@ -273,7 +264,7 @@
       } \
     } \
   } \
-}
+} while(0)
 
 #if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
 # undef LIBXSMM_INIT
@@ -322,7 +313,7 @@
 #define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemv)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (macro template). */
-#define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
   const char libxsmm_blas_xgemm_transa_ = (char)(NULL != ((void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
@@ -342,20 +333,18 @@
     &libxsmm_blas_xgemm_alpha_, (const ITYPE*)(A), &libxsmm_blas_xgemm_lda_, \
                                 (const ITYPE*)(B), &libxsmm_blas_xgemm_ldb_, \
      &libxsmm_blas_xgemm_beta_,       (ITYPE*)(C), &libxsmm_blas_xgemm_ldc_); \
-}
+} while(0)
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
   LIBXSMM_ASSERT(FN); FN(A, B, C)
-#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
+/* @TODO fix prefetch */
+#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) do { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
-  LIBXSMM_ASSERT(FN); FN(A, B, C, \
-    LIBXSMM_GEMM_PREFETCH_A(PA), \
-    LIBXSMM_GEMM_PREFETCH_B(PB), \
-    LIBXSMM_GEMM_PREFETCH_C(PC)); \
-}
+  LIBXSMM_ASSERT(FN); FN(A, B, C); \
+} while(0)
 
 #if (0/*LIBXSMM_GEMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
@@ -397,8 +386,8 @@
  * LIBXSMM_XGEMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
-#define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE); \
+#define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
+  const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE) | ( NULL != (BETA) ? ((*(BETA) == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0) : 0 ); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
   const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(NULL != ((void*)(LDA)) ? *(LDA) : \
@@ -409,7 +398,7 @@
   if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) { \
     const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
-      (const OTYPE*)(ALPHA), (const OTYPE*)(BETA), &libxsmm_xgemm_flags_, NULL); \
+      &libxsmm_xgemm_flags_); \
     if (NULL != libxsmm_mmfunction_) { \
       LIBXSMM_MMCALL_LDX(libxsmm_mmfunction_, (const ITYPE*)(A), (const ITYPE*)(B), (OTYPE*)(C), \
         *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_); \
@@ -437,10 +426,10 @@
                              B, &libxsmm_xgemm_ldb_, \
        &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
   } \
-}
+} while(0)
 
 /** Helper macro to setup a matrix with some initial values. */
-#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
+#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
   /*const*/ double libxsmm_matinit_seed_ = (double)(SEED); /* avoid constant conditional */ \
   const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
   const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
@@ -474,7 +463,7 @@
       } \
     } \
   } \
-}
+} while(0)
 
 #define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
   LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
@@ -487,7 +476,7 @@
 #define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
   LIBXSMM_GEMM_PRINT2(OSTREAM, PRECISION, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
 #define LIBXSMM_GEMM_PRINT2(OSTREAM, IPREC, OPREC, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
-  libxsmm_gemm_dprint2(OSTREAM, (libxsmm_gemm_precision)(IPREC), (libxsmm_gemm_precision)(OPREC), \
+  libxsmm_gemm_dprint2(OSTREAM, (libxsmm_datatype)(IPREC), (libxsmm_datatype)(OPREC), \
     /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
     (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 't'), \
     (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 't'), \
@@ -500,25 +489,25 @@
  * e.g., ITK-SNAP or ParaView.
  */
 LIBXSMM_API void libxsmm_gemm_print(void* ostream,
-  libxsmm_gemm_precision precision, const char* transa, const char* transb,
+  libxsmm_datatype precision, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 LIBXSMM_API void libxsmm_gemm_dprint(void* ostream,
-  libxsmm_gemm_precision precision, char transa, char transb,
+  libxsmm_datatype precision, char transa, char transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
 LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, char transa, char transb,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, char transa, char transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
@@ -559,24 +548,24 @@ LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC);
  * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
  * when supplying NULL-arguments in certain places.
  */
-LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 
 #define libxsmm_blas_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_blas_xgemm(LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64, \
+  libxsmm_blas_xgemm(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define libxsmm_blas_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_blas_xgemm(LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_PRECISION_F32, \
+  libxsmm_blas_xgemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 #define libxsmm_dgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_xgemm_omp(LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64, \
+  libxsmm_xgemm_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define libxsmm_sgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_xgemm_omp(LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_PRECISION_F32, \
+  libxsmm_xgemm_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */

@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     start = libxsmm_timer_tick();
     for (i = 0; i < size_local; ++i) {
 #if defined(MKLJIT)
-      LIBXSMM_EXPECT(MKL_JIT_SUCCESS, mkl_cblas_jit_create_dgemm(jitter + i,
+      LIBXSMM_EXPECT(MKL_JIT_SUCCESS == mkl_cblas_jit_create_dgemm(jitter + i,
         MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
         rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m));
       mkl_jit_get_dgemm_ptr(jitter[i]); /* to include lookup time */
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 #       pragma omp for
         for (i = size_local; i < size_total; ++i) {
 #if defined(MKLJIT)
-          LIBXSMM_EXPECT(MKL_JIT_SUCCESS, mkl_cblas_jit_create_dgemm(jitter + i,
+          LIBXSMM_EXPECT(MKL_JIT_SUCCESS == mkl_cblas_jit_create_dgemm(jitter + i,
             MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
             rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m));
           mkl_jit_get_dgemm_ptr(jitter[i]);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
       for (i = size_local; i < size_total; ++i) {
 #if defined(MKLJIT)
-        LIBXSMM_EXPECT(MKL_JIT_SUCCESS, mkl_cblas_jit_create_dgemm(jitter + i,
+        LIBXSMM_EXPECT(MKL_JIT_SUCCESS == mkl_cblas_jit_create_dgemm(jitter + i,
           MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
           rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m));
         mkl_jit_get_dgemm_ptr(jitter[i]);
@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
 # if defined(MKLJIT)
           kernel(jitter[j], a, b, c);
 # else
-          if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c, a, b, c);
+          if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c/*, a, b, c*/); /* @TODO fix prefetch */
 # endif
           result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(double), rnd[j].m, rnd[j].n, NULL, c, &rnd[j].m, &rnd[j].m);
         }

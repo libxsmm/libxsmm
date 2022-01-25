@@ -225,7 +225,7 @@ void *create_handle(int N, int C, int K, int bn, int bc, int bk, int dtype, int 
   CHKERR_LIBXSMM_DNN( status );
   auto scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle, &status );
   CHKERR_LIBXSMM_DNN( status );
-  auto scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+  auto scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
   //std::cout << "Create Handle = " << libxsmm_handle << std::endl;
   return (void *)libxsmm_handle;
@@ -437,7 +437,7 @@ at::Tensor mlp_sparse_forward(
               num_blocks * sizeof(libxsmm_smmfunction), 64);
   for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
       l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-              &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, KB, CB, CB,
+              &l_xgemm_blob, LIBXSMM_DATATYPE(float), NB / nb, KB, CB, CB,
               0, KB, alpha, beta, flags, prefetch);
       mykernel[blk_idx] =
           libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
@@ -727,7 +727,7 @@ RECORD_FUNCTION("xsmm_mm_bwdupd", std::vector<c10::IValue>({grad_output, weight}
               num_blocks * sizeof(libxsmm_smmfunction), 64);
   for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
       l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-              &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), NB / nb, CB, KB, KB,
+              &l_xgemm_blob, LIBXSMM_DATATYPE(float), NB / nb, CB, KB, KB,
               0, CB, alpha, beta, flags, prefetch);
       mykernel[blk_idx] =
           libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
@@ -967,7 +967,7 @@ at::Tensor mlp_sparse_update(
 
   for (int blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
       l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-              &l_xgemm_blob, LIBXSMM_GEMM_PRECISION(float), CB, KB, NB / nb, CB,
+              &l_xgemm_blob, LIBXSMM_DATATYPE(float), CB, KB, NB / nb, CB,
               KB, 0, alpha, beta, flags, prefetch);
       // Creating update micro kernels
       upd_kernel[blk_idx] =

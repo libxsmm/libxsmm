@@ -39,6 +39,13 @@
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
 
+float upconvert_bf16(libxsmm_bfloat16 x) {
+  union libxsmm_bfloat16_hp bf16_hp;
+  bf16_hp.i[1] = x;
+  bf16_hp.i[0] = 0;
+  return bf16_hp.f;
+}
+
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
     return 0;
@@ -47,18 +54,6 @@ int unequal_fp32_vals(float a, float b) {
   }
 }
 
-int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
-  union libxsmm_bfloat16_hp bf16_hp, bf16_hp2;
-  bf16_hp.i[1] = a;
-  bf16_hp.i[0] = 0;
-  bf16_hp2.i[1] = b;
-  bf16_hp2.i[0] = 0;
-  if (fabs(bf16_hp.f - bf16_hp2.f) < EPS) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
 
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
@@ -258,12 +253,15 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   float *in, *in_vector, *_in;
   float *out, *out_gold;
   libxsmm_blasint i, j;
-  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
-  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_matdiff_info norms_out;
+  libxsmm_meltw_unary_type unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
+  unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -279,9 +277,9 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
 
   libxsmm_rng_set_seed(1);
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
-  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
-  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
   _in       = in;
   in_vector = NULL;
 
@@ -293,7 +291,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < ldi; ++j ) {
@@ -342,8 +340,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -358,11 +355,19 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -370,25 +375,38 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
   unary_kernel( &unary_param );
 
-  /* compare result */
-  s = 0;
+#if 0
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
         printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
       }
-#if 0
-      else {
-        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-      }
-#endif
     }
   }
-  if ( s == 0 ) {
-    printf("SUCCESS output\n");
-  } else {
-    printf("FAILURE output\n");
+#endif
+
+  /* compare result */
+  libxsmm_matdiff_clear(&norms_out);
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ldo*N, 1, out_gold, out, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  double error_bound =0.0;
+  if(RCP_OP || RCP_SQRT_OP){
+    error_bound = 0.0027;
+  } else{
+    error_bound = 0.0007;
+  }
+
+  if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
 
@@ -399,20 +417,30 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     libxsmm_free( in_vector );
   }
 
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary simple fp32 fp32\n");
+  } else {
+    printf("FAILURE unary simple fp32 fp32\n");
+  }
+
   return ret;
 }
 
 int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   libxsmm_bfloat16 *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
+  float *f32out, *f32out_gold;
   libxsmm_blasint i, j;
-  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
+  unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -435,9 +463,11 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   libxsmm_rng_set_seed(1);
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
-  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
-  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
+  out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
+  out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
+  f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
+  f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
   in_vector = NULL;
 
@@ -451,7 +481,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < ldi; ++j ) {
@@ -500,8 +530,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -515,13 +544,21 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = compute_dtype;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -529,32 +566,43 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_kernel( &unary_param );
 
   /* compare result */
-  s = 0;
   for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      if ( unequal_bf16_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j]) ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, (float) out[(i*ldo)+j], (float) out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-#if 0
-      else {
-        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-      }
-#endif
+    for ( j = 0; j < ldo; ++j ) {
+      f32out_gold[(i*ldo)+j] = upconvert_bf16(out_gold[(i*ldo)+j]);
+      f32out[(i*ldo)+j] = upconvert_bf16(out[(i*ldo)+j]);
     }
   }
-  if ( s == 0 ) {
-    printf("SUCCESS output\n");
-  } else {
-    printf("FAILURE output\n");
+
+  libxsmm_matdiff_clear(&norms_out);
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ldo*N, 1, f32out_gold, f32out, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
+  libxsmm_free( f32out_gold );
+  libxsmm_free( f32out );
   libxsmm_free( in );
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
+  }
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary simple bf16 bf16\n");
+  } else {
+    printf("FAILURE unary simple bf16 bf16\n");
   }
 
   return ret;
@@ -563,13 +611,17 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
   float *in, *in_vector, *_in;
   libxsmm_bfloat16 *out, *out_gold;
+  float *f32out, *f32out_gold;
   libxsmm_blasint i, j;
-  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
+  unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -585,9 +637,11 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   libxsmm_rng_set_seed(1);
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
-  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
-  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  in          = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldi, 64);
+  out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
+  out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
+  f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
+  f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
   _in       = in;
   in_vector = NULL;
 
@@ -647,8 +701,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -662,13 +715,21 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -676,32 +737,43 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_kernel( &unary_param );
 
   /* compare result */
-  s = 0;
   for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      if ( unequal_bf16_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j]) ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, (float)out[(i*ldo)+j], (float)out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-#if 0
-      else {
-        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-      }
-#endif
+    for ( j = 0; j < ldo; ++j ) {
+      f32out_gold[(i*ldo)+j] = upconvert_bf16(out_gold[(i*ldo)+j]);
+      f32out[(i*ldo)+j] = upconvert_bf16(out[(i*ldo)+j]);
     }
   }
-  if ( s == 0 ) {
-    printf("SUCCESS output\n");
-  } else {
-    printf("FAILURE output\n");
+
+  libxsmm_matdiff_clear(&norms_out);
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ldo*N, 1, f32out_gold, f32out, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
+  libxsmm_free( f32out_gold );
+  libxsmm_free( f32out );
   libxsmm_free( in );
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
+  }
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary simple fp32 bf16\n");
+  } else {
+    printf("FAILURE unary simple fp32 bf16\n");
   }
 
   return ret;
@@ -711,12 +783,15 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_bfloat16 *in, *in_vector, *_in;
   float *out, *out_gold;
   libxsmm_blasint i, j;
-  libxsmm_blasint s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
+  unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -732,9 +807,9 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   libxsmm_rng_set_seed(1);
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
-  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
-  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
+  out       = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
+  out_gold  = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
   in_vector = NULL;
 
@@ -748,7 +823,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
+    in_vector = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < ldi; ++j ) {
@@ -796,8 +871,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unsigned long long _N = N;
-    unary_param.out.secondary = (void*) &_N;
+    unary_param.op.primary = (void*) &_N;
   }
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
@@ -812,13 +886,20 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
-  }
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -826,24 +907,20 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   unary_kernel( &unary_param );
 
   /* compare result */
-  s = 0;
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      if ( unequal_fp32_vals(out_gold[(i*ldo)+j], out[(i*ldo)+j])  ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-#if 0
-      else {
-        printf("correct at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-      }
-#endif
-    }
-  }
-  if ( s == 0 ) {
-    printf("SUCCESS output\n");
-  } else {
-    printf("FAILURE output\n");
+  libxsmm_matdiff_clear(&norms_out);
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ldo*N, 1, out_gold, out, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
@@ -852,6 +929,12 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_free( in );
   if (use_bcast != NO_BCAST) {
     libxsmm_free( in_vector );
+  }
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary simple bf16 fp32\n");
+  } else {
+    printf("FAILURE unary simple bf16 fp32\n");
   }
 
   return ret;
@@ -909,28 +992,28 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing F32 F32 copy\n");
+    printf("Testing unary F32 F32 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
-    printf("Testing BF16 BF16 copy\n");
+    printf("Testing unary BF16 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
-    printf("Testing F32 BF16 copy\n");
+    printf("Testing unary F32 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 4 && (dtype_comp == 4 || dtype_comp == 2) ) {
-    printf("Testing BF16 F32 copy\n");
+    printf("Testing unary BF16 F32 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing F32 F32 %s\n", opname);
+    printf("Testing unary F32 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op_f32_f32( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || (dtype_comp == 2 && op == XOR_OP)) ) {
-    printf("Testing BF16 BF16 %s\n", opname);
+    printf("Testing unary BF16 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op_bf16_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing F32 BF16 %s\n", opname);
+    printf("Testing unary F32 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op_f32_bf16( M, N, ldi, ldo, op, use_bcast);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing BF16 F32 %s\n", opname);
+    printf("Testing unary BF16 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op_bf16_f32( M, N, ldi, ldo, op, use_bcast);
   } else {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );

@@ -18,16 +18,17 @@ template <typename T>
 class EmbeddingBagImpl
 {
 public:
-  EmbeddingBagImpl(int M, int E) : M(M), E(E)
+  EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 
 #ifdef USE_LIBXSMM_JIT
     _ld = E;
     if (sizeof(T) == 4) {
-      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+      kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
+#else
     } else {
-      kernel = libxsmm_dispatch_meltw_reduce_cols_idx(E, &_ld, &_ld, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F16, (sizeof(long) == 8) ? LIBXSMM_DATATYPE_I64 : LIBXSMM_DATATYPE_I32);
+      kernel = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F16, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
     }
     kernel1 = libxsmm_dispatch_meltw_unary(E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR);
     kernel2 = libxsmm_dispatch_meltw_binary(E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_MELTW_TYPE_BINARY_MULADD);
@@ -47,7 +48,7 @@ public:
   }
 
 #ifdef USE_LIBXSMM_JIT
-  void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict output)[E] = (T(*)[*])output_;
@@ -55,24 +56,26 @@ public:
     #pragma omp parallel for
     for (int n = 0; n < N; n++)
     {
-      libxsmm_meltw_reduce_cols_idx_param params;
+      libxsmm_meltw_unary_param params;
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
-      params.n = end - start;
-      params.ind_ptr = &indices[start];
-      params.inp_ptr = weight;
-      params.out_ptr = &output[n][0];
+      unsigned long long __n = end-start;
+
+      params.in.primary = weight;
+      params.in.secondary = &indices[start];
+      params.in.tertiary = &__n;
+      params.out.primary = &output[n][0];
       kernel( &params );
     }
   }
 #else
-  void forward(int N, int NS, const long *offsets, const long *indices, T *output_)
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict output)[E] = (T(*)[*])output_;
 
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
@@ -93,13 +96,13 @@ public:
 #endif
 
 #ifdef USE_LIBXSMM_JIT
-  void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
+  void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
     T(*__restrict gradout)[E] = (T(*)[*])gradout_;
     T(*__restrict values)[E] = (T(*)[*])values_;
     int _ld = E;
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       libxsmm_meltw_unary_param unary_param;
       auto start = offsets[n];
@@ -108,19 +111,19 @@ public:
 
       unary_param.in.primary    = (void*)&gradout[n][0];
       unary_param.out.primary   = (void*)&values[start][0];
-      unary_param.out.secondary = (void*)&_N;
+      unary_param.op.primary = (void*)&_N;
 
       kernel1(&unary_param);
     }
   }
 #else
-  void backward(int N, int NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
+  void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
     T(*__restrict gradout)[E] = (T(*)[*])gradout_;
     T(*__restrict values)[E] = (T(*)[*])values_;
 
 #pragma omp parallel for
-    for (int n = 0; n < N; n++)
+    for (long n = 0; n < N; n++)
     {
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
@@ -138,7 +141,7 @@ public:
 #endif
 
 #ifdef USE_LIBXSMM_JIT
-  void update(int NS, const T *grads_, const long *indices, float lr, int M, int use_rtm)
+  void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
     int use_lock_free = use_rtm == 0 ? 1: 0;
     T(*__restrict weight)[E] = (T(*)[*])weight_;
@@ -182,7 +185,7 @@ public:
     }
   }
 #else
-  void update(int NS, const T *grads_, const long *indices, float lr, int M, int use_rtm)
+  void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
     T(*__restrict weight)[E] = (T(*)[*])weight_;
     T(*__restrict grads)[E] = (T(*)[*])grads_;
@@ -222,12 +225,12 @@ public:
 #endif
 
   T *weight_;
-  int M;
-  int E;
+  long M;
+  long E;
 
 #ifdef USE_LIBXSMM_JIT
   int _ld;
-  libxsmm_meltwfunction_reduce_cols_idx kernel;
+  libxsmm_meltwfunction_unary kernel;
   libxsmm_meltwfunction_unary kernel1;
   libxsmm_meltwfunction_binary kernel2;
 #endif

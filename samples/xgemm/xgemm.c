@@ -36,7 +36,7 @@
 #if !defined(XGEMM)
 # if defined(SEQUENTIAL)
 #   define XGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-      libxsmm_xgemm(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), \
+      libxsmm_xgemm(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE), \
         TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 # else
 #   define XGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     if (0 != d) XGEMM_GOLD(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
     XGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-    libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
+    libxsmm_gemm_print(stdout, LIBXSMM_DATATYPE(ITYPE),
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
 

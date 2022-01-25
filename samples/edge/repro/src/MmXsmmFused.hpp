@@ -112,7 +112,7 @@ class edge::data::MmXsmmFused< float > {
       libxsmm_descriptor_blob l_xgemmBlob;
       const libxsmm_gemm_descriptor* l_desc = 0;
       const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_GEMM_PRECISION_F32,
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_DATATYPE_F32,
         i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
 
       m_descs.push_back( l_desc );
@@ -198,7 +198,7 @@ class edge::data::MmXsmmFused< double > {
       libxsmm_descriptor_blob l_xgemmBlob;
       const libxsmm_gemm_descriptor* l_desc = 0;
       const int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_GEMM_PRECISION_F64,
+      l_desc = libxsmm_gemm_descriptor_dinit(&l_xgemmBlob, LIBXSMM_DATATYPE_F64,
         i_m, i_n, i_k, i_ldA, i_ldB, i_ldC, i_alpha, i_beta, l_flags, i_prefetch);
 
       m_descs.push_back( l_desc );

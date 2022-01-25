@@ -22,7 +22,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
     libxsmm_matrix_eqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg              *arg_info,
+    libxsmm_matrix_eqn_arg_v2           *arg_info,
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
@@ -33,7 +33,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg              *arg_info);
+    libxsmm_matrix_eqn_arg_v2           *arg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_configure_mateqn_microkernel_loops( libxsmm_generated_code*                 io_generated_code,
@@ -103,6 +103,13 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block( libxsmm_generated_code* 
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_code*          io_generated_code,
+                                                             libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
+                                                             libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+                                                             const libxsmm_meqn_descriptor*          i_meqn_desc );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_code*     io_generated_code,
                                                  libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,

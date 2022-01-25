@@ -51,26 +51,26 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descr
 
 /** Initialize GEMM descriptor (generic: double-precision alpha/beta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, int prefetch);
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, int prefetch);
 
 /** Initialize GEMM descriptor as used by low-level routines (generic). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch);
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch);
 /** Similar to libxsmm_gemm_descriptor_init2 with optional type-converted alpha/beta (dalpha/dbeta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descriptor_blob* blob,
-  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_datatype iprec, libxsmm_datatype oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, int prefetch, double* dalpha, double* dbeta);
 
@@ -79,12 +79,12 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   libxsmm_datatype in_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi,
-  unsigned short flags, unsigned char param, unsigned char operation);
+  unsigned short flags, unsigned short param, unsigned char operation);
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldo, libxsmm_blasint ldi, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
-  unsigned short flags, unsigned char param, unsigned char operation);
+  unsigned short flags, unsigned short param, unsigned char operation);
 
 /** Initialize matrix equation as used by low-level routines */
 LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descriptor_blob* blob,
@@ -94,15 +94,19 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
-  unsigned int buffer_size;   /** total size if the buffer generated_code */
-  unsigned int code_size;     /** size of bytes used in generated_code */
+  unsigned int buffer_size;   /** total size of the buffer generated_code */
+  unsigned int code_size;     /** size in bytes used for generated_code (without constant data) */
   unsigned int code_type;     /**
                                *  0: generated code contains inline assembly in a C function
                                *     which can be dumped into a *.c/cc/cpp file
                                *  1: generated code contains assembly which can be
                                *     dumped into an *.s file
-                               * >1: generated code contains a function in binary code which can be
-                               *     called, when the code is copied into executable memory
+                               * >1: generated code contains a function in binary code which can
+                               *     be called, when the code is copied into executable memory
+                               */
+  unsigned int data_size;     /**
+                               * amount of constant data located after the generated code
+                               * data_size size is separate/excluded from code_size
                                */
   unsigned int last_error;    /**
                                *  0: no error occurred
@@ -110,11 +114,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                */
   unsigned int arch;          /* target arch for the current code generation task */
   unsigned int sf_size;       /* offset of RSP to the beginning of the stack frame
-                               * we track this value to have RBP availbale for general compute
+                               * we track this value to have RBP available for general compute
                                */
 } libxsmm_generated_code;
 
-/** function to translate LIBXSMM Generator error codes to error messages */
+/** Translate LIBXSMM generator error-codes to error messages */
 LIBXSMM_API
 const char* libxsmm_strerror(unsigned int i_error_code);
 
@@ -163,11 +167,9 @@ void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_gener
                                          const unsigned int*            i_column_idx,
                                          const double*                  i_values);
 
-/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_generated_code,
                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                             const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
                                              const double*                  i_values);

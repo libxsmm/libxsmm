@@ -30,7 +30,8 @@ do
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
   ./eltwise_unary_dropout F 0 4 4 ${M} ${N} ${LDI} ${LDI}
-  ./eltwise_unary_dropout B 0 4 4 ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_dropout F 1 4 4 ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_dropout B 1 4 4 ${M} ${N} ${LDI} ${LDI}
 done
 
 rm ${TESTFILE1}
