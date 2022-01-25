@@ -8,21 +8,42 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 #include <math.h>
-#include <assert.h>
-#include <sys/time.h>
+
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+#else /* prototypes for GEMM */
+void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
+              const double* a, const int* LDA, const double* b, const int* LDB,
+              const double* beta, double* c, const int* LDC ) {
+  const int my_M = *M;
+  const int my_N = *N;
+  const int my_K = *K;
+  const int my_LDA = *LDA;
+  const int my_LDB = *LDB;
+  const int my_LDC = *LDC;
+  const float my_alpha = (float)*alpha;
+  const float my_beta = (float)*beta;
+  int m = 0, n = 0, k = 0;
+
+  for ( n = 0; n < my_N; ++n ) {
+    for ( m = 0; m < my_M; ++m ) {
+      c[(n * my_LDC) + m] = my_beta * c[(n * my_LDC) + m];
+      for ( k = 0; k < my_K; ++k ) {
+        c[(n * my_LDC) + m] += my_alpha * a[(k * my_LDA) + m] * b[(n * my_LDB) + k];
+      }
+    }
+  }
+}
+#endif
 
 #define REPS 100
-
 #define REALTYPE double
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
 
 int my_csr_reader( const char*           i_csr_file_in,
                     unsigned int**        o_row_idx,
@@ -59,10 +80,10 @@ int my_csr_reader( const char*           i_csr_file_in,
             0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
         {
           /* allocate CSC datastructure matching mtx file */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + 1));
-          *o_values = (REALTYPE*) malloc(sizeof(double) * (*o_element_count));
-          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count));
+          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_element_count));
+          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count + 1));
+          *o_values = (REALTYPE*) malloc(sizeof(double) * ((size_t)*o_element_count));
+          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
@@ -74,10 +95,10 @@ int my_csr_reader( const char*           i_csr_file_in,
           }
 
           /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_row_count + 1));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_element_count));
-          memset(*o_values, 0, sizeof(double)*(*o_element_count));
-          memset(l_row_idx_id, 0, sizeof(unsigned int)*(*o_row_count));
+          memset(*o_row_idx, 0, sizeof(unsigned int)*((size_t)*o_row_count + 1));
+          memset(*o_column_idx, 0, sizeof(unsigned int)*((size_t)*o_element_count));
+          memset(*o_values, 0, sizeof(double)*((size_t)*o_element_count));
+          memset(l_row_idx_id, 0, sizeof(unsigned int)*((size_t)*o_row_count));
 
           /* init column idx */
           for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
@@ -125,6 +146,7 @@ int my_csr_reader( const char*           i_csr_file_in,
 
   /* let's handle empty rows */
   for ( l_i = 0; l_i < (*o_row_count); l_i++) {
+    assert(NULL != l_row_idx_id);
     if ( l_row_idx_id[l_i] == 0 ) {
       (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
     }
@@ -153,23 +175,25 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_dense_betaone;
   REALTYPE* l_c_dense_betazero;
   REALTYPE l_max_error = 0.0;
-  unsigned int l_m;
-  unsigned int l_n;
-  unsigned int l_k;
+  int l_m;
+  int l_n;
+  int l_k;
 
-  unsigned int l_i;
-  unsigned int l_j;
-  unsigned int l_z;
-  unsigned int l_elems;
-  unsigned int l_reps;
-  unsigned int l_n_block;
+  int l_i;
+  int l_j;
+  int l_z;
+  int l_elems;
+  int l_reps;
+  int l_n_block;
 
-  struct timeval l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total;
 
   double alpha = 1.0;
   double beta = 1.0;
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   char trans = 'N';
+#endif
 
   libxsmm_dfsspmdm* gemm_op_betazero = NULL;
   libxsmm_dfsspmdm* gemm_op_betaone = NULL;
@@ -198,14 +222,14 @@ int main(int argc, char* argv[]) {
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   /* allocate dense matrices */
-  l_a_dense = (REALTYPE*)_mm_malloc(l_k * l_m * sizeof(REALTYPE), 64);
-  l_b = (REALTYPE*)_mm_malloc(l_k * l_n * sizeof(REALTYPE), 64);
-  l_c_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_gold_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_gold_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_dense_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_dense_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_a_dense = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_m, 64);
+  l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_n, 64);
+  l_c_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+  l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
@@ -291,9 +315,17 @@ int main(int argc, char* argv[]) {
   /* BLAS code */
   printf("computing BLAS (A dense) solution...\n");
   beta = 0.0;
-  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#else
+  my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#endif
   beta = 1.0;
-  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#else
+  my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#endif
   printf("...done!\n");
 
   /* check for errors */
@@ -327,7 +359,7 @@ int main(int argc, char* argv[]) {
   printf("max error beta=1 (dense vs. gold): %f\n", l_max_error);
 
   /* Let's measure performance */
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
 #ifdef _OPENMP
     #pragma omp parallel for private(l_z)
@@ -336,14 +368,14 @@ int main(int argc, char* argv[]) {
       libxsmm_dfsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * (((double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
 #ifdef _OPENMP
     #pragma omp parallel for private(l_z)
@@ -352,31 +384,39 @@ int main(int argc, char* argv[]) {
       libxsmm_dfsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   beta = 0.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#else
+    my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+#endif
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   beta = 1.0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    dgemm( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#else
+    my_dgemm( &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+#endif
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
@@ -384,5 +424,6 @@ int main(int argc, char* argv[]) {
   /* free */
   libxsmm_dfsspmdm_destroy( gemm_op_betazero );
   libxsmm_dfsspmdm_destroy( gemm_op_betaone );
-}
 
+  return EXIT_SUCCESS;
+}

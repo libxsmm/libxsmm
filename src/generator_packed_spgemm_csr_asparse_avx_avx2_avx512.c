@@ -62,7 +62,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* select packed width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_simd_packed_width = 8;
     } else {
@@ -97,7 +97,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 
   /* loop over blocks of packing */
   if ( (l_simd_packed_iters_full > 1) || (l_simd_packed_remainder > 0 && l_simd_packed_iters_full > 0 ) ) {
@@ -154,7 +154,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
       unsigned char l_data[32];
       unsigned int l_count;
 
-      if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         unsigned long long* l_i64_ptr = (unsigned long long*)l_data;
         for ( l_count = 0; l_count < 4; ++l_count ) {
           if ( l_count < l_simd_packed_remainder ) {
@@ -192,7 +192,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 }
 
 
@@ -292,7 +292,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
 
   LIBXSMM_UNUSED(i_values);
 
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_avx_mask_instr = LIBXSMM_X86_INSTR_VMASKMOVPD;
   } else {
     l_avx_mask_instr = LIBXSMM_X86_INSTR_VMASKMOVPS;
@@ -316,11 +316,10 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
       /* load C accumulator */
       for ( l_n = 0; l_n < i_num_c_cols; l_n++ ) {
         if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                   i_micro_kernel_config->instruction_set,
-                                                   i_micro_kernel_config->vxor_instruction,
-                                                   i_micro_kernel_config->vector_name,
-                                                   l_n, l_n, l_n );
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                    i_micro_kernel_config->vxor_instruction,
+                                                    i_micro_kernel_config->vector_name,
+                                                    l_n, l_n, l_n );
         } else {
           if ( i_packed_mask == 0 ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -386,17 +385,15 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
 
           if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             if ( i_packed_mask == 0 ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       l_n );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            l_n );
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
@@ -407,25 +404,22 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
                                                 i_micro_kernel_config->vector_name,
                                                 i_num_c_cols+1, 1, 1, 0 );
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols+1, i_num_c_cols, l_n );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        i_micro_kernel_config->vmul_instruction,
+                                                        i_micro_kernel_config->vector_name,
+                                                        i_num_c_cols+1, i_num_c_cols, l_n );
             }
           } else  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             if ( i_packed_mask == 0 ) {
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       l_n );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            l_n );
             } else {
               libxsmm_x86_instruction_vec_mask_move( io_generated_code,
                                                      l_avx_mask_instr,
@@ -435,32 +429,28 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
                                                      i_micro_kernel_config->vector_name,
                                                      14, 15, 0);
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       i_micro_kernel_config->vector_name,
-                                                       14, i_num_c_cols, l_n );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        i_micro_kernel_config->vmul_instruction,
+                                                        i_micro_kernel_config->vector_name,
+                                                        14, i_num_c_cols, l_n );
             }
           } else {
             if ( i_packed_mask == 0 ) {
               /* Mul with full vector load and adding result to final accumulator */
-              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       0,
-                                                       i_gp_reg_mapping->gp_reg_b,
-                                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                                       0,
-                                                       l_b_offset,
-                                                       i_micro_kernel_config->vector_name,
-                                                       i_num_c_cols,
-                                                       15 );
+              libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
+                                                            i_micro_kernel_config->vmul_instruction,
+                                                            i_micro_kernel_config->vector_name,
+                                                            i_gp_reg_mapping->gp_reg_b,
+                                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                                            0,
+                                                            l_b_offset, 0,
+                                                            i_num_c_cols,
+                                                            15 );
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vadd_instruction,
-                                                       i_micro_kernel_config->vector_name,
-                                                       15, l_n, l_n );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        i_micro_kernel_config->vadd_instruction,
+                                                        i_micro_kernel_config->vector_name,
+                                                        15, l_n, l_n );
             } else {
               libxsmm_x86_instruction_vec_mask_move( io_generated_code,
                                                      l_avx_mask_instr,
@@ -470,17 +460,15 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512_m_loop( libxsmm
                                                      i_micro_kernel_config->vector_name,
                                                      14, 15, 0);
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vmul_instruction,
-                                                       i_micro_kernel_config->vector_name,
-                                                       14, i_num_c_cols, 14 );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        i_micro_kernel_config->vmul_instruction,
+                                                        i_micro_kernel_config->vector_name,
+                                                        14, i_num_c_cols, 14 );
 
-              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                       i_micro_kernel_config->instruction_set,
-                                                       i_micro_kernel_config->vadd_instruction,
-                                                       i_micro_kernel_config->vector_name,
-                                                       14, l_n, l_n );
+              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                        i_micro_kernel_config->vadd_instruction,
+                                                        i_micro_kernel_config->vector_name,
+                                                        14, l_n, l_n );
             }
           }
         }

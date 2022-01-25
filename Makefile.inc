@@ -303,17 +303,17 @@ uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
 ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
   echo "int main(void) { return 0; }" > $${INFILE} && if [ "$3" ]; \
-  then $(firstword $1) -c $${INFILE} -o $${INFILE}.o >/dev/null && \
-       $1 $2 $${INFILE}.o -o $${INFILE}.x >/dev/null; \
-  else $(firstword $1) $2 $${INFILE} -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
-  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$(NULL),$2))
+  then $(firstword $1) $2 -c $${INFILE}   -o $${INFILE}.o >/dev/null && if [ "$(strip $3)" ]; then \
+       $(firstword $1) $3    $${INFILE}.o -o $${INFILE}.x >/dev/null; fi; \
+  else $(firstword $1) $2    $${INFILE}   -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$(NULL),$(strip $2 $3)))
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
   printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && if [ "$3" ]; \
-  then $(firstword $1) -c $${INFILE} -o $${INFILE}.o >/dev/null && \
-       $1 $2 $${INFILE}.o -o $${INFILE}.x >/dev/null; \
-  else $(firstword $1) $2 $${INFILE} -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
-  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$2))
+  then $(firstword $1) $2 -c $${INFILE}   -o $${INFILE}.o >/dev/null && if [ "$(strip $3)" ]; then \
+       $(firstword $1) $3    $${INFILE}.o -o $${INFILE}.x >/dev/null; fi; \
+  else $(firstword $1) $2    $${INFILE}   -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
+  rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.f.* 2>/dev/null),$(NULL),$(strip $2 $3)))
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
 ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
@@ -595,10 +595,13 @@ ifneq (0,$(FORTRAN))
         GFC := $(FC)
       else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
         GFC := $(FC)
-      else ifneq (pgfortran,$(CC_NAME))
+      else ifneq (pgfortran,$(FC_NAME))
         ifneq (,$(findstring gfortran,$(FC_NAME)))
           GFC := $(FC)
         endif
+      endif
+      ifeq ($(strip $(FC)),$(strip $(GFC)))
+        FC_NAME := gfortran
       endif
     else
       FORTRAN ?= 0
@@ -846,7 +849,7 @@ PGI ?= 0
 
 ifeq (,$(strip $(GFC)))
 ifneq (,$(filter-out 0,$(INTEL) $(ICX)))
-ifneq (,$(call ftest,$(LD),-nofor-main,link))
+ifneq (,$(call ftest,$(LD),$(NULL),-nofor-main))
   override LD := $(LD) -nofor-main
 endif
 endif
@@ -1003,12 +1006,12 @@ endif
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-  ifneq (,$(call ctest,$(LD),-dynamic,link))
+  ifneq (,$(call ctest,$(LD),$(NULL),-dynamic))
     EXCLUDE_VALUE += -dynamic
     XLD := $(XLD) -dynamic
     LD := $(LD) -dynamic
   endif
-  ifneq (,$(call ftest,$(FLD),-dynamic,link))
+  ifneq (,$(call ftest,$(FLD),$(NULL),-dynamic))
     EXCLUDE_VALUE += -dynamic
     FLD := $(FLD) -dynamic
   endif
@@ -1424,6 +1427,9 @@ else # GCC assumed
       else
         CXXFLAGS += -std=c++11
       endif
+      ifneq (0,$(shell echo "$$((40000<=$(CC_VERSION_NUM)))"))
+        CFLAGS += -Wno-pass-failed
+      endif
     else ifneq (,$(filter-out 2 3,$(XSMM_GCC)))
       CXXFLAGS += -std=c++11
     endif
@@ -1625,7 +1631,7 @@ else # GCC assumed
         ifneq (,$(TESTRESC))
           FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
         else
-          TESTRESC := $(call ftest,$(FLD),-fopenmp,link)
+          TESTRESC := $(call ftest,$(FLD),$(NULL),-fopenmp)
           ifneq (,$(TESTRESC))
             FLDFLAGS += $(TESTRESC)
           else # last try
@@ -1669,7 +1675,7 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
-    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 60000<=$(GCC_VERSION_NUM)) || \
+    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 80000<=$(GCC_VERSION_NUM)) || \
           (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
           (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
@@ -1755,7 +1761,7 @@ ifeq (undefined,$(origin TARGET))
       endif
       # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
-      CTARGET := -march=native
+      CTARGET := -march=native -mtune=native
     endif
   endif # CTARGET
   endif # DBG
@@ -1766,13 +1772,13 @@ endif
 override VNNI := $(if $(filter -mavx512vnni,$(CTARGET)),1,0)
 override BF16 := $(if $(filter -mavx512bf16,$(CTARGET)),1,0)
 
-ifneq (,$(call ftest,$(FC),$(CTARGET)))
+ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   # inherit CTARGET flags
   FTARGET := $(CTARGET)
-else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET))))
+else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
 endif
-ifeq (,$(call ctest,$(CC),$(CTARGET)))
+ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
   CTARGET := $(NULL)
 endif
@@ -1788,6 +1794,12 @@ ifneq (0,$(INTEL))
   INTRINSICS ?= 2
 else ifneq (0,$(CLANG))
   INTRINSICS ?= 2
+else ifneq (,$(GCC_VERSION))
+  ifneq (0,$(shell echo "$$((100000<=$(GCC_VERSION_NUM)))"))
+  ifeq (/usr/bin/,$(call qdir,$(call which,$(CC))))
+    INTRINSICS ?= 2
+  endif
+  endif
 endif
 ifeq (x86_64,$(MNAME))
   INTRINSICS ?= 1006
@@ -1808,8 +1820,8 @@ endif
 
 ifeq (0,$(SYM))
 ifneq (Darwin,$(UNAME))
-  CLDFLAGS += $(call ctest,$(CC),-s,link)
-  FLDFLAGS += $(call ftest,$(FC),-s,link)
+  CLDFLAGS += $(call ctest,$(CC),$(NULL),-s)
+  FLDFLAGS += $(call ftest,$(FC),$(NULL),-s)
 endif
 endif
 
@@ -2292,13 +2304,13 @@ else ifneq (0,$(BLAS)) # generic
       BLASREF ?= 1
     endif
     BLASREF ?= 0
-    ifneq (0,$(BLASREF)) # BLAS (reference)
-    ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
-    ifneq (0,$(PGI))
-      BLAS_FLAGS += -D__CBLAS
-    endif
-    endif
-    endif
+    #ifneq (0,$(BLASREF)) # BLAS (reference)
+    #ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
+    #ifneq (0,$(PGI))
+      #BLAS_FLAGS += -D__CBLAS
+    #endif
+    #endif
+    #endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
       ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))

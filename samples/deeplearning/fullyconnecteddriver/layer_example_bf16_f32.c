@@ -201,6 +201,8 @@ int main(int argc, char* argv[])
     fullyconnected_desc.C = nIFm;
     fullyconnected_desc.K = nOFm;
     fullyconnected_desc.threads = nThreads;
+    fullyconnected_desc.compressed_A = 0;
+    fullyconnected_desc.sparsity_factor_A = 1;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
@@ -257,7 +259,7 @@ int main(int argc, char* argv[])
     /* let's allocate and bind scratch */
     scratch_size = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle, &status );
     CHKERR_LIBXSMM_DNN( status );
-    scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+    scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );

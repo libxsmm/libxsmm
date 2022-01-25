@@ -141,7 +141,7 @@ if (handle->use_fallback_fwd_loops == 1) {
   if ( handle->avoid_fmas_in_rim == 1) {
     for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
       img = imgofm1ofh / (handle->blocksofm*handle->ofh);
-#if 1
+#if 0
       ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
       oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
 #else
@@ -403,7 +403,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                       }
                       oi_use = oi;
                       oj_use = oj;
-#if 1
+#if 0
                       ind = 0;
                       for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
                         for (kj1 = 0; kj1 < handle->desc.R; kj1++) {
@@ -476,7 +476,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                     }
                     oi_use = oi;
                     oj_use = oj;
-#if 1
+#if 0
                     ind = 0;
                     for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
                       for (kj = 0; kj < handle->desc.R; kj++) {

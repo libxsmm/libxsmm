@@ -102,7 +102,6 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
 LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                              const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
                                               const double*                  i_values ) {
@@ -118,7 +117,25 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_spgemm_csr_asparse_reg( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+
+    /* x86 */
+    if ( io_generated_code->arch >= LIBXSMM_X86_GENERIC &&
+         io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_x86( io_generated_code, i_xgemm_desc,
+                                                    i_row_idx, i_column_idx, i_values );
+    /* aarch64 with SVE */
+    } else if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
+                                                            i_row_idx, i_column_idx, i_values );
+    /* aarch64 without SVE */
+    } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
+                io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( io_generated_code, i_xgemm_desc,
+                                                             i_row_idx, i_column_idx, i_values );
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+      return;
+    }
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
@@ -158,19 +175,10 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = NULL;
-  l_generated_code.buffer_size = 0;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 0;
-  l_generated_code.last_error = 0;
-  l_generated_code.sf_size = 0;
+  LIBXSMM_MEMZERO127(&l_generated_code);
 
   /* add signature to code string */
-  if (i_is_csr == 3) {
-    libxsmm_mmfunction_signature_asparse_reg( &l_generated_code, i_routine_name, i_xgemm_desc );
-  } else {
-    libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
-  }
+  libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* account for cases where requested shape does not match sparse data */
   l_column_count = i_xgemm_desc->n;
@@ -298,9 +306,6 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       if (i_is_csr == 1) {
         /* generate the actual kernel code for current description depending on the architecture */
         libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-      } else if (i_is_csr == 3) {
-        /* generate the actual kernel code for current description depending on the architecture */
-        libxsmm_generator_spgemm_csr_reg_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
       } else {
         assert(0/*should not happen*/);
       }

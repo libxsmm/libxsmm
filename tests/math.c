@@ -271,6 +271,23 @@ int main(/*int argc, char* argv[]*/)
     if (libxsmm_shuffle(5) != 2) exit(EXIT_FAILURE);
   }
 
+  { /* check libxsmm_remainder minimizing the remainder */
+    unsigned int lim, rem;
+    lim = 512;  if (libxsmm_remainder(23, 32, &lim, NULL) != (32 * 13)) exit(EXIT_FAILURE);
+    rem = 4;    if (libxsmm_remainder(23, 32, NULL, &rem) != (32 * 3)) exit(EXIT_FAILURE);
+    rem = 1;    if (libxsmm_remainder(23, 32, &lim, &rem) != (32 * 13)) exit(EXIT_FAILURE);
+    lim = 32;   if (libxsmm_remainder(23, 8, &lim, NULL) != (8 * 3)) exit(EXIT_FAILURE);
+    lim = 23;   if (libxsmm_remainder(23, 8, &lim, NULL) != (8 * 23)) exit(EXIT_FAILURE);
+    lim = 4;    if (libxsmm_remainder(23, 8, &lim, NULL) != (8 * 23)) exit(EXIT_FAILURE);
+    rem = 1;    if (libxsmm_remainder(0, 0, NULL, &rem) != 0) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 32, NULL, NULL) != (32 * 23)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 8, NULL, NULL) != (8 * 23)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 8, NULL, NULL) != (8 * 23)) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(0, 32, NULL, NULL) != 0) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(23, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
+    if (libxsmm_remainder(0, 0, NULL, NULL) != 0) exit(EXIT_FAILURE);
+  }
+
   /* find upper limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 0) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 32, 0) != (2 * 3 * 5)) exit(EXIT_FAILURE);
@@ -284,6 +301,8 @@ int main(/*int argc, char* argv[]*/)
   /* find lower limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(23, 32, 1) != (2 * 23)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 32, 1) != (3 * 12)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(320, 300, 1) != 320) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(320, 65, 1) != 80) exit(EXIT_FAILURE);

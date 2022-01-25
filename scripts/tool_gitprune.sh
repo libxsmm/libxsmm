@@ -13,8 +13,12 @@
 GIT=$(command -v git)
 
 if [ "${GIT}" ]; then
+  ${GIT} gc
+  ${GIT} fsck --full
   ${GIT} reflog expire --expire=now --all
-  ${GIT} gc --prune=now
+  # ${GIT} gc --prune=now
+  ${GIT} gc --aggressive
+  ${GIT} remote update --prune
 else
   >&2 echo "Error: missing prerequisites!"
   exit 1

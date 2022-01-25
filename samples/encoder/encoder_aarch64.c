@@ -73,11 +73,31 @@ void test_asimd_move( char* test_name, libxsmm_generated_code* mycode, unsigned 
   dump_code_buffer( mycode, test_name );
 }
 
+void test_asimd_gpr_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
+  int simd[4] = {LIBXSMM_AARCH64_ASIMD_WIDTH_B, LIBXSMM_AARCH64_ASIMD_WIDTH_H, LIBXSMM_AARCH64_ASIMD_WIDTH_S, LIBXSMM_AARCH64_ASIMD_WIDTH_D};
+  unsigned char v;
+  unsigned char g;
+  unsigned char w;
+  char index = 1;
+
+  reset_code_buffer( mycode, test_name );
+
+  for (g = 0; g < 64; ++g ) {
+    for (v = 0; v < 32; ++v ) {
+      for (w = 0; w < 4; ++w ) {
+        libxsmm_aarch64_instruction_asimd_gpr_move( mycode, instr, g, v, index, simd[w] );
+      }
+    }
+  }
+
+  dump_code_buffer( mycode, test_name );
+}
+
 void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, unsigned int instr ) {
   unsigned char b;
   unsigned char o;
-  int simd[8] = { LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_8B, LIBXSMM_AARCH64_ASIMD_SCRUCTTYPE_16B, LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4H, LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_8H,
-                  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2S,  LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_4S, LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_1D, LIBXSMM_AARCH64_ASIMD_STRUCTTYPE_2D };
+  int simd[8] = { LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8B, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4H, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_8H,
+                  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S,  LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_1D, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D };
   unsigned char v;
   unsigned char w;
 
@@ -87,7 +107,7 @@ void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, un
     for (b = 32; b < 64; ++b ) {
       for (v = 0; v < 32; ++v ) {
         for (w = 0; w < 8; ++w ) {
-          libxsmm_aarch64_instruction_asimd_struct_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, v, simd[w] );
+          libxsmm_aarch64_instruction_asimd_struct_r_move( mycode, instr, b, LIBXSMM_AARCH64_GP_REG_UNDEF, v, simd[w] );
         }
       }
     }
@@ -96,7 +116,7 @@ void test_asimd_struct_move( char* test_name, libxsmm_generated_code* mycode, un
       for (o = 32; o < 64; ++o ) {
         for (v = 0; v < 32; ++v ) {
           for (w = 0; w < 8; ++w ) {
-            libxsmm_aarch64_instruction_asimd_struct_move( mycode, instr, b, o, v, simd[w] );
+            libxsmm_aarch64_instruction_asimd_struct_r_move( mycode, instr, b, o, v, simd[w] );
           }
         }
       }
@@ -129,7 +149,7 @@ void test_asimd_pair_move( char* test_name, libxsmm_generated_code* mycode, unsi
   dump_code_buffer( mycode, test_name );
 }
 
-void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned char has_index ) {
+void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsigned int instr, unsigned char has_index_shift, unsigned char twoops ) {
   unsigned char d;
 #if 1
   int tuple[3] = {LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D};
@@ -143,13 +163,36 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
 
   reset_code_buffer( mycode, test_name );
 
-  for (d = 0; d < 32; ++d ) {
-    for (s = 0; s < 32; ++s ) {
-      for (t = 0; t < 32; ++t ) {
+  if ( twoops == 0 ) {
+    for (d = 0; d < 32; ++d ) {
+      for (s = 0; s < 32; ++s ) {
+        for (t = 0; t < 32; ++t ) {
+          for (w = 0; w < 3; ++w ) {
+            if ( has_index_shift == 0 ) {
+              libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, 0, d, tuple[w] );
+            } else if ( has_index_shift == 1 ) {
+              unsigned char max_idx = 4;
+              if ( tuple[w] == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) {
+                max_idx = 2;
+              }
+              for ( i = 0; i < max_idx; ++i ) {
+                libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, i, d, tuple[w] );
+              }
+            } else {
+              /* shouldn't happen */
+            }
+          }
+        }
+      }
+    }
+  } else {
+    t = LIBXSMM_AARCH64_ASIMD_REG_UNDEF;
+    for (d = 0; d < 32; ++d ) {
+      for (s = 0; s < 32; ++s ) {
         for (w = 0; w < 3; ++w ) {
-          if ( has_index == 0 ) {
+          if ( has_index_shift == 0 ) {
             libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, 0, d, tuple[w] );
-          } else {
+          } else if ( has_index_shift == 1 ) {
             unsigned char max_idx = 4;
             if ( tuple[w] == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) {
               max_idx = 2;
@@ -157,6 +200,10 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
             for ( i = 0; i < max_idx; ++i ) {
               libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, i, d, tuple[w] );
             }
+          } else if ( has_index_shift == 2 ) {
+            libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, 28, d, tuple[w] );
+          } else {
+            /* shouldn't happen */
           }
         }
       }
@@ -387,14 +434,17 @@ int main( /*int argc, char* argv[]*/ ) {
   mycode.arch = LIBXSMM_AARCH64_V81;
 
   /* testing asimd ldr/str instructions */
-  test_asimd_move( "asimd_mov_LDR_R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R );
-  test_asimd_move( "asimd_mov_LDR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF );
+  test_asimd_move( "asimd_mov_LDR_R",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R );
+  test_asimd_move( "asimd_mov_LDR_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF );
   test_asimd_move( "asimd_mov_LDR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST );
-  test_asimd_move( "asimd_mov_LDR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_PRE );
-  test_asimd_move( "asimd_mov_LDR_STR_R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_R );
-  test_asimd_move( "asimd_mov_STR_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF );
+  test_asimd_move( "asimd_mov_LDR_I_PRE",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_PRE );
+  test_asimd_move( "asimd_mov_STR_R",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_R );
+  test_asimd_move( "asimd_mov_STR_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF );
   test_asimd_move( "asimd_mov_STR_I_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST );
-  test_asimd_move( "asimd_mov_STR_I_PRE", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
+  test_asimd_move( "asimd_mov_STR_I_PRE",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_PRE );
+
+  test_asimd_gpr_move( "asimd_mov_MOV_G_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V );
+  test_asimd_gpr_move( "asimd_mov_UMOV_V_G",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G );
 
   test_asimd_struct_move( "asimd_mov_LD1R", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R );
   test_asimd_struct_move( "asimd_mov_LD1R_R_POST", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R_R_POST );
@@ -409,10 +459,71 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_pair_move( "asimd_movp_STNP_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF );
 
   /* test SIMD compute instructions */
-  test_asimd_compute( "asimd_comp_FMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,   0 );
-  test_asimd_compute( "asimd_comp_FMLA_E_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V, 1 );
-  test_asimd_compute( "asimd_comp_FMLA_E_S", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S, 1 );
-  test_asimd_compute( "asimd_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,    0 );
+  test_asimd_compute( "asimd_comp_EOR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ORR_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_AND_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_AND_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ADD_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_ADDV_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ADDV_V,    0, 1 );
+  test_asimd_compute( "asimd_comp_BIC_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BIC_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_BIF_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_BIT_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_BSL_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BSL_V,     0, 0 );
+  test_asimd_compute( "asimd_comp_NEG_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_NEG_V,     0, 1 );
+  test_asimd_compute( "asimd_comp_NOT_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_NOT_V,     0, 1 );
+  test_asimd_compute( "asimd_comp_ORN_V",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ORN_V,     0, 1 );
+  test_asimd_compute( "asimd_comp_SHL_I_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_SHL_I_V,   2, 1 );
+  test_asimd_compute( "asimd_comp_SSHR_I_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_SSHR_I_V,  2, 1 );
+  test_asimd_compute( "asimd_comp_USHR_I_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_USHR_I_V,  2, 1 );
+  test_asimd_compute( "asimd_comp_SSHL_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_SSHL_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_USHL_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_USHL_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMEQ_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMEQ_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMEQ_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMGE_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMGE_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGE_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMGT_R_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_R_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_CMGT_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMGT_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMLE_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMLE_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_CMLT_Z_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_CMLT_Z_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_FMLA_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FMLA_E_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V,  1, 0 );
+  test_asimd_compute( "asimd_comp_FMLA_E_S",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_S,  1, 0 );
+  test_asimd_compute( "asimd_comp_FADD_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FSUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FMUL_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FDIV_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FNEG_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,    0, 1 );
+  test_asimd_compute( "asimd_comp_FSQRT_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,   0, 1 );
+  test_asimd_compute( "asimd_comp_FRECPE_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,  0, 1 );
+  test_asimd_compute( "asimd_comp_FRECPS_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_FRSQRTE_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FRSQRTS_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTS_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FMAX_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FMIN_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_FADDP_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FADDP_V,   0, 0 );
+  test_asimd_compute( "asimd_comp_FMAXP_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMAXP_V,   0, 0 );
+  test_asimd_compute( "asimd_comp_FMINP_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FMINP_V,   0, 0 );
+  test_asimd_compute( "asimd_comp_FCMEQ_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMEQ_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMEQ_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMGE_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMGE_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMGT_R_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V, 0, 0 );
+  test_asimd_compute( "asimd_comp_FCMGT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMLE_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLE_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_FCMLT_Z_V", &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_FCMLT_Z_V, 0, 1 );
+  test_asimd_compute( "asimd_comp_TRN1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TRN1,      0, 0 );
+  test_asimd_compute( "asimd_comp_TRN2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TRN2,      0, 0 );
+  test_asimd_compute( "asimd_comp_ZIP1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1,      0, 0 );
+  test_asimd_compute( "asimd_comp_ZIP2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2,      0, 0 );
+  test_asimd_compute( "asimd_comp_UZP1",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UZP1,      0, 0 );
+  test_asimd_compute( "asimd_comp_UZP2",      &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UZP2,      0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_1",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_1,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_2,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_3,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBL_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBL_4,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_1",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_1,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3,     0, 0 );
+  test_asimd_compute( "asimd_comp_TBX_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4,     0, 0 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
@@ -466,6 +577,14 @@ int main( /*int argc, char* argv[]*/ ) {
   test_gpr_alu_compute_imm12( "aarch64_comp_i12_SUB_I", &mycode, LIBXSMM_AARCH64_INSTR_GP_SUB_I );
   test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ADD_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ADD_SR );
   test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_SUB_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_SUB_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ORR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ORR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_AND_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_AND_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_EOR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_EOR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_LSL_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_LSL_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_LSR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_LSR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_ASR_SR", &mycode, LIBXSMM_AARCH64_INSTR_GP_ASR_SR );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_MUL",    &mycode, LIBXSMM_AARCH64_INSTR_GP_MUL    );
+  test_gpr_alu_compute_shifted_reg( "aarch64_comp_sreg_UDIV",   &mycode, LIBXSMM_AARCH64_INSTR_GP_UDIV   );
 
   free( codebuffer );
 

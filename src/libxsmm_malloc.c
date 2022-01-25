@@ -181,7 +181,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_LOCK_PAGES 1
 #endif
 #if !defined(LIBXSMM_MALLOC_LOCK_ALL) && \
-     defined(LIBXSMM_MALLOC_ALIGN_ALL) && 0
+     defined(LIBXSMM_MALLOC_MOD) && 0
 # define LIBXSMM_MALLOC_LOCK_ALL
 #endif
 /* record real allocation size */
@@ -216,14 +216,14 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define INTERNAL_MALLOC_LOCK_PAGES(BUFFER, SIZE)
 #endif
 
-#if defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#if defined(LIBXSMM_MALLOC_MOD)
 # define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) libxsmm_alignment(SIZE, ALIGNMENT)
 #else
 # define INTERNAL_MALLOC_AUTOALIGN(SIZE, ALIGNMENT) (ALIGNMENT)
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)
-# define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) { \
+# define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     const int internal_memalign_hook_recursive_ = LIBXSMM_ATOMIC_ADD_FETCH( \
       &internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
     if ( 1 < internal_memalign_hook_recursive_ /* protect against recursion */ \
@@ -244,7 +244,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       } \
     } \
     LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
-  }
+  } while(0)
 # define INTERNAL_REALLOC_HOOK(RESULT, FLAGS, PTR, SIZE, CALLER) \
   if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
     /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
@@ -265,7 +265,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     } \
     (RESULT) = (PTR); \
   }
-# define INTERNAL_FREE_HOOK(PTR, CALLER) { \
+# define INTERNAL_FREE_HOOK(PTR, CALLER) do { \
     LIBXSMM_UNUSED(CALLER); \
     if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
       /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
@@ -275,8 +275,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     else { /* recognize pointers not issued by LIBXSMM */ \
       libxsmm_free(PTR); \
     } \
-  }
-#elif defined(LIBXSMM_MALLOC_ALIGN_ALL)
+  } while(0)
+#elif defined(LIBXSMM_MALLOC_MOD)
 # define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     LIBXSMM_UNUSED(FLAGS); LIBXSMM_UNUSED(CALLER); \
     INTERNAL_MEMALIGN_REAL(RESULT, ALIGNMENT, SIZE); \
@@ -296,16 +296,16 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(WIN32)
 # if defined(MAP_32BIT)
 #   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-    if (MAP_FAILED == (BUFFER) && 0 != (MAP_32BIT & (MFLAGS))) { \
+    if (MAP_FAILED == (BUFFER) && 0 != (MAP_32BIT & (MFLAGS))) do { \
       (BUFFER) = internal_xmalloc_xmap(ENV, SIZE, (MFLAGS) & ~MAP_32BIT, REPTR); \
       if (MAP_FAILED != (BUFFER)) (MAPSTATE) = 0; \
-    }
+    } while(0)
 # else
 #   define INTERNAL_XMALLOC_MAP32(ENV, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR)
 # endif
 
 # define INTERNAL_XMALLOC(I, ENTRYPOINT, ENVVAR, ENVDEF, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR) \
-  if ((ENTRYPOINT) <= (I) && (MAP_FAILED == (BUFFER) || NULL == (BUFFER))) { \
+  if ((ENTRYPOINT) <= (I) && (MAP_FAILED == (BUFFER) || NULL == (BUFFER))) do { \
     static const char* internal_xmalloc_env_ = NULL; \
     LIBXSMM_ASSERT(NULL != (ENVVAR) && '\0' != *(ENVVAR)); \
     if (NULL == internal_xmalloc_env_) { \
@@ -315,9 +315,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     (BUFFER) = internal_xmalloc_xmap(internal_xmalloc_env_, SIZE, MFLAGS, REPTR); \
     INTERNAL_XMALLOC_MAP32(internal_xmalloc_env_, MAPSTATE, MFLAGS, SIZE, BUFFER, REPTR); \
     if (MAP_FAILED != (BUFFER)) (ENTRYPOINT) = (I); \
-  }
+  } while(0)
 
-# define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) { \
+# define INTERNAL_XMALLOC_WATERMARK(NAME, WATERMARK, LIMIT, SIZE) do { \
   const size_t internal_xmalloc_watermark_ = (WATERMARK) + (SIZE) / 2; /* accept data-race */ \
   if (internal_xmalloc_watermark_ < (LIMIT)) { \
     static size_t internal_xmalloc_watermark_verbose_ = 0; \
@@ -333,7 +333,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
       internal_xmalloc_watermark_verbose_ = internal_xmalloc_watermark_; \
     } \
   } \
-}
+} while(0)
 
 # define INTERNAL_XMALLOC_KIND(KIND, NAME, FLAG, FLAGS, MFLAGS, WATERMARK, LIMIT, INFO, SIZE, BUFFER) \
   if (0 != ((KIND) & (MFLAGS))) { \
@@ -472,8 +472,8 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
   if ((LIBXSMM_MALLOC_HOOK_CHECK) < check) check = (LIBXSMM_MALLOC_HOOK_CHECK);
 #endif
   if (0 != check && NULL != result) { /* check ownership */
-#if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
-    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000),
+#if !defined(_WIN32) /* mprotect: pass address rounded down to page-alignment */
+    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & ((uintptr_t)(-1 * LIBXSMM_PAGE_MINSIZE))),
       sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
 #endif
     {
@@ -872,7 +872,7 @@ LIBXSMM_API_INTERN void* internal_memalign_twiddle(size_t alignment, size_t size
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
 
-#if (defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL)
+#if (defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_MOD)
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t /*alignment*/, size_t /*size*/, const void* /*caller*/);
 LIBXSMM_API_INTERN void* internal_memalign_hook(size_t alignment, size_t size, const void* caller)
 {
@@ -971,7 +971,7 @@ LIBXSMM_API void __wrap_free(void* ptr)
 }
 #endif
 
-#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_ALIGN_ALL))
+#if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_MOD))
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_THROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_THROW
 {
@@ -2179,49 +2179,78 @@ LIBXSMM_API_INLINE void internal_get_vtune_jitdesc(const void* code,
 #endif
 
 
-LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const char* name)
+LIBXSMM_API_INTERN int libxsmm_malloc_xattrib(void* buffer, int flags, size_t size)
+{
+  int result = EXIT_SUCCESS;
+#if defined(_WIN32)
+  LIBXSMM_ASSERT(NULL != buffer || 0 == size);
+#else
+  LIBXSMM_ASSERT((NULL != buffer && MAP_FAILED != buffer) || 0 == size);
+#endif
+  /* quietly keep the read permission, but eventually revoke write permissions */
+  if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
+    if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* data-buffer; non-executable */
+#if defined(_WIN32)
+      /* TODO: implement memory protection under Microsoft Windows */
+#else
+      result = mprotect(buffer, size/*entire memory region*/, PROT_READ);
+#endif
+    }
+    else { /* executable buffer requested */
+#if defined(_WIN32)
+      /* TODO: implement memory protection under Microsoft Windows */
+#else
+      result = mprotect(buffer, size/*entire memory region*/, PROT_READ | PROT_EXEC);
+#endif
+    }
+  }
+  return result;
+}
+
+
+LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const char* name, const size_t* data_size)
 {
   internal_malloc_info_type *const info = (NULL != memory ? internal_malloc_info(*memory, 0/*no check*/) : NULL);
   int result = EXIT_SUCCESS;
   static int error_once = 0;
   if (NULL != info) {
+    const size_t info_size = info->size, apply_size = (NULL == data_size
+      ? info_size : (info_size - LIBXSMM_MIN(*data_size, info_size)));
     void *const buffer = info->pointer;
-    const size_t size = info->size;
 #if defined(_WIN32)
-    LIBXSMM_ASSERT(NULL != buffer || 0 == size);
+    LIBXSMM_ASSERT(NULL != buffer || 0 == apply_size);
 #else
-    LIBXSMM_ASSERT((NULL != buffer && MAP_FAILED != buffer) || 0 == size);
+    LIBXSMM_ASSERT((NULL != buffer && MAP_FAILED != buffer) || 0 == apply_size);
 #endif
     flags |= (info->flags & ~LIBXSMM_MALLOC_FLAG_RWX); /* merge with current flags */
     /* quietly keep the read permission, but eventually revoke write permissions */
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const size_t alignment = (size_t)(((const char*)(*memory)) - ((const char*)buffer));
-      const size_t alloc_size = size + alignment;
+      const size_t alloc_size = apply_size + alignment;
+      int xattrib_result;
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* data-buffer; non-executable */
-#if defined(_WIN32)
-        /* TODO: implement memory protection under Microsoft Windows */
-        LIBXSMM_UNUSED(alloc_size);
-#else
-        if (EXIT_SUCCESS != mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ)
-          && (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        xattrib_result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
+        if (EXIT_SUCCESS != xattrib_result
+          && (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity)
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM WARNING: read-only request for buffer failed!\n");
+          fprintf(stderr, "LIBXSMM WARNING: marking buffer as read-only failed!\n");
         }
-#endif
       }
       else { /* executable buffer requested */
         void *const code_ptr = (NULL != info->reloc ? ((void*)(((char*)info->reloc) + alignment)) : *memory);
         LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
-        if (name && *name) { /* profiler support requested */
+        if (NULL != name && '\0' != *name) { /* profiler support requested */
           if (0 > libxsmm_verbosity) { /* avoid dump if just the profiler is enabled */
-            LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr, size, 1/*unique*/));
+            LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_dump("LIBXSMM-JIT-DUMP", name, code_ptr,
+              /* dump executable code without constant data (apply_size vs info_size) */
+              apply_size, 1/*unique*/));
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
             LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
             const unsigned int code_id = iJIT_GetNewMethodID();
-            internal_get_vtune_jitdesc(code_ptr, code_id, size, name, &vtune_jit_desc);
+            internal_get_vtune_jitdesc(code_ptr, code_id, apply_size, name, &vtune_jit_desc);
             iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
             info->code_id = code_id;
           }
@@ -2233,7 +2262,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           /* If JIT is enabled and a valid name is given, emit information for profiler
            * In jitdump case this needs to be done after mprotect as it gets overwritten
            * otherwise. */
-          libxsmm_perf_dump_code(code_ptr, size, name);
+          libxsmm_perf_dump_code(code_ptr, apply_size, name);
 #endif
         }
         if (NULL != info->reloc && info->pointer != info->reloc) {
@@ -2261,7 +2290,6 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         }
 #if !defined(_WIN32)
         else { /* malloc-based fallback */
-          int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* check checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
           assert(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info)); /* !LIBXSMM_ASSERT */
@@ -2271,15 +2299,15 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
             (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
-          mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
-          if (EXIT_SUCCESS != mprotect_result) {
+          xattrib_result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
+          if (EXIT_SUCCESS != xattrib_result) {
             if (0 != libxsmm_se) { /* hard-error in case of SELinux */
               if (0 != libxsmm_verbosity /* library code is expected to be mute */
                 && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
               {
                 fprintf(stderr, "LIBXSMM ERROR: failed to allocate an executable buffer!\n");
               }
-              result = mprotect_result;
+              result = xattrib_result;
             }
             else if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
               && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -2455,14 +2483,14 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
       else break; /* early exit */
     }
   }
-  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_get_scratch_info(&scratch_info));
+  LIBXSMM_EXPECT(EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info));
   if (0 != scratch_info.npending && /* library code is expected to be mute */
     (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
   {
     char pending_size_buffer[32];
     libxsmm_format_value(pending_size_buffer, sizeof(pending_size_buffer),
       internal_malloc_public_cur + internal_malloc_local_cur, "KM", "B", 10);
-    fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory by %" PRIuPTR " allocation%s!\n",
+    fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory from %" PRIuPTR " allocation%s!\n",
       pending_size_buffer, (uintptr_t)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
   }
   if (NULL != pools) {

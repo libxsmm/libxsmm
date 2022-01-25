@@ -41,7 +41,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select simd packing width and accumulator blocking */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_simd_packed_width = 2;
     l_max_reg_block = 28;
   } else {
@@ -94,7 +94,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
 #endif
 
   /* define gp register mapping */
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;

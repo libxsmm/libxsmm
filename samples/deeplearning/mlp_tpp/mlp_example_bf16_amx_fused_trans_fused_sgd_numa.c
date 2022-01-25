@@ -8,6 +8,33 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
+#if 0
+#define USE_CORE_PERF_SNP
+#endif
+#if 0
+#define USE_CORE_PERF_L2IN
+#endif
+#if 0
+#define USE_CORE_PERF_IPC
+#endif
+#if 0
+#define USE_UNCORE_PERF_DRAM_BW
+#endif
+#if 0
+#define USE_UNCORE_PERF_LLC_VICTIMS
+#endif
+#if 0
+#define USE_UNCORE_PERF_CHA_UTIL
+#endif
+#if 0
+#define USE_UNCORE_PREF_AK_UTIL
+#endif
+#if 0
+#define USE_UNCORE_PREF_IV_UTIL
+#endif
+
+
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 
@@ -21,6 +48,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
+
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC) || defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
+#  include "../../external_aux/perf_counter_markers.h"
+#endif
 
 #define CHECK_L1
 #define OVERWRITE_DOUTPUT_BWDUPD
@@ -311,7 +342,7 @@ my_vnni_reformat_config setup_my_vnni_reformat(libxsmm_blasint N, libxsmm_blasin
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
 
-  res.fused_relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.bn, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+  res.fused_relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.bn, &ld, &ld, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( res.fused_relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP fused_relu_kernel failed. Bailing...!\n");
     exit(-1);
@@ -360,7 +391,14 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.fwd_2d_blocking = 1;
     res.fwd_col_teams = 2;
     res.fwd_row_teams = 7;
-  } else if (threads == 56) {
+  } else if (threads == 28) {
+    res.fwd_bf = 1;
+    res.fwd_2d_blocking = 1;
+    res.fwd_col_teams = 1;
+    res.fwd_row_teams = 14;
+    res.fwd_M_hyperpartitions = 1;
+    res.fwd_N_hyperpartitions = 2;
+   } else if (threads == 56) {
     res.fwd_bf = 1;
     res.fwd_2d_blocking = 1;
     res.fwd_col_teams = 1;
@@ -446,7 +484,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "JIT for TPP fwd_cvtfp32bf16_kernel failed. Bailing...!\n");
     exit(-1);
   }
-  res.fwd_cvtfp32bf16_relu_kernel = libxsmm_dispatch_meltw_unary(res.bk, res.bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  res.fwd_cvtfp32bf16_relu_kernel = libxsmm_dispatch_meltw_unary(res.bk, res.bn, &ldc, &ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU);
   if ( res.fwd_cvtfp32bf16_relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP fwd_cvtfp32bf16_relu_kernel failed. Bailing...!\n");
     exit(-1);
@@ -646,7 +684,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  res.bwd_relu_kernel  = libxsmm_dispatch_meltw_unary(res.bk, res.bn, &ldc, &ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+  res.bwd_relu_kernel  = libxsmm_dispatch_meltw_unary(res.bk, res.bn, &ldc, &ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( res.bwd_relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP bwd_relu_kernel failed. Bailing...!\n");
     exit(-1);
@@ -675,7 +713,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if (((fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) && (res.upd_2d_blocking == 1)) {
     res.fuse_relu_bwd = 1;
   }
-  res.bwd_fused_relu_kernel   = libxsmm_dispatch_meltw_unary(res.bc, res.bn, &ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+  res.bwd_fused_relu_kernel   = libxsmm_dispatch_meltw_unary(res.bc, res.bn, &ldb, &ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( res.bwd_fused_relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP bwd_fused_relu_kernel failed. Bailing...!\n");
     exit(-1);
@@ -2028,6 +2066,45 @@ int main(int argc, char* argv[])
 
   char* env_threads_per_numa;
 
+#if defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_IPC)
+  ctrs_core cc_a, cc_b, cc_s;
+  zero_core_ctrs( &cc_a );
+  zero_core_ctrs( &cc_b );
+  zero_core_ctrs( &cc_s );
+
+#if defined(USE_CORE_PERF_L2IN)
+  setup_core_ctrs(CTRS_EXP_L2_BW);
+#endif
+#if defined(USE_CORE_PERF_SNP)
+  setup_core_ctrs(CTRS_EXP_CORE_SNP_RSP);
+#endif
+#if defined(USE_CORE_PERF_IPC)
+  setup_core_ctrs(CTRS_EXP_IPC);
+#endif
+#endif
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
+  ctrs_uncore uc_a, uc_b, uc_s;
+  zero_uncore_ctrs( &uc_a );
+  zero_uncore_ctrs( &uc_b );
+  zero_uncore_ctrs( &uc_s );
+
+#if defined(USE_UNCORE_PERF_DRAM_BW)
+  setup_uncore_ctrs( CTRS_EXP_DRAM_CAS );
+#endif
+#if defined(USE_UNCORE_PERF_LLC_VICTIMS)
+  setup_uncore_ctrs( CTRS_EXP_CHA_LLC_LOOKUP_VICTIMS );
+#endif
+#if defined(USE_UNCORE_PERF_CHA_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CHA_UTIL );
+#endif
+#if defined(USE_UNCORE_PREF_AK_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CMS_AK );
+#endif
+#if defined(USE_UNCORE_PREF_IV_UTIL)
+  setup_uncore_ctrs( CTRS_EXP_CMS_IV );
+#endif
+#endif
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters MB fuse_type type bn bk bc C1 C2 ... CN\n", argv[0]);
     return 0;
@@ -2206,7 +2283,7 @@ int main(int argc, char* argv[])
       scratch_size = alloc_size;
     }
   }
-  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
 
   /* init data */
   for ( i = 0 ; i < num_layers+2; ++i ) {
@@ -2260,6 +2337,12 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
+    read_core_ctrs( &cc_a );
+#endif
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
+    read_uncore_ctrs( &uc_a );
+#endif
     l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #   pragma omp parallel private(i,j)
@@ -2278,6 +2361,16 @@ int main(int argc, char* argv[])
       }
     }
     l_end = libxsmm_timer_tick();
+#if defined(USE_CORE_PERF_SNP) || defined(USE_CORE_PERF_L2IN) || defined(USE_CORE_PERF_IPC)
+    read_core_ctrs( &cc_b );
+    difa_core_ctrs( &cc_a, &cc_b, &cc_s );
+    divi_core_ctrs( &cc_s, iters );
+#endif
+#if defined(USE_UNCORE_PERF_DRAM_BW) || defined(USE_UNCORE_PERF_LLC_VICTIMS) || defined(USE_UNCORE_PERF_CHA_UTIL) || defined(USE_UNCORE_PREF_AK_UTIL) || defined(USE_UNCORE_PREF_IV_UTIL)
+    read_uncore_ctrs( &uc_b );
+    difa_uncore_ctrs( &uc_a, &uc_b, &uc_s );
+    divi_uncore_ctrs( &uc_s, iters );
+#endif
     l_total = libxsmm_timer_duration(l_start, l_end);
 
     gflop = 0.0;
@@ -2292,6 +2385,104 @@ int main(int argc, char* argv[])
       printf("%i,", C[i] );
     }
     printf("%f,%f\n", ((double)(l_total/iters)), gflop/l_total);
+#if defined(USE_CORE_PERF_L2IN)
+    {
+      bw_gibs bw_avg;
+      get_l2_bw_core_ctrs( &cc_s, (double)(l_total/iters), &bw_avg );
+      printf("AVG GiB/s (IN    L2): %f\n", bw_avg.rd);
+      printf("AVG GiB/s (OUTS  L2): %f\n", bw_avg.wr);
+      printf("AVG GiB/s (OUTNS L2): %f\n", bw_avg.wr2);
+      printf("AVG GiB/s (DEM   L2): %f\n", bw_avg.wr3);
+      printf("AVG GiB/s (DROP  L2): %f\n", bw_avg.wr4);
+    }
+#endif
+#if defined(USE_CORE_PERF_SNP)
+    {
+      snp_rsp rsp;
+      get_snp_rsp_core_ctrs( &cc_s, &rsp );
+      printf("average #cycles per iteration : %f\n", rsp.cyc );
+      printf("SNOOP RESP IHITI              : %f\n", rsp.ihiti );
+      printf("SNOOP RESP IHITFSE            : %f\n", rsp.ihitfse );
+      printf("SNOOP RESP IFWDM              : %f\n", rsp.ifwdm );
+      printf("SNOOP RESP IFWDFE             : %f\n", rsp.ifwdfe );
+      printf("avg SNOOP RESP IHITI / cycle  : %f\n", rsp.ihiti/rsp.cyc );
+      printf("avg SNOOP RESP IHITFSE / cycle: %f\n", rsp.ihitfse/rsp.cyc );
+      printf("avg SNOOP RESP IFWDM / cycle  : %f\n", rsp.ifwdm/rsp.cyc );
+      printf("avg SNOOP RESP IFWDFE / cycle : %f\n", rsp.ifwdfe/rsp.cyc );
+    }
+#endif
+#if defined(USE_CORE_PERF_IPC)
+    {
+      ipc_rate ipc;
+      get_ipc_core_ctr( &cc_s, &ipc );
+      printf("average #cycles per iteration : %f\n", ipc.cyc );
+      printf("#intrs/core per iteration     : %f\n", ipc.instrs_core );
+      printf("total #instr per iteration    : %f\n", ipc.instrs );
+      printf("IPC per core                  : %f\n", ipc.ipc_core );
+      printf("IPC per SOC                   : %f\n", ipc.ipc );
+    }
+#endif
+#if defined(USE_UNCORE_PERF_DRAM_BW)
+    {
+      bw_gibs bw_avg;
+      get_cas_ddr_bw_uncore_ctrs( &uc_s, (double)(l_total/iters), &bw_avg );
+      printf("AVG GiB/s (IN  iMC): %f\n", bw_avg.rd);
+      printf("AVG GiB/s (OUT iMC): %f\n", bw_avg.wr);
+    }
+#endif
+#if defined(USE_UNCORE_PERF_LLC_VICTIMS)
+    {
+      llc_victims llc;
+      get_llc_victim_bw_uncore_ctrs( &uc_s, (double)(l_total/iters), &llc );
+      printf("LLC Lookup rd GiB/s : %f\n", llc.rd_bw );
+      printf("LLC Lookup wr GiB/s : %f\n", llc.wr_bw );
+      printf("LLC Victim E GiB/s  : %f\n", llc.bw_vic_e );
+      printf("LLC Victim F GiB/s  : %f\n", llc.bw_vic_f );
+      printf("LLC Victim M GiB/s  : %f\n", llc.bw_vic_m );
+      printf("LLC Victim S GiB/s  : %f\n", llc.bw_vic_s );
+      printf("LLC Victim E Count  : %f\n", llc.tot_vic_e );
+      printf("LLC Victim F Count  : %f\n", llc.tot_vic_f );
+      printf("LLC Victim M Count  : %f\n", llc.tot_vic_m );
+      printf("LLC Victim S Count  : %f\n", llc.tot_vic_s );
+    }
+#endif
+#if defined(USE_UNCORE_PERF_CHA_UTIL)
+    {
+      cha_util util;
+      get_cha_util_uncore_ctrs( &uc_s, &util );
+      printf("average #cycles per iteration : %f\n", util.cyc );
+      printf("#intrs/cha per iteration      : %f\n", util.instrs_cha );
+      printf("CHA Util                      : %f\n", util.util_cha );
+    }
+#endif
+#if defined(USE_UNCORE_PREF_AK_UTIL)
+    {
+      int cha = 0;
+      for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+        printf("CHA %i: CMS cyc: %lld, AK_VERT: %lld, AK_HORZ: %lld\n", cha, uc_s.cms_clockticks[cha], uc_s.vert_ak_ring_in_use[cha], uc_s.horz_ak_ring_in_use[cha] );
+      }
+    }
+#endif
+#if defined(USE_UNCORE_PREF_IV_UTIL)
+    {
+      int cha = 0;
+      for ( cha = 0; cha < CTRS_NCHA; ++cha ) {
+        printf("CHA %i: CMS cyc: %lld, IV_VERT: %lld, IV_HORZ: %lld\n", cha, uc_s.cms_clockticks[cha], uc_s.vert_iv_ring_in_use[cha], uc_s.horz_iv_ring_in_use[cha] );
+      }
+    }
+#endif
+#if defined(USE_CORE_PERF_L2IN) && defined(USE_UNCORE_PERF_DRAM_BW)
+    {
+      cache_miss_rate mrate;
+      get_l2_llc_misses_uncore_core_ctr( &cc_s, &uc_s, &mrate );
+      printf("average #cycles per iteration  : %f\n", mrate.cyc );
+      printf("average #instrs per iteration  : %f\n", mrate.instrs );
+      printf("acc. #L2 misses per iteration  : %f\n", mrate.llc_rd_acc );
+      printf("acc. #LLC misses per iteration : %f\n", mrate.dram_rd_acc );
+      printf("L2 Miss Rate                   : %f\n", mrate.l2_miss_rate );
+      printf("LLC Miss Rate                  : %f\n", mrate.llc_miss_rate );
+    }
+#endif
   }
 
   if (type == 'B') {

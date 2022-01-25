@@ -70,9 +70,10 @@ int main(void)
     if (b[3*da.m+da.n] != da.v_tst) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(&db, LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
-    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
-
+  if (EXIT_SUCCESS == result) {
+    result = libxsmm_matdiff(&db, LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
+      x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
   if (EXIT_SUCCESS == result) {
     libxsmm_matdiff_reduce(&diff, &db);
     /* One-norm */
@@ -100,9 +101,10 @@ int main(void)
     if (y[3*db.m+db.n] != db.v_tst) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(&dc, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
-    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
-
+  if (EXIT_SUCCESS == result) {
+    result = libxsmm_matdiff(&dc, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+      x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
   if (EXIT_SUCCESS == result) {
     libxsmm_matdiff_reduce(&diff, &dc);
     /* One-norm */
@@ -149,11 +151,11 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* R-squared */
-    if (0.0000001 < LIBXSMM_ABS(diff.rsq - 0.9991717)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.rsq - 0.9490077)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (0 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
-    if (x[3*diff.m+diff.n] != diff.v_ref) result = EXIT_FAILURE;
-    if (y[3*diff.m+diff.n] != diff.v_tst) result = EXIT_FAILURE;
+    if (2 != diff.m || 2 != diff.n) result = EXIT_FAILURE;
+    if (a[3*diff.m+diff.n] != diff.v_ref) result = EXIT_FAILURE;
+    if (b[3*diff.m+diff.n] != diff.v_tst) result = EXIT_FAILURE;
   }
 
   return result;

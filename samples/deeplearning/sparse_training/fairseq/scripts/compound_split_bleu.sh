@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ $# -ne 1 ]; then
     echo "usage: $0 GENERATE_PY_OUTPUT"

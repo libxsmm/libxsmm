@@ -329,7 +329,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
           value->NameLen = 0;
 #   endif
-          if (NULL != filter_symbol) {
+          if (NULL != filter_symbol && '\0' != *(const char*)filter_symbol) {
             struct { size_t d; int s; } approx = { (size_t)LIBXSMM_UNLIMITED, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
 #   if defined(_WIN32) || defined(__CYGWIN__)
@@ -355,7 +355,9 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             symbol = LIBXSMM_MAX((next != n ? symbol : approx.s/*not found*/) + mindepth/*shift*/, 0);
           }
           /* apply filters based on absolute symbol position */
-          if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
+          if (((NULL != filter_symbol && '\0' != *(const char*)filter_symbol)
+            || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms))
+          {
             if (symbol != next && symbol < n && filter_symbol != stacktrace[symbol] &&
 #   if defined(_WIN32) || defined(__CYGWIN__)
               FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)
@@ -462,7 +464,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         }
         if (NULL != value) {
           int next = symbol + 1;
-          if (NULL != filter_symbol) {
+          if (NULL != filter_symbol && '\0' != *(const char*)filter_symbol) {
             struct { size_t d; int s; } approx = { (size_t)LIBXSMM_UNLIMITED, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff)))
@@ -482,7 +484,9 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             symbol = LIBXSMM_MAX((next != n ? symbol : approx.s/*not found*/) + mindepth/*shift*/, 0);
           }
           /* apply filters based on absolute symbol position */
-          if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
+          if (((NULL != filter_symbol && '\0' != *(const char*)filter_symbol)
+            || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms))
+          {
             if (symbol != next && symbol < n && filter_symbol != stacktrace[symbol] &&
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff))
             {
