@@ -16,6 +16,8 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
+/* include TPP-based dnn library */
+#include "../op_lib_tpp/pooling_tpp.h"
 
 #define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
