@@ -65,63 +65,95 @@ int libxsmm_generator_mateqn_get_fp_relative_offset( libxsmm_meqn_stack_var stac
 
   switch ( stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
-      return -128;
+      return -256;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
-      return -120;
+      return -248;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR2:
-      return -112;
+      return -240;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR3:
-      return -104;
+      return -232;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR4:
-      return -96;
+      return -224;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5:
-      return -88;
+      return -216;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR6:
-      return -80;
+      return -208;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7:
-      return -72;
+      return -200;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8:
-      return -64;
+      return -192;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9:
-      return -56;
+      return -184;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10:
-      return -48;
+      return -176;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR11:
-      return -40;
+      return -168;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR12:
-      return -32;
+      return -160;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR13:
-      return -24;
+      return -152;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR14:
-      return -16;
+      return -144;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR15:
+      return -136;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16:
+      return -128;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR17:
+      return -120;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR18:
+      return -112;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR19:
+      return -104;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR20:
+      return -96;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR21:
+      return -88;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR22:
+      return -80;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR23:
+      return -72;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR24:
+      return -64;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR25:
+      return -56;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR26:
+      return -48;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR27:
+      return -40;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR28:
+      return -32;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR29:
+      return -24;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR30:
+      return -16;
+    case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR31:
       return -8;
     case LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR:
-      return -136;
+      return -264;
     case LIBXSMM_MEQN_STACK_VAR_ADDR_SCRATCH_PTR:
-      return -144;
+      return -272;
     case LIBXSMM_MEQN_STACK_VAR_OUT_PTR:
-      return -152;
+      return -280;
     case LIBXSMM_MEQN_STACK_VAR_CONST_0:
-      return -160;
+      return -288;
     case LIBXSMM_MEQN_STACK_VAR_CONST_1:
-      return -168;
+      return -296;
     case LIBXSMM_MEQN_STACK_VAR_CONST_2:
-      return -176;
+      return -304;
     case LIBXSMM_MEQN_STACK_VAR_CONST_3:
-      return -184;
+      return -312;
     case LIBXSMM_MEQN_STACK_VAR_CONST_4:
-      return -192;
+      return -320;
     case LIBXSMM_MEQN_STACK_VAR_CONST_5:
-      return -200;
+      return -328;
     case LIBXSMM_MEQN_STACK_VAR_CONST_6:
-      return -208;
+      return -336;
     case LIBXSMM_MEQN_STACK_VAR_CONST_7:
-      return -216;
+      return -344;
     case LIBXSMM_MEQN_STACK_VAR_CONST_8:
-      return -224;
+      return -352;
     case LIBXSMM_MEQN_STACK_VAR_CONST_9:
-      return -232;
+      return -360;
     default:
       return 0;
   }
@@ -205,7 +237,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ORR_SR, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X29, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
 #endif
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X29, 0, 0 );
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 232, 0 );
+  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 360, 0 );
 
   /* The stack at exit of setup looks like this:
    *

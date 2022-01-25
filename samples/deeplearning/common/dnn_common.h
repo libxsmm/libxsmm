@@ -1060,6 +1060,169 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CKKC_bf16(libxsmm_bfloat16 *src, libxsmm
   }
 }
 
+LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc(float *src, float *dst, int N, int C, int H, int W, int bc)
+{
+  int n, h, w, c1, c2;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(4, float, in, src, C, H, W);
+  LIBXSMM_VLA_DECL(5, float,out, dst, cBlocks, H, W, bc);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
+# pragma omp parallel for private(c1,c2,h,w)
+#endif
+  for (n = 0; n < N; n++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (h = 0; h < H; h++) {
+          for (w = 0; w < W; w++) {
+            LIBXSMM_VLA_ACCESS(5, out, n, c1,       h, w, c2, cBlocks, H, W, bc) =
+            LIBXSMM_VLA_ACCESS(4, in,  n, c1*bc+c2, h, w, C, H, W);
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_pollute_rim_NCHWc(float *dst, int N, int C, int H, int W, int bc, int pad_h, int pad_w, float polute_val)
+{
+  int n, h, w, c1, c2;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(5, float,out, dst, cBlocks, H, W, bc);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
+# pragma omp parallel for private(c1,c2,h,w)
+#endif
+  for (n = 0; n < N; n++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (h = 0; h < H; h++) {
+        for (w = 0; w < W; w++) {
+          for (c2 = 0; c2 < bc; c2++) {
+            if ( (h < pad_h) || (h >= H-pad_h)) {
+              LIBXSMM_VLA_ACCESS(5, out, n, c1, h, w, c2, cBlocks, H, W, bc) = polute_val;
+            } else {
+              if ( (w < pad_w) || (w >= W-pad_w)) {
+                LIBXSMM_VLA_ACCESS(5, out, n, c1, h, w, c2, cBlocks, H, W, bc) = polute_val;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_copy_NCHWc_to_NCHW(float *src, float *dst, int N, int C, int H, int W, int bc)
+{
+  int n, h, w, c1, c2;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(4, float,out, dst, C, H, W);
+  LIBXSMM_VLA_DECL(5, float, in, src, cBlocks, H, W, bc);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
+# pragma omp parallel for private(c1,c2,h,w)
+#endif
+  for (n = 0; n < N; n++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (h = 0; h < H; h++) {
+          for (w = 0; w < W; w++) {
+            LIBXSMM_VLA_ACCESS(4,out,  n, c1*bc+c2, h, w, C, H, W) =
+            LIBXSMM_VLA_ACCESS(5, in, n, c1,       h, w, c2, cBlocks, H, W, bc);
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_copy_KCRS_to_KCRSck(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(4, float, in, src, C, R, S);
+  LIBXSMM_VLA_DECL(6, float,out, dst, cBlocks, R, S, bc, bk);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              LIBXSMM_VLA_ACCESS(6, out, k1,     c1,         r, s, c2, k2, cBlocks, R, S, bc, bk) =
+              LIBXSMM_VLA_ACCESS(4, in,  k1*bk+k2, c1*bc+c2, r, s, C, R, S);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_copy_KCRSck_to_KCRS(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(4, float, out, dst, C, R, S);
+  LIBXSMM_VLA_DECL(6, float,  in, src, cBlocks, R, S, bc, bk);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              LIBXSMM_VLA_ACCESS(4, out,  k1*bk+k2, c1*bc+c2, r, s, C, R, S) =
+                LIBXSMM_VLA_ACCESS(6, in, k1,     c1,         r, s, c2, k2, cBlocks, R, S, bc, bk);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_transpose_KCRCck_to_CKRSkc(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(6, float, out, dst, kBlocks, R, S, bk, bc);
+  LIBXSMM_VLA_DECL(6, float, in , src, cBlocks, R, S, bc, bk);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              LIBXSMM_VLA_ACCESS(6, out, c1, k1, R-1-r, S-1-s, k2, c2, kBlocks, R, S, bk, bc) =
+              LIBXSMM_VLA_ACCESS(6,  in, k1, c1, r, s, c2, k2, cBlocks, R, S, bc, bk);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void matrix_add(int size, float *a, float *b, float *c)
 {
   int i;
@@ -1524,6 +1687,89 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
         }
       }
 #endif
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_fused_conv_fp(naive_conv_t* param, const float* input, float* output, const float* filter, const float* bias, libxsmm_blasint fuse_type)
+{
+  int nImg      = param->nImg;
+  int nIfm      = param->nIfm;
+  int nOfm      = param->nOfm;
+  int ifhp      = param->ifhp;
+  int ifwp      = param->ifwp;
+  int ofhp      = param->ofhp;
+  int ofwp      = param->ofwp;
+  int ifh       = param->ifh;
+  int ifw       = param->ifw;
+  int ofh       = param->ofh;
+  int ofw       = param->ofw;
+  int pad_h     = param->pad_h;
+  int pad_w     = param->pad_w;
+  int pad_h_in  = param->pad_h_in;
+  int pad_w_in  = param->pad_w_in;
+  int pad_h_out = param->pad_h_out;
+  int pad_w_out = param->pad_w_out;
+  int kh        = param->kh;
+  int kw        = param->kw;
+  int stride_h  = param->stride_h;
+  int stride_w  = param->stride_w;
+  /* loop counters */
+  int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
+
+  LIBXSMM_VLA_DECL(4,       float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4, const float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+
+
+  if (fuse_type == 1 || fuse_type == 3) {
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
+#endif
+    for (img = 0; img < nImg; ++img) {
+      for (ofm = 0; ofm < nOfm; ++ofm) {
+        for (oj = 0; oj < ofh; ++oj) {
+          for (oi = 0; oi < ofw; ++oi) {
+            LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += bias[ofm];
+          }
+        }
+      }
+    }
+  }
+
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
+#endif
+  for (img = 0; img < nImg; ++img) {
+    for (ofm = 0; ofm < nOfm; ++ofm) {
+      for (ifm = 0; ifm < nIfm; ++ifm) {
+        for (oj = 0; oj < ofh; ++oj) {
+          ij = oj * stride_h - pad_h;
+          for (oi = 0; oi < ofw; ++oi) {
+            ii = oi * stride_w - pad_w;
+            for (kj = 0; kj < kh; ++kj) {
+              if (ij+kj < 0 || ij+kj >= ifh) continue;
+              for (ki = 0; ki < kw; ++ki) {
+                if (ii+ki < 0 || ii+ki >= ifw) continue;
+                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
+                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
+                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+              }
+            }
+          }
+        }
+      }
+      if (fuse_type == 2 || fuse_type == 3) {
+        for (oj = 0; oj < ofh; ++oj) {
+          for (oi = 0; oi < ofw; ++oi) {
+            LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
+              (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+          }
+        }
+      }
     }
   }
 }
