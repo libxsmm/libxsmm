@@ -908,6 +908,7 @@ int main( int argc, char* argv[] ) {
     arg_metadata[2].eqn_idx     = my_eqn4;
     arg_metadata[3].eqn_idx     = my_eqn4;
     arg_metadata[42].eqn_idx    = my_eqn4;
+    arg_metadata[42].in_arg_pos = 42;
     op_metadata[0].eqn_idx      = my_eqn4;
     op_metadata[1].eqn_idx      = my_eqn4;
 
