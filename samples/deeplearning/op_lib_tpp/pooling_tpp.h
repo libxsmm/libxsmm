@@ -101,11 +101,11 @@ my_pooling_fwd_config setup_my_pooling_fwd( libxsmm_blasint N, libxsmm_blasint C
   res.pad_w_in = pad_w_in;
   res.pad_h_out = pad_h_out;
   res.pad_w_out = pad_w_out;
-
   /* setting ofh and ofw */
   res.ofh = (H + 2 * pad_h - R) / stride_h + 1;
   res.ofw = (W + 2 * pad_w - S) / stride_w + 1;
    /* create barrier */
+  res.threads = threads;
   res.barrier = libxsmm_barrier_create(threads, 1);
   /* calculate scratch size for local pooling copies of one feature map block per thread */
   res.scratch_size = (sizeof(float) * ( (size_t)H + (size_t)LIBXSMM_MAX(pad_h_in, pad_h_out)*2 )
@@ -143,11 +143,11 @@ my_pooling_bwd_config setup_my_pooling_bwd( libxsmm_blasint N, libxsmm_blasint C
   res.pad_w_in = pad_w_in;
   res.pad_h_out = pad_h_out;
   res.pad_w_out = pad_w_out;
-
   /* setting ofh and ofw */
   res.ofh = (H + 2 * pad_h - R) / stride_h + 1;
   res.ofw = (W + 2 * pad_w - S) / stride_w + 1;
    /* create barrier */
+  res.threads = threads;
   res.barrier = libxsmm_barrier_create(threads, 1);
   /* calculate scratch size for local pooling copies of one feature map block per thread */
   res.scratch_size = (sizeof(float) * ( (size_t)H + (size_t)LIBXSMM_MAX(pad_h_in, pad_h_out)*2 )

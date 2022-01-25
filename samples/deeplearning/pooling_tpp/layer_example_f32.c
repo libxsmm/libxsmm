@@ -28,9 +28,12 @@ int main(int argc, char* argv[])
   float *naive_input,     *naive_output,     *naive_delinput,     *naive_deloutput;
   float *naive_input_pad, *naive_output_pad, *naive_delinput_pad, *naive_deloutput_pad;
   float *naive_libxsmm_output, *naive_libxsmm_delinput;
-  int   *naive_mask, *naive_libxsmm_mask;
+  libxsmm_blasint *naive_mask, *naive_libxsmm_mask;
   float *input_libxsmm, *output_libxsmm, *delinput_libxsmm, *deloutput_libxsmm;
-  int   *mask_libxsmm;
+  libxsmm_blasint *mask_libxsmm;
+  my_pooling_fwd_config fwd_cfg;
+  my_pooling_bwd_config bwd_cfg;
+  my_pooling_type pool_type_cfg;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w;
@@ -55,8 +58,9 @@ int main(int argc, char* argv[])
   int pad_h_out = 0;      /* padding mode */
   int pad_w_out = 0;      /* padding mode */
   int pool_type = 0;      /* max pooling */
-  char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
+  char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP */
   char format = 'L';
+  int bc = 32;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -72,17 +76,6 @@ int main(int argc, char* argv[])
   double gb = 0.0;
   double gib = 0.0;
   int i;
-
-  libxsmm_dnn_pooling_desc pooling_desc;
-  libxsmm_dnn_pooling* libxsmm_handle;
-  libxsmm_dnn_tensor*  libxsmm_input;
-  libxsmm_dnn_tensor*  libxsmm_delinput;
-  libxsmm_dnn_tensor*  libxsmm_output;
-  libxsmm_dnn_tensor*  libxsmm_deloutput;
-  libxsmm_dnn_tensor*  libxsmm_mask;
-  libxsmm_dnn_tensor_datalayout* libxsmm_layout;
-  libxsmm_dnn_err_t status;
-  libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, diff;
   libxsmm_matdiff_clear(&norms_fwd);
@@ -162,6 +155,14 @@ int main(int argc, char* argv[])
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf(" InImg %dx%d Padded (%dx%d)\n", ifh, ifw, ifhp, ifwp);
   printf("OutImg %dx%d Padded (%dx%d)\n", ofh, ofw, ofhp, ofwp);
+  if ( pool_type == 0 ) {
+    printf("Pooling-Type: Max\n");
+  } else if ( pool_type == 1 ) {
+    printf("Pooling-Type: Avg\n");
+  } else {
+    printf("Pooling-Type: UNKNOWN!\n");
+    return 0;
+  }
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nFm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nFm*ofhp*ofwp*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nFm*ifhp*ifwp*  sizeof(float))/(1024.0*1024.0) );
@@ -171,25 +172,25 @@ int main(int argc, char* argv[])
 #endif
 
   /* allocate data */
-  naive_input                = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
-  naive_input_pad            = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_delinput             = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
-  naive_delinput_pad         = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_mask                 = (int*  )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_output               = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_output_pad           = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_deloutput            = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_deloutput_pad        = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_input                = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_input_pad            = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_delinput             = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_delinput_pad         = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_mask                 = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_output               = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_output_pad           = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_deloutput            = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_deloutput_pad        = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
 
-  naive_libxsmm_output       = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_libxsmm_delinput     = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_libxsmm_mask         = (int*  )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_libxsmm_output       = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_delinput     = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_libxsmm_mask         = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
 
-  input_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  delinput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  output_libxsmm             = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  deloutput_libxsmm          = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  mask_libxsmm               = (int*  )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  input_libxsmm              = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  delinput_libxsmm           = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  output_libxsmm             = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  deloutput_libxsmm          = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  mask_libxsmm               = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
 
   /* initialize data */
   init_buf(naive_input,          nImg*nFm*ifh*ifw, 0, 0);
@@ -229,6 +230,14 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
+  if ( pool_type == 0 ) {
+    pool_type_cfg = MY_POOLING_TYPE_MAX;
+  } else if ( pool_type == 1 ) {
+    pool_type_cfg = MY_POOLING_TYPE_AVG;
+  } else {
+    return 0;
+  }
+
   if (format == 'A' || format == 'L') {
     printf("\n");
     printf("##########################################\n");
@@ -236,80 +245,26 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
 
     /* setup LIBXSMM handle */
-    pooling_desc.N = nImg;
-    pooling_desc.C = nFm;
-    pooling_desc.H = ifh;
-    pooling_desc.W = ifw;
-    pooling_desc.u = stride_h;
-    pooling_desc.v = stride_w;
-    pooling_desc.R = kh;
-    pooling_desc.S = kw;
-    pooling_desc.pad_h = pad_h;
-    pooling_desc.pad_w = pad_w;
-    pooling_desc.pad_h_in = pad_h_in;
-    pooling_desc.pad_w_in = pad_w_in;
-    pooling_desc.pad_h_out = pad_h_out;
-    pooling_desc.pad_w_out = pad_w_out;
-    pooling_desc.threads = nThreads;
-    pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
-    pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    pooling_desc.datatype_mask = LIBXSMM_DNN_DATATYPE_I32;
-    pooling_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-    if ( pool_type == 0 ) {
-      pooling_desc.pooling_type = LIBXSMM_DNN_POOLING_MAX;
-    } else if ( pool_type == 1 ) {
-      pooling_desc.pooling_type = LIBXSMM_DNN_POOLING_AVG;
-    } else {
-      return 0;
-    }
+    fwd_cfg = setup_my_pooling_fwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
+                                    pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
+                                    bc, nThreads, pool_type_cfg );
 
-    libxsmm_handle = libxsmm_dnn_create_pooling( pooling_desc, &status );
-    CHKERR_LIBXSMM_DNN( status );
-
-    /* setup LIBXSMM buffers */
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, input_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
-    printf("inner activation blocking: %i\n", libxsmm_layout->dim_size[0] );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_delinput  = libxsmm_dnn_link_tensor( libxsmm_layout, delinput_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_output  = libxsmm_dnn_link_tensor( libxsmm_layout, output_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_deloutput  = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_mask  = libxsmm_dnn_link_tensor( libxsmm_layout, mask_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    /* copy in data to LIBXSMM format */
-    /* we can also use the layout functions and set the data on our
-       own external to the library */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,     (void*)naive_input_pad,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,    (void*)naive_output_pad,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,  (void*)naive_delinput_pad,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput, (void*)naive_deloutput_pad, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-
-    /* bind buffers and filter to handle */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_input,     LIBXSMM_DNN_REGULAR_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_delinput,  LIBXSMM_DNN_GRADIENT_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_output,    LIBXSMM_DNN_REGULAR_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_mask  ,    LIBXSMM_DNN_POOLING_MASK ) );
+    /* setup LIBXSMM handle */
+    bwd_cfg = setup_my_pooling_bwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
+                                    pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
+                                    bc, nThreads, pool_type_cfg );
 
     /* let's allocate and bind scratch */
-    scratch_size = libxsmm_dnn_pooling_get_scratch_size( libxsmm_handle, &status );
-    CHKERR_LIBXSMM_DNN( status );
+    scratch_size = LIBXSMM_MAX( fwd_cfg.scratch_size, bwd_cfg.scratch_size );
     scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
+
+    /* copy tensor into the right format */
+    tensor_copy_NCHW_to_NCHWc(     naive_input_pad,     input_libxsmm, nImg, nFm, ifhp, ifwp, bc );
+    tensor_copy_NCHW_to_NCHWc(    naive_output_pad,    output_libxsmm, nImg, nFm, ofhp, ofwp, bc );
+    tensor_copy_NCHW_to_NCHWc(  naive_delinput_pad,  delinput_libxsmm, nImg, nFm, ifhp, ifwp, bc );
+    tensor_copy_NCHW_to_NCHWc( naive_deloutput_pad, deloutput_libxsmm, nImg, nFm, ofhp, ofwp, bc );
 
     if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
       printf("##########################################\n");
@@ -325,10 +280,11 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
+        my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                                 0, tid, scratch );
       }
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      tensor_copy_NCHWc_to_NCHW( output_libxsmm, naive_libxsmm_output, nImg, nFm, ofhp, ofwp, bc );
       copy_internal_nchw( naive_output_pad, naive_output, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
 
       /* compare */
@@ -341,6 +297,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
+
     }
 
     if ( (type == 'A' || type == 'B') && LIBXSMM_NEQ(0, check) ) {
@@ -358,11 +315,12 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
+        my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                                 0, tid, scratch );
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      tensor_copy_NCHWc_to_NCHW( delinput_libxsmm, naive_libxsmm_delinput, nImg, nFm, ifhp, ifwp, bc );
       copy_internal_nchw( naive_delinput_pad, naive_delinput, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
 
       /* compare */
@@ -393,7 +351,8 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+          my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                                   0, tid, scratch );
         }
       }
       l_end = libxsmm_timer_tick();
@@ -430,7 +389,8 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid );
+          my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                                   0, tid, scratch );
         }
       }
       l_end = libxsmm_timer_tick();
@@ -450,21 +410,7 @@ int main(int argc, char* argv[])
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
-    /* clean-up */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_scratch( libxsmm_handle ) );
-    libxsmm_free(scratch);
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK ) );
-
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delinput ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_deloutput ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_mask ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_pooling( libxsmm_handle ) );
+    libxsmm_free( scratch );
   }
 
   /* deallocate data */
@@ -488,7 +434,7 @@ int main(int argc, char* argv[])
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
-    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel) && (global_status == LIBXSMM_DNN_SUCCESS)) {
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);
     }
@@ -497,6 +443,6 @@ int main(int argc, char* argv[])
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return global_status;
+  return 0;
 }
 
