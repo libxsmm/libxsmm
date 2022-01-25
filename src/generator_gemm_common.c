@@ -93,21 +93,22 @@ void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generate
       out_vreg, 0, 1, 0 );
 
   /* Apply sigmoid  */
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
     libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
         i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
         i_micro_kernel_config_mod->mask_hi, i_micro_kernel_config_mod->mask_lo,
         i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
         i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
         i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-        i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves );
+        i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves, i_vname  );
   } else {
     libxsmm_generator_sigmoid_ps_rational_78_avx( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
         i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
         i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
         i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
         i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-        i_micro_kernel_config_mod->vec_neg_ones);
+        i_micro_kernel_config_mod->vec_neg_ones, 'y' );
   }
 }
 
