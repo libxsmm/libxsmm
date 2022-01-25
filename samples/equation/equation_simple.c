@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>

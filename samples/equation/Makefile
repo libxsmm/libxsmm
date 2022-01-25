@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_groupnorm $(OUTDIR)/equation_batchnorm $(OUTDIR)/equation_splitSGD
+XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_groupnorm $(OUTDIR)/equation_batchnorm $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
 
@@ -46,6 +46,9 @@ compile: $(OBJECTS)
 
 $(OUTDIR)/equation_simple: $(OUTDIR)/.make $(BLDDIR)/equation_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_matmul: $(OUTDIR)/.make $(BLDDIR)/equation_matmul-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_matmul-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/equation_softmax: $(OUTDIR)/.make $(BLDDIR)/equation_softmax-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_softmax-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

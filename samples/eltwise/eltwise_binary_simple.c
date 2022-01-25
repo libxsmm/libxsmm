@@ -158,6 +158,7 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
+  libxsmm_meltw_binary_shape binary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
@@ -302,7 +303,16 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     }
   }
 
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, binary_flags, binary_type);
+  binary_shape.m = M;
+  binary_shape.n = N;
+  binary_shape.ldi = &ldi;
+  binary_shape.ldi2 = &ldi;
+  binary_shape.ldo = &ldo;
+  binary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -353,6 +363,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
+  libxsmm_meltw_binary_shape binary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
@@ -503,7 +514,16 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
 
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, binary_flags, binary_type);
+  binary_shape.m = M;
+  binary_shape.n = N;
+  binary_shape.ldi = &ldi;
+  binary_shape.ldi2 = &ldi;
+  binary_shape.ldo = &ldo;
+  binary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  binary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -563,6 +583,7 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
+  libxsmm_meltw_binary_shape binary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
@@ -707,7 +728,17 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, binary_flags, binary_type);
+
+  binary_shape.m = M;
+  binary_shape.n = N;
+  binary_shape.ldi = &ldi;
+  binary_shape.ldi2 = &ldi;
+  binary_shape.ldo = &ldo;
+  binary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -766,6 +797,7 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
+  libxsmm_meltw_binary_shape binary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
@@ -912,7 +944,17 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     }
   }
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary(M, N, &ldi, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, binary_flags, binary_type);
+
+  binary_shape.m = M;
+  binary_shape.n = N;
+  binary_shape.ldi = &ldi;
+  binary_shape.ldi2 = &ldi;
+  binary_shape.ldo = &ldo;
+  binary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  binary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);

@@ -258,6 +258,8 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
@@ -353,11 +355,19 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -389,18 +399,16 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-double error_bound =0.0;
-if(RCP_OP || RCP_SQRT_OP){
-  error_bound = 0.0027;
-}else{
-  error_bound = 0.0007;
-}
+  double error_bound =0.0;
+  if(RCP_OP || RCP_SQRT_OP){
+    error_bound = 0.0027;
+  } else{
+    error_bound = 0.0007;
+  }
 
-if ( norms_out.normf_rel > error_bound ) {
-  ret = EXIT_FAILURE;
-}
-
-
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -428,6 +436,8 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
   unsigned long long _N = N;
@@ -534,13 +544,21 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = compute_dtype;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -600,6 +618,8 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
@@ -695,13 +715,21 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -760,6 +788,8 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
@@ -856,13 +886,20 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
-  }
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);

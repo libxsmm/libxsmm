@@ -30,7 +30,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
     libxsmm_matrix_eqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg              *arg_info,
+    libxsmm_matrix_eqn_arg_v2           *arg_info,
     unsigned int                        input_reg) {
 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -134,7 +134,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg              *arg_info) {
+    libxsmm_matrix_eqn_arg_v2           *arg_info) {
 
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
@@ -414,7 +414,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   unsigned int cur_vreg;
-  libxsmm_matrix_eqn_arg  *arg_info = i_micro_kernel_config->arg_info;
+  libxsmm_matrix_eqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
   char vname = (LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
@@ -1384,7 +1384,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     libxsmm_matequation_kernel_config*      i_micro_kernel_config,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
-  libxsmm_matrix_eqn_arg              *arg_info;
+  libxsmm_matrix_eqn_arg_v2              *arg_info;
   unsigned int arg_id = 0, i = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   if ( eqn == NULL ) {
@@ -1409,7 +1409,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
       LIBXSMM_X86_GP_REG_R15,
       0 );
 
-  arg_info = (libxsmm_matrix_eqn_arg*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg));
+  arg_info = (libxsmm_matrix_eqn_arg_v2*) malloc(i_micro_kernel_config->n_args * sizeof(libxsmm_matrix_eqn_arg_v2));
   i_micro_kernel_config->contains_binary_op = 0;
   i_micro_kernel_config->contains_ternary_op = 0;
   libxsmm_generator_copy_input_args(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, eqn->eqn_root, &arg_id, arg_info, LIBXSMM_X86_GP_REG_R15);
