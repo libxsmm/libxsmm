@@ -18,6 +18,7 @@ deeplearning/convcaps/layer_example_*
 deeplearning/mlpdriver/mlp_example_*
 deeplearning/mlpdriver/mlp_mnist_*
 deeplearning/mlp_tpp/mlp_example_*
+deeplearning/mlp_tpp/mlp_mnist_*
 deeplearning/rnndriver/rnndriver_*
 deeplearning/fullyconnected_tpp/layer_example_*
 eltwise/eltwise_*
