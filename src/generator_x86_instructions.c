@@ -1242,13 +1242,6 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
-#if !defined(NDEBUG)
-  if ( (i_vec_reg_number_dst > 31) || (i_vec_reg_number_src > 31) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_NUM_OOB);
-    return;
-  }
-#endif
-
   /* 1st phase: let's compute some static information before starting the
      encoding process */
   /* 1 A) handling EVEX compressed displacement */
@@ -1422,13 +1415,6 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
   unsigned char tbl_vl[3]         = {0x00, 0x20, 0x40};
   /* index for VL look-ups */
   unsigned int l_vl_idx = (unsigned int)i_vector_name;
-
-#if !defined(NDEBUG)
-  if ( (i_vec_reg_number_0 > 31) || (i_vec_reg_number_1 > 31) || (i_vec_reg_number_2 > 31) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_NUM_OOB);
-    return;
-  }
-#endif
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
@@ -3981,20 +3967,18 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const char i_vector_name,
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
-  int clx_regsize_encodng = 0;
+  /*int l_regsize_adjustment = 0;*/
 
   switch ( i_vector_name ) {
     case 'x':
       number_of_bytes_to_load = 16;
-      clx_regsize_encodng = 0x08;
+      /*l_regsize_adjustment = -4;*/
       break;
     case 'y':
       number_of_bytes_to_load = 32;
-      clx_regsize_encodng = 0x28;
       break;
     case 'z':
       number_of_bytes_to_load = 64;
-      clx_regsize_encodng = 0x48;
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: strange input for i_vector_name: %c\n",i_vector_name);
@@ -4053,7 +4037,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       i++;
     }
     l_last_load_location = i;
-    if (io_generated_code->arch > LIBXSMM_X86_AVX2) {
+    if ( i_vector_name == 'z' ) {
       buf[ i ] = 0x62;
       if ( i_vec_reg_number <= 7 ) {
         buf[i+1] = 0xf1;
@@ -4068,9 +4052,8 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
         buf[i+1] = 0x61;
         vecval = i_vec_reg_number - 24;
       }
-      /* AVx512VL bits chnage this Avx512VL 0x28  f ox is 08*/
       buf[i+2] = 0x7c;
-      buf[i+3] = clx_regsize_encodng;
+      buf[i+3] = 0x48;
       i += 4;
     } else {
       buf[i] = 0xc5;
