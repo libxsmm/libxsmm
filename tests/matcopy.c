@@ -31,13 +31,13 @@
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
 # elif defined(__OPENBLAS77) && 0/* issue #390 */
 #   include <f77blas.h>
-#   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) { \
+#   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) do { \
       /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'n'; \
       /*const*/ELEM_TYPE matcopy_gold_alpha_ = 1; \
       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&matcopy_gold_tc_, &matcopy_gold_tt_, \
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &matcopy_gold_alpha_, \
         A, (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
-    }
+    } while(0)
 # endif
 #endif
 

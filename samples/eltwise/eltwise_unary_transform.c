@@ -21,6 +21,7 @@ int test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_normal_to_normalT_64bit: ldi needs to be equal to or bigger than M\n");
@@ -57,10 +58,18 @@ int test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F64;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F64;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F64;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
@@ -98,6 +107,7 @@ int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_normal_to_normalT_32bit: ldi needs to be equal to or bigger than M\n");
@@ -134,10 +144,18 @@ int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
@@ -175,6 +193,7 @@ int test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_normal_to_normalT_16bit: ldi needs to be equal to or bigger than M\n");
@@ -211,10 +230,18 @@ int test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
@@ -252,6 +279,7 @@ int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_normal_to_normalT_08bit: ldi needs to be equal to or bigger than M\n");
@@ -288,10 +316,18 @@ int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
@@ -329,6 +365,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_vnni_to_vnniT_16bit: ldi needs to be equal to or bigger than M\n");
@@ -347,13 +384,13 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
+    for ( j = 0; j < ldi; ++j ) {
       in[(i*ldi)+j] = (unsigned short)(((i*ldi)+j)%112);
     }
   }
   /* to vnni */
   for ( j = 0; j < N/2; ++j ) {
-    for ( i = 0; i < M ; ++i ) {
+    for ( i = 0; i < ldi ; ++i ) {
       for( j2 = 0; j2 < 2; ++j2 ) {
         in_vnni[(j*ldi*2)+(i*2)+j2] = in[(((j*2)+j2)*ldi)+i];
       }
@@ -366,6 +403,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   }
   for ( i = 0; i < M*ldo; ++i ) {
     out_gold[i] = 0;
+    out_vnni[i] = 0;
   }
 
   /* compute out_gold */
@@ -384,10 +422,18 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI_TO_VNNIT TPP. Bailing...!\n");
     exit(-1);
@@ -430,6 +476,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_to_vnni_16bit: ldi needs to be equal to or bigger than M\n");
@@ -473,6 +520,14 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
@@ -481,7 +536,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   } else {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI;
   }
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI TPP. Bailing...!\n");
     exit(-1);
@@ -522,6 +577,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padn_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -558,11 +614,19 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD2;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -603,6 +667,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -639,11 +704,19 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD2;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADM_MOD2 TPP. Bailing...!\n");
     exit(-1);
@@ -685,6 +758,7 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -721,11 +795,19 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
     }
   }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADNM_MOD2 TPP. Bailing...!\n");
     exit(-1);
