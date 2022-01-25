@@ -15,6 +15,113 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_x86_save_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_save_bitmask) {
+  if ( ( i_save_bitmask & 0x1 ) == 0x1 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RAX );
+  }
+  if ( ( i_save_bitmask & 0x2 ) == 0x2 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
+  }
+  if ( ( i_save_bitmask & 0x4 ) == 0x4 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
+  }
+  if ( ( i_save_bitmask & 0x8 ) == 0x8 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
+  }
+  if ( ( i_save_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSP );
+  }
+  if ( ( i_save_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+  }
+  if ( ( i_save_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+  }
+  if ( ( i_save_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+  }
+  if ( ( i_save_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R8 );
+  }
+  if ( ( i_save_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R9 );
+  }
+  if ( ( i_save_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R10 );
+  }
+  if ( ( i_save_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R11 );
+  }
+  if ( ( i_save_bitmask & 0x1000 ) == 0x1000 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
+  }
+  if ( ( i_save_bitmask & 0x2000 ) == 0x2000 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
+  }
+  if ( ( i_save_bitmask & 0x4000 ) == 0x4000 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
+  }
+  if ( ( i_save_bitmask & 0x8000 ) == 0x8000 ) {
+    libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_restore_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_restore_bitmask) {
+
+  if ( ( i_restore_bitmask & 0x8000 ) == 0x8000 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
+  }
+  if ( ( i_restore_bitmask & 0x4000 ) == 0x4000 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
+  }
+  if ( ( i_restore_bitmask & 0x2000 ) == 0x2000 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R13 );
+  }
+  if ( ( i_restore_bitmask & 0x1000 ) == 0x1000 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
+  }
+  if ( ( i_restore_bitmask & 0x800 ) == 0x800 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R11 );
+  }
+  if ( ( i_restore_bitmask & 0x400 ) == 0x400 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R10 );
+  }
+  if ( ( i_restore_bitmask & 0x200 ) == 0x200 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R9 );
+  }
+  if ( ( i_restore_bitmask & 0x100 ) == 0x100 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R8 );
+  }
+  if ( ( i_restore_bitmask & 0x80 ) == 0x80 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDI );
+  }
+  if ( ( i_restore_bitmask & 0x40 ) == 0x40 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSI );
+  }
+  if ( ( i_restore_bitmask & 0x20 ) == 0x20 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+  }
+  if ( ( i_restore_bitmask & 0x10 ) == 0x10 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RSP );
+  }
+  if ( ( i_restore_bitmask & 0x8 ) == 0x8 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBX );
+  }
+  if ( ( i_restore_bitmask & 0x4 ) == 0x4 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
+  }
+  if ( ( i_restore_bitmask & 0x2 ) == 0x2 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RCX );
+  }
+  if ( ( i_restore_bitmask & 0x1 ) == 0x1 ) {
+    libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RAX );
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_generated_code,
                                                 const unsigned int      i_vmove_instr,
                                                 const unsigned int      i_gp_reg_base,
@@ -1231,7 +1338,6 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
             i_vec_x,
             0, 0, 0, (i_mask_lo) << 4);
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
