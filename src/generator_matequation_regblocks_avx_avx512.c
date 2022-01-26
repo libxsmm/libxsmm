@@ -156,7 +156,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
       if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE) {
         adjust_val = i_adjust_amount * arg_info[i].ld * tsize;
       } else if (arg_info[i].bcast_type == LIBXSMM_MATRIX_EQN_BCAST_TYPE_ROW) {
-        adjust_val = i_adjust_amount * tsize;
+        adjust_val = i_adjust_amount * arg_info[i].ld * tsize;
       } else {
         adjust_val = 0;
       }
@@ -474,7 +474,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           vbcast_instruction(arg_info[i_arg_id].dtype),
           input_reg,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          in * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype),
+          in * arg_info[i_arg_id].ld * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype),
           vname,
           cur_vreg, 0, 0, 0 );
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {

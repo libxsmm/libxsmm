@@ -57,7 +57,7 @@ void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*              
     } else {
       if (bcast_row > 0) {
         if (i_loop_type == LOOP_TYPE_N) {
-          libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_gp_reg, n_microkernel * tsize);
+          libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_gp_reg, ld * n_microkernel * tsize);
         }
       }
       if (bcast_col > 0) {
@@ -156,7 +156,7 @@ void adjust_in_microkernel_addr_gp_reg( libxsmm_generated_code*                 
     } else {
       if (bcast_row > 0) {
         if (i_loop_type == LOOP_TYPE_N) {
-          libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_gp_reg, i_adjust_param * tsize);
+          libxsmm_x86_instruction_alu_imm(  io_generated_code, i_adjust_instr, i_gp_reg, ld * i_adjust_param * tsize);
         }
       }
       if (bcast_col > 0) {
@@ -436,7 +436,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
                   vbcast_instr,
                   i_gp_reg_mapping->gp_reg_in,
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  in * i_micro_kernel_config->datatype_size_in,
+                  in * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                   vname,
                   cur_vreg, 0, 0, 0 );
 
@@ -1496,9 +1496,6 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
       in_offset = _in * i_mateltwise_desc->ldi2;
-      if (bcast_row == 1) {
-        in_offset = _in;
-      }
 
       /* Optimize the input loading in case we have reuse */
       if ( (bcast_input == 0) ||
