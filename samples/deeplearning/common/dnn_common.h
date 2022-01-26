@@ -1125,6 +1125,32 @@ LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc(float *src, float *dst, int N, int
   }
 }
 
+LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc_uint8(unsigned char *src, unsigned char *dst, int N, int C, int H, int W, int bc)
+{
+  int n, h, w, c1, c2;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(4, unsigned char, in, src, C, H, W);
+  LIBXSMM_VLA_DECL(5, unsigned char,out, dst, cBlocks, H, W, bc);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
+# pragma omp parallel for private(c1,c2,h,w)
+#endif
+  for (n = 0; n < N; n++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (h = 0; h < H; h++) {
+          for (w = 0; w < W; w++) {
+            LIBXSMM_VLA_ACCESS(5, out, n, c1,       h, w, c2, cBlocks, H, W, bc) =
+            LIBXSMM_VLA_ACCESS(4, in,  n, c1*bc+c2, h, w, C, H, W);
+          }
+        }
+      }
+    }
+  }
+}
+
+
 LIBXSMM_INLINE void tensor_pollute_rim_NCHWc(float *dst, int N, int C, int H, int W, int bc, int pad_h, int pad_w, float polute_val)
 {
   int n, h, w, c1, c2;
