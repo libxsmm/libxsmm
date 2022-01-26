@@ -152,7 +152,7 @@ void binary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 }
 
 int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
+  float *in, *_in, *in2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   int ret = EXIT_SUCCESS;
@@ -166,7 +166,7 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
     fprintf( stderr, "test_binary_%s_f32_f32: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -177,8 +177,8 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   libxsmm_rng_set_seed(1);
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
-  in2       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),   64);
+  in2       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
@@ -198,69 +198,47 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
-    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
-      }
-      _in = in_vector;
     }
     if (use_bcast == COL_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
-      }
-      _in = in_vector;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
-     _in = in_vector;
     }
     if (use_bcast == ROW_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector2[i] = in2[i*ldi];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == COL_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector2[j] = in2[j];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[0];
         }
       }
-     in_vector2[0] = in2[0];
-     _in2 = in_vector2;
     }
   }
 
@@ -341,10 +319,6 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-    libxsmm_free( in_vector2 );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS binary simple fp32 fp32\n");
@@ -356,7 +330,7 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 }
 
 int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
+  libxsmm_bfloat16 *in, *_in, *in2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   unsigned int i, j;
@@ -371,7 +345,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
     fprintf( stderr, "test_binary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -382,8 +356,8 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   libxsmm_rng_set_seed(1);
 
-  in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  in2         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
+  in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
+  in2         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
@@ -409,69 +383,47 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
-    in_vector2 =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
-      }
-      _in = in_vector;
     }
     if (use_bcast == COL_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
-      }
-      _in = in_vector;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
-     _in = in_vector;
     }
     if (use_bcast == ROW_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector2[i] = in2[i*ldi];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == COL_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector2[j] = in2[j];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[0];
         }
       }
-     in_vector2[0] = in2[0];
-     _in2 = in_vector2;
     }
   }
 
@@ -561,10 +513,6 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_free( f32out );
   libxsmm_free( in );
   libxsmm_free( in2 );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-    libxsmm_free( in_vector2 );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS binary simple bf16 bf16\n");
@@ -576,7 +524,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 }
 
 int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
-  float *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
+  float *in,*_in, *in2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   unsigned int i, j;
@@ -591,7 +539,7 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
     fprintf( stderr, "test_binary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -602,8 +550,8 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   libxsmm_rng_set_seed(1);
 
-  in          = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,                       64);
-  in2         = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,                       64);
+  in          = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),                       64);
+  in2         = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),                       64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
@@ -625,69 +573,47 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
-    in_vector2 =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
-      }
-      _in = in_vector;
     }
     if (use_bcast == COL_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
-      }
-      _in = in_vector;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
-     _in = in_vector;
     }
     if (use_bcast == ROW_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector2[i] = in2[i*ldi];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == COL_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector2[j] = in2[j];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[0];
         }
       }
-     in_vector2[0] = in2[0];
-     _in2 = in_vector2;
     }
   }
 
@@ -776,10 +702,6 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_free( f32out );
   libxsmm_free( in );
   libxsmm_free( in2 );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-    libxsmm_free( in_vector2 );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS binary simple fp32 bf16\n");
@@ -791,7 +713,7 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 }
 
 int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  libxsmm_bfloat16 *in, *in_vector, *_in, *in2, *in_vector2, *_in2;
+  libxsmm_bfloat16 *in, *_in, *in2, *_in2;
   float *out, *out_gold;
   unsigned int i, j;
   int ret = EXIT_SUCCESS;
@@ -805,7 +727,7 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
     fprintf( stderr, "test_binary_%s_bf16_f32: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -816,8 +738,8 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   libxsmm_rng_set_seed(1);
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
-  in2       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi),   64);
+  in2       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi),   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
@@ -841,69 +763,47 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
-    in_vector2 =  (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
-      }
-      _in = in_vector;
     }
     if (use_bcast == COL_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
-      }
-      _in = in_vector;
     }
     if (use_bcast == SCALAR_BCAST_IN0) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
-     _in = in_vector;
     }
     if (use_bcast == ROW_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[i*ldi];
         }
       }
-      for ( i = 0; i < N; ++i ) {
-        in_vector2[i] = in2[i*ldi];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == COL_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[j];
         }
       }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector2[j] = in2[j];
-      }
-      _in2 = in_vector2;
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in2[(i*ldi)+j] = in2[0];
         }
       }
-     in_vector2[0] = in2[0];
-     _in2 = in_vector2;
     }
   }
 
@@ -983,10 +883,6 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_free( out );
   libxsmm_free( in );
   libxsmm_free( in2 );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-    libxsmm_free( in_vector2 );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS binary simple bf16 fp32\n");
