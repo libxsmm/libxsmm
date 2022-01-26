@@ -54,9 +54,10 @@ typedef struct my_bn_fwd_config {
   libxsmm_matrix_eqn_function  func10;
   libxsmm_meltwfunction_unary  reduce_HW_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
-  libxsmm_meltwfunction_binary add_kernel;
-  libxsmm_meltwfunction_unary  copy_kernel;
+  libxsmm_meltwfunction_binary add_kernel; // FIXME: rename since this is a helper not the true inp_add */
+  libxsmm_meltwfunction_unary  copy_kernel;// FIXME: rename since this is a helper not the true inp_add */
   libxsmm_meltwfunction_unary  relu_kernel;
+  libxsmm_meltwfunction_binary ewise_add_kernel;
   my_normalization_fuse        fuse_type;
 } my_bn_fwd_config;
 
@@ -77,9 +78,11 @@ typedef struct my_bn_bwd_config {
   libxsmm_matrix_eqn_function  dbeta_func;
   libxsmm_matrix_eqn_function  din_func;
   libxsmm_meltwfunction_unary  all_zero_kernel;
-  libxsmm_meltwfunction_binary add_kernel;
-  libxsmm_meltwfunction_unary  copy_kernel;
+  libxsmm_meltwfunction_binary add_kernel; // FIXME: rename since this is a helper not the true inp_add */
+  libxsmm_meltwfunction_unary  copy_kernel;// FIXME: rename since this is a helper not the true inp_add */
   libxsmm_meltwfunction_unary  relu_kernel;
+  libxsmm_meltwfunction_binary ewise_add_kernel;
+  libxsmm_meltwfunction_unary  ewise_copy_kernel;
   my_normalization_fuse        fuse_type;
 } my_bn_bwd_config;
 
@@ -148,6 +151,13 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
+  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  if ( res.ewise_add_kernel == NULL) {
+    fprintf( stderr, "JIT for TPP fwd ewise_add_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
   /* TPPs for reducing X and X2 in HW*/
   tmp_ld = bc;
 
@@ -189,7 +199,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask, float eps, int start_tid, int my_tid, void *scratch ) {
+void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask, float eps, int start_tid, int my_tid, void *scratch ) {
 
   const libxsmm_blasint N  = cfg.N;
   const libxsmm_blasint CP = cfg.CP;
@@ -225,8 +235,10 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pgamm
 
   LIBXSMM_VLA_DECL(4, const float,         inp,      pinp, CP, HW, bc);            /* [N, CP, HW, bc] */
   LIBXSMM_VLA_DECL(4,       float,         out,      pout, CP, HW, bc);            /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(2, const float,         gamma,    pgamma, bc);                /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2, const float,         beta,     pbeta, bc);                  /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float,         gamma,    pgamma, bc);                  /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float,         beta,     pbeta, bc);                   /* [CP, bc] */
+
+  LIBXSMM_VLA_DECL(4, const float,         inp_add,  pinp_add, CP, HW, bc);        /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
   LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
@@ -360,13 +372,23 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pgamm
         arg_array[1].primary = s;                                                              /* [bc] */
         arg_array[2].primary = b;                                                              /* [bc] */
         arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);                       /* [bc] */
-        arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, bc);                        /* [bc] */
+        arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta,  cp, 0, bc);                       /* [bc] */
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
+
           arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);           /* [HW, bc] */
           eqn_param.inputs = arg_array;
           eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);       /* [HW,bc] */
           cfg.func10(&eqn_param);                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
+
+          /* Eltwise add */
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+            libxsmm_meltw_binary_param add_param;
+            add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            cfg.ewise_add_kernel(&add_param);
+          }
 
           /* ReLU */
           if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -425,19 +447,22 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* TPP creation */
 
   /* Eltwise TPPs  */
-  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                      LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
   if ( res.all_zero_kernel == NULL) {
     fprintf( stderr, "JIT for TPP bwd all_zero_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                  LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
   if ( res.copy_kernel == NULL) {
     fprintf( stderr, "JIT for TPP bwd copy_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                  LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
   if ( res.add_kernel == NULL) {
     fprintf( stderr, "JIT for TPP bwd add_kernel failed. Bailing...!\n");
     exit(-1);
@@ -446,7 +471,21 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
                                                  /*LIBXSMM_MELTW_FLAG_UNARY_NONE unsupported */ LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
   if ( res.relu_kernel == NULL ) {
-    fprintf( stderr, "JIT for TPP bwd_relu_kernel failed. Bailing...!\n");
+    fprintf( stderr, "JIT for TPP bwd relu_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  if ( res.ewise_add_kernel == NULL) {
+    fprintf( stderr, "JIT for TPP bwd ewise_add_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary(/*1, 1 */res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+                                                       LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  if ( res.ewise_copy_kernel == NULL) {
+    fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -521,7 +560,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 }
 
 void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
-                     float *pdin, float *pdgamma, float *pdbeta, float eps,
+                     float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
                      int start_tid, int my_tid, void *scratch) {
 
   const libxsmm_blasint N  = cfg.N;
@@ -540,8 +579,8 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   const libxsmm_blasint chunksize_dN = (work_dN % cfg.threads == 0) ?
     (work_dN / cfg.threads) : ((work_dN / cfg.threads) + 1);
   /* compute thr_begin and thr_end */
-  const libxsmm_blasint thr_begin_dN = (ltid * chunksize_dN < work_dN) ? (ltid * chunksize_dN) : work_dN;
-  const libxsmm_blasint thr_end_dN = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
+  const libxsmm_blasint thr_begin_dN = ( ltid      * chunksize_dN < work_dN) ? ( ltid      * chunksize_dN) : work_dN;
+  const libxsmm_blasint thr_end_dN   = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
 
   /* number of tasks that could be run in parallel for 1d blocking */
   /* Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here? */
@@ -550,8 +589,8 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   const libxsmm_blasint chunksize_C = (work_C % cfg.threads == 0) ?
     (work_C / cfg.threads) : ((work_C / cfg.threads) + 1);
   /* compute thr_begin and thr_end */
-  const libxsmm_blasint thr_begin_C = (ltid * chunksize_C < work_C) ? (ltid * chunksize_C) : work_C;
-  const libxsmm_blasint thr_end_C = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
+  const libxsmm_blasint thr_begin_C = ( ltid      * chunksize_C < work_C) ? ( ltid      * chunksize_C) : work_C;
+  const libxsmm_blasint thr_end_C   = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
@@ -564,6 +603,8 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   LIBXSMM_VLA_DECL(2, const float, gamma, pgamma, bc);              /* [CP, bc] */
   LIBXSMM_VLA_DECL(2,       float, dgamma, pdgamma, bc);            /* [CP, bc] */
   LIBXSMM_VLA_DECL(2,       float, dbeta, pdbeta, bc);              /* [CP, bc] */
+
+  LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, bc);          /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
   LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
@@ -582,34 +623,51 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
 
     int cpxnt;
 
-    /* ReLU (with a mask optionally) */
-    if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-      libxsmm_meltw_unary_param all_relu_param;
+    /* ReLU/Mask/Eltwise */
+    if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE ||
+        cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+
       for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
         { /* stupid block to keep indentation */
           n  = cpxnt%N;
           cp = cpxnt/N;
 
-          libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
-          libxsmm_matrix_eqn_param eqn_param;
           int hwb, cb;
 
           for(hwb=0; hwb < num_HW_blocks; hwb++){
+            if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+              libxsmm_meltw_unary_param all_relu_param;
 
-//#if 0
-            all_relu_param.op.primary   = (void*)(&alpha);
-            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-            all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+              all_relu_param.op.primary   = (void*)(&alpha);
+              all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+              all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                                (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
-                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
-//            all_relu_param.in.secondary = NULL;
-            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-            cfg.relu_kernel(&all_relu_param);
-          }
+                                               : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
+              all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+              cfg.relu_kernel(&all_relu_param);
+            } /* ReLU/mask */
+//#if 0
+            if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+#if 0
+              int i;
+              for (i = 0; i < bc * (HW/num_HW_blocks); ++i) {
+                int index;
+                index = n * (CP * HW * bc) + cp * (HW * bc) + (hwb*(HW/num_HW_blocks)) * (bc) + i;
+                pdin_add[index] = pdout[index];
+              }
+#endif
+//#if 0
+              libxsmm_meltw_unary_param ewise_copy_param;
+              ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+              ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+              cfg.ewise_copy_kernel(&ewise_copy_param);
 //#endif
+            } /* Eltwise */
+//#endif
+          }
         }
-      }
-    }  /* ReLU */
+      } /* loop over the 1d parallel blocking */
+    }  /* ReLU/Mask/Eltwise */
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
@@ -770,7 +828,7 @@ int main( int argc, char* argv[] ) {
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it;
-  float *inp, *inp_add, *out, *dinp, *dout, *dinp_add, *eqn_dinp, *eqn_dinp_add, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
+  float *inp, *inp_add, *out, *dinp, *dout, *dinp_add, *eqn_dinp, *eqn_dout, *eqn_dinp_add, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
   unsigned char *relumask_uncompressed, *relumask, *eqn_relumask;
   float *naive_inp, *naive_inp_add, *naive_out, *naive_rcpstdev, *naive_zeros, *naive_dinp, *naive_dout, *naive_dbeta, *naive_dgamma, *naive_dinp_add;
   unsigned char *naive_relumask;
@@ -800,7 +858,7 @@ int main( int argc, char* argv[] ) {
   int pad_h_out = 0; /* padding mode */
   int pad_w_out = 0; /* padding mode */
   int norm_type = 0; /* 0: full batchnorm, 1: batch scaling only */
-  int fuse_type = 4; /* 0: nothing fused, 1: relu fused, 2: ewise fused, 3: relu and ewise fused, 4: relu with mask, 5: relu and ewise with mask  */
+  int fuse_type = 5; /* 0: nothing fused, 1: relu fused, 2: ewise fused, 3: relu and ewise fused, 4: relu with mask, 5: relu and ewise with mask  */
 
   int stride_h = 0;  /* defined later */
   int stride_w = 0;  /* defined later */
@@ -932,12 +990,12 @@ int main( int argc, char* argv[] ) {
   naive_inp      = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
   naive_out      = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
   naive_inp_add  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
-  naive_dinp     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W,   2097152);
-  naive_dout     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W,   2097152);
+  naive_dinp     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
+  naive_dout     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
   naive_dinp_add = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
-  naive_dgamma   = (float*) libxsmm_aligned_malloc( sizeof(float)*C,   2097152);
-  naive_dbeta    = (float*) libxsmm_aligned_malloc( sizeof(float)*C,   2097152);
-  naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*C,   2097152);
+  naive_dgamma   = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
+  naive_dbeta    = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
+  naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_zeros    = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
 
   naive_relumask = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*C*H*W, 2097152);
@@ -976,14 +1034,14 @@ int main( int argc, char* argv[] ) {
 
   /* initialize data */
   init_buf(inp,      N*CP*HW*bc, 1, 0);
-  init_buf(out,      N*CP*HW*bc, 1, 0);
+  //init_buf(out,      N*CP*HW*bc, 1, 0);
   init_buf(inp_add,  N*CP*HW*bc, 1, 0);
   init_buf(dinp,     N*CP*HW*bc, 1, 0);
   init_buf(dout,     N*CP*HW*bc, 1, 0);
-  init_buf(dinp_add, N*CP*HW*bc, 1, 0);
+  //init_buf(dinp_add, N*CP*HW*bc, 1, 0);
 
-  copy_buf(out,      eqn_out,      N*CP*HW*bc);
-  copy_buf(dinp,     eqn_dinp,     N*CP*HW*bc);
+  //copy_buf(out,      eqn_out,      N*CP*HW*bc);
+  //copy_buf(dinp,     eqn_dinp,     N*CP*HW*bc);
   copy_buf(dout,     eqn_dout,     N*CP*HW*bc);
 
   zero_buf(naive_zeros, N*C*H*W);
@@ -1030,7 +1088,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,     naive_inp,     N, C, H, W, bc);
@@ -1124,7 +1182,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -1137,7 +1195,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -1156,7 +1214,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,   N, C, H, W, bc);
@@ -1199,8 +1257,6 @@ int main( int argc, char* argv[] ) {
     printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 
-
-
 #ifdef COMPUTE_FP64_REFERENCE
     printf("##################################################\n");
     printf("# Correctness FP32 BWD Batchnorm - Dinput (fp64) #\n");
@@ -1215,31 +1271,33 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 #endif
 
-    printf("################################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dinput add  #\n");
-    printf("################################################\n");
-    libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add, eqn_dinp_add, 0, 0);
-    printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
-    printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
-    printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
-    printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
-    printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
-    printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
+    if (fuse_type == 2 || fuse_type == 5) {
+      printf("################################################\n");
+      printf("# Correctness FP32 BWD Batchnorm - Dinput add  #\n");
+      printf("################################################\n");
+      libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add, eqn_dinp_add, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
+      printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 
 #ifdef COMPUTE_FP64_REFERENCE
-    printf("##################################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dinput add (fp64) #\n");
-    printf("##################################################\n");
-    libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add_fp64_downscaled_to_fp32, eqn_dinp_add, 0, 0);
-    printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
-    printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
-    printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
-    printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
-    printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
-    printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
-    printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
+      printf("##################################################\n");
+      printf("# Correctness FP32 BWD Batchnorm - Dinput add (fp64) #\n");
+      printf("##################################################\n");
+      libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add_fp64_downscaled_to_fp32, eqn_dinp_add, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
+      printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 #endif
+    }
 
     printf("###########################################\n");
     printf("# Correctness FP32 BWD Batchnorm - Dbeta  #\n");
@@ -1297,11 +1355,11 @@ int main( int argc, char* argv[] ) {
   for (i = 0; i < 1024 * 1024; i++ ) {
     sum += cache_fl[i];
   }
-  naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_zeros /*cannot pass NULL or &dummy due to VLA_ACCESS but should be unsued when fuse = 0 const float* dinput_add_ptr*/,
+  naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
                                        beta, dbeta, gamma, dgamma, mean, naive_rcpstdev);
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
-    naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_zeros /*cannot pass NULL or &dummy due to VLA_ACCESS but should be unsued when fuse = 0 const float* dinput_add_ptr*/,
+    naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
                                        beta, dbeta, gamma, dgamma, mean, naive_rcpstdev);
   }
   l_end = libxsmm_timer_tick();
@@ -1319,9 +1377,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   l_start = libxsmm_timer_tick();
+
   for (it = 0; it < iters; it++) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -1332,9 +1391,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   }
+
   l_end = libxsmm_timer_tick();
   l_total2 = libxsmm_timer_duration(l_start, l_end);
   printf("TPP batchnorm time BWD = %.5g\n", ((double)(l_total2)));
