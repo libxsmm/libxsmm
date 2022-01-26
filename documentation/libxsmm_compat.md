@@ -1,8 +1,8 @@
 ## Linux
 
-All Linux distributions are meant to be fully supported (please [report](https://github.com/hfp/libxsmm/issues/new) any compatibility issue). A shared library (`STATIC=0`) necessarily implies some performance hit when accessing thread-local memory (contended multicore execution). The GNU Compiler Collection prior to v5.1 may imply performance hits in some CPUID-dispatched code paths (non-JIT).
+All Linux distributions are meant to be fully supported (please [report](https://github.com/libxsmm/libxsmm/issues/new) any compatibility issue). A shared library (`STATIC=0`) necessarily implies some performance hit when accessing thread-local memory (contended multicore execution). The GNU Compiler Collection prior to v5.1 may imply performance hits in some CPUID-dispatched code paths (non-JIT).
 
-> In case of outdated Binutils, compilation can fail to assemble code that originates from code sections using Intrinsics (see issue [#170](https://github.com/hfp/libxsmm/issues/170) and [#212](https://github.com/hfp/libxsmm/issues/212#issuecomment-394620082)). To resolve the problem, please use `INTRINSICS=1` along with the desired target e.g., `AVX=3 MIC=0`, or `AVX=2`.
+> In case of outdated Binutils, compilation can fail to assemble code that originates from code sections using Intrinsics (see issue [#170](https://github.com/libxsmm/libxsmm/issues/170) and [#212](https://github.com/libxsmm/libxsmm/issues/212#issuecomment-394620082)). To resolve the problem, please use `INTRINSICS=1` along with the desired target e.g., `AVX=3 MIC=0`, or `AVX=2`.
 
 ## CRAY
 
@@ -18,7 +18,7 @@ The compatibility settings imply minor issues when using the CRAY compiler: full
 
 ### Microsoft Windows
 
-Microsoft Windows is [supported](https://github.com/hfp/libxsmm/wiki/Q&A#what-operating-systems-are-covered-by-libxsmm-and-what-about-microsoft-windows) using the Microsoft Visual Studio environment (no `make`). It is advised to review the build settings. However, the following configurations are available: `debug`, `release`, and release mode with `symbols`. JIT-code generation is enabled but limited to the MM domain (GEMM kernels and matcopy kernels; no transpose kernels). GEMM kernels with prefetch signature remain as non-prefetch kernels i.e., prefetch locations are ignored due to the effort of fully supporting the Windows calling convention. As a workaround and to properly preserve caller-state, each JIT-kernel call may be wrapped by an own function.
+Microsoft Windows is [supported](https://github.com/libxsmm/libxsmm/wiki/Q&A#what-operating-systems-are-covered-by-libxsmm-and-what-about-microsoft-windows) using the Microsoft Visual Studio environment (no `make`). It is advised to review the build settings. However, the following configurations are available: `debug`, `release`, and release mode with `symbols`. JIT-code generation is enabled but limited to the MM domain (GEMM kernels and matcopy kernels; no transpose kernels). GEMM kernels with prefetch signature remain as non-prefetch kernels i.e., prefetch locations are ignored due to the effort of fully supporting the Windows calling convention. As a workaround and to properly preserve caller-state, each JIT-kernel call may be wrapped by an own function.
 
 ### Cygwin
 
@@ -73,7 +73,7 @@ LIBXSMM is occasionally tested under FreeBSD. For libxsmmext, it is necessary to
 bash
 gmake
 ```
-An attempt to run the [tests](https://github.com/hfp/libxsmm/wiki/Validation) may ask for a LAPACK/BLAS installation (unless `BLAS=0` is given). Both, Netlib BLAS (reference) and OpenBLAS are available (in case of linker error due to the GNU Fortran runtime library, one can try `gmake CXX=g++7 CC=gcc7 FC=gfortran7` i.e., select a consistent tool chain and adjust `LD_LIBRARY_PATH` accordingly e.g., `/usr/local/lib/gcc7`).
+An attempt to run the [tests](https://github.com/libxsmm/libxsmm/wiki/Validation) may ask for a LAPACK/BLAS installation (unless `BLAS=0` is given). Both, Netlib BLAS (reference) and OpenBLAS are available (in case of linker error due to the GNU Fortran runtime library, one can try `gmake CXX=g++7 CC=gcc7 FC=gfortran7` i.e., select a consistent tool chain and adjust `LD_LIBRARY_PATH` accordingly e.g., `/usr/local/lib/gcc7`).
 
 ## PGI Compiler
 

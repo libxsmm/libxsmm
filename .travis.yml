@@ -46,7 +46,7 @@ addons:
     - python3
   coverity_scan:
     project:
-      name: "hfp/libxsmm"
+      name: "libxsmm/libxsmm"
       description: "Matrix operations and deep learning primitives"
     build_command_prepend: "source .env/travis.env; make -e clean"
     # consider ${MAKEJ} to potentially accelerate the build
