@@ -20,7 +20,7 @@
 
 #define NUM_HW_BLOCKS (16)
 
-//#define COMPUTE_FP64_REFERENCE
+#define COMPUTE_FP64_REFERENCE
 
 /* include c-based dnn library */
 #ifdef CNN_HEADER
@@ -1102,7 +1102,8 @@ int main( int argc, char* argv[] ) {
     mask_compress_uint8 (relumask_uncompressed, relumask, N*CP*H*W*bc);
 
 #ifdef COMPUTE_FP64_REFERENCE
-    extend_buf_fp32_to_fp64 (naive_inp, naive_inp_fp64, N*C*H*W);
+    extend_buf_fp32_to_fp64 (naive_inp,     naive_inp_fp64,     N*C*H*W);
+    extend_buf_fp32_to_fp64 (naive_inp_add, naive_inp_add_fp64, N*C*H*W);
 
     naive_fusedbatchnorm_fp_fp64(&naive_param, naive_inp_fp64, naive_out_fp64, naive_inp_add_fp64,
                                         beta_fp64, gamma_fp64, eps, mean_fp64, naive_rcpstdev_fp64, var_fp64, naive_relumask);
