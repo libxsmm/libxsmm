@@ -98,13 +98,19 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   size_t sum_N_offset, sumsq_N_offset;
 
+  libxsmm_meltw_unary_shape  unary_shape;
+  libxsmm_meltw_binary_shape binary_shape;
+
+  libxsmm_meltw_unary_flags  unary_flags;
+  libxsmm_meltw_binary_flags binary_flags;
+
   libxsmm_blasint ldo = bc;
   libxsmm_blasint ld  = bc;
   libxsmm_blasint tmp_ld, tmp_ld2;
   libxsmm_blasint my_eqn10;
 
-  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  libxsmm_meltw_unary_type  unary_type;
+//  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+//  libxsmm_meltw_unary_type  unary_type;
 
   libxsmm_datatype  in_dt  = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
@@ -131,34 +137,86 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* TPP creation */
 
+  memset( &unary_shape,  0, sizeof(libxsmm_meltw_unary_shape));
+  memset( &binary_shape, 0, sizeof(libxsmm_meltw_binary_shape));
+
   /* Eltwise TPPs  */
-  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+
+//  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = 1;
+  unary_shape.ldi = NULL;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.all_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd all_zero_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  //res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = 1;
+  unary_shape.ldi = &ldo;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.copy_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd copy_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+//  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  binary_shape.m         = res.bc;
+  binary_shape.n         = 1;
+  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.ldi       = &ldo;
+  binary_shape.ldi2      = &ldo;
+  binary_shape.ldo       = &ldo;
+  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd add_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                 /*LIBXSMM_MELTW_FLAG_UNARY_NONE*/ LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+//  res.relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                 /*LIBXSMM_MELTW_FLAG_UNARY_NONE*/ LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = res.H*res.W / res.num_HW_blocks;
+  unary_shape.ldi = &ldo;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT /*LIBXSMM_MELTW_FLAG_UNARY_NONE*/;
+  res.relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
+
   if ( res.relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP fwd_relu_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+//  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  binary_shape.m         = res.bc;
+  binary_shape.n         = res.H*res.W / res.num_HW_blocks;
+  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.ldi       = &ldo;
+  binary_shape.ldi2      = &ldo;
+  binary_shape.ldo       = &ldo;
+  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  res.ewise_add_kernel   = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.ewise_add_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd ewise_add_kernel failed. Bailing...!\n");
     exit(-1);
@@ -167,9 +225,20 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* TPPs for reducing X and X2 in HW*/
   tmp_ld = bc;
 
-  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  res.reduce_HW_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W/res.num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+//  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+//  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+//  res.reduce_HW_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W/res.num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+
+  unary_shape.m   = res.bc;
+  unary_shape.n   = res.H*res.W / res.num_HW_blocks;
+  unary_shape.ldi = &ld;
+  unary_shape.ldo = &tmp_ld;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  res.reduce_HW_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
+
   if ( res.reduce_HW_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd reduce_HW_kernel failed. Bailing...!\n");
     exit(-1);
@@ -209,6 +278,12 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
                                  libxsmm_blasint threads, my_normalization_fuse fuse_type ) {
   my_bn_bwd_config res;
 
+  libxsmm_meltw_unary_shape  unary_shape;
+  libxsmm_meltw_binary_shape binary_shape;
+
+  libxsmm_meltw_unary_flags  unary_flags;
+  libxsmm_meltw_binary_flags binary_flags;
+
   size_t dbeta_N_offset;
 
   libxsmm_blasint ldo = bc;
@@ -242,43 +317,97 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* TPP creation */
 
   /* Eltwise TPPs  */
-  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                      LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+//  res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = 1;
+  unary_shape.ldi = NULL;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.all_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP bwd all_zero_kernel failed. Bailing...!\n");
+    fprintf( stderr, "JIT for TPP fwd all_zero_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                  LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  //res.copy_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = 1;
+  unary_shape.ldi = &ldo;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.copy_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP bwd copy_kernel failed. Bailing...!\n");
+    fprintf( stderr, "JIT for TPP fwd copy_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                  LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+//  res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  binary_shape.m         = res.bc;
+  binary_shape.n         = 1;
+  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.ldi       = &ldo;
+  binary_shape.ldi2      = &ldo;
+  binary_shape.ldo       = &ldo;
+  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP bwd add_kernel failed. Bailing...!\n");
+    fprintf( stderr, "JIT for TPP fwd add_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                 /*LIBXSMM_MELTW_FLAG_UNARY_NONE unsupported */ LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+//  res.relu_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                 /*LIBXSMM_MELTW_FLAG_UNARY_NONE unsupported */ LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT, LIBXSMM_MELTW_TYPE_UNARY_RELU_INV);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = res.H*res.W / res.num_HW_blocks;
+  unary_shape.ldi = &ldo;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT /*LIBXSMM_MELTW_FLAG_UNARY_NONE*/;
+  res.relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
   if ( res.relu_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP bwd relu_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+//  res.ewise_add_kernel = libxsmm_dispatch_meltw_binary(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                       LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
+  binary_shape.m         = res.bc;
+  binary_shape.n         = res.H*res.W / res.num_HW_blocks;
+  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.ldi       = &ldo;
+  binary_shape.ldi2      = &ldo;
+  binary_shape.ldo       = &ldo;
+  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  res.ewise_add_kernel   = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
+
   if ( res.ewise_add_kernel == NULL) {
     fprintf( stderr, "JIT for TPP bwd ewise_add_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
-  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary(/*1, 1 */res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                                                       LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+//  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary(/*1, 1 */res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+//                                                       LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+  unary_shape.m   = res.bc;
+  unary_shape.n   = res.H*res.W / res.num_HW_blocks;
+  unary_shape.ldi = &ldo;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.ewise_copy_kernel == NULL) {
     fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
     exit(-1);

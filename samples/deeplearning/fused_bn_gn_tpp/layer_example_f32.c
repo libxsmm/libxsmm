@@ -36,11 +36,11 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint i, it;
   float *inp, *inp_add, *out, *dinp, *dout, *dinp_add, *eqn_dinp, *eqn_dout, *eqn_dinp_add, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
   unsigned char *relumask_uncompressed, *relumask, *eqn_relumask;
-  float *naive_inp, *naive_inp_add, *naive_out, *naive_rcpstdev, *naive_zeros, *naive_dinp, *naive_dout, *naive_dbeta, *naive_dgamma, *naive_dinp_add;
+  float *naive_inp, *naive_inp_add, *naive_out, *naive_rcpstdev, *naive_dinp, *naive_dout, *naive_dbeta, *naive_dgamma, *naive_dinp_add;
   unsigned char *naive_relumask;
 
 #ifdef COMPUTE_FP64_REFERENCE
-  double *naive_inp_fp64, *naive_inp_add_fp64, *naive_out_fp64, *naive_rcpstdev_fp64, *naive_zeros_fp64, *naive_dinp_fp64, *naive_dout_fp64, *naive_dbeta_fp64, *naive_dgamma_fp64, *naive_dinp_add_fp64;
+  double *naive_inp_fp64, *naive_inp_add_fp64, *naive_out_fp64, *naive_rcpstdev_fp64, *naive_dinp_fp64, *naive_dout_fp64, *naive_dbeta_fp64, *naive_dgamma_fp64, *naive_dinp_add_fp64;
   double *beta_fp64, *gamma_fp64, *mean_fp64, *var_fp64;
   double *dbeta_fp64, *dgamma_fp64;
   float *naive_out_fp64_downscaled_to_fp32, *out_fp64_downscaled_to_fp32;
@@ -117,7 +117,7 @@ int main( int argc, char* argv[] ) {
   /* if H and W are read from cli, redefine HW */
   if (H && W)
     HW = H*W;
-  else { /* else, set formally H and W from the previously set HW */
+  else { /* else, set formally H and W from the value of HW hardcoded above */
     H = HW;
     W = 1;
   }
@@ -129,6 +129,11 @@ int main( int argc, char* argv[] ) {
 
   if ( stride != 1 ) {
     printf("Non-unit stride is not supported \n");
+    return -1;
+  }
+
+  if ( norm_type != 0 ) {
+    printf("Only full batchnorm (norm_type = 0) is supported \n");
     return -1;
   }
 
@@ -147,8 +152,8 @@ int main( int argc, char* argv[] ) {
   naive_param.C = CP*bc;
   naive_param.H = H;
   naive_param.W = W;
-  naive_param.stride_h = stride_h;
-  naive_param.stride_w = stride_w;
+  naive_param.stride_h  = stride_h;
+  naive_param.stride_w  = stride_w;
   naive_param.norm_type = norm_type; /* 0: full batchnorm, 1: batch scaling only */
   naive_param.fuse_type = fuse_type; /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
 
@@ -162,7 +167,7 @@ int main( int argc, char* argv[] ) {
   printf("##########################################\n");
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
-  printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d\n", N, CP*bc, CP, bc, H, W, stride);
+  printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d (PADDING: must be 0s)\n", N, CP*bc, CP, bc, H, W, stride);
   printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
@@ -202,7 +207,6 @@ int main( int argc, char* argv[] ) {
   naive_dgamma   = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_dbeta    = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
-  naive_zeros    = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
 
   naive_relumask = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*C*H*W, 2097152);
 
@@ -216,7 +220,6 @@ int main( int argc, char* argv[] ) {
   naive_dgamma_fp64   = (double*) libxsmm_aligned_malloc( sizeof(double)*C,   2097152);
   naive_dbeta_fp64    = (double*) libxsmm_aligned_malloc( sizeof(double)*C,   2097152);
   naive_rcpstdev_fp64 = (double*) libxsmm_aligned_malloc( sizeof(double)*C,   2097152);
-  naive_zeros_fp64    = (double*) libxsmm_aligned_malloc( sizeof(double)*N*C*H*W, 2097152);
 
   gamma_fp64  = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
   beta_fp64   = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
@@ -240,20 +243,11 @@ int main( int argc, char* argv[] ) {
 
   /* initialize data */
   init_buf(inp,      N*CP*HW*bc, 1, 0);
-  //init_buf(out,      N*CP*HW*bc, 1, 0);
   init_buf(inp_add,  N*CP*HW*bc, 1, 0);
   init_buf(dinp,     N*CP*HW*bc, 1, 0);
   init_buf(dout,     N*CP*HW*bc, 1, 0);
-  //init_buf(dinp_add, N*CP*HW*bc, 1, 0);
 
-  //copy_buf(out,      eqn_out,      N*CP*HW*bc);
-  //copy_buf(dinp,     eqn_dinp,     N*CP*HW*bc);
   copy_buf(dout,     eqn_dout,     N*CP*HW*bc);
-
-  zero_buf(naive_zeros, N*C*H*W);
-#ifdef COMPUTE_FP64_REFERENCE
-  zero_buf_fp64(naive_zeros_fp64, N*C*H*W);
-#endif
 
   init_buf(gamma,  CP*bc, 1, 0);
   init_buf(beta,   CP*bc, 1, 0);
@@ -303,8 +297,9 @@ int main( int argc, char* argv[] ) {
     naive_fusedbatchnorm_fp(&naive_param, naive_inp, naive_out, naive_inp_add,
                                         beta, gamma, eps, mean, naive_rcpstdev, var, naive_relumask);
 
-    tensor_copy_NCHW_to_NCHWc       (naive_out     , out,      N, C, H, W, bc);
+    tensor_copy_NCHW_to_NCHWc       (naive_out     , out,                   N, C, H, W, bc);
     tensor_copy_NCHW_to_NCHWc_uint8 (naive_relumask, relumask_uncompressed, N, C, H, W, bc);
+    /* since naive implementation returnes the mask with 1 char per entry, after changing layout, a compression into bitmask is needed */
     mask_compress_uint8 (relumask_uncompressed, relumask, N*CP*H*W*bc);
 
 #ifdef COMPUTE_FP64_REFERENCE
@@ -651,7 +646,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(naive_dgamma);
   libxsmm_free(naive_dbeta);
   libxsmm_free(naive_rcpstdev);
-  libxsmm_free(naive_zeros);
 
   libxsmm_free(naive_relumask);
 
@@ -660,7 +654,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(naive_out_fp64);
   libxsmm_free(naive_inp_add_fp64);
   libxsmm_free(naive_rcpstdev_fp64);
-  libxsmm_free(naive_zeros_fp64);
   libxsmm_free(naive_dinp_fp64);
   libxsmm_free(naive_dout_fp64);
   libxsmm_free(naive_dinp_add_fp64);
