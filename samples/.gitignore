@@ -7,6 +7,7 @@ deeplearning/sparse_weight_mult/sparse_weight_C_redmult
 deeplearning/grudriver/grudriver_*
 deeplearning/lstmdriver/lstmdriver_*
 deeplearning/poolingdriver/layer_example_*
+deeplearning/pooling_tpp/layer_example_*
 deeplearning/rnndriver/rnndriver_*
 deeplearning/cnnlayer/layer_example_*
 deeplearning/cnnlayer/resnet_driver_f32
@@ -18,6 +19,7 @@ deeplearning/convcaps/layer_example_*
 deeplearning/mlpdriver/mlp_example_*
 deeplearning/mlpdriver/mlp_mnist_*
 deeplearning/mlp_tpp/mlp_example_*
+deeplearning/mlp_tpp/mlp_mnist_*
 deeplearning/rnndriver/rnndriver_*
 deeplearning/fullyconnected_tpp/layer_example_*
 eltwise/eltwise_*

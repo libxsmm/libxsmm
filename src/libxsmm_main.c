@@ -185,18 +185,18 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
       continue
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) /*do*/ { \
       const unsigned int LOCKINDEX = (0 != internal_reglock_count ? LIBXSMM_MOD2(INDEX, internal_reglock_count) : 0); \
       if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state)) { \
         INTERNAL_REGLOCK_TRY(DIFF, CODE); \
       }
-#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state); }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state); } while(0)
 # else /* RW-lock */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) /*do*/ { \
       if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGLOCK, internal_reglock_ptr)) { \
         INTERNAL_REGLOCK_TRY(DIFF, CODE); \
       }
-#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr); }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr); } /*while(0)*/
 # endif
 #endif
 
@@ -687,9 +687,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH,
-      0 != *(LIBXSMM_BRANCH) ? "-" : "", 0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured",
-      LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
+      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);

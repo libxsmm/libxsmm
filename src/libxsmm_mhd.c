@@ -27,7 +27,7 @@
 # define LIBXSMM_MHD_MAX_ELEMSIZE 8
 #endif
 
-#define LIBXSMM_MHD_MINMAX(TYPE, DATA, NELEMENTS, PMIN_INOUT, PMAX_INOUT) { \
+#define LIBXSMM_MHD_MINMAX(TYPE, DATA, NELEMENTS, PMIN_INOUT, PMAX_INOUT) do { \
   LIBXSMM_ASSERT(NULL != (PMIN_INOUT) && NULL != (PMAX_INOUT)); \
   if (0 < (NELEMENTS)) { \
     size_t libxsmm_mhd_minmax_index_ = 0; \
@@ -45,14 +45,15 @@
     } while (libxsmm_mhd_minmax_index_ < (NELEMENTS)); \
   } \
   else *((TYPE*)PMIN_INOUT) = *((TYPE*)PMAX_INOUT) = 0; \
-}
+} while(0)
 
-#define LIBXSMM_MHD_TYPE_PROMOTE(DST_TYPE, SRC_TYPE) \
-  (LIBXSMM_MHD_ELEMTYPE_I64 > (DST_TYPE) || (LIBXSMM_MHD_ELEMTYPE_U64 > (DST_TYPE) \
+#define LIBXSMM_MHD_TYPE_PROMOTE(DST_TYPE, SRC_TYPE) ( \
+  LIBXSMM_MHD_ELEMTYPE_I64 > (DST_TYPE) || (LIBXSMM_MHD_ELEMTYPE_U64 > (DST_TYPE) \
     ? /*dst is   signed*/(LIBXSMM_MHD_ELEMTYPE_U64 > (SRC_TYPE) ? ((SRC_TYPE) > (DST_TYPE)) : 0) \
-    : /*dst is unsigned*/(LIBXSMM_MHD_ELEMTYPE_U64 > (SRC_TYPE) ? 0 : ((SRC_TYPE) > (DST_TYPE)))))
+    : /*dst is unsigned*/(LIBXSMM_MHD_ELEMTYPE_U64 > (SRC_TYPE) ? 0 : ((SRC_TYPE) > (DST_TYPE)))) \
+)
 
-#define LIBXSMM_MHD_ELEMENT_CONVERSION_F(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+#define LIBXSMM_MHD_ELEMENT_CONVERSION_F(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) do { \
   const double h = (0.5 - (DST_TYPE)0.5); \
   SRC_TYPE s = *((const SRC_TYPE*)PSRC); \
   double s0 = 0, s1 = 0; \
@@ -80,9 +81,9 @@
     *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= s ? (s + h) : (s - h)); \
   } \
   RESULT = EXIT_SUCCESS; \
-}
+} while(0)
 
-#define LIBXSMM_MHD_ELEMENT_CONVERSION_I(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+#define LIBXSMM_MHD_ELEMENT_CONVERSION_I(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) do { \
   const double h = (0.5 - (DST_TYPE)0.5); \
   SRC_TYPE s = *((const SRC_TYPE*)PSRC); \
   double s0 = 0, s1 = 0; \
@@ -111,11 +112,11 @@
     *((DST_TYPE*)PDST) = (DST_TYPE)s; \
   } \
   RESULT = EXIT_SUCCESS; \
-}
+} while(0)
 
 #define LIBXSMM_MHD_ELEMENT_CONVERSION_U LIBXSMM_MHD_ELEMENT_CONVERSION_I
 
-#define LIBXSMM_MHD_ELEMENT_CONVERSION(DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+#define LIBXSMM_MHD_ELEMENT_CONVERSION(DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) do { \
   LIBXSMM_ASSERT_MSG(NULL != (PDST) && NULL != (PSRC), "Invalid input or output"); \
   switch(SRC_ENUM) { \
     case LIBXSMM_MHD_ELEMTYPE_F64: { \
@@ -153,7 +154,7 @@
     } break; \
     default: RESULT = EXIT_FAILURE; \
   } \
-}
+} while(0)
 
 
 LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename)

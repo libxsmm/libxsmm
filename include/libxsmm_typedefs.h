@@ -802,6 +802,16 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_attribut
   libxsmm_blasint             set_stride_hint;
 } libxsmm_matrix_arg_attributes;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_op_metadata {
+  libxsmm_blasint eqn_idx;
+  libxsmm_blasint op_arg_pos;
+} libxsmm_matrix_eqn_op_metadata;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_arg_metadata {
+  libxsmm_blasint eqn_idx;
+  libxsmm_blasint in_arg_pos;
+} libxsmm_matrix_eqn_arg_metadata;
+
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
   libxsmm_matrix_op_arg op;   /* op state & parameters */
@@ -877,7 +887,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(con
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c);
 
-/* argument strcuts for generalized interface */
+/* argument structs for generalized interface */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
   libxsmm_matrix_arg_v2 a;   /* a matrix  */

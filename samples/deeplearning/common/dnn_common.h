@@ -1125,12 +1125,11 @@ LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc(float *src, float *dst, int N, int
   }
 }
 
-LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc_uint8(unsigned char *src, unsigned char *dst, int N, int C, int H, int W, int bc)
+LIBXSMM_INLINE void tensor_pollute_rim_NCHWc(float *dst, int N, int C, int H, int W, int bc, int pad_h, int pad_w, float polute_val)
 {
   int n, h, w, c1, c2;
   int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(4, unsigned char, in,  src, C, H, W);
-  LIBXSMM_VLA_DECL(5, unsigned char, out, dst, cBlocks, H, W, bc);
+  LIBXSMM_VLA_DECL(5, float,out, dst, cBlocks, H, W, bc);
 
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
@@ -1138,18 +1137,22 @@ LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc_uint8(unsigned char *src, unsigned
 #endif
   for (n = 0; n < N; n++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
-      for (c2 = 0; c2 < bc; c2++) {
-        for (h = 0; h < H; h++) {
-          for (w = 0; w < W; w++) {
-            LIBXSMM_VLA_ACCESS(5, out, n, c1,       h, w, c2, cBlocks, H, W, bc) =
-            LIBXSMM_VLA_ACCESS(4, in,  n, c1*bc+c2, h, w, C, H, W);
+      for (h = 0; h < H; h++) {
+        for (w = 0; w < W; w++) {
+          for (c2 = 0; c2 < bc; c2++) {
+            if ( (h < pad_h) || (h >= H-pad_h)) {
+              LIBXSMM_VLA_ACCESS(5, out, n, c1, h, w, c2, cBlocks, H, W, bc) = polute_val;
+            } else {
+              if ( (w < pad_w) || (w >= W-pad_w)) {
+                LIBXSMM_VLA_ACCESS(5, out, n, c1, h, w, c2, cBlocks, H, W, bc) = polute_val;
+              }
+            }
           }
         }
       }
     }
   }
 }
-
 
 LIBXSMM_INLINE void tensor_copy_NCHWc_to_NCHW(float *src, float *dst, int N, int C, int H, int W, int bc)
 {
@@ -1196,6 +1199,62 @@ LIBXSMM_INLINE void tensor_copy_KCRS_to_KCRSck(float *src, float *dst, int K, in
             for (s = 0; s < S; s++) {
               LIBXSMM_VLA_ACCESS(6, out, k1,     c1,         r, s, c2, k2, cBlocks, R, S, bc, bk) =
               LIBXSMM_VLA_ACCESS(4, in,  k1*bk+k2, c1*bc+c2, r, s, C, R, S);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_copy_KCRSck_to_KCRS(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(4, float, out, dst, C, R, S);
+  LIBXSMM_VLA_DECL(6, float,  in, src, cBlocks, R, S, bc, bk);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              LIBXSMM_VLA_ACCESS(4, out,  k1*bk+k2, c1*bc+c2, r, s, C, R, S) =
+                LIBXSMM_VLA_ACCESS(6, in, k1,     c1,         r, s, c2, k2, cBlocks, R, S, bc, bk);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_transpose_KCRCck_to_CKRSkc(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(6, float, out, dst, kBlocks, R, S, bk, bc);
+  LIBXSMM_VLA_DECL(6, float, in , src, cBlocks, R, S, bc, bk);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              LIBXSMM_VLA_ACCESS(6, out, c1, k1, R-1-r, S-1-s, k2, c2, kBlocks, R, S, bk, bc) =
+              LIBXSMM_VLA_ACCESS(6,  in, k1, c1, r, s, c2, k2, cBlocks, R, S, bc, bk);
             }
           }
         }

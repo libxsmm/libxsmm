@@ -21,9 +21,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
-#include "my_cnn_common.h"
-#include "my_cnn_fwd_custom_custom_f32.h"
-
+#include "cnn_tpp_common.h"
+#include "cnn_tpp_fwd_custom_custom_f32.h"
+#include "cnn_tpp_bwd_custom_custom_f32.h"
+#include "cnn_tpp_upd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {
@@ -32,17 +33,19 @@ int main(int argc, char* argv[])
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
   float *bias_libxsmm, *delbias_libxsmm;
-  unsigned char *relumask_libxsmm;
+  unsigned char *relumask_libxsmm = NULL;
   my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
-  my_cnn_config my_cnn_cfg;
+  cnn_tpp_config cnn_tpp_cfg;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   int bc = 64, bk = 64;
   int overwrite_output = 1;
+  int avoid_bwd_wt_trans = 0;
   naive_conv_t naive_param;
-  void* scratch;
+  void* scratch = NULL;
   int fuse_type = 0;
+  int zero_output_rims_fwd = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -103,10 +106,15 @@ int main(int argc, char* argv[])
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
-  if (argc > i) overwrite_output = atoi(argv[i++]);
   if (argc > i) fuse_type = atoi(argv[i++]);
   if (argc > i) bc = atoi(argv[i++]);
   if (argc > i) bk = atoi(argv[i++]);
+  if (argc > i) overwrite_output   = atoi(argv[i++]);
+  if (argc > i) avoid_bwd_wt_trans = atoi(argv[i++]);
+  if (argc > i) zero_output_rims_fwd = atoi(argv[i++]);
+
+  LIBXSMM_UNUSED(format);
+  LIBXSMM_UNUSED(delbias_libxsmm);
 
   if ( fuse_type == 0 ) {
     my_fuse = MY_ELTWISE_FUSE_NONE;
@@ -122,6 +130,11 @@ int main(int argc, char* argv[])
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");
+    return 0;
+  }
+
+  if ((type != 'F') && (zero_output_rims_fwd > 0)) {
+    printf("Supporting zero_output rims only for fwd pass...\n");
     return 0;
   }
 
@@ -143,6 +156,11 @@ int main(int argc, char* argv[])
     pad_w_in = pad_w;
     pad_h_out = pad_h;
     pad_w_out = pad_w;
+  }
+
+  if (zero_output_rims_fwd > 0) {
+    pad_h_out = zero_output_rims_fwd;
+    pad_w_out = zero_output_rims_fwd;
   }
 
   /* deriving some values for naive code */
@@ -198,7 +216,20 @@ int main(int argc, char* argv[])
   if (overwrite_output > 0 ) {
     printf("Using Overwrite Option\n");
   }
-
+  if (avoid_bwd_wt_trans > 0) {
+    printf("External transpose of weights\n");
+  }
+  if ( fuse_type == 0 ) {
+    my_fuse = MY_ELTWISE_FUSE_NONE;
+  } else if ( fuse_type == 1 ) {
+    printf("Fusion of bias\n");
+  } else if ( fuse_type == 2 ) {
+    printf("Fusion of relu\n");
+  } else if ( fuse_type == 4 ) {
+    printf("Fusion of bias+relu\n");
+  } else {
+    /* cannot happen */
+  }
   /* allocate data */
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   naive_input_save      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
@@ -325,19 +356,23 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  my_cnn_cfg = setup_my_cnn_fwd(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
-      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output);
+  cnn_tpp_cfg = setup_cnn_tpp(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
+      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans, zero_output_rims_fwd );
 
   /* Copy input/output/weight tensors to correct format */
- tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, my_cnn_cfg.ifmblock);
- tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
- tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, my_cnn_cfg.ifmblock, my_cnn_cfg.ofmblock);
+  tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+  tensor_copy_NCHW_to_NCHWc (naive_output_save, output_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+  /* In this case put garbage in libxsmm_output rim to make sure zero riming works as expected  */
+  if (zero_output_rims_fwd > 0) {
+    tensor_pollute_rim_NCHWc(output_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock, pad_h_out, pad_w_out, 42.0);
+  }
+  tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+  if (avoid_bwd_wt_trans > 0) {
+    tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+  }
 
-  /* let's allocate  scratch */
- my_convolution_setup_fwd_scratch( &my_cnn_cfg );
-
-  if ( my_cnn_cfg.fwd_scratch_size > 0 ) {
-    size_t alloc_size = my_cnn_cfg.fwd_scratch_size;
+  if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
+    size_t alloc_size = cnn_tpp_cfg.scratch_size;
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -356,11 +391,11 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+      cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
           bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
     /* copy out data */
-    tensor_copy_NCHWc_to_NCHW (output_libxsmm, naive_libxsmm_output, nImg, nOfm, ofhp, ofwp, my_cnn_cfg.ofmblock);
+    tensor_copy_NCHWc_to_NCHW (output_libxsmm, naive_libxsmm_output, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
 
     /* compare */
     libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0);
@@ -372,7 +407,82 @@ int main(int argc, char* argv[])
     printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
     printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
+  }
 
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_NEQ(0, check) ) {
+    printf("##########################################\n");
+    printf("#   Correctness - BWD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* let's do some additional init such that we can run passes standalone */
+    tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+          relumask_libxsmm, 0, tid, scratch );
+    }
+
+    /* copy out data */
+    tensor_copy_NCHWc_to_NCHW (dinput_libxsmm, naive_libxsmm_input, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+
+    /* compare */
+    libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_bwd);
+  }
+
+  if ((type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#   Correctness - UPD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+    tensor_copy_NCHW_to_NCHWc (naive_output_wu,   doutput_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
+    tensor_copy_KCRS_to_KCRSck(naive_filter     , dfilter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+          NULL, 0, tid, scratch );
+    }
+
+    tensor_copy_KCRSck_to_KCRS(dfilter_libxsmm , naive_libxsmm_filter, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+
+    /* compare */
+    libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_upd);
+  }
+
+  if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -388,7 +498,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_cnn_fwd_exec( my_cnn_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+        cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
             bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
@@ -403,6 +513,74 @@ int main(int argc, char* argv[])
     printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
         ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+  }
+
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    printf("##########################################\n");
+    printf("#   Performance - BWD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+
+#if defined(_OPENMP)
+#     pragma omp parallel  private(i)
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      for (i = 0; i < iters; ++i) {
+        cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+            relumask_libxsmm, 0, tid, scratch );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+    printf("bp time = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+  }
+
+  if (type == 'A' || type == 'U') {
+    printf("##########################################\n");
+    printf("#   Performance - UPD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      for (i = 0; i < iters; ++i) {
+        cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+            NULL, 0, tid, scratch );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+    printf("wu time = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
   }
 
   /* deallocate data */
