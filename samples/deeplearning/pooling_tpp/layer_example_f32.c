@@ -19,63 +19,59 @@
 /* include TPP-based dnn library */
 #include "../op_lib_tpp/pooling_tpp.h"
 
-#define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
-  fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
-}
-
 int main(int argc, char* argv[])
 {
   float *naive_input,     *naive_output,     *naive_delinput,     *naive_deloutput;
   float *naive_input_pad, *naive_output_pad, *naive_delinput_pad, *naive_deloutput_pad;
   float *naive_libxsmm_output, *naive_libxsmm_delinput;
-  libxsmm_blasint *naive_mask, *naive_libxsmm_mask;
+  int *naive_mask, *naive_libxsmm_mask;
   float *input_libxsmm, *output_libxsmm, *delinput_libxsmm, *deloutput_libxsmm;
-  libxsmm_blasint *mask_libxsmm;
+  int *mask_libxsmm;
   my_pooling_fwd_config fwd_cfg;
   my_pooling_bwd_config bwd_cfg;
   my_pooling_type pool_type_cfg;
 
-  int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
-  int stride_h, stride_w;
+  libxsmm_blasint ifhp, ifwp, ofhp, ofwp, ofh, ofw;
+  libxsmm_blasint stride_h, stride_w;
   naive_pooling_t naive_param;
   void* scratch;
   size_t scratch_size = 0;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
-  int iters = 10;         /* repetitions of benchmark */
-  int ifw = 14;           /* input width, "W" */
-  int ifh = 20;           /* input height, "H" */
-  int nImg = 32;          /* mini-batch size, "N" */
-  int nFm = 256;          /* number of input feature maps, "C" */
-  int stride = 1;         /* stride when accessing inputs */
-  int kh = 2;             /* kernel size height */
-  int kw = 2;             /* kernel size width */
-  int pad_h = 0;          /* pad in h direction */
-  int pad_w = 0;          /* pad in w direction */
-  int pad_h_in = 0;       /* padding mode */
-  int pad_w_in = 0;       /* padding mode */
-  int pad_h_out = 0;      /* padding mode */
-  int pad_w_out = 0;      /* padding mode */
-  int pool_type = 0;      /* max pooling */
+  libxsmm_blasint iters = 10;         /* repetitions of benchmark */
+  libxsmm_blasint ifw = 14;           /* input width, "W" */
+  libxsmm_blasint ifh = 20;           /* input height, "H" */
+  libxsmm_blasint nImg = 32;          /* mini-batch size, "N" */
+  libxsmm_blasint nFm = 256;          /* number of input feature maps, "C" */
+  libxsmm_blasint stride = 1;         /* stride when accessing inputs */
+  libxsmm_blasint kh = 2;             /* kernel size height */
+  libxsmm_blasint kw = 2;             /* kernel size width */
+  libxsmm_blasint pad_h = 0;          /* pad in h direction */
+  libxsmm_blasint pad_w = 0;          /* pad in w direction */
+  libxsmm_blasint pad_h_in = 0;       /* padding mode */
+  libxsmm_blasint pad_w_in = 0;       /* padding mode */
+  libxsmm_blasint pad_h_out = 0;      /* padding mode */
+  libxsmm_blasint pad_w_out = 0;      /* padding mode */
+  libxsmm_blasint pool_type = 0;      /* max pooling */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP */
   char format = 'L';
-  int bc = 32;
+  libxsmm_blasint bc = 32;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
 
 #if defined(_OPENMP)
-  int nThreads = omp_get_max_threads(); /* number of threads */
+  libxsmm_blasint nThreads = (libxsmm_blasint)omp_get_max_threads(); /* number of threads */
 #else
-  int nThreads = 1; /* number of threads */
+  libxsmm_blasint nThreads = 1; /* number of threads */
 #endif
 
   unsigned long long l_start, l_end;
   double l_total = 0.0;
   double gb = 0.0;
   double gib = 0.0;
-  int i;
+  libxsmm_blasint i;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, diff;
   libxsmm_matdiff_clear(&norms_fwd);
@@ -172,25 +168,25 @@ int main(int argc, char* argv[])
 #endif
 
   /* allocate data */
-  naive_input                = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
-  naive_input_pad            = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_delinput             = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
-  naive_delinput_pad         = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_mask                 = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_output               = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_output_pad           = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_deloutput            = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
-  naive_deloutput_pad        = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_input                = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_input_pad            = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_delinput             = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_delinput_pad         = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_mask                 = (int*)  libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(int),   2097152);
+  naive_output               = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_output_pad           = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_deloutput            = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_deloutput_pad        = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
 
-  naive_libxsmm_output       = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_libxsmm_delinput     = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_libxsmm_mask         = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_libxsmm_output       = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_delinput     = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_libxsmm_mask         = (int*)  libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(int),   2097152);
 
-  input_libxsmm              = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  delinput_libxsmm           = (float*          )libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  output_libxsmm             = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  deloutput_libxsmm          = (float*          )libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  mask_libxsmm               = (libxsmm_blasint*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  input_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  delinput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  output_libxsmm             = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  deloutput_libxsmm          = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  mask_libxsmm               = (int*)  libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(int),   2097152);
 
   /* initialize data */
   init_buf(naive_input,          nImg*nFm*ifh*ifw, 0, 0);
@@ -230,19 +226,19 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
-  if ( pool_type == 0 ) {
-    pool_type_cfg = MY_POOLING_TYPE_MAX;
-  } else if ( pool_type == 1 ) {
-    pool_type_cfg = MY_POOLING_TYPE_AVG;
-  } else {
-    return 0;
-  }
-
   if (format == 'A' || format == 'L') {
     printf("\n");
     printf("##########################################\n");
     printf("#      Setting Up  (custom-Storage)      #\n");
     printf("##########################################\n");
+
+    if ( pool_type == 0 ) {
+      pool_type_cfg = MY_POOLING_TYPE_MAX;
+    } else if ( pool_type == 1 ) {
+      pool_type_cfg = MY_POOLING_TYPE_AVG;
+    } else {
+      return 0;
+    }
 
     /* setup LIBXSMM handle */
     fwd_cfg = setup_my_pooling_fwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
@@ -410,6 +406,7 @@ int main(int argc, char* argv[])
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
+    /* clean-up */
     libxsmm_free( scratch );
   }
 
