@@ -41,6 +41,9 @@ typedef struct my_pooling_fwd_config {
   libxsmm_blasint  pad_h_out;
   libxsmm_blasint  pad_w_out;
   libxsmm_blasint  threads;
+  libxsmm_datatype datatype_in;
+  libxsmm_datatype datatype_out;
+  libxsmm_datatype datatype_comp;
   my_pooling_type  pool_type;
   my_pooling_pass  pass_type;
   size_t           scratch_size;
@@ -67,19 +70,23 @@ typedef struct my_pooling_bwd_config {
   libxsmm_blasint  pad_h_out;
   libxsmm_blasint  pad_w_out;
   libxsmm_blasint  threads;
+  libxsmm_datatype datatype_in;
+  libxsmm_datatype datatype_out;
+  libxsmm_datatype datatype_comp;
   my_pooling_type  pool_type;
   my_pooling_pass  pass_type;
   size_t           scratch_size;
   libxsmm_barrier* barrier;
 } my_pooling_bwd_config;
 
-my_pooling_fwd_config setup_my_pooling_fwd( libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W,
-                                            libxsmm_blasint R, libxsmm_blasint S,
-                                            libxsmm_blasint stride_h, libxsmm_blasint stride_w,
-                                            libxsmm_blasint pad_h, libxsmm_blasint pad_w,
-                                            libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
-                                            libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-                                            libxsmm_blasint bc, libxsmm_blasint threads, my_pooling_type pool_type ) {
+my_pooling_fwd_config setup_my_pooling_fwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+                                            const libxsmm_blasint R, const libxsmm_blasint S,
+                                            const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
+                                            const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
+                                            const libxsmm_blasint pad_h_in, const libxsmm_blasint pad_w_in,
+                                            const libxsmm_blasint pad_h_out, const libxsmm_blasint pad_w_out,
+                                            const libxsmm_blasint bc, const libxsmm_blasint threads, const my_pooling_type pool_type,
+                                            const libxsmm_datatype datatype_in, const libxsmm_datatype datatype_out, const libxsmm_datatype datatype_comp ) {
   my_pooling_fwd_config res;
 
   /* setting args */
@@ -107,6 +114,10 @@ my_pooling_fwd_config setup_my_pooling_fwd( libxsmm_blasint N, libxsmm_blasint C
    /* create barrier */
   res.threads = threads;
   res.barrier = libxsmm_barrier_create(threads, 1);
+  /* datatype */
+  res.datatype_in = datatype_in;
+  res.datatype_out = datatype_out;
+  res.datatype_comp = datatype_comp;
   /* calculate scratch size for local pooling copies of one feature map block per thread */
   res.scratch_size = (sizeof(float) * ( (size_t)H + (size_t)LIBXSMM_MAX(pad_h_in, pad_h_out)*2 )
                                     * ( (size_t)W + (size_t)LIBXSMM_MAX(pad_w_in, pad_w_out)*2 )
@@ -115,13 +126,14 @@ my_pooling_fwd_config setup_my_pooling_fwd( libxsmm_blasint N, libxsmm_blasint C
   return res;
 }
 
-my_pooling_bwd_config setup_my_pooling_bwd( libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W,
-                                            libxsmm_blasint R, libxsmm_blasint S,
-                                            libxsmm_blasint stride_h, libxsmm_blasint stride_w,
-                                            libxsmm_blasint pad_h, libxsmm_blasint pad_w,
-                                            libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
-                                            libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-                                            libxsmm_blasint bc, libxsmm_blasint threads, my_pooling_type pool_type ) {
+my_pooling_bwd_config setup_my_pooling_bwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+                                            const libxsmm_blasint R, const libxsmm_blasint S,
+                                            const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
+                                            const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
+                                            const libxsmm_blasint pad_h_in, const libxsmm_blasint pad_w_in,
+                                            const libxsmm_blasint pad_h_out, const libxsmm_blasint pad_w_out,
+                                            const libxsmm_blasint bc, const libxsmm_blasint threads, const my_pooling_type pool_type,
+                                            const libxsmm_datatype datatype_in, const libxsmm_datatype datatype_out, const libxsmm_datatype datatype_comp ) {
   my_pooling_bwd_config res;
 
   /* setting args */
@@ -149,6 +161,10 @@ my_pooling_bwd_config setup_my_pooling_bwd( libxsmm_blasint N, libxsmm_blasint C
    /* create barrier */
   res.threads = threads;
   res.barrier = libxsmm_barrier_create(threads, 1);
+  /* datatype */
+  res.datatype_in = datatype_in;
+  res.datatype_out = datatype_out;
+  res.datatype_comp = datatype_comp;
   /* calculate scratch size for local pooling copies of one feature map block per thread */
   res.scratch_size = (sizeof(float) * ( (size_t)H + (size_t)LIBXSMM_MAX(pad_h_in, pad_h_out)*2 )
                                     * ( (size_t)W + (size_t)LIBXSMM_MAX(pad_w_in, pad_w_out)*2 )
@@ -157,8 +173,8 @@ my_pooling_bwd_config setup_my_pooling_bwd( libxsmm_blasint N, libxsmm_blasint C
   return res;
 }
 
-void my_pooling_fwd_exec_f32( my_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
-                              libxsmm_blasint start_tid, libxsmm_blasint my_tid, void* scratch ) {
+void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
+                              const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
   const libxsmm_blasint ofwp = cfg.ofw + 2*cfg.pad_w_out;
@@ -265,8 +281,8 @@ void my_pooling_fwd_exec_f32( my_pooling_fwd_config cfg, const float* in_act_ptr
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_pooling_fwd_exec_bf16( my_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
-                               libxsmm_blasint start_tid, libxsmm_blasint my_tid, void* scratch ) {
+void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
+                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
   const libxsmm_blasint ofwp = cfg.ofw + 2*cfg.pad_w_out;
@@ -379,8 +395,8 @@ void my_pooling_fwd_exec_bf16( my_pooling_fwd_config cfg, const libxsmm_bfloat16
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_pooling_bwd_exec_f32( my_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
-                              libxsmm_blasint start_tid, libxsmm_blasint my_tid, void* scratch ) {
+void my_pooling_bwd_exec_f32( const my_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
+                              const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
   const libxsmm_blasint ofwp = cfg.ofw + 2*cfg.pad_w_out;
@@ -483,8 +499,8 @@ void my_pooling_bwd_exec_f32( my_pooling_bwd_config cfg, float* din_act_ptr, con
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_pooling_bwd_exec_bf16( my_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
-                               libxsmm_blasint start_tid, libxsmm_blasint my_tid, void* scratch ) {
+void my_pooling_bwd_exec_bf16( const my_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
+                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
   const libxsmm_blasint ofwp = cfg.ofw + 2*cfg.pad_w_out;
@@ -591,5 +607,27 @@ void my_pooling_bwd_exec_bf16( my_pooling_bwd_config cfg, libxsmm_bfloat16* din_
   }
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
+}
+
+void my_pooling_fwd_exec( const my_pooling_fwd_config cfg, const void* in_act_ptr, void* out_act_ptr, int* mask_ptr,
+                          const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
+  if ( (cfg.datatype_in == LIBXSMM_DATATYPE_F32) && (cfg.datatype_out == LIBXSMM_DATATYPE_F32) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
+    my_pooling_fwd_exec_f32( cfg, (const float*)in_act_ptr, (float*)out_act_ptr, mask_ptr, start_tid, my_tid, scratch );
+  } else if ( (cfg.datatype_in == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_out == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
+    my_pooling_fwd_exec_bf16( cfg, (const libxsmm_bfloat16*)in_act_ptr, (libxsmm_bfloat16*)out_act_ptr, mask_ptr, start_tid, my_tid, scratch );
+  } else {
+    /* shouldn't happen */
+  }
+}
+
+void my_pooling_bwd_exec( const my_pooling_bwd_config cfg, void* din_act_ptr, const void* dout_act_ptr, const int* mask_ptr,
+                          const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
+  if ( (cfg.datatype_in == LIBXSMM_DATATYPE_F32) && (cfg.datatype_out == LIBXSMM_DATATYPE_F32) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
+    my_pooling_bwd_exec_f32( cfg, (float*)din_act_ptr, (const float*)dout_act_ptr, mask_ptr, start_tid, my_tid, scratch );
+  } else if ( (cfg.datatype_in == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_out == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
+    my_pooling_bwd_exec_bf16( cfg, (libxsmm_bfloat16*)din_act_ptr, (const libxsmm_bfloat16*)dout_act_ptr, mask_ptr, start_tid, my_tid, scratch );
+  } else {
+    /* shouldn't happen */
+  }
 }
 

@@ -243,12 +243,14 @@ int main(int argc, char* argv[])
     /* setup LIBXSMM handle */
     fwd_cfg = setup_my_pooling_fwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
                                     pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
-                                    bc, nThreads, pool_type_cfg );
+                                    bc, nThreads, pool_type_cfg,
+                                    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
     /* setup LIBXSMM handle */
     bwd_cfg = setup_my_pooling_bwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
                                     pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
-                                    bc, nThreads, pool_type_cfg );
+                                    bc, nThreads, pool_type_cfg,
+                                    LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
     /* let's allocate and bind scratch */
     scratch_size = LIBXSMM_MAX( fwd_cfg.scratch_size, bwd_cfg.scratch_size );
@@ -276,8 +278,8 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
-                                 0, tid, scratch );
+        my_pooling_fwd_exec( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                             0, tid, scratch );
       }
       /* copy out data */
       tensor_copy_NCHWc_to_NCHW( output_libxsmm, naive_libxsmm_output, nImg, nFm, ofhp, ofwp, bc );
@@ -311,8 +313,8 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
-                                 0, tid, scratch );
+        my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                             0, tid, scratch );
       }
 
       /* copy out data */
@@ -347,8 +349,8 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
-                                   0, tid, scratch );
+          my_pooling_fwd_exec( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                               0, tid, scratch );
         }
       }
       l_end = libxsmm_timer_tick();
@@ -385,8 +387,8 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
-                                   0, tid, scratch );
+          my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                               0, tid, scratch );
         }
       }
       l_end = libxsmm_timer_tick();
