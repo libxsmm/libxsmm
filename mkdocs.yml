@@ -1,6 +1,6 @@
 site_name: LIBXSMM
 site_author: Hans Pabst
-copyright: Copyright (c) 2009-2021, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
+copyright: Copyright (c) 2009-2022, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
 site_description: Library targeting Intel Architecture for specialized dense and sparse matrix operations, and deep learning primitives.
 repo_url: https://github.com/libxsmm/libxsmm/
 edit_uri: edit/master/documentation

@@ -15,7 +15,7 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 GIT=$(command -v git)
 
-USR=hfp
+USR=libxsmm
 PRJ=libxsmm
 URL="https://api.github.com/repos/${USR}/${PRJ}/forks"
 

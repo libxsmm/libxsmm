@@ -16,7 +16,7 @@ BANNED_CHARS="\t"
 PATPRE="s/^[[:space:]][[:space:]]*#/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 PATBAN="s/[${BANNED_CHARS}]/"
-PATCMT="s/[[:space:]]\/\//"
+PATCMT="s/^[[:space:]][[:space:]]*\/\//"
 PATEOL="s/\r$/"
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
