@@ -1556,7 +1556,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                          unsigned int                            i_mask_reg) {
   unsigned int im, in;
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
-  LIBXSMM_UNUSED(i_mask_reg);
   LIBXSMM_UNUSED(i_vlen);
 
   for (in = 0; in < i_n_blocking; in++) {
@@ -1571,7 +1570,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
         unsigned char l_blend_reg = 7;
         unsigned char l_tmp_pred_reg = 6;
 
-        /* todo change implementation to sve */
+        libxsmm_aarch64_sve_type l_sve_type = LIBXSMM_AARCH64_SVE_TYPE_S;
 
         /* draw a random number */
         libxsmm_generator_xoshiro128p_f32_aarch64_sve( io_generated_code,
@@ -1586,11 +1585,11 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                        LIBXSMM_AARCH64_SVE_TYPE_S, i_mask_reg );
 
         /* compare with p */
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_R_V,
-                                                   i_micro_kernel_config->dropout_prob_vreg,
-                                                   i_micro_kernel_config->dropout_vreg_tmp2,
-                                                   0, i_micro_kernel_config->dropout_vreg_tmp0,
-                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V,
+                                                 i_micro_kernel_config->dropout_prob_vreg,
+                                                 i_micro_kernel_config->dropout_vreg_tmp2,
+                                                 0, l_blend_reg, /* i_micro_kernel_config->dropout_vreg_tmp0 */
+                                                 i_mask_reg, l_sve_type );
 
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) {
           libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult( io_generated_code, im, i_m_blocking,
@@ -1607,18 +1606,20 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
         }
 
         /* weight */
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                   cur_vreg, i_micro_kernel_config->dropout_invprob_vreg, 0, cur_vreg,
-                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                 cur_vreg, i_micro_kernel_config->dropout_invprob_vreg, 0, cur_vreg,
+                                                 i_mask_reg, l_sve_type );
 
+        /* todo why is this constant not saved in a register? */
         /* blend zero and multiplication result together */
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                                   i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp1,
-                                                   0, i_micro_kernel_config->dropout_vreg_tmp1,
-                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_BIF_V,
-                                                   i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp0, 0, cur_vreg,
-                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+                                                 i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp1,
+                                                 0, i_micro_kernel_config->dropout_vreg_tmp1,
+                                                 i_mask_reg, l_sve_type );
+        
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
+                                                 cur_vreg, i_micro_kernel_config->dropout_vreg_tmp1, 0, cur_vreg,
+                                                 l_blend_reg, l_sve_type );
 
       } else {
 
@@ -1724,7 +1725,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout_inv( libxsmm_generated_c
 
         /* select which value is set to 0 */
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
-                                                 i_micro_kernel_config->dropout_vreg_zero, cur_vreg, 0, cur_vreg,
+                                                 cur_vreg, i_micro_kernel_config->dropout_vreg_zero, 0, cur_vreg,
                                                  l_blend_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
       } else {
         /* weight */
@@ -2803,7 +2804,7 @@ void libxsmm_generator_unary_aarch64_binary_2d_microkernel( libxsmm_generated_co
           i_gp_reg_mapping->gp_reg_in2, LIBXSMM_AARCH64_INSTR_GP_META_ADD, inner_unroll_factor, loop_type);
     }
 
-    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {
+    if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) {/* adjust relu/dropout mask pointers */
       if ((i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU)       || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) ||
           (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV) ||
           (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU)        || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV) ) {

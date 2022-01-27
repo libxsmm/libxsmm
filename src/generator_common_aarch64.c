@@ -839,16 +839,16 @@ void libxsmm_generator_xoshiro128p_f32_aarch64_asimd( libxsmm_generated_code* io
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_xoshiro128p_f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
-                                                      const unsigned int      i_vec_reg_rng_state_0,
-                                                      const unsigned int      i_vec_reg_rng_state_1,
-                                                      const unsigned int      i_vec_reg_rng_state_2,
-                                                      const unsigned int      i_vec_reg_rng_state_3,
-                                                      const unsigned int      i_vec_reg_rng_tmp_0,
-                                                      const unsigned int      i_vec_reg_rng_tmp_1,
-                                                      const unsigned int      i_vec_reg_rng_one,
-                                                      const unsigned int      o_vec_reg_rng,
-                                                      const libxsmm_aarch64_sve_type i_sve_type,
-                                                      const unsigned char     i_pred_reg ) {
+                                                    const unsigned int      i_vec_reg_rng_state_0,
+                                                    const unsigned int      i_vec_reg_rng_state_1,
+                                                    const unsigned int      i_vec_reg_rng_state_2,
+                                                    const unsigned int      i_vec_reg_rng_state_3,
+                                                    const unsigned int      i_vec_reg_rng_tmp_0,
+                                                    const unsigned int      i_vec_reg_rng_tmp_1,
+                                                    const unsigned int      i_vec_reg_rng_one,
+                                                    const unsigned int      o_vec_reg_rng,
+                                                    const libxsmm_aarch64_sve_type i_sve_type,
+                                                    const unsigned char     i_pred_reg ) {
   /* generates random values */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
                                                i_vec_reg_rng_state_0, i_vec_reg_rng_state_3, 0, o_vec_reg_rng, i_pred_reg, i_sve_type );
@@ -894,28 +894,28 @@ void libxsmm_generator_xoshiro128p_f32_aarch64_sve( libxsmm_generated_code* io_g
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
-                                                                const unsigned int                    i_vec_thres,
-                                                                const unsigned int                    i_vec_absmask,
-                                                                const unsigned int                    i_vec_scale,
-                                                                const unsigned int                    i_vec_shifter,
-                                                                const unsigned int                    i_vec_half,
-                                                                const unsigned int                    i_vec_c0,
-                                                                const unsigned int                    i_vec_c01,
-                                                                const unsigned int                    i_vec_c02,
-                                                                const unsigned int                    i_vec_c03,
-                                                                const unsigned int                    i_vec_c1,
-                                                                const unsigned int                    i_vec_c11,
-                                                                const unsigned int                    i_vec_c12,
-                                                                const unsigned int                    i_vec_c13,
-                                                                const unsigned int                    i_vec_c2,
-                                                                const unsigned int                    i_vec_c21,
-                                                                const unsigned int                    i_vec_c22,
-                                                                const unsigned int                    i_vec_c23,
-                                                                const unsigned int                    i_vec_tmp,
-                                                                const unsigned int                    i_vec_tmp1,
-                                                                const unsigned int                    i_gp_reg_tmp,
-                                                                const unsigned int                    i_gp_reg_tmp1,
-                                                                const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
+                                                                      const unsigned int                    i_vec_thres,
+                                                                      const unsigned int                    i_vec_absmask,
+                                                                      const unsigned int                    i_vec_scale,
+                                                                      const unsigned int                    i_vec_shifter,
+                                                                      const unsigned int                    i_vec_half,
+                                                                      const unsigned int                    i_vec_c0,
+                                                                      const unsigned int                    i_vec_c01,
+                                                                      const unsigned int                    i_vec_c02,
+                                                                      const unsigned int                    i_vec_c03,
+                                                                      const unsigned int                    i_vec_c1,
+                                                                      const unsigned int                    i_vec_c11,
+                                                                      const unsigned int                    i_vec_c12,
+                                                                      const unsigned int                    i_vec_c13,
+                                                                      const unsigned int                    i_vec_c2,
+                                                                      const unsigned int                    i_vec_c21,
+                                                                      const unsigned int                    i_vec_c22,
+                                                                      const unsigned int                    i_vec_c23,
+                                                                      const unsigned int                    i_vec_tmp,
+                                                                      const unsigned int                    i_vec_tmp1,
+                                                                      const unsigned int                    i_gp_reg_tmp,
+                                                                      const unsigned int                    i_gp_reg_tmp1,
+                                                                      const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
 
   unsigned long long thres_array = 0x40879fff ;
   unsigned long long absmask_array = 0x7fffffff ;
@@ -953,29 +953,29 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_asimd( libxsmm_ge
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*               io_generated_code,
-                                                                const unsigned int                    i_vec_thres,
-                                                                const unsigned int                    i_vec_absmask,
-                                                                const unsigned int                    i_vec_scale,
-                                                                const unsigned int                    i_vec_shifter,
-                                                                const unsigned int                    i_vec_half,
-                                                                const unsigned int                    i_vec_c0,
-                                                                const unsigned int                    i_vec_c01,
-                                                                const unsigned int                    i_vec_c02,
-                                                                const unsigned int                    i_vec_c03,
-                                                                const unsigned int                    i_vec_c1,
-                                                                const unsigned int                    i_vec_c11,
-                                                                const unsigned int                    i_vec_c12,
-                                                                const unsigned int                    i_vec_c13,
-                                                                const unsigned int                    i_vec_c2,
-                                                                const unsigned int                    i_vec_c21,
-                                                                const unsigned int                    i_vec_c22,
-                                                                const unsigned int                    i_vec_c23,
-                                                                const unsigned int                    i_vec_tmp,
-                                                                const unsigned int                    i_vec_tmp1,
-                                                                const unsigned int                    i_gp_reg_tmp,
-                                                                const unsigned int                    i_gp_reg_tmp1,
-                                                                const libxsmm_aarch64_sve_type        i_sve_type,
-                                                                const unsigned char                   i_pred_reg ) {
+                                                                    const unsigned int                    i_vec_thres,
+                                                                    const unsigned int                    i_vec_absmask,
+                                                                    const unsigned int                    i_vec_scale,
+                                                                    const unsigned int                    i_vec_shifter,
+                                                                    const unsigned int                    i_vec_half,
+                                                                    const unsigned int                    i_vec_c0,
+                                                                    const unsigned int                    i_vec_c01,
+                                                                    const unsigned int                    i_vec_c02,
+                                                                    const unsigned int                    i_vec_c03,
+                                                                    const unsigned int                    i_vec_c1,
+                                                                    const unsigned int                    i_vec_c11,
+                                                                    const unsigned int                    i_vec_c12,
+                                                                    const unsigned int                    i_vec_c13,
+                                                                    const unsigned int                    i_vec_c2,
+                                                                    const unsigned int                    i_vec_c21,
+                                                                    const unsigned int                    i_vec_c22,
+                                                                    const unsigned int                    i_vec_c23,
+                                                                    const unsigned int                    i_vec_tmp,
+                                                                    const unsigned int                    i_vec_tmp1,
+                                                                    const unsigned int                    i_gp_reg_tmp,
+                                                                    const unsigned int                    i_gp_reg_tmp1,
+                                                                    const libxsmm_aarch64_sve_type        i_sve_type,
+                                                                    const unsigned char                   i_pred_reg ) {
 
   unsigned long long thres_array = 0x40879fff ;
   unsigned long long absmask_array = 0x7fffffff ;
@@ -1003,28 +1003,28 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_gene
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
-                                                                    const unsigned int                    i_vec_thres,
-                                                                    const unsigned int                    i_vec_absmask,
-                                                                    const unsigned int                    i_vec_scale,
-                                                                    const unsigned int                    i_vec_shifter,
-                                                                    const unsigned int                    i_vec_half,
-                                                                    const unsigned int                    i_vec_c0,
-                                                                    const unsigned int                    i_vec_c01,
-                                                                    const unsigned int                    i_vec_c02,
-                                                                    const unsigned int                    i_vec_c03,
-                                                                    const unsigned int                    i_vec_c1,
-                                                                    const unsigned int                    i_vec_c11,
-                                                                    const unsigned int                    i_vec_c12,
-                                                                    const unsigned int                    i_vec_c13,
-                                                                    const unsigned int                    i_vec_c2,
-                                                                    const unsigned int                    i_vec_c21,
-                                                                    const unsigned int                    i_vec_c22,
-                                                                    const unsigned int                    i_vec_c23,
-                                                                    const unsigned int                    i_vec_tmp,
-                                                                    const unsigned int                    i_vec_tmp1,
-                                                                    const unsigned int                    i_gp_reg_tmp,
-                                                                    const unsigned int                    i_gp_reg_tmp1,
-                                                                    const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
+                                                                          const unsigned int                    i_vec_thres,
+                                                                          const unsigned int                    i_vec_absmask,
+                                                                          const unsigned int                    i_vec_scale,
+                                                                          const unsigned int                    i_vec_shifter,
+                                                                          const unsigned int                    i_vec_half,
+                                                                          const unsigned int                    i_vec_c0,
+                                                                          const unsigned int                    i_vec_c01,
+                                                                          const unsigned int                    i_vec_c02,
+                                                                          const unsigned int                    i_vec_c03,
+                                                                          const unsigned int                    i_vec_c1,
+                                                                          const unsigned int                    i_vec_c11,
+                                                                          const unsigned int                    i_vec_c12,
+                                                                          const unsigned int                    i_vec_c13,
+                                                                          const unsigned int                    i_vec_c2,
+                                                                          const unsigned int                    i_vec_c21,
+                                                                          const unsigned int                    i_vec_c22,
+                                                                          const unsigned int                    i_vec_c23,
+                                                                          const unsigned int                    i_vec_tmp,
+                                                                          const unsigned int                    i_vec_tmp1,
+                                                                          const unsigned int                    i_gp_reg_tmp,
+                                                                          const unsigned int                    i_gp_reg_tmp1,
+                                                                          const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
 
   unsigned long long thres_array = 0x408f5fff ;
   unsigned long long absmask_array = 0x7fffffff ;
@@ -1064,29 +1064,29 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsm
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_generated_code*               io_generated_code,
-                                                                    const unsigned int                    i_vec_thres,
-                                                                    const unsigned int                    i_vec_absmask,
-                                                                    const unsigned int                    i_vec_scale,
-                                                                    const unsigned int                    i_vec_shifter,
-                                                                    const unsigned int                    i_vec_half,
-                                                                    const unsigned int                    i_vec_c0,
-                                                                    const unsigned int                    i_vec_c01,
-                                                                    const unsigned int                    i_vec_c02,
-                                                                    const unsigned int                    i_vec_c03,
-                                                                    const unsigned int                    i_vec_c1,
-                                                                    const unsigned int                    i_vec_c11,
-                                                                    const unsigned int                    i_vec_c12,
-                                                                    const unsigned int                    i_vec_c13,
-                                                                    const unsigned int                    i_vec_c2,
-                                                                    const unsigned int                    i_vec_c21,
-                                                                    const unsigned int                    i_vec_c22,
-                                                                    const unsigned int                    i_vec_c23,
-                                                                    const unsigned int                    i_vec_tmp,
-                                                                    const unsigned int                    i_vec_tmp1,
-                                                                    const unsigned int                    i_gp_reg_tmp,
-                                                                    const unsigned int                    i_gp_reg_tmp1,
-                                                                    const libxsmm_aarch64_sve_type        i_sve_type,
-                                                                    const unsigned char                   i_pred_reg ) {
+                                                                        const unsigned int                    i_vec_thres,
+                                                                        const unsigned int                    i_vec_absmask,
+                                                                        const unsigned int                    i_vec_scale,
+                                                                        const unsigned int                    i_vec_shifter,
+                                                                        const unsigned int                    i_vec_half,
+                                                                        const unsigned int                    i_vec_c0,
+                                                                        const unsigned int                    i_vec_c01,
+                                                                        const unsigned int                    i_vec_c02,
+                                                                        const unsigned int                    i_vec_c03,
+                                                                        const unsigned int                    i_vec_c1,
+                                                                        const unsigned int                    i_vec_c11,
+                                                                        const unsigned int                    i_vec_c12,
+                                                                        const unsigned int                    i_vec_c13,
+                                                                        const unsigned int                    i_vec_c2,
+                                                                        const unsigned int                    i_vec_c21,
+                                                                        const unsigned int                    i_vec_c22,
+                                                                        const unsigned int                    i_vec_c23,
+                                                                        const unsigned int                    i_vec_tmp,
+                                                                        const unsigned int                    i_vec_tmp1,
+                                                                        const unsigned int                    i_gp_reg_tmp,
+                                                                        const unsigned int                    i_gp_reg_tmp1,
+                                                                        const libxsmm_aarch64_sve_type        i_sve_type,
+                                                                        const unsigned char                   i_pred_reg ) {
 
   unsigned long long thres_array = 0x408f5fff ;
   unsigned long long absmask_array = 0x7fffffff ;
@@ -1116,24 +1116,24 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
-                                                 const unsigned int                    i_vec_x,
-                                                 const unsigned int                    i_vec_xr,
-                                                 const unsigned int                    i_vec_xa,
-                                                 const unsigned int                    i_vec_index,
-                                                 const unsigned int                    i_vec_C0,
-                                                 const unsigned int                    i_vec_C1,
-                                                 const unsigned int                    i_vec_C2,
-                                                 const unsigned int                    i_vec_thres,
-                                                 const unsigned int                    i_vec_absmask,
-                                                 const unsigned int                    i_vec_scale,
-                                                 const unsigned int                    i_vec_shifter,
-                                                 const unsigned int                    i_vec_half,
-                                                 const unsigned int                    i_vec_c0,
-                                                 const unsigned int                    i_vec_c1,
-                                                 const unsigned int                    i_vec_c2,
-                                                 const unsigned int                    i_vec_tmp,
-                                                 const unsigned int                    i_vec_tmp1,
-                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
+                                                       const unsigned int                    i_vec_x,
+                                                       const unsigned int                    i_vec_xr,
+                                                       const unsigned int                    i_vec_xa,
+                                                       const unsigned int                    i_vec_index,
+                                                       const unsigned int                    i_vec_C0,
+                                                       const unsigned int                    i_vec_C1,
+                                                       const unsigned int                    i_vec_C2,
+                                                       const unsigned int                    i_vec_thres,
+                                                       const unsigned int                    i_vec_absmask,
+                                                       const unsigned int                    i_vec_scale,
+                                                       const unsigned int                    i_vec_shifter,
+                                                       const unsigned int                    i_vec_half,
+                                                       const unsigned int                    i_vec_c0,
+                                                       const unsigned int                    i_vec_c1,
+                                                       const unsigned int                    i_vec_c2,
+                                                       const unsigned int                    i_vec_tmp,
+                                                       const unsigned int                    i_vec_tmp1,
+                                                       const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
 
     libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                               i_vec_x, i_vec_x, 0, i_vec_xr,
@@ -1248,25 +1248,25 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*  
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*               io_generated_code,
-                                                 const unsigned int                    i_vec_x,
-                                                 const unsigned int                    i_vec_xr,
-                                                 const unsigned int                    i_vec_xa,
-                                                 const unsigned int                    i_vec_index,
-                                                 const unsigned int                    i_vec_C0,
-                                                 const unsigned int                    i_vec_C1,
-                                                 const unsigned int                    i_vec_C2,
-                                                 const unsigned int                    i_vec_thres,
-                                                 const unsigned int                    i_vec_absmask,
-                                                 const unsigned int                    i_vec_scale,
-                                                 const unsigned int                    i_vec_shifter,
-                                                 const unsigned int                    i_vec_half,
-                                                 const unsigned int                    i_vec_c0,
-                                                 const unsigned int                    i_vec_c1,
-                                                 const unsigned int                    i_vec_c2,
-                                                 const unsigned int                    i_vec_tmp,
-                                                 const unsigned int                    i_vec_tmp1,
-                                                 const libxsmm_aarch64_sve_type        i_sve_type,
-                                                 const unsigned char                   i_pred_reg ) {
+                                                     const unsigned int                    i_vec_x,
+                                                     const unsigned int                    i_vec_xr,
+                                                     const unsigned int                    i_vec_xa,
+                                                     const unsigned int                    i_vec_index,
+                                                     const unsigned int                    i_vec_C0,
+                                                     const unsigned int                    i_vec_C1,
+                                                     const unsigned int                    i_vec_C2,
+                                                     const unsigned int                    i_vec_thres,
+                                                     const unsigned int                    i_vec_absmask,
+                                                     const unsigned int                    i_vec_scale,
+                                                     const unsigned int                    i_vec_shifter,
+                                                     const unsigned int                    i_vec_half,
+                                                     const unsigned int                    i_vec_c0,
+                                                     const unsigned int                    i_vec_c1,
+                                                     const unsigned int                    i_vec_c2,
+                                                     const unsigned int                    i_vec_tmp,
+                                                     const unsigned int                    i_vec_tmp1,
+                                                     const libxsmm_aarch64_sve_type        i_sve_type,
+                                                     const unsigned char                   i_pred_reg ) {
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,
@@ -1355,24 +1355,24 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd(  libxsmm_generated_code*                        io_generated_code,
-                                                      const unsigned int                             i_vec_x,
-                                                      const unsigned int                             i_vec_xr,
-                                                      const unsigned int                             i_vec_xa,
-                                                      const unsigned int                             i_vec_index,
-                                                      const unsigned int                             i_vec_C0,
-                                                      const unsigned int                             i_vec_C1,
-                                                      const unsigned int                             i_vec_C2,
-                                                      const unsigned int                             i_vec_thres,
-                                                      const unsigned int                             i_vec_absmask,
-                                                      const unsigned int                             i_vec_scale,
-                                                      const unsigned int                             i_vec_shifter,
-                                                      const unsigned int                             i_vec_half,
-                                                      const unsigned int                             i_vec_c0,
-                                                      const unsigned int                             i_vec_c1,
-                                                      const unsigned int                             i_vec_c2,
-                                                      const unsigned int                             i_vec_tmp,
-                                                      const unsigned int                             i_vec_tmp1,
-                                                      const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
+                                                            const unsigned int                             i_vec_x,
+                                                            const unsigned int                             i_vec_xr,
+                                                            const unsigned int                             i_vec_xa,
+                                                            const unsigned int                             i_vec_index,
+                                                            const unsigned int                             i_vec_C0,
+                                                            const unsigned int                             i_vec_C1,
+                                                            const unsigned int                             i_vec_C2,
+                                                            const unsigned int                             i_vec_thres,
+                                                            const unsigned int                             i_vec_absmask,
+                                                            const unsigned int                             i_vec_scale,
+                                                            const unsigned int                             i_vec_shifter,
+                                                            const unsigned int                             i_vec_half,
+                                                            const unsigned int                             i_vec_c0,
+                                                            const unsigned int                             i_vec_c1,
+                                                            const unsigned int                             i_vec_c2,
+                                                            const unsigned int                             i_vec_tmp,
+                                                            const unsigned int                             i_vec_tmp1,
+                                                            const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
 
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,
@@ -1501,7 +1501,78 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
                                                           const unsigned char                            i_pred_reg ) {
 
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             i_vec_x, i_vec_x, 0, i_vec_xr,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V,
+                                             i_vec_xr, LIBXSMM_AARCH64_SVE_REG_UNDEF, 31, i_vec_xr,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V,
+                                             i_vec_xr, LIBXSMM_AARCH64_SVE_REG_UNDEF, 31, i_vec_xr,
+                                             i_pred_reg, i_sve_type );
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_AND_V,
+                                             i_vec_x, i_vec_absmask, 0, i_vec_xa,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P,
+                                             i_vec_xa, i_vec_thres, 0, i_vec_xa,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             i_vec_xr, i_vec_xa, 0, i_vec_xr,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             i_vec_xa, i_vec_xa, 0, i_vec_index,
+                                             i_pred_reg, i_sve_type );
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_index, i_vec_scale, 0, i_vec_index,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                             i_vec_index, i_vec_shifter, 0, i_vec_index,
+                                             i_pred_reg, i_sve_type );
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V,
+                                             i_vec_index, LIBXSMM_AARCH64_SVE_REG_UNDEF, 2, i_vec_index,
+                                             i_pred_reg, i_sve_type );
   /* todo */
+  /*libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL_1,
+                                             i_vec_index, i_vec_tmp, 0, i_vec_index,
+                                             i_pred_reg, i_sve_type );*/
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
+                                             i_vec_index, i_vec_tmp1, 0, i_vec_index,
+                                             i_pred_reg, i_sve_type );
+
+  /* todo */
+  /*libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL_4,
+                                             i_vec_c0, i_vec_index, 0, i_vec_C0,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL_4,
+                                              i_vec_c1, i_vec_index, 0, i_vec_C1,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL_4,
+                                             i_vec_c2, i_vec_index, 0, i_vec_C2,
+                                             i_pred_reg, i_sve_type );*/
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
+                                             i_vec_xa, i_vec_C2, 0, i_vec_C1,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             i_vec_C1, i_vec_C1, 0, i_vec_C2,
+                                             i_pred_reg, i_sve_type );
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
+                                              i_vec_xa, i_vec_C2, 0, i_vec_C0,
+                                              i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             i_vec_C0, i_vec_C0, 0, i_vec_C2,
+                                             i_pred_reg, i_sve_type );
+
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                             i_vec_xr, i_vec_C2, 0, i_vec_C2,
+                                             i_pred_reg, i_sve_type );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                             i_vec_C2, i_vec_half, 0, i_vec_x,
+                                             i_pred_reg, i_sve_type );
 }
 
 LIBXSMM_API_INTERN
@@ -1801,20 +1872,20 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_asimd(  libxsm
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_sve(  libxsmm_generated_code*                        io_generated_code,
-                                                                    const unsigned int                             i_vec_c0,
-                                                                    const unsigned int                             i_vec_c1,
-                                                                    const unsigned int                             i_vec_c2,
-                                                                    const unsigned int                             i_vec_c3,
-                                                                    const unsigned int                             i_vec_c1_d,
-                                                                    const unsigned int                             i_vec_c2_d,
-                                                                    const unsigned int                             i_vec_c3_d,
-                                                                    const unsigned int                             i_vec_hi_bound,
-                                                                    const unsigned int                             i_vec_lo_bound,
-                                                                    const unsigned int                             i_vec_ones,
-                                                                    const unsigned int                             i_vec_neg_ones,
-                                                                    const unsigned int                             i_gp_reg_tmp,
-                                                                    const libxsmm_aarch64_sve_type                 i_sve_type,
-                                                                    const unsigned char                            i_pred_reg ) {
+                                                                        const unsigned int                             i_vec_c0,
+                                                                        const unsigned int                             i_vec_c1,
+                                                                        const unsigned int                             i_vec_c2,
+                                                                        const unsigned int                             i_vec_c3,
+                                                                        const unsigned int                             i_vec_c1_d,
+                                                                        const unsigned int                             i_vec_c2_d,
+                                                                        const unsigned int                             i_vec_c3_d,
+                                                                        const unsigned int                             i_vec_hi_bound,
+                                                                        const unsigned int                             i_vec_lo_bound,
+                                                                        const unsigned int                             i_vec_ones,
+                                                                        const unsigned int                             i_vec_neg_ones,
+                                                                        const unsigned int                             i_gp_reg_tmp,
+                                                                        const libxsmm_aarch64_sve_type                 i_sve_type,
+                                                                        const unsigned char                            i_pred_reg ) {
   unsigned long long c0_array = 0x49f77088 ;
   unsigned long long c1_array = 0x4883f7c0 ;
   unsigned long long c2_array = 0x45d89000 ;
@@ -1842,20 +1913,20 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_sve(  libxsmm_
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
-                                                                      const unsigned int                             i_vec_c0,
-                                                                      const unsigned int                             i_vec_c1,
-                                                                      const unsigned int                             i_vec_c2,
-                                                                      const unsigned int                             i_vec_c3,
-                                                                      const unsigned int                             i_vec_c1_d,
-                                                                      const unsigned int                             i_vec_c2_d,
-                                                                      const unsigned int                             i_vec_c3_d,
-                                                                      const unsigned int                             i_vec_hi_bound,
-                                                                      const unsigned int                             i_vec_lo_bound,
-                                                                      const unsigned int                             i_vec_ones,
-                                                                      const unsigned int                             i_vec_neg_ones,
-                                                                      const unsigned int                             i_vec_halves,
-                                                                      const unsigned int                             i_gp_reg_tmp,
-                                                                      const libxsmm_aarch64_asimd_tupletype          i_tupletype  ) {
+                                                                            const unsigned int                             i_vec_c0,
+                                                                            const unsigned int                             i_vec_c1,
+                                                                            const unsigned int                             i_vec_c2,
+                                                                            const unsigned int                             i_vec_c3,
+                                                                            const unsigned int                             i_vec_c1_d,
+                                                                            const unsigned int                             i_vec_c2_d,
+                                                                            const unsigned int                             i_vec_c3_d,
+                                                                            const unsigned int                             i_vec_hi_bound,
+                                                                            const unsigned int                             i_vec_lo_bound,
+                                                                            const unsigned int                             i_vec_ones,
+                                                                            const unsigned int                             i_vec_neg_ones,
+                                                                            const unsigned int                             i_vec_halves,
+                                                                            const unsigned int                             i_gp_reg_tmp,
+                                                                            const libxsmm_aarch64_asimd_tupletype          i_tupletype  ) {
   unsigned long long vec_halves = 0x3f000000 ;
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_tupletype, vec_halves );
   libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_asimd(
@@ -1865,21 +1936,21 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_asimd( libx
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_sve( libxsmm_generated_code*                        io_generated_code,
-                                                                      const unsigned int                             i_vec_c0,
-                                                                      const unsigned int                             i_vec_c1,
-                                                                      const unsigned int                             i_vec_c2,
-                                                                      const unsigned int                             i_vec_c3,
-                                                                      const unsigned int                             i_vec_c1_d,
-                                                                      const unsigned int                             i_vec_c2_d,
-                                                                      const unsigned int                             i_vec_c3_d,
-                                                                      const unsigned int                             i_vec_hi_bound,
-                                                                      const unsigned int                             i_vec_lo_bound,
-                                                                      const unsigned int                             i_vec_ones,
-                                                                      const unsigned int                             i_vec_neg_ones,
-                                                                      const unsigned int                             i_vec_halves,
-                                                                      const unsigned int                             i_gp_reg_tmp,
-                                                                      const libxsmm_aarch64_sve_type                 i_sve_type,
-                                                                      const unsigned char                            i_pred_reg ) {
+                                                                          const unsigned int                             i_vec_c0,
+                                                                          const unsigned int                             i_vec_c1,
+                                                                          const unsigned int                             i_vec_c2,
+                                                                          const unsigned int                             i_vec_c3,
+                                                                          const unsigned int                             i_vec_c1_d,
+                                                                          const unsigned int                             i_vec_c2_d,
+                                                                          const unsigned int                             i_vec_c3_d,
+                                                                          const unsigned int                             i_vec_hi_bound,
+                                                                          const unsigned int                             i_vec_lo_bound,
+                                                                          const unsigned int                             i_vec_ones,
+                                                                          const unsigned int                             i_vec_neg_ones,
+                                                                          const unsigned int                             i_vec_halves,
+                                                                          const unsigned int                             i_gp_reg_tmp,
+                                                                          const libxsmm_aarch64_sve_type                 i_sve_type,
+                                                                          const unsigned char                            i_pred_reg ) {
   unsigned long long vec_halves = 0x3f000000 ;
   libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_halves );
   libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_sve(
@@ -1889,25 +1960,25 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_sve( libxsm
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
-                                                    const unsigned int                             i_vec_x,
-                                                    const unsigned int                             i_vec_x2,
-                                                    const unsigned int                             i_vec_nom,
-                                                    const unsigned int                             i_vec_denom,
-                                                    const unsigned int                             i_mask_hi,
-                                                    const unsigned int                             i_mask_lo,
-                                                    const unsigned int                             i_vec_c0,
-                                                    const unsigned int                             i_vec_c1,
-                                                    const unsigned int                             i_vec_c2,
-                                                    const unsigned int                             i_vec_c3,
-                                                    const unsigned int                             i_vec_c1_d,
-                                                    const unsigned int                             i_vec_c2_d,
-                                                    const unsigned int                             i_vec_c3_d,
-                                                    const unsigned int                             i_vec_hi_bound,
-                                                    const unsigned int                             i_vec_lo_bound,
-                                                    const unsigned int                             i_vec_ones,
-                                                    const unsigned int                             i_vec_neg_ones,
-                                                    const unsigned int                             i_vec_tmp,
-                                                    const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
+                                                          const unsigned int                             i_vec_x,
+                                                          const unsigned int                             i_vec_x2,
+                                                          const unsigned int                             i_vec_nom,
+                                                          const unsigned int                             i_vec_denom,
+                                                          const unsigned int                             i_mask_hi,
+                                                          const unsigned int                             i_mask_lo,
+                                                          const unsigned int                             i_vec_c0,
+                                                          const unsigned int                             i_vec_c1,
+                                                          const unsigned int                             i_vec_c2,
+                                                          const unsigned int                             i_vec_c3,
+                                                          const unsigned int                             i_vec_c1_d,
+                                                          const unsigned int                             i_vec_c2_d,
+                                                          const unsigned int                             i_vec_c3_d,
+                                                          const unsigned int                             i_vec_hi_bound,
+                                                          const unsigned int                             i_vec_lo_bound,
+                                                          const unsigned int                             i_vec_ones,
+                                                          const unsigned int                             i_vec_neg_ones,
+                                                          const unsigned int                             i_vec_tmp,
+                                                          const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
 
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
                                              i_vec_x, i_vec_x, 0, i_vec_x2, i_tupletype );
@@ -1997,26 +2068,26 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64_asimd( libxsmm_generated_code
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_aarch64_sve( libxsmm_generated_code*                        io_generated_code,
-                                                    const unsigned int                             i_vec_x,
-                                                    const unsigned int                             i_vec_x2,
-                                                    const unsigned int                             i_vec_nom,
-                                                    const unsigned int                             i_vec_denom,
-                                                    const unsigned int                             i_mask_hi,
-                                                    const unsigned int                             i_mask_lo,
-                                                    const unsigned int                             i_vec_c0,
-                                                    const unsigned int                             i_vec_c1,
-                                                    const unsigned int                             i_vec_c2,
-                                                    const unsigned int                             i_vec_c3,
-                                                    const unsigned int                             i_vec_c1_d,
-                                                    const unsigned int                             i_vec_c2_d,
-                                                    const unsigned int                             i_vec_c3_d,
-                                                    const unsigned int                             i_vec_hi_bound,
-                                                    const unsigned int                             i_vec_lo_bound,
-                                                    const unsigned int                             i_vec_ones,
-                                                    const unsigned int                             i_vec_neg_ones,
-                                                    const unsigned int                             i_vec_tmp,
-                                                    const libxsmm_aarch64_sve_type                 i_sve_type,
-                                                    const unsigned char                            i_pred_reg ) {
+                                                        const unsigned int                             i_vec_x,
+                                                        const unsigned int                             i_vec_x2,
+                                                        const unsigned int                             i_vec_nom,
+                                                        const unsigned int                             i_vec_denom,
+                                                        const unsigned int                             i_mask_hi,
+                                                        const unsigned int                             i_mask_lo,
+                                                        const unsigned int                             i_vec_c0,
+                                                        const unsigned int                             i_vec_c1,
+                                                        const unsigned int                             i_vec_c2,
+                                                        const unsigned int                             i_vec_c3,
+                                                        const unsigned int                             i_vec_c1_d,
+                                                        const unsigned int                             i_vec_c2_d,
+                                                        const unsigned int                             i_vec_c3_d,
+                                                        const unsigned int                             i_vec_hi_bound,
+                                                        const unsigned int                             i_vec_lo_bound,
+                                                        const unsigned int                             i_vec_ones,
+                                                        const unsigned int                             i_vec_neg_ones,
+                                                        const unsigned int                             i_vec_tmp,
+                                                        const libxsmm_aarch64_sve_type                 i_sve_type,
+                                                        const unsigned char                            i_pred_reg ) {
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                            i_vec_x, i_vec_x, 0, i_vec_x2, i_pred_reg, i_sve_type );
@@ -2108,26 +2179,26 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64_sve( libxsmm_generated_code* 
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
-                                                       const unsigned int                             i_vec_x,
-                                                       const unsigned int                             i_vec_x2,
-                                                       const unsigned int                             i_vec_nom,
-                                                       const unsigned int                             i_vec_denom,
-                                                       const unsigned int                             i_mask_hi,
-                                                       const unsigned int                             i_mask_lo,
-                                                       const unsigned int                             i_vec_c0,
-                                                       const unsigned int                             i_vec_c1,
-                                                       const unsigned int                             i_vec_c2,
-                                                       const unsigned int                             i_vec_c3,
-                                                       const unsigned int                             i_vec_c1_d,
-                                                       const unsigned int                             i_vec_c2_d,
-                                                       const unsigned int                             i_vec_c3_d,
-                                                       const unsigned int                             i_vec_hi_bound,
-                                                       const unsigned int                             i_vec_lo_bound,
-                                                       const unsigned int                             i_vec_ones,
-                                                       const unsigned int                             i_vec_neg_ones,
-                                                       const unsigned int                             i_vec_halves,
-                                                       const unsigned int                             i_vec_tmp,
-                                                       const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
+                                                             const unsigned int                             i_vec_x,
+                                                             const unsigned int                             i_vec_x2,
+                                                             const unsigned int                             i_vec_nom,
+                                                             const unsigned int                             i_vec_denom,
+                                                             const unsigned int                             i_mask_hi,
+                                                             const unsigned int                             i_mask_lo,
+                                                             const unsigned int                             i_vec_c0,
+                                                             const unsigned int                             i_vec_c1,
+                                                             const unsigned int                             i_vec_c2,
+                                                             const unsigned int                             i_vec_c3,
+                                                             const unsigned int                             i_vec_c1_d,
+                                                             const unsigned int                             i_vec_c2_d,
+                                                             const unsigned int                             i_vec_c3_d,
+                                                             const unsigned int                             i_vec_hi_bound,
+                                                             const unsigned int                             i_vec_lo_bound,
+                                                             const unsigned int                             i_vec_ones,
+                                                             const unsigned int                             i_vec_neg_ones,
+                                                             const unsigned int                             i_vec_halves,
+                                                             const unsigned int                             i_vec_tmp,
+                                                             const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
   /* (tanh(x*0.5)+1)*0.5 = 1/(1+exp(-x)) */
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
                                              i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
@@ -2145,27 +2216,27 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd( libxsmm_generated_c
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve( libxsmm_generated_code*                        io_generated_code,
-                                                       const unsigned int                             i_vec_x,
-                                                       const unsigned int                             i_vec_x2,
-                                                       const unsigned int                             i_vec_nom,
-                                                       const unsigned int                             i_vec_denom,
-                                                       const unsigned int                             i_mask_hi,
-                                                       const unsigned int                             i_mask_lo,
-                                                       const unsigned int                             i_vec_c0,
-                                                       const unsigned int                             i_vec_c1,
-                                                       const unsigned int                             i_vec_c2,
-                                                       const unsigned int                             i_vec_c3,
-                                                       const unsigned int                             i_vec_c1_d,
-                                                       const unsigned int                             i_vec_c2_d,
-                                                       const unsigned int                             i_vec_c3_d,
-                                                       const unsigned int                             i_vec_hi_bound,
-                                                       const unsigned int                             i_vec_lo_bound,
-                                                       const unsigned int                             i_vec_ones,
-                                                       const unsigned int                             i_vec_neg_ones,
-                                                       const unsigned int                             i_vec_halves,
-                                                       const unsigned int                             i_vec_tmp,
-                                                       const libxsmm_aarch64_sve_type                 i_sve_type,
-                                                       const unsigned char                            i_pred_reg ) {
+                                                           const unsigned int                             i_vec_x,
+                                                           const unsigned int                             i_vec_x2,
+                                                           const unsigned int                             i_vec_nom,
+                                                           const unsigned int                             i_vec_denom,
+                                                           const unsigned int                             i_mask_hi,
+                                                           const unsigned int                             i_mask_lo,
+                                                           const unsigned int                             i_vec_c0,
+                                                           const unsigned int                             i_vec_c1,
+                                                           const unsigned int                             i_vec_c2,
+                                                           const unsigned int                             i_vec_c3,
+                                                           const unsigned int                             i_vec_c1_d,
+                                                           const unsigned int                             i_vec_c2_d,
+                                                           const unsigned int                             i_vec_c3_d,
+                                                           const unsigned int                             i_vec_hi_bound,
+                                                           const unsigned int                             i_vec_lo_bound,
+                                                           const unsigned int                             i_vec_ones,
+                                                           const unsigned int                             i_vec_neg_ones,
+                                                           const unsigned int                             i_vec_halves,
+                                                           const unsigned int                             i_vec_tmp,
+                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
+                                                           const unsigned char                            i_pred_reg ) {
   /* (tanh(x*0.5)+1)*0.5 = 1/(1+exp(-x)) */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                            i_vec_x, i_vec_halves, 0, i_vec_x, i_pred_reg, i_sve_type );
@@ -2185,10 +2256,10 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve( libxsmm_generated_cod
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( libxsmm_generated_code*               io_generated_code,
-                                                           const unsigned char                   i_vec_reg,
-                                                           const unsigned int                    i_gp_reg_tmp,
-                                                           const libxsmm_aarch64_asimd_tupletype i_tupletype,
-                                                           const unsigned long long              imm64 ) {
+                                                                 const unsigned char                   i_vec_reg,
+                                                                 const unsigned int                    i_gp_reg_tmp,
+                                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype,
+                                                                 const unsigned long long              imm64 ) {
 
 libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
 libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
@@ -2219,11 +2290,11 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( libxsmm_generated
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_code *io_generated_code,
-                                                          const unsigned char     i_vec_reg,
-                                                          const unsigned int      i_gp_reg_tmp0,
-                                                          const unsigned int      i_gp_reg_tmp1,
-                                                          void*                   imm64_array,
-                                                          const unsigned int      i_start_index){
+                                                           const unsigned char     i_vec_reg,
+                                                           const unsigned int      i_gp_reg_tmp0,
+                                                           const unsigned int      i_gp_reg_tmp1,
+                                                           void*                   imm64_array,
+                                                           const unsigned int      i_start_index){
   /* fills an ASIMD register with 128 bits of data, which later will be used using indexed access */
   unsigned long long *imm_array_ptr =  (unsigned long long *)(imm64_array);
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp0, imm_array_ptr[i_start_index] );
