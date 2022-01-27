@@ -110,12 +110,11 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
 
   /* i_masked_elems: 0 = load as many as you can; else: load <i_masked_elems> elements */
   if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-    unsigned char l_pred_reg = 0;/* todo which predicate register should we use? */
+    unsigned char l_pred_reg = i_masked_elems == 0 ? 0 : 1;/* 0 = ptrue, 1 = correct amount */
     if( i_masked_elems == 0 ) {/* just load/store without predicate */
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     } else {
-      libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, i_masked_elems * i_datatype_size, i_gp_reg_scratch);
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
       libxsmm_aarch64_instruction_sve_move(io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, l_pred_reg);
     }
@@ -1702,7 +1701,7 @@ void libxsmm_generator_scalefps_aarch64_asimd( libxsmm_generated_code*          
                                                const unsigned int                    i_vec_z,
                                                const unsigned int                    i_vec_expmask,
                                                const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
-  
+
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRINTM_V,
                                              i_vec_y, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_vec_y,
                                              i_tupletype );
@@ -1732,7 +1731,7 @@ void libxsmm_generator_scalefps_aarch64_sve( libxsmm_generated_code*            
                                              const unsigned int                    i_vec_expmask,
                                              const libxsmm_aarch64_sve_type        i_sve_type,
                                              const unsigned char                   i_pred_reg ) {
-  
+
   /* SVE has an instruction called "fexpa". Maybe it could be used */
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P,
@@ -1757,7 +1756,7 @@ void libxsmm_generator_scalefps_aarch64_sve( libxsmm_generated_code*            
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                            i_vec_x, i_vec_y, 0, i_vec_z,
                                            i_pred_reg, i_sve_type );
-  
+
 }
 
 LIBXSMM_API_INTERN
@@ -1993,7 +1992,7 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64_asimd( libxsmm_generated_code
                                              i_vec_ones,     i_mask_hi, 0, i_vec_x, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V,
                                              i_vec_neg_ones, i_mask_lo, 0, i_vec_x, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-  
+
 }
 
 LIBXSMM_API_INTERN
@@ -2190,7 +2189,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( libxsmm_generat
                                                            const unsigned int                    i_gp_reg_tmp,
                                                            const libxsmm_aarch64_asimd_tupletype i_tupletype,
                                                            const unsigned long long              imm64 ) {
-  
+
 libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
 libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
                                                LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
@@ -2202,7 +2201,7 @@ libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARC
                                                  i_tupletype );
 libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-  
+
 }
 
 LIBXSMM_API_INTERN
@@ -2212,7 +2211,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( libxsmm_generated
                                                                const libxsmm_aarch64_sve_type        i_sve_type,
                                                                const unsigned char                   i_pred_reg,
                                                                const unsigned long long              imm64 ) {
-  
+
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, imm64 );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P,
                                            i_gp_reg_tmp, 0, 0, i_vec_reg, i_pred_reg, i_sve_type );

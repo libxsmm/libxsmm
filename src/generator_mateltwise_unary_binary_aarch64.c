@@ -353,6 +353,7 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
 
   /* In this case we don't have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
+
 #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
     for (in = 0; in < i_n_blocking; in++) {
@@ -374,6 +375,12 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
     return;
   }
 #endif
+
+  if( l_is_sve ){
+    /* define predicate registers 0 and 1 for loading */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 1, i_mask_last_m_chunk * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
+  }
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
@@ -448,7 +455,6 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                                            i_start_vreg + im, i_start_vreg + im, 0, cur_vreg,
                                                            (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D );
-
               }
             }
           }
@@ -1989,6 +1995,12 @@ void libxsmm_setup_input_output_aarch64_masks( libxsmm_generated_code*          
   *i_use_m_input_masking = i_m % i_vlen_in;
   *i_mask_reg_out = 0;
   *i_use_m_output_masking = i_m % i_vlen_out;
+
+  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+    /* reserving predicate 0 and 1 for ptrue and remainder (when loading/storing) */
+    i_micro_kernel_config->reserved_mask_regs += 2;
+  }
+
 }
 
 LIBXSMM_API_INTERN
@@ -2021,7 +2033,7 @@ void libxsmm_configure_microkernel_aarch64_loops( libxsmm_generated_code*       
   LIBXSMM_UNUSED(i_mateltwise_desc);
   LIBXSMM_UNUSED(io_generated_code);
 
-  m_trips               = (i_m + i_vlen_in - 1) / i_vlen_in;
+  m_trips               = LIBXSMM_UPDIV(i_m, i_vlen_in);
   n_trips               = i_n;
 
   max_nm_unrolling  = max_nm_unrolling - reserved_zmms;
@@ -2671,7 +2683,7 @@ void libxsmm_configure_aarch64_kernel_vregs_masks( libxsmm_generated_code*      
                                                  const unsigned int                      i_gp_reg_aux1) {
   /* initialize some values */
   i_micro_kernel_config->reserved_zmms = 0;
-  i_micro_kernel_config->reserved_mask_regs = 1;
+  i_micro_kernel_config->reserved_mask_regs = 2;
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
 
   /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
