@@ -78,43 +78,37 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
         cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
 
       for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-        { /* stupid block to keep indentation */
-          n  = cpxnt%N;
-          cp = cpxnt/N;
+        n  = cpxnt%N;
+        cp = cpxnt/N;
 
-          int hwb, cb;
+        int hwb, cb;
 
-          for(hwb=0; hwb < num_HW_blocks; hwb++){
-            if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-              libxsmm_meltw_unary_param all_relu_param;
+        for(hwb=0; hwb < num_HW_blocks; hwb++){
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+            libxsmm_meltw_unary_param all_relu_param;
 
-              all_relu_param.op.primary   = (void*)(&alpha);
-              all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-              all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                               (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
-                                               : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
-              all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-              cfg.relu_kernel(&all_relu_param);
-            } /* ReLU/mask */
-//#if 0
-            if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+            all_relu_param.op.primary   = (void*)(&alpha);
+            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+            all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                             (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
+                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
+            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+            cfg.relu_kernel(&all_relu_param);
+          } /* ReLU/mask */
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
 #if 0
-              int i;
-              for (i = 0; i < bc * (HW/num_HW_blocks); ++i) {
-                int index;
-                index = n * (CP * HW * bc) + cp * (HW * bc) + (hwb*(HW/num_HW_blocks)) * (bc) + i;
-                pdin_add[index] = pdout[index];
-              }
+            int i;
+            for (i = 0; i < bc * (HW/num_HW_blocks); ++i) {
+              int index;
+              index = n * (CP * HW * bc) + cp * (HW * bc) + (hwb*(HW/num_HW_blocks)) * (bc) + i;
+              pdin_add[index] = pdout[index];
+            }
 #endif
-//#if 0
-              libxsmm_meltw_unary_param ewise_copy_param;
-              ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-              ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-              cfg.ewise_copy_kernel(&ewise_copy_param);
-//#endif
-            } /* Eltwise */
-//#endif
-          }
+            libxsmm_meltw_unary_param ewise_copy_param;
+            ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            cfg.ewise_copy_kernel(&ewise_copy_param);
+          } /* Eltwise */
         }
       } /* loop over the 1d parallel blocking */
     }  /* ReLU/Mask/Eltwise */
@@ -122,71 +116,69 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
+      n  = cpxnt%N;
+      cp = cpxnt/N;
 
-        int hwb, cb;
-        libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
-        libxsmm_matrix_eqn_param eqn_param;
+      int hwb, cb;
+      libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
+      libxsmm_matrix_eqn_param eqn_param;
 
-        LIBXSMM_ALIGNED(float lcl_dgamma_ptr[bc], 64);
-        LIBXSMM_ALIGNED(float lcl_dbeta_ptr[bc], 64);
+      LIBXSMM_ALIGNED(float lcl_dgamma_ptr[bc], 64);
+      LIBXSMM_ALIGNED(float lcl_dbeta_ptr[bc], 64);
 
-        float *dgamma_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, n, 0, N, bc);
-        float *dbeta_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, bc);
+      float *dgamma_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, n, 0, N, bc);
+      float *dbeta_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, bc);
 
-        libxsmm_meltw_unary_param all_zero_param;
-        all_zero_param.out.primary = lcl_dgamma_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
-        all_zero_param.out.primary = lcl_dbeta_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
+      libxsmm_meltw_unary_param all_zero_param;
+      all_zero_param.out.primary = lcl_dgamma_ptr;
+      cfg.all_zero_kernel(&all_zero_param);
+      all_zero_param.out.primary = lcl_dbeta_ptr;
+      cfg.all_zero_kernel(&all_zero_param);
 
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < bc; cb++) { */
-        /*   lcl_dgamma_ptr[cb] = 0.0f; */
-        /*   lcl_dbeta_ptr[cb] = 0.0f; */
-        /* } */
+      /* #pragma omp simd */
+      /* for (int cb = 0; cb < bc; cb++) { */
+      /*   lcl_dgamma_ptr[cb] = 0.0f; */
+      /*   lcl_dbeta_ptr[cb] = 0.0f; */
+      /* } */
 
-        for(cb = 0; cb < bc; cb++){
-          a[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps));
-          b[cb] = -a[cb]*mean[cp*bc + cb];
-        }
-
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[4].primary = lcl_dgamma_ptr;
-        arg_array[5].primary = lcl_dbeta_ptr;
-        arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-
-          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = lcl_dgamma_ptr;
-          cfg.dgamma_func(&eqn_param);                                                             /* dgamma += (a * inp + b) * dout */
-
-          eqn_param.output.primary = lcl_dbeta_ptr;
-          cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-        }
-
-        libxsmm_meltw_unary_param copy_param;
-        copy_param.in.primary = lcl_dgamma_ptr;
-        copy_param.out.primary = dgamma_ncp_ptr;
-        cfg.copy_kernel(&copy_param);
-
-        copy_param.in.primary = lcl_dbeta_ptr;
-        copy_param.out.primary = dbeta_ncp_ptr;
-        cfg.copy_kernel(&copy_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < bc; cb++) { */
-        /*   dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb]; */
-        /*   dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb]; */
-        /* } */
+      for(cb = 0; cb < bc; cb++){
+        a[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps));
+        b[cb] = -a[cb]*mean[cp*bc + cb];
       }
+
+      arg_array[1].primary = a;
+      arg_array[2].primary = b;
+      arg_array[4].primary = lcl_dgamma_ptr;
+      arg_array[5].primary = lcl_dbeta_ptr;
+      arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
+
+      for(hwb=0; hwb < num_HW_blocks; hwb++){
+
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+
+        eqn_param.inputs = arg_array;
+        eqn_param.output.primary = lcl_dgamma_ptr;
+        cfg.dgamma_func(&eqn_param);                                                             /* dgamma += (a * inp + b) * dout */
+
+        eqn_param.output.primary = lcl_dbeta_ptr;
+        cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
+      }
+
+      libxsmm_meltw_unary_param copy_param;
+      copy_param.in.primary = lcl_dgamma_ptr;
+      copy_param.out.primary = dgamma_ncp_ptr;
+      cfg.helper_copy_kernel(&copy_param);
+
+      copy_param.in.primary = lcl_dbeta_ptr;
+      copy_param.out.primary = dbeta_ncp_ptr;
+      cfg.helper_copy_kernel(&copy_param);
+
+      /* #pragma omp simd */
+      /* for (int cb = 0; cb < bc; cb++) { */
+      /*   dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb]; */
+      /*   dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb]; */
+      /* } */
     }
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
@@ -211,12 +203,12 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
         add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-        cfg.add_kernel(&add_param);
+        cfg.helper_add_kernel(&add_param);
 
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
         add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-        cfg.add_kernel(&add_param);
+        cfg.helper_add_kernel(&add_param);
 
         /* #pragma omp simd */
         /* for (int cb = 0; cb < bc; cb++) { */
@@ -229,35 +221,33 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
+      n  = cpxnt%N;
+      cp = cpxnt/N;
 
-        libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
-        libxsmm_matrix_eqn_param eqn_param;
-        int hwb, cb;
+      libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
+      libxsmm_matrix_eqn_param eqn_param;
+      int hwb, cb;
 
-        /* FIXME: Replace expressions for pgamma, pdgamma etc. with ACCESS? */
-        for(cb = 0; cb < bc; cb++){
-          a[cb] = pgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));                            /* a = gamma_ptr[bc] * brstd_ptr[bc] */
-          b[cb] = -a[cb] * scale * pdgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));          /* b = gamma_ptr[bc] * brstd_ptr[bc] * del_gamma_ptr[v] * brstd_ptr[bc] * recp_nhw */
-          c[cb] = -b[cb] * mean[cp*bc + cb] - a[cb] * scale * pdbeta[cp*bc + cb] ;                      /* c = -gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * del_beta_ptr[bc] + gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * bmean_ptr[bc] * del_gamma_ptr[bc] * brstd_ptr[bc]) */
-        }
+      /* FIXME: Replace expressions for pgamma, pdgamma etc. with ACCESS? */
+      for(cb = 0; cb < bc; cb++){
+        a[cb] = pgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));                            /* a = gamma_ptr[bc] * brstd_ptr[bc] */
+        b[cb] = -a[cb] * scale * pdgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));          /* b = gamma_ptr[bc] * brstd_ptr[bc] * del_gamma_ptr[v] * brstd_ptr[bc] * recp_nhw */
+        c[cb] = -b[cb] * mean[cp*bc + cb] - a[cb] * scale * pdbeta[cp*bc + cb] ;                      /* c = -gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * del_beta_ptr[bc] + gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * bmean_ptr[bc] * del_gamma_ptr[bc] * brstd_ptr[bc]) */
+      }
 
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
-        arg_array[7].primary = c;
+      arg_array[1].primary = a;
+      arg_array[2].primary = b;
+      arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
+      arg_array[7].primary = c;
 
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+      for(hwb=0; hwb < num_HW_blocks; hwb++){
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
 
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          cfg.din_func(&eqn_param);                                                                        /* din = dout * a + b * inp + c */
+        eqn_param.inputs = arg_array;
+        eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
 
-        }
       }
     }
   } /* simple code block or parallel section for old code */
