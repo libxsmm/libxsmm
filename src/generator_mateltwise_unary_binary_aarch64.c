@@ -1616,7 +1616,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                  i_micro_kernel_config->dropout_vreg_tmp1, i_micro_kernel_config->dropout_vreg_tmp1,
                                                  0, i_micro_kernel_config->dropout_vreg_tmp1,
                                                  i_mask_reg, l_sve_type );
-        
+
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
                                                  cur_vreg, i_micro_kernel_config->dropout_vreg_tmp1, 0, cur_vreg,
                                                  l_blend_reg, l_sve_type );
