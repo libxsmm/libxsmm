@@ -34,23 +34,6 @@
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 /**
- * Macro to check minimum version requiremnts in code,
- * for example:
- * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
- * // code requiring version 1.17 or later
- * #else
- * // fallback code
- * #endif
-*/
-#define LIBXSMM_VERSION_GE(major, minor, update, patch)                           \
-  (LIBXSMM_VERSION_MAJOR > major ||                                               \
-   (LIBXSMM_VERSION_MAJOR == major &&                                             \
-    (LIBXSMM_VERSION_MINOR > minor ||                                             \
-     (LIBXSMM_VERSION_MINOR == minor &&                                           \
-      (LIBXSMM_VERSION_UPDATE > update ||                                         \
-       (LIBXSMM_VERSION_UPDATE == update && LIBXSMM_VERSION_PATCH >= patch ))))))
-
-/**
  * The following interfaces shall be explicitly included,
  * i.e., separate from libxsmm.h:
  * - libxsmm_intrinsics_x86.h

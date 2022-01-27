@@ -155,6 +155,20 @@
     LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
 #endif
 
+#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
+  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
+
+/**
+ * Macro to check minimum version requiremnts in code, for example:
+ * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
+ * // code requiring version 1.17 or later
+ * #else
+ * // fallback code
+ * #endif
+*/
+#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
+  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
+
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
 # define LIBXSMM_UNPACKED
