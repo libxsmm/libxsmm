@@ -125,6 +125,12 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size);
 /** Remove key-value pair from code registry and release memory. */
 LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size);
 
+LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                          const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
+                                                                                      const unsigned long long br_stride_a_hint, const unsigned long long br_stride_b_hint,
+                                                                                      const unsigned char br_unroll_hint );
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
