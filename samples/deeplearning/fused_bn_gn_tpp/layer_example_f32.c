@@ -18,9 +18,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
-#include "bn_tpp_common.h"
-#include "bn_tpp_fwd_custom_f32.h"
-#include "bn_tpp_bwd_custom_f32.h"
+#include "../op_lib_tpp/batchnorm_tpp.h"
+//#include "bn_tpp_common.h"
+//#include "bn_tpp_fwd_custom_f32.h"
+//#include "bn_tpp_bwd_custom_f32.h"
 
 #define COMPUTE_FP64_REFERENCE
 
