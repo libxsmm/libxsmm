@@ -128,7 +128,6 @@ void eqn1_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
 
   gemm_fp32(C, D, B, 1.0,
             m_C, n_D, n_C,
