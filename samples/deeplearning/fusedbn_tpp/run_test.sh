@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Compiler needs to be sourced
+# Source the compiler
 
 #export OMP_NUM_THREADS=1
 export CHECK=1

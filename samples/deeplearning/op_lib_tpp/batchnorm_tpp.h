@@ -75,7 +75,6 @@ typedef struct my_bn_bwd_config {
   libxsmm_meltwfunction_binary helper_add_kernel;
   libxsmm_meltwfunction_unary  helper_copy_kernel;
   libxsmm_meltwfunction_unary  inv_relu_kernel;
-  libxsmm_meltwfunction_binary ewise_add_kernel;
   libxsmm_meltwfunction_unary  ewise_copy_kernel;
   my_normalization_fuse        fuse_type;
 } my_bn_bwd_config;
@@ -98,12 +97,11 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint tmp_ld, tmp_ld2;
   libxsmm_blasint my_eqn10;
 
-  libxsmm_datatype  in_dt  = LIBXSMM_DATATYPE_F32;
-  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
   libxsmm_meqn_arg_shape  eqn_out_arg_shape;
-
   libxsmm_meqn_arg_shape  arg_shape[128];
+
   libxsmm_matrix_arg_attributes arg_singular_attr;
 
   libxsmm_matrix_eqn_arg_metadata arg_metadata[128];
@@ -138,13 +136,13 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* Eltwise TPPs  */
 
-  unary_shape.m   = res.bc;
-  unary_shape.n   = 1;
-  unary_shape.ldi = NULL;
-  unary_shape.ldo = &ldo;
-  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.m         = res.bc;
+  unary_shape.n         = 1;
+  unary_shape.ldi       = NULL;
+  unary_shape.ldo       = &ldo;
+  unary_shape.in_type   = dtype;
+  unary_shape.out_type  = dtype;
+  unary_shape.comp_type = dtype;
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
@@ -156,9 +154,9 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.n          = 1;
   unary_shape.ldi        = &ldo;
   unary_shape.ldo        = &ldo;
-  unary_shape.in_type    = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.in_type    = dtype;
+  unary_shape.out_type   = dtype;
+  unary_shape.comp_type  = dtype;
   unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.helper_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.helper_copy_kernel == NULL) {
@@ -168,9 +166,9 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   binary_shape.m         = res.bc;
   binary_shape.n         = 1;
-  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.in_type   = dtype;
+  binary_shape.comp_type = dtype;
+  binary_shape.out_type  = dtype;
   binary_shape.ldi       = &ldo;
   binary_shape.ldi2      = &ldo;
   binary_shape.ldo       = &ldo;
@@ -182,13 +180,18 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
+    if ((res.fuse_type == 4 || res.fuse_type == 5) && res.bc % 16 != 0) {
+      fprintf( stderr, "Fused ReLU with a mask does not work for sizes which are not a multiple of 16 (2BYTE limitation). Bailing...!\n");
+      exit(-1);
+    }
+
     unary_shape.m         = res.bc;
     unary_shape.n         = res.H*res.W / res.num_HW_blocks;
     unary_shape.ldi       = &ldo;
     unary_shape.ldo       = &ldo;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
     unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.relu_kernel       = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
     if ( res.relu_kernel == NULL ) {
@@ -200,9 +203,9 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
     binary_shape.m         = res.bc;
     binary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-    binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-    binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    binary_shape.in_type   = dtype;
+    binary_shape.comp_type = dtype;
+    binary_shape.out_type  = dtype;
     binary_shape.ldi       = &ldo;
     binary_shape.ldi2      = &ldo;
     binary_shape.ldo       = &ldo;
@@ -221,9 +224,9 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.n         = res.H*res.W / res.num_HW_blocks;
   unary_shape.ldi       = &ld;
   unary_shape.ldo       = &tmp_ld;
-  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in_type   = dtype;
+  unary_shape.out_type  = dtype;
+  unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   res.reduce_HW_kernel  = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_HW_kernel == NULL) {
@@ -241,19 +244,19 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[0].eqn_idx      = my_eqn10;
   op_metadata[0].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, ternary_flags);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[1].eqn_idx      = my_eqn10;
   op_metadata[1].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, ternary_flags);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
   arg_metadata[0].eqn_idx     = my_eqn10;
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* x = [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = &ld;
-  arg_shape[0].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn10;
@@ -261,7 +264,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].m    = res.bc;                                      /* s = [bc] */
   arg_shape[1].n    = 1;
   arg_shape[1].ld   = &tmp_ld;
-  arg_shape[1].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   arg_metadata[2].eqn_idx     = my_eqn10;
@@ -269,7 +272,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[2].m    = res.bc;                                      /* b = [bc] */
   arg_shape[2].n    = 1;
   arg_shape[2].ld   = &tmp_ld;
-  arg_shape[2].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   arg_metadata[3].eqn_idx     = my_eqn10;
@@ -277,7 +280,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].m    = res.bc;                                      /* gamma = [bc] */
   arg_shape[3].n    = 1;
   arg_shape[3].ld   = &tmp_ld2;
-  arg_shape[3].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
   arg_metadata[4].eqn_idx     = my_eqn10;
@@ -285,13 +288,13 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[4].m    = res.bc;                                      /* beta = [bc] */
   arg_shape[4].n    = 1;
   arg_shape[4].ld   = &tmp_ld2;
-  arg_shape[4].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
   eqn_out_arg_shape.ld   = &ld;
-  eqn_out_arg_shape.type = LIBXSMM_DATATYPE_F32;
+  eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn10 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn10 ); */
@@ -321,8 +324,8 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_meltw_ternary_flags ternary_flags;
 
   libxsmm_meqn_arg_shape  eqn_out_arg_shape;
-
   libxsmm_meqn_arg_shape  arg_shape[128];
+
   libxsmm_matrix_arg_attributes arg_singular_attr;
 
   libxsmm_matrix_eqn_arg_metadata arg_metadata[128];
@@ -337,8 +340,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint tmp_ld2;
   libxsmm_blasint my_eqn11, my_eqn12, my_eqn16;
 
-  libxsmm_datatype  in_dt  = LIBXSMM_DATATYPE_F32;
-  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
   /* setting up some handle values */
   res.N             = N;
@@ -362,14 +364,17 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* TPP creation */
 
+  memset( &unary_shape,  0, sizeof(libxsmm_meltw_unary_shape));
+  memset( &binary_shape, 0, sizeof(libxsmm_meltw_binary_shape));
+
   /* Eltwise TPPs  */
   unary_shape.m         = res.bc;
   unary_shape.n         = 1;
   unary_shape.ldi       = NULL;
   unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in_type   = dtype;
+  unary_shape.out_type  = dtype;
+  unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
@@ -381,9 +386,9 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.n          = 1;
   unary_shape.ldi        = &ldo;
   unary_shape.ldo        = &ldo;
-  unary_shape.in_type    = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type  = LIBXSMM_DATATYPE_F32;
+  unary_shape.in_type    = dtype;
+  unary_shape.out_type   = dtype;
+  unary_shape.comp_type  = dtype;
   unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.helper_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.helper_copy_kernel == NULL) {
@@ -393,9 +398,9 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   binary_shape.m         = res.bc;
   binary_shape.n         = 1;
-  binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-  binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+  binary_shape.in_type   = dtype;
+  binary_shape.comp_type = dtype;
+  binary_shape.out_type  = dtype;
   binary_shape.ldi       = &ldo;
   binary_shape.ldi2      = &ldo;
   binary_shape.ldo       = &ldo;
@@ -411,9 +416,9 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     unary_shape.n         = res.H*res.W / res.num_HW_blocks;
     unary_shape.ldi       = &ldo;
     unary_shape.ldo       = &ldo;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
     unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.inv_relu_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
     if ( res.inv_relu_kernel == NULL ) {
@@ -422,31 +427,13 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     }
   }
 
-  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape.m         = res.bc;
-    binary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-    binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-    binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-    binary_shape.ldi       = &ldo;
-    binary_shape.ldi2      = &ldo;
-    binary_shape.ldo       = &ldo;
-    binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-    res.ewise_add_kernel   = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
-
-    if ( res.ewise_add_kernel == NULL) {
-      fprintf( stderr, "JIT for TPP bwd ewise_add_kernel failed. Bailing...!\n");
-      exit(-1);
-    }
-  }
-
   unary_shape.m         = res.bc;
   unary_shape.n         = res.H*res.W / res.num_HW_blocks;
   unary_shape.ldi       = &ldo;
   unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in_type   = dtype;
+  unary_shape.out_type  = dtype;
+  unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
   if ( res.ewise_copy_kernel == NULL) {
@@ -465,29 +452,29 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn11;
   op_metadata[0].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, binary_flags);
+  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, dtype, binary_flags);
 
   unary_flags                 = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   op_metadata[1].eqn_idx      = my_eqn11;
   op_metadata[1].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_DATATYPE_F32, unary_flags);
+  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, dtype, unary_flags);
 
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[2].eqn_idx      = my_eqn11;
   op_metadata[2].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[2], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, binary_flags);
+  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[2], LIBXSMM_MELTW_TYPE_BINARY_MUL, dtype, binary_flags);
 
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[3].eqn_idx      = my_eqn11;
   op_metadata[3].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[3], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, ternary_flags);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[3], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
   arg_metadata[0].eqn_idx     = my_eqn11;
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* inp [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = &ld;
-  arg_shape[0].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn11;
@@ -495,7 +482,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].m    = res.bc;                                      /* a [bc] */
   arg_shape[1].n    = 1;
   arg_shape[1].ld   = &tmp_ld2;
-  arg_shape[1].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   arg_metadata[2].eqn_idx     = my_eqn11;
@@ -503,7 +490,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[2].m    = res.bc;                                      /* b [bc] */
   arg_shape[2].n    = 1;
   arg_shape[2].ld   = &tmp_ld2;
-  arg_shape[2].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   arg_metadata[3].eqn_idx     = my_eqn11;
@@ -511,7 +498,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
   arg_shape[3].ld   = &ld;
-  arg_shape[3].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
   arg_metadata[4].eqn_idx     = my_eqn11;
@@ -519,13 +506,13 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[4].m    = res.bc;                                      /* dgamma [bc] */
   arg_shape[4].n    = 1;
   arg_shape[4].ld   = &tmp_ld2;
-  arg_shape[4].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* dgamma [bc] */
   eqn_out_arg_shape.n    = 1;
   eqn_out_arg_shape.ld   = &tmp_ld2;
-  eqn_out_arg_shape.type = LIBXSMM_DATATYPE_F32;
+  eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn11 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn11 ); */
@@ -541,19 +528,19 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn12;
   op_metadata[0].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, binary_flags); /* dbeta_tmp [HW, bc] */
+  libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_ADD, dtype, binary_flags); /* dbeta_tmp [HW, bc] */
 
   unary_flags                 = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   op_metadata[1].eqn_idx      = my_eqn12;
   op_metadata[1].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_DATATYPE_F32, unary_flags); /* [HW, bc] -> [bc] */
+  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, dtype, unary_flags); /* [HW, bc] -> [bc] */
 
   arg_metadata[0].eqn_idx     = my_eqn12;
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = &ld;
-  arg_shape[0].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn12;
@@ -561,13 +548,13 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].m    = res.bc;                                      /* dbeta [bc] */
   arg_shape[1].n    = 1;
   arg_shape[1].ld   = &tmp_ld2;
-  arg_shape[1].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* dbeta [bc] */
   eqn_out_arg_shape.n    = 1;
   eqn_out_arg_shape.ld   = &tmp_ld2;
-  eqn_out_arg_shape.type = LIBXSMM_DATATYPE_F32;
+  eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn12 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn12 ); */
@@ -592,14 +579,14 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[0].eqn_idx      = my_eqn16;
   op_metadata[0].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, ternary_flags);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
   arg_metadata[0].eqn_idx     = my_eqn16;
   arg_metadata[0].in_arg_pos  = 1;
   arg_shape[0].m    = res.bc;                                      /* a [bc] */
   arg_shape[0].n    = 1;
   arg_shape[0].ld   = &tmp_ld2;
-  arg_shape[0].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn16;
@@ -607,20 +594,20 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[1].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[1].ld   = &ld;
-  arg_shape[1].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[1].eqn_idx      = my_eqn16;
   op_metadata[1].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_DATATYPE_F32, ternary_flags);
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
   arg_metadata[2].eqn_idx     = my_eqn16;
   arg_metadata[2].in_arg_pos  = 0;
   arg_shape[2].m    = res.bc;                                      /* inp [HW, bc] */
   arg_shape[2].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[2].ld   = &ld;
-  arg_shape[2].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   arg_metadata[3].eqn_idx     = my_eqn16;
@@ -628,7 +615,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].m    = res.bc;                                      /* b [bc] */
   arg_shape[3].n    = 1;
   arg_shape[3].ld   = &tmp_ld2;
-  arg_shape[3].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
   arg_metadata[4].eqn_idx     = my_eqn16;
@@ -636,13 +623,13 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[4].m    = res.bc;                                      /* c [bc] */
   arg_shape[4].n    = 1;
   arg_shape[4].ld   = &tmp_ld2;
-  arg_shape[4].type = LIBXSMM_DATATYPE_F32;
+  arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* din [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W/res.num_HW_blocks;
   eqn_out_arg_shape.ld   = &ld;
-  eqn_out_arg_shape.type = LIBXSMM_DATATYPE_F32;
+  eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn16 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn16 ); */
@@ -658,6 +645,18 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.scratch_size =  sizeof(float) * ( dbeta_N_offset /* dbeta_N*/ + LIBXSMM_UP2(res.CP * res.N * res.bc, 64) /*dgamma_N */ );
 
   return res;
+}
+
+void destroy_my_bn_fwd(my_bn_fwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+
+  /* when/if libxsmm_matrix_eqn_destroy gets added, destructords for equations should go here */
+}
+
+void destroy_my_bn_bwd(my_bn_bwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+
+  /* when/if libxsmm_matrix_eqn_destroy gets added, destructords for equations should go here */
 }
 
 void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask, float eps, int start_tid, int my_tid, void *scratch ) {
@@ -715,6 +714,21 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
   LIBXSMM_VLA_DECL(3, float, sumsq_N, ((float*)scratch) + sumsq_N_offset, N, bc);  /* [CP, N, bc] */
   LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
 
+  libxsmm_meltw_unary_param  all_zero_param;
+  libxsmm_meltw_binary_param add_param;
+  libxsmm_meltw_unary_param  reduce_HW_param;
+  libxsmm_meltw_unary_param  all_relu_param;
+
+  libxsmm_matrix_arg arg_array[5];
+  libxsmm_matrix_eqn_param eqn_param;
+
+  memset( &all_zero_param,  0, sizeof(all_zero_param));
+  memset( &add_param,       0, sizeof(add_param));
+  memset( &reduce_HW_param, 0, sizeof(reduce_HW_param));
+  memset( &all_relu_param,  0, sizeof(all_relu_param));
+
+  memset( &eqn_param,       0, sizeof(eqn_param));
+
   LIBXSMM_ALIGNED(float s[bc], 64);
   LIBXSMM_ALIGNED(float b[bc], 64);
   int n, cp;
@@ -729,7 +743,6 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
     float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, n, 0, N, bc);
     float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
 
-    libxsmm_meltw_unary_param all_zero_param;
     all_zero_param.out.primary = sum_ncp_ptr;
     cfg.all_zero_kernel(&all_zero_param);
     all_zero_param.out.primary = sumsq_ncp_ptr;
@@ -741,15 +754,13 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
     /*   sumsq_ncp_ptr[cb] = 0.0f;  */
     /* } */
 
-    libxsmm_meltw_binary_param add_param;
 
-    libxsmm_meltw_unary_param reduce_HW_params;       /*Private params and tmp array */
     LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
-    reduce_HW_params.out.primary   = lcl_sum_X_X2;                                                         /* [2*bc]  */
+    reduce_HW_param.out.primary   = lcl_sum_X_X2;                                                         /* [2*bc]  */
     for(hwb=0; hwb < num_HW_blocks; hwb++){
 
-      reduce_HW_params.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-      cfg.reduce_HW_kernel(&reduce_HW_params);                                                       /* [HW, bc] -----> [2 * bc] */
+      reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+      cfg.reduce_HW_kernel(&reduce_HW_param);                                                       /* [HW, bc] -----> [2 * bc] */
 
       add_param.in0.primary = sum_ncp_ptr;
       add_param.in1.primary = lcl_sum_X_X2;
@@ -773,7 +784,6 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
 
   for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
 
-    libxsmm_meltw_unary_param all_zero_param;
     all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, bc);
     cfg.all_zero_kernel(&all_zero_param);
     all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, bc);
@@ -785,7 +795,6 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
     /*   sum_X_X2[CP*bc + (cp*bc + cb)] = 0.0f;  */
     /* } */
 
-    libxsmm_meltw_binary_param add_param;
     int cb, ni;
     for(ni = 0; ni < N; ni++){
 
@@ -818,8 +827,6 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
     n  = cpxnt%N;
     cp = cpxnt/N;
 
-    libxsmm_matrix_arg arg_array[5];                                                         /* private eqn args and params*/
-    libxsmm_matrix_eqn_param eqn_param;
     int hwb, cb;
 
     for(cb = 0; cb < bc; cb++){
@@ -840,7 +847,6 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
 
       /* Eltwise add */
       if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-        libxsmm_meltw_binary_param add_param;
         add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
@@ -849,13 +855,12 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
 
       /* ReLU */
       if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-        libxsmm_meltw_unary_param all_relu_param;
 
         all_relu_param.op.primary   = (void*)(&alpha);
         all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
         all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
         all_relu_param.out.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                          (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/BITS_PER_CHAR) : NULL );
+                                          (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (bc/BITS_PER_CHAR)) : NULL );
         cfg.relu_kernel(&all_relu_param);
       } /* ReLU */
     }
@@ -920,6 +925,24 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, bc);  /* [CP, N, bc] */
   LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
 
+  libxsmm_meltw_unary_param  all_zero_param;
+  libxsmm_meltw_binary_param add_param;
+  libxsmm_meltw_unary_param  copy_param;
+  libxsmm_meltw_unary_param  all_relu_param;
+  libxsmm_meltw_unary_param  ewise_copy_param;
+
+  libxsmm_matrix_arg arg_array[8];
+  libxsmm_matrix_eqn_param eqn_param;
+
+  memset( &all_zero_param,   0, sizeof(all_zero_param));
+  memset( &add_param,        0, sizeof(add_param));
+  memset( &copy_param,       0, sizeof(copy_param));
+  memset( &all_relu_param,   0, sizeof(all_relu_param));
+  memset( &ewise_copy_param, 0, sizeof(ewise_copy_param));
+
+  memset( &eqn_param,        0, sizeof(eqn_param));
+
+
   LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
   LIBXSMM_ALIGNED(float b[bc], 64);
   LIBXSMM_ALIGNED(float c[bc], 64);
@@ -939,8 +962,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-          libxsmm_meltw_unary_param all_relu_param;
-
           all_relu_param.op.primary   = (void*)(&alpha);
           all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
           all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
@@ -958,7 +979,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
             pdin_add[index] = pdout[index];
           }
 #endif
-          libxsmm_meltw_unary_param ewise_copy_param;
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           cfg.ewise_copy_kernel(&ewise_copy_param);
@@ -974,8 +994,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     cp = cpxnt/N;
 
     int hwb, cb;
-    libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
-    libxsmm_matrix_eqn_param eqn_param;
 
     LIBXSMM_ALIGNED(float lcl_dgamma_ptr[bc], 64);
     LIBXSMM_ALIGNED(float lcl_dbeta_ptr[bc], 64);
@@ -983,7 +1001,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     float *dgamma_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, n, 0, N, bc);
     float *dbeta_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, bc);
 
-    libxsmm_meltw_unary_param all_zero_param;
     all_zero_param.out.primary = lcl_dgamma_ptr;
     cfg.all_zero_kernel(&all_zero_param);
     all_zero_param.out.primary = lcl_dbeta_ptr;
@@ -1019,7 +1036,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
       cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
     }
 
-    libxsmm_meltw_unary_param copy_param;
     copy_param.in.primary = lcl_dgamma_ptr;
     copy_param.out.primary = dgamma_ncp_ptr;
     cfg.helper_copy_kernel(&copy_param);
@@ -1038,7 +1054,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   libxsmm_barrier_wait(cfg.barrier, ltid);
 
   for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
-    libxsmm_meltw_unary_param all_zero_param;
     all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
     cfg.all_zero_kernel(&all_zero_param);
     all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
@@ -1050,7 +1065,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     /*   pdbeta[cp*bc + cb] = 0.0f; */
     /* } */
 
-    libxsmm_meltw_binary_param add_param;
     int ni;
     for(ni = 0; ni < N; ni++){
 
@@ -1078,8 +1092,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     n  = cpxnt%N;
     cp = cpxnt/N;
 
-    libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
-    libxsmm_matrix_eqn_param eqn_param;
     int hwb, cb;
 
     /* FIXME: Replace expressions for pgamma, pdgamma etc. with ACCESS? */

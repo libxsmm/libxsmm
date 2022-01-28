@@ -135,12 +135,15 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
 
-/*
-  if (fuse_type != 0 && fuse_type != 4 && fuse_type != 5) {
-    printf("Unsupported fuse_type %d was provided (0, 4 and 5 are supported only)\n", fuse_type);
+  if ((fuse_type == 4 || fuse_type == 5) && bc % 16 != 0) {
+    fprintf( stderr, "Fused ReLU with a mask will not work for sizes which are not a multiple of 16 (2BYTE limitation). Bailing...!\n");
     return -1;
   }
-*/
+
+  if (fuse_type != 0 && fuse_type != 2 && fuse_type != 4 && fuse_type != 5) {
+    printf("Unsupported fuse_type %d was provided (0, 2, 4 and 5 are supported only)\n", fuse_type);
+    return -1;
+  }
 
   stride_w = stride;
   stride_h = stride;
@@ -205,7 +208,6 @@ int main( int argc, char* argv[] ) {
   naive_dgamma   = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_dbeta    = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
-
   naive_relumask = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*C*H*W, 2097152);
 
 #ifdef COMPUTE_FP64_REFERENCE
@@ -236,7 +238,6 @@ int main( int argc, char* argv[] ) {
   out_fp64_downscaled_to_fp32        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*(CP*bc)*HW*1, 2097152);
   dinp_fp64_downscaled_to_fp32       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*(CP*bc)*HW*1, 2097152);
   dinp_add_fp64_downscaled_to_fp32   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*(CP*bc)*HW*1, 2097152);
-
 #endif
 
   /* initialize data */
@@ -244,13 +245,12 @@ int main( int argc, char* argv[] ) {
   init_buf(inp_add,  N*CP*HW*bc, 1, 0);
   init_buf(dinp,     N*CP*HW*bc, 1, 0);
   init_buf(dout,     N*CP*HW*bc, 1, 0);
+  init_buf(gamma,    CP*bc,      1, 0);
+  init_buf(beta,     CP*bc,      1, 0);
+  init_buf(dgamma,   CP*bc,      1, 0);
+  init_buf(dbeta,    CP*bc,      1, 0);
 
-  copy_buf(dout,     eqn_dout,     N*CP*HW*bc);
-
-  init_buf(gamma,  CP*bc, 1, 0);
-  init_buf(beta,   CP*bc, 1, 0);
-  init_buf(dgamma, CP*bc, 1, 0);
-  init_buf(dbeta,  CP*bc, 1, 0);
+  copy_buf(dout,   eqn_dout,   N*CP*HW*bc);
   copy_buf(dgamma, eqn_dgamma, CP*bc);
   copy_buf(dbeta,  eqn_dbeta,  CP*bc);
 #ifdef COMPUTE_FP64_REFERENCE
@@ -258,10 +258,10 @@ int main( int argc, char* argv[] ) {
   extend_buf_fp32_to_fp64(beta,  beta_fp64,  CP*bc);
 #endif
 
-  zero_buf_uint8(relumask, N*CP*HW*bc);
+  zero_buf_uint8(relumask,              N*CP*HW*bc);
   zero_buf_uint8(relumask_uncompressed, N*CP*HW*bc);
 
-  init_buf(cache_fl,  1024*1024, 1, 0);
+  init_buf(cache_fl, 1024*1024, 1, 0);
 
   /* setup TPPs (standalone or through the configs) */
 
@@ -417,9 +417,9 @@ int main( int argc, char* argv[] ) {
       my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 
-    tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,   N, C, H, W, bc);
-    tensor_copy_NCHWc_to_NCHW (out,  naive_out,   N, C, H, W, bc);
-    tensor_copy_NCHWc_to_NCHW (dout, naive_dout,  N, C, H, W, bc);
+    tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,  N, C, H, W, bc);
+    tensor_copy_NCHWc_to_NCHW (out,  naive_out,  N, C, H, W, bc);
+    tensor_copy_NCHWc_to_NCHW (dout, naive_dout, N, C, H, W, bc);
 
     naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
                                        beta, dbeta, gamma, dgamma, mean, naive_rcpstdev);
@@ -609,9 +609,14 @@ int main( int argc, char* argv[] ) {
   printf("=================================\n");
 
   /* deallocate data */
+
+  destroy_my_bn_fwd(&my_bn_fwd);
+  destroy_my_bn_bwd(&my_bn_bwd);
+
   if ( scratch != NULL ) {
     libxsmm_free(scratch);
   }
+
   libxsmm_free(inp);
   libxsmm_free(out);
   libxsmm_free(inp_add);
@@ -641,10 +646,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(naive_inp_add);
   libxsmm_free(naive_dinp);
   libxsmm_free(naive_dout);
+  libxsmm_free(naive_dinp_add);
   libxsmm_free(naive_dgamma);
   libxsmm_free(naive_dbeta);
   libxsmm_free(naive_rcpstdev);
-
   libxsmm_free(naive_relumask);
 
 #ifdef COMPUTE_FP64_REFERENCE
