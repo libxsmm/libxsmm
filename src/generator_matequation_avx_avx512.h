@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -21,6 +21,38 @@
 #define N_ADJUSTMENT 1
 #define UNARY_OP_POOL 0
 #define BINARY_OP_POOL 1
+
+LIBXSMM_API_INTERN
+void apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_matrix_eqn_elem                *cur_node,
+                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+                                               unsigned int                           *timestamp,
+                                               unsigned int                           last_timestamp );
+
+LIBXSMM_API_INTERN
+void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_matrix_eqn_elem                *cur_node,
+                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+                                               unsigned int                           *timestamp,
+                                               unsigned int                           last_timestamp );
+
+LIBXSMM_API_INTERN
+int find_in_pos_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
+
+LIBXSMM_API_INTERN
+libxsmm_datatype find_dtype_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_fusion_pattern_type find_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *cur_node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_fusion_pattern_type find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node);
+
+LIBXSMM_API_INTERN
+int is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node);
+
+LIBXSMM_API_INTERN
+int is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_node);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -68,13 +100,13 @@ LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp);
 
 LIBXSMM_API_INTERN
-int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node);
+int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
 
 LIBXSMM_API_INTERN
 void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size);
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_decompose_equation_tree( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size );
+void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint *current_timestamp );

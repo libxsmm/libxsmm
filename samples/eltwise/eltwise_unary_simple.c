@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -250,7 +250,7 @@ void unary_op_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 }
 
 int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
-  float *in, *in_vector, *_in;
+  float *in, *_in;
   float *out, *out_gold;
   libxsmm_blasint i, j;
   int ret = EXIT_SUCCESS;
@@ -258,13 +258,15 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
 
-    if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
     fprintf( stderr, "test_unary_%s_f32_f32: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -275,11 +277,10 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
 
   libxsmm_rng_set_seed(1);
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi), 64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
   _in       = in;
-  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -289,36 +290,27 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
-      }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
       }
     }
     if (use_bcast == COL_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
-      }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
       }
     }
     if (use_bcast == SCALAR_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
     }
-    _in = in_vector;
   }
 
   /* init out */
@@ -353,11 +345,19 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
@@ -389,25 +389,20 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-double error_bound =0.0;
-if(RCP_OP || RCP_SQRT_OP){
-  error_bound = 0.0027;
-}else{
-  error_bound = 0.0007;
-}
+  double error_bound =0.0;
+  if(RCP_OP || RCP_SQRT_OP){
+    error_bound = 0.0027;
+  } else{
+    error_bound = 0.0007;
+  }
 
-if ( norms_out.normf_rel > error_bound ) {
-  ret = EXIT_FAILURE;
-}
-
-
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS unary simple fp32 fp32\n");
@@ -419,7 +414,7 @@ if ( norms_out.normf_rel > error_bound ) {
 }
 
 int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  libxsmm_bfloat16 *in, *in_vector, *_in;
+  libxsmm_bfloat16 *in, *_in;
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   libxsmm_blasint i, j;
@@ -428,6 +423,8 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
   unsigned long long _N = N;
@@ -442,7 +439,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     compute_dtype = LIBXSMM_DATATYPE_BF16;
   }
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
     fprintf( stderr, "test_unary_%s_bf16_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -453,13 +450,12 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   libxsmm_rng_set_seed(1);
 
-  in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
+  in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
-  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -471,36 +467,27 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
-      }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
       }
     }
     if (use_bcast == COL_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
-      }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
       }
     }
     if (use_bcast == SCALAR_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
     }
-    _in = in_vector;
   }
 
   /* init out */
@@ -534,13 +521,21 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, compute_dtype, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = compute_dtype;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -577,9 +572,6 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
   libxsmm_free( in );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS unary simple bf16 bf16\n");
@@ -591,7 +583,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 }
 
 int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  float *in, *in_vector, *_in;
+  float *in, *_in;
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   libxsmm_blasint i, j;
@@ -600,13 +592,15 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
     fprintf( stderr, "test_unary_%s_f32_bf16: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -617,13 +611,12 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   libxsmm_rng_set_seed(1);
 
-  in          = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldi, 64);
+  in          = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
   _in       = in;
-  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -633,36 +626,27 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector =  (float*) libxsmm_aligned_malloc( sizeof(float)*LIBXSMM_MAX(ldi, N),   64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
-      }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
       }
     }
     if (use_bcast == COL_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
-      }
-      for ( j = 0; j < ldi; ++j ) {
-       in_vector[j] = in[j];
       }
     }
     if (use_bcast == SCALAR_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
     }
-    _in = in_vector;
   }
 
   /* init out */
@@ -695,13 +679,21 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
-  }
 
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -738,10 +730,6 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
   libxsmm_free( in );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-  }
-
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS unary simple fp32 bf16\n");
   } else {
@@ -752,7 +740,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 }
 
 int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast ) {
-  libxsmm_bfloat16 *in, *in_vector, *_in;
+  libxsmm_bfloat16 *in, *_in;
   float *out, *out_gold;
   libxsmm_blasint i, j;
   int ret = EXIT_SUCCESS;
@@ -760,13 +748,15 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
 
-  if ( M > ldi ) {
+  if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
     fprintf( stderr, "test_unary_%s_bf16_f32: ldi needs to be equal to or bigger than M\n", opname);
     exit(-1);
   }
@@ -777,11 +767,10 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   libxsmm_rng_set_seed(1);
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out       = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   out_gold  = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
-  in_vector = NULL;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -793,36 +782,27 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   }
 
   if (use_bcast != NO_BCAST) {
-    in_vector = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*LIBXSMM_MAX(ldi, N), 64);
     if (use_bcast == ROW_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[i*ldi];
         }
-      }
-      for ( i = 0; i < N; ++i ) {
-        in_vector[i] = in[i*ldi];
       }
     }
     if (use_bcast == COL_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[j];
         }
-      }
-      for ( j = 0; j < ldi; ++j ) {
-        in_vector[j] = in[j];
       }
     }
     if (use_bcast == SCALAR_BCAST) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < ldi; ++j ) {
+        for ( j = 0; j < LIBXSMM_MAX(M,ldi); ++j ) {
           in[(i*ldi)+j] = in[0];
         }
       }
-     in_vector[0] = in[0];
     }
-    _in = in_vector;
   }
 
   /* init out */
@@ -856,13 +836,20 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     }
   }
 
-  libxsmm_meltwfunction_unary unary_kernel;
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, 0, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, unary_type);
-  } else {
-    unary_kernel = libxsmm_dispatch_meltw_unary(M, N, &ldi, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
-  }
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = &ldi;
+  unary_shape.ldo = &ldo;
+  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
+    unary_shape.n = 0;
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  } else {
+    unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -890,9 +877,6 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
-  if (use_bcast != NO_BCAST) {
-    libxsmm_free( in_vector );
-  }
 
   if ( ret == EXIT_SUCCESS ) {
     printf("SUCCESS unary simple bf16 fp32\n");

@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
@@ -85,9 +85,6 @@
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_THROW;
-#endif
-#if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
-LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -185,18 +182,18 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
       continue
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) /*do*/ { \
       const unsigned int LOCKINDEX = (0 != internal_reglock_count ? LIBXSMM_MOD2(INDEX, internal_reglock_count) : 0); \
       if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state)) { \
         INTERNAL_REGLOCK_TRY(DIFF, CODE); \
       }
-#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state); }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, &internal_reglock[LOCKINDEX].state); } while(0)
 # else /* RW-lock */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) /*do*/ { \
       if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGLOCK, internal_reglock_ptr)) { \
         INTERNAL_REGLOCK_TRY(DIFF, CODE); \
       }
-#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr); }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr); } /*while(0)*/
 # endif
 #endif
 
@@ -687,9 +684,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH,
-      0 != *(LIBXSMM_BRANCH) ? "-" : "", 0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured",
-      LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
+      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
@@ -2867,6 +2863,42 @@ LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 }
 
 
+LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                          const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_gemm_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.k = k;
+  res.lda = (libxsmm_blasint*)lda;
+  res.ldb = (libxsmm_blasint*)ldb;
+  res.ldc = (libxsmm_blasint*)ldc;
+  res.a_in_type = a_in_type;
+  res.b_in_type = b_in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
+                                                                                      const unsigned long long br_stride_a_hint, const unsigned long long br_stride_b_hint,
+                                                                                      const unsigned char br_unroll_hint )
+{
+  libxsmm_gemm_batch_reduce_config res;
+
+  res.br_type = br_type;
+  res.br_stride_a_hint = br_stride_a_hint;
+  res.br_stride_b_hint = br_stride_b_hint;
+  res.br_unroll_hint = br_unroll_hint;
+
+  return res;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
@@ -4639,6 +4671,63 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_ternary;
+}
+
+
+LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_unary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_binary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                            const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+                                                                            const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_ternary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldi3 = (libxsmm_blasint*)ldi3;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
 }
 
 

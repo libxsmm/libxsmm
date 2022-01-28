@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -93,19 +93,6 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
                                                     libxsmm_micro_kernel_config*  i_micro_kernel_config );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_setup_stack_frame( libxsmm_generated_code*            io_generated_code,
-                                                  const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                  libxsmm_micro_kernel_config*        i_micro_kernel_config,
-                                                  int                                 m_tiles,
-                                                  int                                 n_tiles );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_destroy_stack_frame( libxsmm_generated_code*            io_generated_code,
-                                                  const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config );
-LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_descriptor*      i_xgemm_desc,
     libxsmm_micro_kernel_config*  i_micro_kernel_config,
     libxsmm_blocking_info_t*      m_blocking_info,
@@ -129,8 +116,14 @@ void libxsmm_generator_gemm_amx_adjust_n_advancement( libxsmm_generated_code* io
     libxsmm_blasint                     i_n_adjustment );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*        io_generated_code,
+void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code*        io_generated_code,
                                         const libxsmm_gemm_descriptor* i_xgemm_desc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_generated_code,
+                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                           libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_const );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*            io_generated_code,

@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -15,29 +15,29 @@
 # define LIBXSMM_HASH_ALIGNMENT 8
 #endif
 
-#define LIBXSMM_HASH_U64(FN, SEED, BEGIN, END) { \
+#define LIBXSMM_HASH_U64(FN, SEED, BEGIN, END) do { \
   const uint8_t *const end = (NULL != (END) ? ((END) - 7) : NULL); \
   for (; (BEGIN) < end; (BEGIN) += 8) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = (uint32_t)FN(SEED, BEGIN); \
   } \
-}
-#define LIBXSMM_HASH_U32(FN, SEED, BEGIN, END) { \
+} while(0)
+#define LIBXSMM_HASH_U32(FN, SEED, BEGIN, END) do { \
   const uint8_t *const next = (BEGIN) + 4; \
   if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
-}
-#define LIBXSMM_HASH_U16(FN, SEED, BEGIN, END) { \
+} while(0)
+#define LIBXSMM_HASH_U16(FN, SEED, BEGIN, END) do { \
   const uint8_t *const next = (BEGIN) + 2; \
   if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
-}
-#define LIBXSMM_HASH_U8(FN, SEED, BEGIN, END) { \
+} while(0)
+#define LIBXSMM_HASH_U8(FN, SEED, BEGIN, END) do { \
   if ((BEGIN) < (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); ++(BEGIN); \
   } \
-}
+} while(0)
 
 #define LIBXSMM_HASH_CRC32_U8(SEED, PVALUE) _mm_crc32_u8(SEED, *(const uint8_t*)(PVALUE))
 #define LIBXSMM_HASH_CRC32_U16(SEED, PVALUE) _mm_crc32_u16(SEED, *(const uint16_t*)(PVALUE))
@@ -50,17 +50,17 @@
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) _mm_crc32_u64(SEED, *(const uint64_t*)(PVALUE))
 #endif
 
-#define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) { \
+#define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) do { \
   const uint8_t *begin = (const uint8_t*)(DATA); \
   const uint8_t *const endb = begin + (SIZE); \
   LIBXSMM_HASH_U64(FN64, SEED, begin, endb); \
   LIBXSMM_HASH_U32(FN32, SEED, begin, endb); \
   LIBXSMM_HASH_U16(FN16, SEED, begin, endb); \
   return begin == endb ? (SEED) : FN8(SEED, begin); \
-}
+} while(0)
 
 #if defined(LIBXSMM_HASH_ALIGNMENT) && 8 < (LIBXSMM_HASH_ALIGNMENT)
-# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) { \
+# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) do { \
     const uint8_t *begin = (const uint8_t*)(DATA); \
     const uint8_t *const endb = begin + (SIZE); \
     const uint8_t *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_HASH_ALIGNMENT); \
@@ -75,9 +75,9 @@
     LIBXSMM_HASH_U32(FN32, SEED, begin, endb); \
     LIBXSMM_HASH_U16(FN16, SEED, begin, endb); \
     return begin == endb ? (SEED) : FN8(SEED, begin); \
-  }
+  } while(0)
 #elif defined(LIBXSMM_HASH_ALIGNMENT) && 1 < (LIBXSMM_HASH_ALIGNMENT)
-# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) { \
+# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, SEED, DATA, SIZE) do { \
     const uint8_t *begin = (const uint8_t*)(DATA); \
     const uint8_t *const endb = begin + (SIZE); \
     const uint8_t *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_HASH_ALIGNMENT); \
@@ -91,7 +91,7 @@
     LIBXSMM_HASH_U32(FN32, SEED, begin, endb); \
     LIBXSMM_HASH_U16(FN16, SEED, begin, endb); \
     return begin == endb ? (SEED) : FN8(SEED, begin); \
-  }
+  } while(0)
 #else
 # define LIBXSMM_HASH LIBXSMM_HASH_UNALIGNED
 #endif

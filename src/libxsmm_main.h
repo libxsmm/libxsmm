@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -64,12 +64,12 @@
 # define LIBXSMM_MALLOC_MMAP_HOOK
 #endif
 /* map memory for scratch buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
+#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
 # define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
-/* align even if interceptor is disabled at runtime */
-#if !defined(LIBXSMM_MALLOC_ALIGN_ALL) && 1
-# define LIBXSMM_MALLOC_ALIGN_ALL
+/* align if interceptor is disabled (moderated malloc) */
+#if defined(LIBXSMM_MALLOC_MOD) && 0
+# define LIBXSMM_MALLOC_MOD
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_INTRINSIC) && 1
 # if defined(LIBXSMM_PLATFORM_X86) && defined(LIBXSMM_INTRINSICS_INCLUDE) && \
@@ -112,7 +112,7 @@
 # define LIBXSMM_MALLOC_HOOK
 #endif
 #if !defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS) && defined(LIBXSMM_MALLOC_HOOK) && \
-    (defined(LIBXSMM_MALLOC_ALIGN_ALL) || (defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)))
+    (defined(LIBXSMM_MALLOC_MOD) || (defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)))
 # define LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 #endif
 

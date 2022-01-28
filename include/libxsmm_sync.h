@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -225,9 +225,9 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #   if (LIBXSMM_X86_GENERIC <= LIBXSMM_STATIC_TARGET_ARCH)
-#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) do { \
               __asm__ __volatile__("" ::: "memory"); *(DST_PTR) = (VALUE); \
-              __asm__ __volatile__("" ::: "memory"); }
+              __asm__ __volatile__("" ::: "memory"); } while(0)
 #   else
 #     define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND)
 #     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = (VALUE)
@@ -307,13 +307,13 @@ typedef enum libxsmm_atomic_kind {
 # else
 #   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
 # endif
-# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
+# define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) do { \
           LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
           while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
-          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
-# define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { \
+          LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE"); } while(0)
+# define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) do { \
           LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-          LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); }
+          LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); } while(0)
 # define LIBXSMM_ATOMIC_SYNC(KIND) _ReadWriteBarrier()
 # if !defined(LIBXSMM_SYNC_NPAUSE)
 #   define LIBXSMM_SYNC_NPAUSE 4096

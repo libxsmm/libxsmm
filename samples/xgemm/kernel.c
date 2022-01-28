@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
@@ -460,7 +460,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_shape.out_type = i_gemm_def->out_type;
   l_shape.comp_type = i_gemm_def->comp_type;
 
-  /* setting BRGEMM config strucut */
+  /* setting BRGEMM config struct */
   if (i_gemm_def->br_type == 1) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
     l_brconfig.br_stride_a_hint = 0;
@@ -486,7 +486,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   /* setting prefetch flags */
   l_prefetch_flags = i_gemm_def->prefetch;
 
-  /* setting ext strcuts to 0 */
+  /* setting ext structs to 0 */
   memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
   memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
@@ -517,7 +517,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     cfg_tr.gemm( NULL );
   }
 
-  /* reset GEMM paramater */
+  /* reset GEMM parameter */
 #if defined(USE_GEMM_EXT_FRONTEND)
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_ext_param) );
 #else

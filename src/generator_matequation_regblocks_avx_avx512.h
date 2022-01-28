@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -22,7 +22,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
     libxsmm_matrix_eqn_elem             *cur_node,
     unsigned int                        *arg_id,
-    libxsmm_matrix_eqn_arg              *arg_info,
+    libxsmm_matrix_eqn_arg_v2           *arg_info,
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
@@ -33,7 +33,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     unsigned int                        i_adjust_instr,
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
-    libxsmm_matrix_eqn_arg              *arg_info);
+    libxsmm_matrix_eqn_arg_v2           *arg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_configure_mateqn_microkernel_loops( libxsmm_generated_code*                 io_generated_code,

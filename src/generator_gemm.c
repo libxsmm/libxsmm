@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
@@ -231,11 +231,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* right now we only support eltwise fusion on SPR and BF16 */
+  /* TODO: EVANGELOS -- AMMEND  */
+#if 0
   if ( ( (io_generated_code->arch < LIBXSMM_X86_AVX512_SPR) || (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ) &&
        ( l_xgemm_desc_mod.meltw_operation != LIBXSMM_MELTW_OPERATION_NONE ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
+#endif
 
   /* check if alignment is not possible */
   if ( 0 != (l_xgemm_desc_mod.lda % l_vector_length) ) {
@@ -255,12 +258,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
            ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) &&
          ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       if (l_emu_amx == 0) {
-        libxsmm_generator_gemm_amx_kernel( io_generated_code, &l_xgemm_desc_mod );
+        libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
       } else {
         /* let's recheck CPU to even emulation AVX512_BF16 */
         io_generated_code->arch = libxsmm_cpuid();
         l_xgemm_desc_mod.c3 = 0;
-        libxsmm_generator_gemm_amx_kernel_emu( io_generated_code, &l_xgemm_desc_mod );
+        libxsmm_generator_gemm_amx_kernel_emu_wrapper( io_generated_code, &l_xgemm_desc_mod );
       }
     } else {
       if (l_emu_amx != 0) {
