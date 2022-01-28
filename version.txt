@@ -1,1 +1,1 @@
-dnn_refactor-1.17-2110
+dev/kvoronin/batchnormalization_tpp-1.17-2245
