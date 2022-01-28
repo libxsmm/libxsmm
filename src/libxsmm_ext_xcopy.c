@@ -44,22 +44,34 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         kernel.ptr = NULL;
 # if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 2))
         if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
+          const libxsmm_meltw_unary_shape unary_shape_f64 libxsmm_create_meltw_unary_shape(
+            (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+          const libxsmm_meltw_unary_shape unary_shape_f32 libxsmm_create_meltw_unary_shape(
+            (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+          const libxsmm_meltw_unary_shape unary_shape_i16 libxsmm_create_meltw_unary_shape(
+            (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
+          const libxsmm_meltw_unary_shape unary_shape_i8 libxsmm_create_meltw_unary_shape(
+            (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
           switch (typesize) {
-            case 8: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
-              LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_MELTW_FLAG_UNARY_NONE,
-              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+            case 8: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
+              unary_shape_f64, LIBXSMM_MELTW_FLAG_UNARY_NONE );
               break;
-            case 4: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
-              LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE,
-              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+            case 4: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
+              unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
               break;
-            case 2: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
-              LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_MELTW_FLAG_UNARY_NONE,
-              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+            case 2: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
+              unary_shape_i16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
               break;
-            case 1: kernel.function = libxsmm_dispatch_meltw_unary(tm, tn, &ldi, &ldo,
-              LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_MELTW_FLAG_UNARY_NONE,
-              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/);
+            case 1: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+              NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
+              unary_shape_i8, LIBXSMM_MELTW_FLAG_UNARY_NONE );
               break;
           }
         }
@@ -246,22 +258,26 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           libxsmm_xcopykernel kernel;
           kernel.ptr = NULL;
           if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
+            const libxsmm_meltw_unary_shape unary_shape_f64 libxsmm_create_meltw_unary_shape(
+              m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+            const libxsmm_meltw_unary_shape unary_shape_f32 libxsmm_create_meltw_unary_shape(
+              m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+            const libxsmm_meltw_unary_shape unary_shape_i16 libxsmm_create_meltw_unary_shape(
+              m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
+            const libxsmm_meltw_unary_shape unary_shape_i8 libxsmm_create_meltw_unary_shape(
+              m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
             switch (typesize) {
-              case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-                LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
-                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+              case 8: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+                LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_f64, LIBXSMM_MELTW_FLAG_UNARY_NONE );
                 break;
-              case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-                LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+              case 4: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+                LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
                 break;
-              case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-                LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
-                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+              case 2: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+                LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_i16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
                 break;
-              case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-                LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
-                LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+              case 1: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+                LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_i8, LIBXSMM_MELTW_FLAG_UNARY_NONE );
                 break;
             }
             if (NULL != kernel.ptr) { /* JIT-kernel available */
@@ -344,22 +360,26 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
         /* avoid outgrown transpose kernel upfront */
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
       {
+        const libxsmm_meltw_unary_shape unary_shape_f64 libxsmm_create_meltw_unary_shape(
+          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+        const libxsmm_meltw_unary_shape unary_shape_f32 libxsmm_create_meltw_unary_shape(
+          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+        const libxsmm_meltw_unary_shape unary_shape_i16 libxsmm_create_meltw_unary_shape(
+          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
+        const libxsmm_meltw_unary_shape unary_shape_i8 libxsmm_create_meltw_unary_shape(
+          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
         switch (typesize) {
-          case 8: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
-            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+          case 8: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+            LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_f64, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
-          case 4: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
-            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+          case 4: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+            LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
-          case 2: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16,
-            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+          case 2: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+            LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_i16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
-          case 1: kernel.function = libxsmm_dispatch_meltw_unary(m, n, &ldi, &ldo,
-            LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8,
-            LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+          case 1: kernel.function = libxsmm_dispatch_meltw_unary_v2(
+            LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape_i8, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
         }
       }
