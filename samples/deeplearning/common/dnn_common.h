@@ -83,6 +83,15 @@ typedef struct {
   int type;
 } naive_pooling_t;
 
+LIBXSMM_INLINE void mask_compress_uint8 (unsigned char * src_mask_uncompressed, unsigned char * dst_mask_compressed, size_t length) {
+  int i;
+  for (i = 0; i < (int)length; ++i) {
+    if (i%8 == 0)
+      dst_mask_compressed[i/8] = 0;
+    dst_mask_compressed[i/8] |= (src_mask_uncompressed[i] == 0 ? 0x0 : (1 << i%8));;
+  }
+}
+
 /* it's fine to alias in and out */
 LIBXSMM_INLINE void truncate_mask_fp32_bf16(float* in, float* out, unsigned int len) {
   unsigned int i = 0;
@@ -187,6 +196,17 @@ LIBXSMM_INLINE void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len)
 }
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
+  int i;
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < (int)size; ++i) {
+    buf[i] = 0.0f;
+  }
+}
+
+LIBXSMM_INLINE void zero_buf_fp64(double* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(i);
@@ -428,6 +448,22 @@ LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, size_t size, int initPos,
   for (i = 0; i < (int)size; ++i) {
     buf[i] = (unsigned char)((initOne != 0) ? 1 : (rand()%3));
   }
+}
+
+/* src_size is in float elements */
+LIBXSMM_INLINE void extend_buf_fp32_to_fp64 (const float *src, double *dst, size_t src_size)
+{
+  int i;
+  for (i = 0; i < (int)src_size; i++)
+    dst[i] = (double)(src[i]);
+}
+
+/* src_size is in double elements */
+LIBXSMM_INLINE void truncate_buf_fp64_to_fp32 (const double *src, float *dst, size_t src_size)
+{
+  int i;
+  for (i = 0; i < (int)src_size; i++)
+    dst[i] = (float)(src[i]);
 }
 
 LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
@@ -1066,6 +1102,31 @@ LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc(float *src, float *dst, int N, int
   int cBlocks = C/bc;
   LIBXSMM_VLA_DECL(4, float, in, src, C, H, W);
   LIBXSMM_VLA_DECL(5, float,out, dst, cBlocks, H, W, bc);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
+# pragma omp parallel for private(c1,c2,h,w)
+#endif
+  for (n = 0; n < N; n++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (h = 0; h < H; h++) {
+          for (w = 0; w < W; w++) {
+            LIBXSMM_VLA_ACCESS(5, out, n, c1,       h, w, c2, cBlocks, H, W, bc) =
+            LIBXSMM_VLA_ACCESS(4, in,  n, c1*bc+c2, h, w, C, H, W);
+          }
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc_uint8(unsigned char *src, unsigned char *dst, int N, int C, int H, int W, int bc)
+{
+  int n, h, w, c1, c2;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(4, unsigned char, in, src, C, H, W);
+  LIBXSMM_VLA_DECL(5, unsigned char,out, dst, cBlocks, H, W, bc);
 
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(h); LIBXSMM_OMP_VAR(w);
@@ -2508,8 +2569,9 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
   free( tmp_buffer );
 }
 
+/* relumask is created (optionally) in the format without compression, full char element per entry (which is in fact just one bit) */
 LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
-                                     const float* beta_ptr, const float* gamma_ptr, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr)
+                                     const float* beta_ptr, const float* gamma_ptr, float eps, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr, unsigned char *relumask_ptr)
 {
   const int nImg = param->N;
   const int nFm = param->C;
@@ -2521,13 +2583,14 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   const int ofw = ifw/sw;
   const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
-  const float sqrt_eps = 1e-7f;
 
   int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float, input,     input_ptr,     nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4, const float, input_add, input_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, output,    output_ptr,    nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4, const float,   input,     input_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const float,   input_add, input_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float,   output,    output_ptr,    nFm, ofh, ofw);
+
+  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
@@ -2557,7 +2620,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;
-      tbrstd = (float)(1.0/sqrt(tvariance + sqrt_eps));
+      tbrstd = (float)(1.0/sqrt(tvariance + eps));
       expectval_ptr[fm] = tbmean;
       rcpstddev_ptr[fm] = tbrstd;
       variance_ptr[fm] = tvariance;
@@ -2573,13 +2636,14 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
         for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
           const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifh, ifw);
-          const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
+          /*const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);*/
                 float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofh, ofw);
 
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*rcpstddev_ptr[fm] + beta_ptr[fm];
           /* Eltwise */
           if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
+            const float input_add_val = LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
             o += input_add_val;
           }
           /* ReLU */
@@ -2587,6 +2651,108 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
             o = ( o < 0.0f ) ? 0.0f : o;
           }
           *output_ptr2 = o;
+          /* Mask */
+          if ( (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+
+            /* without compression */
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofh, ofw);
+            *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
+          }
+        }
+      }
+    }
+  }
+}
+
+/* relumask is created (optionally) in the format without compression, full char element per entry (which is in fact just one bit) */
+LIBXSMM_INLINE void naive_fusedbatchnorm_fp_fp64(naive_fusedbatchnorm_t* param, const double* input_ptr, double* output_ptr, const double* input_add_ptr,
+                                     const double* beta_ptr, const double* gamma_ptr, double eps, double* expectval_ptr, double* rcpstddev_ptr, double* variance_ptr, unsigned char *relumask_ptr)
+{
+  const int nImg = param->N;
+  const int nFm = param->C;
+  const int ifh = param->H;
+  const int ifw = param->W;
+  const int sh = param->stride_h;
+  const int sw = param->stride_w;
+  const int ofh = ifh/sh;
+  const int ofw = ifw/sw;
+  const double nhw = (double)(nImg * ifh * ifw);
+  const double recp_nhw = 1.0f/nhw;
+
+  int img, fm, hi, wi, ho, wo;
+
+  LIBXSMM_VLA_DECL(4, const double,  input,     input_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const double,  input_add, input_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       double,  output,    output_ptr,    nFm, ofh, ofw);
+
+  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
+
+  if ( param->norm_type == 0 ) {
+#if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(hi);
+#   pragma omp parallel for private(img, fm, hi, wi)
+#endif
+    for (fm = 0; fm < nFm; fm++) {
+      double ch_sum = 0.0f;
+      double ch_sumsq = 0.0f;
+      double tbmean = 0.0f;
+      double tbmeansq = 0.0f;
+      double tsqbmean = 0.0f;
+      double tbrstd = 0.0f;
+      double tvariance = 0.0f;
+
+      for ( img = 0; img < nImg; img++ ) {
+        for ( hi = 0; hi < ifh; hi++ ) {
+          for ( wi = 0; wi < ifw; wi++ ) {
+            const double input_val = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi, wi, nFm, ifh, ifw);
+            ch_sum   += input_val;
+            ch_sumsq += (input_val * input_val);
+          }
+        }
+      }
+
+      tbmean = recp_nhw * ch_sum;
+      tbmeansq  = tbmean * tbmean;
+      tsqbmean = recp_nhw * ch_sumsq;
+      tvariance = tsqbmean - tbmeansq;
+      tbrstd = (double)(1.0/sqrt(tvariance + eps));
+      expectval_ptr[fm] = tbmean;
+      rcpstddev_ptr[fm] = tbrstd;
+      variance_ptr[fm] = tvariance;
+    }
+  }
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
+# pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+#endif
+  for ( img = 0; img < nImg; img++ ) {
+    for ( fm = 0; fm < nFm; fm++ ) {
+      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+          const double  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifh, ifw);
+          /*const double  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw); */
+                double* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofh, ofw);
+
+          /* BN + scale (gamma, beta) */
+          double o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*rcpstddev_ptr[fm] + beta_ptr[fm];
+          /* Eltwise */
+          if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
+            const double  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
+            o += input_add_val;
+          }
+          /* ReLU */
+          if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+            o = ( o < 0.0f ) ? 0.0f : o;
+          }
+          *output_ptr2 = o;
+
+          /* Mask */
+          if ( (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+            /* without compression */
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofh, ofw);
+            *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
+          }
         }
       }
     }
@@ -2610,11 +2776,11 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
 
   int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, dinput,     dinput_ptr,     nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4, const float, output,     output_ptr,     nFm, ofh, ofw);
-  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4, const float,         input,      input_ptr,      nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float,         dinput,     dinput_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float,         dinput_add, dinput_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const float,         output,     output_ptr,     nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4,       float,         doutput,    doutput_ptr,    nFm, ofh, ofw);
   LIBXSMM_UNUSED(beta_ptr);
 
   if ( param->norm_type == 0 ) {
@@ -2634,10 +2800,11 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
             const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
                   float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
 
-            /* ReLU */
+            /* (inv) ReLU/mask */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
-              *del_output_ptr    = (output_val == 0) ? 0 : *del_output_ptr;
+              *del_output_ptr = (output_val == 0) ? 0 : *del_output_ptr;
             }
+
             /* elementwise */
             if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
               *del_input_add_ptr = *del_output_ptr;
@@ -2660,6 +2827,82 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
                 float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifh, ifw);
           const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
           const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
+
+          *del_input_ptr = gamma_ptr[fm] * rcpstddev_ptr[fm] * recp_nhw * (nhw * del_output_val -
+                    (del_beta_ptr[fm] + (input_val - expectval_ptr[fm]) * del_gamma_ptr[fm] * rcpstddev_ptr[fm]));
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_fusedbatchnorm_bp_fp64(naive_fusedbatchnorm_t* param, const double* input_ptr, double* dinput_ptr, const double* output_ptr, double* doutput_ptr, double* dinput_add_ptr,
+                                     const double* beta_ptr, double* del_beta_ptr, const double* gamma_ptr, double* del_gamma_ptr,
+                                     const double* expectval_ptr, const double* rcpstddev_ptr)
+{
+  const int nImg = param->N;
+  const int nFm = param->C;
+  const int ifh = param->H;
+  const int ifw = param->W;
+  const int sh = param->stride_h;
+  const int sw = param->stride_w;
+  const int ofh = ifh/sh;
+  const int ofw = ifw/sw;
+  const double nhw = (double)(nImg * ifh * ifw);
+  const double recp_nhw = 1.0f/nhw;
+
+  int img, fm, hi, wi, ho, wo;
+
+  LIBXSMM_VLA_DECL(4, const double, input,      input_ptr,      nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       double, dinput,     dinput_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       double, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const double, output,     output_ptr,     nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4,       double, doutput,    doutput_ptr,    nFm, ofh, ofw);
+  LIBXSMM_UNUSED(beta_ptr);
+
+  if ( param->norm_type == 0 ) {
+#if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
+#   pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+#endif
+    for ( fm = 0; fm < nFm; fm++ ) {
+      del_gamma_ptr[fm] = 0.0f;
+      del_beta_ptr[fm] = 0.0f;
+
+      for ( img = 0; img < nImg; img++ ) {
+        for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+          for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+                  double* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifh, ifw);
+            const double  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, fm, ofh, ofw);
+            const double  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
+                  double* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
+
+            /* ReLU */
+            if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+              *del_output_ptr = (output_val == 0) ? 0 : *del_output_ptr;
+            }
+            /* elementwise */
+            if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
+              *del_input_add_ptr = *del_output_ptr;
+            }
+            del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * rcpstddev_ptr[fm];
+            del_beta_ptr[fm]  += *del_output_ptr;
+          }
+        }
+      }
+    }
+  }
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+#endif
+  for ( img = 0; img < nImg; img++ ) {
+    for ( fm = 0; fm < nFm; fm++ ) {
+      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++) {
+                double* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifh, ifw);
+          const double  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
+          const double  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
 
           *del_input_ptr = gamma_ptr[fm] * rcpstddev_ptr[fm] * recp_nhw * (nhw * del_output_val -
                     (del_beta_ptr[fm] + (input_val - expectval_ptr[fm]) * del_gamma_ptr[fm] * rcpstddev_ptr[fm]));
