@@ -92,8 +92,6 @@ LIBXSMM_INLINE void mask_compress_uint8 (unsigned char * src_mask_uncompressed, 
   }
 }
 
-
-
 /* it's fine to alias in and out */
 LIBXSMM_INLINE void truncate_mask_fp32_bf16(float* in, float* out, unsigned int len) {
   unsigned int i = 0;
@@ -218,7 +216,6 @@ LIBXSMM_INLINE void zero_buf_fp64(double* buf, size_t size) {
     buf[i] = 0.0f;
   }
 }
-
 
 LIBXSMM_INLINE void zero_buf_bf16(libxsmm_bfloat16* buf, size_t size) {
   int i;
@@ -468,7 +465,6 @@ LIBXSMM_INLINE void truncate_buf_fp64_to_fp32 (const double *src, float *dst, si
   for (i = 0; i < (int)src_size; i++)
     dst[i] = (float)(src[i]);
 }
-
 
 LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
 {
@@ -1149,7 +1145,6 @@ LIBXSMM_INLINE void tensor_copy_NCHW_to_NCHWc_uint8(unsigned char *src, unsigned
     }
   }
 }
-
 
 LIBXSMM_INLINE void tensor_pollute_rim_NCHWc(float *dst, int N, int C, int H, int W, int bc, int pad_h, int pad_w, float polute_val)
 {
@@ -2509,7 +2504,6 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   const int ofw = ifw/sw;
   const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
-  //const float sqrt_eps = 1e-7f;
 
   int img, fm, hi, wi, ho, wo;
 
@@ -2518,9 +2512,6 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   LIBXSMM_VLA_DECL(4,       float,   output,    output_ptr,    nFm, ofh, ofw);
 
   LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
-//  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofh, ofw / 8); /* assuming that ofw is divisible by 8 */
-//  LIBXSMM_VLA_DECL(3, unsigned char, relumask,  relumask_ptr,  nFm, ofh * ofw); //hoping that H * W is divisible by 8
-
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
@@ -2550,7 +2541,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;
-      tbrstd = (float)(1.0/sqrt(tvariance + eps));//sqrt_eps));
+      tbrstd = (float)(1.0/sqrt(tvariance + eps));
       expectval_ptr[fm] = tbmean;
       rcpstddev_ptr[fm] = tbrstd;
       variance_ptr[fm] = tvariance;
@@ -2587,17 +2578,6 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
             /* without compression */
             unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofh, ofw);
             *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
-            /* with compression */
-#if 0
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo/8, nFm, ofh, ofw/8);
-            if (wo%8 == 0)
-              *relumask_ptr2 = 0;
-
-//            unsigned char tmp1 = (unsigned char)(1 << (wo%8));
-//            unsigned char tmp2 = (unsigned char)(( o < 0.0f ) ? 0x0 : 1 << (wo%8));
-//            printf("wo = %d tmp1 = %u tmp2 = %u \n", wo, tmp1, tmp2);
-            *relumask_ptr2 = *relumask_ptr2 | ( (unsigned char)(( o <= 0.0f ) ? 0x0 : 1 << (wo%8)) );
-#endif
           }
         }
       }
@@ -2619,7 +2599,6 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp_fp64(naive_fusedbatchnorm_t* param, 
   const int ofw = ifw/sw;
   const double nhw = (double)(nImg * ifh * ifw);
   const double recp_nhw = 1.0f/nhw;
-  //const float sqrt_eps = 1e-7f;
 
   int img, fm, hi, wi, ho, wo;
 
@@ -2657,7 +2636,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp_fp64(naive_fusedbatchnorm_t* param, 
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tvariance = tsqbmean - tbmeansq;
-      tbrstd = (double)(1.0/sqrt(tvariance + eps));//sqrt_eps));
+      tbrstd = (double)(1.0/sqrt(tvariance + eps));
       expectval_ptr[fm] = tbmean;
       rcpstddev_ptr[fm] = tbrstd;
       variance_ptr[fm] = tvariance;
@@ -2801,8 +2780,6 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp_fp64(naive_fusedbatchnorm_t* param, 
   LIBXSMM_VLA_DECL(4, const double, output,     output_ptr,     nFm, ofh, ofw);
   LIBXSMM_VLA_DECL(4,       double, doutput,    doutput_ptr,    nFm, ofh, ofw);
   LIBXSMM_UNUSED(beta_ptr);
-
-//  LIBXSMM_VLA_DECL(4, const unsigned char, relumask,   relumask_ptr,   nFm, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)

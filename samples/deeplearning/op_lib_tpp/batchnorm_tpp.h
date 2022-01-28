@@ -697,6 +697,8 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
   LIBXSMM_VLA_DECL(4,       float,         out,      pout, CP, HW, bc);            /* [N, CP, HW, bc] */
   LIBXSMM_VLA_DECL(2, const float,         gamma,    pgamma, bc);                  /* [CP, bc] */
   LIBXSMM_VLA_DECL(2, const float,         beta,     pbeta, bc);                   /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float,         mean,     mean,  bc);                   /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float,         var,      var,   bc);                   /* [CP, bc] */
 
   LIBXSMM_VLA_DECL(4, const float,         inp_add,  pinp_add, CP, HW, bc);        /* [N, CP, HW, bc] */
 
@@ -830,8 +832,14 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
     int hwb, cb;
 
     for(cb = 0; cb < bc; cb++){
-      s[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps));                                 /* s = 1/sqrt(var(X) + eps)     [bc] */
-      b[cb] = -1 * mean[cp*bc + cb] * s[cb];                                               /* b = -E[X]/sqrt(var(X) + eps) [bc] */
+      float lvar   = LIBXSMM_VLA_ACCESS(2, var,   cp, cb, bc);
+      float lmean  = LIBXSMM_VLA_ACCESS(2, mean,  cp, cb, bc);
+
+      s[cb] = 1.0f / ((float)sqrt(lvar + eps));                                 /* s = 1/sqrt(var(X) + eps)     [bc] */
+      b[cb] = -1 * lmean * s[cb];                                               /* b = -E[X]/sqrt(var(X) + eps) [bc] */
+
+      /* s[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps)); */                /* s = 1/sqrt(var(X) + eps)     [bc] */
+      /* b[cb] = -1 * mean[cp*bc + cb] * s[cb];               */                /* b = -E[X]/sqrt(var(X) + eps) [bc] */
     }
     arg_array[1].primary = s;                                                              /* [bc] */
     arg_array[2].primary = b;                                                              /* [bc] */
@@ -907,14 +915,16 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
 
   const float scale = 1.0f / ((float)N*HW);                   /* Scaling parameter*/
 
-  LIBXSMM_VLA_DECL(4,       float, din, pdin, CP, HW, bc);          /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(4, const float, inp, pinp, CP, HW, bc);          /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(4,       float, dout, pdout, CP, HW, bc);        /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(2, const float, gamma, pgamma, bc);              /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2,       float, dgamma, pdgamma, bc);            /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2,       float, dbeta, pdbeta, bc);              /* [CP, bc] */
+  LIBXSMM_VLA_DECL(4,       float, din,    pdin, CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4, const float, inp,    pinp, CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4,       float, dout,   pdout, CP, HW, bc);         /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(2, const float, gamma,  pgamma, bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float, mean,   mean,  bc);                 /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float, var,    var,   bc);                 /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float, dgamma, pdgamma, bc);               /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float, dbeta,  pdbeta, bc);                /* [CP, bc] */
 
-  LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, bc);     /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
   LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
@@ -971,14 +981,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
           cfg.inv_relu_kernel(&all_relu_param);
         } /* ReLU/mask */
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-#if 0
-          int i;
-          for (i = 0; i < bc * (HW/num_HW_blocks); ++i) {
-            int index;
-            index = n * (CP * HW * bc) + cp * (HW * bc) + (hwb*(HW/num_HW_blocks)) * (bc) + i;
-            pdin_add[index] = pdout[index];
-          }
-#endif
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           cfg.ewise_copy_kernel(&ewise_copy_param);
@@ -1013,8 +1015,14 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     /* } */
 
     for(cb = 0; cb < bc; cb++){
-      a[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps));
-      b[cb] = -a[cb]*mean[cp*bc + cb];
+      float lvar   = LIBXSMM_VLA_ACCESS(2, var,   cp, cb, bc);
+      float lmean  = LIBXSMM_VLA_ACCESS(2, mean,  cp, cb, bc);
+
+      a[cb] = 1.0f / ((float)sqrt(lvar + eps));
+      b[cb] = -a[cb] * lmean;
+
+      /* a[cb] = 1.0f / ((float)sqrt(var[cp*bc + cb] + eps)); */
+      /* b[cb] = -a[cb]*mean[cp*bc + cb];                     */
     }
 
     arg_array[1].primary = a;
@@ -1094,11 +1102,16 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
 
     int hwb, cb;
 
-    /* FIXME: Replace expressions for pgamma, pdgamma etc. with ACCESS? */
     for(cb = 0; cb < bc; cb++){
-      a[cb] = pgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));                            /* a = gamma_ptr[bc] * brstd_ptr[bc] */
-      b[cb] = -a[cb] * scale * pdgamma[cp*bc + cb] / ((float)sqrt(var[cp*bc + cb] + eps));          /* b = gamma_ptr[bc] * brstd_ptr[bc] * del_gamma_ptr[v] * brstd_ptr[bc] * recp_nhw */
-      c[cb] = -b[cb] * mean[cp*bc + cb] - a[cb] * scale * pdbeta[cp*bc + cb] ;                      /* c = -gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * del_beta_ptr[bc] + gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * bmean_ptr[bc] * del_gamma_ptr[bc] * brstd_ptr[bc]) */
+      float lgamma  = LIBXSMM_VLA_ACCESS(2, gamma,  cp, cb, bc);
+      float ldgamma = LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, bc);
+      float lvar    = LIBXSMM_VLA_ACCESS(2, var,    cp, cb, bc);
+      float lmean   = LIBXSMM_VLA_ACCESS(2, mean,   cp, cb, bc);
+      float ldbeta  = LIBXSMM_VLA_ACCESS(2, dbeta,  cp, cb, bc);
+
+      a[cb]        = lgamma / ((float)sqrt(lvar + eps));                            /* a = gamma_ptr[bc] * brstd_ptr[bc] */
+      b[cb]        = -a[cb] * scale * ldgamma / ((float)sqrt(lvar + eps));          /* b = gamma_ptr[bc] * brstd_ptr[bc] * del_gamma_ptr[v] * brstd_ptr[bc] * recp_nhw */
+      c[cb]        = -b[cb] * lmean - a[cb] * scale * ldbeta ;                      /* c = -gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * del_beta_ptr[bc] + gamma_ptr[bc] * brstd_ptr[bc] * recp_nhw * bmean_ptr[bc] * del_gamma_ptr[bc] * brstd_ptr[bc]) */
     }
 
     arg_array[1].primary = a;
