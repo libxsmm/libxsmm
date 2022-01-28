@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -28,6 +28,6 @@ if [ "${MKDIR}" ] && [ "${WGET}" ]; then
     DIR=$(dirname ${NAME})
     ${MKDIR} -p ${HERE}/model_zoo/${DIR}
     cd ${HERE}/model_zoo/${DIR}
-    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/gxm/model_zoo/${NAME}
+    ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/deeplearning/gxm/model_zoo/${NAME}
   done
 fi

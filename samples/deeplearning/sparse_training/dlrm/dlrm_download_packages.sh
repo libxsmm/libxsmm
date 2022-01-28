@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -30,6 +30,6 @@ NAMES=" \
 if [ "${MKDIR}" ] && [ "${WGET}" ]; then
   ${MKDIR} -p ${HERE}/roc/tmp1; cd ${HERE}/roc/tmp1
   for NAME in ${NAMES}; do
-    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/deeplearning/sparse_training/dlrm/roc/tmp1/${NAME}
+    ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/deeplearning/sparse_training/dlrm/roc/tmp1/${NAME}
   done
 fi
