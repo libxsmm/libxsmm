@@ -3,7 +3,7 @@
 This code sample aims to provide a simple piece of code, which takes an image and produces a visual result using LIBXSMM's MHD image file I/O. Performing a single convolution is *not* a showcase of LIBXSMM's Deeplearning as the code only runs over a single image with one channel.
 LIBXSMM's CNNs are vectorized over image channels (multiple images) according to the native vector-width of the processor and otherwise fall back to a high-level implementation.
 
-**Note**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/cnnlayer).
+**Note**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/cnnlayer).
 
 The executable can run with the following arguments (all arguments are optional):
 

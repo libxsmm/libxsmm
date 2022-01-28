@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
@@ -85,9 +85,6 @@
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_THROW;
-#endif
-#if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
-LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -2866,6 +2863,42 @@ LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 }
 
 
+LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                          const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_gemm_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.k = k;
+  res.lda = (libxsmm_blasint*)lda;
+  res.ldb = (libxsmm_blasint*)ldb;
+  res.ldc = (libxsmm_blasint*)ldc;
+  res.a_in_type = a_in_type;
+  res.b_in_type = b_in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
+                                                                                      const unsigned long long br_stride_a_hint, const unsigned long long br_stride_b_hint,
+                                                                                      const unsigned char br_unroll_hint )
+{
+  libxsmm_gemm_batch_reduce_config res;
+
+  res.br_type = br_type;
+  res.br_stride_a_hint = br_stride_a_hint;
+  res.br_stride_b_hint = br_stride_b_hint;
+  res.br_unroll_hint = br_unroll_hint;
+
+  return res;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
@@ -4638,6 +4671,63 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
 
   return result.meltw_ternary;
+}
+
+
+LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_unary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_binary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                            const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+                                                                            const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_ternary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldi3 = (libxsmm_blasint*)ldi3;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
 }
 
 
