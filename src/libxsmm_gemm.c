@@ -1008,20 +1008,20 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_A & result.ptr->flags)) {
 #if defined(LIBXSMM_GEMM_XCOPY_JIT)
         const libxsmm_blasint itk = (libxsmm_blasint)tk;
-        const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
+        const libxsmm_meltw_unary_shape unary_shape2 = libxsmm_create_meltw_unary_shape(
           itt, itk, &kldb, &itk, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec );
         result.ptr->copy_a.function = libxsmm_dispatch_meltw_unary_v2(
-          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape2, LIBXSMM_MELTW_FLAG_UNARY_NONE );
 #endif
         klda = itt;
       }
       if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_B & result.ptr->flags)) {
 #if defined(LIBXSMM_GEMM_XCOPY_JIT)
         const libxsmm_blasint itn = (libxsmm_blasint)tn, itk = (libxsmm_blasint)tk;
-        const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
+        const libxsmm_meltw_unary_shape unary_shape2 = libxsmm_create_meltw_unary_shape(
           itk, itn, &klda, &itk, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec );
         result.ptr->copy_b.function = libxsmm_dispatch_meltw_unary_v2(
-          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+          LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape2, LIBXSMM_MELTW_FLAG_UNARY_NONE );
 #endif
         kldb = (libxsmm_blasint)tk;
       }
