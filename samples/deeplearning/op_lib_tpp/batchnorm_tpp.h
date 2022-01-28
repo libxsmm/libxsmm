@@ -109,6 +109,8 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
+  memset( &res,  0, sizeof(res));
+
   /* setting up some handle values */
   res.N  = N;
   res.C  = C;
@@ -341,6 +343,8 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint my_eqn11, my_eqn12, my_eqn16;
 
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
+
+  memset( &res,  0, sizeof(res));
 
   /* setting up some handle values */
   res.N             = N;
