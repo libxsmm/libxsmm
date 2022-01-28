@@ -293,21 +293,21 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
         switch (typesize) {
 # if 0 /* unsupported */
           case 8: kernel.function = libxsmm_dispatch_meltw_unary_v2(
-            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
+            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
             unary_shape_f64, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
 # endif
           case 4: kernel.function = libxsmm_dispatch_meltw_unary_v2(
-            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
+            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
             unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
           case 2: kernel.function = libxsmm_dispatch_meltw_unary_v2(
-            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
+            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
             unary_shape_i16, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
 # if 0 /* unsupported */
           case 1: kernel.function = libxsmm_dispatch_meltw_unary_v2(
-            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
+            NULL != in ? LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/ : LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/,
             unary_shape_i8, LIBXSMM_MELTW_FLAG_UNARY_NONE );
             break;
 # endif
