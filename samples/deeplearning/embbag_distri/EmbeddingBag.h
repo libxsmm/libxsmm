@@ -20,12 +20,12 @@ class EmbeddingBagImpl
 public:
   EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
+#ifdef USE_LIBXSMM_JIT
     libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape( E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltw_unary_shape unary_shape_f16 = libxsmm_create_meltw_unary_shape( E, 0, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltw_binary_shape binary_shape_f32 = libxsmm_create_meltw_binary_shape( E, 1, &_ld, &_ld, &_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 
-#ifdef USE_LIBXSMM_JIT
     _ld = E;
     if (sizeof(T) == 4) {
       kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape_f32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
