@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
@@ -1151,6 +1151,36 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   return ret;
 }
 
+LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ld, const libxsmm_datatype type ) {
+  libxsmm_meqn_arg_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ld = (libxsmm_blasint*)ld;
+  res.type = type;
+
+  return res;
+}
+
+LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_create_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint ) {
+  libxsmm_matrix_arg_attributes res;
+
+  res.type = type;
+  res.set_type = set_type;
+  res.set_cardinality_hint = set_cardinality_hint;
+  res.set_stride_hint = set_stride_hint;
+
+  return res;
+}
+
+LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_create_matrix_eqn_arg_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint in_arg_pos ) {
+  libxsmm_matrix_eqn_arg_metadata res;
+
+  res.eqn_idx = eqn_idx;
+  res.in_arg_pos = in_arg_pos;
+
+  return res;
+}
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype ) {
   union libxsmm_matrix_eqn_info info;
