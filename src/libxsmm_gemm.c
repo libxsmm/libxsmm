@@ -931,7 +931,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           itk, itm, &klda, &itm, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec, (libxsmm_datatype)iprec );
         result.ptr->copy_a.function = libxsmm_dispatch_meltw_unary_v2(
-          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE )
+          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
 #endif
         klda = itm;
       }
