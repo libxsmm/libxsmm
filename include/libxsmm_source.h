@@ -49,6 +49,7 @@
 #include "../src/generator_gemm_sse_microkernel.c"
 #include "../src/generator_mateltwise.c"
 #include "../src/generator_mateltwise_aarch64.c"
+#include "../src/generator_mateltwise_gather_scatter_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_aarch64.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"
 #include "../src/generator_mateltwise_reduce_aarch64.c"

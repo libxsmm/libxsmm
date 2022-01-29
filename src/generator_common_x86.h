@@ -14,6 +14,18 @@
 
 #include "generator_common.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_header_no_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_init_val);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_footer_with_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_step,
+    const unsigned int                 i_loop_bound);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_x86_save_gpr_regs(libxsmm_generated_code*   io_generated_code,
