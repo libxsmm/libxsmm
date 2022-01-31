@@ -58,17 +58,12 @@ int main(int argc, char *argv[])
   char transa = 'N', transb = 'N';
 #endif
   libxsmm_gemm_shape gemm_shape;
-  libxsmm_gemm_batch_reduce_config gemm_brconfig;
+  const libxsmm_gemm_batch_reduce_config gemm_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_NONE, 0, 0, 0);
   const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_gemmfunction kernel = NULL;
   libxsmm_gemm_param gemm_param;
-
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
-  gemm_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
-  gemm_brconfig.br_stride_a_hint = 0;
-  gemm_brconfig.br_stride_b_hint = 0;
-  gemm_brconfig.br_unroll_hint = 0;
 
   if (argc != 5) {
     assert(0 < argc);
