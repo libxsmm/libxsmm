@@ -170,16 +170,21 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
 
 
 int main(int argc, char* argv[]) {
-  int M = ( argc == 7 ) ? atoi(argv[1]) : 9;
-  int N = ( argc == 7 ) ? atoi(argv[2]) : 10;
-  int K = ( argc == 7 ) ? atoi(argv[3]) : 20;
-  unsigned int N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
-  unsigned int REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
+  libxsmm_blasint M = ( argc == 7 ) ? atoi(argv[1]) : 9;
+  libxsmm_blasint N = ( argc == 7 ) ? atoi(argv[2]) : 10;
+  libxsmm_blasint K = ( argc == 7 ) ? atoi(argv[3]) : 20;
+  libxsmm_blasint N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
+  libxsmm_blasint REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
+  libxsmm_blasint zero = 0;
   char* l_csc_file =     ( argc == 7 ) ?      argv[6]  : "file.csc";
 
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const REALTYPE alpha = 1, beta = 1;
+  libxsmm_gemmfunction mykernel = NULL;
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+    M, N, K, &K, &zero, &N, LIBXSMM_DATATYPE(REALTYPE),
+    LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+  libxsmm_gemm_param gemm_param;
 
   edge_mat_desc mat_desc = libxsmm_sparse_csc_reader_desc( l_csc_file );
   unsigned int l_rowcount = mat_desc.row_count;
@@ -203,10 +208,6 @@ int main(int argc, char* argv[]) {
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_a, l_a, K, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N, N_CRUNS);
-
-  libxsmm_descriptor_blob l_xgemm_blob;
-  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(REALTYPE) mykernel = NULL;
 
   unsigned long long l_start, l_end;
   double l_total;
@@ -306,34 +307,38 @@ int main(int argc, char* argv[]) {
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)M * (double)N * (double)K * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE(REALTYPE),
-    M, N, K, K, 0, N, alpha, beta, flags, prefetch);
-
   /* sparse routine */
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
 #if defined(__EDGE_EXECUTE_F32__)
-  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
-    mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp).smm;
-  } else {
-    mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp).smm;
-  }
+    mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp );
 #else
-  mykernel = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp).dmm;
+    mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
 #endif
+  } else {
+    mykernel = libxsmm_create_packed_spgemm_csc_v2( gemm_shape, l_flags, l_prefetch_flags, N_CRUNS, l_colptr, l_rowidx, (const void*)l_b_sp );
+  }
 
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
   if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+    gemm_param.a.primary = (void*)l_a;
+#if defined(__EDGE_EXECUTE_F32__)
+    gemm_param.b.primary = (void*)l_b_sp_padded;
+#else
+    gemm_param.b.primary = (void*)l_b_sp;
+#endif
+    gemm_param.c.primary = (void*)l_c_asm;
     l_start = libxsmm_timer_tick();
     for ( l_n = 0; l_n < REPS; l_n++) {
-#if defined(__EDGE_EXECUTE_F32__)
-      mykernel( l_a, l_b_sp_padded, l_c_asm );
-#else
-      mykernel( l_a, l_b_sp, l_c_asm );
-#endif
+      mykernel( &gemm_param );
     }
     l_end = libxsmm_timer_tick();
   } else {
+    gemm_param.a.primary = (void*)l_a;
+    gemm_param.b.primary = (void*)l_b_sp;
+    gemm_param.c.primary = (void*)l_c_asm;
     l_start = libxsmm_timer_tick();
     for ( l_n = 0; l_n < REPS; l_n++) {
-      mykernel( l_a, l_b_sp, l_c_asm );
+      mykernel( &gemm_param );
     }
     l_end = libxsmm_timer_tick();
   }
