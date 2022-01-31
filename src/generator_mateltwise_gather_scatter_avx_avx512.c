@@ -215,11 +215,11 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
 
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = atoi(env_max_m_unroll);
+    max_m_unrolling = LIBXSMM_MAX(1, atoi(env_max_m_unroll));
   }
   if ( 0 == env_max_n_unroll ) {
   } else {
-    n_unroll_factor = atoi(env_max_n_unroll);
+    n_unroll_factor = LIBXSMM_MAX(1, atoi(env_max_n_unroll));
   }
 
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
@@ -325,6 +325,9 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
       }
     } else {
       /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+      free(p_jump_label_tracker);
+#endif
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
     }
@@ -375,6 +378,9 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
         /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+        free(p_jump_label_tracker);
+#endif
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -439,6 +445,9 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, n_unroll_factor * m * idx_tsize);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -761,7 +770,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
 
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = atoi(env_max_m_unroll);
+    max_m_unrolling = LIBXSMM_MAX(1, atoi(env_max_m_unroll));
   }
   if ( 0 == env_pf_dist ) {
   } else {
@@ -878,6 +887,9 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
         /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+        free(p_jump_label_tracker);
+#endif
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -901,6 +913,9 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         }
       } else {
         /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+        free(p_jump_label_tracker);
+#endif
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -963,6 +978,9 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
 
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_mateltwise_footer_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n);
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1093,6 +1111,9 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
 
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat * n - dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer_with_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1, m);
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1218,6 +1239,9 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, idx_tsize * m);
   libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -1256,11 +1280,11 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
 
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = atoi(env_max_m_unroll);
+    max_m_unrolling = LIBXSMM_MAX(1, atoi(env_max_m_unroll));
   }
   if ( 0 == env_max_n_unroll ) {
   } else {
-    n_unroll_factor = atoi(env_max_n_unroll);
+    n_unroll_factor = LIBXSMM_MAX(1, atoi(env_max_n_unroll));
   }
 
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
@@ -1367,6 +1391,9 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
       }
     } else {
       /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+      free(p_jump_label_tracker);
+#endif
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
     }
@@ -1417,6 +1444,9 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         libxsmm_generator_mateltwise_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
         /* shouldn't happen */
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+        free(p_jump_label_tracker);
+#endif
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -1502,6 +1532,9 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+  free(p_jump_label_tracker);
+#endif
 }
 
 LIBXSMM_API_INTERN
