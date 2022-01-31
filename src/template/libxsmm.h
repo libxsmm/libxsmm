@@ -646,7 +646,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values );
+  const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values );
 
 /**
  * Deallocates the JIT'ted code as returned by libxsmm_create_* functions,

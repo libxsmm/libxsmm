@@ -5161,7 +5161,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values )
+  const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values )
 {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_csr_reg_descriptor sreg;
@@ -5189,6 +5189,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsm
     NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
     NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
     l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+  desc->c1 = max_N;
 
   sreg.gemm = desc;
   sreg.row_ptr = row_ptr;

@@ -1275,6 +1275,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   /* Define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
+  l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
@@ -1291,6 +1292,38 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xfff );
+
+  /* implementing load from struct */
+  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
+    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR,
+                                                         l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1,
+                                                         0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    /* A pointer */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mapping.gp_reg_a );
+    /* B pointer */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mapping.gp_reg_b );
+    /* C pointer */
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
+                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 96, l_gp_reg_mapping.gp_reg_c );
+#if 0
+    if ( i_xgemm_desc->prefetch != LIBXSMM_GEMM_PREFETCH_NONE ) {
+      /* A prefetch pointer */
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 56, l_gp_reg_mapping.gp_reg_a_prefetch );
+      /* B preftech pointer */
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
+                                       l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 88, l_gp_reg_mapping.gp_reg_b_prefetch );
+    }
+#endif
+  } else {
+#if 0
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_ABI );
+    return;
+#endif
+  }
 
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, LIBXSMM_AARCH64_SVE_REG_P0,
                                                 -1, l_gp_reg_mapping.gp_reg_help_0 );
