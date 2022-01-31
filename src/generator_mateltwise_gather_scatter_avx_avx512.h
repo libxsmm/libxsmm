@@ -13,6 +13,23 @@
 #define GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_H
 
 #include "generator_common.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_unified_vec_move_ext( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_vmove_instr,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_vec_reg_number_0,
+                                                const unsigned int      i_use_masking,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      use_mask_move_instr,
+                                                const unsigned int      use_m_scalar_loads_stores,
+                                                const unsigned int      aux_gpr,
+                                                const unsigned int      i_is_store );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_initialize_avx_64bit_mask( libxsmm_generated_code*            io_generated_code,
     const unsigned int                       i_mask_reg,
@@ -53,6 +70,8 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_m_loop( libxsmm_generated_
     unsigned int                                   vlen,
     char                                           vname,
     unsigned int                                   use_m_masking,
+    unsigned int                                   use_mask_move_instr,
+    unsigned int                                   use_m_scalar_loads_stores,
     unsigned int                                   mask_reg,
     unsigned int                                   pf_dist,
     unsigned int                                   is_gather,
