@@ -25,8 +25,8 @@ void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
   const int my_LDA = *LDA;
   const int my_LDB = *LDB;
   const int my_LDC = *LDC;
-  const float my_alpha = (float)*alpha;
-  const float my_beta = (float)*beta;
+  const double my_alpha = (double)*alpha;
+  const double my_beta = (double)*beta;
   int m = 0, n = 0, k = 0;
 
   for ( n = 0; n < my_N; ++n ) {
@@ -144,12 +144,12 @@ int main(int argc, char *argv[])
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
-  gemm_param.b.primary = (void*)a;
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < reps; j++ ) {
-    #pragma omp parallel for private(i)
+    #pragma omp parallel for private(i, gemm_param)
     for ( i = 0; i < n; i+=nblock) {
       gemm_param.a.primary = (void*)(b+i);
+      gemm_param.b.primary = (void*)a;
       gemm_param.c.primary = (void*)(c2+i);
       kernel( &gemm_param );
     }
