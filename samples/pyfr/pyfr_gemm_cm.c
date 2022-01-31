@@ -29,7 +29,6 @@ void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
   const double my_beta = (double)*beta;
   int m = 0, n = 0, k = 0;
 
-  printf("here")/
   for ( n = 0; n < my_N; ++n ) {
     for ( m = 0; m < my_M; ++m ) {
       c[(n * my_LDC) + m] = my_beta * c[(n * my_LDC) + m];
