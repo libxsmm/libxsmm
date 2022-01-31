@@ -466,6 +466,8 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GATHER ||
+         node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SCATTER ||
          is_unary_opcode_transform_kernel(node->info.u_op.type) ||
          is_unary_opcode_reduce_kernel(node->info.u_op.type) ) {
       result = 1;
