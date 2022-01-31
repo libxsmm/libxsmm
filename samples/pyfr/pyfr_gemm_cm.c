@@ -57,8 +57,18 @@ int main(int argc, char *argv[])
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   char transa = 'N', transb = 'N';
 #endif
-  int l_prefetch_op = LIBXSMM_PREFETCH_NONE;
-  libxsmm_dmmfunction kernel = NULL;
+  libxsmm_gemm_shape gemm_shape;
+  libxsmm_gemm_batch_reduce_config gemm_brconfig;
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+  libxsmm_gemmfunction kernel = NULL;
+  libxsmm_gemm_param gemm_param;
+
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+  gemm_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
+  gemm_brconfig.br_stride_a_hint = 0;
+  gemm_brconfig.br_stride_b_hint = 0;
+  gemm_brconfig.br_unroll_hint = 0;
 
   if (argc != 5) {
     assert(0 < argc);
@@ -102,7 +112,14 @@ int main(int argc, char *argv[])
   }
 
   /* JIT Kernel */
-  kernel = libxsmm_dmmdispatch(m, nblock, k, NULL, NULL, NULL, NULL, NULL, NULL, &l_prefetch_op );
+  gemm_shape = libxsmm_create_gemm_shape(
+    m, nblock, k, NULL, NULL, NULL, LIBXSMM_DATATYPE_F64,
+    LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+  kernel = libxsmm_dispatch_gemm_v2( gemm_shape, l_flags, l_prefetch_flags, gemm_brconfig );
+  if (kernel == 0) {
+    printf("JIT failed, exiting\n");
+    exit(-1);
+  }
 
   /* init MKL */
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -132,11 +149,14 @@ int main(int argc, char *argv[])
   fprintf(stdout, "GFLOPS  MKL     (CM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (CM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
+  gemm_param.a.primary = (void*)a;
   l_start = libxsmm_timer_tick();
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
-      kernel( a, &b[ldb*i], &c2[ldc*i] );
+      gemm_param.b.primary = (void*)&b[ldb*i];
+      gemm_param.c.primary = (void*)&c2[ldc*i];
+      kernel( &gemm_param );
     }
     l_end = libxsmm_timer_tick();
   }
