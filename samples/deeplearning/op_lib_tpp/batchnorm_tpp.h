@@ -21,8 +21,6 @@
 
 #define BITS_PER_CHAR (8)
 
-#define NUM_HW_BLOCKS (16)
-
 typedef enum my_normalization_fuse {
   MY_NORMALIZE_FUSE_NONE = 0,
   MY_NORMALIZE_FUSE_RELU = 1,
@@ -118,7 +116,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.W  = W;
   res.bc = bc;
   res.CP = res.C / res.bc;
-  res.num_HW_blocks = NUM_HW_BLOCKS; /* hardcoded for now */
+  res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
@@ -243,12 +241,12 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   my_eqn10 = libxsmm_matrix_eqn_create();                          /* y = (s*x + b)*gamma + beta */
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[0].eqn_idx      = my_eqn10;
   op_metadata[0].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[1].eqn_idx      = my_eqn10;
   op_metadata[1].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
@@ -353,7 +351,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.W             = W;
   res.bc            = bc;
   res.CP            = res.C / res.bc;
-  res.num_HW_blocks = NUM_HW_BLOCKS; /* hardcoded for now */
+  res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
@@ -468,7 +466,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   op_metadata[2].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[2], LIBXSMM_MELTW_TYPE_BINARY_MUL, dtype, binary_flags);
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[3].eqn_idx      = my_eqn11;
   op_metadata[3].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[3], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
@@ -580,7 +578,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* din long equation */
   my_eqn16 = libxsmm_matrix_eqn_create();                          /* din = a * dout + (b * inp + c) */
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[0].eqn_idx      = my_eqn16;
   op_metadata[0].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
@@ -601,7 +599,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[1].eqn_idx      = my_eqn16;
   op_metadata[1].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
@@ -931,7 +929,7 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, bc);     /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
-  LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
+  LIBXSMM_VLA_DECL(4, const unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
 
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
   LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, bc);  /* [CP, N, bc] */
