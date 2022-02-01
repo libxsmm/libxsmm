@@ -18,10 +18,10 @@
 
 #define NUM_HW_BLOCKS (16)
 
-//#define REFACTORED_FWD
-//#define REFACTORED_BWD
+#define REFACTORED_FWD
+#define REFACTORED_BWD
 
-//#define COMPUTE_FP64_REFERENCE
+#define COMPUTE_FP64_REFERENCE
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
@@ -264,15 +264,15 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
   const libxsmm_blasint thr_begin_dN = (ltid * chunksize_dN < work_dN) ? (ltid * chunksize_dN) : work_dN;
   const libxsmm_blasint thr_end_dN = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
 
-  /* number of tasks that could be run in parallel for 1d blocking */
-  // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
-  const libxsmm_blasint work_C = CP;
+  /* number of tasks that could be run in parallel for 1d blocking over NP*/
+  // Question: each thread should take a number of full (of length NP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_N = NP;
   /* compute chunk size */
-  const libxsmm_blasint chunksize_C = (work_C % cfg.threads == 0) ?
-    (work_C / cfg.threads) : ((work_C / cfg.threads) + 1);
+  const libxsmm_blasint chunksize_N = (work_N % cfg.threads == 0) ?
+    (work_N / cfg.threads) : ((work_N / cfg.threads) + 1);
   /* compute thr_begin and thr_end */
-  const libxsmm_blasint thr_begin_C = (ltid * chunksize_C < work_C) ? (ltid * chunksize_C) : work_C;
-  const libxsmm_blasint thr_end_C = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
+  const libxsmm_blasint thr_begin_N = (ltid * chunksize_N < work_N) ? (ltid * chunksize_N) : work_N;
+  const libxsmm_blasint thr_end_N = ((ltid + 1) * chunksize_N < work_N) ? ((ltid + 1) * chunksize_N) : work_N;
 #endif
 
   /* lazy barrier init */
@@ -290,9 +290,17 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
   if (group_size <= CB){
     int cp;
+#ifdef TRUE_PARALLEL_FWD
+    int cpxnt;
+    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      { /* stupid block to keep indentation */
+        np = cpxnt/CP;
+        cp = cpxnt%CP;
+#else
     #pragma omp parallel for collapse(2)
     for(np = 0; np < NP; np++){
       for (cp = 0; cp < CP; cp++){
+#endif
         LIBXSMM_ALIGNED(float tmp[2*CB], 64);
         LIBXSMM_ALIGNED(float sum_X[G], 64);
         LIBXSMM_ALIGNED(float sum_X2[G], 64);
@@ -368,11 +376,13 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
         }
       }
     }
-  }
-  else{                                                         /* Case when group_size > CB */
+  } else{                                                         /* Case when group_size > CB */
+#ifdef TRUE_PARALLEL_FWD
+    for ( np = thr_begin_N; np < thr_end_N; ++np ) {
+#else
     #pragma omp parallel for
     for(np = 0; np < NP; np++){
-
+#endif
       LIBXSMM_ALIGNED(float tmp[2*CB], 64);
       LIBXSMM_ALIGNED(float sum_X[G], 64);
       LIBXSMM_ALIGNED(float sum_X2[G], 64);
@@ -847,7 +857,7 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
   const libxsmm_blasint thr_begin_dN = (ltid * chunksize_dN < work_dN) ? (ltid * chunksize_dN) : work_dN;
   const libxsmm_blasint thr_end_dN = ((ltid + 1) * chunksize_dN < work_dN) ? ((ltid + 1) * chunksize_dN) : work_dN;
 
-  /* number of tasks that could be run in parallel for 1d blocking */
+  /* number of tasks that could be run in parallel for 1d blocking over CP */
   // Question: each thread should take a number of full (of length CP chunks) or can we really do a partial split here?
   const libxsmm_blasint work_C = CP;
   /* compute chunk size */
@@ -856,11 +866,20 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin_C = (ltid * chunksize_C < work_C) ? (ltid * chunksize_C) : work_C;
   const libxsmm_blasint thr_end_C = ((ltid + 1) * chunksize_C < work_C) ? ((ltid + 1) * chunksize_C) : work_C;
+
+  /* number of tasks that could be run in parallel for 1d blocking over NP */
+  // Question: each thread should take a number of full (of length NP chunks) or can we really do a partial split here?
+  const libxsmm_blasint work_N = NP;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize_N = (work_N % cfg.threads == 0) ?
+    (work_N / cfg.threads) : ((work_N / cfg.threads) + 1);
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin_N = (ltid * chunksize_N < work_N) ? (ltid * chunksize_N) : work_N;
+  const libxsmm_blasint thr_end_N = ((ltid + 1) * chunksize_N < work_N) ? ((ltid + 1) * chunksize_N) : work_N;
 #endif
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
-
 
 //// new stuff for bwd gn exec
 
@@ -876,13 +895,26 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB);
 
+#ifdef TRUE_PARALLEL_BWD
+  const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + N * CP * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(3, float, dgamma_NP, ((float*)scratch),                  CP, CB);  /* [N, CP, CB] */
+  LIBXSMM_ASSUME_ALIGNED(dgamma_NP_, 64);
+  LIBXSMM_VLA_DECL(3, float, dbeta_NP,  ((float*)scratch) + dbeta_N_offset, CP, CB);  /* [N, CP, CB] */
+  LIBXSMM_ASSUME_ALIGNED(dbeta_NP_, 64);
+#else
   LIBXSMM_ALIGNED(float dgamma_NP[NP*CP*CB], 64);
   LIBXSMM_ALIGNED(float dbeta_NP[NP*CP*CB], 64);
-
+#endif
+//  LIBXSMM_ALIGNED(float dgamma_NP[NP*CP*CB], 64);
+//  LIBXSMM_ALIGNED(float dbeta_NP[NP*CP*CB], 64);
 
   if (group_size <= CB){
+#ifdef TRUE_PARALLEL_BWD
+    {
+#else
     #pragma omp parallel
     {
+#endif
       LIBXSMM_ALIGNED(float a[CB], 64);
       LIBXSMM_ALIGNED(float b[CB], 64);
       LIBXSMM_ALIGNED(float c[CB], 64);
@@ -890,9 +922,17 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
       LIBXSMM_ALIGNED(float db[CB], 64);
 
       int np, cp;
+#ifdef TRUE_PARALLEL_BWD
+      int cpxnt;
+      for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+        { /* stupid block to keep indentation */
+          np = cpxnt/CP;
+          cp = cpxnt%CP;
+#else
       #pragma omp for collapse(2)
-      for (np = 0; np < NP; np++){
+      for (np = 0; np < NP; np++) {
         for (cp = 0; cp < CP; cp++) {
+#endif
           int j, g, hwb, lg;
 
           libxsmm_matrix_eqn_param eqn_param;
@@ -905,9 +945,9 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
               dbeta_NP[np*CP*CB + cp*CB + j] = 0.0f;
            } */
 
-          all_zero_param.out.primary = &dgamma_NP[np*CP*CB + cp*CB];
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
           cfg.all_zero_kernel(&all_zero_param);
-          all_zero_param.out.primary = &dbeta_NP[np*CP*CB + cp*CB];
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
           cfg.all_zero_kernel(&all_zero_param);
           all_zero_param.out.primary = ds;
           cfg.all_zero_kernel(&all_zero_param);
@@ -925,8 +965,8 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
           arg_array[1].primary = a;
           arg_array[2].primary = b;
-          arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
-          arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
+          arg_array[4].primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
+          arg_array[5].primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
           arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[8].primary = ds;
           arg_array[9].primary = db;
@@ -941,10 +981,10 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
             eqn_param.output.primary = db;
             cfg.db_func(&eqn_param);
 
-            eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
             cfg.dgamma_func(&eqn_param);
 
-            eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
             cfg.dbeta_func(&eqn_param);
           }
 
@@ -979,21 +1019,31 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
         }
       }
 
-      #pragma omp for
-      for (cp = 0; cp < CP; cp++) {
+#ifdef TRUE_PARALLEL_BWD
+      for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+#else
+        #pragma omp for
+        for (cp = 0; cp < CP; cp++) {
+#endif
+//      #pragma omp for
+//      for (cp = 0; cp < CP; cp++) {
         for (np=0; np < NP; np++ ) {
           int cb;
           for(cb = 0; cb < CB; cb++){
-            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
-            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, cb, CP, CB);//dgamma_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB)  += LIBXSMM_VLA_ACCESS(3, dbeta_NP,  np, cp, cb, CP, CB);//dbeta_NP[np*CP*CB + cp*CB + cb];
           }
         }
       }
     }
   }
   else{
+#ifdef TRUE_PARALLEL_BWD
+    {
+#else
     #pragma omp parallel
     {
+#endif
       LIBXSMM_ALIGNED(float a[CP*CB], 64);
       LIBXSMM_ALIGNED(float b[CP*CB], 64);
       LIBXSMM_ALIGNED(float c[CP*CB], 64);
@@ -1001,8 +1051,12 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
       LIBXSMM_ALIGNED(float db[CP*CB], 64);
       int np;
 
+#ifdef TRUE_PARALLEL_BWD
+      for ( np = thr_begin_N; np < thr_end_N; ++np ) {
+#else
       #pragma omp for
       for (np = 0; np < NP; np++) {
+#endif
         int j, g, cp, hwb;
 
         libxsmm_matrix_eqn_param eqn_param;
@@ -1016,9 +1070,9 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
         /* } */
 
         for (cp = 0; cp < CP; cp++) {
-          all_zero_param.out.primary = &dgamma_NP[np*CP*CB + cp*CB];
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
           cfg.all_zero_kernel(&all_zero_param);
-          all_zero_param.out.primary = &dbeta_NP[np*CP*CB + cp*CB];
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
           cfg.all_zero_kernel(&all_zero_param);
           all_zero_param.out.primary = &ds[cp*CB];
           cfg.all_zero_kernel(&all_zero_param);
@@ -1036,8 +1090,8 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
         for (cp = 0; cp < CP; cp++) {
           arg_array[1].primary = &a[cp*CB];
           arg_array[2].primary = &b[cp*CB];
-          arg_array[4].primary = &dgamma_NP[np*CP*CB + cp*CB];
-          arg_array[5].primary = &dbeta_NP[np*CP*CB + cp*CB];
+          arg_array[4].primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
+          arg_array[5].primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP,  np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
           arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[8].primary = &ds[cp*CB];
           arg_array[9].primary = &db[cp*CB];
@@ -1052,10 +1106,10 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
             eqn_param.output.primary = &db[cp*CB];
             cfg.db_func(&eqn_param);
 
-            eqn_param.output.primary = &dgamma_NP[np*CP*CB + cp*CB];
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
             cfg.dgamma_func(&eqn_param);
 
-            eqn_param.output.primary = &dbeta_NP[np*CP*CB + cp*CB];
+            eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
             cfg.dbeta_func(&eqn_param);
           }
         }
@@ -1093,13 +1147,17 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
       }
 
       int cp;
+#ifdef TRUE_PARALLEL_BWD
+      for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+#else
       #pragma omp for
       for (cp = 0; cp < CP; cp++) {
+#endif
         for (np=0; np < NP; np++ ) {
           int cb;
           for(cb = 0; cb < CB; cb++){
-            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += dgamma_NP[np*CP*CB + cp*CB + cb];
-            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB) += dbeta_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dgamma, cp, cb, CB) += LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, cb, CP, CB);//dgamma_NP[np*CP*CB + cp*CB + cb];
+            LIBXSMM_VLA_ACCESS(2, dbeta, cp, cb, CB)  += LIBXSMM_VLA_ACCESS(3, dbeta_NP,  np, cp, cb, CP, CB);//dbeta_NP[np*CP*CB + cp*CB + cb];
           }
         }
       }
