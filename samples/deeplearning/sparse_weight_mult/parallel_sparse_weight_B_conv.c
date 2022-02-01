@@ -123,8 +123,6 @@ int main(int argc, char **argv) {
     int P = (H + 2*padh - R)/sh + 1;
     int Q = (W + 2*padw - S)/sw + 1;
 
-    libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-    int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
     float *l_A = (float *)libxsmm_aligned_malloc(sizeof(float) * N * H * W * C, 64);
     float *l_B = (float *)libxsmm_aligned_malloc(sizeof(float) * R * S * C * K, 64);
     float *l_C = (float *)libxsmm_aligned_malloc(sizeof(float) * N * P * Q * K, 64);
@@ -134,6 +132,9 @@ int main(int argc, char **argv) {
     LIBXSMM_VLA_DECL(4, float, l_p_B, l_B, S, K, C);
     LIBXSMM_VLA_DECL(7, float, l_p_C, l_C, P, Q, K / KB, NB / nb, KB, nb);
     LIBXSMM_VLA_DECL(7, float, l_p_C_gold, l_C_gold, P, Q, K / KB, NB / nb, KB, nb);
+
+    const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
 
     /* print sizes */
     printf("Sparse Convolution kernel FWD\n");
@@ -317,27 +318,24 @@ int main(int argc, char **argv) {
     }
 
     /* FWD */
-    float alpha = 1.0;
-    float beta = 1.0;
-    libxsmm_descriptor_blob l_xgemm_blob;
-    libxsmm_gemm_descriptor **l_xgemm_desc =
-        (libxsmm_gemm_descriptor **)libxsmm_aligned_malloc(
-            RSnum_blocks * sizeof(libxsmm_gemm_descriptor *), 64);
-    libxsmm_smmfunction *mykernel =
-        (libxsmm_smmfunction *)libxsmm_aligned_malloc(
-            RSnum_blocks * sizeof(libxsmm_smmfunction), 64);
+    libxsmm_gemmfunction *mykernel =
+        (libxsmm_gemmfunction *)libxsmm_aligned_malloc(
+            RSnum_blocks * sizeof(libxsmm_gemmfunction), 64);
+    const libxsmm_blasint zero = 0;
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+            NB / nb, KB, CB, &CB, &zero, &KB, LIBXSMM_DATATYPE(float),
+            LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
+    libxsmm_gemm_param gemm_param;
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+
     for (blk_idx = 0; blk_idx < RSnum_blocks; ++blk_idx) {
-        l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-            &l_xgemm_blob, LIBXSMM_DATATYPE(float), NB / nb, KB, CB, CB,
-            0, KB, alpha, beta, flags, prefetch);
-        mykernel[blk_idx] =
-            libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
-                                    b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx]).smm;
+        mykernel[blk_idx] = libxsmm_create_packed_spgemm_csc_v2(
+            gemm_shape, l_flags, l_prefetch_flags, nb,
+            b_colptr[blk_idx], b_rowidx[blk_idx], (const void *)b_values[blk_idx]);
     }
 
 #ifdef _OPENMP
-#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w,l_r,l_s)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w,l_r,l_s,gemm_param)
 #endif
     for (k = 0; k < K / KB; ++k) {
       for (n = 0; n < N / NB; ++n) {
@@ -350,9 +348,11 @@ int main(int argc, char **argv) {
               for (l_s = 0; l_s < S; ++l_s) {
                 if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                 for (c = 0; c < C / CB; ++c) {
-                  mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
-                                               b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                             &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
+                  gemm_param.a.primary = &(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb));
+                  gemm_param.b.primary = b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c];
+                  gemm_param.c.primary = &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb));
+
+                  mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c]( &gemm_param );
                 }
               }
             }
@@ -373,7 +373,7 @@ int main(int argc, char **argv) {
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < (int)REPS; ++i) {
 #ifdef _OPENMP
-#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w,l_r,l_s)
+#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(4) private(k,n,c,l_p,l_q,l_h,l_w,l_r,l_s,gemm_param)
 #endif
       for (k = 0; k < K / KB; ++k) {
         for (n = 0; n < N / NB; ++n) {
@@ -386,9 +386,11 @@ int main(int argc, char **argv) {
                 for (l_s = 0; l_s < S; ++l_s) {
                   if ( l_w+l_s < 0 || l_w+l_s >= W ) continue;
                   for (c = 0; c < C / CB; ++c) {
-                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c](&(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb)),
-                                               b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c],
-                                             &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb)) );
+                    gemm_param.a.primary = &(LIBXSMM_VLA_ACCESS(7, l_p_A, n, l_h+l_r, l_w+l_s, c, 0, 0, 0, H, W, C / CB, NB / nb, CB, nb));
+                    gemm_param.b.primary = b_values[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c];
+                    gemm_param.c.primary = &(LIBXSMM_VLA_ACCESS(7, l_p_C, n, l_p, l_q, k, 0, 0, 0, P, Q, K / KB, NB / nb, KB, nb));
+
+                    mykernel[l_r * S * (K/KB) * (C/CB) +  l_s * (K/KB * C/CB) +  k * (C/CB) + c]( &gemm_param );
                   }
                 }
               }
