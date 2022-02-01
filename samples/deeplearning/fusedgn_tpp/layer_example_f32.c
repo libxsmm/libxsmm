@@ -33,17 +33,14 @@
 
 #define BITS_PER_CHAR (8)
 
-
-// FIXME: Either make bn and gn differ, or make macro guards to have only one definition in the final batch/groupnorm headers
-typedef enum my_normalization_fuse {
+typedef enum my_gn_fuse {
   MY_NORMALIZE_FUSE_NONE = 0,
   MY_NORMALIZE_FUSE_RELU = 1,
   MY_NORMALIZE_FUSE_ELTWISE = 2,
   MY_NORMALIZE_FUSE_ELTWISE_RELU = 3,
   MY_NORMALIZE_FUSE_RELU_WITH_MASK = 4,
   MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK = 5
-} my_normalization_fuse;
-
+} my_gn_fuse;
 
 
 #endif /* either REFACTORED_FWD or REFACTORED_BWD */
@@ -87,7 +84,7 @@ typedef struct my_gn_fwd_config {
   libxsmm_meltwfunction_unary  all_zero_G_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
-  my_normalization_fuse        fuse_type;
+  my_gn_fuse        fuse_type;
 } my_gn_fwd_config;
 
 #endif
@@ -115,14 +112,14 @@ typedef struct my_gn_bwd_config {
   libxsmm_matrix_eqn_function  din_func;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
-  my_normalization_fuse        fuse_type;
+  my_gn_fuse        fuse_type;
 } my_gn_bwd_config;
 #endif
 
 #ifdef REFACTORED_FWD
 
 my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint G, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_normalization_fuse fuse_type ) {
+                                 libxsmm_blasint threads, my_gn_fuse fuse_type ) {
 
   my_gn_fwd_config res;
 
@@ -139,12 +136,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_meltw_unary_flags   unary_flags;
   libxsmm_meltw_binary_flags  binary_flags;
   libxsmm_meltw_ternary_flags ternary_flags;
-
-//  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-//  libxsmm_meltw_unary_type  unary_type;
-
-//  libxsmm_datatype  in_dt  = LIBXSMM_DATATYPE_F32;
-//  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
 
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
@@ -287,7 +278,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
   }
 
-  /* TPP for foward */
+  /* TPP for forward */
   ld = res.bc;
   tmp_ld = 1;
   tmp_ld2 = 1;
@@ -373,8 +364,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-// FIXME: Set const modifiers properly? Cannot put const as then reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); complains
-void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, int start_tid, int my_tid, void *scratch ) {
+void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, float eps, int start_tid, int my_tid, void *scratch ) {
 
   // FIXME: N vs NP?
   const libxsmm_blasint NP = cfg.N;
@@ -412,12 +402,10 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-// new stuff for groupnorm fwd
-
-  LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);            /* [NP, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(4, float, out, pout, CP, HW, CB);
-  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);                /* [CP,CB] */
-  LIBXSMM_VLA_DECL(2, float, beta, pbeta, CB);                  /* [CP,CB] */
+  LIBXSMM_VLA_DECL(4, const float, inp, pinp, CP, HW, CB);            /* [NP, CP, HW, CB] */
+  LIBXSMM_VLA_DECL(4,       float, out, pout, CP, HW, CB);
+  LIBXSMM_VLA_DECL(2, const float, gamma, pgamma, CB);                /* [CP,CB] */
+  LIBXSMM_VLA_DECL(2, const float, beta, pbeta, CB);                  /* [CP,CB] */
 
   int np, group_size;
   group_size = (CP*CB)/G;
@@ -462,7 +450,7 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
         LIBXSMM_ALIGNED(float new_tmp[2*CB], 64);
         reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
+          reduce_HW_params.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
           cfg.reduce_HW_kernel(&reduce_HW_params);
 
           add_param.in0.primary = tmp;
@@ -499,11 +487,11 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
         arg_array[1].primary = s;                                                                           /* [CB] */
         arg_array[2].primary = b;                                                                           /* [CB] */
-        arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
-        arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
+        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
+        arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);            /* [HW, CB] */
+          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);            /* [HW, CB] */
           eqn_param.inputs = arg_array;
           eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);        /* [HW, CB] */
           cfg.func10(&eqn_param);                                                                                           /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
@@ -548,7 +536,7 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
         reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          reduce_HW_params.in.primary    = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW, CB] -----> [2 * CB] */
+          reduce_HW_params.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW, CB] -----> [2 * CB] */
           cfg.reduce_HW_kernel(&reduce_HW_params);
 
           add_param.in0.primary = tmp;
@@ -603,11 +591,11 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
         arg_array[1].primary = &s[cp*CB];                                                                   /* [CB] */
         arg_array[2].primary = &b[cp*CB];                                                                   /* [CB] */
-        arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
-        arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
+        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                                    /* [CB] */
+        arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                                     /* [CB] */
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                       /* [HW, CB] */
+          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                       /* [HW, CB] */
           eqn_param.inputs = arg_array;
           eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);                   /* [HW,CB] */
           cfg.func10(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
@@ -633,7 +621,7 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
 
 
 my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint G, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_normalization_fuse fuse_type ) {
+                                 libxsmm_blasint threads, my_gn_fuse fuse_type ) {
 
   my_gn_bwd_config res;
 
@@ -1129,10 +1117,20 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
+void destroy_my_gn_fwd(my_gn_fwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
 
-// FIXME: Set const modifiers properly?
-// FIXME: Add a "my_pass" type of input argument to distinguish between backward over weights vs backward over data
-void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta, float eps,
+  /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
+}
+
+void destroy_my_gn_bwd(my_gn_bwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+
+  /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
+}
+
+void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma,
+                     float *pdin, float *pdgamma, float *pdbeta, float eps,
                      int start_tid, int my_tid, void *scratch) {
 
   const libxsmm_blasint N  = cfg.N;
@@ -1180,19 +1178,16 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-//// new stuff for bwd gn exec
-
-  int group_size;
-  group_size = (CP*CB)/G;
+  int group_size = (CP*CB)/G;
 
   const float scale = 1.0f / ((float)group_size * HW);
 
-  LIBXSMM_VLA_DECL(4, float, din, pdin, CP, HW, CB);
-  LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);
-  LIBXSMM_VLA_DECL(4, float, dout, pdout, CP, HW, CB);
-  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);
-  LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB);
-  LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB);
+  LIBXSMM_VLA_DECL(4,       float, din, pdin, CP, HW, CB);
+  LIBXSMM_VLA_DECL(4, const float, inp, pinp, CP, HW, CB);
+  LIBXSMM_VLA_DECL(4,       float, dout, pdout, CP, HW, CB);
+  LIBXSMM_VLA_DECL(2, const float, gamma, pgamma, CB);
+  LIBXSMM_VLA_DECL(2,       float, dgamma, pdgamma, CB);
+  LIBXSMM_VLA_DECL(2,       float, dbeta, pdbeta, CB);
 
 #ifdef TRUE_PARALLEL_BWD
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + N * CP * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
@@ -1266,12 +1261,12 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
           arg_array[2].primary = b;
           arg_array[4].primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
           arg_array[5].primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP, np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
-          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[8].primary = ds;
           arg_array[9].primary = db;
 
           for(hwb=0; hwb < num_HW_blocks; hwb++){
-            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
 
             eqn_param.output.primary = ds;
@@ -1306,12 +1301,12 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
           arg_array[1].primary = a;
           arg_array[2].primary = b;
-          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[7].primary = c;
 
           for(hwb=0; hwb < num_HW_blocks; hwb++){
-            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[3].primary =        &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             cfg.din_func(&eqn_param);
           }
@@ -1391,13 +1386,13 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
           arg_array[2].primary = &b[cp*CB];
           arg_array[4].primary = &LIBXSMM_VLA_ACCESS(3, dgamma_NP, np, cp, 0, CP, CB);//&dgamma_NP[np*CP*CB + cp*CB];
           arg_array[5].primary = &LIBXSMM_VLA_ACCESS(3, dbeta_NP,  np, cp, 0, CP, CB);//&dbeta_NP[np*CP*CB + cp*CB];
-          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[8].primary = &ds[cp*CB];
           arg_array[9].primary = &db[cp*CB];
 
           for(hwb=0; hwb < num_HW_blocks; hwb++){
-            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[3].primary =        &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
 
             eqn_param.output.primary = &ds[cp*CB];
             cfg.ds_func(&eqn_param);
@@ -1433,12 +1428,12 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
 
           arg_array[1].primary = &a[cp*CB];
           arg_array[2].primary = &b[cp*CB];
-          arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
+          arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
           arg_array[7].primary = &c[cp*CB];
 
           for(hwb=0; hwb < num_HW_blocks; hwb++){
-            arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            arg_array[3].primary =        &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             cfg.din_func(&eqn_param);
           }
