@@ -16,7 +16,7 @@
 #include <math.h>
 #include <omp.h>
 
-#define NUM_HW_BLOCKS (16)
+//#define NUM_HW_BLOCKS (16)
 
 #define REFACTORED_FWD
 #define REFACTORED_BWD
@@ -147,7 +147,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.W             = W;
   res.bc            = bc;
   res.CP            = res.C / res.bc;
-  res.num_HW_blocks = NUM_HW_BLOCKS; /* hardcoded for now */ // FIXME
+  res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
@@ -482,197 +482,6 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, float *pinp, float *pgamma, float *pb
     }
   }
 
-#if 0
-
-#ifdef TRUE_PARALLEL_FWD
-  {
-#else
-  #pragma omp parallel
-  {
-#endif
-    LIBXSMM_ALIGNED(float s[CB], 64);
-    LIBXSMM_ALIGNED(float b[CB], 64);
-    int n, cp;
-
-#ifdef TRUE_PARALLEL_FWD
-    int cpxnt;
-    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
-#else
-    #pragma omp for nowait collapse(2)
-    for (cp = 0; cp < CP; cp++) {
-      for(n = 0; n < N; n++){
-#endif
-
-        int hwb;
-
-#ifdef TRUE_PARALLEL_FWD
-        float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, n, 0, N, CB);
-        float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, CB);
-#else
-        float *sum_ncp_ptr   = &sum_N[cp*N*CB + n*CB];
-        float *sumsq_ncp_ptr = &sumsq_N[cp*N*CB + n*CB];
-#endif
-
-        libxsmm_meltw_unary_param all_zero_param;
-        all_zero_param.out.primary = sum_ncp_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
-        all_zero_param.out.primary = sumsq_ncp_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
-
-        /* #pragma omp simd  */
-        /* for (int cb = 0; cb < CB; cb++) {  */
-        /*   sum_ncp_ptr[cb] = 0.0f;    */
-        /*   sumsq_ncp_ptr[cb] = 0.0f;  */
-        /* } */
-
-        libxsmm_meltw_binary_param add_param;
-
-        libxsmm_meltw_unary_param reduce_HW_params;       /*Private params and tmp array */
-        LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*CB], 64);
-        reduce_HW_params.out.primary   = lcl_sum_X_X2;                                                         /* [2*CB]  */
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-
-          reduce_HW_params.in.primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          cfg.reduce_HW_kernel(&reduce_HW_params);                                                       /* [HW, CB] -----> [2 * CB] */
-
-          add_param.in0.primary = sum_ncp_ptr;
-          add_param.in1.primary = lcl_sum_X_X2;
-          add_param.out.primary = sum_ncp_ptr;
-          cfg.add_kernel(&add_param);
-
-          add_param.in0.primary = sumsq_ncp_ptr;
-          add_param.in1.primary = &lcl_sum_X_X2[CB];
-          add_param.out.primary = sumsq_ncp_ptr;
-          cfg.add_kernel(&add_param);
-
-          /* #pragma omp simd */
-          /* for (int cb = 0; cb < CB; cb++) {  */
-          /*   sum_ncp_ptr[cb] += lcl_sum_X_X2[cb];  */
-          /*   sumsq_ncp_ptr[cb] += lcl_sum_X_X2[CB + cb];  */
-          /* }  */
-        }
-      }
-    }
-
-#ifdef TRUE_PARALLEL_FWD
-    libxsmm_barrier_wait(cfg.barrier, ltid);
-#else
-    #pragma omp barrier
-#endif
-
-#ifdef TRUE_PARALLEL_FWD
-    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
-#else
-    #pragma omp for
-    for (cp = 0; cp < CP; cp++) {
-#endif
-
-#ifdef TRUE_PARALLEL_FWD
-      libxsmm_meltw_unary_param all_zero_param;
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);
-      cfg.all_zero_kernel(&all_zero_param);
-#else
-      libxsmm_meltw_unary_param all_zero_param;
-      all_zero_param.out.primary = &sum_X_X2[cp*CB];
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &sum_X_X2[CP*CB + cp*CB];
-      cfg.all_zero_kernel(&all_zero_param);
-#endif
-
-      /* #pragma omp simd */
-      /* for (int cb = 0; cb < CB; cb++) {  */
-      /*   sum_X_X2[cp*CB + cb] = 0.0f;   */
-      /*   sum_X_X2[CP*CB + (cp*CB + cb)] = 0.0f;  */
-      /* } */
-
-      libxsmm_meltw_binary_param add_param;
-      int cb, ni;
-      for(ni = 0; ni < N; ni++){
-
-#ifdef TRUE_PARALLEL_FWD
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, CB);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, CB);
-        cfg.add_kernel(&add_param);
-
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, CB);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, CB);
-        cfg.add_kernel(&add_param);
-#else
-        add_param.in0.primary = &sum_X_X2[cp*CB];
-        add_param.in1.primary = &sum_N[cp*N*CB + ni*CB];
-        add_param.out.primary = &sum_X_X2[cp*CB];
-        cfg.add_kernel(&add_param);
-
-        add_param.in0.primary = &sum_X_X2[CP*CB + cp*CB];
-        add_param.in1.primary = &sumsq_N[cp*N*CB + ni*CB];
-        add_param.out.primary = &sum_X_X2[CP*CB + cp*CB];
-        cfg.add_kernel(&add_param);
-#endif
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   sum_X_X2[cp*CB + cb] += sum_N[cp*N*CB + n*CB + cb]; */
-        /*   sum_X_X2[CP*CB + (cp*CB + cb)] += sumsq_N[cp*N*CB + n*CB + cb]; */
-        /* } */
-      }
-
-      for(cb = 0; cb < CB; cb++){
-#ifdef TRUE_PARALLEL_FWD
-        mean[cp*CB + cb] = (LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, cb, CP, CB)) * scale;                 /* E[X] */
-        var[cp*CB + cb] = ((LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, cb, CP, CB)) * scale) - (mean[cp*CB + cb]*mean[cp*CB + cb]);
-#else
-        mean[cp*CB + cb] = sum_X_X2[cp*CB + cb] * scale;                                                  /* E[X] */
-        var[cp*CB + cb] = (sum_X_X2[CP*CB + cp*CB + cb] * scale) - (mean[cp*CB + cb]*mean[cp*CB + cb]);
-#endif
-      }
-    }
-
-#ifdef TRUE_PARALLEL_FWD
-    libxsmm_barrier_wait(cfg.barrier, ltid);
-#endif
-
-#ifdef TRUE_PARALLEL_FWD
-    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
-#else
-    #pragma omp for nowait collapse(2)
-    for (cp = 0; cp < CP; cp++){
-      for(n = 0; n < N; n++){                                                             /* Parallelize over batches and CP*/
-#endif
-
-        libxsmm_matrix_arg arg_array[5];                                                         /* private eqn args and params*/
-        libxsmm_matrix_eqn_param eqn_param;
-        int hwb, cb;
-
-        for(cb = 0; cb < CB; cb++){
-          s[cb] = 1.0f / ((float)sqrt(var[cp*CB + cb] + eps));                                 /* s = 1/sqrt(var(X) + eps)     [CB] */
-          b[cb] = -1 * mean[cp*CB + cb] * s[cb];                                               /* b = -E[X]/sqrt(var(X) + eps) [CB] */
-        }
-        arg_array[1].primary = s;                                                              /* [CB] */
-        arg_array[2].primary = b;                                                              /* [CB] */
-        arg_array[3].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);                       /* [CB] */
-        arg_array[4].primary = &LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                        /* [CB] */
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);           /* [HW, CB] */
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);       /* [HW,CB] */
-          cfg.func10(&eqn_param);                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-        }
-      }
-    }
-  }
-
-#endif // for #if 0
-
   libxsmm_barrier_wait(cfg.barrier, ltid);
 
 }
@@ -712,7 +521,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.W             = W;
   res.bc            = bc;
   res.CP            = res.C / res.bc;
-  res.num_HW_blocks = NUM_HW_BLOCKS; /* hardcoded for now */ // FIXME
+  res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
@@ -1164,217 +973,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, float *pinp, float *mea
     }
   }
 
-//--------------------------------------------------
-#if 0
-
-  const float scale = 1.0f / ((float)N*HW);                   /* Scaling parameter*/
-
-  LIBXSMM_VLA_DECL(4, float, din, pdin, CP, HW, CB);          /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(4, float, inp, pinp, CP, HW, CB);          /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(4, float, dout, pdout, CP, HW, CB);        /* [N, CP, HW, CB] */
-  LIBXSMM_VLA_DECL(2, float, gamma, pgamma, CB);              /* [CP, CB] */
-  /* LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, CB); */
-  /* LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, CB); */
-
-#ifdef TRUE_PARALLEL_BWD
-  const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, CB);  /* [CP, N, CB] */
-  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
-  LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, CB);  /* [CP, N, CB] */
-  LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
-#else
-  LIBXSMM_ALIGNED(float dgamma_N[CP*N*CB], 64);
-  LIBXSMM_ALIGNED(float dbeta_N[CP*N*CB], 64);
-#endif
-
-#ifdef TRUE_PARALLEL_BWD
-  {
-#else
-  #pragma omp parallel
-  {
-#endif
-    LIBXSMM_ALIGNED(float a[CB], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
-    LIBXSMM_ALIGNED(float b[CB], 64);
-    LIBXSMM_ALIGNED(float c[CB], 64);
-    int n, cp;
-
-#ifdef TRUE_PARALLEL_BWD
-    int cpxnt;
-    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
-#else
-    #pragma omp for nowait collapse(2)
-    for (cp = 0; cp < CP; cp++) {
-      for (n = 0; n < N; n++) {
-#endif
-
-        int hwb, cb;
-        libxsmm_matrix_arg arg_array[10];                                                           /* Private values of args and params */
-        libxsmm_matrix_eqn_param eqn_param;
-
-        LIBXSMM_ALIGNED(float lcl_dgamma_ptr[CB], 64);
-        LIBXSMM_ALIGNED(float lcl_dbeta_ptr[CB], 64);
-
-#ifdef TRUE_PARALLEL_BWD
-        float *dgamma_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, n, 0, N, CB);
-        float *dbeta_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, n, 0, N, CB);
-#else
-        float *dgamma_ncp_ptr = &dgamma_N[cp*N*CB + n*CB];
-        float *dbeta_ncp_ptr = &dbeta_N[cp*N*CB + n*CB];
-#endif
-
-        libxsmm_meltw_unary_param all_zero_param;
-        all_zero_param.out.primary = lcl_dgamma_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
-        all_zero_param.out.primary = lcl_dbeta_ptr;
-        cfg.all_zero_kernel(&all_zero_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   lcl_dgamma_ptr[cb] = 0.0f; */
-        /*   lcl_dbeta_ptr[cb] = 0.0f; */
-        /* } */
-
-        for(cb = 0; cb < CB; cb++){
-          a[cb] = 1.0f / ((float)sqrt(var[cp*CB + cb] + eps));
-          b[cb] = -a[cb]*mean[cp*CB + cb];
-        }
-
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[4].primary = lcl_dgamma_ptr;
-        arg_array[5].primary = lcl_dbeta_ptr;
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = lcl_dgamma_ptr;
-          cfg.dgamma_func(&eqn_param);                                                             /* dgamma += (a * inp + b) * dout */
-
-          eqn_param.output.primary = lcl_dbeta_ptr;
-          cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-        }
-
-        libxsmm_meltw_unary_param copy_param;
-        copy_param.in.primary = lcl_dgamma_ptr;
-        copy_param.out.primary = dgamma_ncp_ptr;
-        cfg.copy_kernel(&copy_param);
-
-        copy_param.in.primary = lcl_dbeta_ptr;
-        copy_param.out.primary = dbeta_ncp_ptr;
-        cfg.copy_kernel(&copy_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   dgamma_ncp_ptr[cb] = lcl_dgamma_ptr[cb]; */
-        /*   dbeta_ncp_ptr[cb] = lcl_dbeta_ptr[cb]; */
-        /* } */
-      }
-    }
-
-#ifdef TRUE_PARALLEL_BWD
-    libxsmm_barrier_wait(cfg.barrier, ltid);
-#else
-    #pragma omp barrier
-#endif
-
-#ifdef TRUE_PARALLEL_BWD
-    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
-#else
-    #pragma omp for
-    for (cp = 0; cp < CP; cp++) {
-#endif
-      libxsmm_meltw_unary_param all_zero_param;
-      all_zero_param.out.primary = &pdgamma[cp*CB];
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &pdbeta[cp*CB];
-      cfg.all_zero_kernel(&all_zero_param);
-
-      /* #pragma omp simd */
-      /* for (int cb = 0; cb < CB; cb++) { */
-      /*   pdgamma[cp*CB + cb] = 0.0f; */
-      /*   pdbeta[cp*CB + cb] = 0.0f; */
-      /* } */
-
-      libxsmm_meltw_binary_param add_param;
-      int ni;
-      for(ni = 0; ni < N; ni++){
-
-        add_param.in0.primary = &pdgamma[cp*CB];
-#ifdef TRUE_PARALLEL_BWD
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, CB);
-#else
-        add_param.in1.primary = &dgamma_N[cp*N*CB + ni*CB];
-#endif
-        add_param.out.primary = &pdgamma[cp*CB];
-        cfg.add_kernel(&add_param);
-
-        add_param.in0.primary = &pdbeta[cp*CB];
-#ifdef TRUE_PARALLEL_BWD
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, CB);
-#else
-        add_param.in1.primary = &dbeta_N[cp*N*CB + ni*CB];
-#endif
-        add_param.out.primary = &pdbeta[cp*CB];
-        cfg.add_kernel(&add_param);
-
-        /* #pragma omp simd */
-        /* for (int cb = 0; cb < CB; cb++) { */
-        /*   pdgamma[cp*CB + cb] += dgamma_N[cp*N*CB + n*CB + cb];  */
-        /*   pdbeta[cp*CB + cb] += dbeta_N[cp*N*CB + n*CB + cb];  */
-        /* } */
-      }
-    }
-
-#ifdef TRUE_PARALLEL_BWD
-    libxsmm_barrier_wait(cfg.barrier, ltid);
-#endif
-
-#ifdef TRUE_PARALLEL_BWD
-    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      { /* stupid block to keep indentation */
-        n  = cpxnt%N;
-        cp = cpxnt/N;
-#else
-    #pragma omp for nowait collapse(2)                                                                  /* Parallelize over batches and CP*/
-    for (cp = 0; cp < CP; cp++) {
-      for(n = 0; n < N; n++){
-#endif
-        libxsmm_matrix_arg arg_array[8];                                                               /* Private eqn args and params */
-        libxsmm_matrix_eqn_param eqn_param;
-        int hwb, cb;
-
-        for(cb = 0; cb < CB; cb++){
-          a[cb] = pgamma[cp*CB + cb] / ((float)sqrt(var[cp*CB + cb] + eps));                            /* a = gamma_ptr[CB] * brstd_ptr[CB] */
-          b[cb] = -a[cb] * scale * pdgamma[cp*CB + cb] / ((float)sqrt(var[cp*CB + cb] + eps));          /* b = gamma_ptr[CB] * brstd_ptr[CB] * del_gamma_ptr[v] * brstd_ptr[CB] * recp_nhw */
-          c[cb] = -b[cb] * mean[cp*CB + cb] - a[cb] * scale * pdbeta[cp*CB + cb] ;                      /* c = -gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * del_beta_ptr[CB] + gamma_ptr[CB] * brstd_ptr[CB] * recp_nhw * bmean_ptr[CB] * del_gamma_ptr[CB] * brstd_ptr[CB]) */
-        }
-
-        arg_array[1].primary = a;
-        arg_array[2].primary = b;
-        arg_array[6].primary = &LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, CB);
-        arg_array[7].primary = c;
-
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = &LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, din, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          cfg.din_func(&eqn_param);                                                                        /* din = dout * a + b * inp + c */
-        }
-      }
-    }
-  } /* simple code block or parallel section for old code */
-
-#endif // for #if 0 for the copied bn bwd exec
-
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
@@ -1643,7 +1241,7 @@ int main( int argc, char* argv[] ) {
   /* setup TPPs (standalone or through the configs) */
 #if !defined(REFACTORED_BWD) || !defined(REFACTORED_FWD)
 
-  int num_HW_blocks = NUM_HW_BLOCKS;
+  int num_HW_blocks = (H > W ? H : W);//NUM_HW_BLOCKS;//16
   int CB = bc;
   int NP = N;
 
