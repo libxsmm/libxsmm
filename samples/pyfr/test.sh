@@ -18,20 +18,4 @@ echo "export KMP_AFFINITY=granularity=fine,compact,1,0"
 export OMP_NUM_THREADS=8
 #export KMP_AFFINITY=granularity=fine,compact,1,0
 
-./pyfr_gemm_rm 150 2048 125 1000
-./pyfr_gemm_rm 150 48000 125 1000
-./pyfr_gemm_rm 150 96000 125 1000
-
-./pyfr_gemm_cm 150 2048 125 1000
-./pyfr_gemm_cm 150 48000 125 1000
-./pyfr_gemm_cm 150 96000 125 1000
-
-./pyfr_gemm_rm 105 2048 75 1000
-./pyfr_gemm_rm 105 48000 75 1000
-./pyfr_gemm_rm 105 96000 75 1000
-
-./pyfr_gemm_cm 105 2048 75 1000
-./pyfr_gemm_cm 105 48000 75 1000
-./pyfr_gemm_cm 105 96000 75 1000
-
 ./pyfr_driver_asp_reg ./mats/p3/hex/m6-sp.mtx 48000 10000
