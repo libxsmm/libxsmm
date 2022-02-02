@@ -22,21 +22,21 @@
 #endif
 
 
-static void matMulFusedBC(       unsigned int    i_r,
-                                 unsigned int    i_m,
-                                 unsigned int    i_n,
-                                 unsigned int    i_k,
-                                 unsigned int    i_ldA,
-                                 unsigned int    i_ldB,
-                                 unsigned int    i_ldC,
-                                 REALTYPE           i_beta,
-                           const REALTYPE           *i_a,
-                           const REALTYPE           *i_b,
-                                 REALTYPE           *o_c ) {
-  unsigned int l_m = 0;
-  unsigned int l_n = 0;
-  unsigned int l_r = 0;
-  unsigned int l_k = 0;
+static void matMulFusedBC(       libxsmm_blasint  i_r,
+                                 libxsmm_blasint  i_m,
+                                 libxsmm_blasint  i_n,
+                                 libxsmm_blasint  i_k,
+                                 libxsmm_blasint  i_ldA,
+                                 libxsmm_blasint  i_ldB,
+                                 libxsmm_blasint  i_ldC,
+                                 REALTYPE         i_beta,
+                           const REALTYPE        *i_a,
+                           const REALTYPE        *i_b,
+                                 REALTYPE        *o_c ) {
+  libxsmm_blasint l_m = 0;
+  libxsmm_blasint l_n = 0;
+  libxsmm_blasint l_r = 0;
+  libxsmm_blasint l_k = 0;
 
   /* init result matrix */
   for ( l_m = 0; l_m < i_m; l_m++ ) {
@@ -60,16 +60,15 @@ static void matMulFusedBC(       unsigned int    i_r,
 
 int main(int argc, char* argv[]) {
 #if defined(__EDGE_EXECUTE_F32__)
-  unsigned int l_r = 16;
+  libxsmm_blasint l_r = 16;
 #else
-  unsigned int l_r = 8;
+  libxsmm_blasint l_r = 8;
 #endif
-  unsigned int l_m = 1 < argc ? atoi(argv[1]) : 0;
-  unsigned int l_n = 2 < argc ? atoi(argv[2]) : 0;
-  unsigned int l_k = 3 < argc ? atoi(argv[3]) : 0;
+  libxsmm_blasint l_m = 1 < argc ? atoi(argv[1]) : 0;
+  libxsmm_blasint l_n = 2 < argc ? atoi(argv[2]) : 0;
+  libxsmm_blasint l_k = 3 < argc ? atoi(argv[3]) : 0;
   REALTYPE l_beta = (REALTYPE)(4 < argc ? atof(argv[4]) : 0);
-  REALTYPE l_alpha = 1.0;
-  unsigned int l_reps = 5 < argc ? atoi(argv[5]) : 0;
+  libxsmm_blasint l_reps = 5 < argc ? atoi(argv[5]) : 0;
   double flops = 2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
 
   REALTYPE* a = (REALTYPE*)  libxsmm_aligned_malloc( l_m*l_k*sizeof(REALTYPE), 64 );
@@ -77,11 +76,13 @@ int main(int argc, char* argv[]) {
   REALTYPE* c1 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
   REALTYPE* c2 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
 
-  libxsmm_descriptor_blob l_xgemm_blob;
-  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(REALTYPE) mykernel = NULL;
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  libxsmm_gemmfunction mykernel = NULL;
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+    l_m, l_n, l_k, &l_k, &l_n, &l_n, LIBXSMM_DATATYPE(REALTYPE),
+    LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
+  const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+  libxsmm_gemm_param gemm_param;
 
   libxsmm_timer_tickint l_start, l_end;
   double l_total_ref, l_total_opt;
@@ -107,13 +108,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* JIT code */
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE(REALTYPE),
-    l_m, l_n, l_k, l_k, l_n, l_n, l_alpha, l_beta, flags, prefetch);
-#if defined(__EDGE_EXECUTE_F32__)
-  mykernel = libxsmm_create_packed_xgemm_bc_rm( l_xgemm_desc, l_r ).smm;
-#else
-  mykernel = libxsmm_create_packed_xgemm_bc_rm( l_xgemm_desc, l_r ).dmm;
-#endif
+  mykernel = libxsmm_create_packed_gemm_bc_rm_v2( gemm_shape, l_flags, l_prefetch_flags, l_r );
 
   /* run reference */
   matMulFusedBC( l_r,
@@ -127,7 +122,11 @@ int main(int argc, char* argv[]) {
                   c1);
 
   /* run optimized */
-  mykernel( a, b, c2 );
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+  gemm_param.a.primary = (void*)a;
+  gemm_param.b.primary = (void*)b;
+  gemm_param.c.primary = (void*)c2;
+  mykernel( &gemm_param );
 
   /* check correctness */
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
@@ -158,7 +157,7 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
   for ( i = 0; i < l_reps; ++i ) {
     /* run optimized */
-    mykernel( a, b, c2);
+    mykernel( &gemm_param );
   }
   l_end = libxsmm_timer_tick();
   l_total_opt = libxsmm_timer_duration(l_start, l_end);
