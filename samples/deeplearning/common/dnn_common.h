@@ -2913,7 +2913,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp_fp64(naive_fusedbatchnorm_t* param, 
 }
 
 LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
-                                     const float* beta_ptr, const float* gamma_ptr, float eps, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr)
+                                     const float* beta_ptr, const float* gamma_ptr, float eps, float* expectval_ptr, float* rcpstddev_ptr, float* variance_ptr, unsigned char *relumask_ptr)
 {
   const int nImg = param->N;
   const int nFm = param->C;
@@ -2933,6 +2933,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
   LIBXSMM_VLA_DECL(5, const float, input,     input_ptr,     nG,  nFMG, ifh, ifw);
   LIBXSMM_VLA_DECL(5, const float, input_add, input_add_ptr, nG,  nFMG, ifh, ifw);
   LIBXSMM_VLA_DECL(5,       float, output,    output_ptr,    nG,  nFMG, ofh, ofw);
+
+  LIBXSMM_VLA_DECL(5, unsigned char, relumask,  relumask_ptr, nG, nFMG, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
 
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(g); LIBXSMM_OMP_VAR(fmg); LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi);
@@ -2978,9 +2980,9 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
       for ( fmg = 0; fmg < nFMG; fmg++ ) {
         for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
           for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
-            const float  input_val      =  LIBXSMM_VLA_ACCESS(5, input,     img, g,  fmg, hi, wi, nG,  nFMG, ifh, ifw);
-            const float  input_add_val  =  LIBXSMM_VLA_ACCESS(5, input_add, img, g,  fmg, hi, wi, nG,  nFMG, ifh, ifw);
-            float* output_ptr2          = &LIBXSMM_VLA_ACCESS(5, output,    img, g,  fmg, ho, wo, nG,  nFMG, ofh, ofw);
+            const float  input_val      =  LIBXSMM_VLA_ACCESS(5, input,     img, g, fmg, hi, wi, nG, nFMG, ifh, ifw);
+            const float  input_add_val  =  LIBXSMM_VLA_ACCESS(5, input_add, img, g, fmg, hi, wi, nG, nFMG, ifh, ifw);
+            float* output_ptr2          = &LIBXSMM_VLA_ACCESS(5, output,    img, g, fmg, ho, wo, nG, nFMG, ofh, ofw);
 
             /* BN + scale (gamma, beta) */
             float o = gamma_ptr[g*nFMG+fmg]*(input_val - expectval_ptr[img*nG+g])*rcpstddev_ptr[img*nG+g] + beta_ptr[g*nFMG+fmg];
@@ -2993,6 +2995,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
               o = ( o < 0.0f ) ? 0.0f : o;
             }
             *output_ptr2 = o;
+
+            /* Mask */
+            if ( (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+              /* without compression */
+              unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofh, ofw);
+              *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
+            }
           }
         }
       }
@@ -3001,7 +3010,7 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
 }
 
 LIBXSMM_INLINE void naive_fusedgroupnorm_fp_fp64(naive_fusedgroupnorm_t* param, const double* input_ptr, double* output_ptr, const double* input_add_ptr,
-                                     const double* beta_ptr, const double* gamma_ptr, double eps, double* expectval_ptr, double* rcpstddev_ptr, double* variance_ptr)
+                                     const double* beta_ptr, const double* gamma_ptr, double eps, double* expectval_ptr, double* rcpstddev_ptr, double* variance_ptr, unsigned char *relumask_ptr)
 {
   const int nImg = param->N;
   const int nFm = param->C;
@@ -3021,6 +3030,8 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp_fp64(naive_fusedgroupnorm_t* param, 
   LIBXSMM_VLA_DECL(5, const double, input,     input_ptr,     nG,  nFMG, ifh, ifw);
   LIBXSMM_VLA_DECL(5, const double, input_add, input_add_ptr, nG,  nFMG, ifh, ifw);
   LIBXSMM_VLA_DECL(5,       double, output,    output_ptr,    nG,  nFMG, ofh, ofw);
+
+  LIBXSMM_VLA_DECL(5, unsigned char, relumask,  relumask_ptr, nG, nFMG, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
 
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(g); LIBXSMM_OMP_VAR(fmg); LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi);
@@ -3081,6 +3092,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp_fp64(naive_fusedgroupnorm_t* param, 
               o = ( o < 0.0f ) ? 0.0f : o;
             }
             *output_ptr2 = o;
+
+            /* Mask */
+            if ( (param->fuse_type == 4) || (param->fuse_type == 5) ) {
+              /* without compression */
+              unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofh, ofw);
+              *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
+            }
           }
         }
       }
