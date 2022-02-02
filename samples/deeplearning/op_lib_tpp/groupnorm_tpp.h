@@ -1237,6 +1237,24 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       arg_array[9].primary = db;
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
+#if 0
+        if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+          all_relu_param.op.primary   = (void*)(&alpha);
+          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
+                                           : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB) */ ); /* dout_fwd ? nonsense? */
+          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          cfg.inv_relu_kernel(&all_relu_param);
+        } /* ReLU/mask */
+#endif
+        libxsmm_meltw_unary_param ewise_copy_param;
+        if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+          ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+          ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+          cfg.ewise_copy_kernel(&ewise_copy_param);
+        } /* Eltwise */
+
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
         arg_array[3].primary = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
 
