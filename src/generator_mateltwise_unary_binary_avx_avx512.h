@@ -33,7 +33,7 @@ void libxsmm_finalize_unary_kernel_vregs_masks( libxsmm_generated_code*         
                                                 const unsigned int                      i_gp_reg_aux1);
 
 LIBXSMM_API_INTERN
-void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_mateltwise_unary_binary_adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,
@@ -44,7 +44,7 @@ void adjust_after_microkernel_addr_gp_reg( libxsmm_generated_code*              
                                                  unsigned int                            i_loop_type );
 
 LIBXSMM_API_INTERN
-void adjust_in_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_mateltwise_unary_binary_adjust_in_microkernel_addr_gp_reg( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_gp_reg_mapping*      i_gp_reg_mapping,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc,

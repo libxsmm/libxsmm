@@ -85,6 +85,14 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/reduce_max_cols_32b_gtld.sh
 ./kernel_test/reduce_max_rows_32b_eqld.sh
 ./kernel_test/reduce_max_rows_32b_gtld.sh
+./kernel_test/unary_gather_16b_eqld.sh
+./kernel_test/unary_gather_16b_gtld.sh
+./kernel_test/unary_gather_32b_eqld.sh
+./kernel_test/unary_gather_32b_gtld.sh
+./kernel_test/unary_scatter_16b_eqld.sh
+./kernel_test/unary_scatter_16b_gtld.sh
+./kernel_test/unary_scatter_32b_eqld.sh
+./kernel_test/unary_scatter_32b_gtld.sh
 EOM
 
 rm -f tmp.??????????

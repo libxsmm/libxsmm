@@ -14,16 +14,12 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  unsigned int N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
-  unsigned int C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
-  unsigned int K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
-  unsigned int nb =    ( argc > 4 ) ? atoi(argv[4]) : 32;
+  libxsmm_blasint N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
+  libxsmm_blasint C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
+  libxsmm_blasint K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
+  libxsmm_blasint nb =    ( argc > 4 ) ? atoi(argv[4]) : 32;
   double sparse_frac = ( argc > 5 ) ? atof(argv[5]) : 0.9;
   unsigned int REPS  = ( argc > 6 ) ? atoi(argv[6]) : 1;
-
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const float alpha = 1, beta = 1;
 
   unsigned int* l_colptr = NULL;
   unsigned int* l_rowidx = NULL;
@@ -32,21 +28,28 @@ int main(int argc, char* argv[]) {
   float* l_a    = (float*)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
   float* l_b    = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
-  unsigned int l_k, l_n;
-  unsigned int l_i, l_j, l_jj;
-  unsigned int NB = N / nb;
+  libxsmm_blasint l_k, l_n;
+  libxsmm_blasint l_i, l_j, l_jj;
+  libxsmm_blasint NB = N / nb;
 
   LIBXSMM_VLA_DECL(3, float, l_p_a, l_a, C, nb);
   LIBXSMM_VLA_DECL(3, float, l_p_b, l_b, K, nb);
   LIBXSMM_VLA_DECL(2, float, l_p_c_de, l_c_de, C);
 
-  libxsmm_descriptor_blob l_xgemm_blob;
-  libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csc = NULL;
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+  const libxsmm_blasint zero = 0;
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+      C, K, NB, &C, &K, &zero, LIBXSMM_DATATYPE(float),
+      LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
+  libxsmm_gemm_param gemm_param;
+  libxsmm_gemmfunction mykernel_csc = NULL;
 
   unsigned long long l_start, l_end;
   double l_total;
   unsigned int nnz = 0;
+
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
   if (argc != 7 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
@@ -138,15 +141,16 @@ int main(int argc, char* argv[]) {
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE(float),
-    C, K, NB, C, K, 0, alpha, beta, flags, prefetch);
-
   /* sparse routine */
-  mykernel_csc = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, nb, l_colptr, l_rowidx, (const void*)l_c_sp_csc).smm;
+  mykernel_csc = libxsmm_create_packed_spgemm_csc_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
+    l_colptr, l_rowidx, (const void*)l_c_sp_csc);
 
+  gemm_param.a.primary = l_a;
+  gemm_param.b.primary = l_b;
+  gemm_param.c.primary = l_c_sp_csc;
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel_csc( l_a, l_b, l_c_sp_csc );
+    mykernel_csc( &gemm_param );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

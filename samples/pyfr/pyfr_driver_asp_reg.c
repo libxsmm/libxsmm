@@ -44,7 +44,6 @@ void my_dgemm( const int* M, const int* N, const int* K, const double* alpha,
 #define REPS 100
 #define REALTYPE double
 
-
 int my_csr_reader( const char*           i_csr_file_in,
                     unsigned int**        o_row_idx,
                     unsigned int**        o_column_idx,
