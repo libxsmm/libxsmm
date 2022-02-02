@@ -452,16 +452,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
 
   /* setting update GEMM struct */
-  l_shape.m = i_gemm_def->m;
-  l_shape.n = i_gemm_def->n;
-  l_shape.k = i_gemm_def->k;
-  l_shape.lda = (void*)&(i_gemm_def->lda);
-  l_shape.ldb = (void*)&(i_gemm_def->ldb);
-  l_shape.ldc = (void*)&(i_gemm_def->ldc);
-  l_shape.a_in_type = i_gemm_def->in_type;
-  l_shape.b_in_type = i_gemm_def->in_type;
-  l_shape.out_type = i_gemm_def->out_type;
-  l_shape.comp_type = i_gemm_def->comp_type;
+  l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
+      i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
+      i_gemm_def->in_type, i_gemm_def->in_type, i_gemm_def->out_type, i_gemm_def->comp_type );
 
   /* setting BRGEMM config struct */
   if (i_gemm_def->br_type == 1) {
