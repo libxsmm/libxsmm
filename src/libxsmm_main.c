@@ -2942,8 +2942,39 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   return result;
 }
 
+
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                         const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
+                                                         const libxsmm_bitfield prefetch_flags ) {
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_descriptor_blob blob;
+  libxsmm_xmmfunction result;
+  libxsmm_gemm_descriptor *desc = NULL;
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+      l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  /* JIT! */
+  result = libxsmm_xmmdispatch(desc);
+
+  return result.gemm;
+}
+
+
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+                                                           const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config ) {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_descriptor_blob blob;
   libxsmm_xmmfunction result;
@@ -2992,9 +3023,9 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
 }
 
 
-LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                                const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
-                                                                const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
+LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+                                                                  const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
+                                                                  const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops ) {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_descriptor_blob blob;
   libxsmm_xmmfunction result;

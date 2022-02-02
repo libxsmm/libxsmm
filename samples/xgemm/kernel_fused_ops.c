@@ -727,13 +727,13 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_cfg_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | l_flags;
     l_rls_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | l_flags;
     l_flags |= (LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG);
-    cfg_tr.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
-    rls_tr.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
+    cfg_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_cfg_flags, l_prefetch_flags, l_brconfig );
+    rls_tr.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_rls_flags, l_prefetch_flags, l_brconfig );
   }
 #if defined(USE_GEMM_EXT_FRONTEND)
-  l_test_jit.gemm_ext = libxsmm_dispatch_gemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+  l_test_jit.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
 #else
-  l_test_jit.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  l_test_jit.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 #endif
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == 0) {

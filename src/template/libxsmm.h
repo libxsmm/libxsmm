@@ -135,11 +135,14 @@ LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_co
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
 LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                        const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config );
-/** Query or JIT-generate SMM-kernel with fusion, general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
-LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_gemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
-                                                                const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
-                                                                const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
+                                                        const libxsmm_bitfield prefetch_flags );
+/** Query or JIT-generate BRGEMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
+LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+                                                          const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config );
+/** Query or JIT-generate BRGEMM-kernel with fusion, general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
+LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags,
+                                                                  const libxsmm_bitfield prefetch_flags, const libxsmm_gemm_batch_reduce_config brgemm_config,
+                                                                  const libxsmm_gemm_ext_unary_argops unary_argops, const libxsmm_gemm_ext_binary_postops binary_postops );
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
@@ -148,35 +151,6 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch_v2( const libxsmm_blasint m,
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
                                                      const int* basicflags );
-
-/* @TODO: we might want to also NOT add these functios under the new frontend */
-#if 0
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate) */
-LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                       const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                       const int* basicflags );
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs) */
-LIBXSMM_API libxsmm_bmmfunction libxsmm_bmmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                     const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                     const int* basicflags );
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision, int-accumulate) */
-LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                       const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                       const int* basicflags );
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/char-precision, int-accumulate) */
-LIBXSMM_API libxsmm_ssbimmfunction libxsmm_ssbimmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                           const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                           const int* basicflags );
-LIBXSMM_API libxsmm_usbimmfunction libxsmm_usbimmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                           const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                           const int* basicflags );
-LIBXSMM_API libxsmm_subimmfunction libxsmm_subimmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                           const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                           const int* basicflags );
-LIBXSMM_API libxsmm_uubimmfunction libxsmm_uubimmdispatch_v2( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
-                                                           const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-                                                           const int* basicflags );
-#endif
 
 /* @TODO: deprecate all these GEMM dispatchers
    <---- START HERE ----> */

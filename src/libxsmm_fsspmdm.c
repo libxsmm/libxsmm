@@ -204,9 +204,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
       N_dense, M, K, &ldb, &K, &ldc, LIBXSMM_DATATYPE_F64,
       LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
-    const libxsmm_gemm_batch_reduce_config gemm_brconfig =
-      libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_NONE, 0, 0, 0);
-    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags, gemm_brconfig );
+    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags );
   }
 
   if ( NULL != k_dense ) {
@@ -519,9 +517,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
       N_dense, M, K, &ldb, &K, &ldc, LIBXSMM_DATATYPE_F64,
       LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
-    const libxsmm_gemm_batch_reduce_config gemm_brconfig =
-      libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_NONE, 0, 0, 0);
-    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags, gemm_brconfig );
+    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags );
   }
 
   if ( NULL != k_dense ) {
