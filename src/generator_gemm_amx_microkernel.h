@@ -30,10 +30,10 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
     unsigned int                       n_iters);
 
 LIBXSMM_API_INTERN
-void fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
+void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
 
 LIBXSMM_API_INTERN
-void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     unsigned int tile_cols,
     unsigned int LD,
@@ -41,7 +41,7 @@ void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
     unsigned int offset);
 
 LIBXSMM_API_INTERN
-void paired_tilestore( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -52,7 +52,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
-void single_tilestore( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -62,7 +62,7 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
-void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
@@ -71,7 +71,7 @@ void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     unsigned int                       a_lookahead_br_index);
 
 LIBXSMM_API_INTERN
-void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_micro_kernel_config*       i_micro_kernel_config_gemm,
