@@ -293,7 +293,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch);
+      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,     naive_inp,     N, C, H, W, bc);
@@ -389,7 +389,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch);
+      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
 
   l_start = libxsmm_timer_tick();
@@ -403,7 +403,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eps, 0, tid, scratch );
+      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -422,7 +422,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 
 
@@ -587,7 +587,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -600,7 +600,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();

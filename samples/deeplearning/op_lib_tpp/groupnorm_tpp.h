@@ -53,6 +53,7 @@ typedef struct my_gn_fwd_config {
   libxsmm_meltwfunction_unary  all_zero_G_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
+  libxsmm_meltwfunction_unary  relu_kernel;
   libxsmm_meltwfunction_binary ewise_add_kernel;
   my_gn_fuse        fuse_type;
 } my_gn_fwd_config;
@@ -78,6 +79,7 @@ typedef struct my_gn_bwd_config {
   libxsmm_matrix_eqn_function  din_func;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
+  libxsmm_meltwfunction_unary  inv_relu_kernel;
   libxsmm_meltwfunction_unary  ewise_copy_kernel;
   my_gn_fuse        fuse_type;
 } my_gn_bwd_config;
@@ -161,6 +163,27 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if ( res.all_zero_G_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
+  }
+
+  if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
+    if ((res.fuse_type == 4 || res.fuse_type == 5) && res.bc % 16 != 0) {
+      fprintf( stderr, "Fused ReLU with a mask does not work for sizes which are not a multiple of 16 (2BYTE limitation). Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.m         = res.bc;
+    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
+    unary_shape.ldi       = &ldo;
+    unary_shape.ldo       = &ldo;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
+    unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    res.relu_kernel       = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
+    if ( res.relu_kernel == NULL ) {
+      fprintf( stderr, "JIT for TPP fwd_relu_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
@@ -436,6 +459,22 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
       exit(-1);
+  }
+
+  if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
+    unary_shape.m         = res.bc;
+    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
+    unary_shape.ldi       = &ldo;
+    unary_shape.ldo       = &ldo;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
+    unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    res.inv_relu_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
+    if ( res.inv_relu_kernel == NULL ) {
+      fprintf( stderr, "JIT for TPP bwd inv_relu_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   unary_shape.m         = res.bc;
@@ -868,7 +907,8 @@ void destroy_my_gn_bwd(my_gn_bwd_config* cfg) {
   /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
 }
 
-void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, float eps, int start_tid, int my_tid, void *scratch ) {
+void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
+                      float eps, int start_tid, int my_tid, void *scratch ) {
 
   // FIXME: N vs NP?
   const libxsmm_blasint NP = cfg.N;
@@ -911,6 +951,9 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
   LIBXSMM_VLA_DECL(2, const float, beta, pbeta, CB);                  /* [CP,CB] */
 
   LIBXSMM_VLA_DECL(4, const float, inp_add, pinp_add, CP, HW, CB);   /* [N, CP, HW, bc] */
+
+  float alpha = 0.0f;
+  LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, CB/BITS_PER_CHAR);    /* [N, CP, HW, CB/BITS_PER_CHAR] */
 
   int np, group_size;
   group_size = (CP*CB)/G;
@@ -1002,6 +1045,18 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
           add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           cfg.ewise_add_kernel(&add_param);
         }
+
+        /* ReLU */
+        if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+
+          libxsmm_meltw_unary_param all_relu_param;
+          all_relu_param.op.primary   = (void*)(&alpha);
+          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          all_relu_param.out.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                            (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+          cfg.relu_kernel(&all_relu_param);
+        } /* ReLU */
       }
     }
   } else{                                                         /* Case when group_size > CB */
@@ -1108,6 +1163,17 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
             add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             cfg.ewise_add_kernel(&add_param);
           }
+          /* ReLU */
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+
+            libxsmm_meltw_unary_param all_relu_param;
+            all_relu_param.op.primary   = (void*)(&alpha);
+            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+            all_relu_param.out.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                              (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+            cfg.relu_kernel(&all_relu_param);
+          } /* ReLU */
         }
       }
     }
@@ -1118,7 +1184,7 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 }
 
 
-void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma,
+void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
                      float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
                      int start_tid, int my_tid, void *scratch) {
 
@@ -1179,6 +1245,9 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
 
   LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, CB);     /* [N, CP, HW, bc] */
 
+  float alpha = 0.0f;
+  LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, CB/BITS_PER_CHAR);    /* [N, CP, HW, CB/BITS_PER_CHAR] */
+
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + N * CP * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
   LIBXSMM_VLA_DECL(3, float, dgamma_NP, ((float*)scratch),                  CP, CB);  /* [N, CP, CB] */
   LIBXSMM_ASSUME_ALIGNED(dgamma_NP_, 64);
@@ -1237,17 +1306,18 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       arg_array[9].primary = db;
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-#if 0
+//#if 0
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+          libxsmm_meltw_unary_param all_relu_param;
           all_relu_param.op.primary   = (void*)(&alpha);
-          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
           all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
+                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
                                            : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB) */ ); /* dout_fwd ? nonsense? */
-          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
           cfg.inv_relu_kernel(&all_relu_param);
         } /* ReLU/mask */
-#endif
+//#endif
         libxsmm_meltw_unary_param ewise_copy_param;
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
@@ -1359,6 +1429,25 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
         arg_array[9].primary = &db[cp*CB];
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
+//#if 0
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+            libxsmm_meltw_unary_param all_relu_param;
+            all_relu_param.op.primary   = (void*)(&alpha);
+            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+            all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                             (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
+                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB) */ ); /* dout_fwd ? nonsense? */
+            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
+            cfg.inv_relu_kernel(&all_relu_param);
+          } /* ReLU/mask */
+//#endif
+          libxsmm_meltw_unary_param ewise_copy_param;
+          if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+            ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
+            cfg.ewise_copy_kernel(&ewise_copy_param);
+          } /* Eltwise */
+
           arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           arg_array[3].primary =        &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
 
@@ -1422,4 +1511,3 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
-
