@@ -404,6 +404,30 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct( libxsmm_gene
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7, temp_reg );
     }
   }
+
+  /* Setup secondaries if need be */
+  if ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER)) {
+    if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->info.arg.in_pos >= 0)) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          8,
+          temp_reg,
+          0 );
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          temp_reg,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          cur_node->info.arg.in_pos*24+8,
+          temp_reg,
+          0 );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5, temp_reg );
+    } else {
+      fprintf( stderr, "The requested GATHER operation accepts arguments given by the user only...\n" );
+      return;
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -453,6 +477,23 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR7, temp_reg );
     } else {
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR10, temp_reg );
+    }
+  }
+
+  /* Setup secondaries if need be */
+  if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER)) {
+    if (is_last_op > 0) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          24,
+          temp_reg,
+          0 );
+      libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8, temp_reg );
+    } else {
+      fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
+      return;
     }
   }
 }
