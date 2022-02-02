@@ -359,11 +359,8 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  // FIXME: Need to modify as this code is for the batchnorm
-  /* init scratch */
-  sum_N_offset   = LIBXSMM_UP2(res.CP * 2 * res.bc, 64);
-  sumsq_N_offset = LIBXSMM_UP2(sum_N_offset + res.CP * res.N * res.bc, 64);
-  res.scratch_size =  sizeof(float) * ( sumsq_N_offset /*sum_X_X2 + sumsq_N */ + LIBXSMM_UP2((size_t)res.CP * (size_t)res.N * (size_t)res.bc, 64) /* sumsq_N */ );
+  /* init scratch (currently is not needed for the groupnorm fwd) */
+  res.scratch_size = 0;
 
   return res;
 }
