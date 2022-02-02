@@ -25,9 +25,9 @@
 #if 0
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
-  if (is_unary_opcode_transform_kernel(cur_op->info.u_op.type) > 0) {
+  if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(cur_op->info.u_op.type) > 0) {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
-  } else if (is_unary_opcode_reduce_kernel(cur_op->info.u_op.type) > 0) {
+  } else if (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(cur_op->info.u_op.type) > 0) {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
   } else {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->info.u_op.dtype, out_precision, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
@@ -117,7 +117,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
 
   /* Iterate over the equation tree based on the optimal traversal order and call the proper JITer */
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
-    libxsmm_matrix_eqn_elem *cur_op = find_op_at_timestamp(eqn->eqn_root, timestamp);
+    libxsmm_matrix_eqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(eqn->eqn_root, timestamp);
 #if 0
     libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     libxsmm_datatype in_precision = cur_op->tmp.dtype;
@@ -374,7 +374,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
 #endif
       /* Call proper JITer */
 #if 0
-      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
+      if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
         if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
           libxsmm_generator_reduce_rows_avx512_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
         } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
@@ -384,7 +384,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
           return;
         }
-      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
+      } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
         libxsmm_generator_transform_x86_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else {
 #endif
@@ -395,7 +395,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
     }
 #endif
     /* Call proper JITer */
-    if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
+    if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(meltw_desc->param) > 0)) {
       if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
         libxsmm_generator_reduce_rows_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
       } else if ((meltw_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
@@ -405,7 +405,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
       }
-    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
+    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
       libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
     } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) ||
                ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD)) ||

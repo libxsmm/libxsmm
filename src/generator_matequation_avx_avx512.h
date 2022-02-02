@@ -23,36 +23,36 @@
 #define BINARY_OP_POOL 1
 
 LIBXSMM_API_INTERN
-void apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
                                                libxsmm_matrix_eqn_elem                *cur_node,
                                                libxsmm_matrix_eqn_elem                *new_arg_node,
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp );
 
 LIBXSMM_API_INTERN
-void apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
                                                libxsmm_matrix_eqn_elem                *cur_node,
                                                libxsmm_matrix_eqn_elem                *new_arg_node,
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp );
 
 LIBXSMM_API_INTERN
-int find_in_pos_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
+int libxsmm_generator_matequation_find_in_pos_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
 
 LIBXSMM_API_INTERN
-libxsmm_datatype find_dtype_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
+libxsmm_datatype libxsmm_generator_matequation_find_dtype_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_fusion_pattern_type find_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *cur_node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
+libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *cur_node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
 
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_fusion_pattern_type find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node);
+libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node);
 
 LIBXSMM_API_INTERN
-int is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node);
+int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node);
 
 LIBXSMM_API_INTERN
-int is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_node);
+int libxsmm_generator_matequation_is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_node);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -97,13 +97,13 @@ void libxsmm_generator_matequation_destroy_stack_frame( libxsmm_generated_code* 
                                               libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
                                               unsigned int                                        i_strategy  );
 LIBXSMM_API_INTERN
-libxsmm_matrix_eqn_elem* find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp);
+libxsmm_matrix_eqn_elem* libxsmm_generator_matequation_find_op_at_timestamp(libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint timestamp);
 
 LIBXSMM_API_INTERN
-int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
+int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs);
 
 LIBXSMM_API_INTERN
-void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size);
+void libxsmm_generator_matequation_enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs );
@@ -121,13 +121,13 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc );
 
-LIBXSMM_API_INTERN int is_unary_with_bcast(libxsmm_bitfield flags);
-LIBXSMM_API_INTERN int is_binary_with_bcast(libxsmm_bitfield flags);
-LIBXSMM_API_INTERN int is_ternary_with_bcast(libxsmm_bitfield flags);
-LIBXSMM_API_INTERN int is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
-LIBXSMM_API_INTERN int is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
-LIBXSMM_API_INTERN int is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
-LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_with_bcast(libxsmm_bitfield flags);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_with_bcast(libxsmm_bitfield flags);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_with_bcast(libxsmm_bitfield flags);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_unary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_binary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(libxsmm_bitfield flags, libxsmm_matrix_eqn_elem *node);
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
 
 #endif /* GENERATOR_MATEQUATION_AVX_AVX512_H */
 

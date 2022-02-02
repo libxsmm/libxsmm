@@ -1676,6 +1676,26 @@ void libxsmm_generator_generic_loop_footer( libxsmm_generated_code*             
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_header_no_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_init_val) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_loop_reg, i_loop_init_val );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_footer_with_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_step,
+    const unsigned int                 i_loop_bound) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_loop_reg, i_loop_step);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_CMPQ, i_loop_reg, i_loop_bound );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JL, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_xoshiro128pp_axv2_avx512( libxsmm_generated_code* io_generated_code,
                                                  const unsigned char     i_vname,
                                                  const unsigned int      i_vec_reg_rng_state_0,
