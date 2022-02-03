@@ -1244,7 +1244,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
 
 #if !defined(NDEBUG)
   if ( (i_vec_reg_number_dst > 31) || (i_vec_reg_number_src > 31) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_NUM_OOB);
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
     return;
   }
 #endif
@@ -1425,7 +1425,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
 
 #if !defined(NDEBUG)
   if ( (i_vec_reg_number_0 > 31) || (i_vec_reg_number_1 > 31) || (i_vec_reg_number_2 > 31) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_NUM_OOB);
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
     return;
   }
 #endif
