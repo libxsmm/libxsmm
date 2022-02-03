@@ -130,30 +130,27 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
 
+LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                            const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+                                                                            const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
   /* TPP creation */
   ldo = res.G;
-  unary_shape.m           = res.G;
-  unary_shape.n           = 1;
-  unary_shape.ldi         = NULL;
-  unary_shape.ldo         = &ldo;
-  unary_shape.in_type     = dtype;
-  unary_shape.out_type    = dtype;
-  unary_shape.comp_type   = dtype;
-  unary_flags             = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  res.all_zero_G_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.G, 1, NULL, &ldo, dtype, dtype, dtype);
+  unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.all_zero_G_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_G_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero group copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
   }
 
   ldo = res.bc;
-  unary_shape.m         = res.bc;
-  unary_shape.n         = 1;
-  unary_shape.ldi       = NULL;
-  unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = dtype;
-  unary_shape.out_type  = dtype;
-  unary_shape.comp_type = dtype;
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, 1, NULL, &ldo, dtype, dtype, dtype);
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_G_kernel == NULL) {
@@ -167,13 +164,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    unary_shape.m         = res.bc;
-    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    unary_shape.ldi       = &ldo;
-    unary_shape.ldo       = &ldo;
-    unary_shape.in_type   = dtype;
-    unary_shape.out_type  = dtype;
-    unary_shape.comp_type = dtype;
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
     unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.relu_kernel       = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
     if ( res.relu_kernel == NULL ) {
@@ -183,16 +174,9 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape.m         = res.bc;
-    binary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    binary_shape.in_type   = dtype;
-    binary_shape.comp_type = dtype;
-    binary_shape.out_type  = dtype;
-    binary_shape.ldi       = &ldo;
-    binary_shape.ldi2      = &ldo;
-    binary_shape.ldo       = &ldo;
-    binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-    res.ewise_add_kernel   = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
+    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, dtype, dtype, dtype);
+    binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+    res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
     if ( res.ewise_add_kernel == NULL) {
       fprintf( stderr, "JIT for TPP fwd ewise_add_kernel failed. Bailing...!\n");
       exit(-1);
@@ -203,13 +187,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = res.bc;
   tmp_ld = res.bc;
 
-  unary_shape.m         = res.bc;
-  unary_shape.n         = res.H*res.W/res.num_HW_blocks;
-  unary_shape.ldi       = &ld;
-  unary_shape.ldo       = &tmp_ld;
-  unary_shape.in_type   = dtype;
-  unary_shape.out_type  = dtype;
-  unary_shape.comp_type = dtype;
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ld, &tmp_ld, dtype, dtype, dtype);
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   res.reduce_HW_kernel  = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_HW_kernel == NULL) {
@@ -217,16 +195,9 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
   }
 
-  binary_shape.m         = res.bc;
-  binary_shape.n         = 1;
-  binary_shape.in_type   = dtype;
-  binary_shape.comp_type = dtype;
-  binary_shape.out_type  = dtype;
-  binary_shape.ldi       = &ld;
-  binary_shape.ldi2      = &ld;
-  binary_shape.ldo       = &ld;
-  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-  res.add_kernel         = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, &ld, &ld, &ld, dtype, dtype, dtype);
+  binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
       exit(-1);
@@ -238,13 +209,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = group_size;                /* group_size = (CP*bc)/G */
   tmp_ld = 1;
 
-  unary_shape.m            = group_size;
-  unary_shape.n            = 1;
-  unary_shape.ldi          = &ld;
-  unary_shape.ldo          = &tmp_ld;
-  unary_shape.in_type      = dtype;
-  unary_shape.out_type     = dtype;
-  unary_shape.comp_type    = dtype;
+  unary_shape              = libxsmm_create_meltw_unary_shape(group_size, 1, &ld, &tmp_ld, dtype, dtype, dtype);
   unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_groups_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_groups_kernel == NULL) {
@@ -254,13 +219,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   ld = res.bc;
   tmp_ld = 1;
-  unary_shape.m          = res.bc;
-  unary_shape.n          = 1;
-  unary_shape.ldi        = &ld;
-  unary_shape.ldo        = &tmp_ld;
-  unary_shape.in_type    = dtype;
-  unary_shape.out_type   = dtype;
-  unary_shape.comp_type  = dtype;
+  unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, 1, &ld, &tmp_ld, dtype, dtype, dtype);
   unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_rows_kernel == NULL) {
@@ -398,46 +357,27 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.barrier = libxsmm_barrier_create(threads, 1);
 
   ldo = res.bc;
-  unary_shape.m         = res.bc;
-  unary_shape.n         = 1;
-  unary_shape.ldi       = NULL;
-  unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = dtype;
-  unary_shape.out_type  = dtype;
-  unary_shape.comp_type = dtype;
-  unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+  unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, 1, NULL, &ldo, dtype, dtype, dtype);
+  unary_flags         = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  res.all_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
   }
 
   ld = res.bc;
-  binary_shape.m         = res.bc;
-  binary_shape.n         = 1;
-  binary_shape.in_type   = dtype;
-  binary_shape.comp_type = dtype;
-  binary_shape.out_type  = dtype;
-  binary_shape.ldi       = &ld;
-  binary_shape.ldi2      = &ld;
-  binary_shape.ldo       = &ld;
-  binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-  res.add_kernel         = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
+  binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, &ld, &ld, &ld, dtype, dtype, dtype);
+  res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
       exit(-1);
   }
 
   if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
-    unary_shape.m         = res.bc;
-    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    unary_shape.ldi       = &ldo;
-    unary_shape.ldo       = &ldo;
-    unary_shape.in_type   = dtype;
-    unary_shape.out_type  = dtype;
-    unary_shape.comp_type = dtype;
-    unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    res.inv_relu_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
+    unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
+    unary_flags         = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    res.inv_relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
     if ( res.inv_relu_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP bwd inv_relu_kernel failed. Bailing...!\n");
       exit(-1);
@@ -445,13 +385,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    unary_shape.m         = res.bc;
-    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
-    unary_shape.ldi       = &ldo;
-    unary_shape.ldo       = &ldo;
-    unary_shape.in_type   = dtype;
-    unary_shape.out_type  = dtype;
-    unary_shape.comp_type = dtype;
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
     unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
     if ( res.ewise_copy_kernel == NULL) {
