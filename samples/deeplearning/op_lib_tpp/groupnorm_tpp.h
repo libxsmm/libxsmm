@@ -806,7 +806,6 @@ void destroy_my_gn_fwd(my_gn_fwd_config* cfg) {
 void destroy_my_gn_bwd(my_gn_bwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
-  /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
 }
 
 void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
@@ -1283,7 +1282,7 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       }
     }
 
-    /* libxsmm_barrier_wait(cfg.barrier, ltid); not needed? */
+    libxsmm_barrier_wait(cfg.barrier, ltid); /* not needed? */
 
     for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
       for (np=0; np < N; np++ ) {
