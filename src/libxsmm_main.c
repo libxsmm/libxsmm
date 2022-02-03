@@ -4883,7 +4883,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csr(const libxsmm_
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
-  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width,
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
   int l_gemm_flags = (int)gemm_flags;
@@ -4955,7 +4955,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csc(const libxsmm_
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
-  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width,
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
 {
   int l_gemm_flags = (int)gemm_flags;
@@ -5023,7 +5023,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_ac_rm(const libxsmm_
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
-  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width )
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
 {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_pgemm_ac_rm_descriptor pgemmacrm;
@@ -5084,7 +5084,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_bc_rm(const libxsmm_
 
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libxsmm_gemm_shape gemm_shape,
-  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width )
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
 {
   int l_gemm_flags = (int)gemm_flags;
   libxsmm_pgemm_bc_rm_descriptor pgemmbcrm;
