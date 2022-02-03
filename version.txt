@@ -1,1 +1,1 @@
-dev/kvoronin/groupnormalization_tpp-1.17-2160
+dnn_refactor-1.17-2140

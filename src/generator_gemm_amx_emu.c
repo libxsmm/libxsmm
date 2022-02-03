@@ -1085,7 +1085,7 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
         int min_mate_C_id = (i_micro_kernel_config->_C_tile_id[i] < i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]]) ? i_micro_kernel_config->_C_tile_id[i] : i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]];
         int im_store = min_mate_C_id / n_tiles;
         int in_store = min_mate_C_id % n_tiles;
-        paired_tilestore_emu( io_generated_code,
+        libxsmm_generator_gemm_amx_paired_tilestore_emu( io_generated_code,
             i_gp_reg_mapping,
             i_micro_kernel_config,
             i_xgemm_desc,
@@ -1096,7 +1096,7 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
             n_blocking_info->sizes[in_store]);
       }
     } else {
-      single_tilestore_emu( io_generated_code,
+      libxsmm_generator_gemm_amx_single_tilestore_emu( io_generated_code,
           i_gp_reg_mapping,
           i_micro_kernel_config,
           i_xgemm_desc,

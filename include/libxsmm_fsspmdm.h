@@ -13,7 +13,6 @@
 
 #include "libxsmm_typedefs.h"
 
-
 /** Opaque types for fsspmdm */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm libxsmm_sfsspmdm;
