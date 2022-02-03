@@ -95,24 +95,37 @@ fi
 # ./layer_example_${BIN} iters N C H W CB pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type
 #
 CB=64
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   112 112 ${CB}  3 3 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  28  28  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  14  14  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048 14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512   7   7  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512   7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
 
+FUSE=4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   112 112 ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+FUSE=4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=0
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+FUSE=5
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=0
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+FUSE=5
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=0
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+FUSE=5
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+
+FUSE=4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512   7   7  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
+
+FUSE=0
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+FUSE=5
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
