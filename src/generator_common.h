@@ -1178,7 +1178,7 @@
 #define LIBXSMM_ERR_NO_AVX512VL           90043
 #define LIBXSMM_ERR_GP_TEMP_MAPPING       90044
 #define LIBXSMM_ERR_BITMASK_REQUIRED      90045
-#define LIBXSMM_ERR_REG_NUM_OOB           90046
+#define LIBXSMM_ERR_ILLEGAL_ABI           90046
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
