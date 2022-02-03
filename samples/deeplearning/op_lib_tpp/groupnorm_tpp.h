@@ -497,7 +497,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* dgamma function  */
   my_eqn11 = libxsmm_matrix_eqn_create();                                                       /* dgamma = ((inp *a + b) * dout) + dgamma */
 
-#if 0
+#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn11;
   op_metadata[0].op_arg_pos   = -1;
@@ -590,7 +590,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* dbeta function  */
   my_eqn12 = libxsmm_matrix_eqn_create();                                                       /* dbeta [bc] = dout [HW, bc] + dbeta [bc] */
 
-#if 0
+#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn12;
   op_metadata[0].op_arg_pos   = -1;
