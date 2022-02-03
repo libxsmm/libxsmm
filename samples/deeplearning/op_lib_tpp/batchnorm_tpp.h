@@ -429,18 +429,20 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     }
   }
 
-  unary_shape.m         = res.bc;
-  unary_shape.n         = res.H*res.W / res.num_HW_blocks;
-  unary_shape.ldi       = &ldo;
-  unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = dtype;
-  unary_shape.out_type  = dtype;
-  unary_shape.comp_type = dtype;
-  unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
-  if ( res.ewise_copy_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
-    exit(-1);
+  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
+    unary_shape.m         = res.bc;
+    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
+    unary_shape.ldi       = &ldo;
+    unary_shape.ldo       = &ldo;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
+    unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
+    if ( res.ewise_copy_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   /* TPP equations for dgamma, dbeta and din */
@@ -856,7 +858,7 @@ void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_
       cfg.func10(&eqn_param);                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
 
       /* Eltwise add */
-      if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+      if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
         add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
@@ -982,7 +984,7 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
           all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
           cfg.inv_relu_kernel(&all_relu_param);
         } /* ReLU/mask */
-        if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+        if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
           cfg.ewise_copy_kernel(&ewise_copy_param);
