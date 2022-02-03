@@ -930,8 +930,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               i_micro_kernel_config->vec_c0,
               i_micro_kernel_config->vec_c1,
               i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0,
-              i_micro_kernel_config->vec_tmp1,
+              i_micro_kernel_config->vec_tmp0, /* expmask */
               l_sve_type, l_pred_reg );
           } else {
             libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( io_generated_code,
@@ -973,8 +972,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               i_micro_kernel_config->vec_c0,
               i_micro_kernel_config->vec_c1,
               i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0,
-              i_micro_kernel_config->vec_tmp1,
+              i_micro_kernel_config->vec_tmp0, /* expmask */
               l_sve_type, l_pred_reg );
           } else {
             libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( io_generated_code,
@@ -2343,7 +2341,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU || op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) {
     unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
 
-    reserved_zmms += 25;
+    reserved_zmms += l_is_sve ? 24 : 25;
 
     i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
     i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
@@ -2369,7 +2367,10 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->vec_c21        = reserved_zmms - 22;
     i_micro_kernel_config->vec_c2         = reserved_zmms - 23;
     i_micro_kernel_config->vec_tmp0       = reserved_zmms - 24;
-    i_micro_kernel_config->vec_tmp1       = reserved_zmms - 25;
+
+    if(!l_is_sve) {
+      i_micro_kernel_config->vec_tmp1     = reserved_zmms - 25;
+    }
 
     if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
       if(l_is_sve){
@@ -2391,8 +2392,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_c21,
           i_micro_kernel_config->vec_c22,
           i_micro_kernel_config->vec_c23,
-          i_micro_kernel_config->vec_tmp0,
-          i_micro_kernel_config->vec_tmp1,
+          i_micro_kernel_config->vec_tmp0, /* expmask */
           i_gp_reg_tmp0,
           i_gp_reg_tmp1,
           l_sve_type, l_pred_reg );
@@ -2443,8 +2443,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_c21,
           i_micro_kernel_config->vec_c22,
           i_micro_kernel_config->vec_c23,
-          i_micro_kernel_config->vec_tmp0,
-          i_micro_kernel_config->vec_tmp1,
+          i_micro_kernel_config->vec_tmp0, /* expmask */
           i_gp_reg_tmp0,
           i_gp_reg_tmp1,
           l_sve_type, l_pred_reg );
