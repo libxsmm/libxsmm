@@ -37,10 +37,7 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg \
-          $(OUTDIR)/$(OUTNAME)_gemm_cm \
-          $(OUTDIR)/$(OUTNAME)_gemm_rm \
-          $(NULL)
+XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
 
 .PHONY: all
 all: $(XFILES)
@@ -49,12 +46,6 @@ all: $(XFILES)
 compile: $(OBJECTS)
 
 $(OUTDIR)/$(OUTNAME)_driver_asp_reg: $(BLDDIR)/$(OUTNAME)_driver_asp_reg-c.o $(OUTDIR)/.make $(LIBDEP)
-	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/$(OUTNAME)_gemm_cm: $(BLDDIR)/$(OUTNAME)_gemm_cm-c.o $(OUTDIR)/.make $(LIBDEP)
-	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/$(OUTNAME)_gemm_rm: $(BLDDIR)/$(OUTNAME)_gemm_rm-c.o $(OUTDIR)/.make $(LIBDEP)
 	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc

@@ -28,7 +28,7 @@ else
   PDEG=5
   PREC=f64
   VLEN=64
-  FRMT=csc
+  FRMT=csr
 fi
 
 if [[ $PDEG == "1" ]]

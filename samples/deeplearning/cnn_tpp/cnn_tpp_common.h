@@ -261,7 +261,7 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
     tmp_max_c_block = 16;
   }
-  if ( C < tmp_max_c_block ) {
+  if ( C <= tmp_max_c_block ) {
     ifmblock = C;
   } else {
     for ( tmp_block = 1; tmp_block <= tmp_max_c_block; tmp_block *= 2 ) {
@@ -280,7 +280,7 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
     tmp_max_k_block = 16;
   }
-  if ( K < tmp_max_k_block ) {
+  if ( K <= tmp_max_k_block ) {
     ofmblock = K;
   } else {
     for ( tmp_block = 1; tmp_block <= tmp_max_k_block; tmp_block *= 2 ) {

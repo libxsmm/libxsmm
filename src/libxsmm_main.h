@@ -821,7 +821,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldc;
   int N_chunksize;
   double* a_dense;
-  libxsmm_dmmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
@@ -832,7 +832,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldc;
   int N_chunksize;
   float* a_dense;
-  libxsmm_smmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 /** Packed structure storing the mateltw argument description. */

@@ -17,7 +17,7 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -28,7 +28,7 @@ void paired_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
-void single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
