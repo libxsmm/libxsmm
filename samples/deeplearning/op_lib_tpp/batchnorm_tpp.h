@@ -964,37 +964,6 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
 
   int cpxnt;
 
-  /* ReLU/Mask/Eltwise */
-  if (cfg.fuse_type == MY_BN_FUSE_ELTWISE ||
-      cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-
-    for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      n  = cpxnt%N;
-      cp = cpxnt/N;
-
-      int hwb, cb;
-
-      for(hwb=0; hwb < num_HW_blocks; hwb++){
-        if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          all_relu_param.op.primary   = (void*)(&alpha);
-          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-          all_relu_param.in.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
-                                           : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
-          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-          cfg.inv_relu_kernel(&all_relu_param);
-        } /* ReLU/mask */
-        if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          cfg.ewise_copy_kernel(&ewise_copy_param);
-        } /* Eltwise */
-      }
-    } /* loop over the 1d parallel blocking */
-  }  /* ReLU/Mask/Eltwise */
-
-  libxsmm_barrier_wait(cfg.barrier, ltid);
-
   for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
     n  = cpxnt%N;
     cp = cpxnt/N;
@@ -1036,7 +1005,23 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
     arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
 
     for(hwb=0; hwb < num_HW_blocks; hwb++){
-
+      if (cfg.fuse_type == MY_BN_FUSE_ELTWISE ||
+        cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+        if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+          all_relu_param.op.primary   = (void*)(&alpha);
+          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+          all_relu_param.in.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
+                                           : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
+          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+          cfg.inv_relu_kernel(&all_relu_param);
+        } /* ReLU/mask */
+        if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+          ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+          ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+          cfg.ewise_copy_kernel(&ewise_copy_param);
+        } /* Eltwise */
+      }
       arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
       arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
 
