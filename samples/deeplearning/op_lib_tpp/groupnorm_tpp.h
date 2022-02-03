@@ -19,17 +19,15 @@
 # include <omp.h>
 #endif
 
-//#define NUM_HW_BLOCKS (16)
-
 #define BITS_PER_CHAR (8)
 
 typedef enum my_gn_fuse {
-  MY_NORMALIZE_FUSE_NONE = 0,
-  MY_NORMALIZE_FUSE_RELU = 1,
-  MY_NORMALIZE_FUSE_ELTWISE = 2,
-  MY_NORMALIZE_FUSE_ELTWISE_RELU = 3,
-  MY_NORMALIZE_FUSE_RELU_WITH_MASK = 4,
-  MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK = 5
+  MY_GN_FUSE_NONE = 0,
+  MY_GN_FUSE_RELU = 1,
+  MY_GN_FUSE_ELTWISE = 2,
+  MY_GN_FUSE_ELTWISE_RELU = 3,
+  MY_GN_FUSE_RELU_WITH_MASK = 4,
+  MY_GN_FUSE_ELTWISE_RELU_WITH_MASK = 5
 } my_gn_fuse;
 
 typedef struct my_gn_fwd_config {
@@ -143,7 +141,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type   = dtype;
   unary_flags             = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_G_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
-  //res.all_zero_G_kernel = libxsmm_dispatch_meltw_unary(res.G, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
   if ( res.all_zero_G_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero group copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
@@ -159,7 +156,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
-  //res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
   if ( res.all_zero_G_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
@@ -216,9 +212,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   res.reduce_HW_kernel  = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
-  //unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
-  //jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  //res.reduce_HW_kernel = libxsmm_dispatch_meltw_unary(res.bc, res.H*res.W/res.num_HW_blocks, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
   if ( res.reduce_HW_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of reduce_HW_kernel failed for fwd. Bailing...!\n");
       exit(-1);
@@ -234,14 +227,13 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   binary_shape.ldo       = &ld;
   binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.add_kernel         = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
-  //res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ld, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
       exit(-1);
   }
 
   /* TPP for reducing groups */
-  libxsmm_blasint group_size = res.C/res.G;//(res.CP*res.bc)/res.G;
+  libxsmm_blasint group_size = res.C/res.G;
 
   ld = group_size;                /* group_size = (CP*bc)/G */
   tmp_ld = 1;
@@ -255,9 +247,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type    = dtype;
   unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_groups_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
-//  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
-//  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-//  res.reduce_groups_kernel = libxsmm_dispatch_meltw_unary(group_size, 1, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
   if ( res.reduce_groups_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of reduce_groups_kernel failed for fwd. Bailing...!\n");
       exit(-1);
@@ -274,9 +263,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type  = dtype;
   unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
-  //unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
-  //jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-  //res.reduce_rows_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
   if ( res.reduce_rows_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of reduce_rows_kernel failed for fwd. Bailing...!\n");
       exit(-1);
@@ -286,28 +272,25 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = res.bc;
   tmp_ld = 1;
   tmp_ld2 = 1;
-  my_eqn10 = libxsmm_matrix_eqn_create();                                                        /* y = (s*x + b)*gamma + beta */
+  my_eqn10 = libxsmm_matrix_eqn_create();                          /* y = (s*x + b)*gamma + beta */
 
   ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[0].eqn_idx      = my_eqn10;
   op_metadata[0].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
-  //libxsmm_matrix_eqn_push_back_ternary_op( my_eqn10, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT), LIBXSMM_DATATYPE_F32);
 
   ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[1].eqn_idx      = my_eqn10;
   op_metadata[1].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, dtype, ternary_flags);
-  //libxsmm_matrix_eqn_push_back_ternary_op( my_eqn10, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT), LIBXSMM_DATATYPE_F32);
 
   arg_metadata[0].eqn_idx     = my_eqn10;
   arg_metadata[0].in_arg_pos  = 0;
-  arg_shape[0].m              = res.bc;                                      /* x = [HW, bc] */
+  arg_shape[0].m              = res.bc;                            /* x = [HW, bc] */
   arg_shape[0].n              = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld             = &ld;
   arg_shape[0].type           = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
-  //libxsmm_matrix_eqn_push_back_arg( my_eqn10, res.bc, res.H*res.W/res.num_HW_blocks, ld, 0, 0, in_dt );                         /* x = [HW, bc] */
 
   arg_metadata[1].eqn_idx     = my_eqn10;
   arg_metadata[1].in_arg_pos  = 1;
@@ -316,7 +299,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].ld   = &tmp_ld;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
-  //libxsmm_matrix_eqn_push_back_arg( my_eqn10, res.bc, 1, tmp_ld, 1, 0, LIBXSMM_DATATYPE_F32 );       /* s = [bc] */
 
   arg_metadata[2].eqn_idx     = my_eqn10;
   arg_metadata[2].in_arg_pos  = 2;
@@ -325,7 +307,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[2].ld   = &tmp_ld;
   arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
-  //libxsmm_matrix_eqn_push_back_arg( my_eqn10, res.bc, 1, tmp_ld, 2, 0, LIBXSMM_DATATYPE_F32 );       /* b = [bc] */
 
   arg_metadata[3].eqn_idx     = my_eqn10;
   arg_metadata[3].in_arg_pos  = 3;
@@ -334,7 +315,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].ld   = &tmp_ld2;
   arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
-  //libxsmm_matrix_eqn_push_back_arg( my_eqn10, res.bc, 1, tmp_ld2, 3, 0, in_dt );                     /* gamma = [bc] */
 
   arg_metadata[4].eqn_idx     = my_eqn10;
   arg_metadata[4].in_arg_pos  = 4;
@@ -343,7 +323,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[4].ld   = &tmp_ld2;
   arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
-  //libxsmm_matrix_eqn_push_back_arg( my_eqn10, res.bc, 1, tmp_ld2, 4, 0, in_dt );                     /* beta = [bc] */
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
@@ -353,7 +332,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* libxsmm_matrix_eqn_tree_print( my_eqn10 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn10 ); */
   res.func10 = libxsmm_dispatch_matrix_eqn_v2( my_eqn10, eqn_out_arg_shape );
-  //res.func10 = libxsmm_dispatch_matrix_eqn( res.bc, res.H*res.W/res.num_HW_blocks, &ld, out_dt, my_eqn10 );                         /* y = [HW, bc] */
   if ( res.func10 == NULL) {
     fprintf( stderr, "JIT for TPP fwd func10 (eqn10) failed. Bailing...!\n");
     exit(-1);
@@ -383,12 +361,6 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_meltw_unary_flags   unary_flags;
   libxsmm_meltw_binary_flags  binary_flags;
   libxsmm_meltw_ternary_flags ternary_flags;
-
-//  libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-//  libxsmm_meltw_unary_type  unary_type;
-
-  libxsmm_datatype  in_dt  = LIBXSMM_DATATYPE_F32;
-  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
 
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
@@ -435,7 +407,6 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   unary_shape.comp_type = dtype;
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
-  //res.all_zero_kernel = libxsmm_dispatch_meltw_unary(res.bc, 1, NULL, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
   if ( res.all_zero_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
@@ -452,7 +423,6 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   binary_shape.ldo       = &ld;
   binary_flags           = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.add_kernel         = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
-  //res.add_kernel = libxsmm_dispatch_meltw_binary(res.bc, 1, &ld, &ld, &ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_MELTW_TYPE_BINARY_ADD);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
       exit(-1);
@@ -474,18 +444,20 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     }
   }
 
-  unary_shape.m         = res.bc;
-  unary_shape.n         = res.H*res.W / res.num_HW_blocks;
-  unary_shape.ldi       = &ldo;
-  unary_shape.ldo       = &ldo;
-  unary_shape.in_type   = dtype;
-  unary_shape.out_type  = dtype;
-  unary_shape.comp_type = dtype;
-  unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
-  if ( res.ewise_copy_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
-    exit(-1);
+  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
+    unary_shape.m         = res.bc;
+    unary_shape.n         = res.H*res.W / res.num_HW_blocks;
+    unary_shape.ldi       = &ldo;
+    unary_shape.ldo       = &ldo;
+    unary_shape.in_type   = dtype;
+    unary_shape.out_type  = dtype;
+    unary_shape.comp_type = dtype;
+    unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
+    if ( res.ewise_copy_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP bwd ewise_copy_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   /* Group norm equations */
@@ -495,9 +467,8 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   tmp_ld2 = 1;
 
   /* dgamma function  */
-  my_eqn11 = libxsmm_matrix_eqn_create();                                                       /* dgamma = ((inp *a + b) * dout) + dgamma */
+  my_eqn11 = libxsmm_matrix_eqn_create();                          /* dgamma = ((inp *a + b) * dout) + dgamma */
 
-#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn11;
   op_metadata[0].op_arg_pos   = -1;
@@ -520,7 +491,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   arg_metadata[0].eqn_idx     = my_eqn11;
   arg_metadata[0].in_arg_pos  = 0;
-  arg_shape[0].m              = res.bc;                                      /* inp [HW, bc] */
+  arg_shape[0].m              = res.bc;                            /* inp [HW, bc] */
   arg_shape[0].n              = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld             = &ld;
   arg_shape[0].type           = dtype;
@@ -563,34 +534,17 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   eqn_out_arg_shape.ld   = &tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
-  libxsmm_matrix_eqn_tree_print( my_eqn11 );
-  libxsmm_matrix_eqn_rpn_print ( my_eqn11 );
+  /* libxsmm_matrix_eqn_tree_print( my_eqn11 ); */
+  /* libxsmm_matrix_eqn_rpn_print ( my_eqn11 ); */
   res.dgamma_func = libxsmm_dispatch_matrix_eqn_v2( my_eqn11, eqn_out_arg_shape );
-
-#else
-  libxsmm_matrix_eqn_push_back_binary_op(my_eqn11, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32);                   /* dgamma = ((inp *a + b) * dout) + dgamma */
-  libxsmm_matrix_eqn_push_back_unary_op(my_eqn11, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);   /* [HW, bc] -> [bc] */
-  libxsmm_matrix_eqn_push_back_binary_op(my_eqn11, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32);                   /* ((inp *a + b) * dout) */
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn11, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_arg( my_eqn11, res.bc, res.H*res.W/res.num_HW_blocks, ld, 0, 0, in_dt );                        /* inp [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn11, res.bc, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );           /* a [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn11, res.bc, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );           /* b [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn11, res.bc, res.H*res.W/res.num_HW_blocks, ld, 3, 0, in_dt );                        /* dout [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn11, res.bc, 1, 1, 4, 0, LIBXSMM_DATATYPE_F32 );           /* dgamma [bc] */
-  libxsmm_matrix_eqn_tree_print( my_eqn11 );
-  libxsmm_matrix_eqn_rpn_print ( my_eqn11 );
-  res.dgamma_func = libxsmm_dispatch_matrix_eqn( res.bc, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn11 );      /* dgamma [bc] */
-#endif
-
   if ( res.dgamma_func == NULL) {
     fprintf( stderr, "JIT for TPP fwd dgamma_func (eqn11) failed. Bailing...!\n");
     exit(-1);
   }
 
   /* dbeta function  */
-  my_eqn12 = libxsmm_matrix_eqn_create();                                                       /* dbeta [bc] = dout [HW, bc] + dbeta [bc] */
+  my_eqn12 = libxsmm_matrix_eqn_create();                          /* dbeta [bc] = dout [HW, bc] + dbeta [bc] */
 
-#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn12;
   op_metadata[0].op_arg_pos   = -1;
@@ -622,29 +576,18 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   eqn_out_arg_shape.ld   = &tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
-  libxsmm_matrix_eqn_tree_print( my_eqn12 );
-  libxsmm_matrix_eqn_rpn_print ( my_eqn12 );
+  /* libxsmm_matrix_eqn_tree_print( my_eqn12 ); */
+  /* libxsmm_matrix_eqn_rpn_print ( my_eqn12 ); */
 
   res.dbeta_func = libxsmm_dispatch_matrix_eqn_v2( my_eqn12, eqn_out_arg_shape );
-
-#else
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn12, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );      /* dbeta_tmp [HW, bc] */
-  libxsmm_matrix_eqn_push_back_unary_op(my_eqn12, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);  /* [HW, bc] -> [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn12, res.bc, res.H*res.W/res.num_HW_blocks, ld, 3, 0, in_dt );                        /* dout [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn12, res.bc, 1, 1, 5, 0, LIBXSMM_DATATYPE_F32 );           /* dbeta [bc] */
-  libxsmm_matrix_eqn_tree_print( my_eqn12 );
-  libxsmm_matrix_eqn_rpn_print ( my_eqn12 );
-  res.dbeta_func = libxsmm_dispatch_matrix_eqn( res.bc, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn12 );      /* dbeta [bc] */
-#endif
   if ( res.dbeta_func == NULL) {
     fprintf( stderr, "JIT for TPP fwd dbeta_func (eqn12) failed. Bailing...!\n");
     exit(-1);
   }
 
   /* db new equation */
-  my_eqn13 = libxsmm_matrix_eqn_create();                                                       /* db [bc] = (dout * gamma) [HW, bc] + db [bc]*/
+  my_eqn13 = libxsmm_matrix_eqn_create();                          /* db [bc] = (dout * gamma) [HW, bc] + db [bc]*/
 
-#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn13;
   op_metadata[0].op_arg_pos   = -1;
@@ -693,25 +636,14 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn13 ); */
 
   res.db_func = libxsmm_dispatch_matrix_eqn_v2( my_eqn13, eqn_out_arg_shape );
-
-#else
-  libxsmm_matrix_eqn_push_back_binary_op(my_eqn13, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );                  /* db [bc] */
-  libxsmm_matrix_eqn_push_back_unary_op(my_eqn13, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);   /* [HW, bc] -> [bc] */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn13, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn13, res.bc, res.H*res.W/res.num_HW_blocks, ld, 3, 0, in_dt );                        /* dout [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn13, res.bc, 1, 1, 6, 0, in_dt );                          /* gamma [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn13, res.bc, 1, 1, 9, 0, LIBXSMM_DATATYPE_F32 );           /* db [bc] */
-  res.db_func = libxsmm_dispatch_matrix_eqn( res.bc, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn13 ); /* db [bc] */
   if ( res.db_func == NULL) {
     fprintf( stderr, "JIT for TPP fwd db_func (eqn13) failed. Bailing...!\n");
     exit(-1);
   }
-#endif
 
   /* ds new equation */
-  my_eqn14 = libxsmm_matrix_eqn_create();                                                       /* ds [bc] = ((dout * gamma) * inp) [HW, bc] + ds [bc] */
+  my_eqn14 = libxsmm_matrix_eqn_create();                          /* ds [bc] = ((dout * gamma) * inp) [HW, bc] + ds [bc] */
 
-#if 1
   binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   op_metadata[0].eqn_idx      = my_eqn14;
   op_metadata[0].op_arg_pos   = -1;
@@ -773,27 +705,14 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn14 ); */
 
   res.ds_func = libxsmm_dispatch_matrix_eqn_v2( my_eqn14, eqn_out_arg_shape );
-
-#else
-  libxsmm_matrix_eqn_push_back_binary_op(my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );                  /* ds [bc] */
-  libxsmm_matrix_eqn_push_back_unary_op(my_eqn14, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32);   /* [HW, bc] -> [bc] */
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn14, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1, LIBXSMM_DATATYPE_F32 );       /*(dout * gamma)*/
-  libxsmm_matrix_eqn_push_back_arg( my_eqn14, res.bc, res.H*res.W/res.num_HW_blocks, ld, 3, 0, in_dt );                        /* dout [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn14, res.bc, 1, 1, 6, 0, in_dt );                          /* gamma [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn14, res.bc, res.H*res.W/res.num_HW_blocks, ld, 0, 0, in_dt );                        /* inp [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn14, res.bc, 1, 1, 8, 0, LIBXSMM_DATATYPE_F32 );           /* ds [bc] */
-  res.ds_func = libxsmm_dispatch_matrix_eqn( res.bc, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn14 );      /* ds [bc] */
-#endif
   if ( res.ds_func == NULL) {
     fprintf( stderr, "JIT for TPP fwd ds_func (eqn14) failed. Bailing...!\n");
     exit(-1);
   }
 
   /* din equation */
-  my_eqn15 = libxsmm_matrix_eqn_create();                                                       /* din = ((gamma * a) * dout) + (inp * b + c) */
+  my_eqn15 = libxsmm_matrix_eqn_create();                          /* din = ((gamma * a) * dout) + (inp * b + c) */
 
-#if 1
   ternary_flags               = (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT);
   op_metadata[0].eqn_idx      = my_eqn15;
   op_metadata[0].op_arg_pos   = -1;
@@ -866,25 +785,11 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn16 ); */
 
   res.din_func = libxsmm_dispatch_matrix_eqn_v2( my_eqn15, eqn_out_arg_shape );
-
-#else
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn15, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT), LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn15, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, 1, 1, 6, 0, in_dt );                          /* gamma [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );           /* a [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, res.H*res.W/res.num_HW_blocks, ld, 3, 0, in_dt );                        /* dout [HW, bc] */
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn15, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT), LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, res.H*res.W/res.num_HW_blocks, ld, 0, 0, in_dt );                        /* inp [HW, bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );           /* b [bc] */
-  libxsmm_matrix_eqn_push_back_arg( my_eqn15, res.bc, 1, 1, 7, 0, LIBXSMM_DATATYPE_F32 );           /* c [bc] */
-  res.din_func = libxsmm_dispatch_matrix_eqn( res.bc, res.H*res.W/res.num_HW_blocks, &ld, in_dt, my_eqn15 );                         /* din [HW, bc] */
-#endif
   if ( res.din_func == NULL) {
     fprintf( stderr, "JIT for TPP fwd din_func (eqn15) failed. Bailing...!\n");
     exit(-1);
   }
 
-  // FIXME: Need to modify as this code is for the batchnorm
   /* init scratch */
   dbeta_N_offset = LIBXSMM_UP2(res.CP * res.N * res.bc, 64);
   res.scratch_size =  sizeof(float) * ( dbeta_N_offset /* dbeta_N*/ + LIBXSMM_UP2(res.CP * res.N * res.bc, 64) /*dgamma_N */ );
@@ -955,6 +860,26 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
   int np, group_size;
   group_size = (CP*CB)/G;
 
+  libxsmm_meltw_unary_param  all_zero_param;
+  libxsmm_meltw_binary_param add_param;
+  libxsmm_meltw_unary_param  reduce_HW_param;
+  libxsmm_meltw_unary_param  m_reduce_groups_param;
+  libxsmm_meltw_unary_param  v_reduce_groups_param;
+  libxsmm_meltw_unary_param  all_relu_param;
+
+  libxsmm_matrix_arg arg_array[5];
+  libxsmm_matrix_eqn_param eqn_param;
+
+  memset( &all_zero_param,        0, sizeof(all_zero_param));
+  memset( &add_param,             0, sizeof(add_param));
+  memset( &reduce_HW_param,       0, sizeof(reduce_HW_param));
+  memset( &m_reduce_groups_param, 0, sizeof(m_reduce_groups_param));
+  memset( &v_reduce_groups_param, 0, sizeof(v_reduce_groups_param));
+  memset( &all_relu_param,        0, sizeof(all_relu_param));
+  memset( &eqn_param,             0, sizeof(eqn_param));
+
+  eqn_param.inputs = arg_array;
+
   if (group_size <= CB){
     int cp;
     int cpxnt;
@@ -969,11 +894,6 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
       LIBXSMM_ALIGNED(float b[CB], 64);
 
       int i, j, hwb, g;
-      libxsmm_matrix_eqn_param eqn_param;
-      libxsmm_meltw_unary_param m_reduce_groups_params, v_reduce_groups_params, reduce_HW_params;
-      libxsmm_meltw_unary_param all_zero_param;
-      libxsmm_meltw_binary_param add_param;
-      libxsmm_matrix_arg arg_array[5];
 
       all_zero_param.out.primary = tmp;
       cfg.all_zero_kernel(&all_zero_param);
@@ -987,10 +907,10 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 
 /***************************  Process entire block code *****************************/
       LIBXSMM_ALIGNED(float new_tmp[2*CB], 64);
-      reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
+      reduce_HW_param.out.primary   = new_tmp;                  /* [2*CB] */
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-        reduce_HW_params.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
-        cfg.reduce_HW_kernel(&reduce_HW_params);
+        reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW_block, CB] -----> [2 * CB] */
+        cfg.reduce_HW_kernel(&reduce_HW_param);
 
         add_param.in0.primary = tmp;
         add_param.in1.primary = new_tmp;
@@ -1008,12 +928,12 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 
       for(i=0; i < CB; i += group_size){
         g = (cp*CB + i)/group_size;                                                                      /* determine current group */
-        m_reduce_groups_params.in.primary    = &tmp[i];
-        m_reduce_groups_params.out.primary   = &sum_X[g];
-        v_reduce_groups_params.in.primary    = &tmp[CB + i];
-        v_reduce_groups_params.out.primary   = &sum_X2[g];
-        cfg.reduce_groups_kernel(&m_reduce_groups_params);
-        cfg.reduce_groups_kernel(&v_reduce_groups_params);
+        m_reduce_groups_param.in.primary    = &tmp[i];
+        m_reduce_groups_param.out.primary   = &sum_X[g];
+        v_reduce_groups_param.in.primary    = &tmp[CB + i];
+        v_reduce_groups_param.out.primary   = &sum_X2[g];
+        cfg.reduce_groups_kernel(&m_reduce_groups_param);
+        cfg.reduce_groups_kernel(&v_reduce_groups_param);
 
         mean[np*G + g] = sum_X[g] / ((float)group_size * HW);
         var[np*G + g] = (sum_X2[g] / ((float)group_size * HW)) - (mean[np*G + g]*mean[np*G + g]);        /* var = E[X^2] - (E[X])^2 */
@@ -1031,12 +951,11 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);            /* [HW, CB] */
-        eqn_param.inputs = arg_array;
         eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);        /* [HW, CB] */
         cfg.func10(&eqn_param);                                                                                           /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
 
         /* Eltwise add */
-        if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
           add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
@@ -1044,13 +963,11 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
         }
 
         /* ReLU */
-        if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-
-          libxsmm_meltw_unary_param all_relu_param;
+        if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
           all_relu_param.op.primary   = (void*)(&alpha);
           all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
           all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.out.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+          all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                             (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
           cfg.relu_kernel(&all_relu_param);
         } /* ReLU */
@@ -1066,11 +983,12 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 
       int i, j, cp, hwb, g;
       float m, v;
-      libxsmm_matrix_eqn_param eqn_param;
-      libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, m_reduce_groups_params, v_reduce_groups_params, reduce_HW_params;
-      libxsmm_meltw_unary_param all_zero_param;
-      libxsmm_meltw_binary_param add_param;
-      libxsmm_matrix_arg arg_array[5];
+
+      libxsmm_meltw_unary_param  m_reduce_rows_param;
+      libxsmm_meltw_unary_param  v_reduce_rows_param;
+
+      memset( &m_reduce_rows_param, 0, sizeof(m_reduce_rows_param));
+      memset( &v_reduce_rows_param, 0, sizeof(v_reduce_rows_param));
 
       all_zero_param.out.primary = sum_X;
       cfg.all_zero_G_kernel(&all_zero_param);
@@ -1087,10 +1005,10 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
         /*   tmp[cb] = 0.0f; */
         /* } */
 
-        reduce_HW_params.out.primary   = new_tmp;                  /* [2*CB] */
+        reduce_HW_param.out.primary = new_tmp;                  /* [2*CB] */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          reduce_HW_params.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW, CB] -----> [2 * CB] */
-          cfg.reduce_HW_kernel(&reduce_HW_params);
+          reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW, CB] -----> [2 * CB] */
+          cfg.reduce_HW_kernel(&reduce_HW_param);
 
           add_param.in0.primary = tmp;
           add_param.in1.primary = new_tmp;
@@ -1109,23 +1027,23 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
 
         if (group_size >= CB){                                 /* Group size >= block size  (Ex.- CP = 4, CB = 16, G = 2, group_size = 32) */
           g = (cp*CB)/group_size;                              /* determine current group */
-          m_reduce_rows_params.in.primary    = tmp;
-          m_reduce_rows_params.out.primary   = &m;
-          v_reduce_rows_params.in.primary    = &tmp[CB];
-          v_reduce_rows_params.out.primary   = &v;
-          cfg.reduce_rows_kernel(&m_reduce_rows_params);
-          cfg.reduce_rows_kernel(&v_reduce_rows_params);
+          m_reduce_rows_param.in.primary    = tmp;
+          m_reduce_rows_param.out.primary   = &m;
+          v_reduce_rows_param.in.primary    = &tmp[CB];
+          v_reduce_rows_param.out.primary   = &v;
+          cfg.reduce_rows_kernel(&m_reduce_rows_param);
+          cfg.reduce_rows_kernel(&v_reduce_rows_param);
           sum_X[g] += m;
           sum_X2[g] += v;
         }
         else{                                                 /* Group size < block size  (Ex.- CP = 4, CB = 16, G = 32, group_size = 2) */
           for(i=0; i < CB; i += group_size){
-            m_reduce_groups_params.in.primary    = &tmp[i];
-            m_reduce_groups_params.out.primary   = &sum_X[cp*(CB/group_size) + (i/group_size)];
-            v_reduce_groups_params.in.primary    = &tmp[CB + i];
-            v_reduce_groups_params.out.primary   = &sum_X2[cp*(CB/group_size) + (i/group_size)];
-            cfg.reduce_groups_kernel(&m_reduce_groups_params);
-            cfg.reduce_groups_kernel(&v_reduce_groups_params);
+            m_reduce_groups_param.in.primary    = &tmp[i];
+            m_reduce_groups_param.out.primary   = &sum_X[cp*(CB/group_size) + (i/group_size)];
+            v_reduce_groups_param.in.primary    = &tmp[CB + i];
+            v_reduce_groups_param.out.primary   = &sum_X2[cp*(CB/group_size) + (i/group_size)];
+            cfg.reduce_groups_kernel(&m_reduce_groups_param);
+            cfg.reduce_groups_kernel(&v_reduce_groups_param);
           }
         }
       }
@@ -1154,20 +1072,18 @@ void my_gn_fwd_exec( my_gn_fwd_config cfg, const float *pinp, const float *pinp_
           cfg.func10(&eqn_param);                                                                                 /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
 
           /* Eltwise add */
-          if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
             add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             cfg.ewise_add_kernel(&add_param);
           }
           /* ReLU */
-          if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-
-            libxsmm_meltw_unary_param all_relu_param;
+          if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
             all_relu_param.op.primary   = (void*)(&alpha);
             all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
             all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.out.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+            all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                               (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
             cfg.relu_kernel(&all_relu_param);
           } /* ReLU */
@@ -1226,6 +1142,20 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
   const libxsmm_blasint thr_begin_N = (ltid * chunksize_N < work_N) ? (ltid * chunksize_N) : work_N;
   const libxsmm_blasint thr_end_N = ((ltid + 1) * chunksize_N < work_N) ? ((ltid + 1) * chunksize_N) : work_N;
 
+  libxsmm_meltw_unary_param  all_zero_param;
+  libxsmm_meltw_unary_param  all_relu_param;
+  libxsmm_meltw_unary_param  ewise_copy_param;
+
+  libxsmm_matrix_arg arg_array[10];
+  libxsmm_matrix_eqn_param eqn_param;
+
+  memset( &all_zero_param,        0, sizeof(all_zero_param));
+  memset( &all_relu_param,        0, sizeof(all_relu_param));
+  memset( &ewise_copy_param,      0, sizeof(ewise_copy_param));
+  memset( &eqn_param,             0, sizeof(eqn_param));
+
+  eqn_param.inputs = arg_array;
+
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
@@ -1260,17 +1190,11 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
 
     int np, cp;
     int cpxnt;
-
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
       np = cpxnt/CP;
       cp = cpxnt%CP;
 
       int j, g, hwb, lg;
-
-      libxsmm_matrix_eqn_param eqn_param;
-      libxsmm_meltw_unary_param all_zero_param;
-      libxsmm_matrix_arg arg_array[10];
-      eqn_param.inputs = arg_array;
 
       /* for(j = 0; j < CB; j++){
           dgamma_NP[np*CP*CB + cp*CB + j] = 0.0f;
@@ -1285,7 +1209,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       cfg.all_zero_kernel(&all_zero_param);
       all_zero_param.out.primary = db;
       cfg.all_zero_kernel(&all_zero_param);
-
 
       for(g = (cp*CB)/group_size; g < ((cp+1)*CB)/group_size; g++){                                                  /* compute a and b for each channel from group means and variance */
         lg = g - (cp*CB)/group_size;
@@ -1304,18 +1227,16 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       arg_array[9].primary = db;
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-        if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-          libxsmm_meltw_unary_param all_relu_param;
+        if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
           all_relu_param.op.primary   = (void*)(&alpha);
           all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+          all_relu_param.in.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                            (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
                                            : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB) */ ); /* dout_fwd ? nonsense? */
           all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
           cfg.inv_relu_kernel(&all_relu_param);
         } /* ReLU/mask */
-        libxsmm_meltw_unary_param ewise_copy_param;
-        if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
           cfg.ewise_copy_kernel(&ewise_copy_param);
@@ -1389,11 +1310,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
     for ( np = thr_begin_N; np < thr_end_N; ++np ) {
       int j, g, cp, hwb;
 
-      libxsmm_matrix_eqn_param eqn_param;
-      libxsmm_meltw_unary_param all_zero_param;
-      libxsmm_matrix_arg arg_array[10];
-      eqn_param.inputs = arg_array;
-
       /* for(j = 0; j < CP*CB; j++){ */
       /*   dgamma_NP[np*CP*CB + j] = 0.0f; */
       /*   dbeta_NP[np*CP*CB + j] = 0.0f; */
@@ -1427,18 +1343,16 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
         arg_array[9].primary = &db[cp*CB];
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
-            libxsmm_meltw_unary_param all_relu_param;
+          if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
             all_relu_param.op.primary   = (void*)(&alpha);
             all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.in.secondary = ((cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) ?
+            all_relu_param.in.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                              (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB/8)
                                              : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB) */ ); /* dout_fwd ? nonsense? */
             all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
             cfg.inv_relu_kernel(&all_relu_param);
           } /* ReLU/mask */
-          libxsmm_meltw_unary_param ewise_copy_param;
-          if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
+          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
             ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
             cfg.ewise_copy_kernel(&ewise_copy_param);
