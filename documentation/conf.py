@@ -3,7 +3,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -12,7 +12,7 @@ import sphinx_rtd_theme
 import os
 
 project = 'LIBXSMM'
-copyright = '2009-2021, Intel Corporation.'
+copyright = '2009-2022, Intel Corporation.'
 author = 'Intel Corporation'
 user = os.environ.get('USER')
 

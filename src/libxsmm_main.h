@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -821,7 +821,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldc;
   int N_chunksize;
   double* a_dense;
-  libxsmm_dmmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
@@ -832,7 +832,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldc;
   int N_chunksize;
   float* a_dense;
-  libxsmm_smmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 /** Packed structure storing the mateltw argument description. */

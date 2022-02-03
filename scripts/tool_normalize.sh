@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -16,7 +16,7 @@ BANNED_CHARS="\t"
 PATPRE="s/^[[:space:]][[:space:]]*#/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 PATBAN="s/[${BANNED_CHARS}]/"
-PATCMT="s/[[:space:]]\/\//"
+PATCMT="s/^[[:space:]][[:space:]]*\/\//"
 PATEOL="s/\r$/"
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)

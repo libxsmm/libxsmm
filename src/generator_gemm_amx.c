@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -944,7 +944,7 @@ void libxsmm_generator_gemm_store_C_amx( libxsmm_generated_code*            io_g
         int min_mate_C_id = (i_micro_kernel_config->_C_tile_id[i] < i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]]) ? i_micro_kernel_config->_C_tile_id[i] : i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]];
         int im_store = min_mate_C_id / n_tiles;
         int in_store = min_mate_C_id % n_tiles;
-        paired_tilestore( io_generated_code,
+        libxsmm_generator_gemm_amx_paired_tilestore( io_generated_code,
             i_gp_reg_mapping,
             i_micro_kernel_config,
             i_xgemm_desc,
@@ -955,7 +955,7 @@ void libxsmm_generator_gemm_store_C_amx( libxsmm_generated_code*            io_g
             n_blocking_info->sizes[in_store]);
       }
     } else {
-      single_tilestore( io_generated_code,
+      libxsmm_generator_gemm_amx_single_tilestore( io_generated_code,
           i_gp_reg_mapping,
           i_micro_kernel_config,
           i_xgemm_desc,

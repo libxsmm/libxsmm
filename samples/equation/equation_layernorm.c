@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -567,6 +567,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape reduce_rows_shape, reduce_cols_shape;
   libxsmm_meltwfunction_unary reduce_rows_kernel, reduce_cols_kernel;
 
   const float eps = FLT_EPSILON;
@@ -669,12 +670,14 @@ int main( int argc, char* argv[] ) {
   tmp_ld = S3;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  reduce_cols_kernel = libxsmm_dispatch_meltw_unary(S3, S1, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+  reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
   ld = S3;
   tmp_ld = 1;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-  reduce_rows_kernel = libxsmm_dispatch_meltw_unary(S3, 1, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, jit_reduce_flags, unary_type);
+  reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
 
   /* TPP for scaling */
   ld = S2*S3;

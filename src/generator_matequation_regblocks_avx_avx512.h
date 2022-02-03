@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -14,7 +14,7 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-unsigned int get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id);
+unsigned int libxsmm_generator_matequation_regblocks_get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id);
 
   LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generated_code,
@@ -61,10 +61,10 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
                                                  unsigned int*                           i_mask_reg_out);
 
 LIBXSMM_API_INTERN
-unsigned int vmove_instruction(libxsmm_datatype  dtype);
+unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype  dtype);
 
 LIBXSMM_API_INTERN
-unsigned int vbcast_instruction(libxsmm_datatype  dtype);
+unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_datatype  dtype);
 
 
 LIBXSMM_API_INTERN
@@ -169,11 +169,11 @@ void libxsmm_generator_configure_equation_avx512_vlens( libxsmm_generated_code* 
 
 
 LIBXSMM_API_INTERN
-unsigned int unary_op_req_zmms(libxsmm_generated_code*                    io_generated_code,  libxsmm_meltw_unary_type u_type);
+unsigned int libxsmm_generator_matequation_regblocks_unary_op_req_zmms(libxsmm_generated_code*                    io_generated_code,  libxsmm_meltw_unary_type u_type);
 
 
 LIBXSMM_API_INTERN
-unsigned int binary_op_req_zmms(libxsmm_generated_code*                    io_generated_code, libxsmm_meltw_binary_type b_type);
+unsigned int libxsmm_generator_matequation_regblocks_binary_op_req_zmms(libxsmm_generated_code*                    io_generated_code, libxsmm_meltw_binary_type b_type);
 
 LIBXSMM_API_INTERN
 void libxsmm_adjust_required_zmms( libxsmm_generated_code*                    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config,
@@ -192,13 +192,13 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
     libxsmm_matrix_eqn                      *eqn );
 
 LIBXSMM_API_INTERN
-void get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
+void libxsmm_generator_matequation_regblocks_get_parent_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
 
 LIBXSMM_API_INTERN
-void assign_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
+void libxsmm_generator_matequation_regblocks_assign_bcast_info(libxsmm_matrix_eqn_elem* cur_node);
 
 LIBXSMM_API_INTERN
-void propagate_bcast_info( libxsmm_matrix_eqn *eqn );
+void libxsmm_generator_matequation_regblocks_propagate_bcast_info( libxsmm_matrix_eqn *eqn );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm_generated_code* io_generated_code,
