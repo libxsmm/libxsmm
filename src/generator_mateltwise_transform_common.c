@@ -24,19 +24,19 @@ void libxsmm_generator_transform_x86_microkernel( libxsmm_generated_code*       
                                                   const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) &&  (io_generated_code->arch < LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_transform_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-  } else if ( ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256_CPX) ) ||
-              ( (io_generated_code->arch > LIBXSMM_X86_AVX512) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) )
-            )  {
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE) ) {
     /* we need to re-run some setting for KNx */
     /* @TODO find a better solution for KNx, const to non-const cast is considered harmful.... */
     unsigned int l_save_arch = io_generated_code->arch;
-    io_generated_code->arch = LIBXSMM_X86_AVX2;
-    libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
+    if ( (l_save_arch == LIBXSMM_X86_AVX512_MIC) || (l_save_arch == LIBXSMM_X86_AVX512_KNM) ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX2;
+      libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
+    }
     libxsmm_generator_transform_avx_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
-    io_generated_code->arch = l_save_arch;
-    libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
-  } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
-    libxsmm_generator_transform_avx_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
+    if ( (l_save_arch == LIBXSMM_X86_AVX512_MIC) || (l_save_arch == LIBXSMM_X86_AVX512_KNM) ) {
+      io_generated_code->arch = l_save_arch;
+      libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
+    }
   } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
     libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else {
