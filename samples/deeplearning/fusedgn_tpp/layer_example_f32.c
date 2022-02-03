@@ -426,16 +426,17 @@ int main( int argc, char* argv[] ) {
     }
 
 
+    /* To have a better comparison, exact inputs to TPP bwd are passed to reference ("naive"), except rcpstdev */
     tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,   N, CP*bc, HW, 1, bc);
-    tensor_copy_NCHWc_to_NCHW (out,  naive_out,   N, CP*bc, HW, 1, bc);
-    tensor_copy_NCHWc_to_NCHW (dout, naive_dout,  N, CP*bc, HW, 1, bc);
-
+    tensor_copy_NCHWc_to_NCHW (eqn_out,  naive_out,   N, CP*bc, HW, 1, bc);
+    tensor_copy_NCHWc_to_NCHW (eqn_dout, naive_dout,  N, CP*bc, HW, 1, bc);
 
     naive_fusedgroupnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
                                        beta, dbeta, gamma, dgamma, mean, naive_rcpstdev, var);
 
     tensor_copy_NCHW_to_NCHWc (naive_dinp,     dinp,     N, C, H, W, bc);
     tensor_copy_NCHW_to_NCHWc (naive_dinp_add, dinp_add, N, C, H, W, bc);
+    tensor_copy_NCHW_to_NCHWc (naive_dout, dout, N, C, H, W, bc); /* extra check */
 
 #ifdef COMPUTE_FP64_REFERENCE
     extend_buf_fp32_to_fp64 (naive_inp,  naive_inp_fp64,  N*CP*bc*HW);
@@ -479,7 +480,31 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
+
+    printf("##################################################\n");
+    printf("# Correctness FP32 BWD groupnorm - reference vs reference Dinput (fp64) #\n");
+    printf("##################################################\n");
+    libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_fp64_downscaled_to_fp32, dinp, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 #endif
+
+    printf("############################################\n");
+    printf("# Correctness FP32 BWD groupnorm - Dout  #\n");
+    printf("############################################\n");
+    libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dout, eqn_dout, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
 
     if (fuse_type == 2 || fuse_type == 5) {
       printf("################################################\n");
@@ -499,6 +524,18 @@ int main( int argc, char* argv[] ) {
       printf("# Correctness FP32 BWD Batchnorm - Dinput add (fp64) #\n");
       printf("##################################################\n");
       libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add_fp64_downscaled_to_fp32, eqn_dinp_add, 0, 0);
+      printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd_d.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd_d.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd_d.linf_rel);
+      printf("Check-norm    : %.24f\n\n", norms_bwd_d.normf_rel);
+
+      printf("##################################################\n");
+      printf("# Correctness FP32 BWD Batchnorm - reference Dinput add (fp64) #\n");
+      printf("##################################################\n");
+      libxsmm_matdiff(&norms_bwd_d, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, dinp_add_fp64_downscaled_to_fp32, dinp_add, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd_d.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd_d.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd_d.l2_abs);
