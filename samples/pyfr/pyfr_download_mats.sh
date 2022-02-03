@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -25,7 +25,7 @@ if [ "${MKDIR}" ] && [ "${WGET}" ]; then
     for KIND in ${KINDS}; do
       mkdir ${KIND}; cd ${KIND}
       for FILE in ${FILES}; do
-        ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx
+        ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx
       done
       cd ..
     done

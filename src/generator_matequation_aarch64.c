@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -439,7 +439,7 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
          is_unary_opcode_transform_kernel(node->info.u_op.type) ||
-         is_unary_opcode_reduce_kernel(node->info.u_op.type) ) {
+         libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ) {
       result = 1;
     }
   }
@@ -457,7 +457,7 @@ int is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node) {
 }
 
 LIBXSMM_API_INTERN
-void enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size) {
+void libxsmm_generator_matequation_enqueue_equation(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size) {
   jiting_queue[*queue_size] = eqn;
   *queue_size = *queue_size + 1;
 }
@@ -612,34 +612,34 @@ void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn,
       }
       new_eqn->eqn_root = cur_node;
       new_eqn->is_constructed = 1;
-      enqueue_equation(new_eqn, jiting_queue, queue_size);
+      libxsmm_generator_matequation_enqueue_equation(new_eqn, jiting_queue, queue_size);
     }
     if (timestamp == last_timestamp) {
-      enqueue_equation(eqn, jiting_queue, queue_size);
+      libxsmm_generator_matequation_enqueue_equation(eqn, jiting_queue, queue_size);
     }
   }
 #else
-  enqueue_equation(eqn, jiting_queue, queue_size);
+  libxsmm_generator_matequation_enqueue_equation(eqn, jiting_queue, queue_size);
 #endif
 }
 
 #if 0
-LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
-LIBXSMM_API_INTERN void are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
   if (node->tmp.dtype != LIBXSMM_DATATYPE_F32) {
     *result = 0;
   }
   if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     return;
   } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
-    are_nodes_pure_f32(node->le, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->le, result);
   } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
-    are_nodes_pure_f32(node->le, result);
-    are_nodes_pure_f32(node->ri, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->le, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->ri, result);
   } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
-    are_nodes_pure_f32(node->le, result);
-    are_nodes_pure_f32(node->ri, result);
-    are_nodes_pure_f32(node->r2, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->le, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->ri, result);
+    libxsmm_generator_matequation_are_nodes_pure_f32(node->r2, result);
   }
 }
 #endif
@@ -668,7 +668,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   }
 
   /* Check if equation is purely F32 */
-  are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
+  libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
   if ( !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
     /* This should not happen  */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );

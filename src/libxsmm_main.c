@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
@@ -85,9 +85,6 @@
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_THROW;
-#endif
-#if defined(LIBXSMM_AUTOPIN) && !defined(_WIN32)
-LIBXSMM_EXTERN int putenv(char*) LIBXSMM_THROW;
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -2866,6 +2863,42 @@ LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 }
 
 
+LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
+                                                          const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+                                                          const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_gemm_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.k = k;
+  res.lda = (libxsmm_blasint*)lda;
+  res.ldb = (libxsmm_blasint*)ldb;
+  res.ldc = (libxsmm_blasint*)ldc;
+  res.a_in_type = a_in_type;
+  res.b_in_type = b_in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
+                                                                                      const unsigned long long br_stride_a_hint, const unsigned long long br_stride_b_hint,
+                                                                                      const unsigned char br_unroll_hint )
+{
+  libxsmm_gemm_batch_reduce_config res;
+
+  res.br_type = br_type;
+  res.br_stride_a_hint = br_stride_a_hint;
+  res.br_stride_b_hint = br_stride_b_hint;
+  res.br_unroll_hint = br_unroll_hint;
+
+  return res;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
@@ -4641,6 +4674,63 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
 }
 
 
+LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_unary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_binary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
+                                                                            const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+                                                                            const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
+{
+  libxsmm_meltw_ternary_shape res;
+
+  res.m = m;
+  res.n = n;
+  res.ldi = (libxsmm_blasint*)ldi;
+  res.ldi2 = (libxsmm_blasint*)ldi2;
+  res.ldi3 = (libxsmm_blasint*)ldi3;
+  res.ldo = (libxsmm_blasint*)ldo;
+  res.in_type = in_type;
+  res.out_type = out_type;
+  res.comp_type = comp_type;
+
+  return res;
+}
+
+
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary_v2( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags )
 {
   libxsmm_descriptor_blob blob;
@@ -4764,6 +4854,50 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csr(const libxsmm_
 }
 
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width,
+  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pspgemm_csr_descriptor pspgemm_csr;
+  libxsmm_build_request request;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+  if ( (NULL == row_ptr) || (NULL == column_idx) || (NULL == values) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  pspgemm_csr.gemm = desc;
+  pspgemm_csr.row_ptr = row_ptr;
+  pspgemm_csr.column_idx = column_idx;
+  pspgemm_csr.values = values;
+  pspgemm_csr.packed_width = packed_width;
+  request.descriptor.pspgemm_csr = &pspgemm_csr;
+  request.kind = LIBXSMM_BUILD_KIND_PSPGEMM_CSR;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csc(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
 {
@@ -4793,6 +4927,50 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csc(const libxsmm_
 }
 
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width,
+  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pspgemm_csc_descriptor pspgemm_csc;
+  libxsmm_build_request request;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+  if ( (NULL == column_ptr) || (NULL == row_idx) || (NULL == values) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  pspgemm_csc.gemm = desc;
+  pspgemm_csc.column_ptr = column_ptr;
+  pspgemm_csc.row_idx = row_idx;
+  pspgemm_csc.values = values;
+  pspgemm_csc.packed_width = packed_width;
+  request.descriptor.pspgemm_csc = &pspgemm_csc;
+  request.kind = LIBXSMM_BUILD_KIND_PSPGEMM_CSC;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_ac_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
@@ -4818,6 +4996,43 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_ac_rm(const libxsmm_
 }
 
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width )
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pgemm_ac_rm_descriptor pgemmacrm;
+  libxsmm_build_request request;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  pgemmacrm.gemm = desc;
+  pgemmacrm.packed_width = packed_width;
+  request.descriptor.pgemmacrm = &pgemmacrm;
+  request.kind = LIBXSMM_BUILD_KIND_PGEMMRMAC;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_bc_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width)
 {
   libxsmm_code_pointer result = { 0 };
@@ -4840,6 +5055,43 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_bc_rm(const libxsmm_
     libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
   }
   return result.xgemm;
+}
+
+
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libxsmm_gemm_shape gemm_shape,
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, libxsmm_blasint packed_width )
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pgemm_bc_rm_descriptor pgemmbcrm;
+  libxsmm_build_request request;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  pgemmbcrm.gemm = desc;
+  pgemmbcrm.packed_width = packed_width;
+  request.descriptor.pgemmbcrm = &pgemmbcrm;
+  request.kind = LIBXSMM_BUILD_KIND_PGEMMRMBC;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
 }
 
 
@@ -4904,6 +5156,50 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
     }
   }
   return result.xgemm.smm;
+}
+
+
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsmm_gemm_shape gemm_shape,
+  const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
+  const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values )
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_csr_reg_descriptor sreg;
+  libxsmm_build_request request;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* @TODO some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+  if ( (NULL == row_ptr) || (NULL == column_idx) || (NULL == values) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utiliztes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    NULL != gemm_shape.lda ? *(gemm_shape.lda) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k),
+    NULL != gemm_shape.ldb ? *(gemm_shape.ldb) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n),
+    NULL != gemm_shape.ldc ? *(gemm_shape.ldc) : gemm_shape.m, LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+  desc->c1 = max_N;
+
+  sreg.gemm = desc;
+  sreg.row_ptr = row_ptr;
+  sreg.column_idx = column_idx;
+  sreg.values = values;
+  request.descriptor.sreg = &sreg;
+  request.kind = LIBXSMM_BUILD_KIND_SREG;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
 }
 
 

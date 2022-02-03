@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -20,7 +20,7 @@ NAMES="tet4_0_fluxL_0_csc.mtx tet4_0_fluxL_0_csr.mtx tet4_0_fluxL_1_csc.mtx tet4
 if [ "${MKDIR}" ] && [ "${WGET}" ]; then
   ${MKDIR} -p ${HERE}/mats; cd ${HERE}/mats
   for NAME in ${NAMES}; do
-    ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/${NAME}
+    ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/edge/mats/${NAME}
   done
 fi
 

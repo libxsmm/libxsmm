@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -15,7 +15,7 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 GIT=$(command -v git)
 
-USR=hfp
+USR=libxsmm
 PRJ=libxsmm
 URL="https://api.github.com/repos/${USR}/${PRJ}/forks"
 
