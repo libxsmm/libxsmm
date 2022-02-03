@@ -254,8 +254,6 @@ int main( int argc, char* argv[] ) {
   copy_buf(dinp,    eqn_dinp, N*CP*HW*bc);
   copy_buf(dout,    eqn_dout, N*CP*HW*bc);
 
-//  zero_buf(inp_add, N*CP*HW*bc); // debugging!
-
   init_buf(gamma,  CP*bc, 1, 0);
   init_buf(beta,   CP*bc, 1, 0);
   init_buf(dgamma, CP*bc, 1, 0);
