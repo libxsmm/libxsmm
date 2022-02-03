@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
   unsigned long long *cols_ind_array;
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
+  libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltwfunction_unary kernel2 = NULL;
@@ -86,11 +87,6 @@ int main(int argc, char* argv[]) {
   if ( argc > 10 ) iters = atoi(argv[10]);
 
   printf("CL is: %d %d %d %d %d %d %d %d %llu %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
-
-#if 0
-  libxsmm_meltw_opreduce_vecs_flags opredop_flags = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
-  libxsmm_meltwfunction_opreduce_vecs_idx new_kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_I64, opredop_flags);
-#endif
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -222,12 +218,23 @@ int main(int argc, char* argv[]) {
     }
   } else { /* should not happen */ }
 
+  unary_shape.m = m;
+  unary_shape.n = n;
+  unary_shape.ldi = &ld_in;
+  unary_shape.ldo = &ld_in;
+
   printf("JITing reduce kernel... \n");
   if (n_cols_idx == 0) {
     if (use_bf16 == 0) {
-      kernel = libxsmm_dispatch_meltw_unary(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+      unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
     } else {
-      kernel = libxsmm_dispatch_meltw_unary(m, n, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, unary_flags, unary_type);
+      unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
     }
 
     /* Call JITed kernel and compare result  */
@@ -241,13 +248,23 @@ int main(int argc, char* argv[]) {
     }
     kernel( &unary_param );
   } else {
+    unary_shape.n = 0;
 #ifdef FP16_REDUCE_COLSIDX
-    kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_F16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F16, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
+    unary_shape.in_type = LIBXSMM_DATATYPE_F16;
+    unary_shape.out_type = LIBXSMM_DATATYPE_F16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
 #else
     if (use_bf16 == 0) {
-      kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
+      unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
     } else {
-      kernel2 = libxsmm_dispatch_meltw_unary(m, 0, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX);
+      unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
     }
 #endif
     /* Call JITed kernel and compare result  */

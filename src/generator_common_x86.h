@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
@@ -13,6 +13,27 @@
 #define GENERATOR_COMMON_X86_H
 
 #include "generator_common.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_header_no_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_init_val);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_footer_with_idx_inc( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_step,
+    const unsigned int                 i_loop_bound);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_save_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_save_bitmask);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_x86_restore_gpr_regs(libxsmm_generated_code*   io_generated_code,
+    const unsigned short    i_restore_bitmask);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                        io_generated_code,

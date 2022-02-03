@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
@@ -1178,6 +1178,7 @@
 #define LIBXSMM_ERR_NO_AVX512VL           90043
 #define LIBXSMM_ERR_GP_TEMP_MAPPING       90044
 #define LIBXSMM_ERR_BITMASK_REQUIRED      90045
+#define LIBXSMM_ERR_ILLEGAL_ABI           90046
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1279,6 +1280,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int decompress_A;
   unsigned int vnni_cvt_output_ext_buf;
   unsigned int norm_to_normT_B_ext_buf;
+  unsigned int has_colbias_act_fused;
 
   /* Register names/logistics for fusion boo-keeping  */
   unsigned int reserved_zmms;
@@ -1311,6 +1313,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary arrays for micro-kernel iteration space traversal */
   int use_paired_tilestores;
+  int m_tiles;
+  int n_tiles;
   int _im[4];
   int _in[4];
   int _C_tile_id[4];
@@ -1638,7 +1642,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      contains_binary_op;
   unsigned int                      contains_ternary_op;
   unsigned int                      tmp_size;
-  libxsmm_matrix_eqn_arg            *arg_info;
+  libxsmm_matrix_eqn_arg_v2         *arg_info;
   unsigned int                      reserved_zmms;
   unsigned int                      reserved_mask_regs;
   unsigned int                      register_block_size;
@@ -1740,7 +1744,23 @@ typedef enum libxsmm_meqn_stack_var {
   LIBXSMM_MEQN_STACK_VAR_CONST_6            =  26,
   LIBXSMM_MEQN_STACK_VAR_CONST_7            =  27,
   LIBXSMM_MEQN_STACK_VAR_CONST_8            =  28,
-  LIBXSMM_MEQN_STACK_VAR_CONST_9            =  29
+  LIBXSMM_MEQN_STACK_VAR_CONST_9            =  29,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR16 =  30,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR17 =  31,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR18 =  32,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR19 =  33,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR20 =  34,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR21 =  35,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR22 =  36,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR23 =  37,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR24 =  38,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR25 =  39,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR26 =  40,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR27 =  41,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR28 =  42,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR29 =  43,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR30 =  44,
+  LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR31 =  45
 } libxsmm_meqn_stack_var;
 
 /* Auxiliary stack variable enumeration in GEMM */

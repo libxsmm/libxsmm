@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -96,6 +96,9 @@
 #   define LIBXSMM_DESCRIPTOR_SIGSIZE 32
 # endif
 #endif
+
+/* special type for bitfield flags */
+typedef unsigned int libxsmm_bitfield;
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
@@ -258,7 +261,10 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64,
   LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES   = 128,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS           = 512,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS           = 1024,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -306,7 +312,15 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2         = 41,
   LIBXSMM_MELTW_TYPE_UNARY_QUANT                        = 42,
   LIBXSMM_MELTW_TYPE_UNARY_DEQUANT                      = 43,
-  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX              = 44
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX              = 44,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1   = 45,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2   = 46,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4   = 47,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8   = 48,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
+  LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -328,21 +342,36 @@ typedef enum libxsmm_meltw_binary_type {
   LIBXSMM_MELTW_TYPE_BINARY_MULADD      =  5,
   LIBXSMM_MELTW_TYPE_BINARY_MATMUL      =  6,
   LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD = 7,
-  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8
+  LIBXSMM_MELTW_TYPE_BINARY_PACK        =  8,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM                       =  9,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS               =  10,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS               =  11,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_TRANS_B_TRANS       =  12,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI                =  13,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_B_TRANS        =  14,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS          =  15,
+  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  16,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_B_TRANS               =  17,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS               =  18,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_TRANS_B_TRANS       =  19,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI                =  20,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_B_TRANS        =  21,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS          =  22,
+  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  23
 } libxsmm_meltw_binary_type;
 
 typedef enum libxsmm_meltw_ternary_flags {
-  LIBXSMM_MELTW_FLAG_TERNARY_NONE              =   0,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0    =   1,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1    =   2,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2    =   4,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0    =   8,
+  LIBXSMM_MELTW_FLAG_TERNARY_NONE              =  0,
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_0    =  1,
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_1    =  2,
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_ROW_IN_2    =  4,
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0    =  8,
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1    =  16,
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2    =  32,
   LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 =  64,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 = 128,
-  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 = 256,
-  LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT = 512
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 =  128,
+  LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 =  256,
+  LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT =  512
 } libxsmm_meltw_ternary_flags;
 
 typedef enum libxsmm_meltw_ternary_type {
@@ -350,7 +379,22 @@ typedef enum libxsmm_meltw_ternary_type {
   LIBXSMM_MELTW_TYPE_TERNARY_MULADD      =  1,
   LIBXSMM_MELTW_TYPE_TERNARY_MATMUL      =  2,
   LIBXSMM_MELTW_TYPE_TERNARY_BLEND       =  3,
-  LIBXSMM_MELTW_TYPE_TERNARY_NMULADD     =  4
+  LIBXSMM_MELTW_TYPE_TERNARY_NMULADD     =  4,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM                       =  5,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS               =  6,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS               =  7,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_TRANS_B_TRANS       =  8,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI                =  9,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_B_TRANS        =  10,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS          =  11,
+  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_A_VNNI_TRANS_B_TRANS  =  12,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_B_TRANS               =  13,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_TRANS               =  14,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_TRANS_B_TRANS       =  15,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI                =  16,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_B_TRANS        =  17,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS          =  18,
+  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  19
 } libxsmm_meltw_ternary_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmelt_flags {
@@ -690,6 +734,46 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
   void* quaternary;
 } libxsmm_matrix_op_arg;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_arg_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ld;                  /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_datatype type;                /* datatype of input */
+} libxsmm_meqn_arg_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_unary_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_binary_shape;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape {
+  libxsmm_blasint m;                    /* number of rows */
+  libxsmm_blasint n;                    /* number of cols */
+  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
+  libxsmm_blasint* ldi3;                /* leading dimension of third input, if NULL induced from K,N */
+  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype out_type;            /* datatype of output */
+  libxsmm_datatype comp_type;           /* datatype of compute */
+} libxsmm_meltw_ternary_shape;
+
 /** argument struct for matrix-eltwise: opreduce vecs indexed */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs_idx_param {
   unsigned long long n;
@@ -703,6 +787,35 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_opreduce_vecs
   void* argop_off_vec_0;
   void* argop_off_vec_1;
 } libxsmm_meltw_opreduce_vecs_idx_param;
+
+typedef enum libxsmm_matrix_arg_type {
+  LIBXSMM_MATRIX_ARG_TYPE_SINGULAR = 0,
+  LIBXSMM_MATRIX_ARG_TYPE_SET      = 1
+} libxsmm_matrix_arg_type;
+
+typedef enum libxsmm_matrix_arg_set_type {
+  LIBXSMM_MATRIX_ARG_SET_TYPE_NONE        = 0,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_ABS_ADDRESS = 1,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_OFFSET_BASE = 2,
+  LIBXSMM_MATRIX_ARG_SET_TYPE_STRIDE_BASE = 3
+} libxsmm_matrix_arg_set_type;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_attributes {
+  libxsmm_matrix_arg_type     type;
+  libxsmm_matrix_arg_set_type set_type;
+  libxsmm_blasint             set_cardinality_hint;
+  libxsmm_blasint             set_stride_hint;
+} libxsmm_matrix_arg_attributes;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_op_metadata {
+  libxsmm_blasint eqn_idx;
+  libxsmm_blasint op_arg_pos;
+} libxsmm_matrix_eqn_op_metadata;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_arg_metadata {
+  libxsmm_blasint eqn_idx;
+  libxsmm_blasint in_arg_pos;
+} libxsmm_matrix_eqn_arg_metadata;
 
 /** argument struct for matrix-eltwise: unary */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_param {
@@ -779,7 +892,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_usbimmfunction)(con
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_subimmfunction)(const          char* a, const unsigned char* b, int* c);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uubimmfunction)(const unsigned char* a, const unsigned char* b, int* c);
 
-/* argument strcuts for generalized interface */
+/* argument structs for generalized interface */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_param {
   libxsmm_matrix_op_arg op;  /* op state & parameters */
   libxsmm_matrix_arg_v2 a;   /* a matrix  */
@@ -798,7 +911,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_param {
   libxsmm_matrix_arg_v2 cp;  /* c before applying binary/ternary op after GEMM */
 } libxsmm_gemm_ext_param;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape_flags {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
   libxsmm_blasint m;                    /* number of rows of A and C */
   libxsmm_blasint n;                    /* number of cols of C and B */
   libxsmm_blasint k;                    /* number of cols of A and number of rows of B */
@@ -809,9 +922,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape_flags {
   libxsmm_datatype b_in_type;           /* datatype of B */
   libxsmm_datatype out_type;            /* datatype of C */
   libxsmm_datatype comp_type;           /* datatype of inner product */
-  int* flags;                           /* flags for GEMM operation */
-  int* prefetch;                        /* prefetch option for the GEMM operation*/
-} libxsmm_gemm_shape_flags;
+} libxsmm_gemm_shape;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
   libxsmm_gemm_batch_reduce_type br_type;  /* specifying the type of the BRGEMM operation */

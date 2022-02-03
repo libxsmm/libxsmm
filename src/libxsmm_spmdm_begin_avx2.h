@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Nadathur Satish, Hans Pabst (Intel Corp.)
@@ -37,7 +37,7 @@
 #define _MM_FMADD_FP32 _mm256_fmadd_ps
 #define _MM_MUL_FP32 _mm256_mul_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
-#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) { \
+#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) do { \
   __m256 ymm9  = _mm256_loadu_ps(ptr_A); \
   __m256 ymm10 = _mm256_loadu_ps(ptr_A + (size_t)ldA); \
   __m256 ymm11 = _mm256_loadu_ps(ptr_A + (size_t)ldA*2); \
@@ -82,9 +82,9 @@
          _mm256_storeu_ps(ptr_B + (size_t)ldB*5, ymm0); \
          _mm256_storeu_ps(ptr_B + (size_t)ldB*6, ymm5); \
          _mm256_storeu_ps(ptr_B + (size_t)ldB*7, ymm4);}}}} \
-}
+} while(0)
 
-#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) { \
+#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) do { \
   __m256 ymm9, ymm10, ymm11, ymm12, ymm13, ymm14, ymm15, ymm2; \
   __m256i vload_1 =  _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A))); \
   vload_1 =  _mm256_inserti128_si256(vload_1, _mm_loadu_si128((const __m128i*)(ptr_A + (size_t)ldA)), 1); \
@@ -134,9 +134,9 @@
          _mm256_storeu_ps(ptr_B + (size_t)ldB*5, ymm0); \
          _mm256_storeu_ps(ptr_B + (size_t)ldB*6, ymm5); \
          _mm256_storeu_ps(ptr_B + (size_t)ldB*7, ymm4);}}}}}}}} \
-}
+} while(0)
 
-#define COMPRESS_FP32(v, k, m, cnt) { \
+#define COMPRESS_FP32(v, k, m, cnt) do { \
   const unsigned int mask = _mm256_movemask_ps(m); \
   const SIMDTYPE_INT32 vk = _MM_SET1_INT16((short)(k)); \
   const __m256i perm_ctrl = _mm256_loadu_si256(&shufmasks[mask]); \
@@ -146,21 +146,21 @@
   _mm256_storeu_ps(values_ptr + (cnt), v_packed); \
   _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
   cnt = (unsigned short)((cnt) + _mm_popcnt_u32(mask)); \
-}
+} while(0)
 
-#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) { \
+#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) do { \
   const __m256i vlo = _mm256_unpacklo_epi16(vzero, v); \
   const __m256i vhi = _mm256_unpackhi_epi16(vzero, v); \
   vlo_final = _mm256_castsi256_ps(_mm256_permute2f128_si256(vlo, vhi, 0x20)); \
   vhi_final = _mm256_castsi256_ps(_mm256_permute2f128_si256(vlo, vhi, 0x31)); \
-}
+} while(0)
 
-#define COMPRESS_BFLOAT16(vlo, vhi, v) { \
+#define COMPRESS_BFLOAT16(vlo, vhi, v) do { \
   const __m256i vtmp1 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x20)); \
   const __m256i vtmp2 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x31)); \
   const __m256i a = _mm256_srli_epi32(vtmp1, 16), b = _mm256_srli_epi32(vtmp2, 16); \
   v = _mm256_packus_epi32(a, b); \
-}
+} while(0)
 
 #endif
 

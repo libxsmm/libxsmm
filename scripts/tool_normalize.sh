@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -16,7 +16,7 @@ BANNED_CHARS="\t"
 PATPRE="s/^[[:space:]][[:space:]]*#/"
 PATSPC="s/[[:space:]][[:space:]]*$/"
 PATBAN="s/[${BANNED_CHARS}]/"
-PATCMT="s/[[:space:]]\/\//"
+PATCMT="s/^[[:space:]][[:space:]]*\/\//"
 PATEOL="s/\r$/"
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -32,6 +32,7 @@ DIR=$1
 FMTBIN=$(command -v clang-format)
 FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
+MYPY=$(command -v mypy)
 DIFF=$(command -v diff)
 SED=$(command -v gsed)
 GIT=$(command -v git)
@@ -59,6 +60,12 @@ if [ "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ] && \
    [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; echo $?)" ];
 then
   echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
+fi
+
+if [ "${MYPY}" ] && [ "0" = "$(${MYPY} 2>&1 >/dev/null; echo $?)" ] && \
+   [ "0" != "$(${MYPY} ${HERE}/*.py 2>&1 >/dev/null; echo $?)" ];
+then
+  echo "Warning: some Python scripts do not pass MyPy check (${HERE})!"
 fi
 
 if [ ! "${FMTBIN}" ] || [ "$(${FMTBIN} --style=file -dump-config 2>&1 >/dev/null)" ]; then

@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -50,6 +50,7 @@
 #include "../src/generator_mateltwise.c"
 #include "../src/generator_mateltwise_aarch64.c"
 #include "../src/generator_mateltwise_aarch64_sve.c"
+#include "../src/generator_mateltwise_gather_scatter_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_aarch64.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"
 #include "../src/generator_mateltwise_reduce_aarch64.c"
