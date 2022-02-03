@@ -101,9 +101,9 @@ int main( int argc, char* argv[] ) {
   if ( argc > i ) iters = atoi(argv[i++]);
   if ( argc > i ) N = atoi(argv[i++]);
   if ( argc > i ) C = atoi(argv[i++]);
-  if ( argc > i ) G = atoi(argv[i++]);
   if ( argc > i ) H  = atoi(argv[i++]);
   if ( argc > i ) W  = atoi(argv[i++]);
+  if ( argc > i ) G = atoi(argv[i++]);
   if ( argc > i ) bc = atoi(argv[i++]);
   if ( argc > i ) pad_w_in   = atoi(argv[i++]);
   if ( argc > i ) pad_h_in   = atoi(argv[i++]);
@@ -134,7 +134,7 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( norm_type != 0 ) {
-    printf("Only full batchnorm (norm_type = 0) is supported \n");
+    printf("Only full norm (norm_type = 0) is supported \n");
     return -1;
   }
 
