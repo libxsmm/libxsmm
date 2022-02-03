@@ -1260,6 +1260,7 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
 
     int np, cp;
     int cpxnt;
+
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
       np = cpxnt/CP;
       cp = cpxnt%CP;
@@ -1303,7 +1304,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
       arg_array[9].primary = db;
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-//#if 0
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
           libxsmm_meltw_unary_param all_relu_param;
           all_relu_param.op.primary   = (void*)(&alpha);
@@ -1314,7 +1314,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
           all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
           cfg.inv_relu_kernel(&all_relu_param);
         } /* ReLU/mask */
-//#endif
         libxsmm_meltw_unary_param ewise_copy_param;
         if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
           ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
@@ -1367,6 +1366,8 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
         cfg.din_func(&eqn_param);
       }
     }
+
+    /* libxsmm_barrier_wait(cfg.barrier, ltid); not needed? */
 
     for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
       for (np=0; np < NP; np++ ) {
@@ -1426,7 +1427,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
         arg_array[9].primary = &db[cp*CB];
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-//#if 0
           if (cfg.fuse_type == MY_NORMALIZE_FUSE_RELU || cfg.fuse_type == MY_NORMALIZE_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
             libxsmm_meltw_unary_param all_relu_param;
             all_relu_param.op.primary   = (void*)(&alpha);
@@ -1437,7 +1437,6 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
             all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
             cfg.inv_relu_kernel(&all_relu_param);
           } /* ReLU/mask */
-//#endif
           libxsmm_meltw_unary_param ewise_copy_param;
           if (cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE || cfg.fuse_type == MY_NORMALIZE_FUSE_ELTWISE_RELU_WITH_MASK) {
             ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
@@ -1493,6 +1492,8 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
         }
       }
     }
+
+    libxsmm_barrier_wait(cfg.barrier, ltid);
 
     int cp;
     for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
