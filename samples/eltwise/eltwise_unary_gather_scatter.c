@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
 #define COLS 0
 #define ROWS 1
 #define OFFS 2

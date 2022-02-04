@@ -6,13 +6,15 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
+#include "eltwise_perf_tester.h"
 
 #define PI 3.14159265358979323846
 #define EPS 1.19209290e-03F
@@ -262,6 +264,7 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -275,12 +278,14 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     exit(-1);
   }
 
-  libxsmm_rng_set_seed(1);
-
   in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi), 64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
   _in       = in;
+
+  BENCHMARK_INIT();
+
+  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -387,18 +392,24 @@ int test_unary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-  double error_bound =0.0;
-  if(RCP_OP || RCP_SQRT_OP){
+  flopsPerIteration = (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N);
+  bandwidthPerIteration = (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(float));
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+
+  double error_bound = 0.0;
+  if (RCP_OP || RCP_SQRT_OP) {
     error_bound = 0.0027;
-  } else{
+  } else {
     error_bound = 0.0007;
   }
 
   if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -428,6 +439,7 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_dnn_datatype compute_dtype = LIBXSMM_DATATYPE_F32;
   char opname[256];
   unsigned long long _N = N;
+  int flopsPerIteration, bandwidthPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -448,14 +460,16 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     exit(-1);
   }
 
-  libxsmm_rng_set_seed(1);
-
   in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
+
+  BENCHMARK_INIT();
+
+  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -561,11 +575,17 @@ int test_unary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  flopsPerIteration = (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N);
+  bandwidthPerIteration = (M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * sizeof(libxsmm_bfloat16));
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -596,6 +616,7 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -609,14 +630,16 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     exit(-1);
   }
 
-  libxsmm_rng_set_seed(1);
-
   in          = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   out_gold    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)           *N*ldo, 64);
   _in       = in;
+
+  BENCHMARK_INIT();
+
+  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -719,11 +742,18 @@ int test_unary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  flopsPerIteration = M * N;
+  /* todo: is this the correct bandwidth? */
+  bandwidthPerIteration = M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -752,6 +782,7 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
+  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -765,12 +796,14 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     exit(-1);
   }
 
-  libxsmm_rng_set_seed(1);
-
   in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out       = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   out_gold  = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in       = in;
+
+  BENCHMARK_INIT();
+
+  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -870,9 +903,16 @@ int test_unary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+  flopsPerIteration = unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR || unary_type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ? 0 : M * N;
+  /* todo: is this the correct bandwidth? */
+  bandwidthPerIteration = M * N * (unary_type == LIBXSMM_MELTW_TYPE_UNARY_XOR ? 1 : 2) * 2;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
