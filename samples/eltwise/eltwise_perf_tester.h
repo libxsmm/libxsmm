@@ -64,10 +64,13 @@ const char* getBenchmarkedArch(int index) {
 
 /* returns the target duration of every single benchmark run; if the duration is <= 0 or NaN, no benchmarks will be run */
 double getBenchmarkDuration(){
-  static double duration = 0;
-  const char* dur = getenv("BENCHMARK_DURATION");
-  if( dur ){
-    duration = atof(dur);
+  static double duration = -1;
+  if (duration < 0) {
+    duration = 0.1;
+    const char* dur = getenv("BENCHMARK_DURATION");
+    if(dur){
+      duration = atof(dur);
+    }
   }
   return duration;
 }
