@@ -1086,12 +1086,12 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
                                                                         const libxsmm_aarch64_sve_type        i_sve_type,
                                                                         const unsigned char                   i_pred_reg ) {
 
-  unsigned long long thres_array = 0x408f5fff ;
-  unsigned long long absmask_array = 0x7fffffff ;
-  unsigned long long scale_array = 0x405d67c9 ;
-  unsigned long long shifter_array = 0x4b400000 ;
-  unsigned long long half_array = 0x3f000000 ;
-  unsigned long long expmask_array = 0x000000ff;
+  unsigned long long thres_array    = 0x408f5fff;
+  unsigned long long absmask_array  = 0x7fffffff;
+  unsigned long long scale_array    = 0x405d67c9;
+  unsigned long long shifter_array  = 0x4b400000;
+  unsigned long long half_array     = 0x3f000000;
+  unsigned long long expmask_array  = 0x000000ff;
 
   unsigned int c0_array[16] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
   unsigned int c1_array[16] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
@@ -1201,6 +1201,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*  
                                                i_vec_c2, i_vec_index, 0, i_vec_C2,
                                                i_tupletype );
 
+
     libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,
                                                i_vec_xa, i_vec_C2, 0, i_vec_C1,
                                                i_tupletype );
@@ -1287,12 +1288,9 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_xr, i_vec_xa, 0, i_vec_xr,
                                              i_pred_reg, i_sve_type );
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_xa, i_vec_xa, 0, i_vec_index,
-                                             i_pred_reg, i_sve_type );
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                             i_vec_index, i_vec_scale, 0, i_vec_index,
+                                             i_vec_xa, i_vec_scale, 0, i_vec_index,
                                              i_pred_reg, i_sve_type );
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
                                              i_vec_index, i_vec_shifter, 0, i_vec_index,
@@ -1322,26 +1320,21 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                              i_vec_xa, i_vec_C2, 0, i_vec_C1,
                                              i_pred_reg, i_sve_type );
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_C1, i_vec_C1, 0, i_vec_C2,
-                                             i_pred_reg, i_sve_type );
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
-                                             i_vec_xa, i_vec_C2, 0, i_vec_C0,
-                                             i_pred_reg, i_sve_type );
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_C0, i_vec_C0, 0, i_vec_C2,
+                                             i_vec_xa, i_vec_C1, 0, i_vec_C0,
                                              i_pred_reg, i_sve_type );
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                             i_vec_xr, i_vec_C2, 0, i_vec_C2,
+                                             i_vec_C0, i_vec_xr, 0, i_vec_C2,
                                              i_pred_reg, i_sve_type );
-    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
-                                             i_vec_C2, i_vec_half, 0, i_vec_x,
+
+     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                             i_vec_C2, i_vec_half, 0, i_vec_C1,
                                              i_pred_reg, i_sve_type );
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                             i_vec_x, i_vec_C2, 0, i_vec_x,
+                                             i_vec_x, i_vec_C1, 0, i_vec_x,
                                              i_pred_reg, i_sve_type );
 
 }
@@ -1493,16 +1486,18 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
                                                           const unsigned int                             i_vec_exp_mask, /* contains 0x000000ff for masking the exponent */
                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
                                                           const unsigned char                            i_pred_reg ) {
-
+  
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,
                                              i_pred_reg, i_sve_type );
+
+  /* using a mask here was tested, and yielded no performance advantage */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V,
-                                             i_vec_xr, LIBXSMM_AARCH64_SVE_REG_UNDEF, 31, i_vec_xr,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_xr, LIBXSMM_AARCH64_SVE_REG_UNDEF, 31, i_vec_xr,
+                                           i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V,
-                                             i_vec_xr, LIBXSMM_AARCH64_SVE_REG_UNDEF, 31, i_vec_xr,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_xr, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 31, i_vec_xr,
+                                           i_pred_reg, i_sve_type );
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_AND_V,
                                              i_vec_x, i_vec_absmask, 0, i_vec_xa,
@@ -1513,16 +1508,13 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_xr, i_vec_xa, 0, i_vec_xr,
                                              i_pred_reg, i_sve_type );
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_xa, i_vec_xa, 0, i_vec_index,
-                                             i_pred_reg, i_sve_type );
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                             i_vec_index, i_vec_scale, 0, i_vec_index,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_xa, i_vec_scale, 0, i_vec_index,
+                                           i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
-                                             i_vec_index, i_vec_shifter, 0, i_vec_index,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_index, i_vec_shifter, 0, i_vec_index,
+                                           i_pred_reg, i_sve_type );
 
   /* index &= 0xff -> extract the exponent */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_AND_V,
@@ -1531,35 +1523,30 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
 
   /* coded for 512 bit vec len, extend i_vec_c0/1/2 with zeros (vl > 512), or use multiple indexing requests with TBX (vl < 512) */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL,
-                                             i_vec_c0, i_vec_index, 0, i_vec_C0,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_c0, i_vec_index, 0, i_vec_C0,
+                                           i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL,
-                                              i_vec_c1, i_vec_index, 0, i_vec_C1,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_c1, i_vec_index, 0, i_vec_C1,
+                                           i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL,
-                                             i_vec_c2, i_vec_index, 0, i_vec_C2,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_c2, i_vec_index, 0, i_vec_C2,
+                                           i_pred_reg, i_sve_type );
+
+  /* removing the unnecessary moves here yielded a 20% performance increase, going from 9.4x to 11.4x vs ASIMD (16x16)*/
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
+                                           i_vec_xa, i_vec_C2, 0, i_vec_C1,
+                                           i_pred_reg, i_sve_type );
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
-                                             i_vec_xa, i_vec_C2, 0, i_vec_C1,
-                                             i_pred_reg, i_sve_type );
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_C1, i_vec_C1, 0, i_vec_C2,
-                                             i_pred_reg, i_sve_type );
-
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
-                                              i_vec_xa, i_vec_C2, 0, i_vec_C0,
-                                              i_pred_reg, i_sve_type );
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
-                                             i_vec_C0, i_vec_C0, 0, i_vec_C2,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_xa, i_vec_C1, 0, i_vec_C0,
+                                           i_pred_reg, i_sve_type );
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                             i_vec_xr, i_vec_C2, 0, i_vec_C2,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_xr, i_vec_C0, 0, i_vec_C2,
+                                           i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
-                                             i_vec_C2, i_vec_half, 0, i_vec_x,
-                                             i_pred_reg, i_sve_type );
+                                           i_vec_C2, i_vec_half, 0, i_vec_x,
+                                           i_pred_reg, i_sve_type );
 
 }
 
