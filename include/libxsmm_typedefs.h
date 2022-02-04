@@ -718,6 +718,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* primary;
   void* secondary;
   void* tertiary;
+  void* quaternary;
 } libxsmm_matrix_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_v2 {
