@@ -18,9 +18,6 @@
 #include <immintrin.h>
 #endif
 
-#define TYPE_ADD 0
-#define TYPE_MAX 1
-
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
 {
@@ -43,7 +40,8 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
   unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 10000, reduce_op = 0, use_bf16 = 0;
   unsigned long long n_cols_idx = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
@@ -132,7 +130,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  if (reduce_op == TYPE_ADD) {
+  if (reduce_op == 0) {
     /* Calculate reference results...  */
     if (reduce_rows == 1) {
       for (j = 0; j < n; j++) {
@@ -169,7 +167,7 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-  } else if(reduce_op == TYPE_MAX){
+  } else {
     if (reduce_rows == 1) {
       for (j = 0; j < n; j++) {
         ref_result_reduce_elts[j] = sinp[j*ld_in];
@@ -186,7 +184,7 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-  } else { /* should not happen */ }
+  }
 
   if (reduce_rows == 1) {
     unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
@@ -194,7 +192,7 @@ int main(int argc, char* argv[]) {
     unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   }
 
-  if (reduce_op == TYPE_ADD) {
+  if (reduce_op == 0) {
     if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
       result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
       if (use_bf16 == 1) {
@@ -212,11 +210,11 @@ int main(int argc, char* argv[]) {
     if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     }
-  } else if(reduce_op == TYPE_MAX){
+  } else {
     if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
     }
-  } else { /* should not happen */ }
+  }
 
   unary_shape.m = m;
   unary_shape.n = n;
@@ -358,7 +356,7 @@ int main(int argc, char* argv[]) {
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    if (reduce_op == TYPE_ADD) {
+    if (reduce_op == 0) {
 
       if (reduce_rows == 1) {
         for (j = 0; j < n; j++) {
@@ -395,7 +393,7 @@ int main(int argc, char* argv[]) {
         }
       }
 
-    } else if(reduce_op == TYPE_MAX){
+    } else {
       if (reduce_rows == 1) {
         for (j = 0; j < n; j++) {
           ref_result_reduce_elts[j] = sinp[j*ld_in];
@@ -412,7 +410,7 @@ int main(int argc, char* argv[]) {
           }
         }
       }
-    } else { /* should not happen */ }
+    }
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
@@ -451,7 +449,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  fprintf(stdout, "SUCCESS unary reduce\n" );
+  fprintf(stdout, "SUCCESS unnary reduce\n" );
   return EXIT_SUCCESS;
 }
 

@@ -6,22 +6,13 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-
-#include "eltwise_perf_tester.h"
-
-#define TYPE_RELU 0
-#define TYPE_LEAKY_RELU 1
-#define TYPE_ELU 2
-/* GELU is being tested by eltwise_unary_simple.c */
-
-#define PRINT_CORRECT_MASKS 0
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
   union libxsmm_bfloat16_hp bf16_hp;
@@ -34,11 +25,11 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0.0f : in[(j*ldi) + i];
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
       }
       if ( type != 2) {
@@ -52,16 +43,16 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0 : in[(j*ldi) + i];
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         union libxsmm_bfloat16_hp bf16_hp_out;
         bf16_hp.i[0] = 0;
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp_out.f = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? alpha*bf16_hp.f : bf16_hp.f;
         out[(j*ldo) + i] = bf16_hp_out.i[1];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         float in_f;
         libxsmm_bfloat16 res;
         union libxsmm_bfloat16_hp bf16_hp;
@@ -85,12 +76,12 @@ void relu_fwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     for ( i = 0; i < M; ++i ) {
       union libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.f = in[(j*ldi) + i];
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0 : bf16_hp.i[1];
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         bf16_hp.f = ( in[(j*ldi) + i] < 0.0f ) ? alpha*bf16_hp.f : bf16_hp.f;
         out[(j*ldo) + i] = bf16_hp.i[1];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         float res;
         libxsmm_bfloat16 res_bf16;
         res = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i] ;
@@ -111,11 +102,11 @@ void relu_fwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
       union libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.i[1] = in[(j*ldi) + i];
       bf16_hp.i[0] = 0;
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? 0 : bf16_hp.f;
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( bf16_hp.f < 0.0f ) ? alpha*bf16_hp.f : bf16_hp.f;
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         float in_f;
         in_f = bf16_hp.f;
         in_f = alpha * (expf(in_f)-1.0);
@@ -132,11 +123,11 @@ void relu_bwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? in[(j*ldi) + i] : 0.0f;
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? in[(j*ldi) + i] : alpha*in[(j*ldi) + i];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         out[(j*ldo) + i] = ( out_fwd[(j*ldi) + i] > 0 ) ? in[(j*ldi) + i] : in[(j*ldi) + i] * (out_fwd[(j*ldi) + i] + alpha) ;
       }
     }
@@ -147,16 +138,16 @@ void relu_bwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? in[(j*ldi) + i] : 0;
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         union libxsmm_bfloat16_hp bf16_hp_out;
         bf16_hp.i[0] = 0;
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp_out.f = ( mask[(j*ldi) + i] == 0 ) ? bf16_hp.f : alpha*bf16_hp.f;
         out[(j*ldo) + i] = bf16_hp_out.i[1];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         libxsmm_bfloat16 res_bf16;
         float res;
@@ -181,13 +172,13 @@ void relu_bwd_f32_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     for ( i = 0; i < M; ++i ) {
       union libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.f = in[(j*ldi) + i];
-      if ( type == TYPE_RELU ) {
+      if ( type == 0 ) {
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? bf16_hp.i[1] : 0;
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         union libxsmm_bfloat16_hp bf16_hp_two;
         bf16_hp_two.f = alpha*in[(j*ldi) + i];
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? bf16_hp.i[1] : bf16_hp_two.i[1];
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         libxsmm_bfloat16 res_bf16;
         float res;
         if ( out_fwd[(j*ldi) + i] > 0 ) {
@@ -206,23 +197,23 @@ void relu_bwd_bf16_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_blasint i, j;
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
-      if ( type == TYPE_RELU ) {
+      if ( type  == 0 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         bf16_hp.i[1] = ( mask[(j*ldi) + i] == 0 ) ? in[(j*ldi) + i] : 0;
         bf16_hp.i[0] = 0;
         out[(j*ldo) + i] = bf16_hp.f;
-      } else if ( type == TYPE_LEAKY_RELU ) {
+      } else if ( type == 1 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp.i[0] = 0;
         out[(j*ldo) + i] = ( mask[(j*ldi) + i] == 0 ) ? bf16_hp.f : alpha*bf16_hp.f;
-      } else if ( type == TYPE_ELU ) {
+      } else if ( type == 2 ) {
         union libxsmm_bfloat16_hp bf16_hp;
         float res;
         float comp;
         bf16_hp.i[1] = out_fwd[(j*ldi) + i];
         bf16_hp.i[0] = 0;
-        comp = bf16_hp.f;
+        comp =  bf16_hp.f;
         res =  bf16_hp.f + alpha;
         bf16_hp.i[1] = in[(j*ldi) + i];
         res = res * bf16_hp.f;
@@ -246,8 +237,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldi, 16)*2;/* ldi/8, rounding up to even numbers */
-  int bandwidthPerIteration, flopsPerIteration;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -258,15 +248,13 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -307,12 +295,11 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU, unary_shape, unary_flags );
   } else {
     unary_kernel = 0;
@@ -335,28 +322,24 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1; /* could be adjusted */
-  bandwidthPerIteration = sizeof(float) * 2; /* load + store */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
-  if ( type != TYPE_ELU ) {
+  if ( type != 2 ) {
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
+        for ( j = 0; j < M/8; ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at position i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if PRINT_CORRECT_MASKS
+#if 0
         else {
-          printf("correct at position i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
@@ -369,8 +352,6 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
       }
     }
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -463,12 +444,11 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU, unary_shape, unary_flags );
   } else {
     unary_kernel = 0;
@@ -498,7 +478,7 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -514,14 +494,14 @@ int test_relu_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bl
     }
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
+        for ( j = 0; j < M/8; ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if PRINT_CORRECT_MASKS
+#if 0
           else {
-            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
@@ -567,8 +547,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_bf16_fwd: ldi needs to be equal to or bigger than M\n");
@@ -579,6 +558,8 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
   out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
   out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
@@ -586,10 +567,6 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -632,12 +609,11 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU, unary_shape, unary_flags );
   } else {
     unary_kernel = 0;
@@ -667,11 +643,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1;/* could be adjusted */
-  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -681,14 +653,14 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
+        for ( j = 0; j < M/8; ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if PRINT_CORRECT_MASKS
+#if 0
           else {
-            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
@@ -701,8 +673,6 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
       }
     }
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -735,8 +705,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -747,15 +716,13 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     exit(-1);
   }
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
+  libxsmm_rng_set_seed(1);
+
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -798,12 +765,11 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU, unary_shape, unary_flags );
   } else {
     unary_kernel = 0;
@@ -826,28 +792,24 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1; /* could be adjusted depending on the type */
-  bandwidthPerIteration = sizeof(libxsmm_bfloat16) + sizeof(float);/* load + store */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
-  if ( type != TYPE_ELU ) {
+  if ( type != 2 ) {
     s = 0;
     if ( bitm != 0 ) {
       for ( i = 0; i < N; ++i ) {
-        for ( j = 0; j < LIBXSMM_UPDIV(M,8); ++j ) {
+        for ( j = 0; j < M/8; ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
-#if PRINT_CORRECT_MASKS
+#if 0
           else {
-            printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           }
 #endif
         }
@@ -860,8 +822,6 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
       }
     }
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -892,8 +852,7 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
-  libxsmm_blasint mask_ld = LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_f32_bwd: ldi needs to be equal to or bigger than M\n");
@@ -904,16 +863,14 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
     exit(-1);
   }
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  out_fwd   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
+  libxsmm_rng_set_seed(1);
+
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out_fwd   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -955,17 +912,17 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
   /* use jited relu */
-  unary_param.op.primary   = (void*)(&alpha);
-  unary_param.in.primary   = (void*)in;
-  unary_param.in.secondary = ( type == TYPE_ELU ) ? (void*)out_fwd : (void*)mask_bit;
-  unary_param.out.primary  = (void*)out;
-  if ( type == TYPE_RELU ) {
+  unary_param.op.primary    = (void*)(&alpha);
+  unary_param.in.primary    = (void*)in;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
+  unary_param.out.primary   = (void*)out;
+  if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU_INV, unary_shape, unary_flags );
   } else {
@@ -990,17 +947,11 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1;
-  bandwidthPerIteration = sizeof(float) * 2;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_fwd );
   libxsmm_free( out_gold );
@@ -1033,8 +984,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1045,18 +995,16 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     exit(-1);
   }
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  out_fwd   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
-  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
-  f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  mask_bit  = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
-
-  BENCHMARK_INIT();
-
   libxsmm_rng_set_seed(1);
+
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out_fwd   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  mask_bit  = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)* N*mask_ld, 64);
+  mask_gold = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)* N*ldi, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1102,15 +1050,15 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == TYPE_ELU ) ? (void*)out_fwd : (void*)mask_bit;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
   unary_param.out.primary   = (void*)out;
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU_INV, unary_shape, unary_flags );
   } else {
@@ -1142,17 +1090,11 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1;
-  bandwidthPerIteration = sizeof(libxsmm_bfloat16) * 2;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -1187,8 +1129,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_f32_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1199,18 +1140,16 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     exit(-1);
   }
 
-  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  out_fwd   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
-  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
-  f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
+  libxsmm_rng_set_seed(1);
+
+  in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out_fwd   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi,   64);
+  out       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  out_gold  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo,   64);
+  f32out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  f32out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1258,15 +1197,15 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == TYPE_ELU ) ? (void*)out_fwd : (void*)mask_bit;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
   unary_param.out.primary   = (void*)out;
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU_INV, unary_shape, unary_flags );
   } else {
@@ -1298,17 +1237,11 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1;
-  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -1342,8 +1275,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_meltwfunction_unary unary_kernel;
   union libxsmm_bfloat16_hp bf16_hp;
-  libxsmm_blasint mask_ld = LIBXSMM_UPDIV(ldi, 16)*2;
-  int flopsPerIteration, bandwidthPerIteration;
+  libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1354,16 +1286,14 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     exit(-1);
   }
 
-  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  out_fwd   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi, 64);
-  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo, 64);
-  mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
-  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
-
-  BENCHMARK_INIT();
-
   libxsmm_rng_set_seed(1);
+
+  in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out_fwd   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldi,   64);
+  out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
+  mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)* N*mask_ld, 64);
+  mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)* N*ldi, 64);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1409,15 +1339,15 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   /* use jited relu */
   unary_param.op.primary    = (void*)(&alpha);
   unary_param.in.primary    = (void*)in;
-  unary_param.in.secondary  = ( type == TYPE_ELU ) ? (void*)out_fwd : (void*)mask_bit;
+  unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
   unary_param.out.primary   = (void*)out;
-  if ( type == TYPE_RELU ) {
+  if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_LEAKY_RELU ) {
+  } else if ( type == 1 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV, unary_shape, unary_flags );
-  } else if ( type == TYPE_ELU ) {
+  } else if ( type == 2 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU_INV, unary_shape, unary_flags );
   } else {
@@ -1442,17 +1372,11 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = 1;
-  bandwidthPerIteration = sizeof(libxsmm_bfloat16) + sizeof(float);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_fwd );
   libxsmm_free( out_gold );
@@ -1505,13 +1429,13 @@ int main( int argc, char* argv[] ) {
 
 
   if ( type == 'D' ) {
-    itype = TYPE_RELU;
+    itype = 0;
     printf("Testing ReLU ");
   } else if ( type == 'L' ) {
-    itype = TYPE_LEAKY_RELU;
+    itype = 1;
     printf("Testing Leaky ReLU ");
   } else if ( type == 'E' ) {
-    itype = TYPE_ELU;
+    itype = 2;
 #if 0
     bitm = 0;
     printf("Testing ELU (disabling bitmask support) ");
@@ -1519,7 +1443,7 @@ int main( int argc, char* argv[] ) {
     printf("Testing ELU ");
 #endif
   } else {
-    itype = TYPE_RELU;
+    itype = 0;
     printf("Testing ReLU ");
   }
 

@@ -14,8 +14,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "eltwise_perf_tester.h"
-
 #define NO_BCAST 0
 #define ROW_BCAST_IN0 1
 #define COL_BCAST_IN0 2
@@ -164,7 +162,6 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
-  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -178,18 +175,16 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),   64);
   in2       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
-  _in2 = in2;
+  _in2      = in2;
 
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
-
-  /* init in */
+   /* init in */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ldi; ++j ) {
       in[(i*ldi)+j] = (float)libxsmm_rng_f64();
@@ -314,18 +309,11 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
-  /* muladd had 4x bandwidth instead of 3x, because 3x load + 1x store instead of 2x load + 1x store */
-  bandwidthPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 4 : 3) * sizeof(float);
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -353,7 +341,6 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
-  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -367,6 +354,8 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in          = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   in2         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi), 64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
@@ -374,19 +363,15 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   f32out      = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
    _in        = in;
-   _in2 = in2;
+  _in2        = in2;
 
-   libxsmm_rng_set_seed(1);
-
-   BENCHMARK_INIT();
-
-   /* init in */
-   for (i = 0; i < N; ++i) {
-     for (j = 0; j < ldi; ++j) {
-       union libxsmm_bfloat16_hp bf16_hp;
-       bf16_hp.f = (float)libxsmm_rng_f64();
-       in[(i * ldi) + j] = bf16_hp.i[1];
-     }
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      union libxsmm_bfloat16_hp bf16_hp;
+      bf16_hp.f = (float)libxsmm_rng_f64();
+      in[(i*ldi)+j] = bf16_hp.i[1];
+    }
   }
 
   for ( i = 0; i < N; ++i ) {
@@ -516,18 +501,11 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-
-  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
-  bandwidthPerIteration = M * N * 3 * sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -546,7 +524,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 }
 
 int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, unsigned int op, unsigned int use_bcast) {
-  float *in, *_in, *in2, *_in2;
+  float *in,*_in, *in2, *_in2;
   libxsmm_bfloat16 *out, *out_gold;
   float *f32out, *f32out_gold;
   unsigned int i, j;
@@ -557,7 +535,6 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
-  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -571,6 +548,8 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in          = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),                       64);
   in2         = (float*) libxsmm_aligned_malloc( sizeof(float)*N*LIBXSMM_MAX(M,ldi),                       64);
   out         = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ldo, 64);
@@ -579,10 +558,6 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   _in         = in;
   _in2        = in2;
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -715,18 +690,11 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
-
-
-  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
-  bandwidthPerIteration = M * N * (2 * sizeof(float)  + sizeof(libxsmm_bfloat16));
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -755,7 +723,6 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
-  int bandwidthPerIteration, flopsPerIteration;
 
   set_opname(op, opname);
   set_binarytype(op, &binary_type);
@@ -769,16 +736,14 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     exit(-1);
   }
 
+  libxsmm_rng_set_seed(1);
+
   in        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi),   64);
   in2       = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*LIBXSMM_MAX(M,ldi),   64);
   out       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   _in       = in;
-  _in2 = in2;
-
-  BENCHMARK_INIT();
-
-  libxsmm_rng_set_seed(1);
+  _in2      = in2;
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -910,16 +875,9 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-
-  flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
-  bandwidthPerIteration = M * N * (2 * sizeof(libxsmm_bfloat16) + sizeof(float));
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
-
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
-
-  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
