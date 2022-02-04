@@ -6,13 +6,14 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "eltwise_perf_tester.h"
 
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
@@ -196,6 +197,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_f32_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -211,6 +213,8 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -280,7 +284,11 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = 2 * sizeof(float);
+  flopsPerIteration = 1;/* set to 1 for comparisons */
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
@@ -311,6 +319,8 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -343,6 +353,7 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_matdiff_info norms_out;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_bf16_fwd: ldi needs to be equal to or bigger than M\n");
@@ -360,6 +371,8 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,              64);
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -437,7 +450,11 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = 2 * sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel( &unary_param ), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -468,6 +485,8 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -501,6 +520,7 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_f32_bf16_fwd: ldi needs to be equal to or bigger than M\n");
@@ -518,6 +538,8 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,              64);
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -594,7 +616,11 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -625,6 +651,8 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -658,6 +686,7 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_matdiff_info norms_out;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -673,6 +702,8 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -745,6 +776,10 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
@@ -775,6 +810,8 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
 
+  BENCHMARK_FINALIZE();
+
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
@@ -803,6 +840,7 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_f32_f32_fwd: ldi needs to be equal to or bigger than M\n");
@@ -818,6 +856,8 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -878,11 +918,17 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = 2 * sizeof(float);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -914,6 +960,7 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_matdiff_info norms_out;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -931,6 +978,8 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,                64);
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,       64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,       64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -999,12 +1048,17 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = 2 + sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -1037,6 +1091,7 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_f32_bf16_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1054,6 +1109,8 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   f32out_gold = (float*)            libxsmm_aligned_malloc( sizeof(float)*N*ldo,            64);
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1121,11 +1178,17 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = sizeof(float) * sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -1158,6 +1221,7 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_matdiff_info norms_out;
   union libxsmm_bfloat16_hp bf16_hp;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
+  int bandwidthPerIteration, flopsPerIteration;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_dropout_bf16_f32_bwd: ldi needs to be equal to or bigger than M\n");
@@ -1173,6 +1237,8 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   out_gold  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldo,   64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
+
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1234,11 +1300,17 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  printf("Check-norm    : %.24f\n", norms_out.normf_rel);
+
+  bandwidthPerIteration = sizeof(float) * sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
+
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );

@@ -13,7 +13,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <immintrin.h>
+
+/* immintrin.h doesn't exist on A64FX; if this file exists for other platforms than X86, adjust this if condition */
+#if defined(LIBXSMM_PLATFORM_X86)
+# include <immintrin.h>
+#endif
 #define COLS 0
 #define ROWS 1
 #define OFFS 2
