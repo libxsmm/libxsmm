@@ -264,7 +264,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -339,7 +339,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
 
   flopsPerIteration = 1; /* could be adjusted */
   bandwidthPerIteration = sizeof(float) * 2; /* load + store */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
@@ -370,7 +370,7 @@ int test_relu_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_blas
     }
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -587,7 +587,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -632,7 +632,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  
+
   if ( type == TYPE_RELU ) {
     unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
   } else if ( type == TYPE_LEAKY_RELU ) {
@@ -671,7 +671,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
 
   flopsPerIteration = 1;/* could be adjusted */
   bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -702,7 +702,7 @@ int test_relu_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     }
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -753,7 +753,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -830,7 +830,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
 
   flopsPerIteration = 1; /* could be adjusted depending on the type */
   bandwidthPerIteration = sizeof(libxsmm_bfloat16) + sizeof(float);/* load + store */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
@@ -861,7 +861,7 @@ int test_relu_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_bla
     }
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -911,7 +911,7 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
   mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -994,13 +994,13 @@ int test_relu_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
 
   flopsPerIteration = 1;
   bandwidthPerIteration = sizeof(float) * 2;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( out_fwd );
   libxsmm_free( out_gold );
@@ -1054,7 +1054,7 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   mask_bit  = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*)  libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -1146,13 +1146,13 @@ int test_relu_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   flopsPerIteration = 1;
   bandwidthPerIteration = sizeof(libxsmm_bfloat16) * 2;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -1208,7 +1208,7 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -1302,13 +1302,13 @@ int test_relu_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   flopsPerIteration = 1;
   bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( f32out_gold );
   libxsmm_free( f32out );
@@ -1361,7 +1361,7 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   mask_bit  = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
 
-  BENCHMARK_INIT();
+  BENCHMARK_INIT()
 
   libxsmm_rng_set_seed(1);
 
@@ -1446,13 +1446,13 @@ int test_relu_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
 
   flopsPerIteration = 1;
   bandwidthPerIteration = sizeof(libxsmm_bfloat16) + sizeof(float);
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
 
   if ( norms_out.normf_rel > 0.007 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE();
+  BENCHMARK_FINALIZE()
 
   libxsmm_free( out_fwd );
   libxsmm_free( out_gold );
