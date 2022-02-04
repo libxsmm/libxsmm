@@ -214,7 +214,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -288,7 +288,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
 
   bandwidthPerIteration = 2 * sizeof(float);
   flopsPerIteration = 1;/* set to 1 for comparisons */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
@@ -320,7 +320,7 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -372,7 +372,7 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -454,7 +454,7 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
 
   bandwidthPerIteration = 2 * sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel( &unary_param ), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel( &unary_param ), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -486,7 +486,7 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -539,7 +539,7 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,     64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -620,7 +620,7 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -652,7 +652,7 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -703,7 +703,7 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -778,7 +778,7 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
 
   bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
@@ -810,7 +810,7 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -857,7 +857,7 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -922,13 +922,13 @@ int test_dropout_f32_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   bandwidthPerIteration = 2 * sizeof(float);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -979,7 +979,7 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,       64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,       64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1052,13 +1052,13 @@ int test_dropout_bf16_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   bandwidthPerIteration = 2 + sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -1110,7 +1110,7 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   mask        = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
   mask_gold   = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1182,13 +1182,13 @@ int test_dropout_f32_bf16_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   bandwidthPerIteration = sizeof(float) * sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -1238,7 +1238,7 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   /* init in */
   for ( i = 0; i < N; ++i ) {
@@ -1304,13 +1304,13 @@ int test_dropout_bf16_f32_bwd( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   bandwidthPerIteration = sizeof(float) * sizeof(libxsmm_bfloat16);
   flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );

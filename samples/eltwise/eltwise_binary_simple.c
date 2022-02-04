@@ -185,7 +185,7 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   _in       = in;
   _in2 = in2;
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   libxsmm_rng_set_seed(1);
 
@@ -319,13 +319,13 @@ int test_binary_op_f32_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasin
   flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
   /* muladd had 4x bandwidth instead of 3x, because 3x load + 1x store instead of 2x load + 1x store */
   bandwidthPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 4 : 3) * sizeof(float);
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -378,7 +378,7 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
    libxsmm_rng_set_seed(1);
 
-   BENCHMARK_INIT()
+   BENCHMARK_INIT();
 
    /* init in */
    for (i = 0; i < N; ++i) {
@@ -521,13 +521,13 @@ int test_binary_op_bf16_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
   bandwidthPerIteration = M * N * 3 * sizeof(libxsmm_bfloat16);
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -580,7 +580,7 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   _in         = in;
   _in2        = in2;
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   libxsmm_rng_set_seed(1);
 
@@ -720,13 +720,13 @@ int test_binary_op_f32_bf16( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
   bandwidthPerIteration = M * N * (2 * sizeof(float)  + sizeof(libxsmm_bfloat16));
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
@@ -776,7 +776,7 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   _in       = in;
   _in2 = in2;
 
-  BENCHMARK_INIT()
+  BENCHMARK_INIT();
 
   libxsmm_rng_set_seed(1);
 
@@ -913,13 +913,13 @@ int test_binary_op_bf16_f32( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   flopsPerIteration = M * N * (binary_type == LIBXSMM_MELTW_TYPE_BINARY_MULADD ? 2 : 1);
   bandwidthPerIteration = M * N * (2 * sizeof(libxsmm_bfloat16) + sizeof(float));
-  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration)
+  BENCHMARK_RUN(binary_kernel(&binary_param), bandwidthPerIteration, flopsPerIteration);
 
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
 
-  BENCHMARK_FINALIZE()
+  BENCHMARK_FINALIZE();
 
   libxsmm_free( out_gold );
   libxsmm_free( out );
