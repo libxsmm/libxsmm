@@ -14,14 +14,14 @@
 #include <math.h>
 #include <string.h>
 
-void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
   libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
   int* i_data = (int*) data;
   short* s_data = (short*) data;
   char* c_data = (char*) data;
-  unsigned int l_r, l_i, l_j;
+  size_t l_r, l_i, l_j;
 
   for (l_r = 0; l_r < br; l_r++) {
     for (l_i = 0; l_i < ld; l_i++) {
@@ -47,71 +47,128 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
   }
 }
 
-void init_zero_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0x0, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
-void init_garbage_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0xdeadbeef, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
-double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n ) {
+void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
+  double* d_data = (double*) data;
+  float* f_data = (float*) data;
+  unsigned short* s_data = (unsigned short*) data;
+  unsigned char* c_data = (unsigned char*) data;
+  size_t i,j;
+
+  for ( i = 0; i < n; ++i ) {
+    for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
+      if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+        d_data[(i*ld)+j] = d_data[i*ld];
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+        f_data[(i*ld)+j] = f_data[i*ld];
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+        s_data[(i*ld)+j] = s_data[i*ld];
+      } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
+        c_data[(i*ld)+j] = c_data[i*ld];
+      } else {
+      }
+    }
+  }
+}
+
+void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
+  double* d_data = (double*) data;
+  float* f_data = (float*) data;
+  unsigned short* s_data = (unsigned short*) data;
+  unsigned char* c_data = (unsigned char*) data;
+  size_t i,j;
+
+  for ( i = 0; i < n; ++i ) {
+    for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
+      if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+        d_data[(i*ld)+j] = d_data[j];
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+        f_data[(i*ld)+j] = f_data[j];
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+        s_data[(i*ld)+j] = s_data[j];
+      } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
+        c_data[(i*ld)+j] = c_data[j];
+      } else {
+      }
+    }
+  }
+}
+
+void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
+  double* d_data = (double*) data;
+  float* f_data = (float*) data;
+  unsigned short* s_data = (unsigned short*) data;
+  unsigned char* c_data = (unsigned char*) data;
+  size_t i,j;
+
+  for ( i = 0; i < n; ++i ) {
+    for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
+      if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+        d_data[(i*ld)+j] = d_data[0];
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+        f_data[(i*ld)+j] = f_data[0];
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+        s_data[(i*ld)+j] = s_data[0];
+      } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
+        c_data[(i*ld)+j] = c_data[0];
+      } else {
+      }
+    }
+  }
+}
+
+libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
-  double max_error = 0.0;
 
   libxsmm_matdiff_clear(&l_diff);
 
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
-    max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
-    max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-    unsigned int l_i, l_j;
-    libxsmm_bfloat16* h_data =      (libxsmm_bfloat16*)data;
-    libxsmm_bfloat16* h_data_gold = (libxsmm_bfloat16*)data_gold;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        union libxsmm_bfloat16_hp tmp_c;
-        union libxsmm_bfloat16_hp tmp_gold;
-        double l_fabs;
-
-        tmp_c.i[1] = h_data[(l_j * ld) + l_i];
-        tmp_c.i[0] = 0;
-        tmp_gold.i[1] = h_data_gold[(l_j * ld) + l_i];
-        tmp_gold.i[0] = 0;
-        l_fabs = fabs((double)tmp_gold.f - (double)tmp_c.f);
-        if (max_error < l_fabs) max_error = l_fabs;
-      }
-    }
+    float* f_data_gold = (float*) malloc( sizeof(float)*n*ld );
+    float* f_data      = (float*) malloc( sizeof(float)*n*ld );
+    libxsmm_convert_bf16_f32( data_gold, f_data_gold, n*ld );
+    libxsmm_convert_bf16_f32( data,      f_data,      n*ld );
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
+    free( f_data );
+    free( f_data_gold );
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    unsigned int l_i, l_j;
-    int* l_data = (int*)data;
-    int* l_data_gold = (int*)data_gold;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
-        if (max_error < l_fabs) max_error = l_fabs;
-      }
-    }
+    const int* i_data_gold = (const int*)data_gold;
+    const int* i_data      = (const int*)data;
+    double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
+    double* f_data      = (double*) malloc( sizeof(double)*n*ld );
+    size_t i;
+    for ( i = 0; i < (size_t)n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
+    for ( i = 0; i < (size_t)n*ld; ++i ) f_data[i]      = (double)i_data[i];
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
+    free( f_data );
+    free( f_data_gold );
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-    unsigned int l_i, l_j;
-    unsigned char* l_data      = (unsigned char*)data;
-    unsigned char* l_data_gold = (unsigned char*)data_gold;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
-        if (max_error < l_fabs) max_error = l_fabs;
-      }
-    }
+    const char* i_data_gold = (const char*)data_gold;
+    const char* i_data      = (const char*)data;
+    double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
+    double* f_data      = (double*) malloc( sizeof(double)*n*ld );
+    size_t i;
+    for ( i = 0; i < (size_t)n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
+    for ( i = 0; i < (size_t)n*ld; ++i ) f_data[i]      = (double)i_data[i];
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
+    free( f_data );
+    free( f_data_gold );
   } else {
-    max_error = 100.0;
   }
 
-  return max_error;
+  return l_diff;
 }
 
 

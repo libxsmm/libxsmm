@@ -59,9 +59,9 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
 int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
   const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, &ldi, &ldo, dtype, dtype, dtype );
   libxsmm_meltw_unary_param unary_param;
+  libxsmm_matdiff_info norms_out;
   char *in;
   char *out, *out_gold;
-  double s;
   int ret = EXIT_SUCCESS;
 
   if ( M > ldi ) {
@@ -96,12 +96,12 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   unary_kernel( &unary_param );
 
   /* check result */
-  s = check_matrix( dtype, out_gold, out, ldo, N, M );
+  norms_out = check_matrix( dtype, out_gold, out, ldo, N, M );
 
-  if ( s == 0 ) {
-    printf("SUCCESS unary transpose LIBXSMM_DATATYPE: %i\n", dtype);
+  if ( norms_out.linf_abs == 0 ) {
+    printf("SUCCESS unary transpose LIBXSMM_TYPESIZE: %i\n", LIBXSMM_TYPESIZE(dtype));
   } else {
-    printf("FAILURE unary transpose LIBXSMM_DATATYPE: %i\n", dtype);
+    printf("FAILURE unary transpose LIBXSMM_TYPESIZE: %i\n", LIBXSMM_TYPESIZE(dtype));
     ret = EXIT_FAILURE;
   }
 
