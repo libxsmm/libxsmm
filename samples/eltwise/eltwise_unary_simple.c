@@ -41,22 +41,6 @@
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
 
-float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
-  bf16_hp.i[1] = x;
-  bf16_hp.i[0] = 0;
-  return bf16_hp.f;
-}
-
-int unequal_fp32_vals(float a, float b) {
-  if (fabs(a-b) < EPS) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
-
-
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
@@ -200,7 +184,7 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
   *type = unary_type;
 }
 
-void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const char *in, char *out,
+void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out,
                    const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   size_t i,j;
 
@@ -281,7 +265,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   _in       = in;
 
   /* init in */
-  init_random_matrix( dtype_in,  in,       1, ldi, N );
+  init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 

@@ -77,7 +77,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   out      = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
   out_gold = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
 
-  init_random_matrix( dtype, in,       1, ldi, N );
+  init_random_matrix( dtype, in,       1, ldi, N, 0 );
   init_zero_matrix(   dtype, out,      1, ldo, M );
   init_zero_matrix(   dtype, out_gold, 1, ldo, M );
 

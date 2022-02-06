@@ -14,7 +14,7 @@
 #include <math.h>
 #include <string.h>
 
-void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
+void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint neg_values ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
   libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
@@ -27,12 +27,12 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
     for (l_i = 0; l_i < ld; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         if ( dtype == LIBXSMM_DATATYPE_F64 ) {
-          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = libxsmm_rng_f64();
+          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = (neg_values) ? (0.05 - libxsmm_rng_f64()/10.0) : libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (neg_values) ? (float)(0.05 - libxsmm_rng_f64()/10.0) : (float)libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           union libxsmm_bfloat16_hp tmp;
-          tmp.f = (float)libxsmm_rng_f64();
+          tmp.f = (neg_values) ? (float)(0.05 - libxsmm_rng_f64()/10.0) : (float)libxsmm_rng_f64();
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
