@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  printf("Max. Error: %f\n", max_error);
+  printf("max. error: %f\n", max_error);
 
   /* lets run some performance test */
   l_start = libxsmm_timer_tick();
