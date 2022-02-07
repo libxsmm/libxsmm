@@ -193,8 +193,8 @@ int main( int argc, char* argv[] ) {
   eqn_dbeta  = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   gamma      = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   beta       = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
-  mean       = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
-  var        = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
+  mean       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*G,     2097152);
+  var        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*G,     2097152);
   eqn_out    = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
   cache_fl   = (float*) libxsmm_aligned_malloc( sizeof(float)*1024*1024,   2097152);
 
@@ -210,7 +210,7 @@ int main( int argc, char* argv[] ) {
   naive_dinp_add = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*H*W, 2097152);
   naive_dgamma   = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   naive_dbeta    = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
-  naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*(CP*bc),   2097152);
+  naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*N*G,   2097152);
   naive_relumask = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*C*H*W, 2097152);
 
 #ifdef COMPUTE_FP64_REFERENCE
@@ -222,7 +222,7 @@ int main( int argc, char* argv[] ) {
   naive_dinp_add_fp64 = (double*) libxsmm_aligned_malloc( sizeof(double)*N*C*H*W,   2097152);
   naive_dgamma_fp64   = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
   naive_dbeta_fp64    = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
-  naive_rcpstdev_fp64 = (double*) libxsmm_aligned_malloc( sizeof(double)*(CP*bc),   2097152);
+  naive_rcpstdev_fp64 = (double*) libxsmm_aligned_malloc( sizeof(double)*N*G,   2097152);
 
   gamma_fp64  = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
   beta_fp64   = (double*) libxsmm_aligned_malloc( sizeof(double)*CP*bc,   2097152);
