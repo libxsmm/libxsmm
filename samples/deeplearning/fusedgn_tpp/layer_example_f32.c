@@ -270,8 +270,8 @@ int main( int argc, char* argv[] ) {
 
   init_buf(cache_fl,  1024*1024, 1, 0);
 
-  my_gn_fwd = setup_my_gn_fwd(N, C, G, H, W, bc, nThreads, (my_gn_fuse)fuse_type );
-  my_gn_bwd = setup_my_gn_bwd(N, C, G, H, W, bc, nThreads, (my_gn_fuse)fuse_type );
+  my_gn_fwd = setup_my_gn_fwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type );
+  my_gn_bwd = setup_my_gn_bwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type );
 
   /* allocate and bind scratch */
   if ( my_gn_fwd.scratch_size > 0 || my_gn_bwd.scratch_size > 0 ) {

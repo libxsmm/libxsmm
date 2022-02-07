@@ -82,7 +82,7 @@ typedef struct my_gn_bwd_config {
   my_gn_fuse        fuse_type;
 } my_gn_bwd_config;
 
-my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint G, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
                                  libxsmm_blasint threads, my_gn_fuse fuse_type ) {
 
   my_gn_fwd_config res;
@@ -293,7 +293,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint G, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
                                  libxsmm_blasint threads, my_gn_fuse fuse_type ) {
 
   my_gn_bwd_config res;
@@ -1091,7 +1091,7 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
   LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, CB);     /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
-  LIBXSMM_VLA_DECL(4,       unsigned char, relumask, prelumask, CP, HW, CB/BITS_PER_CHAR);    /* [N, CP, HW, CB/BITS_PER_CHAR] */
+  LIBXSMM_VLA_DECL(4, const unsigned char, relumask, prelumask, CP, HW, CB/BITS_PER_CHAR);    /* [N, CP, HW, CB/BITS_PER_CHAR] */
 
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + N * CP * CB), 64) - ((uintptr_t)(scratch))) / sizeof(float);
   LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  CP, CB);  /* [N, CP, CB] */
@@ -1210,6 +1210,11 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
     libxsmm_barrier_wait(cfg.barrier, ltid); /* not needed? */
 
     for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+
       for (np=0; np < N; np++ ) {
         int cb;
         for(cb = 0; cb < CB; cb++){
@@ -1330,6 +1335,11 @@ void my_gn_bwd_exec( my_gn_bwd_config cfg, float *pdout, const float *pinp, cons
 
     int cp;
     for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, CB);
+      cfg.all_zero_kernel(&all_zero_param);
+
       for (np=0; np < N; np++ ) {
         int cb;
         for(cb = 0; cb < CB; cb++){
