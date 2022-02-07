@@ -652,6 +652,9 @@ int main( int argc, char* argv[] ) {
   printf("=================================\n");
 
   /* deallocate data */
+  destroy_my_gn_fwd(&my_gn_fwd);
+  destroy_my_gn_bwd(&my_gn_bwd);
+
   if ( scratch != NULL ) {
     libxsmm_free(scratch);
   }
