@@ -161,7 +161,6 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
   unsigned int ldc = i_gemm_def->ldc;
   unsigned int m = i_gemm_def->m;
   unsigned int n = i_gemm_def->n;
-  libxsmm_blasint i, j;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
     relu_fwd_f32_f32_gold(m, n, ldc, ldc, ldc/8, f_c_gold, f_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
