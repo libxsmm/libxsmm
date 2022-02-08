@@ -222,7 +222,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   char *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int *rng_state, *rng_state_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
@@ -349,7 +349,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   char *out, *out_gold;
   unsigned char *mask;
   unsigned char *mask_gold;
-  size_t i;
+  libxsmm_blasint i;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;

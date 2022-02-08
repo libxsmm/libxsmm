@@ -72,7 +72,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = 0;
           for (jj = 0; jj < n_cols_idx; jj++) {
-            j = cols_ind_array[jj];
+            j = (libxsmm_blasint)cols_ind_array[jj];
             ref_result_reduce_elts[i] += sinp[j*ld_in + i];
           }
         }
@@ -314,17 +314,17 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  reference_reduce_kernel( m, n, ld_in, n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
+  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
 
   printf("JITing reduce kernel... \n");
 #ifdef FP16_REDUCE_COLSIDX
-  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
       sinp, result_reduce_elts,
       sinp_bf16, result_reduce_elts_bf16,
       sinp_hp, result_reduce_elts_hp,
       cols_ind_array, cols_ind_array_32bit );
 #else
-  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
       sinp, result_reduce_elts,
       sinp_bf16, result_reduce_elts_bf16,
       cols_ind_array, cols_ind_array_32bit );
@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    reference_reduce_kernel( m, n, ld_in, n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
+    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

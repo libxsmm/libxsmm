@@ -284,7 +284,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype_in;
   libxsmm_blasint dtype_out;
   libxsmm_blasint dtype_comp;
-  unsigned char op;
+  libxsmm_blasint op;
   libxsmm_blasint use_bcast;
   libxsmm_blasint M;
   libxsmm_blasint N;
