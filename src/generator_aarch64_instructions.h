@@ -503,7 +503,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
                                              const unsigned int                i_vmove_instr,
                                              const unsigned int                i_gp_reg_addr,
                                              const unsigned int                i_gp_reg_offset,
-                                             const short                       i_offset,
+                                             const int                         i_offset,
                                              const unsigned int                i_vec_reg,
                                              const libxsmm_aarch64_asimd_width i_asimdwidth );
 
@@ -559,7 +559,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
                                                     const unsigned int                i_vmove_instr,
                                                     const unsigned int                i_gp_reg_addr,
                                                     const unsigned int                i_gp_reg_offset,
-                                                    const short                       i_offset,
+                                                    const int                         i_offset,
                                                     const unsigned int                i_vec_reg,
                                                     const short                       i_index,
                                                     const libxsmm_aarch64_asimd_width i_asimdwidth );
@@ -579,7 +579,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*           io_generated_code,
                                                   const unsigned int                i_vmove_instr,
                                                   const unsigned int                i_gp_reg_addr,
-                                                  const short                       i_offset,
+                                                  const int                         i_offset,
                                                   const unsigned int                i_vec_reg_0,
                                                   const unsigned int                i_vec_reg_1,
                                                   const libxsmm_aarch64_asimd_width i_asimdwidth );
@@ -620,7 +620,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const unsigned int                     i_vmove_instr,
                                            const unsigned int                     i_gp_reg_addr,
                                            const unsigned int                     i_gp_reg_offset,
-                                           const short                            i_offset,
+                                           const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg );
 
@@ -629,7 +629,7 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
                                                const unsigned int                 i_prefetch_instr,
                                                const unsigned int                 i_gp_reg_addr,
                                                const unsigned int                 i_gp_reg_offset,
-                                               const short                        i_offset,
+                                               const int                          i_offset,
                                                const unsigned int                 i_pred_reg,
                                                const libxsmm_aarch64_sve_prefetch i_prefetch );
 
@@ -692,7 +692,7 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_move_instr,
                                            const unsigned int      i_gp_reg_addr,
                                            const unsigned int      i_gp_reg_off,
-                                           const short             i_offset,
+                                           const int               i_offset,
                                            const unsigned int      i_gp_reg_dst );
 
 /**
@@ -709,7 +709,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*           io_generated_code,
                                                 const unsigned int                i_move_instr,
                                                 const unsigned int                i_gp_reg_addr,
-                                                const char                        i_offset,
+                                                const int                         i_offset,
                                                 const unsigned int                i_gp_reg_0,
                                                 const unsigned int                i_gp_reg_1 );
 
@@ -727,7 +727,7 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
                                                  const unsigned int      i_alu_instr,
                                                  const unsigned int      i_gp_reg_dst,
                                                  const unsigned char     i_shift,
-                                                 const unsigned short    i_imm16 );
+                                                 const unsigned int      i_imm16 );
 
 /**
  * Generates a sequence of instructions to load a int64 into a GPR
@@ -757,7 +757,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
                                                     const unsigned int      i_alu_instr,
                                                     const unsigned int      i_gp_reg_src,
                                                     const unsigned int      i_gp_reg_dst,
-                                                    const unsigned short    i_imm12,
+                                                    const unsigned int      i_imm12,
                                                     const unsigned char     i_imm12_lsl12 );
 
 /**
@@ -793,7 +793,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
                                                           const unsigned int              i_gp_reg_src_0,
                                                           const unsigned int              i_gp_reg_src_1,
                                                           const unsigned int              i_gp_reg_dst,
-                                                          const unsigned char             i_imm6,
+                                                          const unsigned int              i_imm6,
                                                           const libxsmm_aarch64_shiftmode i_shift_dir );
 
 /**

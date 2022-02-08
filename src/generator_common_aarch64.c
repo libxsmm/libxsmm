@@ -112,7 +112,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
   unsigned int l_vmove_instr   = ( i_is_store == 0 ) ? l_vload_instr : l_vstore_instr;
 
   if ( i_masked_elems == 1 ) {
-    unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+    unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
     if ( i_is_store == 0 ) {
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
     }
@@ -165,7 +165,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
                                                             const unsigned int      i_datatype_size,
                                                             const unsigned int      i_masked_elems,
                                                             const unsigned int      i_adv_gpr ) {
-  unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+  unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
 
   if ( i_masked_elems != 1 ) {
     if ( i_adv_gpr == 0 ) {
