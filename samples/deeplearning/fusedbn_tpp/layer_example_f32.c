@@ -28,7 +28,7 @@ int main( int argc, char* argv[] ) {
   my_bn_bwd_config my_bn_bwd;
 
   naive_fusedbatchnorm_t naive_param;
-  void *scratch;
+  void *scratch = NULL;
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it;
