@@ -888,13 +888,14 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     }
 
     if (_A_tile_id_load[i] > 0) {
+      /* @TODO catch _A_offset overflow */
       libxsmm_x86_instruction_tile_move_emu( io_generated_code,
           i_micro_kernel_config->instruction_set,
           _A_tileload_instr[i],
           gp_reg_a,
           i_gp_reg_mapping->gp_reg_lda,
           4,
-          _A_offsets[i] * i_micro_kernel_config->sparsity_factor_A,
+          (int)(_A_offsets[i] * i_micro_kernel_config->sparsity_factor_A),
           _A_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
@@ -904,18 +905,19 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
             n_CL_to_pf,
             i_xgemm_desc->lda * 2,
             i_gp_reg_mapping->gp_reg_a,
-            (unsigned int)(_A_offsets[i] + pf_dist * i_xgemm_desc->c1));
+            _A_offsets[i] + pf_dist * i_xgemm_desc->c1 );
       }
     }
 
     if (_B_tile_id_load[i] > 0) {
-        libxsmm_x86_instruction_tile_move_emu( io_generated_code,
+      /* @TODO catch _B_offset overflow */
+      libxsmm_x86_instruction_tile_move_emu( io_generated_code,
             i_micro_kernel_config->instruction_set,
             _B_tileload_instr[i],
             i_gp_reg_mapping->gp_reg_b,
             i_gp_reg_mapping->gp_reg_ldb,
             4,
-            _B_offsets[i],
+            (int)(_B_offsets[i]),
             _B_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_micro_kernel_config->norm_to_normT_B_ext_buf == 1) {
@@ -930,7 +932,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
             n_CL_to_pf,
             i_xgemm_desc->ldb * 2,
             i_gp_reg_mapping->gp_reg_b,
-            (unsigned int)(_B_offsets[i] + pf_dist * i_xgemm_desc->c2));
+            _B_offsets[i] + pf_dist * i_xgemm_desc->c2 );
       }
     }
 

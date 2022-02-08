@@ -668,8 +668,8 @@ void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
     long long                          a_offs,
-    unsigned int                       a_lookahead_offs,
-    unsigned int                       a_lookahead_br_index) {
+    long long                          a_lookahead_offs,
+    long long                          a_lookahead_br_index) {
 
   unsigned int expanded_cl, current_mask_reg, current_zmm;
   unsigned int reserved_mask_regs       = i_micro_kernel_config->reserved_mask_regs;
@@ -693,7 +693,7 @@ void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*
         i_micro_kernel_config->alu_mov_instruction,
         i_gp_reg_mapping->gp_reg_a_offset,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
-        a_lookahead_br_index*8,
+        (int)(a_lookahead_br_index*8),
         i_gp_reg_mapping->gp_reg_a,
         0 );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_a, help_gpr);
@@ -792,8 +792,8 @@ void libxsmm_generator_gemm_amx_normT_32x16_bf16_ext_buf(libxsmm_generated_code*
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_micro_kernel_config*       i_micro_kernel_config_gemm,
     unsigned int                       i_gp_reg_in,
-    unsigned int                       i_offset_in,
-    unsigned int                       i_offset_out) {
+    long long                          i_offset_in,
+    long long                          i_offset_out) {
 
   int i = 0, reserved_zmms = i_micro_kernel_config_gemm->reserved_zmms;
   libxsmm_mateltwise_kernel_config  config_struct;
