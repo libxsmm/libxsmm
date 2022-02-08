@@ -112,9 +112,6 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
   libxsmm_meltw_unary_shape unary_shape;
   libxsmm_blasint ld_in = _ld_in;
-  libxsmm_blasint result_size = (reduce_rows == 1) ? n : ld_in;
-  float *result_reduce_elts_squared;
-  libxsmm_bfloat16 *result_reduce_elts_squared_bf16;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltwfunction_unary kernel2 = NULL;
@@ -127,17 +124,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
   if (reduce_op == 0) {
     if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
-      result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16 + result_size;
-      }
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
     }
     if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
-      result_reduce_elts_squared = (float*) result_reduce_elts;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16;
-      }
       unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD;
     }
     if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
@@ -215,7 +204,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 1000, reduce_op = 0, use_bf16 = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0, use_bf16 = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
