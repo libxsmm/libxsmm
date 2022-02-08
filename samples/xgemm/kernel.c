@@ -458,17 +458,17 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 2) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
     l_brconfig.br_stride_a_hint = i_gemm_def->lda*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->in_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_brconfig.br_stride_a_hint = 0;
