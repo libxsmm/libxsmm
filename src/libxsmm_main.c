@@ -3010,8 +3010,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
     desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
   }
   if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = brgemm_config.br_stride_a_hint;
-    desc->c2 = brgemm_config.br_stride_b_hint;
+    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
   }
 
   /* JIT! */
@@ -3060,8 +3060,8 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
     desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
   }
   if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = brgemm_config.br_stride_a_hint;
-    desc->c2 = brgemm_config.br_stride_b_hint;
+    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
   }
 
   /* setting binary post-op eltwise fields */
@@ -4030,8 +4030,8 @@ LIBXSMM_API libxsmm_dmmfunction_reducebatch_strd libxsmm_dmmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4053,8 +4053,8 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch_strd libxsmm_smmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4076,8 +4076,8 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebat
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4099,8 +4099,8 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4122,8 +4122,8 @@ LIBXSMM_API libxsmm_wimmfunction_reducebatch_strd libxsmm_wimmdispatch_reducebat
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4145,8 +4145,8 @@ LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_strd libxsmm_ssbimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4168,8 +4168,8 @@ LIBXSMM_API libxsmm_usbimmfunction_reducebatch_strd libxsmm_usbimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4191,8 +4191,8 @@ LIBXSMM_API libxsmm_subimmfunction_reducebatch_strd libxsmm_subimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4214,8 +4214,8 @@ LIBXSMM_API libxsmm_uubimmfunction_reducebatch_strd libxsmm_uubimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_AB_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4238,8 +4238,8 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
     gemm_flags | LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE,
     libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4261,8 +4261,8 @@ LIBXSMM_API libxsmm_dmmfunction_reducebatch_strd libxsmm_dmmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4285,8 +4285,8 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch_strd libxsmm_smmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4309,8 +4309,8 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebat
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4333,8 +4333,8 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4357,8 +4357,8 @@ LIBXSMM_API libxsmm_wimmfunction_reducebatch_strd libxsmm_wimmdispatch_reducebat
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4381,8 +4381,8 @@ LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_strd libxsmm_ssbimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4405,8 +4405,8 @@ LIBXSMM_API libxsmm_usbimmfunction_reducebatch_strd libxsmm_usbimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4429,8 +4429,8 @@ LIBXSMM_API libxsmm_subimmfunction_reducebatch_strd libxsmm_subimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4453,8 +4453,8 @@ LIBXSMM_API libxsmm_uubimmfunction_reducebatch_strd libxsmm_uubimmdispatch_reduc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_AB_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4478,8 +4478,8 @@ LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_red
     gemm_flags | LIBXSMM_GEMM_FLAG_B_UNSIGNED | LIBXSMM_GEMM_FLAG_C_UNSIGNED | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE,
     libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4503,8 +4503,8 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4533,8 +4533,8 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
@@ -4564,8 +4564,8 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd_meltwfused libxsmm_bsmmdispatc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
   }
@@ -4594,8 +4594,8 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd_meltwfused libxsmm_bsmmdispatc
     NULL != ldc ? *ldc : m, NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
   /*const*/ libxsmm_xmmfunction result;
-  desc->c1 = (unsigned long long)stride_a;
-  desc->c2 = (unsigned long long)stride_b;
+  desc->c1 = (long long)stride_a;
+  desc->c2 = (long long)stride_b;
   desc->c3 = (unsigned char)(((unroll_hint < 255) && (unroll_hint > 0)) ? unroll_hint : 0);
   if ( (stride_a < 0) || (stride_b < 0) ) {
     return NULL;
