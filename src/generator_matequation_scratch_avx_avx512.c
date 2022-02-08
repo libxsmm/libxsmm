@@ -78,7 +78,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
       ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
     if ((cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) &&
         (cur_op->le->info.arg.arg_attr.type == LIBXSMM_MATRIX_ARG_TYPE_SET)) {
-      br_config.br_unroll_hint = cur_op->le->info.arg.arg_attr.set_cardinality_hint;
+      br_config.br_unroll_hint = (unsigned char)(( cur_op->le->info.arg.arg_attr.set_cardinality_hint <= 255 ) ? cur_op->le->info.arg.arg_attr.set_cardinality_hint : 0);
       if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_ABS_ADDRESS) {
         br_config.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
       } else if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_OFFSET_BASE) {
@@ -204,6 +204,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping( libxsmm_gemm_descriptor
   /* define gp register mapping */
   memset( &l_gp_reg_mapping, 0, sizeof(libxsmm_gp_reg_mapping) );
 #if defined(_WIN32) || defined(__CYGWIN__)
+  LIBXSMM_UNUSED(i_xgemm_desc);
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
@@ -274,6 +275,7 @@ void libxsmm_generator_matequation_gemm_set_reg_mapping_amx( libxsmm_gemm_descri
   /* define gp register mapping */
   memset( &l_gp_reg_mapping, 0, sizeof(libxsmm_gp_reg_mapping) );
 #if defined(_WIN32) || defined(__CYGWIN__)
+  LIBXSMM_UNUSED(i_xgemm_desc);
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RSI;
 #else
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RSI;
