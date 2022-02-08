@@ -21,12 +21,11 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint K = ( argc == 7 ) ? atoi(argv[3]) : 20;
   libxsmm_blasint N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
   libxsmm_blasint REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
-  libxsmm_blasint zero = 0;
   char* l_csr_file =     ( argc == 7 ) ?      argv[6]  : "file.csr";
 
   libxsmm_gemmfunction mykernel = NULL;
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-    M, N, K, &K, &zero, &N, LIBXSMM_DATATYPE(REALTYPE),
+    M, N, K, K, 0, N, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
   const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;

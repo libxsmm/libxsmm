@@ -140,8 +140,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
   unary_shape.m = m;
   unary_shape.n = n;
-  unary_shape.ldi = &ld_in;
-  unary_shape.ldo = &ld_in;
+  unary_shape.ldi = ld_in;
+  unary_shape.ldo = ld_in;
 #ifdef FP16_REDUCE_COLSIDX
   unary_shape.in_type = LIBXSMM_DATATYPE_F16;
   unary_shape.out_type = LIBXSMM_DATATYPE_F16;

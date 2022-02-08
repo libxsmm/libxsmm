@@ -718,6 +718,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* primary;
   void* secondary;
   void* tertiary;
+  void* quaternary;
 } libxsmm_matrix_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_v2 {
@@ -737,15 +738,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_arg_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ld;                  /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint ld;                   /* leading dimension of input */
   libxsmm_datatype type;                /* datatype of input */
 } libxsmm_meqn_arg_shape;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -754,9 +755,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldi2;                 /* leading dimension of second input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -765,10 +766,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
-  libxsmm_blasint* ldi3;                /* leading dimension of third input, if NULL induced from K,N */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldi2;                 /* leading dimension of second input */
+  libxsmm_blasint ldi3;                 /* leading dimension of third input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -915,9 +916,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
   libxsmm_blasint m;                    /* number of rows of A and C */
   libxsmm_blasint n;                    /* number of cols of C and B */
   libxsmm_blasint k;                    /* number of cols of A and number of rows of B */
-  libxsmm_blasint* lda;                 /* leading dimension of A, if NULL induced from M,K */
-  libxsmm_blasint* ldb;                 /* leading dimension of B, if NULL induced from K,N */
-  libxsmm_blasint* ldc;                 /* leading dimension of C, if NULL induced from M,N */
+  libxsmm_blasint lda;                  /* leading dimension of A */
+  libxsmm_blasint ldb;                  /* leading dimension of B */
+  libxsmm_blasint ldc;                  /* leading dimension of C */
   libxsmm_datatype a_in_type;           /* datatype of A */
   libxsmm_datatype b_in_type;           /* datatype of B */
   libxsmm_datatype out_type;            /* datatype of C */
