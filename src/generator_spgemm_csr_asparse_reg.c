@@ -201,12 +201,12 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
             }
 
             o_ops[l_op_idx].c_disps[l_z] = l_row;
-            o_ops[l_op_idx].acc_idxs[l_z] = l_acc_idxs[l_y] + l_z;
-            o_ops[l_op_idx].src_vals[l_z] = i_unique_pos[l_off];
-            o_ops[l_op_idx].src_sgns[l_z] = i_unique_sgn[l_off];
+            o_ops[l_op_idx].acc_idxs[l_z] = (unsigned char)(l_acc_idxs[l_y] + l_z);
+            o_ops[l_op_idx].src_vals[l_z] = (unsigned short)i_unique_pos[l_off];
+            o_ops[l_op_idx].src_sgns[l_z] = (char)i_unique_sgn[l_off];
           }
 
-          o_ops[l_op_idx].n = l_z;
+          o_ops[l_op_idx].n = (unsigned short)l_z;
           o_ops[l_op_idx].b_disp = i_column_idx[l_g_off];
 
           if ( ++l_op_idx == i_max_ops ) {
@@ -284,7 +284,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   const unsigned int l_perm_consts[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
   unsigned int l_need_bcast_reg = 0;
-  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs, l_cur_bcast_reg;
+  unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs = 0, l_cur_bcast_reg = 0;
 
   const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
@@ -296,7 +296,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
   unsigned int l_num_reg, l_used_reg = 0, l_values_per_reg;
   unsigned int l_breg_unique, l_preg_unique;
-  unsigned int l_base_c_reg, l_ld_reg = 0, l_base_perm_reg, l_vbytes;
+  unsigned int l_base_c_reg = 0, l_ld_reg = 0, l_base_perm_reg = 0, l_vbytes;
 
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
   unsigned int l_n_ops, l_op_idx;
@@ -715,7 +715,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
   /* Test the loop condition */
   libxsmm_generator_generic_loop_footer( io_generated_code, &l_loop_label_tracker,
-                                         l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->c1 );
+                                         l_gp_reg_mapping.gp_reg_nloop, (unsigned int)i_xgemm_desc->c1 );
 
   /* Close asm */
   libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
@@ -925,7 +925,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
   /* Start the n loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X23, i_xgemm_desc->c1 );
+                                         LIBXSMM_AARCH64_GP_REG_X23, (unsigned int)i_xgemm_desc->c1 );
 
   /* Reset the data segment pointer */
   if ( l_unique > l_reg_unique ) {
@@ -1014,7 +1014,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                            LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST,
                                                            LIBXSMM_AARCH64_GP_REG_X26, 0, l_fbytes,
                                                            l_rva / l_values_per_reg,
-                                                           l_rva % l_values_per_reg,
+                                                           (short)(l_rva % l_values_per_reg),
                                                            l_width );
 
             /* Update our records */
@@ -1026,7 +1026,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
                                                    l_rvb,
                                                    l_rva / l_values_per_reg,
-                                                   l_rva % l_values_per_reg,
+                                                   (unsigned char)(l_rva % l_values_per_reg),
                                                    l_rvc, l_tuplet );
 
         /* See if we need to save the accumulator */
@@ -1106,7 +1106,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                              LIBXSMM_AARCH64_INSTR_ASIMD_LD1_I_POST,
                                                              LIBXSMM_AARCH64_GP_REG_X26, 0, l_fbytes,
                                                              l_rva / l_values_per_reg,
-                                                             l_rva % l_values_per_reg,
+                                                             (short)(l_rva % l_values_per_reg),
                                                              l_width );
 
               /* Update our records */
@@ -1118,12 +1118,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
                                                      l_rvb,
                                                      l_rva / l_values_per_reg,
-                                                     l_rva % l_values_per_reg,
+                                                     (unsigned char)(l_rva % l_values_per_reg),
                                                      l_rvc + l_n, l_tuplet );
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, l_fma_insn,
                                                      l_rvb + 1,
                                                      l_rva / l_values_per_reg,
-                                                     l_rva % l_values_per_reg,
+                                                     (unsigned char)(l_rva % l_values_per_reg),
                                                      l_rvc + l_n + 1, l_tuplet );
 
           /* See if we need to save the accumulator */
@@ -1407,7 +1407,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Start the n loop */
   libxsmm_generator_loop_header_aarch64( io_generated_code, &l_loop_label_tracker,
-                                         LIBXSMM_AARCH64_GP_REG_X0, i_xgemm_desc->c1 );
+                                         LIBXSMM_AARCH64_GP_REG_X0, (unsigned int)i_xgemm_desc->c1 );
 
   /* Copy our B pointer to a GPR */
   libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_1 );
@@ -1434,7 +1434,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
       for ( l_z = 0; l_z < op.n; l_z++ ) {
         unsigned int l_u = op.src_vals[l_z], l_v;
-        unsigned int l_rva, l_idx;
+        unsigned int l_rva;
+        unsigned char l_idx;
         unsigned int l_rg = l_base_c_gp_reg + op.acc_idxs[l_z];
         unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
@@ -1444,7 +1445,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         /* Constant is packed in its register */
         if ( l_u < l_npacked_reg*l_npacked_values_per_reg ) {
           l_rva = l_u / l_npacked_values_per_reg;
-          l_idx = l_u % l_npacked_values_per_reg;
+          l_idx = (unsigned char)(l_u % l_npacked_values_per_reg);
           l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I;
         /* Constant is broadcasted in its register or will be loaded */
         } else {

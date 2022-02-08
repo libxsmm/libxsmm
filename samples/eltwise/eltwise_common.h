@@ -21,7 +21,7 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
   int* i_data = (int*) data;
   short* s_data = (short*) data;
   char* c_data = (char*) data;
-  size_t l_r, l_i, l_j;
+  libxsmm_blasint l_r, l_i, l_j;
 
   for (l_r = 0; l_r < br; l_r++) {
     for (l_i = 0; l_i < ld; l_i++) {
@@ -62,7 +62,7 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
   float* f_data = (float*) data;
   unsigned short* s_data = (unsigned short*) data;
   unsigned char* c_data = (unsigned char*) data;
-  size_t i,j;
+  libxsmm_blasint i,j;
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
@@ -85,7 +85,7 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
   float* f_data = (float*) data;
   unsigned short* s_data = (unsigned short*) data;
   unsigned char* c_data = (unsigned char*) data;
-  size_t i,j;
+  libxsmm_blasint i,j;
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
@@ -108,7 +108,7 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
   float* f_data = (float*) data;
   unsigned short* s_data = (unsigned short*) data;
   unsigned char* c_data = (unsigned char*) data;
-  size_t i,j;
+  libxsmm_blasint i,j;
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
@@ -148,9 +148,9 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     const int* i_data      = (const int*)data;
     double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
     double* f_data      = (double*) malloc( sizeof(double)*n*ld );
-    size_t i;
-    for ( i = 0; i < (size_t)n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
-    for ( i = 0; i < (size_t)n*ld; ++i ) f_data[i]      = (double)i_data[i];
+    libxsmm_blasint i;
+    for ( i = 0; i < n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
+    for ( i = 0; i < n*ld; ++i ) f_data[i]      = (double)i_data[i];
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );
@@ -159,9 +159,9 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     const char* i_data      = (const char*)data;
     double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
     double* f_data      = (double*) malloc( sizeof(double)*n*ld );
-    size_t i;
-    for ( i = 0; i < (size_t)n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
-    for ( i = 0; i < (size_t)n*ld; ++i ) f_data[i]      = (double)i_data[i];
+    libxsmm_blasint i;
+    for ( i = 0; i < n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
+    for ( i = 0; i < n*ld; ++i ) f_data[i]      = (double)i_data[i];
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );

@@ -222,13 +222,13 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   char *out, *out_gold;
   unsigned char *mask, *mask_gold;
   unsigned int *rng_state, *rng_state_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
-  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, &ldi, &ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
 
@@ -349,12 +349,12 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   char *out, *out_gold;
   unsigned char *mask;
   unsigned char *mask_gold;
-  size_t i;
+  libxsmm_blasint i;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
-  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, &ldi, &ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
 

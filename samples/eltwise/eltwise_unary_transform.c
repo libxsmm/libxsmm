@@ -57,7 +57,7 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
 }
 
 int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
-  const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, &ldi, &ldo, dtype, dtype, dtype );
+  const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype, dtype, dtype );
   libxsmm_meltw_unary_param unary_param;
   libxsmm_matdiff_info norms_out;
   char *in;
@@ -115,7 +115,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
 int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
@@ -178,8 +178,8 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -223,7 +223,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = N + (N%2);
@@ -276,8 +276,8 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -324,7 +324,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -370,8 +370,8 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -414,7 +414,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
@@ -460,8 +460,8 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -504,7 +504,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -551,8 +551,8 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -673,7 +673,7 @@ void test_vnni_to_vnniT_08bit() {
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype;
-  char op;
+  libxsmm_blasint op;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;

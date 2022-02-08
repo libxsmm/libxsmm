@@ -611,7 +611,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_
   if(xgemm_node->up != NULL) {
     if (xgemm_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_matrix_eqn_elem     *sibling_node = NULL;
-      libxsmm_meltw_binary_flags  bcast_flag = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+      libxsmm_bitfield bcast_flag = LIBXSMM_MELTW_FLAG_BINARY_NONE;
       if (xgemm_node->up->le == xgemm_node) {
         sibling_node = xgemm_node->up->ri;
         bcast_flag = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
@@ -949,7 +949,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
             l_kernel_config.alu_mov_instruction,
             temp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            arg_tmp_id*24,
+            arg_tmp_id*32,
             temp_reg,
             0 );
       }
