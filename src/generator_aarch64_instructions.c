@@ -300,10 +300,10 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           io_generated_code,
                                              const unsigned int                i_vmove_instr,
-                                             const unsigned char               i_gp_reg_addr,
-                                             const unsigned char               i_gp_reg_offset,
+                                             const unsigned int                i_gp_reg_addr,
+                                             const unsigned int                i_gp_reg_offset,
                                              const short                       i_offset,
-                                             const unsigned char               i_vec_reg,
+                                             const unsigned int                i_vec_reg,
                                              const libxsmm_aarch64_asimd_width i_asimdwidth ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: at least ARM V81 needs to be specified as target arch!\n");
@@ -398,8 +398,8 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*           io_generated_code,
                                                  const unsigned int                i_vmove_instr,
-                                                 const unsigned char               i_gp_reg,
-                                                 const unsigned char               i_vec_reg,
+                                                 const unsigned int                i_gp_reg,
+                                                 const unsigned int                i_vec_reg,
                                                  const short                       i_index,
                                                  const libxsmm_aarch64_asimd_width i_asimdwidth ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
@@ -464,9 +464,9 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*               io_generated_code,
                                                       const unsigned int                    i_vmove_instr,
-                                                      const unsigned char                   i_gp_reg_addr,
-                                                      const unsigned char                   i_gp_reg_offset,
-                                                      const unsigned char                   i_vec_reg,
+                                                      const unsigned int                    i_gp_reg_addr,
+                                                      const unsigned int                    i_gp_reg_offset,
+                                                      const unsigned int                    i_vec_reg,
                                                       const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: at least ARM V81 needs to be specified as target arch!\n");
@@ -515,10 +515,10 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*           io_generated_code,
                                                     const unsigned int                i_vmove_instr,
-                                                    const unsigned char               i_gp_reg_addr,
-                                                    const unsigned char               i_gp_reg_offset,
+                                                    const unsigned int                i_gp_reg_addr,
+                                                    const unsigned int                i_gp_reg_offset,
                                                     const short                       i_offset,
-                                                    const unsigned char               i_vec_reg,
+                                                    const unsigned int                i_vec_reg,
                                                     const short                       i_index,
                                                     const libxsmm_aarch64_asimd_width i_asimdwidth ) {
   LIBXSMM_UNUSED( i_offset );
@@ -596,10 +596,10 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*           io_generated_code,
                                                   const unsigned int                i_vmove_instr,
-                                                  const unsigned char               i_gp_reg_addr,
+                                                  const unsigned int                i_gp_reg_addr,
                                                   const short                       i_offset,
-                                                  const unsigned char               i_vec_reg_0,
-                                                  const unsigned char               i_vec_reg_1,
+                                                  const unsigned int                i_vec_reg_0,
+                                                  const unsigned int                i_vec_reg_1,
                                                   const libxsmm_aarch64_asimd_width i_asimdwidth ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: at least ARM V81 needs to be specified as target arch!\n");
@@ -675,10 +675,10 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*               io_generated_code,
                                                 const unsigned int                    i_vec_instr,
-                                                const unsigned char                   i_vec_reg_src_0,
-                                                const unsigned char                   i_vec_reg_src_1,
+                                                const unsigned int                    i_vec_reg_src_0,
+                                                const unsigned int                    i_vec_reg_src_1,
                                                 const unsigned char                   i_idx_shf,
-                                                const unsigned char                   i_vec_reg_dst,
+                                                const unsigned int                    i_vec_reg_dst,
                                                 const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: at least ARM V81 needs to be specified as target arch!\n");
@@ -835,11 +835,11 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*                io_generated_code,
                                            const unsigned int                     i_vmove_instr,
-                                           const unsigned char                    i_gp_reg_addr,
-                                           const unsigned char                    i_gp_reg_offset,
+                                           const unsigned int                     i_gp_reg_addr,
+                                           const unsigned int                     i_gp_reg_offset,
                                            const short                            i_offset,
-                                           const unsigned char                    i_vec_reg,
-                                           const unsigned char                    i_pred_reg ) {
+                                           const unsigned int                     i_vec_reg,
+                                           const unsigned int                     i_pred_reg ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
@@ -952,10 +952,10 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*            io_generated_code,
                                                const unsigned int                 i_prefetch_instr,
-                                               const unsigned char                i_gp_reg_addr,
-                                               const unsigned char                i_gp_reg_offset,
+                                               const unsigned int                 i_gp_reg_addr,
+                                               const unsigned int                 i_gp_reg_offset,
                                                const short                        i_offset,
-                                               const unsigned char                i_pred_reg,
+                                               const unsigned int                 i_pred_reg,
                                                const libxsmm_aarch64_sve_prefetch i_prefetch ) {
   LIBXSMM_UNUSED( i_gp_reg_offset );
 
@@ -1008,11 +1008,11 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_generated_code,
                                               const unsigned int             i_vec_instr,
-                                              const unsigned char            i_vec_reg_src_0,
-                                              const unsigned char            i_vec_reg_src_1,
+                                              const unsigned int             i_vec_reg_src_0,
+                                              const unsigned int             i_vec_reg_src_1,
                                               const unsigned char            i_index,
-                                              const unsigned char            i_vec_reg_dst,
-                                              const unsigned char            i_pred_reg,
+                                              const unsigned int             i_vec_reg_dst,
+                                              const unsigned int             i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM A64FX needs to be specified as target arch!\n");
@@ -1082,10 +1082,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*           io_generated_code,
                                                const unsigned int                i_pred_instr,
-                                               const unsigned char               i_pred_reg,
-                                               const unsigned char               i_gp_reg_src_0,
+                                               const unsigned int                i_pred_reg,
+                                               const unsigned int                i_gp_reg_src_0,
                                                const libxsmm_aarch64_gp_width    i_gp_width,
-                                               const unsigned char               i_gp_reg_src_1,
+                                               const unsigned int                i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
@@ -1141,7 +1141,7 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_gp_reg_addr,
                                            const unsigned int      i_gp_reg_offset,
                                            const short             i_offset,
-                                           const unsigned char     i_gp_reg_dst ) {
+                                           const unsigned int      i_gp_reg_dst ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -1221,10 +1221,10 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*           io_generated_code,
                                                 const unsigned int                i_move_instr,
-                                                const unsigned char               i_gp_reg_addr,
+                                                const unsigned int                i_gp_reg_addr,
                                                 const char                        i_offset,
-                                                const unsigned char               i_gp_reg_0,
-                                                const unsigned char               i_gp_reg_1 ) {
+                                                const unsigned int                i_gp_reg_0,
+                                                const unsigned int                i_gp_reg_1 ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_pair_move: at least ARM V81 needs to be specified as target arch!\n");
     exit(-1);
@@ -1372,8 +1372,8 @@ void libxsmm_aarch64_instruction_alu_set_imm64( libxsmm_generated_code*  io_gene
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_generated_code,
                                                     const unsigned int      i_alu_instr,
-                                                    const unsigned char     i_gp_reg_src,
-                                                    const unsigned char     i_gp_reg_dst,
+                                                    const unsigned int      i_gp_reg_src,
+                                                    const unsigned int      i_gp_reg_dst,
                                                     const unsigned short    i_imm12,
                                                     const unsigned char     i_imm12_lsl12 ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
@@ -1443,8 +1443,8 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_compute_imm24( libxsmm_generated_code* io_generated_code,
                                                     const unsigned int      i_alu_instr,
-                                                    const unsigned char     i_gp_reg_src,
-                                                    const unsigned char     i_gp_reg_dst,
+                                                    const unsigned int      i_gp_reg_src,
+                                                    const unsigned int      i_gp_reg_dst,
                                                     const unsigned int      i_imm24 ) {
   if ( i_imm24 > 0xffffff ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm24: unexpected imm/shift: %u %u\n", i_alu_instr, i_imm24);
@@ -1468,9 +1468,9 @@ void libxsmm_aarch64_instruction_alu_compute_imm24( libxsmm_generated_code* io_g
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code*         io_generated_code,
                                                           const unsigned int              i_alu_instr,
-                                                          const unsigned char             i_gp_reg_src_0,
-                                                          const unsigned char             i_gp_reg_src_1,
-                                                          const unsigned char             i_gp_reg_dst,
+                                                          const unsigned int              i_gp_reg_src_0,
+                                                          const unsigned int              i_gp_reg_src_1,
+                                                          const unsigned int              i_gp_reg_dst,
                                                           const unsigned char             i_imm6,
                                                           const libxsmm_aarch64_shiftmode i_shift_dir ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
@@ -1548,9 +1548,9 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*         io_generated_code,
                                                     const unsigned int              i_alu_meta_instr,
-                                                    const unsigned char             i_gp_reg_src,
-                                                    const unsigned char             i_gp_reg_tmp,
-                                                    const unsigned char             i_gp_reg_dst,
+                                                    const unsigned int              i_gp_reg_src,
+                                                    const unsigned int              i_gp_reg_tmp,
+                                                    const unsigned int              i_gp_reg_dst,
                                                     const unsigned long long        i_imm64 ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: at least ARM V81 needs to be specified as target arch!\n");

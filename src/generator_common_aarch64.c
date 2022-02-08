@@ -25,9 +25,9 @@ void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
-                                                   unsigned char           i_p_reg,
+                                                   unsigned int            i_p_reg,
                                                    int                     i_n_bits,
-                                                   unsigned char           i_gp_reg_scratch ) {
+                                                   unsigned int            i_gp_reg_scratch ) {
   if( i_n_bits < 0 ) {
     libxsmm_aarch64_instruction_sve_pcompute( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SVE_PTRUE,
