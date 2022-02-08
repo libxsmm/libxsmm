@@ -1349,6 +1349,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ifmblock;
     unary_shape.m         = res.ifmblock;
     unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.ifmblock_copy_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ifmblock_copy_kernel_f32  == NULL ) {
       fprintf( stderr, "JIT for TPP ifmblock_copy_kernel_f32 failed. Bailing...!\n");
@@ -1365,6 +1367,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ofmblock;
     unary_shape.m         = res.ofmblock;
     unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ofmblock_zero_kernel_f32  == NULL ) {
       fprintf( stderr, "JIT for TPP ofmblock_zero_kernel_f32 failed. Bailing...!\n");
@@ -1375,6 +1379,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ofw * res.ofmblock;
     unary_shape.m         = res.ofw * res.ofmblock;
     unary_shape.n         = 1;
+    unary_shape.ldi       = stride_out;
+    unary_shape.ldo       = stride_out;
     res.ofw_x_ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ofw_x_ofmblock_zero_kernel_f32  == NULL ) {
       fprintf( stderr, "JIT for TPP ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
@@ -1384,6 +1390,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ofwp * res.ofmblock;
     unary_shape.m         = res.ofw * res.ofmblock;
     unary_shape.n         = res.ofh;
+    unary_shape.ldi       = stride_out;
+    unary_shape.ldo       = stride_out;
     res.ofh_x_ofw_x_ofmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.ofh_x_ofw_x_ofmblock_zero_kernel_f32  == NULL ) {
       fprintf( stderr, "JIT for TPP ofh_x_ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
@@ -1396,6 +1404,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       stride_out            = res.ofmblock;
       unary_shape.m         = res.ofmblock;
       unary_shape.n         = res.fwd_ofw_rb;
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
       res.relu_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
       if (  res.relu_kernel_f32  == NULL ) {
         fprintf( stderr, "JIT for TPP relu_kernel_f32 failed. Bailing...!\n");
@@ -1541,10 +1551,9 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
     l_shape.comp_type = LIBXSMM_DATATYPE_F32;
-    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
-    res.bwd_compute_kernel_fallback_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    res.bwd_compute_kernel_fallback_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
 
     /* Eltwise TPPs */
     stride_in             = res.ofmblock;
@@ -1567,6 +1576,8 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_in             = stride_out;
     unary_shape.m         = res.ofw * res.ifmblock;
     unary_shape.n         = res.ofh;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.ofh_x_ofw_x_ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
 
     if (  res.ofh_x_ofw_x_ifmblock_zero_kernel_f32  == NULL ) {
@@ -1578,6 +1589,8 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     stride_out            = unary_shape.m;
     stride_in             = stride_out;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.paddedH_x_paddedW_x_ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
 
     if (  res.paddedH_x_paddedW_x_ifmblock_zero_kernel_f32  == NULL ) {
@@ -1589,6 +1602,8 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     stride_out            = unary_shape.m;
     stride_in             = stride_out;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.ifhp_x_ifwp_x_ifmblock_zero_kernel_f32= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
 
     if (  res.ifhp_x_ifwp_x_ifmblock_zero_kernel_f32  == NULL ) {
@@ -1654,12 +1669,11 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     l_shape.b_in_type = LIBXSMM_DATATYPE_F32;
     l_shape.out_type  = LIBXSMM_DATATYPE_F32;
     l_shape.comp_type = LIBXSMM_DATATYPE_F32;
-    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
 
     beta = ((img_chunksize == 1) && (res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
     l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
-    res.upd_compute_kernel_no_linearized_tasklist_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    res.upd_compute_kernel_no_linearized_tasklist_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
     if (  res.upd_compute_kernel_no_linearized_tasklist_f32.gemm  == NULL ) {
       fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel_no_linearized_tasklist_f32 failed. Bailing...!\n");
       exit(-1);
@@ -1669,7 +1683,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     beta = ((res.N == 1) && (res.upd_ofh_rb == res.ofh) && (res.upd_ofw_rb == res.ofw)) ? 0.f : 1.f;
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
     l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
-    res.upd_compute_kernel_linearized_tasklist_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    res.upd_compute_kernel_linearized_tasklist_f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
     if (  res.upd_compute_kernel_linearized_tasklist_f32.gemm  == NULL ) {
       fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel_linearized_tasklist_f32 failed. Bailing...!\n");
       exit(-1);
@@ -1798,6 +1812,8 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     stride_in             = res.ifmblock * res.ofmblock;
     stride_out            = res.ifmblock * res.ofmblock;
     unary_shape.m         = res.ifmblock * res.ofmblock;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
     res.zero_ifmblock_x_ofmblock_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.zero_ifmblock_x_ofmblock_kernel_f32  == NULL ) {
       fprintf( stderr, "JIT for TPP zero_ifmblock_x_ofmblock_kernel_f32 failed. Bailing...!\n");
@@ -1815,7 +1831,8 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       stride_out            = chunk0;
       unary_shape.m         = chunk0;
       unary_shape.n         = res.weight_copies;
-
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
       res.wt_reduce_kernel0_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
       if (  res.wt_reduce_kernel0_f32  == NULL ) {
         fprintf( stderr, "JIT for TPP wt_reduce_kernel0_f32 failed. Bailing...!\n");
@@ -1825,6 +1842,8 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       if (chunk1 > 0) {
         stride_out            = chunk1;
         unary_shape.m         = chunk1;
+        unary_shape.ldi       = stride_in;
+        unary_shape.ldo       = stride_out;
         res.wt_reduce_kernel1_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
         if (  res.wt_reduce_kernel1_f32  == NULL ) {
           fprintf( stderr, "JIT for TPP wt_reduce_kernel1_f32 failed. Bailing...!\n");
