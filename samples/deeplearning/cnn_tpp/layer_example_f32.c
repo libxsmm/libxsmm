@@ -613,6 +613,11 @@ int main(int argc, char* argv[])
   libxsmm_free(doutput_libxsmm);
   libxsmm_free(filtertr_libxsmm);
   libxsmm_free(bias_libxsmm);
+  if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
+    libxsmm_free(scratch);
+  }
+  cnn_tpp_free_offset_brgemm_aux_arrays( &cnn_tpp_cfg );
+
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
     if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {

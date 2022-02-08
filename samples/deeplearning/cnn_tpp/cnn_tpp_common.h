@@ -1213,6 +1213,9 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     int brgemm_pf_oob = 0;
     const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
 
+    res.A_offsets = NULL;
+    res.B_offsets = NULL;
+
     res.block_fwd_ofm = 1;
     res.block_fwd_oj = res.fwd_ofh_rb;
     ldx = (res.pack_input == 1) ? (libxsmm_blasint)res.ifmblock : (libxsmm_blasint)res.v*res.ifmblock;
@@ -1440,6 +1443,9 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     int brgemm_pf_oob = 0;
     const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
 
+    res.A_offsets_bwd = NULL;
+    res.B_offsets_bwd = NULL;
+
     ldB = (libxsmm_blasint)res.ofmblock;
     ldA = (libxsmm_blasint)res.ifmblock;
     ldC = (res.spread_input_bwd == 1) ? (libxsmm_blasint)(res.ifmblock * res.v) : (libxsmm_blasint)res.ifmblock;
@@ -1630,6 +1636,13 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       prefetch_mode = prefetch_mode | libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
     }
     l_prefetch_flags = prefetch_mode;
+
+    res.A_offsets_upd = NULL;
+    res.B_offsets_upd = NULL;
+    res.A_offsets2_upd = NULL;
+    res.B_offsets2_upd = NULL;
+    res.A_offsets3_upd = NULL;
+    res.B_offsets3_upd = NULL;
 
     /* Regular GEMM  -- no tasklist*/
     l_shape.m = res.ofmblock;
@@ -1952,6 +1965,40 @@ cnn_tpp_config setup_cnn_tpp(libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasi
 
   return res;
 }
+
+void cnn_tpp_free_offset_brgemm_aux_arrays( cnn_tpp_config* cfg) {
+  if (cfg->A_offsets != NULL) {
+    libxsmm_free(cfg->A_offsets);
+  }
+  if (cfg->B_offsets != NULL) {
+    libxsmm_free(cfg->B_offsets);
+  }
+  if (cfg->A_offsets_bwd != NULL) {
+    libxsmm_free(cfg->A_offsets_bwd);
+  }
+  if (cfg->B_offsets_bwd != NULL) {
+    libxsmm_free(cfg->B_offsets_bwd);
+  }
+  if (cfg->A_offsets_upd != NULL) {
+    libxsmm_free(cfg->A_offsets_upd);
+  }
+  if (cfg->B_offsets_upd != NULL) {
+    libxsmm_free(cfg->B_offsets_upd);
+  }
+  if (cfg->A_offsets2_upd != NULL) {
+    libxsmm_free(cfg->A_offsets2_upd);
+  }
+  if (cfg->B_offsets2_upd != NULL) {
+    libxsmm_free(cfg->B_offsets2_upd);
+  }
+  if (cfg->A_offsets3_upd != NULL) {
+    libxsmm_free(cfg->A_offsets3_upd);
+  }
+  if (cfg->B_offsets3_upd != NULL) {
+    libxsmm_free(cfg->B_offsets3_upd);
+  }
+}
+
 
 
 
