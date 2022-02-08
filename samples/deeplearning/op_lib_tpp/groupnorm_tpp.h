@@ -87,8 +87,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   my_gn_fwd_config res;
 
-  size_t sum_N_offset, sumsq_N_offset;
-
   libxsmm_blasint ldo = bc;
   libxsmm_blasint ld  = bc;
   libxsmm_blasint tmp_ld, tmp_ld2;
@@ -132,7 +130,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* TPP creation */
   ldo = res.G;
-  unary_shape           = libxsmm_create_meltw_unary_shape(res.G, 1, NULL, &ldo, dtype, dtype, dtype);
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.G, 1, res.G, ldo, dtype, dtype, dtype);
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_G_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_G_kernel == NULL) {
@@ -141,7 +139,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   ldo = res.bc;
-  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, 1, NULL, &ldo, dtype, dtype, dtype);
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, 1, res.bc, ldo, dtype, dtype, dtype);
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel   = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_G_kernel == NULL) {
@@ -155,7 +153,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, dtype, dtype, dtype);
     unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.relu_kernel       = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
     if ( res.relu_kernel == NULL ) {
@@ -165,7 +163,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, &ldo, dtype, dtype, dtype);
+    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, dtype, dtype, dtype);
     binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
     res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
     if ( res.ewise_add_kernel == NULL) {
@@ -178,7 +176,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = res.bc;
   tmp_ld = res.bc;
 
-  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ld, &tmp_ld, dtype, dtype, dtype);
+  unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ld, tmp_ld, dtype, dtype, dtype);
   unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   res.reduce_HW_kernel  = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_HW_kernel == NULL) {
@@ -186,7 +184,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
   }
 
-  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, &ld, &ld, &ld, dtype, dtype, dtype);
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype);
   binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
@@ -200,7 +198,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = group_size;                /* group_size = (CP*bc)/G */
   tmp_ld = 1;
 
-  unary_shape              = libxsmm_create_meltw_unary_shape(group_size, 1, &ld, &tmp_ld, dtype, dtype, dtype);
+  unary_shape              = libxsmm_create_meltw_unary_shape(group_size, 1, ld, tmp_ld, dtype, dtype, dtype);
   unary_flags              = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_groups_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_groups_kernel == NULL) {
@@ -210,7 +208,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   ld = res.bc;
   tmp_ld = 1;
-  unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, 1, &ld, &tmp_ld, dtype, dtype, dtype);
+  unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, 1, ld, tmp_ld, dtype, dtype, dtype);
   unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   res.reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_rows_kernel == NULL) {
@@ -238,7 +236,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m              = res.bc;                            /* x = [HW, bc] */
   arg_shape[0].n              = res.H*res.W /res.num_HW_blocks;
-  arg_shape[0].ld             = &ld;
+  arg_shape[0].ld             = ld;
   arg_shape[0].type           = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -246,7 +244,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 1;
   arg_shape[1].m    = res.bc;                                      /* s = [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld;
+  arg_shape[1].ld   = tmp_ld;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
@@ -254,7 +252,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[2].in_arg_pos  = 2;
   arg_shape[2].m    = res.bc;                                      /* b = [bc] */
   arg_shape[2].n    = 1;
-  arg_shape[2].ld   = &tmp_ld;
+  arg_shape[2].ld   = tmp_ld;
   arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
@@ -262,7 +260,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[3].in_arg_pos  = 3;
   arg_shape[3].m    = res.bc;                                      /* gamma = [bc] */
   arg_shape[3].n    = 1;
-  arg_shape[3].ld   = &tmp_ld2;
+  arg_shape[3].ld   = tmp_ld2;
   arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
@@ -270,13 +268,13 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[4].in_arg_pos  = 4;
   arg_shape[4].m    = res.bc;                                      /* beta = [bc] */
   arg_shape[4].n    = 1;
-  arg_shape[4].ld   = &tmp_ld2;
+  arg_shape[4].ld   = tmp_ld2;
   arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
-  eqn_out_arg_shape.ld   = &ld;
+  eqn_out_arg_shape.ld   = ld;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn10 ); */
@@ -348,7 +346,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.barrier = libxsmm_barrier_create(threads, 1);
 
   ldo = res.bc;
-  unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, 1, NULL, &ldo, dtype, dtype, dtype);
+  unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, 1, res.bc, ldo, dtype, dtype, dtype);
   unary_flags         = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.all_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
   if ( res.all_zero_kernel == NULL) {
@@ -358,7 +356,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   ld = res.bc;
   binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, &ld, &ld, &ld, dtype, dtype, dtype);
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype);
   res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");
@@ -366,7 +364,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
-    unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
+    unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, dtype, dtype, dtype);
     unary_flags         = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.inv_relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
     if ( res.inv_relu_kernel == NULL ) {
@@ -376,7 +374,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, &ldo, &ldo, dtype, dtype, dtype);
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, dtype, dtype, dtype);
     unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
     if ( res.ewise_copy_kernel == NULL) {
@@ -418,7 +416,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m              = res.bc;                            /* inp [HW, bc] */
   arg_shape[0].n              = res.H*res.W /res.num_HW_blocks;
-  arg_shape[0].ld             = &ld;
+  arg_shape[0].ld             = ld;
   arg_shape[0].type           = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -426,7 +424,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 1;
   arg_shape[1].m    = res.bc;                                      /* a [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld2;
+  arg_shape[1].ld   = tmp_ld2;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
@@ -434,7 +432,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[2].in_arg_pos  = 2;
   arg_shape[2].m    = res.bc;                                      /* b [bc] */
   arg_shape[2].n    = 1;
-  arg_shape[2].ld   = &tmp_ld2;
+  arg_shape[2].ld   = tmp_ld2;
   arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
@@ -442,7 +440,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[3].in_arg_pos  = 3;
   arg_shape[3].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
-  arg_shape[3].ld   = &ld;
+  arg_shape[3].ld   = ld;
   arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
@@ -450,13 +448,13 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[4].in_arg_pos  = 4;
   arg_shape[4].m    = res.bc;                                      /* dgamma [bc] */
   arg_shape[4].n    = 1;
-  arg_shape[4].ld   = &tmp_ld2;
+  arg_shape[4].ld   = tmp_ld2;
   arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* dgamma [bc] */
   eqn_out_arg_shape.n    = 1;
-  eqn_out_arg_shape.ld   = &tmp_ld2;
+  eqn_out_arg_shape.ld   = tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn11 ); */
@@ -484,7 +482,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[0].n    = res.H*res.W/res.num_HW_blocks;
-  arg_shape[0].ld   = &ld;
+  arg_shape[0].ld   = ld;
   arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -492,13 +490,13 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 5;
   arg_shape[1].m    = res.bc;                                      /* dbeta [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld2;
+  arg_shape[1].ld   = tmp_ld2;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* dbeta [bc] */
   eqn_out_arg_shape.n    = 1;
-  eqn_out_arg_shape.ld   = &tmp_ld2;
+  eqn_out_arg_shape.ld   = tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn12 ); */
@@ -532,7 +530,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[0].n    = res.H*res.W/res.num_HW_blocks;
-  arg_shape[0].ld   = &ld;
+  arg_shape[0].ld   = ld;
   arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -540,7 +538,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 6;
   arg_shape[1].m    = res.bc;                                      /* gamma [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld2;
+  arg_shape[1].ld   = tmp_ld2;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
@@ -548,13 +546,13 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[2].in_arg_pos  = 9;
   arg_shape[2].m    = res.bc;                                      /* db [bc] */
   arg_shape[2].n    = 1;
-  arg_shape[2].ld   = &tmp_ld2;
+  arg_shape[2].ld   = tmp_ld2;
   arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* db [bc] */
   eqn_out_arg_shape.n    = 1;
-  eqn_out_arg_shape.ld   = &tmp_ld2;
+  eqn_out_arg_shape.ld   = tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn13 ); */
@@ -593,7 +591,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[0].n    = res.H*res.W/res.num_HW_blocks;
-  arg_shape[0].ld   = &ld;
+  arg_shape[0].ld   = ld;
   arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -601,7 +599,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 6;
   arg_shape[1].m    = res.bc;                                      /* gamma [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld2;
+  arg_shape[1].ld   = tmp_ld2;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
@@ -609,7 +607,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[2].in_arg_pos  = 0;
   arg_shape[2].m              = res.bc;                            /* inp [HW, bc] */
   arg_shape[2].n              = res.H*res.W /res.num_HW_blocks;
-  arg_shape[2].ld             = &ld;
+  arg_shape[2].ld             = ld;
   arg_shape[2].type           = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
@@ -617,13 +615,13 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[3].in_arg_pos  = 8;
   arg_shape[3].m    = res.bc;                                      /* ds [bc] */
   arg_shape[3].n    = 1;
-  arg_shape[3].ld   = &tmp_ld2;
+  arg_shape[3].ld   = tmp_ld2;
   arg_shape[3].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* ds [bc] */
   eqn_out_arg_shape.n    = 1;
-  eqn_out_arg_shape.ld   = &tmp_ld2;
+  eqn_out_arg_shape.ld   = tmp_ld2;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn14 ); */
@@ -652,7 +650,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[0].in_arg_pos  = 6;
   arg_shape[0].m    = res.bc;                                      /* gamma [bc] */
   arg_shape[0].n    = 1;
-  arg_shape[0].ld   = &tmp_ld2;
+  arg_shape[0].ld   = tmp_ld2;
   arg_shape[0].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
@@ -660,7 +658,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[1].in_arg_pos  = 1;
   arg_shape[1].m    = res.bc;                                      /* a [bc] */
   arg_shape[1].n    = 1;
-  arg_shape[1].ld   = &tmp_ld2;
+  arg_shape[1].ld   = tmp_ld2;
   arg_shape[1].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
@@ -668,7 +666,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[2].in_arg_pos  = 3;
   arg_shape[2].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[2].n    = res.H*res.W/res.num_HW_blocks;
-  arg_shape[2].ld   = &ld;
+  arg_shape[2].ld   = ld;
   arg_shape[2].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
@@ -681,7 +679,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[3].in_arg_pos  = 0;
   arg_shape[3].m              = res.bc;                            /* inp [HW, bc] */
   arg_shape[3].n              = res.H*res.W /res.num_HW_blocks;
-  arg_shape[3].ld             = &ld;
+  arg_shape[3].ld             = ld;
   arg_shape[3].type           = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
@@ -689,7 +687,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[4].in_arg_pos  = 2;
   arg_shape[4].m    = res.bc;                                      /* b [bc] */
   arg_shape[4].n    = 1;
-  arg_shape[4].ld   = &tmp_ld2;
+  arg_shape[4].ld   = tmp_ld2;
   arg_shape[4].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
 
@@ -697,13 +695,13 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_metadata[5].in_arg_pos  = 7;
   arg_shape[5].m    = res.bc;                                      /* c [bc] */
   arg_shape[5].n    = 1;
-  arg_shape[5].ld   = &tmp_ld2;
+  arg_shape[5].ld   = tmp_ld2;
   arg_shape[5].type = dtype;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[5], arg_shape[5], arg_singular_attr);
 
   eqn_out_arg_shape.m    = res.bc;                                 /* din [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W/res.num_HW_blocks;
-  eqn_out_arg_shape.ld   = &ld;
+  eqn_out_arg_shape.ld   = ld;
   eqn_out_arg_shape.type = dtype;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn16 ); */

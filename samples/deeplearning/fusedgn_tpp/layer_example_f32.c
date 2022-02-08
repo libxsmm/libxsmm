@@ -30,7 +30,7 @@ int main( int argc, char* argv[] ) {
   my_gn_bwd_config my_gn_bwd;
 
   naive_fusedgroupnorm_t naive_param;
-  void *scratch;
+  void *scratch = NULL;
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it;
@@ -66,9 +66,6 @@ int main( int argc, char* argv[] ) {
   int pad_w_out = 0; /* padding mode */
   int norm_type = 0; /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type = 5; /* 0: nothing fused, 1: relu fused, 2: ewise fused, 3: relu and ewise fused, 4: relu with mask, 5: relu and ewise with mask  */
-
-  int stride_h = 0;  /* defined later */
-  int stride_w = 0;  /* defined later */
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -147,9 +144,6 @@ int main( int argc, char* argv[] ) {
     printf("Unsupported fuse_type %d was provided (0, 2, 4 and 5 are supported only)\n", fuse_type);
     return -1;
   }
-
-  stride_w = stride;
-  stride_h = stride;
 
   /* set struct for naive batch normalization */
   naive_param.N = N;
