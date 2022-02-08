@@ -21,10 +21,10 @@
 
 /* include c-based dnn library */
 #include "../common/dnn_common.h"
-#include "cnn_tpp_common.h"
-#include "cnn_tpp_fwd_custom_custom_f32.h"
-#include "cnn_tpp_bwd_custom_custom_f32.h"
-#include "cnn_tpp_upd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_common.h"
+#include "../op_lib_tpp/cnn_tpp_fwd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_bwd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_upd_custom_custom_f32.h"
 
 int main(int argc, char* argv[])
 {

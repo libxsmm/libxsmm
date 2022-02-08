@@ -40,10 +40,173 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
   }
 }
 
+LIBXSMM_INLINE
+void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld_in, libxsmm_blasint n_cols_idx,
+                              float *sinp, float *ref_result_reduce_elts, float *ref_result_reduce_elts_squared, unsigned long long *cols_ind_array,
+                              unsigned int reduce_op, unsigned int reduce_rows ) {
+  libxsmm_blasint i = 0, j = 0, jj = 0;
+
+  if (reduce_op == 0) {
+    /* Calculate reference results...  */
+    if (reduce_rows == 1) {
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[j] = 0;
+        ref_result_reduce_elts_squared[j] = 0;
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[j] += sinp[j*ld_in + i];
+          ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+        }
+      }
+    } else {
+      if (n_cols_idx == 0) {
+        /* In this case we reduce columns */
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = 0;
+          ref_result_reduce_elts_squared[i] = 0;
+          for (j = 0; j < n; j++) {
+            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+            ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
+          }
+        }
+      } else {
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = 0;
+          for (jj = 0; jj < n_cols_idx; jj++) {
+            j = cols_ind_array[jj];
+            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
+          }
+        }
+      }
+    }
+  } else {
+    if (reduce_rows == 1) {
+      for (j = 0; j < n; j++) {
+        ref_result_reduce_elts[j] = sinp[j*ld_in];
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
+        }
+      }
+    } else {
+      /* In this case we reduce columns */
+      for (i = 0; i < m; i++) {
+        ref_result_reduce_elts[i] = sinp[i];
+        for (j = 0; j < n; j++) {
+          ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE
+void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel, libxsmm_meltwfunction_unary *res_kernel2, libxsmm_meltw_unary_param *res_unary_param, libxsmm_meltw_unary_param *res_unary_param2,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint _ld_in , libxsmm_blasint n_cols_idx,
+  unsigned int reduce_rows, unsigned int reduce_op, unsigned int reduce_elts, unsigned int reduce_elts_squared, unsigned int use_bf16, unsigned int idx_type,
+  float *sinp, float *result_reduce_elts,
+  libxsmm_bfloat16 *sinp_bf16, libxsmm_bfloat16 *result_reduce_elts_bf16,
+#ifdef FP16_REDUCE_COLSIDX
+  unsigned short *sinp_hp, unsigned short *result_reduce_elts_hp,
+#endif
+  unsigned long long *cols_ind_array, unsigned int *cols_ind_array_32bit ) {
+  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
+  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_blasint ld_in = _ld_in;
+  libxsmm_meltwfunction_unary kernel = NULL;
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltwfunction_unary kernel2 = NULL;
+  libxsmm_meltw_unary_param params2;
+  if (reduce_rows == 1) {
+    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+  } else {
+    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  }
+
+  if (reduce_op == 0) {
+    if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+    }
+    if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD;
+    }
+    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
+    }
+  } else {
+    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
+      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
+    }
+  }
+
+  unary_shape.m = m;
+  unary_shape.n = n;
+  unary_shape.ldi = ld_in;
+  unary_shape.ldo = ld_in;
+#ifdef FP16_REDUCE_COLSIDX
+  unary_shape.in_type = LIBXSMM_DATATYPE_F16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_F16;
+#else
+  if (use_bf16 == 0) {
+    unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type = LIBXSMM_DATATYPE_F32;
+  } else {
+    unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  }
+#endif
+  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+
+  /* JIT kernel  */
+  if (n_cols_idx == 0) {
+    kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+  } else {
+    if (idx_type == 0) {
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+    } else {
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
+    }
+    unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
+    unary_shape.n = 0;
+    kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, unary_flags );
+  }
+
+  /* Setup param struct  */
+  if (use_bf16 == 0) {
+    unary_param.in.primary = sinp;
+    unary_param.out.primary = result_reduce_elts;
+  } else {
+    unary_param.in.primary = sinp_bf16;
+    unary_param.out.primary = result_reduce_elts_bf16;
+  }
+#ifdef FP16_REDUCE_COLSIDX
+  params2.in.primary  = sinp_hp;
+  params2.out.primary = result_reduce_elts_hp;
+#else
+  if (use_bf16 == 0) {
+    params2.in.primary  = sinp;
+    params2.out.primary  = result_reduce_elts;
+  } else {
+    params2.in.primary  = sinp_bf16;
+    params2.out.primary  = result_reduce_elts_bf16;
+  }
+#endif
+  if (idx_type == 0) {
+    params2.in.secondary = cols_ind_array;
+  } else {
+    params2.in.secondary = cols_ind_array_32bit;
+  }
+
+  *res_kernel = kernel;
+  *res_kernel2 = kernel2;
+  *res_unary_param = unary_param;
+  *res_unary_param2 = params2;
+}
+
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, jj, k, iters = 10000, reduce_op = 0, use_bf16 = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0, use_bf16 = 0;
   unsigned long long n_cols_idx = 0;
+  unsigned int idx_type = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   libxsmm_bfloat16 *sinp_bf16 = NULL;
@@ -53,9 +216,7 @@ int main(int argc, char* argv[])
   unsigned short *sinp_hp, *result_reduce_elts_hp;
 #endif
   unsigned long long *cols_ind_array;
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
-  libxsmm_meltw_unary_shape unary_shape;
+  unsigned int *cols_ind_array_32bit;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltwfunction_unary kernel2 = NULL;
@@ -83,6 +244,7 @@ int main(int argc, char* argv[])
   if ( argc > 8 ) use_bf16 = atoi(argv[8]);
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
   if ( argc > 10 ) iters = atoi(argv[10]);
+  if ( argc > 11 ) idx_type = atoi(argv[11]);
 
   printf("CL is: %d %d %d %d %d %d %d %d %llu %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
 
@@ -106,10 +268,32 @@ int main(int argc, char* argv[])
   ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
   ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
+  cols_ind_array_32bit = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
   result_reduce_elts_squared = NULL;
+
+  if (reduce_op == 0) {
+    if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
+      result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
+      if (use_bf16 == 1) {
+        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16 + result_size;
+      }
+    }
+    if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
+      result_reduce_elts_squared = (float*) result_reduce_elts;
+      if (use_bf16 == 1) {
+        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16;
+      }
+    }
+  }
 
   /* Fill matrices with random data */
   sfill_matrix ( sinp, ld_in, m, n );
+
+  /* Initialize cold_ind array */
+  for (j = 0; j < n_cols_idx; j++) {
+    cols_ind_array[j] = rand() % n;
+    cols_ind_array_32bit[j] = (unsigned int) cols_ind_array[j];
+  }
 
   if (use_bf16 == 1) {
     libxsmm_rne_convert_fp32_bf16( sinp, sinp_bf16, ld_in*n );
@@ -130,164 +314,34 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  if (reduce_op == 0) {
-    /* Calculate reference results...  */
-    if (reduce_rows == 1) {
-      for (j = 0; j < n; j++) {
-        ref_result_reduce_elts[j] = 0;
-        ref_result_reduce_elts_squared[j] = 0;
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] += sinp[j*ld_in + i];
-          ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
-        }
-      }
-    } else {
-      if (n_cols_idx == 0) {
-        /* In this case we reduce columns */
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
-          ref_result_reduce_elts_squared[i] = 0;
-          for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-            ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
-          }
-        }
-      } else {
-        /* In this case we reduce columns */
-        for (j = 0; j < n_cols_idx; j++) {
-          cols_ind_array[j] = rand() % n;
-        }
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
-          result_reduce_elts[i] = 0;
-          for (jj = 0; jj < n_cols_idx; jj++) {
-            j = cols_ind_array[jj];
-            ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-          }
-        }
-      }
-    }
-  } else {
-    if (reduce_rows == 1) {
-      for (j = 0; j < n; j++) {
-        ref_result_reduce_elts[j] = sinp[j*ld_in];
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
-        }
-      }
-    } else {
-      /* In this case we reduce columns */
-      for (i = 0; i < m; i++) {
-        ref_result_reduce_elts[i] = sinp[i];
-        for (j = 0; j < n; j++) {
-          ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
-        }
-      }
-    }
-  }
-
-  if (reduce_rows == 1) {
-    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-  } else {
-    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  }
-
-  if (reduce_op == 0) {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
-      result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16 + result_size;
-      }
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
-    }
-    if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
-      result_reduce_elts_squared = (float*) result_reduce_elts;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16;
-      }
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD;
-    }
-    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
-    }
-  } else {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 0)) {
-      unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX;
-    }
-  }
-
-  unary_shape.m = m;
-  unary_shape.n = n;
-  unary_shape.ldi = &ld_in;
-  unary_shape.ldo = &ld_in;
+  reference_reduce_kernel( m, n, ld_in, n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
 
   printf("JITing reduce kernel... \n");
-  if (n_cols_idx == 0) {
-    if (use_bf16 == 0) {
-      unary_shape.in_type = LIBXSMM_DATATYPE_F32;
-      unary_shape.out_type = LIBXSMM_DATATYPE_F32;
-      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-      kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
-    } else {
-      unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
-      unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
-      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-      kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
-    }
+#ifdef FP16_REDUCE_COLSIDX
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+      sinp, result_reduce_elts,
+      sinp_bf16, result_reduce_elts_bf16,
+      sinp_hp, result_reduce_elts_hp,
+      cols_ind_array, cols_ind_array_32bit );
+#else
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+      sinp, result_reduce_elts,
+      sinp_bf16, result_reduce_elts_bf16,
+      cols_ind_array, cols_ind_array_32bit );
+#endif
 
+  if (n_cols_idx == 0) {
     /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce kernel... \n");
-    if (use_bf16 == 0) {
-      unary_param.in.primary = sinp;
-      unary_param.out.primary = result_reduce_elts;
-    } else {
-      unary_param.in.primary = sinp_bf16;
-      unary_param.out.primary = result_reduce_elts_bf16;
-    }
     kernel( &unary_param );
   } else {
-    unary_shape.n = 0;
-#ifdef FP16_REDUCE_COLSIDX
-    unary_shape.in_type = LIBXSMM_DATATYPE_F16;
-    unary_shape.out_type = LIBXSMM_DATATYPE_F16;
-    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-    kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-#else
-    if (use_bf16 == 0) {
-      unary_shape.in_type = LIBXSMM_DATATYPE_F32;
-      unary_shape.out_type = LIBXSMM_DATATYPE_F32;
-      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-    } else {
-      unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
-      unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
-      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
-      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES );
-    }
-#endif
-    /* Call JITed kernel and compare result  */
     printf("Calling JITed reduce cols idx kernel... \n");
-    params2.in.primary = sinp;
-    params2.in.secondary = cols_ind_array;
-    params2.in.tertiary = &n_cols_idx;
-    params2.out.primary = result_reduce_elts;
-#ifdef FP16_REDUCE_COLSIDX
-    params2.in.primary  = sinp_hp;
-    params2.out.primary= result_reduce_elts_hp;
-#else
-    if (use_bf16 == 0) {
-      params2.in.primary  = sinp;
-      params2.out.primary  = result_reduce_elts;
-    } else {
-      params2.in.primary  = sinp_bf16;
-      params2.out.primary  = result_reduce_elts_bf16;
-    }
-#endif
 #ifdef FP16_REDUCE_COLSIDX
     for (i = 0; i < m; i++) {
       result_reduce_elts_hp[i] = _cvtss_sh(result_reduce_elts[i], _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
     }
 #endif
+    params2.in.tertiary = &n_cols_idx;
     kernel2( &params2 );
 #ifdef FP16_REDUCE_COLSIDX
     for (i = 0; i < m; i++) {
@@ -356,61 +410,7 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    if (reduce_op == 0) {
-
-      if (reduce_rows == 1) {
-        for (j = 0; j < n; j++) {
-          ref_result_reduce_elts[j] = 0;
-          ref_result_reduce_elts_squared[j] = 0;
-          for (i = 0; i < m; i++) {
-            ref_result_reduce_elts[j] += sinp[j*ld_in + i];
-            ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
-          }
-        }
-      } else {
-        if (n_cols_idx == 0) {
-          /* In this case we reduce columns */
-          for (i = 0; i < m; i++) {
-            ref_result_reduce_elts[i] = 0;
-            ref_result_reduce_elts_squared[i] = 0;
-            for (j = 0; j < n; j++) {
-              ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-              ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
-            }
-          }
-        } else {
-          /* In this case we reduce columns */
-          for (j = 0; j < n_cols_idx; j++) {
-            cols_ind_array[j] = rand() % n_cols_idx;
-          }
-          for (i = 0; i < m; i++) {
-            ref_result_reduce_elts[i] = 0;
-            for (jj = 0; jj < n_cols_idx; jj++) {
-              j = cols_ind_array[jj];
-              ref_result_reduce_elts[i] += sinp[j*ld_in + i];
-            }
-          }
-        }
-      }
-
-    } else {
-      if (reduce_rows == 1) {
-        for (j = 0; j < n; j++) {
-          ref_result_reduce_elts[j] = sinp[j*ld_in];
-          for (i = 0; i < m; i++) {
-            ref_result_reduce_elts[j] = LIBXSMM_MAX( ref_result_reduce_elts[j], sinp[j*ld_in + i] );
-          }
-        }
-      } else {
-        /* In this case we reduce columns */
-        for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = sinp[i];
-          for (j = 0; j < n; j++) {
-            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
-          }
-        }
-      }
-    }
+    reference_reduce_kernel( m, n, ld_in, n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
@@ -422,6 +422,7 @@ int main(int argc, char* argv[])
       kernel( &unary_param );
     }
   } else {
+    params2.in.tertiary = &n_cols_idx;
     for (k = 0; k < iters; k++) {
       kernel2( &params2 );
     }
