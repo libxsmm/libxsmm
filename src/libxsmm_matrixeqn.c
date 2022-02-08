@@ -1151,12 +1151,12 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   return ret;
 }
 
-LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ld, const libxsmm_datatype type ) {
+LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_datatype type ) {
   libxsmm_meqn_arg_shape res;
 
   res.m = m;
   res.n = n;
-  res.ld = (libxsmm_blasint*)ld;
+  res.ld = ld;
   res.type = type;
 
   return res;
@@ -1226,7 +1226,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_matrix_eqn_ar
 
   info.arg.m = arg_shape.m;
   info.arg.n = arg_shape.n;
-  info.arg.ld = ( arg_shape.ld != NULL) ? *(arg_shape.ld) : arg_shape.m;
+  info.arg.ld = arg_shape.ld;
   info.arg.in_pos = arg_metadata.in_arg_pos;
   info.arg.dtype = arg_shape.type;
   info.arg.arg_attr = arg_attr;

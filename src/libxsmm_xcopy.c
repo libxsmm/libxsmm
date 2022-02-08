@@ -276,18 +276,18 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
       if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
 # if 0
         const libxsmm_meltw_unary_shape unary_shape_f64 = libxsmm_create_meltw_unary_shape(
-          (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
           LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
 # endif
         const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
-          (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
           LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
         const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-          (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
           LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
 # if 0
         const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
-          (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+          (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
           LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
 # endif
         switch (typesize) {
@@ -382,15 +382,15 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
 # if 0
               const libxsmm_meltw_unary_shape unary_shape_f64 = libxsmm_create_meltw_unary_shape(
-                m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+                m, n, ldi, ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
 # endif
               const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
-                m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+                m, n, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
               const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-                m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
+                m, n, ldi, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
 # if 0
               const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
-                m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
+                m, n, ldi, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
 # endif
               switch (typesize) {
 # if 0 /* unsupported */
@@ -428,18 +428,18 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
 # if 0
               const libxsmm_meltw_unary_shape unary_shape_f64 = libxsmm_create_meltw_unary_shape(
-                (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
                 LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
 # endif
               const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
-                (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
                 LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
               const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-                (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
                  LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
 # if 0
               const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
-                (libxsmm_blasint)tm, (libxsmm_blasint)tn, &ldi, &ldo,
+                (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
                 LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
 # endif
               switch (typesize) {
@@ -707,15 +707,15 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
       {
 # if 0
         const libxsmm_meltw_unary_shape unary_shape_f64 = libxsmm_create_meltw_unary_shape(
-          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+          m, n, ldi, ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
 # endif
         const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
-          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+          m, n, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
         const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
+          m, n, ldi, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
 # if 0
         const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
-          m, n, &ldi, &ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
+          m, n, ldi, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
 # endif
         switch (typesize) {
 # if 0 /* unsupported */

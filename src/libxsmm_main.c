@@ -4703,15 +4703,15 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary(
 
 
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+                                                                        const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                                                                         const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
   libxsmm_meltw_unary_shape res;
 
   res.m = m;
   res.n = n;
-  res.ldi = (libxsmm_blasint*)ldi;
-  res.ldo = (libxsmm_blasint*)ldo;
+  res.ldi = ldi;
+  res.ldo = ldo;
   res.in_type = in_type;
   res.out_type = out_type;
   res.comp_type = comp_type;
@@ -4721,16 +4721,16 @@ LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const li
 
 
 LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
+                                                                          const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
                                                                           const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
   libxsmm_meltw_binary_shape res;
 
   res.m = m;
   res.n = n;
-  res.ldi = (libxsmm_blasint*)ldi;
-  res.ldi2 = (libxsmm_blasint*)ldi2;
-  res.ldo = (libxsmm_blasint*)ldo;
+  res.ldi = ldi;
+  res.ldi2 = ldi2;
+  res.ldo = ldo;
   res.in_type = in_type;
   res.out_type = out_type;
   res.comp_type = comp_type;
@@ -4740,17 +4740,17 @@ LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const 
 
 
 LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                            const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
+                                                                            const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
                                                                             const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
   libxsmm_meltw_ternary_shape res;
 
   res.m = m;
   res.n = n;
-  res.ldi = (libxsmm_blasint*)ldi;
-  res.ldi2 = (libxsmm_blasint*)ldi2;
-  res.ldi3 = (libxsmm_blasint*)ldi3;
-  res.ldo = (libxsmm_blasint*)ldo;
+  res.ldi = ldi;
+  res.ldi2 = ldi2;
+  res.ldi3 = ldi3;
+  res.ldo = ldo;
   res.in_type = in_type;
   res.out_type = out_type;
   res.comp_type = comp_type;
@@ -4764,8 +4764,7 @@ LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary_v2( const l
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     unary_shape.in_type, unary_shape.comp_type, unary_shape.out_type, LIBXSMM_DATATYPE_UNSUPPORTED, unary_shape.m, unary_shape.n,
-    (unary_shape.ldi == NULL) ? unary_shape.m : *(unary_shape.ldi),
-    (unary_shape.ldo == NULL) ? unary_shape.m : *(unary_shape.ldo), 0, 0,
+    unary_shape.ldi, unary_shape.ldo, 0, 0,
     (unsigned short)unary_flags, (unsigned short)unary_type, LIBXSMM_MELTW_OPERATION_UNARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
@@ -4779,9 +4778,7 @@ LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary_v2( const
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     binary_shape.in_type, binary_shape.comp_type, binary_shape.out_type, LIBXSMM_DATATYPE_UNSUPPORTED, binary_shape.m, binary_shape.n,
-    (binary_shape.ldi == NULL) ? binary_shape.m : *(binary_shape.ldi),
-    (binary_shape.ldo == NULL) ? binary_shape.m : *(binary_shape.ldo),
-    (binary_shape.ldi2 == NULL) ? binary_shape.m : *(binary_shape.ldi2), 0,
+    binary_shape.ldi, binary_shape.ldo, binary_shape.ldi2, 0,
     (unsigned short)binary_flags, (unsigned short)binary_type, LIBXSMM_MELTW_OPERATION_BINARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
@@ -4795,10 +4792,7 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary_v2( con
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init2(&blob,
     ternary_shape.in_type, ternary_shape.comp_type, ternary_shape.out_type, LIBXSMM_DATATYPE_UNSUPPORTED, ternary_shape.m, ternary_shape.n,
-    (ternary_shape.ldi == NULL) ? ternary_shape.m : *(ternary_shape.ldi),
-    (ternary_shape.ldo == NULL) ? ternary_shape.m : *(ternary_shape.ldo),
-    (ternary_shape.ldi2 == NULL) ? ternary_shape.m : *(ternary_shape.ldi2),
-    (ternary_shape.ldi3 == NULL) ? ternary_shape.m : *(ternary_shape.ldi3),
+    ternary_shape.ldi, ternary_shape.ldo, ternary_shape.ldi2, ternary_shape.ldi3,
     (unsigned short)ternary_flags, (unsigned short)ternary_type, LIBXSMM_MELTW_OPERATION_TERNARY);
 
   libxsmm_xmeltwfunction result = libxsmm_dispatch_meltw(desc);
@@ -4847,7 +4841,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2(
   const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape ) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meqn_descriptor *const desc = libxsmm_meqn_descriptor_init(&blob,
-    out_shape.type, out_shape.m, out_shape.n, (out_shape.ld == NULL) ? out_shape.m : *(out_shape.ld), (unsigned int)idx );
+    out_shape.type, out_shape.m, out_shape.n, out_shape.ld, (unsigned int)idx );
 
   return libxsmm_dispatch_matrix_eqn_desc( desc );
 }
