@@ -670,13 +670,13 @@ int main( int argc, char* argv[] ) {
   tmp_ld = S3;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, &ld, &tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
   reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
   ld = S3;
   tmp_ld = 1;
   unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
   jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-  reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, &ld, &tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
   reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
 
   /* TPP for scaling */

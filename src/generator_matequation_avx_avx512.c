@@ -949,7 +949,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
             l_kernel_config.alu_mov_instruction,
             temp_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            arg_tmp_id*24,
+            arg_tmp_id*32,
             temp_reg,
             0 );
       }
