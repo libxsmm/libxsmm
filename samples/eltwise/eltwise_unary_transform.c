@@ -115,7 +115,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
 int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
@@ -223,7 +223,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = N + (N%2);
@@ -324,7 +324,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -414,7 +414,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
@@ -504,7 +504,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -673,7 +673,7 @@ void test_vnni_to_vnniT_08bit() {
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype;
-  char op;
+  libxsmm_blasint op;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;

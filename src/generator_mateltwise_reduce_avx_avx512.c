@@ -1151,7 +1151,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                     reg_sum,
                     aux_vreg,
                     reg_sum,
-                    0, 0, 0, (mask_reg) << 4);
+                    0, 0, 0, (mask_reg) << 4 );
         }
       }
     }
@@ -1181,7 +1181,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                   cur_vreg,
                   aux_vreg,
                   cur_vreg,
-                  0, 0, 0, (mask_reg) << 4);
+                  0, 0, 0, (mask_reg) << 4 );
       }
 
       if ( compute_plain_vals_reduce > 0 ) {

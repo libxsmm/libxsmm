@@ -927,8 +927,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
   libxsmm_gemm_batch_reduce_type br_type;  /* specifying the type of the BRGEMM operation */
-  unsigned long long br_stride_a_hint;     /* mandatory hint for strided BRGEMM */
-  unsigned long long br_stride_b_hint;     /* mandatory hint for strided BRGEMM */
+  libxsmm_blasint br_stride_a_hint;        /* mandatory hint for strided BRGEMM */
+  libxsmm_blasint br_stride_b_hint;        /* mandatory hint for strided BRGEMM */
   unsigned char br_unroll_hint;            /* optional hint containing the BR count */
 } libxsmm_gemm_batch_reduce_config;
 

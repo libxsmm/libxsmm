@@ -16,15 +16,8 @@
 
 #include "eltwise_common.h"
 
-float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
-  bf16_hp.i[1] = x;
-  bf16_hp.i[0] = 0;
-  return bf16_hp.f;
-}
-
 void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint ldo_mask, const void *in, void *out, const float alpha, unsigned char *out_mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t i, j;
+  libxsmm_blasint i, j;
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
@@ -36,7 +29,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           f_out[(j*ldo) + i] = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha*f_in[(j*ldi) + i] : f_in[(j*ldi) + i];
         } else if ( type == 2 ) {
-          f_out[(j*ldo) + i] = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(f_in[(j*ldi) + i])-1.0) : f_in[(j*ldi) + i];
+          f_out[(j*ldo) + i] = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(f_in[(j*ldi) + i])-1.0f) : f_in[(j*ldi) + i];
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( f_in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -55,7 +48,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( in_value < 0.0f ) ? alpha*in_value : in_value;
         } else if ( type == 2 ) {
-          out_value = ( in_value < 0.0f ) ? alpha*(expf(in_value)-1.0) : in_value;
+          out_value = ( in_value < 0.0f ) ? alpha*(expf(in_value)-1.0f) : in_value;
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -74,7 +67,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha*f_in[(j*ldi) + i] : f_in[(j*ldi) + i];
         } else if ( type == 2 ) {
-          out_value = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(f_in[(j*ldi) + i])-1.0) : f_in[(j*ldi) + i];
+          out_value = ( f_in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(f_in[(j*ldi) + i])-1.0f) : f_in[(j*ldi) + i];
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( f_in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -94,7 +87,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           f_out[(j*ldo) + i] = ( in_value < 0.0f ) ? alpha*in_value : in_value;
         } else if ( type == 2 ) {
-          f_out[(j*ldo) + i] = ( in_value < 0.0f ) ? alpha*(expf(in_value)-1.0) : in_value;
+          f_out[(j*ldo) + i] = ( in_value < 0.0f ) ? alpha*(expf(in_value)-1.0f) : in_value;
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -188,7 +181,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   char *in;
   char *out, *out_gold;
   unsigned char *mask, *mask_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   float alpha = 0.1f;
   int ret = EXIT_SUCCESS;

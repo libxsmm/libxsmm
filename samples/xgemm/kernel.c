@@ -47,14 +47,14 @@ typedef struct gemm_def {
   float scf;
 } gemm_def;
 
-void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
   libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
   int* i_data = (int*) data;
   short* s_data = (short*) data;
   char* c_data = (char*) data;
-  unsigned int l_r, l_i, l_j;
+  libxsmm_blasint l_r, l_i, l_j;
 
   for (l_r = 0; l_r < br; l_r++) {
     for (l_i = 0; l_i < ld; l_i++) {
@@ -80,24 +80,24 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
   }
 }
 
-void init_zero_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0x0, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
-void init_garbage_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
+void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0xdeadbeef, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
-void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
-  unsigned int l_r, l_j, l_i, l_s, l_k2;
-  unsigned int lda = i_gemm_def->lda;
-  unsigned int ldb = i_gemm_def->ldb;
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
-  unsigned int k = i_gemm_def->k;
+void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void* c ) {
+  libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
+  libxsmm_blasint lda = i_gemm_def->lda;
+  libxsmm_blasint ldb = i_gemm_def->ldb;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
+  libxsmm_blasint k = i_gemm_def->k;
 
   if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_F64) &&
        (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F64) &&
@@ -317,7 +317,7 @@ void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
   }
 }
 
-double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n ) {
+double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
   double max_error = 0.0;
 
@@ -330,7 +330,7 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-    unsigned int l_i, l_j;
+    libxsmm_blasint l_i, l_j;
     libxsmm_bfloat16* h_data =      (libxsmm_bfloat16*)data;
     libxsmm_bfloat16* h_data_gold = (libxsmm_bfloat16*)data_gold;
     for (l_i = 0; l_i < m; l_i++) {
@@ -348,7 +348,7 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
       }
     }
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    unsigned int l_i, l_j;
+    libxsmm_blasint l_i, l_j;
     int* l_data = (int*)data;
     int* l_data_gold = (int*)data_gold;
     for (l_i = 0; l_i < m; l_i++) {
@@ -358,7 +358,7 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
       }
     }
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-    unsigned int l_i, l_j;
+    libxsmm_blasint l_i, l_j;
     unsigned char* l_data      = (unsigned char*)data;
     unsigned char* l_data_gold = (unsigned char*)data_gold;
     for (l_i = 0; l_i < m; l_i++) {
@@ -402,8 +402,8 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   size_t l_t, l_r;
   char** l_a_addr = (char**)malloc(i_gemm_def->br_count*sizeof(char*));
   char** l_b_addr = (char**)malloc(i_gemm_def->br_count*sizeof(char*));
-  unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
-  unsigned long long* l_b_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
+  long long* l_a_offs = (long long*)malloc(i_gemm_def->br_count*sizeof(long long));
+  long long* l_b_offs = (long long*)malloc(i_gemm_def->br_count*sizeof(long long));
   double l_beta = i_gemm_def->beta;
   unsigned long long l_br = (unsigned long long)i_gemm_def->br_count;
   int l_cfg_flags = 0;
@@ -417,11 +417,11 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   /* setup brgemm offsets */
   if ( i_gemm_def->br_type == 2 ) {
     for ( l_r = 0 ; l_r < i_gemm_def->br_count; l_r++ ) {
-      l_a_offs[l_r] = l_r * (size_t)i_gemm_def->lda * (size_t)i_gemm_def->k * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
+      l_a_offs[l_r] = l_r * (long long)i_gemm_def->lda * i_gemm_def->k * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
       if (i_gemm_def->trans_b == 0) {
-        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
+        l_b_offs[l_r] = l_r * (long long)i_gemm_def->ldb * i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
       } else {
-        l_b_offs[l_r] = l_r * (size_t)i_gemm_def->ldb * (size_t)i_gemm_def->k * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
+        l_b_offs[l_r] = l_r * (long long)i_gemm_def->ldb * i_gemm_def->k * LIBXSMM_TYPESIZE(i_gemm_def->in_type);
       }
     }
   }
@@ -458,17 +458,17 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 2) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
     l_brconfig.br_stride_a_hint = i_gemm_def->lda*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->in_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = (unsigned char)(( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count);
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_brconfig.br_stride_a_hint = 0;

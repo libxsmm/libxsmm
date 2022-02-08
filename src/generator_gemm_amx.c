@@ -138,13 +138,13 @@ void libxsmm_generator_gemm_footer_nloop_amx( libxsmm_generated_code*           
 
   if (i_micro_kernel_config->fused_bcolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * i_m_loop_exists * 2/*(i_micro_kernel_config->datatype_size/2)*/) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ( i_xgemm_desc->m  * i_m_loop_exists * 2/*(i_micro_kernel_config->datatype_size/2)*/) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
   if (i_micro_kernel_config->fused_scolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * i_m_loop_exists * 4/*i_micro_kernel_config->datatype_size*/) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ( i_xgemm_desc->m  * i_m_loop_exists * 4/*i_micro_kernel_config->datatype_size*/) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -1718,7 +1718,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
-  void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, unsigned int, unsigned int, unsigned int);
+  void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, long long, long long, unsigned int);
   unsigned int l_m_done = 0;
   unsigned int l_m_count = 0;
   unsigned int l_m_blocking = m_blocking_info[0].blocking;
@@ -1728,7 +1728,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_START = 0;
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 1;
   unsigned int i;
-  unsigned int A_offs = 0, B_offs = 0;
+  long long A_offs = 0, B_offs = 0;
 #if defined(LIBXSMM_GENERATOR_GEMM_AMX_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
