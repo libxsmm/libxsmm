@@ -1311,14 +1311,14 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
 
   /* 2 B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char) tbl_evex_RRp[i_vec_reg_number_dst];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_dst < 32) ? tbl_evex_RRp[i_vec_reg_number_dst] : tbl_evex_RRp[0]);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vvvv[i_vec_reg_number_src] : tbl_evex_vvvv[0]);
   /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
   if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
-    code[p2   ] |= (unsigned char)  tbl_evex_vp[l_reg_idx];
+    code[p2   ] |= (unsigned char)((l_reg_idx < 16 ) ? tbl_evex_vp[l_reg_idx] : tbl_evex_vp[0]);
   } else {
-    code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+    code[p2   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vp[i_vec_reg_number_src] : tbl_evex_vp[0]);
   }
   /* VL: 128bit,256bit,512bit */
   code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
@@ -3334,6 +3334,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   /*const*/ unsigned int i_scale = 1;
 
   /* @TODO: check instruction set */
+  LIBXSMM_UNUSED( i_scale );
   LIBXSMM_UNUSED( i_instruction_set );
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
@@ -3454,6 +3455,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_fifth);
           if ( l_regbas0 == 4 ) buf[i++] = (unsigned char)(0x24);
        } else {
+#if 0
           int l_regidx  = i_gp_reg_idx  % 8;
           int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
           int l_sca=0;
@@ -3469,6 +3471,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           buf[i++] = (unsigned char)(0x04);
           l_place  = i - 1;
           buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+#endif
        }
 
        if ( (l_regbas0 == 5) && (i_displacement==0) )
