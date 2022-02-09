@@ -426,7 +426,7 @@ int cnn_tpp_setup_fwd_pixels_gemm( cnn_tpp_config* cfg ) {
   int result = cfg->fwd_ofw_rb * cfg->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
-    if (cfg->R != 1 || cfg->R != 1) {
+    if (cfg->R != 1 || cfg->S != 1) {
       if (cfg->ofw < 24) {
         result = (cfg->fwd_ofw_rb+2*cfg->pad_w) * (cfg->fwd_ofh_rb-2) + 2 * (cfg->fwd_ofw_rb+cfg->pad_w);
       }
@@ -735,7 +735,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_pixels_gemm( cnn_tpp_config* cfg ) {
   int result = cfg->bwd_ofw_rb * cfg->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
-    if (cfg->R != 1 || cfg->R != 1) {
+    if (cfg->R != 1 || cfg->S != 1) {
       if (cfg->ofw < 24) {
         result = (cfg->bwd_ofw_rb+2*cfg->pad_w) * (cfg->bwd_ofh_rb-2) + 2 * (cfg->bwd_ofw_rb+cfg->pad_w);
       }
