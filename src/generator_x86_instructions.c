@@ -1074,7 +1074,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   /* R */
   code[p0   ] |= (unsigned char)(( i_vec_reg_number_dst < 8 ) ? 0x80 : 0x00);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_src];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_src < 16) ? tbl_vex_vvvv[i_vec_reg_number_src] : tbl_vex_vvvv[0]);
   /* VL: 128bit,256bit */
   code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
