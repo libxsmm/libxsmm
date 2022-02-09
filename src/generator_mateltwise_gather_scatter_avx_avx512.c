@@ -8,6 +8,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#include <errno.h>
+
 #include "generator_common_x86.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_gather_scatter_avx_avx512.h"
@@ -215,11 +217,23 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
 
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = LIBXSMM_MAX(1, atoi(env_max_m_unroll));
+    char* end;
+    long val;
+    errno = 0;
+    val = strtol( env_max_m_unroll, &end, 10 );
+    if ( errno != ERANGE ) {
+      max_m_unrolling = (unsigned int)LIBXSMM_MAX(1, val);
+    }
   }
   if ( 0 == env_max_n_unroll ) {
   } else {
-    n_unroll_factor = LIBXSMM_MAX(1, atoi(env_max_n_unroll));
+    char* end;
+    long val;
+    errno = 0;
+    val = strtol( env_max_n_unroll, &end, 10 );
+    if ( errno != ERANGE ) {
+      n_unroll_factor = (unsigned int)LIBXSMM_MAX(1, val);
+    }
   }
 
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
@@ -317,13 +331,15 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
       } else {
         vname_load = 'y';
       }
-    } else if (vname_load == 'y') {
+    } else /*if (vname_load == 'y')*/ {
       if (is_gather > 0) {
         vname_store = 'x';
       } else {
         vname_load = 'x';
       }
-    } else {
+    }
+#if 0
+    else {
       /* shouldn't happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
@@ -331,6 +347,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
     }
+#endif
   } else {
     idx_vload_instr = LIBXSMM_X86_INSTR_VMOVUPS;
   }
