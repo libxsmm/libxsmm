@@ -234,8 +234,8 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64_n_loop( libxsmm_generat
   /* adjust C pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_c,
-                                                 (unsigned long long)((unsigned long long)(i_micro_kernel_config->datatype_size_out*i_packed_width*i_xgemm_desc->ldc*i_xgemm_desc->m)
-                                                   -(i_micro_kernel_config->datatype_size_out*i_packed_width*l_n_chunksize) ) );
+                                                 (unsigned long long)(((unsigned long long)i_micro_kernel_config->datatype_size_out*i_packed_width*i_xgemm_desc->ldc*i_xgemm_desc->m)
+                                                   -((unsigned long long)i_micro_kernel_config->datatype_size_out*i_packed_width*l_n_chunksize)) );
 
   /* N loop jump back */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_nloop, l_n_chunksize );

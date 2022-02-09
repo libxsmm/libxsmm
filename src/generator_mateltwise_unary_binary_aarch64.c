@@ -322,17 +322,21 @@ void libxsmm_generator_configure_aarch64_loop_order(const libxsmm_meltw_descript
   /* TODO: Potentially reorder loops given the kernel type */
   *loop_order = _loop_order;
 
+#if 0
   if (_loop_order == NM_LOOP_ORDER) {
+#endif
     *out_blocking = *n_blocking;
     *out_bound = i_mateltwise_desc->n;
     *inner_blocking = *m_blocking;
     *inner_bound = i_mateltwise_desc->m;
+#if 0
   } else {
     *out_blocking = *m_blocking;
     *out_bound = i_mateltwise_desc->m;
     *inner_blocking = *n_blocking;
     *inner_bound = i_mateltwise_desc->n;
   }
+#endif
 }
 
 LIBXSMM_API_INTERN
@@ -581,7 +585,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
     }
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
-                                                   (unsigned long long)((unsigned long long)(l_ld_bytes*i_n_blocking)) );
+                                                   (unsigned long long)((unsigned long long)l_ld_bytes*i_n_blocking) );
 #if 0
   }
 #endif
@@ -970,7 +974,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
   } else {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_mapping->gp_reg_relumask, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_relumask,
-                                                   (unsigned long long)((unsigned long long)(l_ld_bytes*i_n_blocking)) );
+                                                   (unsigned long long)((unsigned long long)l_ld_bytes*i_n_blocking) );
   }
 }
 
@@ -1242,7 +1246,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
     if (bcast_row == 1) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                     i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                    (unsigned long long)((unsigned long long)( i_mateltwise_desc->ldi2 * i_micro_kernel_config->datatype_size_in)) );
+                                                    (unsigned long long)((unsigned long long)i_mateltwise_desc->ldi2 * i_micro_kernel_config->datatype_size_in) );
     }
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,

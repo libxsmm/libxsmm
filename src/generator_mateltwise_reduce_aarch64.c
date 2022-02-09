@@ -15,6 +15,10 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+#if 0
+#define USE_ENV_TUNING
+#endif
+
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC
 #endif
@@ -1807,7 +1811,9 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
   unsigned int END_LABEL = 1;
   unsigned int vlen = 4;
   unsigned int mask_reg = 0;
+#if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_REDUCE_COLS_IDX");
+#endif
   const char *const env_load_acc= getenv("LOAD_ACCS_REDUCE_COLS_IDX");
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
@@ -1819,10 +1825,12 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
 
   LIBXSMM_UNUSED( mask_reg );
 
+#if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = atoi(env_max_m_unroll);
+    max_m_unrolling = LIBXSMM_MAX(1,atoi(env_max_m_unroll));
   }
+#endif
   if ( 0 == env_load_acc ) {
   } else {
     load_acc = atoi(env_load_acc);
