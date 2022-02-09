@@ -126,6 +126,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   unsigned int use_stack_vars = ((save_args_to_stack > 0) || (allocate_scratch > 0) || (use_aux_stack_vars > 0)) ? 1 : 0;
 
   LIBXSMM_UNUSED(i_gp_reg_mapping);
+  LIBXSMM_UNUSED(temp_reg);
 
   i_micro_kernel_config->skip_pushpops_callee_gp_reg = skip_pushpops_callee_gp_reg;
   i_micro_kernel_config->use_stack_vars              = use_stack_vars;
@@ -152,6 +153,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
   }
 
   if (allocate_scratch > 0) {
+#if 0
     /* TODO: Scratch size is kernel-dependent  */
     unsigned int scratch_size = 1024;
 
@@ -164,6 +166,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, scratch_size );
     libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+#endif
   }
 
   /* Now push to RSP the callee-save registers  */
