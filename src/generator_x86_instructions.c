@@ -3335,6 +3335,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
 
   /* @TODO: check instruction set */
   LIBXSMM_UNUSED( i_scale );
+  LIBXSMM_UNUSED( i_gp_reg_idx );
   LIBXSMM_UNUSED( i_instruction_set );
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
@@ -3445,8 +3446,10 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
        buf[i++] = (unsigned char)(0xff);
        io_generated_code->code_size = i;
     } else {
+#if 0
        if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
        {
+#endif
           buf[i++] = (unsigned char)(0xc4);
           buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
           buf[i++] = (unsigned char)(0x78 + l_third);
@@ -3454,8 +3457,8 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           l_place = i - 1;
           buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_fifth);
           if ( l_regbas0 == 4 ) buf[i++] = (unsigned char)(0x24);
-       } else {
 #if 0
+       } else {
           int l_regidx  = i_gp_reg_idx  % 8;
           int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
           int l_sca=0;
@@ -3471,8 +3474,8 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           buf[i++] = (unsigned char)(0x04);
           l_place  = i - 1;
           buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
-#endif
        }
+#endif
 
        if ( (l_regbas0 == 5) && (i_displacement==0) )
        {
