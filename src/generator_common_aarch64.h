@@ -26,9 +26,9 @@
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
-                                                   unsigned char           i_p_reg,
+                                                   unsigned int            i_p_reg,
                                                             int            i_n_bits,
-                                                   unsigned char           i_gp_reg_scratch );
+                                                   unsigned int            i_gp_reg_scratch );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mov_aarch64( libxsmm_generated_code* io_generated_code,
@@ -392,7 +392,7 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64( libxsmm_generated_code*  
 */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_code *io_generated_code,
-                                                              const unsigned char     i_vec_reg,
+                                                              const unsigned int      i_vec_reg,
                                                               const unsigned int      i_gp_reg_tmp,
                                                               const libxsmm_aarch64_asimd_tupletype i_tupletype,
                                                               unsigned long long imm64);
@@ -408,7 +408,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_cod
 */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_code *io_generated_code,
-                                                          const unsigned char     i_vec_reg,
+                                                          const unsigned int      i_vec_reg,
                                                           const unsigned int      i_gp_reg_tmp0,
                                                           const unsigned int      i_gp_reg_tmp1,
                                                           void                    *imm64_array,
@@ -427,7 +427,7 @@ void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_cod
  */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_code* io_generated_code,
-                                                              const unsigned char     i_vec_reg,
+                                                              const unsigned int      i_vec_reg,
                                                               const unsigned int      i_gp_reg_tmp0,
                                                               const unsigned int      i_gp_reg_tmp1,
                                                               const unsigned int      i_pred_tmp,

@@ -1746,7 +1746,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_cntl,
                                                              const unsigned char     i_sae_cntl,
-                                                             const unsigned short    i_imm8 ) {
+                                                             const unsigned int      i_imm8 ) {
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )  == 0) &&
        (libxsmm_x86_instruction_vec_is_regonly( i_vec_instr ) == 0)    ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
@@ -1966,7 +1966,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_reg_number_src0,
                                                     const unsigned int      i_reg_number_src1,
                                                     const unsigned int      i_reg_number_dst,
-                                                    const unsigned short    i_imm8 ) {
+                                                    const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
                                                            i_reg_number_src0, i_reg_number_src1, i_reg_number_dst,
                                                            0, 0, 0, i_imm8 );
@@ -1981,7 +1981,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_cntl,
                                                              const unsigned char     i_sae_cntl,
-                                                             const unsigned short    i_imm8 ) {
+                                                             const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
                                                            i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
                                                            i_mask_reg_number, i_mask_cntl, i_sae_cntl, i_imm8 );
@@ -2017,7 +2017,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const char              i_vector_name,
                                                     const unsigned int      i_reg_number_src0,
                                                     const unsigned int      i_reg_number_dst,
-                                                    const unsigned short    i_imm8 ) {
+                                                    const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, i_vec_instr, i_vector_name,
                                                            i_reg_number_src0, LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
                                                            0, 0, 0, i_imm8 );
@@ -2036,7 +2036,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
                                                              const unsigned int      i_reg_number_dst,
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_rnd_exp_cntl,
-                                                             const unsigned short    i_imm8 )
+                                                             const unsigned int      i_imm8 )
 {
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )     == 0) &&
        (libxsmm_x86_instruction_vec_is_regmemonly( i_vec_instr ) == 0)    ) {
@@ -2296,7 +2296,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( libxsmm_generated_code* 
                                                         const unsigned int      i_use_broadcast,
                                                         const unsigned int      i_reg_number_src1,
                                                         const unsigned int      i_reg_number_dst,
-                                                        const unsigned short    i_imm8 ) {
+                                                        const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
                                                           i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
                                                           i_reg_number_src1, i_reg_number_dst,
@@ -2315,7 +2315,7 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_mask_imm8( libxsmm_generated_c
                                                              const unsigned int      i_reg_number_dst,
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_rnd_exp_cntl,
-                                                             const unsigned short    i_imm8 ) {
+                                                             const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
                                                           i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
                                                           LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
@@ -2366,7 +2366,7 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_imm8( libxsmm_generated_code* 
                                                         const int               i_displacement,
                                                         const unsigned int      i_use_broadcast,
                                                         const unsigned int      i_reg_number_dst,
-                                                        const unsigned short    i_imm8 ) {
+                                                        const unsigned int      i_imm8 ) {
   libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, i_vec_instr, i_vector_name,
                                                           i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_use_broadcast,
                                                           LIBXSMM_X86_VEC_REG_UNDEF, i_reg_number_dst,
@@ -2707,7 +2707,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
-                                          const size_t            i_immediate ) {
+                                          const long long         i_immediate ) {
   switch ( i_alu_instr ) {
     case LIBXSMM_X86_INSTR_MOVQ:
     case LIBXSMM_X86_INSTR_MOVB_R_IMM8:
@@ -3224,7 +3224,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_src_0,
                                                const unsigned int      i_mask_reg_number_src_1,
                                                const unsigned int      i_mask_reg_number_dest,
-                                               const unsigned short    i_imm8 ) {
+                                               const unsigned int      i_imm8 ) {
   /* check if passed in a correct instruction */
   switch ( i_mask_instr ) {
     case LIBXSMM_X86_INSTR_KADDB:

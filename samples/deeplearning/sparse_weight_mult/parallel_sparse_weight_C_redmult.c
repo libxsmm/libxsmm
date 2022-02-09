@@ -227,9 +227,8 @@ int main(int argc, char **argv) {
     libxsmm_gemmfunction *mykernel =
         (libxsmm_gemmfunction *)libxsmm_aligned_malloc(
             num_blocks * sizeof(libxsmm_gemmfunction), 64);
-    const libxsmm_blasint zero = 0;
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-            CB, KB, NB / nb, &CB, &KB, &zero, LIBXSMM_DATATYPE(float),
+            CB, KB, NB / nb, CB, KB, 0, LIBXSMM_DATATYPE(float),
             LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
     libxsmm_gemm_param gemm_param;
     memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );

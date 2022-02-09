@@ -43,7 +43,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
             i_micro_kernel_config->alu_mov_instruction,
             input_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            cur_node->info.arg.in_pos*24,
+            cur_node->info.arg.in_pos*32,
             i_micro_kernel_config->gpr_pool[cur_pos],
             0 );
       } else {
@@ -51,7 +51,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
             i_micro_kernel_config->alu_mov_instruction,
             input_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            cur_node->info.arg.in_pos*24,
+            cur_node->info.arg.in_pos*32,
             temp_reg,
             0 );
         libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
