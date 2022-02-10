@@ -92,8 +92,8 @@ void dropout_fwd_f32_f32_gold(unsigned int M, float *in, float *out, unsigned ch
     w = 16;
   } else if ( (cpuid == LIBXSMM_X86_AVX2) || ( is_env_cpuid_avx2 != 0  ) ) {
     w = 8;
-  } else {
-    w = 4;
+  } else {/* why is there this extra code above anyways?... */
+    w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
   }
 
   for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {

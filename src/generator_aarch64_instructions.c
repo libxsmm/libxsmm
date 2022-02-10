@@ -1043,6 +1043,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P:

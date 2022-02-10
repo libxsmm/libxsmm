@@ -620,16 +620,22 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      prng_state2_vreg,
                                                       const unsigned int      prng_state3_vreg ) {
   /* load RNG state */
-  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
-    /* is the memory layout really this awkward? I'd expect the offsets to be 0,16,32,48 Bytes */
-    /*libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,   0, prng_state0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,  64, prng_state1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 128, prng_state2_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 192, prng_state3_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );*/
+  /* The memory layout is currently designed for architectures with upto 512 bit vector length.
+   * If an architecture has a wider vector length, a lot of things need to be fixed (for both aarch64 and x86).
+   * Load the first VL in fp32 values, the rest doesn't matter */
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+    /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
+     * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
+    unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
+    unsigned int l_increment = 64 / l_vector_length;
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF,               0, prng_state0_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF,     l_increment, prng_state1_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 2 * l_increment, prng_state2_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 3 * l_increment, prng_state3_vreg, 0 );
   } else {
     libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_prng_state_ptr,
                                             LIBXSMM_AARCH64_GP_REG_UNDEF,   0, prng_state0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
@@ -650,14 +656,28 @@ void libxsmm_generator_store_prng_state_aarch64_asimd( libxsmm_generated_code* i
                                                        const unsigned int      prng_state2_vreg,
                                                        const unsigned int      prng_state3_vreg ) {
   /* store RNG state */
-  libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,   0, prng_state0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-  libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF,  64, prng_state1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-  libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 128, prng_state2_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
-  libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 192, prng_state3_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+    /* the same notes as in libxsmm_generator_load_prng_state_aarch64_asimd() apply here */
+    unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
+    unsigned int l_increment = 64 / l_vector_length;
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF,               0, prng_state0_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF,     l_increment, prng_state1_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 2 * l_increment, prng_state2_vreg, 0 );
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_prng_state_ptr,
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 3 * l_increment, prng_state3_vreg, 0 );
+  } else {
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
+                                            LIBXSMM_AARCH64_GP_REG_UNDEF,   0, prng_state0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
+                                            LIBXSMM_AARCH64_GP_REG_UNDEF,  64, prng_state1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
+                                            LIBXSMM_AARCH64_GP_REG_UNDEF, 128, prng_state2_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_prng_state_ptr,
+                                            LIBXSMM_AARCH64_GP_REG_UNDEF, 192, prng_state3_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -667,26 +687,46 @@ void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      dropout_vreg_one,
                                                       const unsigned int      dropout_prob_vreg,
                                                       const unsigned int      dropout_invprob_vreg ) {
-  /* load constant register */
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, 0x3f800000 );
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
-                                                 LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR,
-                                        0, i_gp_reg_tmp);
-  libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                   dropout_vreg_one, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                 LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
 
-  /* load probability */
-  libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, i_gp_reg_prob_ptr, LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                   dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
-                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
+    unsigned char l_pred_reg = 0;
 
-  /* load 1/prob */
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V,
-                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_invprob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    /* load constant "1.0f" into register */
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+                                                             LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, 0x3f800000 );
+
+    /* load probability */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
+                                          i_gp_reg_prob_ptr, 0, 0, dropout_prob_vreg, l_pred_reg );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
+                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+
+
+    /* load 1/prob */
+    /* there is only destructive division, so we first copy the value, and then divide in-place */
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                             dropout_prob_vreg, dropout_prob_vreg, 0, dropout_invprob_vreg,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P, /* div = a/b, divr = b/a, src0 must be dst */
+                                             dropout_invprob_vreg, dropout_vreg_one, 0, dropout_invprob_vreg,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+  } else {
+    /* load constant register */
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+                                                               LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, 0x3f800000 );
+
+    /* load probability */
+    libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, i_gp_reg_prob_ptr, LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                     dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
+                                               dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+
+    /* load 1/prob */
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V,
+                                               dropout_vreg_one, dropout_prob_vreg, 0, dropout_invprob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -696,30 +736,50 @@ void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code
                                                           const unsigned int      dropout_vreg_one,
                                                           const unsigned int      dropout_vreg_zero,
                                                           const unsigned int      dropout_prob_vreg ) {
-  /* load constant register */
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_tmp, 0x3f800000 );
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
-                                                 LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-  libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR,
-                                        0, i_gp_reg_tmp);
-  libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                   dropout_vreg_one, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-  libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
-                                                 LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
+  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
 
-  /* load probability */
-  libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, i_gp_reg_prob_ptr, LIBXSMM_AARCH64_GP_REG_UNDEF,
-                                                   dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
-                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
+    unsigned char l_pred_reg = 0;
 
-  /* load 1/prob */
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V,
-                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    /* load constant register */
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+                                                             LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, 0x3f800000 );
 
-  /* load zero, for masking */
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                             dropout_vreg_zero, dropout_vreg_zero, 0, dropout_vreg_zero, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    /* load probability */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,
+                                          i_gp_reg_prob_ptr, 0, 0, dropout_prob_vreg, l_pred_reg );
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
+                                             dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+
+    /* load 1/prob */
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P, /* div = a/b, divr = b/a, src0 must be dst */
+                                             dropout_prob_vreg, dropout_vreg_one, 0, dropout_prob_vreg,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+
+    /* load zero, for masking */
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+                                             dropout_vreg_zero, dropout_vreg_zero, 0, dropout_vreg_zero,
+                                             l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
+  } else {
+    /* load constant register */
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+                                                               LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, 0x3f800000 );
+
+    /* load probability */
+    libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LD1R, i_gp_reg_prob_ptr, LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                     dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
+                                               dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+
+    /* load 1/prob */
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FDIV_V,
+                                               dropout_vreg_one, dropout_prob_vreg, 0, dropout_prob_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+
+    /* load zero, for masking */
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
+                                               dropout_vreg_zero, dropout_vreg_zero, 0, dropout_vreg_zero, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -1486,7 +1546,7 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
                                                           const unsigned int                             i_vec_exp_mask, /* contains 0x000000ff for masking the exponent */
                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
                                                           const unsigned char                            i_pred_reg ) {
-  
+
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,
                                              i_pred_reg, i_sve_type );
@@ -2345,4 +2405,60 @@ void libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( libxsmm_generated
 
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 64, 0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_generated_code,
+                                             const unsigned char            i_gp_reg_src,
+                                             const unsigned char            i_gp_reg_dst,
+                                             const unsigned char            i_gp_reg_tmp,
+                                             const unsigned char            i_vec_reg_tmp,
+                                             const unsigned char            i_pred_reg_tmp,
+                                             const unsigned int             i_element_count,
+                                             const libxsmm_aarch64_sve_type i_sve_type ) {
+
+  unsigned int l_bytes_length = (1 << (unsigned int) i_sve_type) * i_element_count;
+  unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;/* number of bytes per vector */
+  unsigned int l_remainder = l_bytes_length % l_vector_length;
+  unsigned int l_i;
+
+  /* the offset of the instructions could be used, but that would make things more complicated and
+   * we're L1 cache bound probably anyways */
+  for(l_i=0;l_i+l_vector_length<=l_bytes_length;l_i+=l_vector_length){
+
+    /* load all bytes */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                          i_gp_reg_src, 0, 0, i_vec_reg_tmp, i_pred_reg_tmp );
+    /* store all bytes */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
+                                          i_gp_reg_dst, 0, 0, i_vec_reg_tmp, i_pred_reg_tmp );
+
+    /* inc src, inc dst */
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                   i_gp_reg_src, i_gp_reg_src, l_vector_length, 0 );
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                   i_gp_reg_dst, i_gp_reg_dst, l_vector_length, 0 );
+  }
+
+  if(l_remainder != 0) {
+    /* remainder handling, set predicate first */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, i_pred_reg_tmp, l_remainder, i_gp_reg_tmp );
+    /* load all bytes */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
+                                          i_gp_reg_src, 0, 0, i_vec_reg_tmp, i_pred_reg_tmp );
+    /* store all bytes */
+    libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
+                                          i_gp_reg_dst, 0, 0, i_vec_reg_tmp, i_pred_reg_tmp );
+    /* increment not needed, as this is the last copying instruction */
+  }
+
+  /* decrement source and destination registers */
+  unsigned int l_incremented_size = l_bytes_length - l_remainder;
+  if(l_incremented_size > 0){
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
+                                                   i_gp_reg_src, i_gp_reg_src, l_incremented_size, 0 );
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
+                                                   i_gp_reg_dst, i_gp_reg_dst, l_incremented_size, 0 );
+  }
+
 }

@@ -689,5 +689,28 @@ void libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( libxsmm_generated
                                                                void*                   imm64_array,
                                                                const unsigned int      i_start_index);
 
+/**
+ * Copies data from one pointer to another.
+ * Resets both source and destination pointer after the copy has completed.
+ *
+ * @param io_generated_code current program
+ * @param i_gp_src_reg source pointer register
+ * @param i_gp_dst_reg destination pointer register
+ * @param i_gp_tmp_reg a temporary general-purpose register
+ * @param i_vec_tmp_reg a temporary vector register
+ * @param i_pred_tmp_reg a temporary predicate register
+ * @param i_element_count how many elements are to be copied
+ * @param i_sve_type the type of element to be copied (defines amount of bytes/element)
+ */
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_generated_code,
+                                             const unsigned char            i_gp_reg_src,
+                                             const unsigned char            i_gp_reg_dst,
+                                             const unsigned char            i_gp_reg_tmp,
+                                             const unsigned char            i_vec_reg_tmp,
+                                             const unsigned char            i_pred_reg_tmp,
+                                             const unsigned int             i_element_count,
+                                             const libxsmm_aarch64_sve_type i_sve_type );
+
 #endif /* GENERATOR_COMMON_AARCH64_H */
 

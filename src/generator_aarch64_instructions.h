@@ -397,7 +397,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, a/b, vectors, predicated, src0 == dst */
+#define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
