@@ -286,10 +286,6 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-  bandwidthPerIteration = 2 * sizeof(float);
-  flopsPerIteration = 1;/* set to 1 for comparisons */
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
-
   if ( norms_out.normf_rel > 0.00001 ) {
     ret = EXIT_FAILURE;
   }
@@ -299,12 +295,12 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }
@@ -316,6 +312,10 @@ int test_dropout_f32_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_b
       ret = EXIT_FAILURE;
     }
   }
+
+  bandwidthPerIteration = 2 * sizeof(float);
+  flopsPerIteration = 1;/* set to 1 for comparisons */
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
@@ -452,10 +452,6 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-  bandwidthPerIteration = 2 * sizeof(libxsmm_bfloat16);
-  flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel( &unary_param ), bandwidthPerIteration, flopsPerIteration);
-
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
@@ -465,12 +461,12 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }
@@ -482,6 +478,10 @@ int test_dropout_bf16_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm
       ret = EXIT_FAILURE;
     }
   }
+
+  bandwidthPerIteration = 2 * sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel( &unary_param ), bandwidthPerIteration, flopsPerIteration);
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
@@ -618,10 +618,6 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n", norms_out.normf_rel);
 
-  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
-
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
@@ -631,12 +627,12 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }
@@ -648,6 +644,10 @@ int test_dropout_f32_bf16_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
       ret = EXIT_FAILURE;
     }
   }
+
+  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );
@@ -776,10 +776,6 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
-  flopsPerIteration = 1;
-  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
-
   if ( norms_out.normf_rel > 0.005 ) {
     ret = EXIT_FAILURE;
   }
@@ -789,12 +785,12 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
     for ( i = 0; i < N; ++i ) {
       for ( j = 0; j < M/8; ++j ) {
         if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-          printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("error at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
           s = 1;
         }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at position i=%i, j=%i, %u, %u\n", i, j, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
       }
@@ -806,6 +802,10 @@ int test_dropout_bf16_f32_fwd( libxsmm_blasint bitm, libxsmm_blasint M, libxsmm_
       ret = EXIT_FAILURE;
     }
   }
+
+  bandwidthPerIteration = sizeof(float) + sizeof(libxsmm_bfloat16);
+  flopsPerIteration = 1;
+  BENCHMARK_RUN(unary_kernel(&unary_param), bandwidthPerIteration, flopsPerIteration);
 
   libxsmm_rng_destroy_extstate( rng_state );
   libxsmm_rng_destroy_extstate( rng_state_gold );

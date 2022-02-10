@@ -256,6 +256,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult( libxsmm_gene
                                                                     const unsigned char     i_gp_reg_mask, // i_gp_reg_mapping->gp_reg_dropoutmask
                                                                     const unsigned char     i_blend_reg,
                                                                     const unsigned char     i_scratch_gp_reg, // i_gp_reg_mapping->gp_reg_scratch_0
+                                                                    const unsigned char     i_tmp_pred_reg,
                                                                     unsigned int* const     io_mask_adv );
 
 LIBXSMM_API_INTERN
@@ -269,7 +270,8 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult( libxsmm_gen
                                                                      const unsigned char     i_tmp_vreg2, // i_micro_kernel_config->dropout_vreg_tmp2
                                                                      const unsigned char     i_gp_reg_mask,
                                                                      const unsigned char     i_blend_reg,
-                                                                     const unsigned char     i_tmp_pred_reg,
+                                                                     const unsigned char     i_tmp_pred_reg0,
+                                                                     const unsigned char     i_tmp_pred_reg1,
                                                                      const unsigned char     i_gp_reg_scratch,
                                                                      unsigned int* const     io_mask_adv );
 
