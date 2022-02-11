@@ -399,9 +399,11 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     } else {
       mask_reg = 15;
       idx_mask_reg = 14;
+#if defined(USE_ENV_TUNING)
       if (max_m_unrolling > 7) {
         max_m_unrolling = 7;
       }
+#endif
       libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
       if (idx_tsize == 8) {
         libxsmm_generator_mateltwise_initialize_avx_64bit_mask( io_generated_code, idx_mask_reg, m % vlen);
@@ -1283,8 +1285,10 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   unsigned int dtype_size_idx_mat = 0;
   unsigned int dtype_size_reg_mat = 0;
   unsigned int gp_idx_mat_reg = 0, gp_reg_mat_reg = 0, gp_idx_mat_base_reg = 0;
+#if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_GATHER_SCATTER");
   const char *const env_max_n_unroll = getenv("MAX_N_UNROLL_GATHER_SCATTER");
+#endif
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
@@ -1293,6 +1297,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
 #endif
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
+#if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
   } else {
     max_m_unrolling = LIBXSMM_MAX(1, atoi(env_max_m_unroll));
@@ -1301,6 +1306,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   } else {
     n_unroll_factor = LIBXSMM_MAX(1, atoi(env_max_n_unroll));
   }
+#endif
 
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
     gather_instr  = (idx_tsize == 8) ? LIBXSMM_X86_INSTR_VGATHERQPS : LIBXSMM_X86_INSTR_VGATHERDPS;
@@ -1405,12 +1411,14 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         vname_load = 'x';
       }
     } else {
+#if 0
       /* shouldn't happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
       return;
+#endif
     }
   } else {
     idx_vload_instr = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -1468,9 +1476,11 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
     } else {
       mask_reg = 15;
       idx_mask_reg = 14;
+#if defined(USE_ENV_TUNING)
       if (max_m_unrolling > 7) {
         max_m_unrolling = 7;
       }
+#endif
       libxsmm_generator_mateltwise_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
       if (idx_tsize == 8) {
         libxsmm_generator_mateltwise_initialize_avx_64bit_mask( io_generated_code, idx_mask_reg, m % vlen);
