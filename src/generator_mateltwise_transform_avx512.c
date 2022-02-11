@@ -1422,7 +1422,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     /* transpose 32 x m_8rem blocks */
     if ( l_n_32mul > 0 ) {
       /* open n loop */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0 );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0 );
       libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 32 );
 
