@@ -16,6 +16,9 @@
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_gemm_avx512_microkernel.h"
+#include "generator_mateltwise_transform_avx512.h"
+#include "generator_mateltwise_transform_avx.h"
+#include "generator_mateltwise_transform_sse.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( libxsmm_generated_code*        io_generated_code,
@@ -134,7 +137,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* in case when A needs to be transposed, we need to change temporarily the desciptor dimensions for gemm */
   libxsmm_descriptor_blob l_blob_opa;
   unsigned int lda_transpose = i_xgemm_desc->m;
-  const libxsmm_gemm_descriptor *const l_xgemm_desc_opa = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ?
+
+  const libxsmm_gemm_descriptor * l_xgemm_desc_opa;
+  if (LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype)) {
+    l_xgemm_desc_opa = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ?
       libxsmm_sgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
         lda_transpose,
         i_xgemm_desc->ldb,
@@ -142,6 +148,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
         1. /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
         (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch)
       : i_xgemm_desc);
+  } else if (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype)) {
+    l_xgemm_desc_opa = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ?
+      libxsmm_dgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
+        lda_transpose,
+        i_xgemm_desc->ldb,
+        i_xgemm_desc->ldc,
+        1. /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
+        (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch)
+      : i_xgemm_desc);
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+  }
 
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc_opa, 0 );
@@ -275,7 +293,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     /* creating a descriptor for the meltwise transform (transpose) */
     libxsmm_descriptor_blob l_meltw_blob;
     const libxsmm_meltw_descriptor *const l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob,
-      i_xgemm_desc->datatype, i_xgemm_desc->datatype,
+      (libxsmm_datatype)(i_xgemm_desc->datatype), (libxsmm_datatype)(i_xgemm_desc->datatype), /* FIXME: should go away after rebasing, cast would not be needed */
       i_xgemm_desc->k /*m*/, i_xgemm_desc->m /*n*/,
       i_xgemm_desc->lda, i_xgemm_desc->m,
       i_xgemm_desc->flags, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
@@ -312,21 +330,42 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_meltw_setup_stack_frame( io_generated_code, l_mateltwise_desc, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config);
 
     /* main transform (transpose) kernel generator call dispatched over supported microkernel ISA */
-    if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
-        libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                            l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
-                                                                            l_gp_reg_mask, l_gp_reg_mask_2, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
-                                                                            l_mask_reg_4, l_mask_reg_5, l_mask_reg_6,
-                                                                            &l_mateltwise_kernel_config, l_mateltwise_desc );
-    } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
-        libxsmm_generator_transform_norm_to_normt_32bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                         l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
-                                                                        &l_mateltwise_kernel_config, l_mateltwise_desc );
-    } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
-        libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                         l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
-                                                                        &l_mateltwise_kernel_config, l_mateltwise_desc );
-    }
+    if ( LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype) ) {
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+          libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                              l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                              l_gp_reg_mask, l_gp_reg_mask_2, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
+                                                                              l_mask_reg_4, l_mask_reg_5, l_mask_reg_6,
+                                                                              &l_mateltwise_kernel_config, l_mateltwise_desc );
+      } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
+          libxsmm_generator_transform_norm_to_normt_32bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                          &l_mateltwise_kernel_config, l_mateltwise_desc );
+      } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
+          libxsmm_generator_transform_norm_to_normt_32bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                          &l_mateltwise_kernel_config, l_mateltwise_desc );
+      }
+    } else if ( LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype) ) {
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+          libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                              l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                              l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
+                                                                              l_mask_reg_4, l_mask_reg_5,
+                                                                              &l_mateltwise_kernel_config, l_mateltwise_desc );
+      } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
+          libxsmm_generator_transform_norm_to_normt_64bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                          &l_mateltwise_kernel_config, l_mateltwise_desc );
+      } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch < LIBXSMM_X86_AVX) ) {
+          libxsmm_generator_transform_norm_to_normt_64bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                          &l_mateltwise_kernel_config, l_mateltwise_desc );
+      }
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    } /* dispatch over datatypes */
 
     /* stack management at the end for meltw kernel */
     libxsmm_generator_meltw_destroy_stack_frame( io_generated_code, l_mateltwise_desc, &l_mateltwise_kernel_config );
