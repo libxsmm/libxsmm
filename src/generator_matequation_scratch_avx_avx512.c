@@ -17,6 +17,7 @@
 #include "generator_common_x86.h"
 #include "generator_matequation_scratch_avx_avx512.h"
 #include "generator_mateltwise_reduce_avx_avx512.h"
+#include "generator_mateltwise_gather_scatter_avx_avx512.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_gemm_sse_avx_avx2_avx512.h"
 #include "generator_gemm_amx.h"
