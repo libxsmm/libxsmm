@@ -2457,7 +2457,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
               if (wi+kw < 0 || wi+kw >= ifw) continue;
               if ( param->type == 0 ) {
                 const int index = (hi+kh)*ifw + wi+kw;
-                if ( LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw) > LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) ) {
+                if ( LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw) >= LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) ) {
                   LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
                   LIBXSMM_VLA_ACCESS(4, mask, img, fm, ho, wo, nFm, ofh, ofw) = index;
                 }

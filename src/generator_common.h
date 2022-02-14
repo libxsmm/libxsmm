@@ -1582,6 +1582,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int skip_pushpops_callee_gp_reg;
   unsigned int use_stack_vars;
   char vector_name;
+  unsigned int opreduce_use_unary_arg_reading;
+  unsigned int opreduce_avoid_acc_load;
 } libxsmm_mateltwise_kernel_config;
 
 /* structure for storing the current gp reg mapping for matequation */

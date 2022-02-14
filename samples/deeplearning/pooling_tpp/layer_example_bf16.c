@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   libxsmm_blasint pool_type = 0;      /* max pooling */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
-  libxsmm_blasint bc = 32;
+  libxsmm_blasint bc = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));

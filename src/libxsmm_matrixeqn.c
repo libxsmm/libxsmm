@@ -1182,6 +1182,15 @@ LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_create_matrix_eqn_arg_metada
   return res;
 }
 
+LIBXSMM_API libxsmm_matrix_eqn_op_metadata libxsmm_create_matrix_eqn_op_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint op_arg_pos ) {
+  libxsmm_matrix_eqn_op_metadata res;
+
+  res.eqn_idx = eqn_idx;
+  res.op_arg_pos = op_arg_pos;
+
+  return res;
+}
+
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype ) {
   union libxsmm_matrix_eqn_info info;
 
