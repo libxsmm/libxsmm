@@ -1,1 +1,1 @@
-dev/kvoronin/stack_transpose_gemm-1.17-2171
+dev/kvoronin/stack_transpose_gemm-1.17-2172
