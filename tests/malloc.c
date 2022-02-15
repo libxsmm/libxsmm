@@ -44,14 +44,14 @@ int main(void)
 
 #if defined(CHECK_PMALLOC)
   { /* check pooled malloc */
-    void* pool[1024];
-    char* storage[42*sizeof(pool)/sizeof(*pool)];
+    void* pool[4096];
+    char* storage[9*sizeof(pool)/sizeof(*pool)];
     size_t num = sizeof(pool) / sizeof(*pool);
     int i;
 
     libxsmm_pmalloc_init(42, &num, pool, storage);
 # if defined(_OPENMP)
-#   pragma omp parallel for private(i)
+#   pragma omp parallel for private(i) schedule(dynamic,1)
 # endif
     for (i = 0; i < (sizeof(pool) / sizeof(*pool)); ++i) {
       void *const p = libxsmm_pmalloc(pool, &num);
