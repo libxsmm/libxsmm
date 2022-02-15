@@ -2655,13 +2655,19 @@ LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], vo
 
 LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
 {
-  LIBXSMM_ASSERT(NULL != pool && NULL != i && 0 < *i);
-  return pool[LIBXSMM_ATOMIC_SUB_FETCH(i, 1, LIBXSMM_ATOMIC_RELAXED)];
+  size_t idx;
+  LIBXSMM_ASSERT(NULL != pool && NULL != i);
+  idx = LIBXSMM_ATOMIC_SUB_FETCH(i, 1, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ASSERT(0 <= idx && ((size_t)-1) != idx);
+  return pool[idx];
 }
 
 
 LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i)
 {
+  size_t idx;
   LIBXSMM_ASSERT(NULL != pointer && NULL != pool && NULL != i);
-  pool[LIBXSMM_ATOMIC_FETCH_ADD(i, 1, LIBXSMM_ATOMIC_RELAXED)] = pointer;
+  idx = LIBXSMM_ATOMIC_FETCH_ADD(i, 1, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ASSERT(0 <= idx && ((size_t)-1) != (idx + 1));
+  pool[idx] = pointer;
 }
