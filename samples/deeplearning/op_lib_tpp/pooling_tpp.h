@@ -246,7 +246,7 @@ void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_a
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
   /* number of tasks that could be run in parallel */
-  const libxsmm_blasint work = cfg.N * cfg.Bc;
+  const libxsmm_blasint work = cfg.N * cfg.Bc * cfg.ofh * cfg.ofw;
   /* compute chunk size */
   const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
   /* compute thr_begin and thr_end */
@@ -256,7 +256,7 @@ void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_a
   /* loop variables */
   libxsmm_blasint img = 0;
   libxsmm_blasint fm = 0;
-  libxsmm_blasint imgfm = 0;
+  libxsmm_blasint task = 0;
   libxsmm_blasint ho = 0;
   libxsmm_blasint wo = 0;
   libxsmm_blasint hi = 0;
@@ -264,6 +264,8 @@ void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_a
   libxsmm_blasint kh = 0;
   libxsmm_blasint kw = 0;
   libxsmm_blasint v = 0;
+  libxsmm_blasint _ho = 0;
+  libxsmm_blasint _wo = 0;
 
   /* only for average pooling */
   float recp_pool_size = 1.0f/((float)cfg.R*(float)cfg.S);
@@ -284,46 +286,45 @@ void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_a
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
-    img = imgfm / cfg.Bc;
-    fm = imgfm % cfg.Bc;
+  for (task = thr_begin; task < thr_end; ++task) {
+    img = task / (cfg.ofw * cfg.ofh * cfg.Bc);
+    fm = (task % (cfg.ofw * cfg.ofh * cfg.Bc))/(cfg.ofw * cfg.ofh);
+    _ho = ((task % (cfg.ofw * cfg.ofh * cfg.Bc))%(cfg.ofw * cfg.ofh))/cfg.ofw;
+    _wo = ((task % (cfg.ofw * cfg.ofh * cfg.Bc))%(cfg.ofw * cfg.ofh))%cfg.ofw;
+    ho = cfg.pad_h_out + _ho;
+    hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
+    wo = cfg.pad_w_out + _wo;
+    wi = ((wo-cfg.pad_w_out) * cfg.v) - cfg.pad_w;
 
-    for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
-      hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
-      for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {
-        wi = ((wo-cfg.pad_w_out) * cfg.v) - cfg.pad_w;
-
-        /* Setup the reduce indicdes */
-        n = 0;
-        for ( kh = 0; kh < cfg.R; kh++ ) {
-          if (hi+kh < 0 || hi+kh >= cfg.H) continue;
-          for ( kw = 0; kw < cfg.S; kw++ ) {
-            if (wi+kw < 0 || wi+kw >= cfg.W) {
-              continue;
-            } else {
-              ind_array[n] = (hi+kh+cfg.pad_h_in) * ifwp + (wi+kw+cfg.pad_w_in);
-              n++;
-            }
-          }
-        }
-        unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
-        unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-        if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
-          unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
-        }
-        cfg.fwd_pool_reduce_kernel( & unary_param );
-
-        if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
-          for ( v = 0; v < cfg.bc; v++ ) {
-            LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
-            LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
-          }
-        } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
-          binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-          binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-          cfg.fwd_scale_kernel( &binary_param );
+    /* Setup the reduce indicdes */
+    n = 0;
+    for ( kh = 0; kh < cfg.R; kh++ ) {
+      if (hi+kh < 0 || hi+kh >= cfg.H) continue;
+      for ( kw = 0; kw < cfg.S; kw++ ) {
+        if (wi+kw < 0 || wi+kw >= cfg.W) {
+          continue;
+        } else {
+          ind_array[n] = (hi+kh+cfg.pad_h_in) * ifwp + (wi+kw+cfg.pad_w_in);
+          n++;
         }
       }
+    }
+    unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
+    unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+      unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
+    }
+    cfg.fwd_pool_reduce_kernel( & unary_param );
+
+    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+      for ( v = 0; v < cfg.bc; v++ ) {
+        LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
+        LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
+      }
+    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+      binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+      binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+      cfg.fwd_scale_kernel( &binary_param );
     }
   }
 
@@ -341,7 +342,7 @@ void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bf
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
   /* number of tasks that could be run in parallel */
-  const libxsmm_blasint work = cfg.N * cfg.Bc;
+  const libxsmm_blasint work = cfg.N * cfg.Bc * cfg.ofh * cfg.ofw;
   /* compute chunk size */
   const libxsmm_blasint chunksize = (work % cfg.threads == 0) ? (work / cfg.threads) : ((work / cfg.threads) + 1);
   /* compute thr_begin and thr_end */
@@ -351,7 +352,7 @@ void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bf
   /* loop variables */
   libxsmm_blasint img = 0;
   libxsmm_blasint fm = 0;
-  libxsmm_blasint imgfm = 0;
+  libxsmm_blasint task = 0;
   libxsmm_blasint ho = 0;
   libxsmm_blasint wo = 0;
   libxsmm_blasint hi = 0;
@@ -359,6 +360,8 @@ void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bf
   libxsmm_blasint kh = 0;
   libxsmm_blasint kw = 0;
   libxsmm_blasint v = 0;
+  libxsmm_blasint _ho = 0;
+  libxsmm_blasint _wo = 0;
 
   /* only for average pooling */
   float recp_pool_size_f32 = 1.0f/((float)cfg.R*(float)cfg.S);
@@ -380,48 +383,46 @@ void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bf
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
-    img = imgfm / cfg.Bc;
-    fm = imgfm % cfg.Bc;
-    for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
-      hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
-      for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {
-        wi = ((wo-cfg.pad_w_out) * cfg.v) - cfg.pad_w;
-
-        /* Setup the reduce indicdes */
-        n = 0;
-        for ( kh = 0; kh < cfg.R; kh++ ) {
-          if (hi+kh < 0 || hi+kh >= cfg.H) continue;
-          for ( kw = 0; kw < cfg.S; kw++ ) {
-            if (wi+kw < 0 || wi+kw >= cfg.W) {
-              continue;
-            } else {
-              ind_array[n] = (hi+kh+cfg.pad_h_in) * ifwp + (wi+kw+cfg.pad_w_in);
-              n++;
-            }
-          }
-        }
-        unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
-        unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-        if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
-          unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
-        }
-        cfg.fwd_pool_reduce_kernel( & unary_param );
-
-        if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
-          for ( v = 0; v < cfg.bc; v++ ) {
-            LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
-            LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
-          }
-        } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
-          binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-          binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-          cfg.fwd_scale_kernel( &binary_param );
+  for (task = thr_begin; task < thr_end; ++task) {
+    img = task / (cfg.ofw * cfg.ofh * cfg.Bc);
+    fm = (task % (cfg.ofw * cfg.ofh * cfg.Bc))/(cfg.ofw * cfg.ofh);
+    _ho = ((task % (cfg.ofw * cfg.ofh * cfg.Bc))%(cfg.ofw * cfg.ofh))/cfg.ofw;
+    _wo = ((task % (cfg.ofw * cfg.ofh * cfg.Bc))%(cfg.ofw * cfg.ofh))%cfg.ofw;
+    ho = cfg.pad_h_out + _ho;
+    hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
+    wo = cfg.pad_w_out + _wo;
+    wi = ((wo-cfg.pad_w_out) * cfg.v) - cfg.pad_w;
+    /* Setup the reduce indicdes */
+    n = 0;
+    for ( kh = 0; kh < cfg.R; kh++ ) {
+      if (hi+kh < 0 || hi+kh >= cfg.H) continue;
+      for ( kw = 0; kw < cfg.S; kw++ ) {
+        if (wi+kw < 0 || wi+kw >= cfg.W) {
+          continue;
+        } else {
+          ind_array[n] = (hi+kh+cfg.pad_h_in) * ifwp + (wi+kw+cfg.pad_w_in);
+          n++;
         }
       }
     }
-  }
+    unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
+    unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+      unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
+    }
+    cfg.fwd_pool_reduce_kernel( & unary_param );
 
+    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+      for ( v = 0; v < cfg.bc; v++ ) {
+        LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
+        LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
+      }
+    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+      binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+      binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
+      cfg.fwd_scale_kernel( &binary_param );
+    }
+  }
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
