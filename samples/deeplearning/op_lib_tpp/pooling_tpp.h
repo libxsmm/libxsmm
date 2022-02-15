@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
@@ -18,7 +18,8 @@ typedef enum my_pooling_pass {
 
 typedef enum my_pooling_type {
   MY_POOLING_TYPE_AVG = 1,
-  MY_POOLING_TYPE_MAX = 2
+  MY_POOLING_TYPE_MAX = 2,
+  MY_POOLING_TYPE_MAX_NOMASK = 3
 } my_pooling_type;
 
 typedef struct my_pooling_fwd_config {
@@ -137,6 +138,9 @@ my_pooling_fwd_config setup_my_pooling_fwd( const libxsmm_blasint N, const libxs
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH;
   if ( res.pool_type == MY_POOLING_TYPE_MAX ) {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP;
+    res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+  } else if ( res.pool_type == MY_POOLING_TYPE_MAX_NOMASK )  {
+    unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
   } else {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
@@ -314,7 +318,7 @@ void my_pooling_fwd_exec_f32( const my_pooling_fwd_config cfg, const float* in_a
             LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
             LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
           }
-        } else {
+        } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
           binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
           binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
           cfg.fwd_scale_kernel( &binary_param );
@@ -409,7 +413,7 @@ void my_pooling_fwd_exec_bf16( const my_pooling_fwd_config cfg, const libxsmm_bf
             LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
             LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
           }
-        } else {
+        } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
           binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
           binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
           cfg.fwd_scale_kernel( &binary_param );

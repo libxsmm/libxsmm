@@ -6,7 +6,7 @@
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 
@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP */
   char format = 'L';
   libxsmm_blasint bc = 64;
+  libxsmm_blasint skip_mask_comp = 0;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -102,6 +103,7 @@ int main(int argc, char* argv[])
   if (argc > i) stride     = atoi(argv[i++]);
   if (argc > i) pool_type  = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
+  if (argc > i) skip_mask_comp = atoi(argv[i++]);
 
   if (type != 'A' && type != 'F' && type != 'B') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only)\n");
@@ -233,7 +235,11 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
 
     if ( pool_type == 0 ) {
-      pool_type_cfg = MY_POOLING_TYPE_MAX;
+      if (skip_mask_comp == 0) {
+        pool_type_cfg = MY_POOLING_TYPE_MAX;
+      } else {
+        pool_type_cfg = MY_POOLING_TYPE_MAX_NOMASK;
+      }
     } else if ( pool_type == 1 ) {
       pool_type_cfg = MY_POOLING_TYPE_AVG;
     } else {
