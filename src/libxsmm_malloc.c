@@ -2643,3 +2643,25 @@ LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi)
   return internal_malloc_kind;
 }
 
+
+LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], void* storage)
+{
+  char* p = (char*)storage;
+  size_t n, i = 0;
+  LIBXSMM_ASSERT(0 < size && NULL != num && NULL != pool && NULL != storage);
+  for (n = *num; i < n; ++i, p += size) pool[i] = p;
+}
+
+
+LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
+{
+  LIBXSMM_ASSERT(NULL != pool && NULL != i && 0 < *i);
+  return pool[LIBXSMM_ATOMIC_SUB_FETCH(i, 1, LIBXSMM_ATOMIC_RELAXED)];
+}
+
+
+LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i)
+{
+  LIBXSMM_ASSERT(NULL != pointer && NULL != pool && NULL != i);
+  pool[LIBXSMM_ATOMIC_ADD_FETCH(i, 1, LIBXSMM_ATOMIC_RELAXED)] = pointer;
+}
