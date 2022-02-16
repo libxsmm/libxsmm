@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
   int nImg = 256;          /* mini-batch size, "N" */
   int nIFm = 1024;          /* number of input feature maps, "C" */
   int nOFm = 1024;          /* number of output feature maps, "K" */
-  int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
+  int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 4: relu and elementwise fused, 6: relu fused with mask, 7: relu with mask and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   int bn = 32;
   int bk = 32;
@@ -92,8 +92,8 @@ int main(int argc, char* argv[])
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only). 'M' (BPUP-fused only)\n");
     return -1;
   }
-  if ( (fuse_type < 0) || (fuse_type > 4) || (fuse_type == 3) ) {
-    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU)\n");
+  if ( (fuse_type < 0) || (fuse_type > 7) || fuse_type == 3 || fuse_type == 5 ) {
+    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU), 6 (ReLU with a mask), 7 (Bias+ReLU with a mask)\n");
     return -1;
   }
 
@@ -198,6 +198,10 @@ int main(int argc, char* argv[])
     my_fuse = MY_ELTWISE_FUSE_RELU;
   } else if ( fuse_type == 4 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
+  } else if ( fuse_type == 6 ) {
+    my_fuse = MY_ELTWISE_FUSE_RELU_WITH_MASK;
+  } else if ( fuse_type == 7 ) {
+    my_fuse = MY_ELTWISE_FUSE_BIAS_RELU_WITH_MASK;
   } else {
     /* cannot happen */
   }
