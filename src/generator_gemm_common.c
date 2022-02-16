@@ -801,6 +801,12 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
   gemm_scratch_size += scratch_pad_size;
 
+  if ( (LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0 ) {
+    transpose_scratch_size = i_xgemm_desc->m * i_xgemm_desc->k * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_xgemm_desc->datatype));
+    transpose_pad_size  = (transpose_scratch_size % 64 == 0) ? 0 : ((transpose_scratch_size + 63)/64) * 64 - transpose_scratch_size;
+    transpose_scratch_size += transpose_pad_size;
+  }
+
   if (gemm_scratch_size > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, gemm_scratch_size );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
