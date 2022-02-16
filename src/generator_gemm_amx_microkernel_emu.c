@@ -186,7 +186,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
     }
 
     if (i_micro_kernel_config->fused_sigmoid == 1) {
-      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+      const char i_vname = 'z';
       if (tile1 >= 0) {
         libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, reg_0, i_micro_kernel_config->vec_x2,
             i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom,
