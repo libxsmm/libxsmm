@@ -121,6 +121,15 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_bitfield  unary_flags;
   libxsmm_bitfield  binary_flags;
 
+  libxsmm_gemm_shape l_shape;
+  libxsmm_gemm_batch_reduce_config l_brconfig;
+  //libxsmm_gemm_ext_unary_argops l_argops;
+  //libxsmm_gemm_ext_binary_postops l_postops;
+
+  libxsmm_bitfield l_flags;
+  libxsmm_bitfield l_prefetch_flags = 0;
+  int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
   /* setting up some handle values */
@@ -330,46 +339,16 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   /* TPP creation */
 
-    libxsmm_gemm_shape l_shape;
-    libxsmm_gemm_batch_reduce_config l_brconfig;
-    //libxsmm_gemm_ext_unary_argops l_argops;
-    //libxsmm_gemm_ext_binary_postops l_postops;
-    libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-    libxsmm_bitfield l_prefetch_flags = 0;
-    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE); // FIXME?
-    int brgemm_pf_oob = 0; // FIXME?
-    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB"); // FIXME?
+  l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+  l_flags |= 0; // FIXME?
+  l_prefetch_flags = prefetch_mode;
 
-    //l_flags |= res.fwd_flags;
-    //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
-    l_flags |= 0; // FIXME?
-    if ( 0 == env_brgemm_pf_oob ) {
-    } else {
-      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
-    }
-    if (brgemm_pf_oob > 0) {
-      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
-    }
-    l_prefetch_flags = prefetch_mode;
+  libxsmm_blasint stride_a = res.bk*res.bc*sizeof(float);
+  libxsmm_blasint stride_b = res.bc*res.bn*sizeof(float);
 
-    libxsmm_blasint stride_a = res.bk*res.bc*sizeof(float);
-    libxsmm_blasint stride_b = res.bc*res.bn*sizeof(float);
-
-    l_shape.m = res.bk;
-    l_shape.n = res.bn;
-    l_shape.k = res.bc;
-    l_shape.lda = lda;
-    l_shape.ldb = ldb;
-    l_shape.ldc = ldc;
-    l_shape.a_in_type = dtype;
-    l_shape.b_in_type = dtype;
-    l_shape.out_type  = dtype;
-    l_shape.comp_type = dtype;
-    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = stride_a;
-    l_brconfig.br_stride_b_hint = stride_b;
-    //l_brconfig.br_unroll_hint   = res.blocksifm_blocking; // FIXME?
-
+  l_shape                              = libxsmm_create_gemm_shape(res.bk, res.bn, res.bc, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+  l_brconfig                           = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
   res.fwd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
   if ( res.fwd_compute_kernel_strd_f32.gemm == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd failed. Bailing...!\n");
@@ -461,6 +440,14 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   libxsmm_bitfield  unary_flags;
   libxsmm_bitfield  binary_flags;
+
+  libxsmm_gemm_shape l_shape;
+  libxsmm_gemm_batch_reduce_config l_brconfig;
+  //libxsmm_gemm_ext_unary_argops l_argops;
+  //libxsmm_gemm_ext_binary_postops l_postops;
+  libxsmm_bitfield l_flags;
+  libxsmm_bitfield l_prefetch_flags = 0;
+  int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE); // FIXME?
 
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
@@ -792,46 +779,17 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.barrier = libxsmm_barrier_create(threads, 1);
 
   /* TPP creation */
-    libxsmm_gemm_shape l_shape;
-    libxsmm_gemm_batch_reduce_config l_brconfig;
-    //libxsmm_gemm_ext_unary_argops l_argops;
-    //libxsmm_gemm_ext_binary_postops l_postops;
-    libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-    libxsmm_bitfield l_prefetch_flags = 0;
-    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE); // FIXME?
-    int brgemm_pf_oob = 0; // FIXME?
-    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB"); // FIXME?
 
-    //l_flags |= res.fwd_flags;
-    //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
-    l_flags |= 0; // FIXME?
-    if ( 0 == env_brgemm_pf_oob ) {
-    } else {
-      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
-    }
-    if (brgemm_pf_oob > 0) {
-      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
-    }
-    l_prefetch_flags = prefetch_mode;
+  l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+  l_flags |= 0; // FIXME?
+  l_prefetch_flags = prefetch_mode;
 
-    libxsmm_blasint stride_a = res.bk*res.bc*sizeof(float);
-    libxsmm_blasint stride_b = res.bk*res.bn*sizeof(float);
+  libxsmm_blasint stride_a = res.bk*res.bc*sizeof(float);
+  libxsmm_blasint stride_b = res.bk*res.bn*sizeof(float);
 
-    l_shape.m = res.bc;
-    l_shape.n = res.bn;
-    l_shape.k = res.bk;
-    l_shape.lda = lda;
-    l_shape.ldb = ldb;
-    l_shape.ldc = ldc;
-    l_shape.a_in_type = dtype;
-    l_shape.b_in_type = dtype;
-    l_shape.out_type  = dtype;
-    l_shape.comp_type = dtype;
-    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = stride_a;
-    l_brconfig.br_stride_b_hint = stride_b;
-    //l_brconfig.br_unroll_hint   = res.blocksifm_blocking; // FIXME?
-
+  l_shape                              = libxsmm_create_gemm_shape(res.bc, res.bn, res.bk, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+  l_brconfig                           = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
   res.bwd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
   if ( res.bwd_compute_kernel_strd_f32.gemm == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd failed. Bailing...!\n");
@@ -901,33 +859,16 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   updM = res.bk/res.ofm_subtasks;
   updN = res.bc/res.ifm_subtasks;
 
-//    libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
-    l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+  l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
-//    libxsmm_blasint stride_a = res.K*res.bn*sizeof(float);
-//    libxsmm_blasint stride_b = res.C*res.bn*sizeof(float);
-    stride_a = res.K*res.bn*sizeof(float);
-    stride_b = res.C*res.bn*sizeof(float);
+  stride_a = res.K*res.bn*sizeof(float);
+  stride_b = res.C*res.bn*sizeof(float);
 
-    l_shape.m = updM;
-    l_shape.n = updN;
-    l_shape.k = res.bn;
-    l_shape.lda = lda;//res.bk;
-    l_shape.ldb = ldb;//res.bc;
-    l_shape.ldc = ldc;//res.bk;
-    l_shape.a_in_type = dtype;
-    l_shape.b_in_type = dtype;
-    l_shape.out_type  = dtype;
-    l_shape.comp_type = dtype;
-    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
-    l_brconfig.br_stride_a_hint = stride_a;
-    l_brconfig.br_stride_b_hint = stride_b;
-    //l_brconfig.br_unroll_hint   = res.blocksifm_blocking; // FIXME?
+  //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+  l_flags |= 0; // FIXME?
 
-    //l_flags |= res.fwd_flags;
-    //l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
-    l_flags |= 0; // FIXME?
-
+  l_shape                              = libxsmm_create_gemm_shape(updM, updN, res.bn, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+  l_brconfig                           = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
   res.upd_compute_kernel_strd_f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
   if ( res.upd_compute_kernel_strd_f32.gemm == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_upd failed. Bailing...!\n");
