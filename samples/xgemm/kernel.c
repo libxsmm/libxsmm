@@ -120,16 +120,16 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               } else {
                 d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * m) + (l_i * lda) + l_s] *
                                                    d_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
-              } // if-else l_trans_a
+              } /* if-else l_trans_a */
             } else {
               if (i_gemm_def->trans_a == 0) {
                 d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * k) + (l_s * lda) + l_i] *
                                                    d_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } else { // untested?
+              } else {
                 d_c[(l_j * ldc) + l_i] += d_a[(l_r * lda * m) + (l_i * lda) + l_s] *
                                                    d_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } // if-else l_trans_a
-            } // if-else l_trans_b
+              } /* if-else l_trans_a */
+            } /* if-else l_trans_b */
           }
         }
       }
@@ -155,16 +155,16 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               } else {
                 f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
                                                    f_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
-              } // if-else l_trans_a
+              } /* if-else l_trans_a */
             } else {
               if (i_gemm_def->trans_a == 0) {
                 f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * k) + (l_s * lda) + l_i] *
                                                    f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } else { // untested?
+              } else {
                 f_c[(l_j * ldc) + l_i] += f_a[(l_r * lda * m) + (l_i * lda) + l_s] *
                                                    f_b[(l_r * ldb * k) + (l_s * ldb) + l_j];
-              } // if-else l_trans_a
-            } // if-else l_trans_b
+              } /* if-else l_trans_a */
+            } /* if-else l_trans_b */
           }
         }
       }
