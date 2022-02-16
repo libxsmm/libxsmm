@@ -16,7 +16,7 @@ There is a whole collection of test targets available (`test-cp2k`, `test-cpp`, 
 
 ## Test Suites
 
-It is possible to run tests like LIBXSMM's continuous integration ([https://travis-ci.org/hfp/libxsmm](https://travis-ci.org/hfp/libxsmm)):
+It is possible to run tests like LIBXSMM's continuous integration:
 
 ```bash
 scripts/tool_test.sh
@@ -67,7 +67,7 @@ Make sure to rely on `PLATFORM=1`, otherwise a compilation error should occur _I
 
 If platform support is forced (`PLATFORM=1`), runtime code generation is disabled at compile-time (`JIT=0`). Runtime code generation can be also enabled (`PLATFORM=1 JIT=1`) but code-dispatch will still return NULL-kernels. However, some tests will start failing as missing JIT-support it is not signaled at compile-time as with `JIT=0`.
 
-**Note**: JIT-support normally guarantees a non-NULL code pointer ("kernel") if the request is according to the [limitations](https://github.com/hfp/libxsmm/wiki/Q&A#what-is-a-small-matrix-multiplication) (user-code is not asked to check for a NULL-kernel), which does not hold true if JIT is enabled on a platform that does not implement it.
+**Note**: JIT-support normally guarantees a non-NULL code pointer ("kernel") if the request is according to the [limitations](https://github.com/libxsmm/libxsmm/wiki/Q&A#what-is-a-small-matrix-multiplication) (user-code is not asked to check for a NULL-kernel), which does not hold true if JIT is enabled on a platform that does not implement it.
 
 ### TinyCC
 
@@ -87,7 +87,7 @@ make PLATFORM=1 CC=xlc CXX=xlc++ FC=xlf
 
 ### Cross-compilation for ARM
 
-ARM AArch64 is regularly [supported](https://github.com/hfp/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires aforementioned `PLATFORM=1` to unlock compilation (similar to 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not be confused with supporting 32-bit ARM architectures.
+ARM AArch64 is regularly [supported](https://github.com/libxsmm/libxsmm/wiki/Compatibility#arm-aarch64). However, 32-bit ARM requires aforementioned `PLATFORM=1` to unlock compilation (similar to 32-bit Intel Architecture). Unlocking compilation for 32-bit ARM is not be confused with supporting 32-bit ARM architectures.
 
 ```bash
 make PLATFORM=1 AR=arm-linux-gnueabi-ar \

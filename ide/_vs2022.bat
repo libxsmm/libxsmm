@@ -11,6 +11,6 @@ IF EXIST C:\blaze\blaze\Blaze.h (
   SET BLAZEROOT=C:\blaze
 )
 
-CALL "%~d0%~p0_vs.bat" 2019
+CALL "%~d0%~p0_vs.bat" 2022
 
 ENDLOCAL

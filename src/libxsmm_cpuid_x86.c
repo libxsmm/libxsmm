@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -19,19 +19,19 @@
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
 #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
-#   define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) do { \
       unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
       (EAX) = (int)libxsmm_xgetbv_; \
       (EDX) = (int)(libxsmm_xgetbv_ >> 32); \
-    }
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+    } while(0)
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) do { \
       int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
       __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
       (EAX) = (unsigned int)libxsmm_cpuid_x86_[0]; \
       (EBX) = (unsigned int)libxsmm_cpuid_x86_[1]; \
       (ECX) = (unsigned int)libxsmm_cpuid_x86_[2]; \
       (EDX) = (unsigned int)libxsmm_cpuid_x86_[3]; \
-    }
+    } while(0)
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
       LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */
@@ -59,6 +59,38 @@
 
 #define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
 
+#if defined(LIBXSMM_PLATFORM_X86)
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
+# if defined(__linux__)
+#  include <sys/syscall.h>
+#  include <unistd.h>
+#  if !defined(LIBXSMM_BUILD) || (1 >= (LIBXSMM_BUILD))
+LIBXSMM_EXTERN long syscall(long number, ...) LIBXSMM_THROW;
+#  endif
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
+{
+  unsigned long bitmask = 0;
+  long status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
+  if (0 != status) return -1;
+  if (bitmask & (1<<18)) return 0;
+
+  status = syscall(SYS_arch_prctl, 0x1023, 18);
+  if (0 != status) return -1; /* setup failed */
+  status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
+
+  /* setup failed */
+  if (0 != status || !(bitmask & (1<18))) return -1;
+
+  /* setup successfull */
+  return 0;
+}
+# else
+LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
+{
+  return -1;
+}
+# endif
+#endif
 
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
@@ -132,6 +164,18 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           else feature_cpu = LIBXSMM_X86_SSE42;
         }
         else feature_cpu = LIBXSMM_X86_SSE3;
+      }
+      /* enable AMX state in the OS on SPR and later */
+      if (feature_cpu >= LIBXSMM_X86_AVX512_SPR) {
+        if (0 != libxsmm_cpuid_x86_amx_enable()) {
+          static int error_once = 0;
+          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
+            fprintf(stderr, "LIBXSMM WARNING: AMX state allocation in the OS failed!\n");
+          }
+          feature_cpu = LIBXSMM_X86_AVX512_CLX;
+        }
       }
 # if !defined(LIBXSMM_INTRINSICS_DEBUG)
       LIBXSMM_ASSERT_MSG(LIBXSMM_STATIC_TARGET_ARCH <= LIBXSMM_MAX(LIBXSMM_X86_GENERIC, feature_cpu), "missed detecting ISA extensions");

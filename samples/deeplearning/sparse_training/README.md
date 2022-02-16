@@ -5,7 +5,7 @@
 1. Resnet - ported from [link](https://pytorch.org/vision/stable/models.html)
 2. Transformer - ported from [link](https://github.com/pytorch/fairseq)
 3. DLRM - ported from [link](https://github.com/facebookresearch/dlrm)
-4. PCL_MLP - A python extension of the `torch.nn.Linear` module that uses efficient sparse JIT kernels for matrix multiplication (supports forward, backward and update pass) - ported from [link](https://github.com/hfp/libxsmm/tree/master/samples/deeplearning/sparse_weight_mult)
+4. PCL_MLP - A python extension of the `torch.nn.Linear` module that uses efficient sparse JIT kernels for matrix multiplication (supports forward, backward and update pass) - ported from [link](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/sparse_weight_mult)
 
 ## Features
 

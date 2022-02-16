@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Xing Liu (Intel Corp.)
@@ -76,13 +76,13 @@ void BlockSpMatStep2(int K, int C, int KB, int CB, unsigned int *colptr,
 }
 
 int main(int argc, char **argv) {
-    int N = (argc > 1) ? atoi(argv[1]) : 2048;
-    int C = (argc > 2) ? atoi(argv[2]) : 512;
-    int K = (argc > 3) ? atoi(argv[3]) : 512;
-    int NB = (argc > 4) ? atoi(argv[4]) : 32;
-    int CB = (argc > 5) ? atoi(argv[5]) : 32;
-    int KB = (argc > 6) ? atoi(argv[6]) : 32;
-    int nb = (argc > 7) ? atoi(argv[7]) : 16;
+    libxsmm_blasint N = (argc > 1) ? atoi(argv[1]) : 2048;
+    libxsmm_blasint C = (argc > 2) ? atoi(argv[2]) : 512;
+    libxsmm_blasint K = (argc > 3) ? atoi(argv[3]) : 512;
+    libxsmm_blasint NB = (argc > 4) ? atoi(argv[4]) : 32;
+    libxsmm_blasint CB = (argc > 5) ? atoi(argv[5]) : 32;
+    libxsmm_blasint KB = (argc > 6) ? atoi(argv[6]) : 32;
+    libxsmm_blasint nb = (argc > 7) ? atoi(argv[7]) : 16;
     double sparse_frac = (argc > 8) ? atof(argv[8]) : 0.90;
     unsigned int REPS = (argc > 9) ? atoi(argv[9]) : 10;
     if (N < NB ||
@@ -98,11 +98,9 @@ int main(int argc, char **argv) {
         REPS <= 0) {
         return -1;
     }
-    int l_n, l_c, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
-    int i, k, n, c;
+    libxsmm_blasint l_n, l_c, l_nn, l_cc, l_nnn, l_k, l_kk, blk_idx;
+    libxsmm_blasint i, k, n, c;
 
-    libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-    int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
     float *l_A = (float *)libxsmm_aligned_malloc(sizeof(float) * N * C, 64);
     float *l_B = (float *)libxsmm_aligned_malloc(sizeof(float) * C * K, 64);
     float *l_C = (float *)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
@@ -111,6 +109,10 @@ int main(int argc, char **argv) {
     LIBXSMM_VLA_DECL(5, float, l_p_A, l_A, C / CB, NB / nb, CB, nb);
     LIBXSMM_VLA_DECL(5, float, l_p_C, l_C, K / KB, NB / nb, KB, nb);
     LIBXSMM_VLA_DECL(5, float, l_p_C_gold, l_C_gold, K / KB, NB / nb, KB, 16);
+
+    const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+
     /* touch A */
     for (l_n = 0; l_n < N / NB; ++l_n) {
         for (l_c = 0; l_c < C / CB; ++l_c) {
@@ -224,33 +226,31 @@ int main(int argc, char **argv) {
         }
     }
     /* FWD */
-    float alpha = 1.0;
-    float beta = 1.0;
-    libxsmm_descriptor_blob l_xgemm_blob;
-    libxsmm_gemm_descriptor **l_xgemm_desc =
-        (libxsmm_gemm_descriptor **)libxsmm_aligned_malloc(
-            num_blocks * sizeof(libxsmm_gemm_descriptor *), 64);
-    libxsmm_smmfunction *mykernel =
-        (libxsmm_smmfunction *)libxsmm_aligned_malloc(
-            num_blocks * sizeof(libxsmm_smmfunction), 64);
+    libxsmm_gemmfunction *mykernel =
+        (libxsmm_gemmfunction *)libxsmm_aligned_malloc(
+            num_blocks * sizeof(libxsmm_gemmfunction), 64);
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+            NB / nb, KB, CB, CB, 0, KB, LIBXSMM_DATATYPE(float),
+            LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
+    libxsmm_gemm_param gemm_param;
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
+
     for (blk_idx = 0; blk_idx < num_blocks; ++blk_idx) {
-        l_xgemm_desc[blk_idx] = libxsmm_gemm_descriptor_dinit(
-            &l_xgemm_blob, LIBXSMM_DATATYPE(float), NB / nb, KB, CB, CB,
-            0, KB, alpha, beta, flags, prefetch);
-        mykernel[blk_idx] =
-            libxsmm_create_packed_spxgemm_csc(l_xgemm_desc[blk_idx], nb, b_colptr[blk_idx],
-                                    b_rowidx[blk_idx],
-                                    (const void *)b_values[blk_idx]).smm;
+        mykernel[blk_idx] = libxsmm_create_packed_spgemm_csc_v2(
+            gemm_shape, l_flags, l_prefetch_flags, nb,
+            b_colptr[blk_idx], b_rowidx[blk_idx], (const void *)b_values[blk_idx]);
     }
 #ifdef _OPENMP
-#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c,gemm_param)
 #endif
     for (k = 0; k < K / KB; ++k) {
         for (n = 0; n < N / NB; ++n) {
             for (c = 0; c < C / CB; ++c) {
-                mykernel[k * C / CB + c](&(l_A[(n * C / CB + c) * CB * NB]),
-                                         b_values[k * C / CB + c],
-                                         &(l_C[(n * K / KB + k) * NB * KB]));
+                gemm_param.a.primary = &(l_A[(n * C / CB + c) * CB * NB]);
+                gemm_param.b.primary = b_values[k * C / CB + c];
+                gemm_param.c.primary = &(l_C[(n * K / KB + k) * NB * KB]);
+
+                mykernel[k * C / CB + c]( &gemm_param );
             }
         }
     }
@@ -266,15 +266,16 @@ int main(int argc, char **argv) {
     unsigned long long l_start = libxsmm_timer_tick();
     for (i = 0; i < (int)REPS; ++i) {
 #ifdef _OPENMP
-#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c)
+#       pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c,gemm_param)
 #endif
         for (k = 0; k < K / KB; ++k) {
             for (n = 0; n < N / NB; ++n) {
                 for (c = 0; c < C / CB; ++c) {
-                    mykernel[k * C / CB + c](
-                        &(l_A[(n * C / CB + c) * CB * NB]),
-                        b_values[k * C / CB + c],
-                        &(l_C[(n * K / KB + k) * NB * KB]));
+                    gemm_param.a.primary = &(l_A[(n * C / CB + c) * CB * NB]);
+                    gemm_param.b.primary = b_values[k * C / CB + c];
+                    gemm_param.c.primary = &(l_C[(n * K / KB + k) * NB * KB]);
+
+                    mykernel[k * C / CB + c]( &gemm_param );
                 }
             }
         }

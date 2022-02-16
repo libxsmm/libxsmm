@@ -44,7 +44,7 @@ MNK ?= 0
 CACHE ?= 1
 
 # Issue software prefetch instructions (see end of section
-# https://github.com/hfp/libxsmm/#generator-driver)
+# https://github.com/libxsmm/libxsmm/#generator-driver)
 # Use the enumerator 1...6, or the exact strategy
 # name pfsigonly...AL2_BL2viaC.
 # 0: no prefetch (nopf)
@@ -113,6 +113,13 @@ SHARED ?= 0
 #  0: disable intercepted malloc at compile-time
 # >0: enable intercepted malloc
 MALLOC ?= 0
+
+# 0: disable moderating memory allocations
+# 1: moderated memory alignment
+ALIGN ?= 0
+ifneq (0,$(ALIGN))
+  DFLAGS += -DLIBXSMM_MALLOC_MOD
+endif
 
 # Determines the kind of routine called for intercepted GEMMs
 # >=1 and odd : sequential and non-tiled (small problem sizes only)
@@ -752,7 +759,7 @@ $(1): $(2) $(3) $(dir $(1))/.make
 		if [ "2" = "$(INTRINSICS)" ]; then \
 			echo "--------------------------------------------------------------"; \
 			echo "In case of assembler error, perhaps GNU Binutils are outdated."; \
-			echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
+			echo "See https://github.com/libxsmm/libxsmm#outdated-binutils"; \
 			echo "--------------------------------------------------------------"; \
 		fi; \
 		false; \
@@ -1331,15 +1338,15 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		> $@
 
 $(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
-	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md"
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Compatibility.md"
 	@echo >> $@
 
 $(DOCDIR)/libxsmm_valid.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
-	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md"
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Validation.md"
 	@echo >> $@
 
 $(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
-	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/hfp/libxsmm/Q&A.md"
+	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Q&A.md"
 	@echo >> $@
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
@@ -1393,7 +1400,7 @@ $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
-		-e '1s/^/# [LIBXSMM Samples](https:\/\/github.com\/hfp\/libxsmm\/raw\/master\/documentation\/libxsmm_samples.pdf)\n\n/' \
+		-e '1s/^/# [LIBXSMM Samples](https:\/\/github.com\/libxsmm\/libxsmm\/raw\/master\/documentation\/libxsmm_samples.pdf)\n\n/' \
 		> $@
 
 $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
@@ -1680,7 +1687,7 @@ ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
 	@echo "Description: Matrix operations and deep learning primitives" >> $@
-	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(ALIAS_PREFIX)" >> $@
@@ -1702,7 +1709,7 @@ endif
 $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Name: libxsmm/f" > $@
 	@echo "Description: LIBXSMM for Fortran" >> $@
-	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(ALIAS_PREFIX)" >> $@
@@ -1716,7 +1723,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Name: libxsmm/ext" > $@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >> $@
-	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(ALIAS_PREFIX)" >> $@
@@ -1739,7 +1746,7 @@ endif
 $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Name: libxsmm/noblas" > $@
 	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >> $@
-	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(ALIAS_PREFIX)" >> $@
@@ -1793,8 +1800,8 @@ deb:
 		cd ..; \
 		echo "Source: $${ARCHIVE_NAME}" > control; \
 		echo "Section: libs" >> control; \
-		echo "Homepage: https://github.com/hfp/libxsmm" >> control; \
-		echo "Vcs-Git: https://github.com/hfp/libxsmm/libxsmm.git" >> control; \
+		echo "Homepage: https://github.com/libxsmm/libxsmm/" >> control; \
+		echo "Vcs-Git: https://github.com/libxsmm/libxsmm/libxsmm.git" >> control; \
 		echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
 		echo "Priority: optional" >> control; \
 		echo "Build-Depends: debhelper (>= 9)" >> control; \
@@ -1805,12 +1812,12 @@ deb:
 		echo "Architecture: amd64" >> control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm" \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm/" \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
-		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE}" \
+		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm/releases/tags/$${VERSION_ARCHIVE}" \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \

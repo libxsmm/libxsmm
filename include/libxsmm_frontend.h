@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -232,7 +232,7 @@
   | (~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B) & (DEFAULT))
 
 /** Inlinable GEMM exercising the compiler's code generation (macro template). TODO: only NN is supported and SP/DP matrices. */
-#define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
   const char libxsmm_inline_xgemm_transa_ = (char)(NULL != ((void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
@@ -264,7 +264,7 @@
       } \
     } \
   } \
-}
+} while(0)
 
 #if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
 # undef LIBXSMM_INIT
@@ -313,7 +313,7 @@
 #define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemv)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (macro template). */
-#define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
   const char libxsmm_blas_xgemm_transa_ = (char)(NULL != ((void*)(TRANSA)) ? (*(const char*)(TRANSA)) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS) ? 'n' : 't')); \
@@ -333,18 +333,18 @@
     &libxsmm_blas_xgemm_alpha_, (const ITYPE*)(A), &libxsmm_blas_xgemm_lda_, \
                                 (const ITYPE*)(B), &libxsmm_blas_xgemm_ldb_, \
      &libxsmm_blas_xgemm_beta_,       (ITYPE*)(C), &libxsmm_blas_xgemm_ldc_); \
-}
+} while(0)
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
   LIBXSMM_ASSERT(FN); FN(A, B, C)
 /* @TODO fix prefetch */
-#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
+#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) do { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
   LIBXSMM_ASSERT(FN); FN(A, B, C); \
-}
+} while(0)
 
 #if (0/*LIBXSMM_GEMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
@@ -386,7 +386,7 @@
  * LIBXSMM_XGEMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_XGEMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
-#define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) do { \
   const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS) | LIBXSMM_GEMM_XFLAGS(ITYPE, OTYPE) | ( NULL != (BETA) ? ((*(BETA) == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0) : 0 ); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
@@ -426,10 +426,10 @@
                              B, &libxsmm_xgemm_ldb_, \
        &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
   } \
-}
+} while(0)
 
 /** Helper macro to setup a matrix with some initial values. */
-#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
+#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
   /*const*/ double libxsmm_matinit_seed_ = (double)(SEED); /* avoid constant conditional */ \
   const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
   const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
@@ -463,7 +463,7 @@
       } \
     } \
   } \
-}
+} while(0)
 
 #define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
   LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)

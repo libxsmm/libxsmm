@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
@@ -782,35 +782,24 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
     i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
     gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
-    scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-    gemm_scratch_size += scratch_pad_size;
     if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-        i_micro_kernel_config->emulation_scratch_offset = 0;
-        gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
-        scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-        gemm_scratch_size += scratch_pad_size;
+      i_micro_kernel_config->emulation_scratch_offset = 0;
+      gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     }
   } else {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
       int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
       gemm_scratch_size = LIBXSMM_MAX(32*64, expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4/*i_micro_kernel_config->datatype_size*/);
-      scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-      gemm_scratch_size += scratch_pad_size;
     } else {
       /* Allocate scratch for stashing 32 zmms  */
       if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
         gemm_scratch_size = 32 * 64;
-        scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-        gemm_scratch_size += scratch_pad_size;
       }
     }
   }
 
-  if ( (LIBXSMM_GEMM_FLAG_TRANS_A & i_xgemm_desc->flags) > 0 ) {
-    transpose_scratch_size = i_xgemm_desc->m * i_xgemm_desc->k * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_xgemm_desc->datatype));
-    transpose_pad_size  = (transpose_scratch_size % 64 == 0) ? 0 : ((transpose_scratch_size + 63)/64) * 64 - transpose_scratch_size;
-    transpose_scratch_size += transpose_pad_size;
-  }
+  scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
+  gemm_scratch_size += scratch_pad_size;
 
   if (gemm_scratch_size > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, gemm_scratch_size );
@@ -2123,13 +2112,13 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
   if (i_micro_kernel_config->fused_bcolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * 2/*(i_micro_kernel_config->datatype_size/2)*/) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ( i_xgemm_desc->m  * 2/*(i_micro_kernel_config->datatype_size/2)*/) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
   if (i_micro_kernel_config->fused_scolbias == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, -( i_xgemm_desc->m  * 4/*i_micro_kernel_config->datatype_size*/) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_help_0, ( i_xgemm_desc->m  * 4/*i_micro_kernel_config->datatype_size*/) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 

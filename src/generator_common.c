@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
@@ -749,17 +749,27 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
+  io_gp_reg_mapping->gp_reg_param_struct = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_base = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_base = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_offset = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-/*  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;*/
+  io_gp_reg_mapping->gp_reg_b_offset = LIBXSMM_X86_GP_REG_UNDEF;
+  /*  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;*/
   io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_reduce_count = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_ptrs = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_ptrs = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_lda = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldb = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldc = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
@@ -767,28 +777,44 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
   io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
+  /* Auxiliary regs for sparsity in A support  */
+  io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
-  io_gp_reg_mapping->gp_reg_a = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_b = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_c = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_AARCH64_GP_REG_UNDEF;
-/*  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_AARCH64_GP_REG_UNDEF;*/
-  io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_reduce_count = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_reduce_loop = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_scf = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_AARCH64_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_param_struct = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_base = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_base = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_offset = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_offset = LIBXSMM_X86_GP_REG_UNDEF;
+  /*  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;*/
+  io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_reduce_count = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_ptrs = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_ptrs = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_lda = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldb = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_ldc = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
+  /* Auxiliary regs for sparsity in A support  */
+  io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
 LIBXSMM_API_INTERN
@@ -1146,6 +1172,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_BITMASK_REQUIRED:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "eltwise kernels with bitmasks are require for the chosen eltwise op (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_ILLEGAL_ABI:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "wrong ABI (classic, xgemm, xgemm_ext) was used in kernel jit request (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_TRANS_A:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

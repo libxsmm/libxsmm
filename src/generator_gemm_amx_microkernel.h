@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -30,18 +30,18 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
     unsigned int                       n_iters);
 
 LIBXSMM_API_INTERN
-void fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
+void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
 
 LIBXSMM_API_INTERN
-void prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     unsigned int tile_cols,
     unsigned int LD,
     unsigned int base_reg,
-    unsigned int offset);
+    long long    offset);
 
 LIBXSMM_API_INTERN
-void paired_tilestore( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -52,7 +52,7 @@ void paired_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
-void single_tilestore( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -62,22 +62,22 @@ void single_tilestore( libxsmm_generated_code*            io_generated_code,
     int                                n_cols);
 
 LIBXSMM_API_INTERN
-void decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     libxsmm_micro_kernel_config*       i_micro_kernel_config,
-    int                                a_offs,
-    unsigned int                       a_lookahead_offs,
-    unsigned int                       a_lookahead_br_index);
+    long long                          a_offs,
+    long long                          a_lookahead_offs,
+    long long                          a_lookahead_br_index);
 
 LIBXSMM_API_INTERN
-void normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
+void libxsmm_generator_gemm_amx_normT_32x16_bf16_ext_buf(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_micro_kernel_config*       i_micro_kernel_config_gemm,
     unsigned int                       i_gp_reg_in,
-    unsigned int                       i_offset_in,
-    unsigned int                       i_offset_out);
+    long long                          i_offset_in,
+    long long                          i_offset_out);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            io_generated_code,
@@ -87,10 +87,10 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                      libxsmm_blocking_info_t*           n_blocking_info,
                                                      libxsmm_blocking_info_t*           m_blocking_info,
-                                                     unsigned int                       offset_A,
-                                                     unsigned int                       offset_B,
+                                                     long long                          offset_A,
+                                                     long long                          offset_B,
                                                      unsigned int                       is_last_k,
-                                                     int                                i_brgemm_loop,
+                                                     long long                          i_brgemm_loop,
                                                      unsigned int                       fully_unrolled_brloop  );
 
 LIBXSMM_API_INTERN
@@ -101,8 +101,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                       libxsmm_blocking_info_t*           n_blocking_info,
                                                       libxsmm_blocking_info_t*           m_blocking_info,
-                                                      unsigned int                       A_offs,
-                                                      unsigned int                       B_offs,
+                                                      long long                          A_offs,
+                                                      long long                          B_offs,
                                                       unsigned int                       fully_unrolled_brloop );
 
 #endif /* GENERATOR_GEMM_AMX_MICROKERNEL_H */

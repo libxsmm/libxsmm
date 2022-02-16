@@ -8,11 +8,18 @@ else
   PYTHON=$(command -v python)
 fi
 
+if [ $# -ne 1 ]
+then
+  MAXM=101
+else
+  MAXM=$1
+fi
+
 ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(1,101), 18)
+randnum = rnd.sample(range(1,${MAXM}), 18)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:

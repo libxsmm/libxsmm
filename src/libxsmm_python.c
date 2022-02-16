@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -114,8 +114,7 @@ LIBXSMM_API PyMODINIT_FUNC initlibxsmm(void)
     "Library targeting Intel Architecture for small, dense or "
     "sparse matrix multiplications, and small convolutions."));
   PyModule_AddIntConstant(pymod, "VERSION_API", LIBXSMM_VERSION2(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR));
-  PyModule_AddIntConstant(pymod, "VERSION_ALL", LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR,
-                                                                LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+  PyModule_AddIntConstant(pymod, "VERSION_ALL", LIBXSMM_VERSION_NUMBER);
   PyModule_AddIntConstant(pymod, "VERSION_MAJOR", LIBXSMM_VERSION_MAJOR);
   PyModule_AddIntConstant(pymod, "VERSION_MINOR", LIBXSMM_VERSION_MINOR);
   PyModule_AddIntConstant(pymod, "VERSION_UPDATE", LIBXSMM_VERSION_UPDATE);
