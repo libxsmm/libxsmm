@@ -44,21 +44,39 @@ int main(void)
 
 #if defined(CHECK_PMALLOC)
   { /* check pooled malloc */
-    void* pool[4096];
-    char* storage[9*sizeof(pool)/sizeof(*pool)];
-    size_t num = sizeof(pool) / sizeof(*pool);
-    int i;
+    void* pool[128];
+    char storage[8*sizeof(pool)/sizeof(*pool)];
+    void* backup[sizeof(pool)];
+    const int npool = sizeof(pool) / sizeof(*pool);
+    size_t num = npool;
+    int i, j;
 
-    libxsmm_pmalloc_init(42, &num, pool, storage);
+    libxsmm_pmalloc_init(sizeof(storage) / num, &num, pool, storage);
+    memcpy(backup, pool, sizeof(pool));
+    for (i = 0; i < 1024; ++i) {
 # if defined(_OPENMP)
-#   pragma omp parallel for private(i) schedule(dynamic,1)
+#     pragma omp parallel for private(j) schedule(dynamic,1)
 # endif
-    for (i = 0; i < (sizeof(pool) / sizeof(*pool)); ++i) {
-      void *const p = libxsmm_pmalloc(pool, &num);
-      libxsmm_pfree(p, pool, &num);
+      for (j = 0; j < npool; ++j) {
+        void* const p = libxsmm_pmalloc(pool, &num);
+        libxsmm_pfree(p, pool, &num);
+      }
+      if (npool != num) break;
     }
-    if (sizeof(pool) != (num * sizeof(*pool))) ++nerrors;
+    if (npool == num) {
+      for (i = 0, num = 0; i < npool; ++i) {
+        const void* const p = backup[i];
+        for (j = 0; j < npool; ++j) {
+          if (p == pool[j]) {
+            ++num; break;
+          }
+        }
+      }
+      nerrors += (int)LIBXSMM_DELTA(npool, num);
+    }
+    else ++nerrors;
   }
+  if (0 != nerrors) FPRINTF(stderr, "Error: incorrect pmalloc!\n");
 #endif
 
 #if defined(CHECK_SETUP)
