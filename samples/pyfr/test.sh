@@ -10,12 +10,19 @@
 # Alexander Heinecke (Intel Corp.)
 ###############################################################################
 
-echo "Please use sufficient affinities when running this benchmark"
-echo "e.g.:"
-echo "export OMP_NUM_THREADS=X"
-echo "export KMP_AFFINITY=granularity=fine,compact,1,0"
-
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=2
 #export KMP_AFFINITY=granularity=fine,compact,1,0
 
-./pyfr_driver_asp_reg ./mats/p3/hex/m6-sp.mtx 48000 10000
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+for m in ./mats/p*/*/*-sp.mtx
+do
+  ./pyfr_driver_asp_reg $m 48000 10 > /dev/null
+  if [ $? -eq 0 ]
+  then
+    echo "$m passed!"
+  else
+    echo "${bold}$m failed!${normal}"
+  fi
+done
