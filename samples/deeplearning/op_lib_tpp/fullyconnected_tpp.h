@@ -19,7 +19,7 @@
 # include <omp.h>
 #endif
 
-typedef enum my_fc_fuse {
+typedef enum my_fc_eltw_fuse {
   MY_FC_ELTW_FUSE_NONE = 0,
   MY_FC_ELTW_FUSE_BIAS = 1,
   MY_FC_ELTW_FUSE_RELU = 2,
@@ -28,7 +28,7 @@ typedef enum my_fc_fuse {
   /* 5 is reserved for tanh + bias, see naive */
   MY_FC_ELTW_FUSE_RELU_WITH_MASK = 6,
   MY_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK = 7
-} my_fc_fuse;
+} my_fc_eltw_fuse;
 
 typedef enum my_pass {
   MY_PASS_FWD   = 1,
@@ -45,7 +45,7 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint bc;
   libxsmm_blasint bk;
   libxsmm_blasint threads;
-  my_fc_fuse fuse_type;
+  my_fc_eltw_fuse fuse_type;
   libxsmm_blasint fwd_bf;
   libxsmm_blasint fwd_2d_blocking;
   libxsmm_blasint fwd_row_teams;
@@ -74,7 +74,7 @@ typedef struct my_fc_bwd_config {
   libxsmm_blasint bc;
   libxsmm_blasint bk;
   libxsmm_blasint threads;
-  my_fc_fuse fuse_type;
+  my_fc_eltw_fuse fuse_type;
   libxsmm_blasint bwd_bf;
   libxsmm_blasint bwd_2d_blocking;
   libxsmm_blasint bwd_col_teams;
@@ -105,7 +105,7 @@ typedef struct my_fc_bwd_config {
 } my_fc_bwd_config;
 
 my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_fc_fuse fuse_type) {
+                                 libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_fc_eltw_fuse fuse_type) {
   my_fc_fwd_config res;
   libxsmm_blasint lda = bk;
   libxsmm_blasint ldb = bc;
@@ -481,7 +481,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 }
 
 my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
-    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_fc_fuse fuse_type) {
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_fc_eltw_fuse fuse_type) {
   my_fc_bwd_config res;
   libxsmm_blasint lda = bc;
   libxsmm_blasint ldb = bk;
