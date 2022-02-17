@@ -1342,7 +1342,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
   /* loop variables */
   libxsmm_blasint ofm1 = 0, mb1 = 0, ofm2 = 0;
 
-  //float *grad_output_ptr = (((cfg.fuse_type & MY_FC_FUSE_RELU) == MY_FC_FUSE_RELU) ? ((float*)scratch)+(cfg.C*cfg.K) : (float*)dout_act_ptr);
   float *grad_output_ptr = ( (cfg.fuse_type == MY_FC_FUSE_RELU || cfg.fuse_type == MY_FC_FUSE_BIAS_RELU ||
                               cfg.fuse_type == MY_FC_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_FC_FUSE_BIAS_RELU_WITH_MASK)
                               ? ((float*)scratch)+(cfg.C*cfg.K) : (float*)dout_act_ptr);
@@ -1359,7 +1358,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
   if (cfg.fuse_type == MY_FC_FUSE_RELU || cfg.fuse_type == MY_FC_FUSE_BIAS_RELU ||
       cfg.fuse_type == MY_FC_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_FC_FUSE_BIAS_RELU_WITH_MASK) {
-  //if ( (cfg.fuse_type & MY_FC_FUSE_RELU) == MY_FC_FUSE_RELU ) {
     for ( mb1ofm1 = eltwise_thr_begin; mb1ofm1 < eltwise_thr_end; ++mb1ofm1 ) {
       mb1  = mb1ofm1%nBlocksMB;
       ofm1 = mb1ofm1/nBlocksMB;
@@ -1376,7 +1374,6 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
 
   if (cfg.fuse_type == MY_FC_FUSE_BIAS || cfg.fuse_type == MY_FC_FUSE_BIAS_RELU ||
       cfg.fuse_type == MY_FC_FUSE_BIAS_RELU_WITH_MASK) {
-  //if ( (cfg.fuse_type & MY_FC_FUSE_BIAS) == MY_FC_FUSE_BIAS ) {
     for ( ofm1 = dbias_thr_begin; ofm1 < dbias_thr_end; ++ofm1 ) {
       eltwise_params.in.primary    = &LIBXSMM_VLA_ACCESS(4,  doutput, 0, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
       eltwise_params.out.primary   = &LIBXSMM_VLA_ACCESS(2,  dbias, ofm1, 0, cfg.bk);
