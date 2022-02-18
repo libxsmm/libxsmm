@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-          input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+          input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
     }
 
     matrix_copy_NCNC_to_NC( delinput_libxsmm, naive_libxsmm_delinput, 1, nImg, nIFm, bn, bc );
@@ -361,7 +361,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-            input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_PASS_BWD, 0, tid, scratch );
+            input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
       }
     }
     l_end = libxsmm_timer_tick();
@@ -379,6 +379,9 @@ int main(int argc, char* argv[])
   }
 
   /* deallocate data */
+  destroy_my_fc_fwd(&my_fc_fwd);
+  destroy_my_fc_bwd(&my_fc_bwd);
+
   if ( scratch != NULL ) {
     libxsmm_free(scratch);
   }

@@ -30,12 +30,12 @@ typedef enum my_fc_eltw_fuse {
   MY_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK = 7
 } my_fc_eltw_fuse;
 
-typedef enum my_pass {
-  MY_PASS_FWD   = 1,
-  MY_PASS_BWD_D = 2,
-  MY_PASS_BWD_W = 4,
-  MY_PASS_BWD   = 6
-} my_pass;
+typedef enum my_fc_pass {
+  MY_FC_PASS_FWD   = 1,
+  MY_FC_PASS_BWD_D = 2,
+  MY_FC_PASS_BWD_W = 4,
+  MY_FC_PASS_BWD   = 6
+} my_fc_pass;
 
 typedef struct my_fc_fwd_config {
   libxsmm_blasint N;
@@ -1173,7 +1173,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
 
 void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
-    float* dbias_ptr, const unsigned char* relu_ptr, my_pass pass, int start_tid, int my_tid, void* scratch ) {
+    float* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */
   const libxsmm_blasint bn = cfg.bn;
   const libxsmm_blasint bk = cfg.bk;
@@ -1252,7 +1252,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
 
-  if ( (pass & MY_PASS_BWD_D) == MY_PASS_BWD_D ) {
+  if ( (pass & MY_FC_PASS_BWD_D) == MY_FC_PASS_BWD_D ) {
     const libxsmm_blasint use_2d_blocking = cfg.bwd_2d_blocking;
 
     /* number of tasks that could be run in parallel */
@@ -1373,7 +1373,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
 
-  if ( (pass & MY_PASS_BWD_W) == MY_PASS_BWD_W ) {
+  if ( (pass & MY_FC_PASS_BWD_W) == MY_FC_PASS_BWD_W ) {
     /* number of tasks that could be run in parallel */
     const libxsmm_blasint ofm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ofm_subtasks;
     const libxsmm_blasint ifm_subtasks = (cfg.upd_2d_blocking == 1) ? 1 : cfg.ifm_subtasks;
@@ -1487,3 +1487,10 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_p
   }
 }
 
+void destroy_my_fc_fwd(my_fc_fwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+}
+
+void destroy_my_fc_bwd(my_fc_bwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+}
