@@ -651,6 +651,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel (unsigned int opcode) {
+  int result = 0;
+  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 int libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel (unsigned int opcode) {
   int result = 0;
   if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) ||
@@ -711,6 +721,10 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_
         cur_node->tmp.n = 1;
         cur_node->tmp.ld = cur_node->le->tmp.m;
       }
+    } else if ( libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(cur_node->info.u_op.type) > 0 ) {
+      cur_node->tmp.m = cur_node->le->tmp.m;
+      cur_node->tmp.n = 1;
+      cur_node->tmp.ld = cur_node->le->tmp.m;
     } else if ( libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_node->info.u_op.type) > 0 ) {
       cur_node->tmp.m = 1;
       cur_node->tmp.n = 1;
