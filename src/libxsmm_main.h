@@ -231,9 +231,9 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   /** Denotes of optional eltwise data-type */
   unsigned char meltw_datatype_aux;
   /** multipurpose 64-bit field, currently used for: a) stride_a in brgemm */
-  unsigned long long c1;
+  long long c1;
   /** multipurpose 64-bit field, currently used for: a) stride_b in brgemm */
-  unsigned long long c2;
+  long long c2;
   /** multipurpose 8-bit field, currently used for: a) unroll hint in brgemm */
   unsigned char c3;
   /** LDx, LDy, LDz,  additional meltw LDs */
@@ -821,7 +821,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int ldc;
   int N_chunksize;
   double* a_dense;
-  libxsmm_dmmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
@@ -832,7 +832,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
   int ldc;
   int N_chunksize;
   float* a_dense;
-  libxsmm_smmfunction kernel;
+  libxsmm_gemmfunction kernel;
 };
 
 /** Packed structure storing the mateltw argument description. */

@@ -128,7 +128,6 @@ void eqn1_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
 
   gemm_fp32(C, D, B, 1.0,
             m_C, n_D, n_C,
@@ -291,7 +290,7 @@ int main( int argc, char* argv[] ) {
   for (j = 0; j < n_tensors; j++) {
     arg_shape[j].m = m_i[j];
     arg_shape[j].n = n_i[j];
-    arg_shape[j].ld = &ld_i[j];
+    arg_shape[j].ld = ld_i[j];
     if (j == n_tensors-1) {
       arg_shape[j].type = out_dt;
     } else {
@@ -597,7 +596,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_arg_shape  colbias_shape_fused;
     colbias_shape_fused.m = m_i[2];
     colbias_shape_fused.n = 1;
-    colbias_shape_fused.ld = &m_i[2];
+    colbias_shape_fused.ld = m_i[2];
     colbias_shape_fused.type = in_dt;
 
     my_eqn5 = libxsmm_matrix_eqn_create();
@@ -901,7 +900,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_meqn_arg_shape  colbias_shape_bf16;
     colbias_shape_bf16.m = m_i[2];
     colbias_shape_bf16.n = 1;
-    colbias_shape_bf16.ld = &m_i[2];
+    colbias_shape_bf16.ld = m_i[2];
     colbias_shape_bf16.type = in_dt;
 
     my_eqn4 = libxsmm_matrix_eqn_create();

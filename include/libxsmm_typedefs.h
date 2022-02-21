@@ -261,7 +261,10 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64,
   LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES   = 128,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS           = 512,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS           = 1024,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -315,7 +318,9 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4   = 47,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8   = 48,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
-  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50
+  LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
+  LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -713,6 +718,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* primary;
   void* secondary;
   void* tertiary;
+  void* quaternary;
 } libxsmm_matrix_arg;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg_v2 {
@@ -732,15 +738,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_op_arg {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_arg_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ld;                  /* leading dimension of first input, if NULL induced from M,K */
+  libxsmm_blasint ld;                   /* leading dimension of input */
   libxsmm_datatype type;                /* datatype of input */
 } libxsmm_meqn_arg_shape;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -749,9 +755,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldi2;                 /* leading dimension of second input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -760,10 +766,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape {
   libxsmm_blasint m;                    /* number of rows */
   libxsmm_blasint n;                    /* number of cols */
-  libxsmm_blasint* ldi;                 /* leading dimension of first input, if NULL induced from M,K */
-  libxsmm_blasint* ldi2;                /* leading dimension of second input, if NULL induced from M,K */
-  libxsmm_blasint* ldi3;                /* leading dimension of third input, if NULL induced from K,N */
-  libxsmm_blasint* ldo;                 /* leading dimension of output, if NULL induced from M,N */
+  libxsmm_blasint ldi;                  /* leading dimension of first input */
+  libxsmm_blasint ldi2;                 /* leading dimension of second input */
+  libxsmm_blasint ldi3;                 /* leading dimension of third input */
+  libxsmm_blasint ldo;                  /* leading dimension of output */
   libxsmm_datatype in_type;             /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
@@ -910,9 +916,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
   libxsmm_blasint m;                    /* number of rows of A and C */
   libxsmm_blasint n;                    /* number of cols of C and B */
   libxsmm_blasint k;                    /* number of cols of A and number of rows of B */
-  libxsmm_blasint* lda;                 /* leading dimension of A, if NULL induced from M,K */
-  libxsmm_blasint* ldb;                 /* leading dimension of B, if NULL induced from K,N */
-  libxsmm_blasint* ldc;                 /* leading dimension of C, if NULL induced from M,N */
+  libxsmm_blasint lda;                  /* leading dimension of A */
+  libxsmm_blasint ldb;                  /* leading dimension of B */
+  libxsmm_blasint ldc;                  /* leading dimension of C */
   libxsmm_datatype a_in_type;           /* datatype of A */
   libxsmm_datatype b_in_type;           /* datatype of B */
   libxsmm_datatype out_type;            /* datatype of C */
@@ -921,8 +927,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_shape {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_config {
   libxsmm_gemm_batch_reduce_type br_type;  /* specifying the type of the BRGEMM operation */
-  unsigned long long br_stride_a_hint;     /* mandatory hint for strided BRGEMM */
-  unsigned long long br_stride_b_hint;     /* mandatory hint for strided BRGEMM */
+  libxsmm_blasint br_stride_a_hint;        /* mandatory hint for strided BRGEMM */
+  libxsmm_blasint br_stride_b_hint;        /* mandatory hint for strided BRGEMM */
   unsigned char br_unroll_hint;            /* optional hint containing the BR count */
 } libxsmm_gemm_batch_reduce_config;
 

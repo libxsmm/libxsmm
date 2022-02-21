@@ -1085,7 +1085,7 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
         int min_mate_C_id = (i_micro_kernel_config->_C_tile_id[i] < i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]]) ? i_micro_kernel_config->_C_tile_id[i] : i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]];
         int im_store = min_mate_C_id / n_tiles;
         int in_store = min_mate_C_id % n_tiles;
-        paired_tilestore_emu( io_generated_code,
+        libxsmm_generator_gemm_amx_paired_tilestore_emu( io_generated_code,
             i_gp_reg_mapping,
             i_micro_kernel_config,
             i_xgemm_desc,
@@ -1096,7 +1096,7 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
             n_blocking_info->sizes[in_store]);
       }
     } else {
-      single_tilestore_emu( io_generated_code,
+      libxsmm_generator_gemm_amx_single_tilestore_emu( io_generated_code,
           i_gp_reg_mapping,
           i_micro_kernel_config,
           i_xgemm_desc,
@@ -1567,7 +1567,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info ) {
 
-  void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, unsigned int, unsigned int, unsigned int);
+  void (*l_generator_kloop)(libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,  libxsmm_blocking_info_t*,  libxsmm_blocking_info_t*, long long, long long, unsigned int);
   unsigned int l_m_done = 0;
   unsigned int l_m_count = 0;
   unsigned int l_m_blocking = m_blocking_info[0].blocking;
@@ -1577,7 +1577,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_START = 0;
   unsigned int NON_UNROLLED_BR_LOOP_LABEL_END = 1;
   unsigned int i;
-  unsigned int A_offs = 0, B_offs = 0;
+  long long A_offs = 0, B_offs = 0;
 #if defined(LIBXSMM_GENERATOR_GEMM_AMX_EMU_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
@@ -1684,7 +1684,8 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
         /* Here is the K loop along with the microkernel */
         l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], A_offs, B_offs, 1);
 
-        /* In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+        /* @TODO This code is dead. In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+#if 0
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
@@ -1701,6 +1702,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
               i_gp_reg_mapping->gp_reg_a,
               1 );
         }
+#endif
       }
 
       if (i_xgemm_desc->c3 > 0) {
@@ -1811,7 +1813,8 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
       /* Here is the K loop along with the microkernel */
       l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], 0, 0, 0);
 
-      /* In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+      /* @TODO this code is dead: In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+#if 0
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
@@ -1828,6 +1831,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
             i_gp_reg_mapping->gp_reg_a,
             1 );
       }
+#endif
 
       if (i_micro_kernel_config->decompress_A == 1) {
         libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop);

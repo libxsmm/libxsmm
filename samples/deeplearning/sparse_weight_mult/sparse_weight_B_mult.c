@@ -14,16 +14,13 @@
 #include <libxsmm.h>
 
 int main(int argc, char* argv[]) {
-  unsigned int N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
-  unsigned int C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
-  unsigned int K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
-  unsigned int nb =    ( argc > 4 ) ? atoi(argv[4]) : 16;
+  libxsmm_blasint N =     ( argc > 1 ) ? atoi(argv[1]) : 64;
+  libxsmm_blasint C =     ( argc > 2 ) ? atoi(argv[2]) : 512;
+  libxsmm_blasint K =     ( argc > 3 ) ? atoi(argv[3]) : 32;
+  libxsmm_blasint nb =    ( argc > 4 ) ? atoi(argv[4]) : 16;
   double sparse_frac = ( argc > 5 ) ? atof(argv[5]) : 0.90;
   unsigned int REPS  = ( argc > 6 ) ? atoi(argv[6]) : 1;
-
-  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const float alpha = 1, beta = 1;
+  libxsmm_blasint NB = N / nb;
 
   unsigned int* l_colptr = NULL;
   unsigned int* l_rowidx = NULL;
@@ -37,8 +34,8 @@ int main(int argc, char* argv[]) {
   float* l_c_asm_csc = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float* l_c_asm_csr = (float*)libxsmm_aligned_malloc(sizeof(float) * N * K, 64);
   float l_max_error = 0.0;
-  unsigned int l_k, l_n;
-  unsigned int l_i, l_j, l_jj;
+  libxsmm_blasint l_k, l_n;
+  libxsmm_blasint l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(2, float, l_p_b_de, l_b_de, C);
   LIBXSMM_VLA_DECL(3, float, l_p_a, l_a, C, nb);
@@ -46,22 +43,25 @@ int main(int argc, char* argv[]) {
   LIBXSMM_VLA_DECL(3, float, l_p_c_asm_csr, l_c_asm_csr, K, nb);
   LIBXSMM_VLA_DECL(3, float, l_p_c_gold, l_c_gold, K, nb);
 
-  libxsmm_descriptor_blob l_xgemm_blob;
-  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csc = NULL;
-  LIBXSMM_MMFUNCTION_TYPE(float) mykernel_csr = NULL;
+  const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+      NB, K, C, C, 0, K, LIBXSMM_DATATYPE(float),
+      LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
+  libxsmm_gemm_param gemm_param;
+  libxsmm_gemmfunction mykernel_csc = NULL;
+  libxsmm_gemmfunction mykernel_csr = NULL;
 
   unsigned long long l_start, l_end;
   double l_total;
-  unsigned int NB;
   unsigned int nnz = 0;
+
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
   if (argc != 7 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
     return -1;
   }
-
-  NB = N / nb;
 
   /* touch A */
   for ( l_i = 0; l_i < NB; l_i++) {
@@ -154,25 +154,30 @@ int main(int argc, char* argv[]) {
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
-  l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_DATATYPE(float),
-    NB, K, C, C, 0, K, alpha, beta, flags, prefetch);
-
   /* sparse routine */
-  mykernel_csc = libxsmm_create_packed_spxgemm_csc(l_xgemm_desc, nb, l_colptr, l_rowidx, (const void*)l_b_sp_csc).smm;
-  mykernel_csr = libxsmm_create_packed_spxgemm_csr(l_xgemm_desc, nb, l_rowptr, l_colidx, (const void*)l_b_sp_csr).smm;
+  mykernel_csc = libxsmm_create_packed_spgemm_csc_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
+    l_colptr, l_rowidx, (const void*)l_b_sp_csc);
+  mykernel_csr = libxsmm_create_packed_spgemm_csr_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
+    l_rowptr, l_colidx, (const void*)l_b_sp_csr);
 
+  gemm_param.a.primary = l_a;
+  gemm_param.b.primary = l_b_sp_csc;
+  gemm_param.c.primary = l_c_asm_csc;
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel_csc( l_a, l_b_sp_csc, l_c_asm_csc );
+    mykernel_csc( &gemm_param );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse (asm, csc)\n", l_total);
   printf("%f GFLOPS for sparse (asm, csc)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
+  gemm_param.a.primary = l_a;
+  gemm_param.b.primary = l_b_sp_csr;
+  gemm_param.c.primary = l_c_asm_csr;
   l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel_csr( l_a, l_b_sp_csr, l_c_asm_csr );
+    mykernel_csr( &gemm_param );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
