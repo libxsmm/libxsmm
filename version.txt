@@ -1,1 +1,1 @@
-dnn_refactor-1.17-2206
+dev/kvoronin/pooling_tpp_minor_fix-1.17-2207

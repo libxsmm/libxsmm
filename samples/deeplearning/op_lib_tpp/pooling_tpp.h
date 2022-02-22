@@ -96,9 +96,9 @@ my_pooling_fwd_config setup_my_pooling_fwd( const libxsmm_blasint N, const libxs
                                             const libxsmm_blasint bc, const libxsmm_blasint threads, const my_pooling_type pool_type,
                                             const libxsmm_datatype datatype_in, const libxsmm_datatype datatype_out, const libxsmm_datatype datatype_comp ) {
   my_pooling_fwd_config res;
-  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-  libxsmm_meltw_unary_shape unary_shape;
-  libxsmm_meltw_binary_flags binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  libxsmm_bitfield unary_flags  = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_bitfield binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+  libxsmm_meltw_unary_shape  unary_shape;
   libxsmm_meltw_binary_shape binary_shape;
 
   /* setting args */
@@ -167,9 +167,9 @@ my_pooling_bwd_config setup_my_pooling_bwd( const libxsmm_blasint N, const libxs
   libxsmm_meqn_arg_shape          arg_shape;
   libxsmm_blasint                 eqn_idx = 0;
   libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
-  libxsmm_meltw_unary_flags       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_bitfield                unary_flags  = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+  libxsmm_bitfield                binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   libxsmm_meltw_unary_shape       unary_shape;
-  libxsmm_meltw_binary_flags      binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   libxsmm_meltw_binary_shape      binary_shape;
 
   /* setting args */
@@ -626,3 +626,12 @@ void my_pooling_bwd_exec( const my_pooling_bwd_config cfg, void* din_act_ptr, co
   }
 }
 
+void destroy_my_pooling_fwd(my_pooling_fwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+
+}
+
+void destroy_my_pooling_bwd(my_pooling_bwd_config* cfg) {
+  libxsmm_barrier_destroy(cfg->barrier);
+
+}
