@@ -35,7 +35,9 @@ LIBXSMM_VLA_DECL(4, element_filter_type, decompressed_filter, (element_filter_ty
 
 float* temp_output = (float*)handle->scratch + (handle->desc.threads * handle->desc.C * handle->bk)/2;
 LIBXSMM_VLA_DECL(4, float, output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 libxsmm_meltw_gemm_param gemm_eltwise_params;
+#endif
 libxsmm_gemm_ext_param  gemm_param_ext;
 
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE

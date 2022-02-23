@@ -12,22 +12,6 @@
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
 
-libxsmm_meltw_unary_type get_sparsity_type(unsigned int sparsity_factor) {
-  libxsmm_meltw_unary_type result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1;
-  if (sparsity_factor == 2) {
-    result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2;
-  } else if (sparsity_factor == 4) {
-    result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4;
-  } else if (sparsity_factor == 8) {
-    result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8;
-  } else if (sparsity_factor == 16) {
-    result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16;
-  } else if (sparsity_factor == 32) {
-    result = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32;
-  }
-  return result;
-}
-
 LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsmm_dnn_fullyconnected_desc fullyconnected_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_fullyconnected* handle = 0;
 
@@ -787,6 +771,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
               libxsmm_gemm_ext_unary_argops l_argops;
               libxsmm_gemm_ext_binary_postops l_postops;
               libxsmm_blasint ldap;
+              libxsmm_meltw_unary_type sparsity_type;
 
               ldap = handle->bk;
               l_shape.m = handle->bk;
@@ -809,7 +794,20 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
 
               handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
 
-              l_argops.ap_unary_type  = get_sparsity_type((unsigned int)handle->sparsity_factor_A);
+              sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1;
+              if (handle->sparsity_factor_A == 2) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2;
+              } else if (handle->sparsity_factor_A == 4) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4;
+              } else if (handle->sparsity_factor_A == 8) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8;
+              } else if (handle->sparsity_factor_A == 16) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16;
+              } else if (handle->sparsity_factor_A == 32) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32;
+              }
+
+              l_argops.ap_unary_type  = sparsity_type;
               l_argops.store_ap = 1;
               l_argops.ldap = &ldap;
               handle->sparse_gemm9.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
