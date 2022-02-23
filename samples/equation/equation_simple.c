@@ -13,8 +13,25 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#define EXPANSION_FACTOR 8
 
 #define EPS 1.19209290e-03F
+
+void create_unique_random_array(unsigned long long *inout_array, int n) {
+  if (n > 1)
+  {
+    int i;
+    for (i = 0; i < n; i++) {
+      inout_array[i] = i;
+    }
+    for (i = 0; i < n - 1; i++) {
+      int j = i + rand() / (RAND_MAX / (n - i) + 1);
+      unsigned long long t = inout_array[j];
+      inout_array[j] = inout_array[i];
+      inout_array[i] = t;
+    }
+  }
+}
 
 int unequal_fp32_vals(float a, float b) {
   if (fabs(a-b) < EPS) {
@@ -68,6 +85,17 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
   }
 }
 
+void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, unsigned int *cols_ind_array, float *out) {
+  libxsmm_blasint i, j, ind;
+  for ( j = 0; j < M; ++j ) {
+    out[j] = 0.0;
+    for ( i = 0; i < N; ++i ) {
+      ind = cols_ind_array[i];
+      out[j] += arg0[ind * ld + j];
+    }
+  }
+}
+
 void eqn0_bf16bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat16 *bf16_arg0, libxsmm_bfloat16 *bf16_arg1, libxsmm_bfloat16 *bf16_arg2, libxsmm_bfloat16* bf16_arg3, libxsmm_bfloat16 *bf16_out) {
   libxsmm_blasint i, j;
 
@@ -84,8 +112,11 @@ void eqn0_bf16bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, lib
       Arg2 = bf16_hp.f;
       bf16_hp.i[1] = bf16_arg3[(i*ld)+j];
       Arg3 = bf16_hp.f;
-
+#if 0
       res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+#else
+      res = (Arg0 + 1.0f + Arg1) * ((Arg2*Arg2) + Arg3);
+#endif
       libxsmm_rne_convert_fp32_bf16( &res, &bf16_out[(i*ld)+j], 1 );
     }
   }
@@ -129,8 +160,8 @@ void eqn0_f32bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, floa
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint my_eqn0; /*, my_eqn1*/;
-  libxsmm_matrix_eqn_function func0; /*, func1;*/
+  libxsmm_blasint my_eqn0, my_eqn1;
+  libxsmm_matrix_eqn_function func0, func1;
   libxsmm_blasint i, j, s, it;
   libxsmm_matrix_eqn_param eqn_param;
   unsigned long long l_start, l_end;
@@ -140,19 +171,34 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_arg arg_array[4];
   libxsmm_bfloat16 *bf16_arg0, *bf16_arg1, *bf16_arg2, *bf16_arg3, *bf16_out, *bf16_eqn_out;
   libxsmm_matrix_arg bf16_arg_array[4];
+  libxsmm_matrix_eqn_arg_metadata arg_metadata;
+  libxsmm_matrix_eqn_op_metadata  op_metadata;
+  libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
+  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
+  unsigned int       *cols_ind_array;
+  unsigned long long *cols_ind_array_64b;
+  unsigned long long *unique_random_array;
+  float              *large_input;
+  libxsmm_bfloat16   *large_input_bf16;
+
   int M = 64;
   int N = 64;
+  int large_N = EXPANSION_FACTOR * N;
   int ld = 64;
   int iters = 100;
   int datatype_mode = 0;
+  int idx_type = 0;
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
 
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
   if ( argc > 4 ) datatype_mode = atoi(argv[4]);
   if ( argc > 5 ) iters = atoi(argv[5]);
+  if ( argc > 6 ) idx_type = atoi(argv[6]);
+  large_N = EXPANSION_FACTOR * N;
 
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
@@ -174,6 +220,11 @@ int main( int argc, char* argv[] ) {
   arg3 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   eqn_out  = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
+  cols_ind_array      = (unsigned int*) libxsmm_aligned_malloc( sizeof(unsigned int)*N,   64);
+  cols_ind_array_64b  = (unsigned long long*) libxsmm_aligned_malloc( sizeof(unsigned long long)*N,   64);
+  unique_random_array = (unsigned long long*) libxsmm_aligned_malloc( sizeof(unsigned long long)*large_N,   64);
+  large_input = (float*) libxsmm_aligned_malloc( sizeof(float)*large_N*ld,   64);
+  large_input_bf16 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*large_N*ld,   64);
 
   bf16_arg0 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
   bf16_arg1 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
@@ -199,6 +250,13 @@ int main( int argc, char* argv[] ) {
       libxsmm_rne_convert_fp32_bf16( &arg3[(i*ld)+j], &bf16_arg3[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &out[(i*ld)+j], &bf16_out[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &eqn_out[(i*ld)+j], &bf16_eqn_out[(i*ld)+j], 1 );
+    }
+  }
+
+  for ( i = 0; i < large_N; ++i ) {
+    for ( j = 0; j < ld; ++j ) {
+      large_input[(i*ld)+j] = (float)libxsmm_rng_f64();
+      libxsmm_rne_convert_fp32_bf16( &large_input[(i*ld)+j], &large_input_bf16[(i*ld)+j], 1 );
     }
   }
 
@@ -384,6 +442,85 @@ int main( int argc, char* argv[] ) {
   printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
 
   printf("Speedup is %.5g\n", l_total/l_total2);
+
+  if (datatype_mode == 0 || datatype_mode == 1) {
+    /* Now we test a gather-reduce equation */
+    create_unique_random_array(unique_random_array, large_N);
+    for (i = 0; i < N; i++) {
+      cols_ind_array_64b[i] = (unsigned long long) unique_random_array[i];
+      cols_ind_array[i] = (unsigned int) cols_ind_array_64b[i];
+    }
+    my_eqn1       = libxsmm_matrix_eqn_create();
+    arg_metadata  = libxsmm_create_matrix_eqn_arg_metadata(my_eqn1, 0);
+    op_metadata   = libxsmm_create_matrix_eqn_op_metadata(my_eqn1, -1);
+    arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( M, 1, ld, out_dt);
+    unary_flags   = (idx_type == 0) ? LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES : LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
+    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
+    func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
+
+    if (datatype_mode == 0) {
+      arg_array[0].primary   = large_input;
+      if (idx_type == 0) {
+        arg_array[0].secondary = cols_ind_array;
+      } else {
+        arg_array[0].secondary = cols_ind_array_64b;
+      }
+      eqn_param.output.primary = eqn_out;
+    } else if (datatype_mode == 1) {
+      bf16_arg_array[0].primary   = large_input_bf16;
+      if (idx_type == 0) {
+        bf16_arg_array[0].secondary = cols_ind_array;
+      } else {
+        bf16_arg_array[0].secondary = cols_ind_array_64b;
+      }
+      eqn_param.output.primary = bf16_eqn_out;
+    }
+
+    func1(&eqn_param);
+    eqn1_f32f32(M, N, ld, large_input, cols_ind_array, out);
+
+    /* compare */
+    printf("\n\n##########################################\n");
+    printf("#   Correctness  GATHER-REDUCE- Output   #\n");
+    printf("##########################################\n");
+    if (datatype_mode == 1) {
+      for (i = 0; i < M; i++) {
+        eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
+      }
+    }
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld, 1, out, eqn_out, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    eqn1_f32f32(M, N, ld, large_input, cols_ind_array, out);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      eqn1_f32f32(M, N, ld, large_input, cols_ind_array, out);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("Compiler equation time  = %.5g\n", ((double)(l_total)));
+
+    func1(&eqn_param);
+    l_start = libxsmm_timer_tick();
+    for (it = 0; it < iters; it++) {
+      func1(&eqn_param);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total2 = libxsmm_timer_duration(l_start, l_end);
+    printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
+
+    printf("Speedup is %.5g\n", l_total/l_total2);
+  }
 
 #if 0
   my_eqn1 = libxsmm_matrix_eqn_create();

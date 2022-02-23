@@ -747,6 +747,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
             handle->gemm_fwd8.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(libxsmm_bfloat16), handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT, LIBXSMM_DATATYPE_F32, fusion_flags, 0, 0, 0, 0);
 
             if (handle->compressed_A == 1) {
+#if 0
               fusion_flags = LIBXSMM_MELTW_FLAG_FUSE_NONE;
               handle->gemm_fwd9.xgemm.bsmrs_meltwfused = libxsmm_bsmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_DECOMPRESS_A, LIBXSMM_DATATYPE_F32, fusion_flags, (unsigned char)handle->sparsity_factor_A, 0, 0, 0);
               handle->gemm_fwd10.xgemm.bsmrs_meltwfused = libxsmm_bsmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_DECOMPRESS_A, LIBXSMM_DATATYPE_F32, fusion_flags, (unsigned char)handle->sparsity_factor_A, 0, 0, 0);
@@ -762,6 +763,75 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
               handle->gemm_fwd15.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A, LIBXSMM_DATATYPE_F32, fusion_flags, (unsigned char)handle->sparsity_factor_A, 0, 0, 0);
               fusion_flags = LIBXSMM_MELTW_FLAG_COLBIAS_ACT_SIGM_OVERWRITE_C;
               handle->gemm_fwd16.xgemm.bmrs_meltwfused = libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(handle->bk, handle->bn, handle->bc, (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A, handle->bc*handle->bn*sizeof(libxsmm_bfloat16), unroll_hint, &lda, &ldb, &ldc, &alpha, &zerobeta, &l_flags, NULL, LIBXSMM_MELTW_OPERATION_COLBIAS_ACT_DECOMPRESS_A, LIBXSMM_DATATYPE_F32, fusion_flags, (unsigned char)handle->sparsity_factor_A, 0, 0, 0);
+#else
+              libxsmm_gemm_shape l_shape;
+              libxsmm_bitfield _l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+              libxsmm_bitfield l_prefetch_flags = 0;
+              libxsmm_gemm_batch_reduce_config l_brconfig;
+              libxsmm_gemm_ext_unary_argops l_argops;
+              libxsmm_gemm_ext_binary_postops l_postops;
+              libxsmm_blasint ldap;
+              libxsmm_meltw_unary_type sparsity_type;
+
+              ldap = handle->bk;
+              l_shape.m = handle->bk;
+              l_shape.n = handle->bn;
+              l_shape.k = handle->bc;
+              l_shape.lda = handle->bk;
+              l_shape.ldb = handle->bc;
+              l_shape.ldc = handle->bk;
+              l_shape.a_in_type = LIBXSMM_DATATYPE_BF16;
+              l_shape.b_in_type = LIBXSMM_DATATYPE_BF16;
+              l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+              l_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+              l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+              l_brconfig.br_stride_a_hint = (handle->bk*handle->bc*sizeof(libxsmm_bfloat16))/handle->sparsity_factor_A;
+              l_brconfig.br_stride_b_hint = handle->bc*handle->bn*sizeof(libxsmm_bfloat16);
+              l_brconfig.br_unroll_hint   = (handle->desc.C/handle->bc)/handle->fwd_bf;
+
+              memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
+              memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
+
+              handle->fwd_config_kernel = libxsmm_bsmmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
+
+              sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1;
+              if (handle->sparsity_factor_A == 2) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2;
+              } else if (handle->sparsity_factor_A == 4) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4;
+              } else if (handle->sparsity_factor_A == 8) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8;
+              } else if (handle->sparsity_factor_A == 16) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16;
+              } else if (handle->sparsity_factor_A == 32) {
+                sparsity_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32;
+              }
+
+              l_argops.ap_unary_type  = sparsity_type;
+              l_argops.store_ap = 1;
+              l_argops.ldap = &ldap;
+              handle->sparse_gemm9.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              _l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
+              handle->sparse_gemm10.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              l_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+              handle->sparse_gemm11.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              /* Configure colbias in binary postop */
+              l_postops.d_in_type      = LIBXSMM_DATATYPE_F32;
+              l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
+              l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
+              l_postops.ldd            = NULL;
+              handle->sparse_gemm12.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+              handle->sparse_gemm15.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+              handle->sparse_gemm16.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              /* Reset colbias   */
+              memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
+              l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+              handle->sparse_gemm13.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+              l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
+              handle->sparse_gemm14.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+#endif
             }
 
             /* Also JIT eltwise functions... */

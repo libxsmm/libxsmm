@@ -262,6 +262,8 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   }
   if ( C <= tmp_max_c_block ) {
     ifmblock = C;
+  } else if (C % tmp_max_c_block == 0) {
+    ifmblock = tmp_max_c_block;
   } else {
     for ( tmp_block = 1; tmp_block <= tmp_max_c_block; tmp_block *= 2 ) {
       if ( C % tmp_block == 0 ) ifmblock = tmp_block;
@@ -281,6 +283,8 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   }
   if ( K <= tmp_max_k_block ) {
     ofmblock = K;
+  } else if (K % tmp_max_k_block == 0) {
+    ofmblock = tmp_max_k_block;
   } else {
     for ( tmp_block = 1; tmp_block <= tmp_max_k_block; tmp_block *= 2 ) {
       if ( K % tmp_block == 0 ) ofmblock = tmp_block;

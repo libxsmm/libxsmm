@@ -455,6 +455,15 @@ int libxsmm_generator_matequation_is_xgemm_node(libxsmm_matrix_eqn_elem  *cur_no
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_generator_matequation_is_gather_node(libxsmm_matrix_eqn_elem  *cur_node) {
+  int result = 0;
+  if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER)) {
+    result = 1;
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_elem *node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
   int result = 0;
   if (node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
@@ -469,7 +478,8 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GATHER ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SCATTER ||
          libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(node->info.u_op.type) ||
-         libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ) {
+         libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(node->info.u_op.type) ||
+         libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(node->info.u_op.type) ) {
       result = 1;
     }
   }
@@ -647,6 +657,22 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_
   return result;
 }
 
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *gather_node) {
+  libxsmm_matrix_eqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
+  if ((gather_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS) > 0) {
+    if (gather_node->up != NULL) {
+      if (gather_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) {
+        if (gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD || gather_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+          if ((gather_node->up->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS) > 0) {
+            result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS;
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
 
 LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *cur_node, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs) {
@@ -657,6 +683,12 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion
       result = libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors( cur_node );
     }
   }
+
+  /* Check for gather-op fusion pattern */
+  if (libxsmm_generator_matequation_is_gather_node(cur_node) > 0) {
+    result = libxsmm_generator_matequation_find_gather_fusion_pattern_with_ancestors( cur_node );
+  }
+
   return result;
 }
 
@@ -766,6 +798,63 @@ void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(lib
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_matrix_eqn_elem                *cur_node,
+                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+                                               unsigned int                           *timestamp,
+                                               unsigned int                           last_timestamp ) {
+  if (fusion_pattern == LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS) {
+    cur_node->fusion_info.gather.idx_dtype = ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES) > 0) ? LIBXSMM_DATATYPE_I32 : LIBXSMM_DATATYPE_I64;
+    cur_node->fusion_info.gather.idx_array_pos_in_arg = cur_node->le->info.arg.in_pos;
+    cur_node->info.u_op.flags = 0;
+    /* Collapse parent UNARY node and enhance info in gather node */
+    if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) {
+      cur_node->fusion_info.gather.fused_reduce_cols_add = 1;
+      cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD;
+      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
+      } else {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+      }
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing GATHER-COLS with ADD-REDUCE-COLS\n");
+      }
+    } else if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) {
+      cur_node->fusion_info.gather.fused_reduce_cols_max = 1;
+      cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX;
+      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
+      } else {
+        cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+      }
+      if (libxsmm_verbosity < 0) {
+        fprintf( stderr, "Fusing GATHER-COLS with MAX-REDUCE-COLS\n");
+      }
+    } else {
+      /* Should not happen  */
+    }
+    /* Update tmp size of new pseudo-arg */
+    new_arg_node->tmp.n = 1;
+
+    (*timestamp)++;
+    if (*timestamp < last_timestamp) {
+      new_arg_node->up = cur_node->up->up;
+      if (cur_node->up->up->le == cur_node->up) {
+        cur_node->up->up->le = new_arg_node;
+      } else if (cur_node->up->up->ri == cur_node->up)  {
+        cur_node->up->up->ri = new_arg_node;
+      } else {
+        cur_node->up->up->r2 = new_arg_node;
+      }
+    }
+  } else {
+    /* Should not happen  */
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
                                                libxsmm_matrix_eqn_elem                *cur_node,
                                                libxsmm_matrix_eqn_elem                *new_arg_node,
@@ -773,6 +862,9 @@ void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_m
                                                unsigned int                           last_timestamp ) {
   if (libxsmm_generator_matequation_is_xgemm_node(cur_node) > 0) {
     libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(fusion_pattern, cur_node, new_arg_node, timestamp, last_timestamp );
+  }
+  if (libxsmm_generator_matequation_is_gather_node(cur_node) > 0) {
+    libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(fusion_pattern, cur_node, new_arg_node, timestamp, last_timestamp );
   }
 }
 
