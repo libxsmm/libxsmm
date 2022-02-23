@@ -1226,7 +1226,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
         _B_tile_id[i],
         _C_tile_id[i]);
 
-    if ((prefetch_C_scratch > 0) &&
+    if ((prefetch_C_scratch > 0) && (is_last_k == 1) &&
         (i_brgemm_loop + prefetch_C_scratch_dist == i_xgemm_desc->c3) &&
         (((i < 2) && (use_paired_tilestores == 1)) || ((i < 1) && (use_paired_tilestores == 0)))) {
       unsigned int offset = 0;
@@ -1242,7 +1242,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
 
     _C_tile_done[_C_tile_id[i]] = 1;
 
-    if ((prefetch_C_matrix > 0) &&
+    if ((prefetch_C_matrix > 0) && (is_last_k == 1) &&
         (i_brgemm_loop + prefetch_C_matrix_dist == i_xgemm_desc->c3)) {
       unsigned int offset = 0;
       if (use_paired_tilestores == 1) {
