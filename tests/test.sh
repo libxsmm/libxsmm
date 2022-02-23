@@ -9,11 +9,12 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2164
+# shellcheck disable=SC2086,SC2164
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
 SED=$(command -v sed)
+ENV=$(command -v env)
 TR=$(command -v tr)
 WC=$(command -v wc)
 
@@ -60,23 +61,20 @@ for TEST in ${TESTS}; do
   echo -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}"
-    RUNTEST=${HERE}/${NAME}${EXE}
-    if [ "${TOOL_COMMAND_POST}" ]; then RUNTEST="${RUNTEST} ${TOOL_COMMAND_POST}"; fi
-    if [ "${TOOL_COMMAND}" ]; then RUNTEST="${TOOL_COMMAND} ${RUNTEST}"; fi
     ERROR=$({
     if [ "$(${LDD} "${HERE}/${NAME}${EXE}" 2>/dev/null | ${GREP} libiomp5\.)" ]; then
-      LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
         DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
         KMP_AFFINITY=scatter,granularity=fine,1 \
         MIC_KMP_AFFINITY=scatter,granularity=fine \
         MIC_ENV_PREFIX=MIC \
         OFFLOAD_INIT=on_start \
-      "${RUNTEST}"
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
     else
-      LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
         DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
         OMP_PROC_BIND=TRUE \
-      "${RUNTEST}"
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
     fi >/dev/null; } 2>&1)
     RESULT=$?
   else
