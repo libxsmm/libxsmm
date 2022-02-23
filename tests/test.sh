@@ -14,7 +14,6 @@
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
 SED=$(command -v sed)
-ENV=$(command -v env)
 TR=$(command -v tr)
 WC=$(command -v wc)
 
@@ -66,7 +65,7 @@ for TEST in ${TESTS}; do
     if [ "${TOOL_COMMAND}" ]; then RUNTEST="${TOOL_COMMAND} ${RUNTEST}"; fi
     ERROR=$({
     if [ "$(${LDD} "${HERE}/${NAME}${EXE}" 2>/dev/null | ${GREP} libiomp5\.)" ]; then
-      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+      LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
         DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
         KMP_AFFINITY=scatter,granularity=fine,1 \
         MIC_KMP_AFFINITY=scatter,granularity=fine \
@@ -74,7 +73,7 @@ for TEST in ${TESTS}; do
         OFFLOAD_INIT=on_start \
       "${RUNTEST}"
     else
-      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+      LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
         DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
         OMP_PROC_BIND=TRUE \
       "${RUNTEST}"
