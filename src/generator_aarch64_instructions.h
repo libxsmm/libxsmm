@@ -342,6 +342,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF    0xe5804006
 #define LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF    0xe5800006
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1B_I_OFF     0xa400a086 /* load  8 bit elements into vector register */
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1B_I_OFF     0xe400e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF     0xa4a0a086 /* load 16 bit elements into vector register */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR        0xa5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF     0xa540a086 /* load 32 bit elements into vector register */
