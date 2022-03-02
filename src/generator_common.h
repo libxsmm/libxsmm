@@ -396,6 +396,9 @@
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
+#define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052420
+#define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052430
+
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
@@ -405,6 +408,7 @@
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
 #define LIBXSMM_X86_INSTR_VPSRAD_I         0x244d1672
+#define LIBXSMM_X86_INSTR_VPSRAW_I         0x244d1671
 #define LIBXSMM_X86_INSTR_VPSRLD_I         0x242d1672
 #define LIBXSMM_X86_INSTR_VPSLLVW          0x30852612
 #define LIBXSMM_X86_INSTR_VPSLLVD          0x30052647
@@ -1473,10 +1477,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
+  unsigned int use_fp32bf8_cvt_generic;
   unsigned int dcvt_mask_aux0;
   unsigned int dcvt_mask_aux1;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int dcvt_zmm_aux2;
   unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
@@ -1631,10 +1637,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      use_fp32bf8_cvt_generic;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
   unsigned int                      dcvt_zmm_aux0;
   unsigned int                      dcvt_zmm_aux1;
+  unsigned int                      dcvt_zmm_aux3;
   unsigned int                      reduce_vreg;
   unsigned int                      n_avail_gpr;
   unsigned int                      gpr_pool[16];

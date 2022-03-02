@@ -770,3 +770,41 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
   }
 }
 
+LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
+  unsigned int i = 0;
+
+  /* truncate buffer to bf8 */
+  for ( i = 0; i < length; ++i ) {
+    unsigned short short_round = 0;
+    unsigned int do_round = 1;
+
+    short_round = _cvtss_sh( in[i], (_MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC) );
+
+    /* we don't round NaN and inf */
+    if ( (short_round & 0x7c00) == 0x7c00 ) {
+      do_round = 0;
+    }
+
+    /* perform round nearest tie even */
+    if ( do_round != 0 ) {
+      unsigned short fixup = (short_round >> 8) & 1;
+      short_round = short_round + 0x007f + fixup;
+    }
+
+    /* create the bf8 value by shifting out the lower 16bits */
+    short_round = short_round >> 8;
+
+    out[i] = (unsigned char)short_round;
+  }
+}
+
+LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, unsigned int length) {
+  unsigned int i = 0;
+
+  /* up-convert is super simple */
+  for ( i = 0; i < length; ++i ) {
+    unsigned short tmp = ((unsigned short)in[i]) << 8;
+    out[i] = _cvtsh_ss( tmp );
+  }
+}
+

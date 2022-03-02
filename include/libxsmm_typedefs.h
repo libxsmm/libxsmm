@@ -36,6 +36,7 @@
 #define LIBXSMM_TYPENAME_double f64
 #define LIBXSMM_TYPENAME_float f32
 #define LIBXSMM_TYPENAME_libxsmm_bfloat16 bf16
+#define LIBXSMM_TYPENAME_libxsmm_bfloat8 bf8
 #define LIBXSMM_TYPENAME_libxsmm_float16 f16
 #define LIBXSMM_TYPENAME_int i32
 #define LIBXSMM_TYPENAME_short i16
@@ -46,6 +47,7 @@
 #define LIBXSMM_TYPEINFO_FP_double 1
 #define LIBXSMM_TYPEINFO_FP_float 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
+#define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat8 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_float16 1
 #define LIBXSMM_TYPEINFO_FP_int 0
 #define LIBXSMM_TYPEINFO_FP_short 0
@@ -56,6 +58,7 @@
 #define LIBXSMM_TYPESYMBOL_double F64
 #define LIBXSMM_TYPESYMBOL_float F32
 #define LIBXSMM_TYPESYMBOL_libxsmm_bfloat16 BF16
+#define LIBXSMM_TYPESYMBOL_libxsmm_bfloat8 BF8
 #define LIBXSMM_TYPESYMBOL_libxsmm_float16 F16
 #define LIBXSMM_TYPESYMBOL_int I32
 #define LIBXSMM_TYPESYMBOL_short I16
@@ -65,12 +68,13 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_BF8  ? 1 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
-  0/*invalid*/)))))))))
+  0/*invalid*/))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -102,12 +106,18 @@ typedef unsigned int libxsmm_bitfield;
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
+typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned short libxsmm_float16;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
   libxsmm_bfloat16 i[2];
   float f;
 } libxsmm_bfloat16_hp;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_qp {
+  libxsmm_bfloat8 i[2];
+  libxsmm_float16 hf;
+} libxsmm_bfloat8_qp;
 
 #if defined(__cplusplus)
 namespace Eigen { struct bfloat16; }
@@ -137,6 +147,7 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
+  LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_F16,
   LIBXSMM_DATATYPE_I64,
   LIBXSMM_DATATYPE_I32,
@@ -320,7 +331,10 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
   LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
-  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52,
+  LIBXSMM_MELTW_TYPE_UNARY_CVT2BF8_RNE                  = 53,
+  LIBXSMM_MELTW_TYPE_UNARY_CVT2BF8_STOCHASTIC           = 54,
+  LIBXSMM_MELTW_TYPE_UNARY_CVTBF82FP32                  = 55,
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -597,6 +611,7 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_F64  = LIBXSMM_DATATYPE_F64,
   LIBXSMM_DNN_DATATYPE_F32  = LIBXSMM_DATATYPE_F32,
   LIBXSMM_DNN_DATATYPE_BF16 = LIBXSMM_DATATYPE_BF16,
+  LIBXSMM_DNN_DATATYPE_BF8  = LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DNN_DATATYPE_F16  = LIBXSMM_DATATYPE_F16,
   LIBXSMM_DNN_DATATYPE_I32  = LIBXSMM_DATATYPE_I32,
   LIBXSMM_DNN_DATATYPE_I16  = LIBXSMM_DATATYPE_I16,
