@@ -488,7 +488,6 @@ void libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( libxsmm_generated_code
                                                           const unsigned int      io_mask_0,
                                                           const unsigned int      io_mask_1 );
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf16_avx512_preppedstack_nocompact( libxsmm_generated_code* io_generated_code,
                                                           const char              i_vname,
