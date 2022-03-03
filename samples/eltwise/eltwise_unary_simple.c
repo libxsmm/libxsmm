@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <immintrin.h>
 #include "eltwise_common.h"
 
 #define PI 3.14159265358979323846
@@ -40,14 +39,6 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
-
-float upconvert_bf8(libxsmm_bfloat8 x) {
-  union libxsmm_bfloat8_qp bf8_qp;
-  float dst[4] = {0.0};
-  bf8_qp.i[1] = x;
-  bf8_qp.i[0] = 0;
-  return _cvtsh_ss (bf8_qp.hf);
-}
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
   union libxsmm_bfloat16_hp bf16_hp;
@@ -369,13 +360,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     exit(-1);
   }
   unary_kernel( &unary_param );
-
-  /* compare result */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < ldo; ++j ) {
-      printf(" %d : gold : %f, out :%f\n", (i*ldo)+j, upconvert_bf8(out_gold[(i*ldo)+j]), upconvert_bf8(out[(i*ldo)+j]));
-    }
-  }
 
   /* compare result */
   norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N );
