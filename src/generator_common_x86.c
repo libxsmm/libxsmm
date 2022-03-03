@@ -347,7 +347,7 @@ void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*         
             i_vec_tmp1,
             i_vec_tmp0,
             i_vec_result,
-            0, 0, 0, (i_vec_result) << 4);
+            0, 0, 0, (unsigned short)(i_vec_result) << 4);
 }
 
 LIBXSMM_API_INTERN
@@ -1328,7 +1328,7 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
             i_vec_x,
             i_vec_ones,
             i_vec_x,
-            0, 0, 0, (i_mask_hi) << 4);
+            0, 0, 0, (unsigned short)(i_mask_hi) << 4);
 
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
             LIBXSMM_X86_INSTR_VBLENDVPS,
@@ -1336,7 +1336,7 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
             i_vec_x,
             i_vec_neg_ones,
             i_vec_x,
-            0, 0, 0, (i_mask_lo) << 4);
+            0, 0, 0, (unsigned short)(i_mask_lo) << 4);
 }
 
 LIBXSMM_API_INTERN
