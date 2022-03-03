@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <immintrin.h>
 
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint neg_values ) {
   double* d_data = (double*) data;
