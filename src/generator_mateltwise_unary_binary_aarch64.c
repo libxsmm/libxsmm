@@ -658,11 +658,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_INC:
           if( l_is_sve ) {
-            /* either create a 1-register like asimd, or add immediate value */
-            /* todo test which one is faster (if it matters somehow) */
-            unsigned char l_immediate_enum = 1; /* 0 = 0.5, 1 = 1.0 */
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P,
-                                                     l_immediate_enum, 0, 0, cur_vreg, l_pred_reg, l_sve_type );
+            /* using the immediate-add instruction is 7/6x slower on 64x64 elements on A64FX than using a simple add function with a constant */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                                     cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg, l_pred_reg, l_sve_type );
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
                                                        cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
@@ -729,8 +727,47 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
           break;
         case LIBXSMM_MELTW_TYPE_UNARY_SQRT:
           if( l_is_sve ) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
+            /* the SQRT instruction is very slow on A64FX, only as fast as ASIMD, so maybe even serial performance */
+            /* LIBXSMM is a machine learning oriented library and instructions like 1/x are inexact, so let's make this inexact as well */
+            if(libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE){
+              /* old & slow way */
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            } else if(0){/* no iterations at all would result in an approx error of ~9%, and a speedup of 36x compared to the accuate ASIMD function */
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
+                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
+                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            } else {
+              /* inverse */
+              unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
+                                                       cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
+                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
+                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+              /* then 1/sqrt */
+              /* fp32, num_iterations=0 -> 0.07    relative error, 27.0x speedup */
+              /* fp32, num_iterations=1 -> 0.0002  relative error, 16.3x speedup */
+              /* fp32, num_iterations=2 -> 0.00007 relative error,  9.6x speedup */
+              unsigned char num_iterations = 1;
+              unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
+              unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
+              /* Newton iteration: guess *= (3-guess*guess*x)/2 */
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
+                                                      cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+              unsigned char i;
+              for(i=0;i<num_iterations;i++){
+                unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                         tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
+                                                         cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                         tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
+              }
+            }
           } else {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
@@ -2392,6 +2429,14 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
+  if(op == LIBXSMM_MELTW_TYPE_UNARY_SQRT){
+    if(l_is_sve){
+      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms + 1;
+      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
+    }
+  }
+
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_ELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV)) {
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 1;
@@ -2501,9 +2546,12 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   }
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_INC) {
-    if (!l_is_sve){/* sve has an inc instruction, so it doesn't need a constant */
-      i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+    if (l_is_sve){/* while sve has an inc instruction, that one is slower for 64x64 (2.95x -> 3.49x speedup vs ASIMD on A64FX) */
+      libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_micro_kernel_config->vec_ones, i_gp_reg_tmp0,
+                                                            l_tupletype, l_pred_reg, 0x3f800000 );
+    } else {
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_micro_kernel_config->vec_ones, i_gp_reg_tmp0,
                                                             l_tupletype, 0x3f800000 );
     }
