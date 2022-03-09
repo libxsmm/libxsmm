@@ -2,15 +2,15 @@
 
 LIBXSMM is a library for specialized dense and sparse matrix operations as well as for deep learning primitives such as small convolutions. The library is targeting Intel Architecture with <span>Intel&#160;SSE</span>, <span>Intel&#160;AVX</span>, <span>Intel&#160;AVX2</span>, <span>Intel&#160;AVX&#8209;512</span> (with VNNI and Bfloat16), and <span>Intel&#160;AMX</span> (Advanced Matrix Extensions) supported by future Intel processor code-named Sapphire Rapids. Code generation is mainly based on <span>Just&#8209;In&#8209;Time (JIT)</span> code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and deep learning). LIBXSMM is suitable for "build once and deploy everywhere", i.e., no special target flags are needed to exploit the available performance. Supported GEMM datatypes are: `FP64`, `FP32`, `bfloat16`, `int16`, and `int8`.
 
-For a list questions and answers, please also have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
+For a list questions and answers, please also have a look at [https://github.com/libxsmm/libxsmm/wiki/Q&A](https://github.com/libxsmm/libxsmm/wiki/Q&A).
 
 **Where to go for documentation?**
 
 * **ReadtheDocs**: [main](https://libxsmm.readthedocs.io/) and [sample](https://libxsmm.readthedocs.io/libxsmm_samples/) documentation with full text search.
-* **PDF**: [main](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm_samples.pdf) documentation.
-* **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/hfp/libxsmm/tree/master/samples/magazine) (full list of [Articles](#articles)).
+* **PDF**: [main](https://github.com/libxsmm/libxsmm/raw/master/documentation/libxsmm.pdf) documentation file, and separate [sample](https://github.com/libxsmm/libxsmm/raw/master/documentation/libxsmm_samples.pdf) documentation.
+* **Articles**: [magazine article](https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf) incl. [sample code](https://github.com/libxsmm/libxsmm/tree/master/samples/magazine) (full list of [Articles](#articles)).
 
-<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/hfp/libxsmm/tree/master/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
+<a name="getting-started"></a><a name="hello-libxsmm"></a>**Getting Started**: The following C++ code is focused on a specific functionality but may be considered as [Hello LIBXSMM](https://github.com/libxsmm/libxsmm/tree/master/samples/hello). Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile with `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
 ```cpp
 #include <libxsmm.h>
@@ -35,7 +35,7 @@ int main(/*int argc, char* argv[]*/) {
 }
 ```
 
-Plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c) as well as [Fortran code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.f) resemble the same [example](https://github.com/hfp/libxsmm/tree/master/samples/hello).
+Plain [C code](https://github.com/libxsmm/libxsmm/blob/master/samples/hello/hello.c) as well as [Fortran code](https://github.com/libxsmm/libxsmm/blob/master/samples/hello/hello.f) resemble the same [example](https://github.com/libxsmm/libxsmm/tree/master/samples/hello).
 
 <a name="what-is-a-small-matrix-multiplication"></a>**What is a small matrix multiplication?** When characterizing the problem-size by using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within <i>(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;64</i> (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, and *TransA := 'N'*.
 
@@ -45,7 +45,7 @@ Plain [C code](https://github.com/hfp/libxsmm/blob/master/samples/hello/hello.c)
 
 ### Overview<a name="general-interface"></a>
 
-Please have a look at [https://github.com/hfp/libxsmm/tree/master/include](https://github.com/hfp/libxsmm/tree/master/include) for all published functions. Get started with the following list of available domains and documented functionality:
+Please have a look at [https://github.com/libxsmm/libxsmm/tree/master/include](https://github.com/libxsmm/libxsmm/tree/master/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
 * MM: [Matrix Multiplication](#matrix-multiplication)
 * DNN: [Deep Neural Networks](#deep-neural-networks)
@@ -92,13 +92,13 @@ The [service function domain (AUX)](libxsmm_aux.md) contains routines for:
 
 ### Backend<a name="jit-backend"></a>
 
-More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md). The [encoder sample collection](https://github.com/hfp/libxsmm/tree/master/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) is considered legacy (deprecated).
+More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md). The [encoder sample collection](https://github.com/libxsmm/libxsmm/tree/master/samples/encoder) can help to get started writing a kernel using LIBXSMM. Please note, LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) is considered legacy (deprecated).
 
 ## Build Instructions
 
 ### Overview
 
-The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h#L36) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32). There are two ways prepared to build and use LIBXSMM:
+The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/libxsmm/libxsmm/blob/master/src/template/libxsmm.h#L36) and [FORTRAN](https://github.com/libxsmm/libxsmm/blob/master/src/template/libxsmm.f#L32). There are two ways prepared to build and use LIBXSMM:
 
 * [Classic Library (ABI)](#classic-library-abi) and [Link Instructions](#link-instructions) (C/C++ and FORTRAN)
 * [Header-Only](#header-only) (C and C++)
@@ -126,19 +126,19 @@ On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless 
 make CXX=CC CC=cc FC=ftn
 ```
 
-A variety of build environments is out-of-the-box compatible, see [https://github.com/hfp/libxsmm/wiki/Compatibility](https://github.com/hfp/libxsmm/wiki/Compatibility). If the build process is not successful, it may help to avoid advanced GCC flags. This is useful with a tool chain, which pretends to be GCC-compatible (and is treated as such) but fails to consume the afore mentioned flags:
+A variety of build environments is out-of-the-box compatible, see [https://github.com/libxsmm/libxsmm/wiki/Compatibility](https://github.com/libxsmm/libxsmm/wiki/Compatibility). If the build process is not successful, it may help to avoid advanced GCC flags. This is useful with a tool chain, which pretends to be GCC-compatible (and is treated as such) but fails to consume the afore mentioned flags:
 
 ```bash
 make COMPATIBLE=1
 ```
 
-<a name="outdated-binutils"></a>In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). LIBXSMM implements some functionality using compiler-intrinsics and multiple code-paths which are scheduled according to CPUID. In contrast to `INTRINSICS=2` (default), `INTRINSICS=1` enables a fully static code path according to the desired target. If no target is given (e.g., `AVX=3`, or `AVX=2`), instruction set extensions cannot be leveraged for such code-paths. Try to fix failing compilation by building the latest GNU Binutils (and `export PATH=/path/to/binutils/bin:${PATH}`). Binutils are versioned independently of <span>GNU&#160;GCC</span> and other compilers. If one cannot update Binutils, work around with a CPUID-value as tabulated in [libxsmm_cpuid.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h): start at the upper end (less than 1999) and decrement until compilation passes (make INTRINSICS=_CPUID_, e.g., `make INTRINSICS=1021`). As a last resort, rely on a fully static code path:
+<a name="outdated-binutils"></a>In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). LIBXSMM implements some functionality using compiler-intrinsics and multiple code-paths which are scheduled according to CPUID. In contrast to `INTRINSICS=2` (default), `INTRINSICS=1` enables a fully static code path according to the desired target. If no target is given (e.g., `AVX=3`, or `AVX=2`), instruction set extensions cannot be leveraged for such code-paths. Try to fix failing compilation by building the latest GNU Binutils (and `export PATH=/path/to/binutils/bin:${PATH}`). Binutils are versioned independently of <span>GNU&#160;GCC</span> and other compilers. If one cannot update Binutils, work around with a CPUID-value as tabulated in [libxsmm_cpuid.h](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_cpuid.h): start at the upper end (less than 1999) and decrement until compilation passes (make INTRINSICS=_CPUID_, e.g., `make INTRINSICS=1021`). As a last resort, rely on a fully static code path:
 
 ```bash
 make INTRINSICS=1
 ```
 
-To test and validate a build, please consult [https://github.com/hfp/libxsmm/wiki/Validation](https://github.com/hfp/libxsmm/wiki/Validation). To run some basic sanity checks, remember that each set of given key-value pairs represents a different build (and test):
+To test and validate a build, please consult [https://github.com/libxsmm/libxsmm/wiki/Validation](https://github.com/libxsmm/libxsmm/wiki/Validation). To run some basic sanity checks, remember that each set of given key-value pairs represents a different build (and test):
 
 ```bash
 make STATIC=0 tests
@@ -157,11 +157,11 @@ make realclean
 * <a name="header-only-fortran"></a>By including `libxsmm.f` and linking with `libxsmm`, and (optionally) `libxsmmext`, or
 * By (implicitly) calling a SUBROUTINE and linking with `libxsmm`, and (optionally) `libxsmmext`.
 
-**Note**: Using the Fortran module or including the interface, requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
+**Note**: Using the Fortran module or including the interface, requires at least a <span>Fortran&#160;2003</span> compiler (F2K3). <span>FORTRAN&#160;77</span> compatibility is only implicitly available (no interface), and the available subset of routines is documented in `libxsmm.f` and marked with [comments](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
 ### Header-Only
 
-<span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/hfp/libxsmm/tree/master/src) directory (with the implications as noted earlier).
+<span>Version&#160;1.4.4</span> introduced support for "header-only" usage in C and C++. By only including `libxsmm_source.h` allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but can also increase the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/libxsmm/libxsmm/tree/master/src) directory (with the implications as noted earlier).
 
 <a name="zero-config"></a>The header-only form depends on `libxsmm_source.h` which is *generated* according to the content of the source folder (`src`). <span>LIBXSMM&#160;1.16</span> (and later) provides header-only support without invoking a make-target (zero configuration) for any given checkout of LIBXSMM. To use configured header-only (non-default), LIBXSMM_CONFIGURED must be defined (`-D`). Previously, it was necessary to invoke `make header-only` (v1.6.2 or later), `make cheader` (prior to v1.6.2), or any target building the library (`make`). The zero-config feature allows 3rd-party build systems an easier integration of LIBXSMM, which also holds true if the system builds LIBXSMM from source (see [classic ABI](#zero-config-abi)). Fortran code may [include](#header-only-fortran) `libxsmm.f` but still requires that interface to be generated.
 
@@ -174,7 +174,7 @@ Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) cod
 <a name="table-of-libraries"></a>Library | Purpose
 :-------------|---------
 libxsmm       | Thread-safe core functions (same routine can be called concurrently). Contains routines that can take a thread-ID and the number of library-external threads.
-libxsmmf      | Necessary when using the Fortran MODule but not when including `libxsmm.f` or relying on implicit interfaces ([Fortran 77](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility)).
+libxsmmf      | Necessary when using the Fortran MODule but not when including `libxsmm.f` or relying on implicit interfaces ([Fortran 77](https://github.com/libxsmm/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility)).
 libxsmmext    | Provides library-internal OpenMP-threaded functions carrying the `omp` postfix when compared to function name names of the core library.
 libxsmmnoblas | Supplies faked symbols for `dgemm` (and others) and thereby removes the need to link against a LAPACK/BLAS library.
 
@@ -281,7 +281,7 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 * [Customizing performance](libxsmm_tune.md#tuning)
 * <a name="auto-dispatch"></a>[Tuning auto-dispatch](libxsmm_tune.md#auto-dispatch)
 
-<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch called "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/hfp/libxsmm/tree/results#libxsmm-results](https://github.com/hfp/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
+<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch called "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results](https://github.com/libxsmm/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
 
 ```bash
 git clone --branch results \
@@ -289,7 +289,7 @@ git clone --branch results \
   libxsmm-results
 ```
 
-Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, multiplying with all matrices covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all matrices from the main memory). Most of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
+Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, multiplying with all matrices covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all matrices from the main memory). Most of the [code samples](https://github.com/libxsmm/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
 
 ## Applications
 
@@ -299,11 +299,11 @@ Please note that comparing performance results depends on whether the operands o
 
 <b>[2]&#160;</b>[https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/): SeisSol is one of the leading codes for earthquake scenarios, for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see [https://github.com/TUM-I5/seissol_kernels/](https://github.com/TUM-I5/seissol_kernels/).
 
-<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code. Please also note LIBXSMM's [NekBox reproducer](https://github.com/hfp/libxsmm/tree/master/samples/nek#nek-sample-collection).
+<b>[3]&#160;</b>[https://github.com/NekBox/NekBox](https://github.com/NekBox/NekBox): NekBox is a highly scalable and portable spectral element code, which is inspired by the [Nek5000](https://nek5000.mcs.anl.gov/) code. NekBox is specialized for box geometries and intended to prototype new methods as well as to leverage FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM can be used to substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code. Please also note LIBXSMM's [NekBox reproducer](https://github.com/libxsmm/libxsmm/tree/master/samples/nek#nek-sample-collection).
 
 <b>[4]&#160;</b>[https://github.com/Nek5000/Nek5000](https://github.com/Nek5000/Nek5000): Nek5000 is the open-source, highly-scalable, always-portable spectral element code from [https://nek5000.mcs.anl.gov/](https://nek5000.mcs.anl.gov/). The development branch of the Nek5000 code [incorporates](https://github.com/Nek5000/Nek5000/blob/master/core/mxm_wrapper.f) LIBXSMM.
 
-<b>[5]&#160;</b>[http://pyfr.org/](http://pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR&#160;1.6.0 optionally [incorporates LIBXSMM](http://pyfr.org/user_guide.php) as a matrix multiplication provider for the OpenMP backend. Please also note LIBXSMM's [PyFR-related code sample](https://github.com/hfp/libxsmm/tree/master/samples/pyfr).
+<b>[5]&#160;</b>[http://pyfr.org/](http://pyfr.org/): PyFR is an open-source Python based framework for solving advection-diffusion type problems on streaming architectures by using the flux reconstruction approach. PyFR&#160;1.6.0 optionally [incorporates LIBXSMM](http://pyfr.org/user_guide.php) as a matrix multiplication provider for the OpenMP backend. Please also note LIBXSMM's [PyFR-related code sample](https://github.com/libxsmm/libxsmm/tree/master/samples/pyfr).
 
 <b>[6]&#160;</b>[http://dial3343.org/about/](http://dial3343.org/about/): The Extreme-scale Discontinuous Galerkin Environment (EDGE) is a solver for hyperbolic partial differential equations with emphasis on seismic simulations. The EDGE [source code](https://github.com/3343/edge) optionally relies on LIBXSMM, but for high performance LIBXSMM's kernels are highly recommended.
 

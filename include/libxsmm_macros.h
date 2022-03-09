@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -154,6 +154,20 @@
 # define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
     LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
 #endif
+
+#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
+  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
+
+/**
+ * Macro to check minimum version requiremnts in code, for example:
+ * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
+ * // code requiring version 1.17 or later
+ * #else
+ * // fallback code
+ * #endif
+*/
+#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
+  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
@@ -762,6 +776,9 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
 #   define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
 # endif
+# if !defined(_CRT_INTERNAL_NONSTDC_NAMES)
+#   define _CRT_INTERNAL_NONSTDC_NAMES 1
+# endif
 # if !defined(_CRT_SECURE_NO_DEPRECATE)
 #   define _CRT_SECURE_NO_DEPRECATE 1
 # endif
@@ -827,6 +844,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   include <windows.h>
 # else
 #   include <pthread.h>
+#   include <unistd.h>
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT)

@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -59,13 +59,14 @@
 
 #define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
 
+#if defined(LIBXSMM_PLATFORM_X86)
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
-#if defined(__linux__)
-# include <sys/syscall.h>
-# include <unistd.h>
-# if !defined(LIBXSMM_BUILD) || (1 >= (LIBXSMM_BUILD))
+# if defined(__linux__)
+#  include <sys/syscall.h>
+#  include <unistd.h>
+#  if !defined(LIBXSMM_BUILD) || (1 >= (LIBXSMM_BUILD))
 LIBXSMM_EXTERN long syscall(long number, ...) LIBXSMM_THROW;
-# endif
+#  endif
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 {
   unsigned long bitmask = 0;
@@ -83,11 +84,12 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
   /* setup successfull */
   return 0;
 }
-#else
+# else
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 {
   return -1;
 }
+# endif
 #endif
 
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)

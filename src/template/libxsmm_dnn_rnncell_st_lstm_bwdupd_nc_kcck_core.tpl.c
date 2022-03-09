@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -284,8 +284,6 @@ for (j = t-1; j >= 0; --j) {
     if ((C == K) && (bc == bk) && (bcbk_multiples_of_16 == 1)) {
 #if 0
       if (K % 2048 != 0) {
-#else
-      if ( 0 == 0 ) {
 #endif
         /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
         for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
@@ -343,6 +341,13 @@ for (j = t-1; j >= 0; --j) {
           }
           batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
         }
+        LIBXSMM_UNUSED(diB_);
+        LIBXSMM_UNUSED(dciB_);
+        LIBXSMM_UNUSED(dfB_);
+        LIBXSMM_UNUSED(dpB_);
+        LIBXSMM_UNUSED(batchreduce_kernelc);
+        LIBXSMM_UNUSED(batchreduce_kernelb);
+#if 0
       } else {
         /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
         /* Use blocked format for di, dci, df and dp */
@@ -402,6 +407,7 @@ for (j = t-1; j >= 0; --j) {
           batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
         }
       }
+#endif
     } else {
       /* dr = difoc * h^T */
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {

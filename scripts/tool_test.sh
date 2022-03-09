@@ -4,7 +4,7 @@
 # This file is part of the LIBXSMM library.                                   #
 #                                                                             #
 # For information on the license, see the LICENSE file.                       #
-# Further information: https://github.com/hfp/libxsmm/                        #
+# Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
 # Hans Pabst (Intel Corp.)
@@ -182,7 +182,7 @@ then
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [[ ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") || (-d "$1") ]]; then
+  elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
     TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"

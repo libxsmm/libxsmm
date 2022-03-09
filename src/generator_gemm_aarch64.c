@@ -4,7 +4,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke (Intel Corp.)
@@ -227,13 +227,19 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_a64fx( libxsmm_generated_c
 #endif
         if ( l_n == 0 ) {
           if ( l_m_total == 0 ) {
+#if 0
             l_a_reg = (l_m_total%2 == 0) ? 6 : 7;
+#endif
+            l_a_reg = 6;
             libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
                                                     i_gp_reg_mapping->gp_reg_a, LIBXSMM_AARCH64_GP_REG_UNDEF, l_m_instr_offset[l_m_total],
                                                     l_a_reg, l_m_instr_width[l_m_total] );
             l_m_total++;
             if ( l_m_total_blocks > 1 ) {
+#if 0
               l_a_reg = (l_m_total%2 == 0) ? 6 : 7;
+#endif
+              l_a_reg = 7;
               libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
                                                       i_gp_reg_mapping->gp_reg_a, LIBXSMM_AARCH64_GP_REG_UNDEF, l_m_instr_offset[l_m_total],
                                                       l_a_reg, l_m_instr_width[l_m_total] );

@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
@@ -51,20 +51,17 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   const double alpha, const double beta, libxsmm_blasint c_is_nt,
   const double* a_dense)
 {
-  const double one = 1.0;
   double* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
   unsigned int* a_csr_colidx = NULL;
   double* aa_dense = NULL;
-  int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  libxsmm_gemm_descriptor* xgemm_desc;
-  libxsmm_descriptor_blob xgemm_blob;
+  libxsmm_bitfield flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
+  libxsmm_bitfield prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_dfsspmdm* new_handle = NULL;
-  libxsmm_dmmfunction k_sparse1 = NULL;
-  libxsmm_dmmfunction k_sparse2 = NULL;
-  libxsmm_dmmfunction k_sparse4 = NULL;
-  libxsmm_dmmfunction k_dense = NULL;
+  libxsmm_gemmfunction k_sparse1 = NULL;
+  libxsmm_gemmfunction k_sparse2 = NULL;
+  libxsmm_gemmfunction k_sparse4 = NULL;
+  libxsmm_gemmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
   int N_sparse1, N_sparse2, N_sparse4, N_dense;
   static int error_once = 0;
@@ -171,30 +168,27 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   {
     /* Attempt to JIT a sparse kernel */
     if ( N_sparse1 <= N ) {
-      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse1 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse1, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F64,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+      k_sparse1 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* If that worked try to JIT a second (wider) sparse kernel */
     if ( NULL != k_sparse1 && 0 == (N % N_sparse2) ) {
-      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse2 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse2, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F64,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+      k_sparse2 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* And if that worked try going even wider still */
     if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
-      xgemm_desc = libxsmm_dgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse4 = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse4, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F64,
+        LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+      k_sparse4 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
   }
   LIBXSMM_HANDLE_ERROR_OFF_END();
@@ -206,8 +200,10 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* Also generate a dense kernel */
   if ( NULL != aa_dense ) {
-    k_dense = libxsmm_dmmdispatch(N_dense, M, K, &ldb, &K, &ldc,
-      &one, &beta, &flags, NULL/*auto-prefetch*/);
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+      N_dense, M, K, ldb, K, ldc, LIBXSMM_DATATYPE_F64,
+      LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags );
   }
 
   if ( NULL != k_dense ) {
@@ -231,7 +227,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
-    void* fp;
+    libxsmm_gemm_param gemm_param;
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -253,11 +250,15 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark dense */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_dense && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
+        gemm_param.b.primary = (void*)aa_dense;
         for ( j = 0; j < N; j += N_dense ) {
-          k_dense( B + j, aa_dense, C + j );
+          gemm_param.a.primary = (void*)(B+j);
+          gemm_param.c.primary = (void*)(C+j);
+          k_dense( &gemm_param );
         }
       }
       /* Bias to prefer dense kernels */
@@ -265,28 +266,37 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark sparse (regular) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
       for ( i = 0; i < 250; ++i ) {
-        k_sparse1( NULL, B, C );
+        k_sparse1( &gemm_param );
       }
       dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
     /* Benchmark sparse (wide) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
-      for ( i = 0; i < 250; ++i ) {
-        k_sparse2( NULL, B, C );
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
+       for ( i = 0; i < 250; ++i ) {
+        k_sparse2( &gemm_param );
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
     /* Benchmark sparse (widest) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
       for ( i = 0; i < 250; ++i ) {
-        k_sparse4( NULL, B, C );
+        k_sparse4( &gemm_param );
       }
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
@@ -306,8 +316,11 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
       LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
       libxsmm_free( fp );
+#endif
     }
 
     /* Sparse (wide) fastest */
@@ -315,17 +328,23 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
+#endif
     }
 
     /* Sparse (widest) fastest */
     if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
-        assert(NULL != k_sparse4);
-        new_handle->kernel = k_sparse4;
+      assert(NULL != k_sparse4);
+      new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
-        LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
-        libxsmm_free( fp );
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
+      LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
+      libxsmm_free( fp );
+#endif
     }
 
     libxsmm_free( B );
@@ -352,20 +371,17 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   const float alpha, const float beta, libxsmm_blasint c_is_nt,
   const float* a_dense)
 {
-  const float one = 1.0f;
-  float* a_csr_values = NULL;
+  double* a_csr_values = NULL;
   unsigned int* a_csr_rowptr = NULL;
   unsigned int* a_csr_colidx = NULL;
   float* aa_dense = NULL;
-  int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  libxsmm_gemm_descriptor* xgemm_desc;
-  libxsmm_descriptor_blob xgemm_blob;
+  libxsmm_bitfield flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );
+  libxsmm_bitfield prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_sfsspmdm* new_handle = NULL;
-  libxsmm_smmfunction k_sparse1 = NULL;
-  libxsmm_smmfunction k_sparse2 = NULL;
-  libxsmm_smmfunction k_sparse4 = NULL;
-  libxsmm_smmfunction k_dense = NULL;
+  libxsmm_gemmfunction k_sparse1 = NULL;
+  libxsmm_gemmfunction k_sparse2 = NULL;
+  libxsmm_gemmfunction k_sparse4 = NULL;
+  libxsmm_gemmfunction k_dense = NULL;
   int i, j, n, nkerns, a_nnz = 0;
   int N_sparse1, N_sparse2, N_sparse4, N_dense;
   static int error_once = 0;
@@ -433,7 +449,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   }
 
   /* Allocate CSR structure */
-  a_csr_values = (float*)malloc((size_t)a_nnz * sizeof(float));
+  a_csr_values = (double*)malloc((size_t)a_nnz * sizeof(double));
   a_csr_rowptr = (unsigned int*)malloc(((size_t)M + 1) * sizeof(unsigned int));
   a_csr_colidx = (unsigned int*)malloc((size_t)a_nnz * sizeof(unsigned int));
 
@@ -472,32 +488,30 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   {
     /* Attempt to JIT a sparse kernel */
     if ( N_sparse1 <= N ) {
-      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse1, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse1 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse1, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F32,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+      k_sparse1 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* If that worked try to JIT a second (wider) sparse kernel */
     if ( NULL != k_sparse1 && 0 == (N % N_sparse2) ) {
-      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse2, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse2 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse2, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F32,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+      k_sparse2 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* And if that worked try going even wider still */
     if ( NULL != k_sparse2 && 0 == (N % N_sparse4) ) {
-      xgemm_desc = libxsmm_sgemm_descriptor_init(&xgemm_blob, M, N_sparse4, K,
-                                                 0, ldb, ldc, one, beta, flags, prefetch);
-      if ( NULL != xgemm_desc ) {
-        xgemm_desc->c1 = N;
-        k_sparse4 = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
-      }
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+        M, N_sparse4, K, 0, ldb, ldc, LIBXSMM_DATATYPE_F32,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+      k_sparse4 = libxsmm_create_spgemm_csr_areg_v2( gemm_shape, flags, prefetch_flags, N,
+        a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
-  } LIBXSMM_HANDLE_ERROR_OFF_END();
+  }
+  LIBXSMM_HANDLE_ERROR_OFF_END();
 
   /* Free CSR */
   free( a_csr_values );
@@ -506,8 +520,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* Also generate a dense kernel */
   if ( NULL != aa_dense ) {
-    k_dense = libxsmm_smmdispatch(N_dense, M, K, &ldb, &K, &ldc,
-                                  &one, &beta, &flags, NULL/*auto-prefetch*/);
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+      N_dense, M, K, ldb, K, ldc, LIBXSMM_DATATYPE_F32,
+      LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags );
   }
 
   if ( NULL != k_dense ) {
@@ -531,7 +547,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
-    void* fp;
+    libxsmm_gemm_param gemm_param;
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -553,11 +570,15 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark dense */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_dense && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
+        gemm_param.b.primary = (void*)aa_dense;
         for ( j = 0; j < N; j += N_dense ) {
-          k_dense( B + j, aa_dense, C + j );
+          gemm_param.a.primary = (void*)(B+j);
+          gemm_param.c.primary = (void*)(C+j);
+          k_dense( &gemm_param );
         }
       }
       /* Bias to prefer dense kernels */
@@ -565,28 +586,37 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark sparse (regular) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
       for ( i = 0; i < 250; ++i ) {
-        k_sparse1( NULL, B, C );
+        k_sparse1( &gemm_param );
       }
       dt_sparse1 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
     /* Benchmark sparse (wide) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
       for ( i = 0; i < 250; ++i ) {
-        k_sparse2( NULL, B, C );
+        k_sparse2( &gemm_param );
       }
       dt_sparse2 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
 
     /* Benchmark sparse (widest) */
+    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
       t = libxsmm_timer_tick();
+      gemm_param.b.primary = (void*)B;
+      gemm_param.c.primary = (void*)C;
       for ( i = 0; i < 250; ++i ) {
-        k_sparse4( NULL, B, C );
+        k_sparse4( &gemm_param );
       }
       dt_sparse4 = libxsmm_timer_duration( t, libxsmm_timer_tick() );
     }
@@ -606,8 +636,11 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
       LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
       libxsmm_free( fp );
+#endif
     }
 
     /* Sparse (wide) fastest */
@@ -615,8 +648,11 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
+#endif
     }
 
     /* Sparse (widest) fastest */
@@ -624,8 +660,11 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
+#if !defined(__APPLE__) && !defined(__arm64__)
+      void* fp;
       LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
+#endif
     }
 
     libxsmm_free( B );
@@ -649,13 +688,21 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const double* B, double* C )
 {
   int i;
+  libxsmm_gemm_param gemm_param;
+
   assert( handle != NULL );
 
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
   if ( handle->a_dense == NULL ) {
-    handle->kernel( NULL, B, C );
+    gemm_param.b.primary = (void*)B;
+    gemm_param.c.primary = (void*)C;
+    handle->kernel( &gemm_param );
   } else {
+    gemm_param.b.primary = (void*)handle->a_dense;
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
-      handle->kernel( B+i, handle->a_dense, C+i );
+      gemm_param.a.primary = (void*)(B+i);
+      gemm_param.c.primary = (void*)(C+i);
+      handle->kernel( &gemm_param );
     }
   }
 }
@@ -664,13 +711,21 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const float* B, float* C )
 {
   int i;
+  libxsmm_gemm_param gemm_param;
+
   assert( handle != NULL );
 
+  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
   if ( handle->a_dense == NULL ) {
-    handle->kernel( NULL, B, C );
+    gemm_param.b.primary = (void*)B;
+    gemm_param.c.primary = (void*)C;
+    handle->kernel( &gemm_param );
   } else {
+    gemm_param.b.primary = (void*)handle->a_dense;
     for ( i = 0; i < handle->N; i += handle->N_chunksize ) {
-      handle->kernel( B+i, handle->a_dense, C+i );
+      gemm_param.a.primary = (void*)(B+i);
+      gemm_param.c.primary = (void*)(C+i);
+      handle->kernel( &gemm_param );
     }
   }
 }
@@ -681,17 +736,19 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   assert( handle != NULL );
 
   if ( handle->a_dense != NULL ) {
-    libxsmm_free(handle->a_dense);
+    libxsmm_free( handle->a_dense );
   } else {
+#if !defined(__APPLE__) && !defined(__arm64__)
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
-    LIBXSMM_ASSIGN127(&fp, &handle->kernel);
-    libxsmm_free(fp);
+    LIBXSMM_ASSIGN127( &fp, &handle->kernel );
+    libxsmm_free( fp );
+#endif
   }
 
-  free(handle);
+  free( handle );
 }
 
 
@@ -701,16 +758,16 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
 
   if ( handle->a_dense != NULL ) {
     libxsmm_free(handle->a_dense);
-  }
-  else {
+  } else {
+#if !defined(__APPLE__) && !defined(__arm64__)
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
-    LIBXSMM_ASSIGN127(&fp, &handle->kernel);
-    libxsmm_free(fp);
+    LIBXSMM_ASSIGN127( &fp, &handle->kernel );
+    libxsmm_free( fp );
+#endif
   }
 
-  free(handle);
+  free( handle );
 }
-

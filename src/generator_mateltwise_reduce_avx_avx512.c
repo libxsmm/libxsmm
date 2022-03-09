@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -14,6 +14,10 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
+
+#if 0
+#define USE_ENV_TUNING
+#endif
 
 #if !defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC
@@ -66,7 +70,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
       i_micro_kernel_config->alu_mov_instruction,
      i_gp_reg_mapping->gp_reg_param_struct,
      LIBXSMM_X86_GP_REG_UNDEF, 0,
-     56,
+     64,
      i_gp_reg_mapping->gp_reg_out,
      0 );
 
@@ -484,7 +488,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       56,
+       64,
        i_gp_reg_mapping->gp_reg_reduced_elts,
        0 );
     if ( compute_squared_vals_reduce > 0 ) {
@@ -497,7 +501,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       56,
+       64,
        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
        0 );
   }
@@ -1075,7 +1079,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       56,
+       64,
        i_gp_reg_mapping->gp_reg_reduced_elts,
        0 );
     if ( compute_squared_vals_reduce > 0 ) {
@@ -1088,7 +1092,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         i_micro_kernel_config->alu_mov_instruction,
        i_gp_reg_mapping->gp_reg_param_struct,
        LIBXSMM_X86_GP_REG_UNDEF, 0,
-       56,
+       64,
        i_gp_reg_mapping->gp_reg_reduced_elts_squared,
        0 );
   }
@@ -1151,7 +1155,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                     reg_sum,
                     aux_vreg,
                     reg_sum,
-                    0, 0, 0, (mask_reg) << 4);
+                    0, 0, 0, (mask_reg) << 4 );
         }
       }
     }
@@ -1181,7 +1185,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                   cur_vreg,
                   aux_vreg,
                   cur_vreg,
-                  0, 0, 0, (mask_reg) << 4);
+                  0, 0, 0, (mask_reg) << 4 );
       }
 
       if ( compute_plain_vals_reduce > 0 ) {
@@ -5277,7 +5281,9 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   unsigned int END_LABEL = 2;
   unsigned int vlen = 16;
   unsigned int mask_reg = 0;
+#if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_REDUCE_COLS_IDX");
+#endif
   const char *const env_pf_dist = getenv("PF_DIST_REDUCE_COLS_IDX");
   const char *const env_pf_type = getenv("PF_TYPE_REDUCE_COLS_IDX");
   const char *const env_nts     = getenv("NTS_REDUCE_COLS_IDX");
@@ -5290,10 +5296,12 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
 #endif
   libxsmm_reset_jump_label_tracker(p_jump_label_tracker);
 
+#if defined(USE_ENV_TUNING)
   if ( 0 == env_max_m_unroll ) {
   } else {
-    max_m_unrolling = atoi(env_max_m_unroll);
+    max_m_unrolling = LIBXSMM_MAX(1,atoi(env_max_m_unroll));
   }
+#endif
   if ( 0 == env_pf_dist ) {
   } else {
     pf_dist = atoi(env_pf_dist);
@@ -5365,7 +5373,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       i_micro_kernel_config->alu_mov_instruction,
       i_gp_reg_mapping->gp_reg_param_struct,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
-      56,
+      64,
       i_gp_reg_mapping->gp_reg_out,
       0 );
 

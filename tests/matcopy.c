@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -154,15 +154,15 @@ int main(void)
             LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
       {
         const libxsmm_datatype type = LIBXSMM_DATATYPE(ELEM_TYPE);
-        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary(
-          m[test], n[test], ldi + test, ldo + test, type, type, type,
-          LIBXSMM_MELTW_FLAG_UNARY_NONE,
+        const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
+          m[test], n[test], ldi[test], ldo[test], type, type, type);
+        const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(
 #   if 1
           LIBXSMM_MELTW_TYPE_UNARY_IDENTITY/*mcopy*/
 #   else
           LIBXSMM_MELTW_TYPE_UNARY_XOR/*mzero*/
 #   endif
-        );
+          , unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
         if (NULL == kernel) {
 #   if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);

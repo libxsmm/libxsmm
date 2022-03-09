@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
@@ -14,143 +14,75 @@
 #include <stdio.h>
 #include <math.h>
 
-int test_normal_to_normalT_64bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
-  double *in;
-  double *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
-  int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
+#include "eltwise_common.h"
 
-  if ( M > ldi ) {
-    fprintf( stderr, "test_normal_to_normalT_64bit: ldi needs to be equal to or bigger than M\n");
-    exit(-1);
-  }
-  if ( N > ldo ) {
-    fprintf( stderr, "test_normal_to_normalT_64bit: ldo needs to be equal to or bigger than N\n");
-    exit(-1);
-  }
+void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ){
+  size_t i, j;
 
-  in       = (double*) libxsmm_aligned_malloc( sizeof(double)*N*ldi, 64);
-  out      = (double*) libxsmm_aligned_malloc( sizeof(double)*M*ldo, 64);
-  out_gold = (double*) libxsmm_aligned_malloc( sizeof(double)*M*ldo, 64);
-
-  /* init in */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (double)(((i*ldi)+j)%4096);
-    }
-  }
-
-  /* init out */
-  for ( i = 0; i < M*ldo; ++i ) {
-    out[i] = 0;
-  }
-  for ( i = 0; i < M*ldo; ++i ) {
-    out_gold[i] = 0;
-  }
-
-  /* compute out_gold */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      out_gold[(j*ldo)+i] = in[(i*ldi)+j];
-    }
-  }
-
-  unary_shape.m = M;
-  unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_F64;
-  unary_shape.out_type = LIBXSMM_DATATYPE_F64;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F64;
-
-  /* use jited tranpose */
-  unary_param.in.primary  = (void*)in;
-  unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
-    exit(-1);
-  }
-  unary_kernel( &unary_param );
-
-  /* compare result */
-  s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
+  if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
+    const double*  in_data = (const double*)in;
+    double*       out_data = (double*)      out;
+    for ( i = 0; i < (size_t)N; ++i ) {
+      for ( j = 0; j < (size_t)M; ++j ) {
+        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
       }
     }
-  }
-  if ( s == 0 ) {
-    printf("SUCCESS unary transpose 64bit\n");
+  } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32)) {
+    const float*  in_data = (const float*)in;
+    float*       out_data = (float*)      out;
+    for ( i = 0; i < (size_t)N; ++i ) {
+      for ( j = 0; j < (size_t)M; ++j ) {
+        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+      }
+    }
+  } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+    const unsigned short*  in_data = (const unsigned short*)in;
+    unsigned short*       out_data = (unsigned short*)      out;
+    for ( i = 0; i < (size_t)N; ++i ) {
+      for ( j = 0; j < (size_t)M; ++j ) {
+        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+      }
+    }
+  } else if ( (dtype == LIBXSMM_DATATYPE_I8) ) {
+    const unsigned char*  in_data = (const unsigned char*)in;
+    unsigned char*       out_data = (unsigned char*)      out;
+    for ( i = 0; i < (size_t)N; ++i ) {
+      for ( j = 0; j < (size_t)M; ++j ) {
+        out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
+      }
+    }
   } else {
-    printf("FAILURE unary transpose 64bit\n");
-    ret = EXIT_FAILURE;
+    /* shouldn't happen */
   }
-
-  libxsmm_free( out_gold );
-  libxsmm_free( out );
-  libxsmm_free( in );
-
-  return ret;
 }
 
-int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
-  float *in;
-  float *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
-  int ret = EXIT_SUCCESS;
+int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
+  const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype, dtype, dtype );
   libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_matdiff_info norms_out;
+  char *in;
+  char *out, *out_gold;
+  int ret = EXIT_SUCCESS;
 
   if ( M > ldi ) {
-    fprintf( stderr, "test_normal_to_normalT_32bit: ldi needs to be equal to or bigger than M\n");
+    fprintf( stderr, "test_normal_to_normalT: ldi needs to be equal to or bigger than M\n");
     exit(-1);
   }
   if ( N > ldo ) {
-    fprintf( stderr, "test_normal_to_normalT_32bit: ldo needs to be equal to or bigger than N\n");
+    fprintf( stderr, "test_normal_to_normalT: ldo needs to be equal to or bigger than N\n");
     exit(-1);
   }
 
-  in       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ldi, 64);
-  out      = (float*) libxsmm_aligned_malloc( sizeof(float)*M*ldo, 64);
-  out_gold = (float*) libxsmm_aligned_malloc( sizeof(float)*M*ldo, 64);
+  in       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*N*ldi, 64);
+  out      = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
+  out_gold = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
 
-  /* init in */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (float)(((i*ldi)+j)%4096);
-    }
-  }
+  init_random_matrix( dtype, in,       1, ldi, N, 0 );
+  init_zero_matrix(   dtype, out,      1, ldo, M );
+  init_zero_matrix(   dtype, out_gold, 1, ldo, M );
 
-  /* init out */
-  for ( i = 0; i < M*ldo; ++i ) {
-    out[i] = 0;
-  }
-  for ( i = 0; i < M*ldo; ++i ) {
-    out_gold[i] = 0;
-  }
-
-  /* compute out_gold */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      out_gold[(j*ldo)+i] = in[(i*ldi)+j];
-    }
-  }
-
-  unary_shape.m = M;
-  unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type = LIBXSMM_DATATYPE_F32;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+  /* run reference */
+  ref_transpose( in, out_gold, M, N, ldi, ldo, dtype );
 
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
@@ -160,194 +92,16 @@ int test_normal_to_normalT_32bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
     exit(-1);
   }
+  /* run TPP */
   unary_kernel( &unary_param );
 
-  /* compare result */
-  s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < ldo; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-    }
-  }
-  if ( s == 0 ) {
-    printf("SUCCESS unary tranpose 32bit\n");
+  /* check result */
+  norms_out = check_matrix( dtype, out_gold, out, ldo, N, M );
+
+  if ( norms_out.linf_abs == 0 ) {
+    printf("SUCCESS unary transpose LIBXSMM_TYPESIZE: %i\n", LIBXSMM_TYPESIZE(dtype));
   } else {
-    printf("FAILURE unary transose 32bit\n");
-    ret = EXIT_FAILURE;
-  }
-
-  libxsmm_free( out_gold );
-  libxsmm_free( out );
-  libxsmm_free( in );
-
-  return ret;
-}
-
-int test_normal_to_normalT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
-  unsigned short *in;
-  unsigned short *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
-  int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
-
-  if ( M > ldi ) {
-    fprintf( stderr, "test_normal_to_normalT_16bit: ldi needs to be equal to or bigger than M\n");
-    exit(-1);
-  }
-  if ( N > ldo ) {
-    fprintf( stderr, "test_normal_to_normalT_16bit: ldo needs to be equal to or bigger than N\n");
-    exit(-1);
-  }
-
-  in       = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*N*ldi, 64);
-  out      = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*M*ldo, 64);
-  out_gold = (unsigned short*) libxsmm_aligned_malloc( sizeof(unsigned short)*M*ldo, 64);
-
-  /* init in */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (unsigned short)(((i*ldi)+j)%4096);
-    }
-  }
-
-  /* init out */
-  for ( i = 0; i < M*ldo; ++i ) {
-    out[i] = 0;
-  }
-  for ( i = 0; i < M*ldo; ++i ) {
-    out_gold[i] = 0;
-  }
-
-  /* compute out_gold */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      out_gold[(j*ldo)+i] = in[(i*ldi)+j];
-    }
-  }
-
-  unary_shape.m = M;
-  unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
-  unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
-
-  /* use jited tranpose */
-  unary_param.in.primary  = (void*)in;
-  unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
-    exit(-1);
-  }
-  unary_kernel( &unary_param );
-
-  /* compare result */
-  s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-    }
-  }
-  if ( s == 0 ) {
-    printf("SUCCESS unary transpose 16bit\n");
-  } else {
-    printf("FAILURE unary transpose 16bit\n");
-    ret = EXIT_FAILURE;
-  }
-
-  libxsmm_free( out_gold );
-  libxsmm_free( out );
-  libxsmm_free( in );
-
-  return ret;
-}
-
-int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
-  unsigned char *in;
-  unsigned char *out, *out_gold;
-  unsigned int i, j;
-  unsigned int s;
-  int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
-
-  if ( M > ldi ) {
-    fprintf( stderr, "test_normal_to_normalT_08bit: ldi needs to be equal to or bigger than M\n");
-    exit(-1);
-  }
-  if ( N > ldo ) {
-    fprintf( stderr, "test_normal_to_normalT_08bit: ldo needs to be equal to or bigger than N\n");
-    exit(-1);
-  }
-
-  in       = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*ldi, 64);
-  out      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*M*ldo, 64);
-  out_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*M*ldo, 64);
-
-  /* init in */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%4096);
-    }
-  }
-
-  /* init out */
-  for ( i = 0; i < M*ldo; ++i ) {
-    out[i] = 0;
-  }
-  for ( i = 0; i < M*ldo; ++i ) {
-    out_gold[i] = 0;
-  }
-
-  /* compute out_gold */
-  for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      out_gold[(j*ldo)+i] = in[(i*ldi)+j];
-    }
-  }
-
-  unary_shape.m = M;
-  unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_I8;
-  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
-
-  /* use jited tranpose */
-  unary_param.in.primary  = (void*)in;
-  unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-  if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
-    exit(-1);
-  }
-  unary_kernel( &unary_param );
-
-  /* compare result */
-  s = 0;
-  for ( i = 0; i < M; ++i ) {
-    for ( j = 0; j < N; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, out[(i*ldo)+j], out_gold[(i*ldo)+j]);
-        s = 1;
-      }
-    }
-  }
-  if ( s == 0 ) {
-    printf("SUCCESS unary transpose 08bit\n");
-  } else {
-    printf("FAILURE unary transpose 08bit\n");
+    printf("FAILURE unary transpose LIBXSMM_TYPESIZE: %i\n", LIBXSMM_TYPESIZE(dtype));
     ret = EXIT_FAILURE;
   }
 
@@ -361,7 +115,7 @@ int test_normal_to_normalT_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param;
@@ -424,8 +178,8 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -469,7 +223,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j, j2;
+  libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = N + (N%2);
@@ -522,8 +276,8 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -570,7 +324,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -616,8 +370,8 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -660,7 +414,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
@@ -706,8 +460,8 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -750,7 +504,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
@@ -797,8 +551,8 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   unary_shape.m = M;
   unary_shape.n = N;
-  unary_shape.ldi = &ldi;
-  unary_shape.ldo = &ldo;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
   unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
@@ -919,7 +673,7 @@ void test_vnni_to_vnniT_08bit() {
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype;
-  char op;
+  libxsmm_blasint op;
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;
@@ -940,16 +694,16 @@ int main( int argc, char* argv[] ) {
 
   if ( op == 'T' && dtype == 8 ) {
     printf("Testing 64bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT_64bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_F64 );
   } else if ( op == 'T' && dtype == 4 ) {
     printf("Testing 32bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT_32bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_F32 );
   } else if ( op == 'T' && dtype == 2 ) {
     printf("Testing 16bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT_16bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16 );
   } else if ( op == 'T' && dtype == 1 ) {
     printf("Testing 08bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT_08bit( M, N, ldi, ldo );
+    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_I8 );
   } else if ( op == 'R' && dtype == 2 ) {
     printf("Testing 16bit VNNI to VNNI Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni_to_vnniT_16bit( M, N, ldi, ldo );

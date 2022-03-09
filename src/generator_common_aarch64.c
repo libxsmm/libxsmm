@@ -4,7 +4,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Alexander Breuer (Univ. Jena), Alexander Heinecke, Evangelos Georganas (Intel Corp.)
@@ -25,9 +25,9 @@ void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
-                                                   unsigned char           i_p_reg,
+                                                   unsigned int            i_p_reg,
                                                    int                     i_n_bits,
-                                                   unsigned char           i_gp_reg_scratch ) {
+                                                   unsigned int            i_gp_reg_scratch ) {
   if( i_n_bits < 0 ) {
     libxsmm_aarch64_instruction_sve_pcompute( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SVE_PTRUE,
@@ -112,7 +112,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
   unsigned int l_vmove_instr   = ( i_is_store == 0 ) ? l_vload_instr : l_vstore_instr;
 
   if ( i_masked_elems == 1 ) {
-    unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+    unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
     if ( i_is_store == 0 ) {
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
     }
@@ -165,7 +165,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
                                                             const unsigned int      i_datatype_size,
                                                             const unsigned int      i_masked_elems,
                                                             const unsigned int      i_adv_gpr ) {
-  unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+  unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
 
   if ( i_masked_elems != 1 ) {
     if ( i_adv_gpr == 0 ) {
@@ -256,7 +256,7 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
     }
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                   (unsigned long long)((unsigned long long)(i_ld*i_n_blocking)) );
+                                                   (unsigned long long)((unsigned long long)i_ld*i_n_blocking) );
   } else {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
@@ -349,7 +349,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
         }
         /* combine the m-jump with the n one*/
         else {
-          l_jump_block_m_last = i_vec_length * i_data_size;
+          l_jump_block_m_last = (unsigned long long)i_vec_length * i_data_size;
         }
       }
 
@@ -461,7 +461,7 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                 (unsigned long long)((unsigned long long)(i_ld*i_n_blocking)) );
+                                                 (unsigned long long)((unsigned long long)i_ld*i_n_blocking) );
 }
 
 LIBXSMM_API_INTERN
@@ -525,7 +525,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
       }
       /* combine the m-jump with the n one */
       else {
-        l_jump_block_m_last = i_vec_length * i_data_size;
+        l_jump_block_m_last = (unsigned long long)i_vec_length * i_data_size;
       }
     }
 
@@ -1481,7 +1481,7 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64( libxsmm_generated_code*  
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_code *io_generated_code,
-                                                              const unsigned char     i_vec_reg,
+                                                              const unsigned int      i_vec_reg,
                                                               const unsigned int      i_gp_reg_tmp,
                                                               const libxsmm_aarch64_asimd_tupletype i_tupletype,
                                                               const unsigned long long imm64) {
@@ -1500,7 +1500,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec ( libxsmm_generated_cod
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_code *io_generated_code,
-                                                          const unsigned char     i_vec_reg,
+                                                          const unsigned int      i_vec_reg,
                                                           const unsigned int      i_gp_reg_tmp0,
                                                           const unsigned int      i_gp_reg_tmp1,
                                                           void                    *imm64_array,
@@ -1525,7 +1525,7 @@ void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_cod
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_code* io_generated_code,
-                                                              const unsigned char     i_vec_reg,
+                                                              const unsigned int      i_vec_reg,
                                                               const unsigned int      i_gp_reg_tmp0,
                                                               const unsigned int      i_gp_reg_tmp1,
                                                               const unsigned int      i_pred_tmp,

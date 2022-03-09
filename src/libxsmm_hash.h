@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
@@ -13,9 +13,11 @@
 
 #include <libxsmm_macros.h>
 
-/* Map number of Bits to corresponding routine. */
+/** Map number of Bits to corresponding routine. */
 #define LIBXSMM_CRC32U(N) LIBXSMM_CONCATENATE(libxsmm_crc32_u, N)
-/* Map number of Bytes to number of bits. */
+/** Calculate CRC32-value of the given pointer. */
+#define LIBXSMM_CRCPTR(SEED, PTR) LIBXSMM_CRC32U(LIBXSMM_BITS)(SEED, &(PTR))
+/** Map number of Bytes to number of bits. */
 #define LIBXSMM_CRC32(N) LIBXSMM_CONCATENATE(libxsmm_crc32_b, N)
 #define libxsmm_crc32_b4 libxsmm_crc32_u32
 #define libxsmm_crc32_b8 libxsmm_crc32_u64

@@ -1,6 +1,6 @@
 deeplearning/sparse_weight_mult/parallel_sparse_weight_B_mult
+deeplearning/sparse_weight_mult/parallel_sparse_weight_B_conv
 deeplearning/sparse_weight_mult/parallel_sparse_weight_C_redmult
-deeplearning/sparse_weight_mult/simple
 deeplearning/sparse_weight_mult/sparse_weight_A_mult
 deeplearning/sparse_weight_mult/sparse_weight_B_mult
 deeplearning/sparse_weight_mult/sparse_weight_C_redmult
@@ -36,7 +36,5 @@ packed/trsm/getrf
 packed/trmm/trmm
 packed/trsm/trsm
 pyfr/pyfr_driver_asp_reg
-pyfr/pyfr_gemm_cm
-pyfr/pyfr_gemm_rm
 spmdm/spmdm
 *.txt

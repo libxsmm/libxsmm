@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evanelos Georganas, Alexander Heinecke (Intel Corp.)
@@ -29,7 +29,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_transform_Xway_byteshuffle_network_avx512( libxsmm_generated_code* io_generated_code,
                                                                   const char              i_vector_name,
                                                                   const unsigned char     i_in_idx[16],
-                                                                  const unsigned char     i_vec_reg_suffle_cntl,
+                                                                  const unsigned int      i_vec_reg_suffle_cntl,
                                                                   const unsigned int      i_vec_reg_src_start,
                                                                   const unsigned int      i_vec_reg_dst_start,
                                                                   const unsigned int      i_shuffle_instr,
