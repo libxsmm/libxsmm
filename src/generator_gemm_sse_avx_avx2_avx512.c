@@ -313,7 +313,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
 
     /* creating a descriptor for the meltwise transform (transpose) */
-    /* const libxsmm_meltw_descriptor *const l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob, */
     l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob,
       (libxsmm_datatype)(i_xgemm_desc->datatype), (libxsmm_datatype)(i_xgemm_desc->datatype), /* FIXME: should go away after rebasing, cast would not be needed */
       i_xgemm_desc->k /*m*/, i_xgemm_desc->m /*n*/,
