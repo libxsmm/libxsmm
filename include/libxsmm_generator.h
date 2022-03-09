@@ -14,10 +14,8 @@
 #include "libxsmm_typedefs.h"
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
-  0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A)) && \
-        (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
-        (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
-
+  0 ==  (LIBXSMM_NEQ(1, ALPHA) /*&& LIBXSMM_NEQ(-1, ALPHA)*/) || \
+        (LIBXSMM_NEQ(1, BETA) && LIBXSMM_NEQ(0, BETA)))
 
 /** Initialize GEMM descriptor as used by low-level routines (type-specific). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
