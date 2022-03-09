@@ -291,7 +291,7 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
 #elif defined(NDEBUG)
-  posix_memalign(&result, alignment, size);
+  LIBXSMM_EXPECT(0 == posix_memalign(&result, alignment, size));
 #else
   if (0 != posix_memalign(&result, alignment, size)) result = NULL;
 #endif
@@ -1935,6 +1935,27 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
               (unsigned int)request->descriptor.gemm->meltw_param, meltw_tname, (unsigned int)request->descriptor.gemm->meltw_flags,
               request->descriptor.gemm->meltw_ldx, request->descriptor.gemm->meltw_ldy, request->descriptor.gemm->meltw_ldz, decompress_A, sparsity_factor_A );
           } else if (kernabi == 2) {
+            decompress_A = 0;
+            sparsity_factor_A = 1;
+            if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1) {
+              decompress_A = 1;
+              sparsity_factor_A = 1;
+            } else if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2) {
+              decompress_A = 1;
+              sparsity_factor_A = 2;
+            } else if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4) {
+              decompress_A = 1;
+              sparsity_factor_A = 4;
+            } else if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_8) {
+              decompress_A = 1;
+              sparsity_factor_A = 8;
+            } else if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16) {
+              decompress_A = 1;
+              sparsity_factor_A = 16;
+            } else if (request->descriptor.gemm->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32) {
+              decompress_A = 1;
+              sparsity_factor_A = 32;
+            }
             /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
             LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_abi%i_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i_uh%u_si%i_tc-%s_avnni%i_bvnni%i_cvnni%i_meopd%u-%s-mefld%u-meld%u-%u-%u_meopap%u-meflap%u-melap%u_meopbp%u-meflbp%u-melbp%u_meopcp%u-meflcp%u-melcp%u_mestore%u_decompress_A%i_spfactor%i.mxm", kernabi, target_arch, tname,
               0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',

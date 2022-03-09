@@ -286,7 +286,7 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) InterlockedAnd8((volatile char*)(DST_PTR), 0)
 #   define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) InterlockedAnd64((volatile LONGLONG*)(DST_PTR), 0)
 # endif
-# define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) InterlockedOr((volatile LONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) InterlockedOr((volatile LONG*)(DST_PTR), (LONG)VALUE)
 # define LIBXSMM_ATOMIC_FETCH_OR8(DST_PTR, VALUE, KIND) _InterlockedOr8((volatile char*)(DST_PTR), VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) + (VALUE))
 # define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) + (VALUE))
@@ -294,14 +294,18 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((size_t)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((size_t)VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) - (VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) - (VALUE))
-# define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), VALUE)
-# define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) _InterlockedExchangeAdd16((volatile SHORT*)(DST_PTR), VALUE)
-# define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) InterlockedExchangeAdd64((volatile LONGLONG*)(DST_PTR), VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), (LONG)VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) _InterlockedExchangeAdd16((volatile SHORT*)(DST_PTR), (SHORT)VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) InterlockedExchangeAdd64((volatile LONGLONG*)(DST_PTR), (LONGLONG)VALUE)
 # define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, -1 * (VALUE), KIND)
 # define LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, -1 * (VALUE), KIND)
 # define LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, -1 * (VALUE), KIND)
-# define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
-# define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
+# define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) \
+    (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), (LONG)NEWVAL, (LONG)OLDVAL))
+# define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) \
+    ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
+# define LIBXSMM_ATOMIC_CMPSWP64(DST_PTR, OLDVAL, NEWVAL, KIND) \
+    (((LONG64)(OLDVAL)) == InterlockedCompareExchange64((volatile LONG64*)(DST_PTR), NEWVAL, OLDVAL))
 # if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
 #   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_CMPSWP, 8)(DST_PTR, 0, 1, KIND)
 # else
@@ -462,9 +466,13 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_SYNC_YIELD pthread_yield_np()
-#   elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
-      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
-      LIBXSMM_EXTERN int sched_yield(void); /* sched.h */
+#   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
+      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_THROW;
+#     else
+      LIBXSMM_EXTERN int sched_yield(void);
+#     endif
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)

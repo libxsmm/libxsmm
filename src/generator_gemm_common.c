@@ -478,7 +478,8 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_stack_vars_v2( libxsmm_genera
   }
 
   if ((is_brgemm == 1) && ( i_micro_kernel_config->decompress_A == 1)) {
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, i_gp_reg_mapping->gp_reg_reduce_count );
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_count, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
+    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
   }
 
   if (is_offset_brgemm == 1) {
