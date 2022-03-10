@@ -120,6 +120,18 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int adjust_A_pf_ptrs = 0;
   unsigned int adjust_B_pf_ptrs = 0;
 
+  /* Local variables used for A transpose case */
+  libxsmm_descriptor_blob           l_blob_opa;
+  const libxsmm_gemm_descriptor *   l_xgemm_desc_opa;
+  libxsmm_descriptor_blob           l_meltw_blob;
+  libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
+  libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
+  unsigned int                      lda_transpose;
+  /* Local variables used only for older gemm setup (not LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) */
+  unsigned int                      l_trans_a_stack_size = 0;
+  unsigned int                      l_transpose_stack_register = LIBXSMM_X86_GP_REG_UNDEF;
+  const libxsmm_meltw_descriptor *  l_mateltwise_desc;
+
   /* @TODO we need to implement a consolidate solution for callee save stuff
    * here we need to handle AMX stuff to allow AMX optimized TPPs to run lower platforms */
   if ( !( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
@@ -136,10 +148,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   }
 
   /* in case when A needs to be transposed, we need to change temporarily the desciptor dimensions for gemm */
-  libxsmm_descriptor_blob l_blob_opa;
-  unsigned int lda_transpose = i_xgemm_desc->m;
-
-  const libxsmm_gemm_descriptor * l_xgemm_desc_opa;
+  lda_transpose = i_xgemm_desc->m;
   if (LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype)) {
     l_xgemm_desc_opa = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ?
       libxsmm_sgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
@@ -255,11 +264,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_gemm_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
   }
 
-  /* Local variables used only for older gemm setup (not LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) */
-  unsigned int l_trans_a_stack_size = 0;
-  unsigned int l_transpose_stack_register = LIBXSMM_X86_GP_REG_UNDEF; /* for saving start of the A transpose allocated on the stack */
-
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
+    /* initializing required register variables for meltwise transform (transpose) */
+    unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
+    unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
+    unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
+    unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
+    unsigned int l_gp_reg_mask = LIBXSMM_X86_GP_REG_R10;
+    unsigned int l_gp_reg_mask_2 = LIBXSMM_X86_GP_REG_R11;
+    unsigned int l_mask_reg_0 = 1;
+    unsigned int l_mask_reg_1 = 2;
+    unsigned int l_mask_reg_2 = 3;
+    unsigned int l_mask_reg_3 = 4;
+    unsigned int l_mask_reg_4 = 5;
+    unsigned int l_mask_reg_5 = 6;
+    unsigned int l_mask_reg_6 = 7;
+
     if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) != LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
       /* Aligning the stack at 64-byte boundary */
       unsigned int temp_reg = LIBXSMM_X86_GP_REG_R12;
@@ -293,34 +313,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     }
 
     /* creating a descriptor for the meltwise transform (transpose) */
-    libxsmm_descriptor_blob l_meltw_blob;
-    const libxsmm_meltw_descriptor *const l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob,
+    l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob,
       (libxsmm_datatype)(i_xgemm_desc->datatype), (libxsmm_datatype)(i_xgemm_desc->datatype), /* FIXME: should go away after rebasing, cast would not be needed */
       i_xgemm_desc->k /*m*/, i_xgemm_desc->m /*n*/,
       i_xgemm_desc->lda, i_xgemm_desc->m,
       i_xgemm_desc->flags, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
 
-    /* initializng required register variables for meltwise transform (transpose) */
-    unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
-    unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
-    unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_RAX;
-    unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_RDX;
-    unsigned int l_gp_reg_mask = LIBXSMM_X86_GP_REG_R10;
-    unsigned int l_gp_reg_mask_2 = LIBXSMM_X86_GP_REG_R11;
-    unsigned int l_mask_reg_0 = 1;
-    unsigned int l_mask_reg_1 = 2;
-    unsigned int l_mask_reg_2 = 3;
-    unsigned int l_mask_reg_3 = 4;
-    unsigned int l_mask_reg_4 = 5;
-    unsigned int l_mask_reg_5 = 6;
-    unsigned int l_mask_reg_6 = 7;
-
     /* define mateltwise kernel config */
-    libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
     libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc);
 
     /* define gp register mapping */
-    libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
     memset(&l_mateltwise_gp_reg_mapping, 0, sizeof(l_mateltwise_gp_reg_mapping));
 #if defined(_WIN32) || defined(__CYGWIN__)
     l_mateltwise_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_X86_GP_REG_RCX;
@@ -678,12 +680,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   else {
     /* cleaning up the stack memory for the transpose */
     if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
+        unsigned int temp_reg;
 
         /* cleaning up the space for transpose */
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, l_trans_a_stack_size );
 
         /* removing the extra offset applied to RSP to 64-byte boundary */
-        unsigned int temp_reg = LIBXSMM_X86_GP_REG_R12;
+        temp_reg = LIBXSMM_X86_GP_REG_R12;
         libxsmm_x86_instruction_pop_reg( io_generated_code, temp_reg);
         libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, temp_reg );
     }
