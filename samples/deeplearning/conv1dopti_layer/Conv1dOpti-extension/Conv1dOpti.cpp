@@ -62,7 +62,9 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     libxsmm_blasint per_ldi = WW_t;
     libxsmm_blasint per_ldo = F_t*C_t;
 
-    libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( per_m, per_n, per_ldi, per_ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_kernel == NULL) {
         fprintf( stderr, "JIT unary TPP for NORM_TO_NORMT. Bailing...!\n");
         exit(-1);
@@ -99,8 +101,12 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     libxsmm_blasint tpp_n = F_t;                                   // rows
     libxsmm_blasint ld_zero = W_t;
 
-    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
-    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, tpp_n, tpp_m1, ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, tpp_n, tpp_m2, ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    // libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by unary copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -119,8 +125,13 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     }
     tpp_m1 = (XS_TILE_FORWARD + dial*(WW_t-1));
     tpp_m2 = (W_t - tile_multiple + dial*(WW_t-1));
-    libxsmm_meltwfunction_unary trans_shortvnni_kernel = libxsmm_dispatch_meltw_unary(tpp_m1, C_t, &ldi, &ldo_short, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
-    libxsmm_meltwfunction_unary trans_edgevnni_kernel = libxsmm_dispatch_meltw_unary(tpp_m2, C_t, &ldi, &ldo_edge, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
+
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, C_t, ldi, ldo_short, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_shortvnni_kernel = libxsmm_dispatch_meltw_unary_v2( trans_vnni_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, C_t, ldi, ldo_edge, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_edgevnni_kernel = libxsmm_dispatch_meltw_unary_v2( trans_vnni_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_shortvnni_kernel = libxsmm_dispatch_meltw_unary(tpp_m1, C_t, &ldi, &ldo_short, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
+    // libxsmm_meltwfunction_unary trans_edgevnni_kernel = libxsmm_dispatch_meltw_unary(tpp_m2, C_t, &ldi, &ldo_edge, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
     if ( trans_shortvnni_kernel == NULL | trans_edgevnni_kernel == NULL) {
         fprintf( stderr, "JIT for NORM_TO_VNNI TPP. Bailing...!\n");
         exit(-1);
@@ -216,7 +227,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint flip_ldi_1 = WW_t;
     libxsmm_blasint flip_ldo_1 = F_t*C_t;
 
-    libxsmm_meltwfunction_unary trans_flip_1 = libxsmm_dispatch_meltw_unary(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( flip_m1, flip_n1, flip_ldi_1, flip_ldo_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_flip_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_flip_1 = libxsmm_dispatch_meltw_unary(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_flip_1 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -233,7 +246,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint flip_ldi_2 = C_t;
     libxsmm_blasint flip_ldo_2 = F_t;
 
-    libxsmm_meltwfunction_unary trans_flip_2 = libxsmm_dispatch_meltw_unary(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( flip_m2, flip_n2, flip_ldi_2, flip_ldo_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_flip_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_flip_2 = libxsmm_dispatch_meltw_unary(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_flip_2 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -273,7 +288,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     if (ldi_virtual < virtual_m1){                      // corner case when width's are very small
         virtual_m1 = ldi_virtual;
-        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+        unary_shape = libxsmm_create_meltw_unary_shape( ldo_virtual, virtual_n, ldo_virtual, ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+        // libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
         if ( all_zero == NULL) {
             fprintf( stderr, "JIT for initialization by unary virtual all zero kernel failed. Bailing...!\n");
             exit(-1);
@@ -286,8 +303,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
         }
     }
 
-    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
-    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    unary_shape = libxsmm_create_meltw_unary_shape( virtual_m1, virtual_n, ldi_virtual, ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( virtual_m2, virtual_n, virtual_m2, ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+    // libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
         fprintf( stderr, "JIT for initialization by unary virtual copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -361,8 +382,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint tpp_n = C_t;                                     // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
-    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, tpp_n, tpp_m1, ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, tpp_n, tpp_m2, ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    // libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by unary copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -383,8 +408,13 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     tpp_m1 = (XS_TILE_DBACKWARD + dial*(WW_t-1));
     tpp_m2 = (XS_TILE_DBACKWARD + dial*(WW_t-1));
 
-    libxsmm_meltwfunction_unary trans_shortvnni_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, F_t, &ldi_1, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
-    libxsmm_meltwfunction_unary trans_shortvnni_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, F_t, &ldi_2, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, F_t, ldi_1, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_shortvnni_kernel_1 = libxsmm_dispatch_meltw_unary_v2( trans_vnni_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, F_t, ldi_2, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_shortvnni_kernel_2 = libxsmm_dispatch_meltw_unary_v2( trans_vnni_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+
+    // libxsmm_meltwfunction_unary trans_shortvnni_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, F_t, &ldi_1, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
+    // libxsmm_meltwfunction_unary trans_shortvnni_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, F_t, &ldi_2, &ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, trans_vnni_type);
     if ( trans_shortvnni_kernel_1 == NULL | trans_shortvnni_kernel_2 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_VNNI TPP. Bailing...!\n");
         exit(-1);
@@ -495,8 +525,13 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_bfloat16* grad_edgevnni = (libxsmm_bfloat16*) grad_edgevnni_tensor2.data_ptr<at::BFloat16>();
 
     /* use jited tranpose */
-    libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary(short_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
-    libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary(edge_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( short_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+
+    // libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary(short_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    // libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary(edge_W_t/2, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -553,7 +588,10 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     /* JIT eltwise TPPs for FP32 to BF16 conversion... */
     libxsmm_blasint cvt_m = 1;
     libxsmm_blasint cvt_n = F_t*C_t*WW_t;
-    libxsmm_meltwfunction_unary eltwise_kernel = libxsmm_dispatch_meltw_unary(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+
+    unary_shape = libxsmm_create_meltw_unary_shape( cvt_m, cvt_n, cvt_m, cvt_m, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary eltwise_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary eltwise_kernel = libxsmm_dispatch_meltw_unary(cvt_m, cvt_n, NULL, NULL, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
     if ( eltwise_kernel == NULL ) {
         fprintf( stderr, "JIT for TPP convert FP32 to BF16 failed. Bailing...!\n");
         exit(-1);
@@ -572,7 +610,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint ldi_per_1 = F_t;
     libxsmm_blasint ldo_per_1 = C_t;
 
-    libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary(per_m1, per_n1, &ldi_per_1, &ldo_per_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( per_m1, per_n1, ldi_per_1, ldo_per_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary(per_m1, per_n1, &ldi_per_1, &ldo_per_1, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_1 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -591,7 +631,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint ldi_per_2 = F_t*C_t;
     libxsmm_blasint ldo_per_2 = WW_t;
 
-    libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary(per_m2, per_n2, &ldi_per_2, &ldo_per_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( per_m2, per_n2, ldi_per_2, ldo_per_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary(per_m2, per_n2, &ldi_per_2, &ldo_per_2, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_2 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -641,7 +683,9 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     libxsmm_blasint per_ldi = WW_t;
     libxsmm_blasint per_ldo = F_t*C_t;
 
-    libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( per_m, per_n, per_ldi, per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_kernel = libxsmm_dispatch_meltw_unary(per_m, per_n, &per_ldi, &per_ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_kernel == NULL) {
         fprintf( stderr, "JIT unary TPP for NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -673,8 +717,12 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     libxsmm_meltw_unary_flags unary_flags;
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
 
-    libxsmm_meltwfunction_unary unary_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
-    libxsmm_meltwfunction_unary unary_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, tpp_n, tpp_m1, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary unary_kernel_1 = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, tpp_n, tpp_m2, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary unary_kernel_2 = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    // libxsmm_meltwfunction_unary unary_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
+    // libxsmm_meltwfunction_unary unary_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, unary_flags, unary_type);
     if ( unary_kernel_1 == NULL || unary_kernel_2 == NULL) {
         fprintf( stderr, "JIT for copy UNARY kernel. Bailing...!\n");
         exit(-1);
@@ -757,7 +805,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint flip_ldi_1 = WW_t;
     libxsmm_blasint flip_ldo_1 = F_t*C_t;
 
-    libxsmm_meltwfunction_unary trans_unary_flip_1 = libxsmm_dispatch_meltw_unary(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( flip_m1, flip_n1, flip_ldi_1, flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_unary_flip_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_unary_flip_1 = libxsmm_dispatch_meltw_unary(flip_m1, flip_n1, &flip_ldi_1, &flip_ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_unary_flip_1 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -773,7 +823,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint flip_ldi_2 = C_t;
     libxsmm_blasint flip_ldo_2 = F_t;
 
-    libxsmm_meltwfunction_unary trans_unary_flip_2 = libxsmm_dispatch_meltw_unary(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( flip_m2, flip_n2, flip_ldi_2, flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_unary_flip_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_unary_flip_2 = libxsmm_dispatch_meltw_unary(flip_m2, flip_n2, &flip_ldi_2, &flip_ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_unary_flip_2 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -821,7 +873,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     if (ldi_virtual < virtual_m1){                      // corner case when width's are very small
         virtual_m1 = ldi_virtual;
-        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+        unary_shape = libxsmm_create_meltw_unary_shape( ldo_virtual, virtual_n, ldo_virtual, ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+        libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+        // libxsmm_meltwfunction_unary all_zero = libxsmm_dispatch_meltw_unary(ldo_virtual, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
         if ( all_zero == NULL) {
             fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed. Bailing...!\n");
             exit(-1);
@@ -834,8 +888,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
     }
 
-    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
-    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    unary_shape = libxsmm_create_meltw_unary_shape( virtual_m1, virtual_n, ldi_virtual, ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( virtual_m2, virtual_n, virtual_m2, ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary virtual_copy = libxsmm_dispatch_meltw_unary(virtual_m1, virtual_n, &ldi_virtual, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY);
+    // libxsmm_meltwfunction_unary virtual_copy_zero = libxsmm_dispatch_meltw_unary(virtual_m2, virtual_n, NULL, &ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( virtual_copy == NULL || virtual_copy_zero == NULL) {
         fprintf( stderr, "JIT for initialization by unary copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -896,8 +954,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint tpp_n = C_t;      // rows
     libxsmm_blasint ld_zero = Win_t;
 
-    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
-    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m1, tpp_n, tpp_m1, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( tpp_m2, tpp_n, tpp_m1, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary copy_kernel_1 = libxsmm_dispatch_meltw_unary(tpp_m1, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
+    // libxsmm_meltwfunction_unary copy_kernel_2 = libxsmm_dispatch_meltw_unary(tpp_m2, tpp_n, NULL, &ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_XOR);
     if ( copy_kernel_1 == NULL || copy_kernel_2 == NULL) {
         fprintf( stderr, "JIT for initialization by TPP copy kernel failed. Bailing...!\n");
         exit(-1);
@@ -975,8 +1037,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
     /* use jited tranpose */
-    libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary(short_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
-    libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary(edge_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( short_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary(short_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    // libxsmm_meltwfunction_unary trans_edgekernel_grad = libxsmm_dispatch_meltw_unary(edge_W_t, N_g, &M_g, &N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_shortkernel_grad == NULL | trans_edgekernel_grad == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -1026,7 +1092,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint ldi_1 = F_t;
     libxsmm_blasint ldo_1 = C_t;
 
-    libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( per_m1, per_n1, ldi_1, ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_1 = libxsmm_dispatch_meltw_unary(per_m1, per_n1, &ldi_1, &ldo_1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_1 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
@@ -1047,7 +1115,9 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint ldi_2 = F_t*C_t;
     libxsmm_blasint ldo_2 = WW_t;
 
-    libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
+    unary_shape = libxsmm_create_meltw_unary_shape( per_m2, per_n2, ldi_2, ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+    // libxsmm_meltwfunction_unary trans_permute_2 = libxsmm_dispatch_meltw_unary(per_m2, per_n2, &ldi_2, &ldo_2, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT);
     if ( trans_permute_2 == NULL) {
         fprintf( stderr, "JIT for unary NORM_TO_NORMT TPP. Bailing...!\n");
         exit(-1);
