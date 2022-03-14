@@ -31,11 +31,11 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
+  for PREC_IN in 1 2 4
   do
     for PREC_COMP in 4
     do
-      for PREC_OUT in 2 4
+      for PREC_OUT in 1 2 4
       do
         for BCAST_IN in 0 1 2 3
         do

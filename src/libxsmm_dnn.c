@@ -808,3 +808,55 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
   }
 }
 
+/* this implementation of xoroshiro128++ PRNG is borrowed from:
+ *    http://prng.di.unimi.it/xoshiro128plusplus.c
+ *    main page: http://prng.di.unimi.it/
+ */
+LIBXSMM_API int rotl_(const int x, int k) {
+  return (x << k) | (x >> (32 - k));
+}
+
+static int s[4] = {0x76B5DBC3, 0x532CB7BF, 0x6AFA41C3, 0x28DBD9F7};
+
+LIBXSMM_API int xorshf_rand(void) {
+  const int result_plus = s[0] + s[3];
+  const int t = s[1] << 9;
+  s[2] ^= s[0];
+  s[3] ^= s[1];
+  s[1] ^= s[2];
+  s[0] ^= s[3];
+  s[2] ^= t;
+  s[3] = rotl_(s[3], 11);
+  return result_plus;
+}
+
+LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len) {
+  unsigned int i = 0;
+
+  unsigned short rand = (unsigned short) xorshf_rand();
+  /* truncate buffer to bf8 */
+  for ( i = 0; i < len; ++i ) {
+    unsigned short short_round = 0;
+    unsigned int do_round = 1;
+
+    short_round = _cvtss_sh( in[i], (_MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC) );
+
+    /* we don't round NaN and inf */
+    if ( (short_round & 0x7c00) == 0x7c00 ) {
+      do_round = 0;
+    }
+    /* perform round nearest tie even */
+    if ( do_round != 0) {
+      if ( (short_round & 0x7c00) == 0x0000) {
+        unsigned short fixup = (short_round >> 8) & 1;
+        short_round = short_round + 0x007f + fixup;
+      } else {
+        short_round = short_round + (rand & 0x00ff);
+      }
+    }
+    /* create the bf8 value by shifting out the lower 16bits */
+    short_round = short_round >> 8;
+    out[i] = (unsigned char)short_round;
+  }
+}
+

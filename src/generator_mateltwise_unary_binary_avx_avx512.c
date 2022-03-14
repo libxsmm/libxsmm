@@ -665,17 +665,30 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
           }
           if ( ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
                LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) ) {
+
+            unsigned int stochastic_rnd = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0);
+            if ( stochastic_rnd == 1 ) {
+              /* draw a random number */
+              libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                       i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                       i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg,
+                                                       i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
+                                                       i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_rand);
+            }
+
             if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
               libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
                                                                  cur_vreg, cur_vreg,
                                                                  i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
                                                                  i_micro_kernel_config->dcvt_zmm_aux2,
-                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
+                                                                 stochastic_rnd, i_micro_kernel_config->prng_vreg_rand);
             } else {
               libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
                                                                  cur_vreg, cur_vreg,
                                                                  i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
+                                                                 stochastic_rnd, i_micro_kernel_config->prng_vreg_rand);
             }
           }
 
@@ -1918,6 +1931,27 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg, i_micro_kernel_config->zero_vreg );
   }
 
+  /* load prng state into registers for stochastic rounding */
+  if (((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0)) {
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
+      unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
+      reserved_zmms += 6;
+
+      i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
+      i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
+      i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
+      i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
+      i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
+      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 6;
+
+      libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
+                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
+                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
+
+      i_micro_kernel_config->reserved_zmms = reserved_zmms;
+    }
+  }
+
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) || (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV)) {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
       i_micro_kernel_config->dropout_vreg_avxmask = i_micro_kernel_config->reserved_zmms;
@@ -2286,7 +2320,7 @@ void libxsmm_finalize_unary_kernel_vregs_masks( libxsmm_generated_code*         
   LIBXSMM_UNUSED(i_gp_reg_tmp);
   LIBXSMM_UNUSED(i_gp_reg_aux1);
 
-  if ( op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT ) {
+  if ( op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT || ((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ) {
     libxsmm_generator_store_prng_state_avx_avx512( io_generated_code, l_vname, i_gp_reg_aux0,
                                                    i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
                                                    i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg );
@@ -2304,6 +2338,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   i_micro_kernel_config->reserved_zmms = 0;
   i_micro_kernel_config->reserved_mask_regs = 1;
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
+  i_micro_kernel_config->use_fp32bf8_cvt_generic = 0;
 
   /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
@@ -2320,7 +2355,6 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   /* if we need FP32->BF8 downconverts and we don't have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
        LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {
-    i_micro_kernel_config->use_fp32bf8_cvt_generic = 0;
     if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
       libxsmm_generator_vcvtneps2bf8_generic_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
     } else {
@@ -2656,6 +2690,11 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
     } else {
       i_gp_reg_mapping->gp_reg_quant_sf = LIBXSMM_X86_GP_REG_UNDEF;
     }
+    if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ) {
+      i_gp_reg_mapping->gp_reg_prngstate = LIBXSMM_X86_GP_REG_RDX;
+    } else {
+      i_gp_reg_mapping->gp_reg_prngstate = LIBXSMM_X86_GP_REG_UNDEF;
+    }
   }
 
   /* load the input pointer and output pointer */
@@ -2814,6 +2853,15 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           i_gp_reg_mapping->gp_reg_quant_sf,
           0 );
       l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_quant_sf;
+    } else if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0) ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+          i_micro_kernel_config->alu_mov_instruction,
+          i_gp_reg_mapping->gp_reg_param_struct,
+          LIBXSMM_X86_GP_REG_UNDEF, 0,
+          8,
+          i_gp_reg_mapping->gp_reg_prngstate,
+          0 );
+      l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_prngstate;
     }
   } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,

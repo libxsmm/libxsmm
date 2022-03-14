@@ -122,14 +122,13 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', im, im );
         }
       }
-
       if (downconvert_input_f32bf8 > 0) {
         libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, 'z',
             im, im,
             i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-            i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+            i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
+            0, 0);
       }
-
       if (downconvert_input_f32f16 > 0) {
          libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, 'z', im, im, 0x0 );
       }

@@ -1574,6 +1574,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dropout_invprob_vreg;
   unsigned int dropout_vreg_avxmask;
 
+  /* aux variable for stochastic rounding */
+  unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_rand;
+
   /* aux variable for quantization */
   unsigned int quant_vreg_scf;
 

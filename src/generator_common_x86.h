@@ -530,7 +530,10 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
                                                          const unsigned int      io_vec_tmp_0,
                                                          const unsigned int      io_vec_tmp_1,
                                                          const unsigned int      io_mask_0,
-                                                         const unsigned int      io_mask_1 );
+                                                         const unsigned int      io_mask_1,
+                                                         const unsigned int      stochastic_rnd,
+                                                         const unsigned int      i_vec_rand );
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf8_generic_avx512_prep_stack( libxsmm_generated_code* io_generated_code,
@@ -549,7 +552,9 @@ void libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( libxsmm_generat
                                                           const unsigned int      io_vec_tmp_1,
                                                           const unsigned int      io_vec_tmp_2,
                                                           const unsigned int      io_mask_0,
-                                                          const unsigned int      io_mask_1 );
+                                                          const unsigned int      io_mask_1,
+                                                          const unsigned int      stochastic_rnd,
+                                                          const unsigned int      i_vec_rand );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated_code,

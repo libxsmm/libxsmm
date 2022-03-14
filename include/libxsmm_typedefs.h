@@ -275,7 +275,8 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256,
   LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS           = 512,
   LIBXSMM_MELTW_FLAG_UNARY_GS_COLS           = 1024,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048,
+  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND  = 4096
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
