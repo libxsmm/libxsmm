@@ -40,21 +40,6 @@
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
 
-float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
-  bf16_hp.i[1] = x;
-  bf16_hp.i[0] = 0;
-  return bf16_hp.f;
-}
-
-int unequal_fp32_vals(float a, float b) {
-  if (fabs(a-b) < EPS) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
-
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
@@ -507,7 +492,7 @@ int main( int argc, char* argv[] ) {
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 1 ) {
+  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
