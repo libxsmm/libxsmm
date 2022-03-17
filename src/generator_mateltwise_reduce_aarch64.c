@@ -447,7 +447,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
     for (_in = 1; _in < split_factor; _in++) {
       for (im = 0; im < m_unroll_factor; im++) {
         if ( compute_plain_vals_reduce > 0 ) {
-          if(is_sve){
+          if ( is_sve ) {
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, reduce_instr,
                                                      start_vreg_sum + im, start_vreg_sum + im + _in * m_unroll_factor,
                                                      0, start_vreg_sum + im, pred_reg_all, sve_type );
@@ -459,7 +459,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
         }
 
         if ( compute_squared_vals_reduce > 0 ) {
-          if(is_sve){
+          if ( is_sve ) {
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, reduce_instr,
                                                      start_vreg_sum2 + im, start_vreg_sum2 + im + _in * m_unroll_factor,
                                                      0, start_vreg_sum2 + im, pred_reg_all, sve_type );
@@ -550,12 +550,12 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
                                                             mask_count2 ? pred_reg_mask : pred_reg_all );
 
           if ( compute_plain_vals_reduce > 0 ) {
-            if(is_sve){
+            if ( is_sve ) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, reduce_instr,
                                                        tmp_vreg,
                                                        start_vreg_sum + im + _in * m_unroll_factor, 0,
                                                        start_vreg_sum + im + _in * m_unroll_factor,
-                                                       pred_reg_all, sve_type );
+                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
                                                          tmp_vreg,
@@ -566,10 +566,10 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
           }
 
           if ( compute_squared_vals_reduce > 0 ) {
-            if(is_sve){
+            if ( is_sve ) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                                        tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor,
-                                                       pred_reg_all, sve_type );
+                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,
                                                          tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor,
@@ -602,7 +602,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
                                                        tmp_vreg,
                                                        start_vreg_sum + im + _in * m_unroll_factor, 0,
                                                        start_vreg_sum + im + _in * m_unroll_factor,
-                                                       pred_reg_all, sve_type );
+                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
                                                          tmp_vreg,
@@ -615,10 +615,12 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
           if ( compute_squared_vals_reduce > 0 ) {
             if(is_sve){
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
-                                                       tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor, pred_reg_all, sve_type );
+                                                       tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor,
+                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V,
-                                                         tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor, asimd_type );
+                                                         tmp_vreg, tmp_vreg, 0, start_vreg_sum2 + im + _in * m_unroll_factor,
+                                                         asimd_type );
             }
           }
         }
@@ -868,12 +870,14 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
 
       if ( compute_plain_vals_reduce > 0 ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, reduce_instr,
-          cur_vreg, reg_sum, 0, reg_sum, pred_reg_all, sve_type );
+          cur_vreg, reg_sum, 0, reg_sum,
+          mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
       }
 
       if ( compute_squared_vals_reduce > 0 ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
-          cur_vreg, cur_vreg, 0, reg_sum_squared, pred_reg_all, sve_type );
+          cur_vreg, cur_vreg, 0, reg_sum_squared,
+          mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
       }
     }
   } else {
@@ -904,8 +908,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   /* Now last horizontal reduction and store of the result...  */
   if ( compute_plain_vals_reduce > 0 ) {
     if ( is_sve ) {/* reduces all values into one; places result into asimd register */
+      /* if m_trips is 1 && use_m_masking, then the end of the vreg is set to zero */
+      /* that's ok for add, but deadly for max of negative numbers */
       libxsmm_aarch64_instruction_sve_compute(io_generated_code, hreduce_instr,
-        reg_sum, reg_sum, 0, reg_sum, pred_reg_all, sve_type );
+        reg_sum, reg_sum, 0, reg_sum,
+        m_trips == 1 && use_m_masking > 0 ? pred_reg_mask : pred_reg_all, sve_type );
     } else {
       libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, reg_sum);
     }
@@ -917,7 +924,8 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   if ( compute_squared_vals_reduce > 0 ) {
     if ( is_sve ) {/* reduces all values into one; places result into asimd register */
       libxsmm_aarch64_instruction_sve_compute(io_generated_code, hreduce_instr,
-        reg_sum_squared, reg_sum_squared, 0, reg_sum_squared, pred_reg_all, sve_type );
+        reg_sum_squared, reg_sum_squared, 0, reg_sum_squared,
+        m_trips == 1 && use_m_masking > 0 ? pred_reg_mask : pred_reg_all, sve_type );
     } else {
       libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, reg_sum_squared);
     }
