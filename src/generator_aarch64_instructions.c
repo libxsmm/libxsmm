@@ -1107,13 +1107,13 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   /* this check could be disabled for performance reasons */
   if( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE ){
     if( i_vec_reg_src_0 != i_vec_reg_dst ){
-      if(i_vec_reg_src_1 == i_vec_reg_dst && 
+      if(i_vec_reg_src_1 == i_vec_reg_dst &&
         (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
          l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
          l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P)){
         /* arguments can be switched around */
         /* we assign 0 <- 1 anyways, so we just skip that */
-      } else if(i_vec_reg_src_1 == i_vec_reg_dst && 
+      } else if(i_vec_reg_src_1 == i_vec_reg_dst &&
         (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ||
          l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P)){
         /* arguments can be switched around + instruction can be exchanged */
