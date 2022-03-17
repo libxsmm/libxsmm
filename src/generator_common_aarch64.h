@@ -57,7 +57,7 @@ void libxsmm_generator_loop_footer_aarch64( libxsmm_generated_code*     io_gener
                                             const unsigned int          i_gp_reg_loop_cnt,
                                             const unsigned int          i_loop_blocking );
 
-/* 
+/*
  * loads i_masked_elems elements from i_gp_reg_addr
  * if i_masked_elems is 0, it loads as many as fit into a vector register
  * if the architecture is SVE, the predicate registers are assumed to be set already: 0 must be ptrue, 1 must have length i_masked_elems
@@ -72,7 +72,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
                                                              const unsigned int      i_adv_gpr,
                                                              const unsigned int      i_is_store );
 
-/* 
+/*
  * loads i_masked_elems elements from i_gp_reg_addr
  * if i_masked_elems is 0, it loads as many as fit into a vector register
  * if the architecture is SVE, the predicate register i_mask_reg is assumed to be set already

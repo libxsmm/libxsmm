@@ -1096,21 +1096,36 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   /* add with immediate is currently the only instruction with an immediate; may be a flag in the future */
   /* this check could be disabled for performance reasons */
-  if( i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P ){
+  if( l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P ){
     if( l_vec_reg_src_0 > 1) {
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %u\n", l_vec_reg_src_1 );
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %x\n", l_vec_reg_src_1 );
       exit(-1);
     }
   }
 
   /* special instruction, where only dst = src_0 is supported */
   /* this check could be disabled for performance reasons */
-  if( (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE ){
+  if( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE ){
     if( i_vec_reg_src_0 != i_vec_reg_dst ){
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %u only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
-      exit(-1);
+      if(i_vec_reg_src_1 == i_vec_reg_dst && 
+        (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
+         l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
+         l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P)){
+        /* arguments can be switched around */
+        /* we assign 0 <- 1 anyways, so we just skip that */
+      } else if(i_vec_reg_src_1 == i_vec_reg_dst && 
+        (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ||
+         l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P)){
+        /* arguments can be switched around + instruction can be exchanged */
+        /* we assign 0 <- 1 anyways, so we just skip that */
+        l_vec_instr = l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ? LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P : LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P;
+      } else {
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
+        exit(-1);
+      }
+    } else {
+      l_vec_reg_src_0 = l_vec_reg_src_1;
     }
-    l_vec_reg_src_0 = l_vec_reg_src_1;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1127,7 +1142,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       unsigned char l_elementSizeBits = 8 << (int) i_type;/* B -> 8, H -> 16, S -> 32, D -> 64 */
       if(i_index >= l_elementSizeBits){
         /* the index must be within bounds */
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: index %d is too large for type %d, max allowed: %d!\n", i_index, i_type, l_elementSizeBits);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, i_type, l_elementSizeBits);
         exit(-1);
       }
       /* the encoding for right shift is reversed */

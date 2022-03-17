@@ -733,13 +733,13 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               /* old & slow way */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            #if 0
+#if 0
             } else if(0){/* no iterations at all would result in an approx error of ~9%, and a speedup of 36x compared to the accurate ASIMD function */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
                                                        cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            #endif
+#endif
             } else {
               /* inverse */
               unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
@@ -1533,7 +1533,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   unsigned int l_predicate_length = l_vector_length / 8;/* 4 bytes/float, 8 bits in 1 byte, 512 bit -> 64 bytes -> 8 bytes*/
   unsigned int l_data_length = l_predicate_length / 4;/* only every 4th bit needs to be read, 512 bit -> .. -> 2 bytes */
 
-  #ifdef SVE_MASKS_HAVE_PADDING
+#ifdef SVE_MASKS_HAVE_PADDING
   /* Warning! this code is specific to a sve vector length of 512 bits (A64FX)
    * and it writes over the end of the mask space (which is UB).
    * If the caller ensures there is enough padding, it will be fine. */
@@ -1541,7 +1541,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   /* load 2 bytes from memory into first 16 bits of predicate register */
   libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF,
                                         i_gp_reg_mask, 0, 0, i_blend_reg, 0 );
-  #elif defined(SVE_SLOW_COPY)
+#elif defined(SVE_SLOW_COPY)
   /* for 64x8 on A64FX, this is 3x slower */
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
    * 1024 needs to respect the size of the mask data array */
@@ -1560,7 +1560,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, i_scratch_gp_reg, LIBXSMM_AARCH64_GP_REG_XSP, l_vector_length );
-  #else
+#else
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
    * 1024 needs to respect the size of the mask data array */
   unsigned char im_mod = im & 3;/* 4 = number of bits per float within predicate register */
@@ -1599,9 +1599,9 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
                                            i_blend_reg, i_blend_reg, 0, i_blend_reg,
                                            0, LIBXSMM_AARCH64_SVE_TYPE_H );
 
-  #endif
+#endif
 
-  #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
+#if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
 
   /* zip, 8 bits, low */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L,
@@ -1618,7 +1618,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
                                                  i_gp_reg_mask, i_gp_reg_mask, l_data_length, 0 );
   /* we read <l_data_length> bytes */
   io_mask_adv[0] += l_data_length;
-  #endif
+#endif
 
 }
 
@@ -1638,7 +1638,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
 
   /* store bitflags (l_blend_reg) to bitflag array in memory */
 
-  #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
+#if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* mv l_blend_reg into l_tmp_pred_reg */
   /* UZP_P_E, 16 bits */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E,
@@ -1648,18 +1648,18 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E,
                                            i_tmp_pred_reg0, i_tmp_pred_reg0, 0, i_tmp_pred_reg0,
                                            0, LIBXSMM_AARCH64_SVE_TYPE_B );
-  #endif
+#endif
 
   unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
   unsigned int l_predicate_length = l_vector_length / 8;/* 4 bytes/float, 8 bits in 1 byte */
   unsigned int l_data_length = l_predicate_length / 4;/* only every 4th bit needs to be stored */
-  #ifdef SVE_MASKS_HAVE_PADDING
+#ifdef SVE_MASKS_HAVE_PADDING
   /* ideal: store predicate into register, store register into memory (only 2 bytes) */
   /* Antonio can't find an instruction for that -> ensure the buffer has padding, and write over the end :/ */
   /* a hacky but less illegal way to do that would be to write to the stack, load from it, and store to the correct location */
   libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF,
                                         i_gp_reg_mask, 0, 0, i_tmp_pred_reg0, 0 );
-  #elif defined(SVE_SLOW_COPY)
+#elif defined(SVE_SLOW_COPY)
   /* load <l_data_length> bytes from i_gp_reg_mask, store them into xsp, then load from xsp; only works for 256/512 bit vector lengths */
   unsigned int l_stack_offset = LIBXSMM_UPDIV(l_predicate_length, 16) * 16;/* for sp alignment */
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, i_tmp_pred_reg1, l_data_length, i_gp_reg_scratch );
@@ -1673,7 +1673,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                         i_gp_reg_mask, 0, 0, i_tmp_vreg0, i_tmp_pred_reg1 );
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, i_gp_reg_scratch, LIBXSMM_AARCH64_GP_REG_XSP, l_stack_offset );
-  #else
+#else
 
   unsigned char im_mod = im & 3;
   if(im_mod == 3 || im == i_m_blocking-1){
@@ -1738,14 +1738,14 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                              i_blend_reg, i_blend_reg, 0, i_tmp_pred_reg1, 0, LIBXSMM_AARCH64_SVE_TYPE_B );
   }
 
-  #endif
+#endif
 
-  #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
+#if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* increment gp_reg_relumask by <l_data_length> */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                  i_gp_reg_mask, i_gp_reg_scratch, i_gp_reg_mask, l_data_length );
   io_mask_adv[0] += l_data_length;/* we wrote <l_data_length> bytes */
-  #endif
+#endif
 
 }
 
