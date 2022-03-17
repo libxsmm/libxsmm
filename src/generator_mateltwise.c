@@ -18,6 +18,7 @@ LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*          io_generated_code,
                                           const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
   /* generate kernel */
+  printf("generating code for architecture %d\n", io_generated_code->arch);
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_sse_avx_avx512_kernel( io_generated_code, i_mateltw_desc );
    } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82) ) {

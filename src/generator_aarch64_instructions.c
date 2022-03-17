@@ -1027,6 +1027,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   /* this is a check whether the instruction is valid; it could removed for better performance */
   switch ( i_vec_instr ) {
     case LIBXSMM_AARCH64_INSTR_SVE_MOV_R_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_DUP_GP_V:
     case LIBXSMM_AARCH64_INSTR_SVE_ORR_P:
     case LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_AND_V:
@@ -1050,6 +1051,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P:
+    case LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P:
@@ -1058,6 +1061,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FRINTM_V_P:
     case LIBXSMM_AARCH64_INSTR_SVE_FCVTZS_V_P_SS:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
@@ -1079,6 +1084,15 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_AND_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
+
+  unsigned int l_vec_instr = i_vec_instr;
+  /* fp compare less than is a pseudo instruction: greater than or equal with switched source registers */
+  if( l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V ){
+    l_vec_instr = LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V;
+    unsigned char l_tmp = l_vec_reg_src_0;
+    l_vec_reg_src_0 = l_vec_reg_src_1;
+    l_vec_reg_src_1 = l_tmp;
+  }
 
   /* add with immediate is currently the only instruction with an immediate; may be a flag in the future */
   /* this check could be disabled for performance reasons */
@@ -1104,7 +1118,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     unsigned int* code     = (unsigned int *) io_generated_code->generated_code;
 
     /* fix bits, 0x10 must not be used as flags */
-    code[code_head] = (unsigned int)(0xffffff10 & i_vec_instr);
+    code[code_head] = (unsigned int)(0xffffff10 & l_vec_instr);
     /* setting Zda/Zdn */
     code[code_head] |= (unsigned int)(0x1f & i_vec_reg_dst);
     /* setting Zn */

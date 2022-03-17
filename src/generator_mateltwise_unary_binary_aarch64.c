@@ -733,11 +733,13 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
               /* old & slow way */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            } else if(0){/* no iterations at all would result in an approx error of ~9%, and a speedup of 36x compared to the accuate ASIMD function */
+            #if 0
+            } else if(0){/* no iterations at all would result in an approx error of ~9%, and a speedup of 36x compared to the accurate ASIMD function */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
                                                        cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            #endif
             } else {
               /* inverse */
               unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
@@ -1540,6 +1542,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF,
                                         i_gp_reg_mask, 0, 0, i_blend_reg, 0 );
   #elif defined(SVE_SLOW_COPY)
+  /* for 64x8 on A64FX, this is 3x slower */
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
    * 1024 needs to respect the size of the mask data array */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
@@ -1565,7 +1568,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
     /* count of sections, that will be loaded: max 4, max i_m_blocking & 3 at the end */
     unsigned int copied_sections = i_m_blocking - im < 3 ? i_m_blocking & 3 : 4;
     unsigned int copied_length = copied_sections * l_data_length;
-    unsigned int stack_offset = LIBXSMM_UPDIV(copied_length, 16) * 16;/* stack addresses need to be aligned to 16 bytes */
+    unsigned int stack_offset = (copied_length+15) & (~15);/* stack addresses need to be aligned to 16 bytes */
     /* starting a new "chunk", sp -= pl */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    LIBXSMM_AARCH64_GP_REG_XSP, i_scratch_gp_reg, LIBXSMM_AARCH64_GP_REG_XSP, stack_offset );
