@@ -92,8 +92,28 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
 
 
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
-    libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
-    libxsmm_bmmfunction_reducebatch_strd bmmedgekernel2 = libxsmm_bmmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &edge_width, &lda, &ldc, NULL, NULL, NULL, NULL);
+    libxsmm_gemm_flags l_flags;
+    libxsmm_gemm_prefetch_type l_prefetch;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+
+    l_flags = LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(XS_TILE_FORWARD, F_t, C_t, short_width, lda, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*2*sizeof(libxsmm_bfloat16);
+    l_brconfig.br_stride_b_hint = F_t*C_t*sizeof(libxsmm_bfloat16);
+    libxsmm_gemmfunction shortkernel = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    l_shape = libxsmm_create_gemm_shape(W_t - tile_multiple, F_t, C_t, edge_width, lda, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*2*sizeof(libxsmm_bfloat16);
+    l_brconfig.br_stride_b_hint = F_t*C_t*sizeof(libxsmm_bfloat16);
+    libxsmm_gemmfunction edgekernel = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    // libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
+    // libxsmm_bmmfunction_reducebatch_strd bmmedgekernel2 = libxsmm_bmmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*2*sizeof(libxsmm_bfloat16), F_t*C_t*sizeof(libxsmm_bfloat16), &edge_width, &lda, &ldc, NULL, NULL, NULL, NULL);
 
     /* JIT eltwise TPPs for initialization ... */
     libxsmm_blasint tpp_m1 = XS_TILE_FORWARD;                      // columns
@@ -141,10 +161,9 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     #pragma omp parallel for
     for(int n = 0; n < N_t; n++) {                               // Loop for batches
         int last_block = 0;
-        libxsmm_meltw_unary_param copy_params_1;           // Copy parameter variable for holding the pointer
-        libxsmm_meltw_unary_param copy_params_2;
-        libxsmm_meltw_unary_param trans_param_short;
-        libxsmm_meltw_unary_param trans_param_edge;
+        libxsmm_meltw_unary_param copy_params_1, copy_params_2;           // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param trans_param_short, trans_param_edge;
+        libxsmm_gemm_param gemm_param_short, gemm_param_edge;
 
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
 
@@ -157,7 +176,12 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
             trans_shortvnni_kernel( &trans_param_short );
 
             // brGEMM
-            bmmshortkernel(&input_a_shortvnni[n*C_t*short_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
+            // bmmshortkernel(&input_a_shortvnni[n*C_t*short_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
+            gemm_param_short.a.primary = &input_a_shortvnni[n*C_t*short_width];
+            gemm_param_short.b.primary = &flip_weight_a[0];
+            gemm_param_short.c.primary = &Y_a[n*F_t*W_t + 0*W_t + wb];
+            gemm_param_short.op.tertiary = &l_br;
+            shortkernel( &gemm_param_short );
 
             last_block = wb;        // Store value for last block
         }
@@ -173,7 +197,12 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
             trans_edgevnni_kernel( &trans_param_edge );
 
             // brGEMM
-            bmmedgekernel2(&input_a_edgevnni[n*C_t*edge_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + (last_block + XS_TILE_FORWARD)], &l_br);
+            // bmmedgekernel2(&input_a_edgevnni[n*C_t*edge_width], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + (last_block + XS_TILE_FORWARD)], &l_br);
+            gemm_param_edge.a.primary = &input_a_edgevnni[n*C_t*edge_width];
+            gemm_param_edge.b.primary = &flip_weight_a[0];
+            gemm_param_edge.c.primary = &Y_a[n*F_t*W_t + 0*W_t + (last_block + XS_TILE_FORWARD)];
+            gemm_param_edge.op.tertiary = &l_br;
+            edgekernel( &gemm_param_edge );
         }
     }
 
@@ -368,8 +397,28 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_bfloat16* grad_a_shortvnni = (libxsmm_bfloat16*) grad_shortvnni_tensor.data_ptr<at::BFloat16>();
 
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
-    libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
-    libxsmm_bmmfunction_reducebatch_strd bmmshortkernel2 = libxsmm_bmmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
+    libxsmm_gemm_flags l_flags;
+    libxsmm_gemm_prefetch_type l_prefetch;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+
+    l_flags = LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(XS_TILE_DBACKWARD, C_t, F_t, short_width, lda, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = 2*dial*sizeof(libxsmm_bfloat16);
+    l_brconfig.br_stride_b_hint = C_t*F_t*sizeof(libxsmm_bfloat16);
+    libxsmm_gemmfunction bmmshortkernel = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    l_shape = libxsmm_create_gemm_shape(Win_t - tile_multiple, C_t, F_t, short_width, lda, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = 2*dial*sizeof(libxsmm_bfloat16);
+    l_brconfig.br_stride_b_hint = C_t*F_t*sizeof(libxsmm_bfloat16);
+    libxsmm_gemmfunction bmmshortkernel2 = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    // libxsmm_bmmfunction_reducebatch_strd bmmshortkernel = libxsmm_bmmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
+    // libxsmm_bmmfunction_reducebatch_strd bmmshortkernel2 = libxsmm_bmmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, 2*dial*sizeof(libxsmm_bfloat16), C_t*F_t*sizeof(libxsmm_bfloat16), &short_width, &lda, &ldc, NULL, NULL, NULL, NULL);
 
     if ( bmmshortkernel == NULL || bmmshortkernel2 == NULL) {
         fprintf( stderr, "JIT for bmm kernel failed. Bailing...!\n");
@@ -425,10 +474,9 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     for(int n = 0; n < N_t; n++) {
         int last_block=0;
 
-        libxsmm_meltw_unary_param copy_params_1;                       // Copy parameter variable for holding the pointer
-        libxsmm_meltw_unary_param copy_params_2;
-        libxsmm_meltw_unary_param trans_param_1;
-        libxsmm_meltw_unary_param trans_param_2;
+        libxsmm_meltw_unary_param copy_params_1, copy_params_2;                       // Copy parameter variable for holding the pointer
+        libxsmm_meltw_unary_param trans_param_1, trans_param_2;
+        libxsmm_gemm_param gemm_param, gemm_param2;
 
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
@@ -444,7 +492,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
                 trans_shortvnni_kernel_1( &trans_param_1 );
 
                 // brGEMM
-                bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                // bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                gemm_param.a.primary = &grad_a_shortvnni[n*F_t*short_width];
+                gemm_param.b.primary = &flip_weight_a[0];
+                gemm_param.c.primary = &d_input_a[n*C_t*Win_t + 0*Win_t + wb];
+                gemm_param.op.tertiary = &l_br;
+                bmmshortkernel( &gemm_param );
             }
             else if (wb < (WW_t-1)*dial){
                 // Right side case (Take VNNI transform of grad_a_shortpad array)
@@ -455,7 +508,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
                 trans_shortvnni_kernel_2( &trans_param_2 );
 
                 // brGEMM
-                bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                // bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                gemm_param.a.primary = &grad_a_shortvnni[n*F_t*short_width];
+                gemm_param.b.primary = &flip_weight_a[0];
+                gemm_param.c.primary = &d_input_a[n*C_t*Win_t + 0*Win_t + wb];
+                gemm_param.op.tertiary = &l_br;
+                bmmshortkernel( &gemm_param );
             }
             else{
                 // Left side case (Take VNNI transform of grad_a_shortpad array)
@@ -466,7 +524,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
                 trans_shortvnni_kernel_2( &trans_param_2 );
 
                 // brGEMM
-                bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                // bmmshortkernel(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                gemm_param.a.primary = &grad_a_shortvnni[n*F_t*short_width];
+                gemm_param.b.primary = &flip_weight_a[0];
+                gemm_param.c.primary = &d_input_a[n*C_t*Win_t + 0*Win_t + wb];
+                gemm_param.op.tertiary = &l_br;
+                bmmshortkernel( &gemm_param );
             }
             last_block = wb;
         }
@@ -484,7 +547,12 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             trans_shortvnni_kernel_2( &trans_param_2 );
 
             // brGEMM
-            bmmshortkernel2(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
+            // bmmshortkernel2(&grad_a_shortvnni[n*F_t*short_width], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
+            gemm_param2.a.primary = &grad_a_shortvnni[n*F_t*short_width];
+            gemm_param2.b.primary = &flip_weight_a[0];
+            gemm_param2.c.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];
+            gemm_param2.op.tertiary = &l_br;
+            bmmshortkernel2( &gemm_param2 );
         }
     }
 
@@ -538,8 +606,17 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     }
 
     /* Dispatch brGEMM kernels for the normal case and the edge case*/
-    libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
-    libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
+    l_flags = LIBXSMM_GEMM_FLAG_VNNI_A;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(F_t, C_t, XS_TILE_WBACKWARD, ldb_trans_g, lda_g, ldc_g, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+    libxsmm_gemmfunction bsmmkernel5 = libxsmm_dispatch_gemm_v2(l_shape, l_flags, l_prefetch);
+
+    l_shape = libxsmm_create_gemm_shape(F_t, C_t, W_t - tile_multiple, ldb_trans_g, lda_g, ldc_g, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16);
+    libxsmm_gemmfunction bsmmkernel6 = libxsmm_dispatch_gemm_v2(l_shape, l_flags, l_prefetch);
+
+    // libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
+    // libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
 
     if ( bsmmkernel5 == NULL | bsmmkernel6 == NULL) {
         fprintf( stderr, "JIT for bsmm kernel. Bailing...!\n");
@@ -550,8 +627,8 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])
     for(int n = 0; n < N_t; n++) {
         int last_block = 0;
-        libxsmm_meltw_unary_param trans_param_short;
-        libxsmm_meltw_unary_param trans_param_edge;
+        libxsmm_meltw_unary_param trans_param_short, trans_param_edge;
+        libxsmm_gemm_param gemm_param5, gemm_param6;
 
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {            // Normal Case
 
@@ -561,8 +638,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             trans_shortkernel_grad( &trans_param_short );
 
             for(int kw = 0; kw < WW_t; kw++) {
-                // libxsmm_bsmmfunction bsmmkernel5 = libxsmm_bsmmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
-                bsmmkernel5(&grad_shortvnni[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
+                // bsmmkernel5(&grad_shortvnni[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
+                gemm_param5.a.primary = &grad_shortvnni[n*F_t*short_W_t];
+                gemm_param5.b.primary = &input_a[n*C_t*Win_t + wb + kw*dial];
+                gemm_param5.c.primary = &flip_d_weight_a[kw*C_t*F_t];
+                bsmmkernel5( &gemm_param5 );
             }
             last_block = wb;
         }
@@ -574,8 +654,11 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             trans_edgekernel_grad( &trans_param_edge );
 
             for(int kw = 0; kw < WW_t; kw++) {
-                // libxsmm_bsmmfunction bsmmkernel6 = libxsmm_bsmmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
-                bsmmkernel6(&grad_edgevnni[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
+                // bsmmkernel6(&grad_edgevnni[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
+                gemm_param6.a.primary = &grad_edgevnni[n*F_t*edge_W_t];
+                gemm_param6.b.primary = &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial];
+                gemm_param6.c.primary = &flip_d_weight_a[kw*F_t*C_t];
+                bsmmkernel6( &gemm_param6 );
             }
         }
     }
@@ -702,9 +785,30 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
 
     int tile_multiple = (W_t/XS_TILE_FORWARD)*XS_TILE_FORWARD;
 
-    /* Dispatch brGEMM kernels for the normal case and the edge case*/
-    libxsmm_smmfunction_reducebatch_strd kernel = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
-    libxsmm_smmfunction_reducebatch_strd kernel2 = libxsmm_smmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
+    /* Dispatch SGEMM kernels for the normal case and the edge case*/
+    /* setting update GEMM struct */
+    libxsmm_gemm_flags l_flags;
+    libxsmm_gemm_prefetch_type l_prefetch;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+
+    l_flags = LIBXSMM_GEMM_FLAG_NONE;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(XS_TILE_FORWARD, F_t, C_t, ldb, lda, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*sizeof(float);
+    l_brconfig.br_stride_b_hint = F_t*C_t*sizeof(float);
+    libxsmm_gemmfunction kernel = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    l_shape = libxsmm_create_gemm_shape(W_t - tile_multiple, F_t, C_t, ldb, lda, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*sizeof(float);
+    l_brconfig.br_stride_b_hint = F_t*C_t*sizeof(float);
+    libxsmm_gemmfunction kernel2 = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    // libxsmm_smmfunction_reducebatch_strd kernel = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_FORWARD, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
+    // libxsmm_smmfunction_reducebatch_strd kernel2 = libxsmm_smmdispatch_reducebatch_strd(W_t - tile_multiple, F_t, C_t, dial*sizeof(float), F_t*C_t*sizeof(float), &ldb, &lda, &ldc, NULL, NULL, NULL, NULL);
 
     /* JIT eltwise TPPs for initialization... */
     libxsmm_blasint tpp_m1 = XS_TILE_FORWARD;                      // columns
@@ -734,13 +838,20 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
         int last_block = 0;
         libxsmm_meltw_unary_param unary_param_1;
         libxsmm_meltw_unary_param unary_param_2;
+        libxsmm_gemm_param gemm_param, gemm_param_2;
 
         for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    // width blocking loop (Normal case)
 
             unary_param_1.out.primary = &Y_a[n*F_t*W_t + wb];       // Initialization
             unary_kernel_1( &unary_param_1 );
 
-            kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
+            // kernel(&input_a[n*C_t*Win_t + 0*Win_t + wb], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + wb], &l_br);
+            gemm_param.a.primary = &input_a[n*C_t*Win_t + 0*Win_t + wb];
+            gemm_param.b.primary = &flip_weight_a[0];
+            gemm_param.c.primary = &Y_a[n*F_t*W_t + 0*W_t + wb];
+            gemm_param.op.tertiary = &l_br;
+            kernel( &gemm_param );
+
             last_block = wb;
         }
 
@@ -749,7 +860,12 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
             unary_param_2.out.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];     // Initialization
             unary_kernel_2( &unary_param_2 );
 
-            kernel2(&input_a[n*C_t*Win_t + 0*Win_t + last_block + XS_TILE_FORWARD], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + last_block + XS_TILE_FORWARD], &l_br);
+            // kernel2(&input_a[n*C_t*Win_t + 0*Win_t + last_block + XS_TILE_FORWARD], &flip_weight_a[0], &Y_a[n*F_t*W_t + 0*W_t + last_block + XS_TILE_FORWARD], &l_br);
+            gemm_param_2.a.primary = &input_a[n*C_t*Win_t + 0*Win_t + last_block + XS_TILE_FORWARD];
+            gemm_param_2.b.primary = &flip_weight_a[0];
+            gemm_param_2.c.primary = &Y_a[n*F_t*W_t + 0*W_t + last_block + XS_TILE_FORWARD];
+            gemm_param_2.op.tertiary = &l_br;
+            kernel2( &gemm_param_2 );
         }
     }
 
@@ -849,7 +965,20 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     int ldc = Win_t;                 // Input width (60400)
     unsigned long long l_br = WW_t;  // Number of batches for brGEMM (51)
 
-    libxsmm_smmfunction_reducebatch_strd kernel = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_orig, &lda, &ldc, NULL, NULL, NULL, NULL);
+    libxsmm_gemm_flags l_flags;
+    libxsmm_gemm_prefetch_type l_prefetch;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+
+    l_flags = LIBXSMM_GEMM_FLAG_NONE;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(XS_TILE_DBACKWARD, C_t, F_t, ldb_orig, lda, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*sizeof(float);
+    l_brconfig.br_stride_b_hint = C_t*F_t*sizeof(float);
+    libxsmm_gemmfunction kernel = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+    // libxsmm_smmfunction_reducebatch_strd kernel = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_orig, &lda, &ldc, NULL, NULL, NULL, NULL);
 
     int pad_tile_multiple = 2 * (((WW_t - 1)*dial)/XS_TILE_DBACKWARD + 1) * XS_TILE_DBACKWARD;       // 896
 
@@ -860,8 +989,21 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     int ldb_shortpad = 2*pad_tile_multiple;       // grad pad 1792
 
     /* Dispatch kernels for normal and edge cases*/
-    libxsmm_smmfunction_reducebatch_strd kernel4 = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
-    libxsmm_smmfunction_reducebatch_strd kernel5 = libxsmm_smmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
+
+    l_shape = libxsmm_create_gemm_shape(XS_TILE_DBACKWARD, C_t, F_t, ldb_shortpad, lda, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*sizeof(float);
+    l_brconfig.br_stride_b_hint = C_t*F_t*sizeof(float);
+    libxsmm_gemmfunction kernel4 = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    l_shape = libxsmm_create_gemm_shape(Win_t - tile_multiple, C_t, F_t, ldb_shortpad, lda, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = dial*sizeof(float);
+    l_brconfig.br_stride_b_hint = C_t*F_t*sizeof(float);
+    libxsmm_gemmfunction kernel5 = libxsmm_dispatch_brgemm_v2(l_shape, l_flags, l_prefetch, l_brconfig);
+
+    // libxsmm_smmfunction_reducebatch_strd kernel4 = libxsmm_smmdispatch_reducebatch_strd(XS_TILE_DBACKWARD, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
+    // libxsmm_smmfunction_reducebatch_strd kernel5 = libxsmm_smmdispatch_reducebatch_strd(Win_t - tile_multiple, C_t, F_t, dial*sizeof(float), C_t*F_t*sizeof(float), &ldb_shortpad, &lda, &ldc, NULL, NULL, NULL, NULL);
 
 // #ifdef USE_TPP
     // Virtual copy kernels
@@ -972,17 +1114,36 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
         libxsmm_meltw_unary_param copy_params_1;
         libxsmm_meltw_unary_param copy_params_2;
+        libxsmm_gemm_param gemm_param, gemm_param4, gemm_param5;
         for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
             copy_params_1.out.primary = &d_input_a[n*C_t*Win_t + wb];            // Initialization
             copy_kernel_1(&copy_params_1);
 
-            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD)              // Normal case
-                kernel(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
-            else if (wb < (WW_t-1)*dial)                // Right side case
-                kernel4(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + wb], &l_br);
-            else             // left side case
-                kernel4(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + wb], &l_br);
+            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){              // Normal case
+                // kernel(&grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + 0*Win_t + wb], &l_br);
+                gemm_param.a.primary = &grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial];
+                gemm_param.b.primary = &flip_weight_a[0];
+                gemm_param.c.primary = &d_input_a[n*C_t*Win_t + wb];
+                gemm_param.op.tertiary = &l_br;
+                kernel( &gemm_param );
+            }
+            else if (wb < (WW_t-1)*dial){                // Right side case
+                // kernel4(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + wb], &l_br);
+                gemm_param4.a.primary = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb];
+                gemm_param4.b.primary = &flip_weight_a[0];
+                gemm_param4.c.primary = &d_input_a[n*C_t*Win_t + wb];
+                gemm_param4.op.tertiary = &l_br;
+                kernel4( &gemm_param4 );
+            }
+            else{             // left side case
+                // kernel4(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + wb], &l_br);
+                gemm_param4.a.primary = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple];
+                gemm_param4.b.primary = &flip_weight_a[0];
+                gemm_param4.c.primary = &d_input_a[n*C_t*Win_t + wb];
+                gemm_param4.op.tertiary = &l_br;
+                kernel4( &gemm_param4 );
+            }
 
             last_block = wb;     // store position for last block
         }
@@ -992,7 +1153,12 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             copy_params_2.out.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            // Initialization
             copy_kernel_2(&copy_params_2);
 
-            kernel5(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
+            // kernel5(&grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple], &flip_weight_a[0], &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD], &l_br);
+            gemm_param5.a.primary = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + last_block + XS_TILE_DBACKWARD - Wpad_t + 2*pad_tile_multiple];
+            gemm_param5.b.primary = &flip_weight_a[0];
+            gemm_param5.c.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];
+            gemm_param5.op.tertiary = &l_br;
+            kernel5( &gemm_param5 );
         }
     }
 
@@ -1049,8 +1215,16 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     }
 
     /* Dispatch brGEMM kernel for normal and edge cases*/
-    libxsmm_smmfunction kernel_w5 = libxsmm_smmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
-    libxsmm_smmfunction kernel_w6 = libxsmm_smmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
+    l_flags = LIBXSMM_GEMM_FLAG_NONE;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+
+    l_shape = libxsmm_create_gemm_shape(F_t, C_t, XS_TILE_WBACKWARD, ldb_trans_g, lda_g, ldc_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    libxsmm_gemmfunction kernel_w5 = libxsmm_dispatch_gemm_v2(l_shape, l_flags, l_prefetch);
+
+    l_shape = libxsmm_create_gemm_shape(F_t, C_t, W_t - tile_multiple, ldb_trans_g, lda_g, ldc_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+    libxsmm_gemmfunction kernel_w6 = libxsmm_dispatch_gemm_v2(l_shape, l_flags, l_prefetch);
+    // libxsmm_smmfunction kernel_w5 = libxsmm_smmdispatch(F_t, C_t, XS_TILE_WBACKWARD, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
+    // libxsmm_smmfunction kernel_w6 = libxsmm_smmdispatch(F_t, C_t, W_t - tile_multiple, &ldb_trans_g, &lda_g, &ldc_g, NULL, NULL, NULL, NULL);
 
     // Main compute loop
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])                // Distribute the weight array
@@ -1058,6 +1232,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         int last_block = 0;
         libxsmm_meltw_unary_param trans_param_short;                    // Pointer to hold trans short
         libxsmm_meltw_unary_param trans_param_edge;                     // Pointer to hold trans edge
+        libxsmm_gemm_param gemm_param_w5, gemm_param_w6;
 
         for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {                // Normal case
 
@@ -1066,7 +1241,11 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             trans_shortkernel_grad( &trans_param_short );
 
             for(int kw = 0; kw < WW_t; kw++) {
-                kernel_w5(&grad_shorttrans[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
+                // kernel_w5(&grad_shorttrans[n*F_t*short_W_t], &input_a[n*C_t*Win_t + wb + kw*dial], &flip_d_weight_a[kw*C_t*F_t]);
+                gemm_param_w5.a.primary = &grad_shorttrans[n*F_t*short_W_t];
+                gemm_param_w5.b.primary = &input_a[n*C_t*Win_t + wb + kw*dial];
+                gemm_param_w5.c.primary = &flip_d_weight_a[kw*C_t*F_t];
+                kernel_w5( &gemm_param_w5 );
             }
             last_block = wb;
         }
@@ -1079,7 +1258,11 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
             for(int kw = 0; kw < WW_t; kw++) {
 
-                kernel_w6(&grad_edgetrans[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
+                // kernel_w6(&grad_edgetrans[n*F_t*edge_W_t], &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial], &flip_d_weight_a[kw*F_t*C_t]);
+                gemm_param_w6.a.primary = &grad_edgetrans[n*F_t*edge_W_t];
+                gemm_param_w6.b.primary = &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial];
+                gemm_param_w6.c.primary = &flip_d_weight_a[kw*F_t*C_t];
+                kernel_w6( &gemm_param_w6 );
             }
         }
     }
