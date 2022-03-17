@@ -1,12 +1,13 @@
 /******************************************************************************
 * Copyright (c) Intel Corporation - All rights reserved.                      *
+*               Friedrich Schiller University Jena - All rights reserved.     *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm_generator.h>
 #include "generator_common.h"
@@ -17,8 +18,10 @@
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*          io_generated_code,
                                           const libxsmm_meltw_descriptor*  i_mateltw_desc ) {
+  if (libxsmm_get_verbosity() < 0) {/* print architecture */
+    printf("Generating code for architecture %s\n", libxsmm_cpuid_name(io_generated_code->arch));
+  }
   /* generate kernel */
-  printf("generating code for architecture %d\n", io_generated_code->arch);
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_sse_avx_avx512_kernel( io_generated_code, i_mateltw_desc );
    } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82) ) {

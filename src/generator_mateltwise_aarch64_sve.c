@@ -1,12 +1,12 @@
 /******************************************************************************
-* Copyright (c) Intel Corporation - All rights reserved.                      *
+* Copyright (c) Friedrich Schiller University Jena - All rights reserved.     *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/hfp/libxsmm/                        *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Antonio Noack (Friedrich-Schiller University of Jena)
+/* Antonio Noack (Friedrich Schiller University Jena)
 ******************************************************************************/
 
 #include "generator_mateltwise_aarch64.h"
