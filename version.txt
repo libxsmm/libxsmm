@@ -1,1 +1,1 @@
-dev/kvoronin/a_transpose_gcc_fix-1.17-2207
+a_transpose-1.17-2210
