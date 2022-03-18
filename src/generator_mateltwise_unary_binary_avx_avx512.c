@@ -301,17 +301,21 @@ void libxsmm_generator_configure_loop_order(const libxsmm_meltw_descriptor* i_ma
   /* TODO: Potentially reorder loops given the kernel type */
   *loop_order = _loop_order;
 
+#if 0
   if (_loop_order == NM_LOOP_ORDER) {
+#endif
     *out_blocking = *n_blocking;
     *out_bound = i_mateltwise_desc->n;
     *inner_blocking = *m_blocking;
     *inner_bound = i_mateltwise_desc->m;
+#if 0
   } else {
     *out_blocking = *m_blocking;
     *out_bound = i_mateltwise_desc->m;
     *inner_blocking = *n_blocking;
     *inner_bound = i_mateltwise_desc->n;
   }
+#endif
 }
 
 LIBXSMM_API_INTERN

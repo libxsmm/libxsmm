@@ -87,12 +87,13 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
     } else {
       /* if we are the first line after comment header, we allocate our data structures */
       if ( l_header_read == 0 ) {
-        unsigned int row_count, column_count;
-        if (3 == sscanf(l_line, "%u %u %u", &row_count, &column_count, o_element_count) &&
+        unsigned int row_count, column_count, element_count;
+        if (3 == sscanf(l_line, "%u %u %u", &row_count, &column_count, &element_count) &&
             0 != row_count && 0 != column_count && 0 != *o_element_count)
         {
           *io_column_count = LIBXSMM_MAX(*io_column_count, column_count);
           *io_row_count = LIBXSMM_MAX(*io_row_count, row_count);
+          *o_element_count = LIBXSMM_MAX(0, element_count);
           /* allocate CSC data structure matching mtx file, and set everything to zero for init */
           /* coverity[tainted_data] */
           *o_row_idx = (unsigned int*)calloc(*o_element_count, sizeof(unsigned int));

@@ -781,29 +781,24 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
     i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
     gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
-    scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-    gemm_scratch_size += scratch_pad_size;
     if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-        i_micro_kernel_config->emulation_scratch_offset = 0;
-        gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
-        scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-        gemm_scratch_size += scratch_pad_size;
+      i_micro_kernel_config->emulation_scratch_offset = 0;
+      gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     }
   } else {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
       int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
       gemm_scratch_size = LIBXSMM_MAX(32*64, expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4/*i_micro_kernel_config->datatype_size*/);
-      scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-      gemm_scratch_size += scratch_pad_size;
     } else {
       /* Allocate scratch for stashing 32 zmms  */
       if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
         gemm_scratch_size = 32 * 64;
-        scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
-        gemm_scratch_size += scratch_pad_size;
       }
     }
   }
+
+  scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;
+  gemm_scratch_size += scratch_pad_size;
 
   if (gemm_scratch_size > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, gemm_scratch_size );
