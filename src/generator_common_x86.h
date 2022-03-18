@@ -107,7 +107,8 @@ void libxsmm_generator_sigmoid_ps_rational_78_avx( libxsmm_generated_code*      
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones);
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
@@ -121,7 +122,8 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx( libxsmm_genera
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones);
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
@@ -139,7 +141,8 @@ void libxsmm_generator_tanh_ps_rational_78_avx( libxsmm_generated_code*         
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones );
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx( libxsmm_generated_code*                        io_generated_code,
@@ -153,7 +156,8 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx( libxsmm_generated
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones );
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_scalefps_avx( libxsmm_generated_code*                        io_generated_code,
@@ -172,7 +176,8 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx( libxsmm_generated_code*  
     const unsigned int                             i_vec_log2e,
     const unsigned int                             i_vec_expmask,
     const unsigned int                             i_vec_hi_bound,
-    const unsigned int                             i_vec_lo_bound );
+    const unsigned int                             i_vec_lo_bound,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_exp_ps_3dts_avx( libxsmm_generated_code*                        io_generated_code,
@@ -187,7 +192,8 @@ void libxsmm_generator_exp_ps_3dts_avx( libxsmm_generated_code*                 
     const unsigned int                             i_vec_log2e,
     const unsigned int                             i_vec_expmask,
     const unsigned int                             i_vec_hi_bound,
-    const unsigned int                             i_vec_lo_bound );
+    const unsigned int                             i_vec_lo_bound,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_generic_loop_header( libxsmm_generated_code*             io_generated_code,
@@ -209,7 +215,8 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx512( libxsmm_generated_code
     const unsigned int                             i_vec_c2,
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
-    const unsigned int                             i_vec_log2e );
+    const unsigned int                             i_vec_log2e,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_exp_ps_3dts_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -221,7 +228,8 @@ void libxsmm_generator_exp_ps_3dts_avx512( libxsmm_generated_code*              
     const unsigned int                             i_vec_c2,
     const unsigned int                             i_vec_c3,
     const unsigned int                             i_vec_halves,
-    const unsigned int                             i_vec_log2e );
+    const unsigned int                             i_vec_log2e,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -233,6 +241,20 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512( libxsmm_generated
     const unsigned int                             i_vec_c0,
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2 );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx512_vl256( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi );
 
 
 LIBXSMM_API_INTERN
@@ -270,6 +292,29 @@ void libxsmm_generator_gelu_ps_minimax3_avx512( libxsmm_generated_code*         
     const unsigned int                             i_vec_c2 );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gelu_ps_minimax3_avx512_vl256( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_xr,
+    const unsigned int                             i_vec_xa,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_C0,
+    const unsigned int                             i_vec_C1,
+    const unsigned int                             i_vec_C2,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi,
+    const unsigned int                             i_vec_tmp0,
+    const unsigned int                             i_vec_tmp1 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_avx( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
     const unsigned int                             i_vec_c0_lo,
@@ -304,6 +349,19 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512( libxsmm_gener
     const unsigned int                             i_vec_c1,
     const unsigned int                             i_vec_c2 );
 
+void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_avx512_vl256( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_x,
@@ -323,6 +381,29 @@ void libxsmm_generator_gelu_inv_ps_minimax3_avx512( libxsmm_generated_code*     
     const unsigned int                             i_vec_c2 );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gelu_inv_ps_minimax3_avx512_vl256( libxsmm_generated_code*                        io_generated_code,
+    const unsigned int                             i_vec_x,
+    const unsigned int                             i_vec_xr,
+    const unsigned int                             i_vec_xa,
+    const unsigned int                             i_vec_index,
+    const unsigned int                             i_vec_C0,
+    const unsigned int                             i_vec_C1,
+    const unsigned int                             i_vec_C2,
+    const unsigned int                             i_vec_thres,
+    const unsigned int                             i_vec_absmask,
+    const unsigned int                             i_vec_scale,
+    const unsigned int                             i_vec_shifter,
+    const unsigned int                             i_vec_half,
+    const unsigned int                             i_vec_c0_lo,
+    const unsigned int                             i_vec_c0_hi,
+    const unsigned int                             i_vec_c1_lo,
+    const unsigned int                             i_vec_c1_hi,
+    const unsigned int                             i_vec_c2_lo,
+    const unsigned int                             i_vec_c2_hi,
+    const unsigned int                             i_vec_tmp0,
+    const unsigned int                             i_vec_tmp1 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_c0,
     const unsigned int                             i_vec_c1,
@@ -334,7 +415,8 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( libxsmm_genera
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones );
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -354,7 +436,8 @@ void libxsmm_generator_tanh_ps_rational_78_avx512( libxsmm_generated_code*      
     const unsigned int                             i_vec_hi_bound,
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
-    const unsigned int                             i_vec_neg_ones);
+    const unsigned int                             i_vec_neg_ones,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*                        io_generated_code,
@@ -369,7 +452,8 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( libxsmm_gen
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
     const unsigned int                             i_vec_neg_ones,
-    const unsigned int                             i_vec_halves );
+    const unsigned int                             i_vec_halves,
+    const unsigned char                            i_vname );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_prng_state_avx_avx512( libxsmm_generated_code* io_generated_code,
@@ -432,7 +516,8 @@ void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*   
     const unsigned int                             i_vec_lo_bound,
     const unsigned int                             i_vec_ones,
     const unsigned int                             i_vec_neg_ones,
-    const unsigned int                             i_vec_halves );
+    const unsigned int                             i_vec_halves,
+    const unsigned char                            i_vname     );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
