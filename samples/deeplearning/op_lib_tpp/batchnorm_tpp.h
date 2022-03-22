@@ -46,6 +46,10 @@ typedef struct my_bn_fwd_config {
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
+  libxsmm_datatype datatype_in;
+  libxsmm_datatype datatype_out;
+  libxsmm_datatype datatype_comp;
+
   libxsmm_barrier* barrier;
 
   libxsmm_matrix_eqn_function  func10;
@@ -69,6 +73,10 @@ typedef struct my_bn_bwd_config {
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
+  libxsmm_datatype datatype_in;
+  libxsmm_datatype datatype_out;
+  libxsmm_datatype datatype_comp;
+
   libxsmm_barrier* barrier;
 
   libxsmm_matrix_eqn_function  dgamma_func;
@@ -83,7 +91,8 @@ typedef struct my_bn_bwd_config {
 } my_bn_bwd_config;
 
 my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_bn_fuse fuse_type ) {
+                                 libxsmm_blasint threads, my_normalization_fuse fuse_type,
+                                 libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   my_bn_fwd_config res;
 
   size_t sum_N_offset, sumsq_N_offset;
@@ -99,8 +108,6 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ld  = bc;
   libxsmm_blasint tmp_ld, tmp_ld2;
   libxsmm_blasint my_eqn10;
-
-  libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
 
   libxsmm_meqn_arg_shape  eqn_out_arg_shape;
   libxsmm_meqn_arg_shape  arg_shape[128];
@@ -130,6 +137,10 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "bc = %d is not divisible by BITS_PER_CHAR = %d. Bailing...!\n", res.bc, BITS_PER_CHAR);
     exit(-1);
   }
+
+  res.datatype_in   = datatype_in;
+  res.datatype_out  = datatype_out;
+  res.datatype_comp = datatype_comp;
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
@@ -280,7 +291,8 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 }
 
 my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_bn_fuse fuse_type ) {
+                                 libxsmm_blasint threads, my_normalization_fuse fuse_type,
+                                 libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   my_bn_bwd_config res;
 
   libxsmm_meltw_unary_shape  unary_shape;
@@ -307,8 +319,6 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint tmp_ld2;
   libxsmm_blasint my_eqn11, my_eqn12, my_eqn16;
 
-  libxsmm_datatype dtype = LIBXSMM_DATATYPE_F32;
-
   memset( &res,  0, sizeof(res));
 
   /* setting up some handle values */
@@ -327,6 +337,10 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     fprintf( stderr, "bc = %d is not divisible by BITS_PER_CHAR = %d. Bailing...!\n", res.bc, BITS_PER_CHAR);
     exit(-1);
   }
+
+  res.datatype_in   = datatype_in;
+  res.datatype_out  = datatype_out;
+  res.datatype_comp = datatype_comp;
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
