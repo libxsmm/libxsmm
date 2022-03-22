@@ -875,29 +875,10 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   float alpha = 0.0f;
   LIBXSMM_VLA_DECL(4, const unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
 
-  const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, bc);  /* [CP, N, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
-  LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, bc);  /* [CP, N, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
-
-  libxsmm_meltw_unary_param  all_zero_param;
-  libxsmm_meltw_binary_param add_param;
-  libxsmm_meltw_unary_param  copy_param;
-  libxsmm_meltw_unary_param  all_relu_param;
-  libxsmm_meltw_unary_param  ewise_copy_param;
-
   libxsmm_matrix_arg arg_array[8];
   libxsmm_matrix_eqn_param eqn_param;
 
-  memset( &all_zero_param,   0, sizeof(all_zero_param));
-  memset( &add_param,        0, sizeof(add_param));
-  memset( &copy_param,       0, sizeof(copy_param));
-  memset( &all_relu_param,   0, sizeof(all_relu_param));
-  memset( &ewise_copy_param, 0, sizeof(ewise_copy_param));
-
   memset( &eqn_param,        0, sizeof(eqn_param));
-
 
   LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
   LIBXSMM_ALIGNED(float b[bc], 64);
@@ -907,6 +888,25 @@ void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, cons
   int n, cp;
 
   if (norm_type == MY_BN_FULL_NORM) {
+
+    const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+    LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, bc);  /* [CP, N, bc] */
+    LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
+    LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, bc);  /* [CP, N, bc] */
+    LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
+
+    libxsmm_meltw_unary_param  all_zero_param;
+    libxsmm_meltw_binary_param add_param;
+    libxsmm_meltw_unary_param  copy_param;
+    libxsmm_meltw_unary_param  all_relu_param;
+    libxsmm_meltw_unary_param  ewise_copy_param;
+
+    memset( &all_zero_param,   0, sizeof(all_zero_param));
+    memset( &add_param,        0, sizeof(add_param));
+    memset( &copy_param,       0, sizeof(copy_param));
+    memset( &all_relu_param,   0, sizeof(all_relu_param));
+    memset( &ewise_copy_param, 0, sizeof(ewise_copy_param));
+
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
       n  = cpxnt%N;
       cp = cpxnt/N;

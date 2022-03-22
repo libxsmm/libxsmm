@@ -176,6 +176,7 @@ int main( int argc, char* argv[] ) {
   printf("##########################################\n");
   printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d (PADDING: must be 0s)\n", N, CP*bc, CP, bc, H, W, stride);
   printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
+  printf("PARAMS: NORM TYPE:%d\n", norm_type);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
