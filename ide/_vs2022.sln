@@ -480,12 +480,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eltwise_unary_simple", "..\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "equation", "equation", "{C4C1477D-6DEA-4CB0-994C-B68418378D9D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "equation_groupnorm", "..\samples\equation\equation_groupnorm.vcxproj", "{A3278385-4CF1-498A-B0C7-57FC092FBD05}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "equation_layernorm", "..\samples\equation\equation_layernorm.vcxproj", "{7535971A-EDC3-49DF-A9A5-F85FD4F14B90}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
