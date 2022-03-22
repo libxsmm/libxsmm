@@ -32,7 +32,8 @@ int main( int argc, char* argv[] ) {
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it;
-  float *inp, *inp_add, *out, *dinp, *dout, *dinp_add, *eqn_dinp, *eqn_dout, *eqn_dinp_add, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
+  float *inp, *inp_add, *out, *dinp, *dout, *dinp_add, *eqn_dinp, *eqn_dout, *eqn_dinp_add, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *mean, *var, *eqn_mean, *eqn_var, sum = 0.0;
+  float *cache_fl;
   unsigned char *relumask_uncompressed, *relumask, *eqn_relumask;
   float *naive_inp, *naive_inp_add, *naive_out, *naive_rcpstdev, *naive_dinp, *naive_dout, *naive_dbeta, *naive_dgamma, *naive_dinp_add;
   unsigned char *naive_relumask;
@@ -61,7 +62,7 @@ int main( int argc, char* argv[] ) {
   int pad_w_in  = 0; /* padding mode */
   int pad_h_out = 0; /* padding mode */
   int pad_w_out = 0; /* padding mode */
-  int norm_type = 0; /* 0: full batchnorm, 1: batch scaling only */
+  int norm_type = 0; /* 0: full batchnorm, 1: batch scaling only for fwd / only input gradient for bwd */
   int fuse_type = 5; /* 0: nothing fused, 1: relu fused, 2: ewise fused, 3: relu and ewise fused, 4: relu with mask, 5: relu and ewise with mask  */
 
   int stride_h = 0;  /* defined later */
@@ -112,6 +113,11 @@ int main( int argc, char* argv[] ) {
 
   CP = C / bc;
 
+  if ( C % bc != 0 || CP == 0 ) {
+    printf("Bad input channel blocking: C = %d bc = %d \n", C, bc);
+    return -1;
+  }
+
   /* if H and W are read from cli, redefine HW */
   if (H && W)
     HW = H*W;
@@ -130,8 +136,8 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
 
-  if ( norm_type != 0 ) {
-    printf("Only full batchnorm (norm_type = 0) is supported \n");
+  if ( norm_type != 0 && norm_type != 1) {
+    printf("Only full batchnorm (norm_type = 0) and scale-only (normalize-only for fwd, only input gradient for bwd) norm types are supported \n");
     return -1;
   }
 
@@ -170,6 +176,7 @@ int main( int argc, char* argv[] ) {
   printf("##########################################\n");
   printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d (PADDING: must be 0s)\n", N, CP*bc, CP, bc, H, W, stride);
   printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
+  printf("PARAMS: NORM TYPE:%d\n", norm_type);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
@@ -192,6 +199,8 @@ int main( int argc, char* argv[] ) {
   beta       = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   mean       = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   var        = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
+  eqn_mean   = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
+  eqn_var    = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   eqn_out    = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
   cache_fl   = (float*) libxsmm_aligned_malloc( sizeof(float)*1024*1024,   2097152);
 
@@ -250,6 +259,27 @@ int main( int argc, char* argv[] ) {
   init_buf(dgamma,   CP*bc,      1, 0);
   init_buf(dbeta,    CP*bc,      1, 0);
 
+  if (norm_type == 1) { /* normalize-only batchnorm, hence initializing mean and variance */
+    int i;
+    init_buf(mean,   CP*bc,      1, 0);
+    init_buf(var,    CP*bc,      1, 0);
+
+    copy_buf(mean,  eqn_mean, CP*bc);
+    copy_buf(var,   eqn_var,  CP*bc);
+
+    for (i = 0; i < C; i++) {
+      naive_rcpstdev[i] = (float)(1.0/sqrt(var[i] + eps));
+    }
+
+#ifdef COMPUTE_FP64_REFERENCE
+    extend_buf_fp32_to_fp64(mean,   mean_fp64,   CP*bc);
+    extend_buf_fp32_to_fp64(var,    var_fp64,    CP*bc);
+    extend_buf_fp32_to_fp64(dgamma, dgamma_fp64, CP*bc);
+    extend_buf_fp32_to_fp64(dbeta,  dbeta_fp64,  CP*bc);
+    extend_buf_fp32_to_fp64(naive_rcpstdev, naive_rcpstdev_fp64, C);
+#endif
+  }
+
   copy_buf(dout,   eqn_dout,   N*CP*HW*bc);
   copy_buf(dgamma, eqn_dgamma, CP*bc);
   copy_buf(dbeta,  eqn_dbeta,  CP*bc);
@@ -265,8 +295,8 @@ int main( int argc, char* argv[] ) {
 
   /* setup TPPs (standalone or through the configs) */
 
-  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_normalization_fuse)fuse_type );
-  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_normalization_fuse)fuse_type );
+  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
+  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
 
   /* allocate and bind scratch */
   if ( my_bn_fwd.scratch_size > 0 || my_bn_bwd.scratch_size > 0 ) {
@@ -286,7 +316,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,     naive_inp,     N, C, H, W, bc);
@@ -382,7 +412,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -395,7 +425,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -414,7 +444,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,  N, C, H, W, bc);
@@ -577,7 +607,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
 
@@ -591,7 +621,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
 
@@ -632,6 +662,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(eqn_dbeta);
   libxsmm_free(mean);
   libxsmm_free(var);
+  libxsmm_free(eqn_mean);
+  libxsmm_free(eqn_var);
   libxsmm_free(gamma);
   libxsmm_free(beta);
   libxsmm_free(eqn_out);

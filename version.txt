@@ -1,1 +1,1 @@
-dnn_refactor-1.17-2211
+dev/kvoronin/batchnorm_nostats_extension-1.17-2213
