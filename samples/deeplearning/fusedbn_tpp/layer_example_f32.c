@@ -295,8 +295,8 @@ int main( int argc, char* argv[] ) {
 
   /* setup TPPs (standalone or through the configs) */
 
-  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
-  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
+  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_FP32, LIBXSMM_DATATYPE_FP32, LIBXSMM_DATATYPE_FP32);
+  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_FP32, LIBXSMM_DATATYPE_FP32, LIBXSMM_DATATYPE_FP32);
 
   /* allocate and bind scratch */
   if ( my_bn_fwd.scratch_size > 0 || my_bn_bwd.scratch_size > 0 ) {
