@@ -31,7 +31,7 @@
 #define PRIVATE_ACT_TRANS
 #define PRIVATE_DACT_TRANS
 #define FUSE_SGD_IN_BWD
-
+#define BYPASS_SGD
 
 #define _mm512_load_fil(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_store_fil(A,B)  _mm256_storeu_si256((__m256i*)(A), (__m256i)LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16((B)))
@@ -1363,15 +1363,13 @@ if (cfg.upd_2d_blocking == 0) {
     /* Set up tensors for transposing/scratch before vnni reformatting dfilter */
     libxsmm_bfloat16  *tr_inp_ptr = (libxsmm_bfloat16*) ((libxsmm_bfloat16*)scratch + cfg.N * cfg.K);
     float               *dfilter_f32_ptr = (float*) ((libxsmm_bfloat16*)tr_inp_ptr + cfg.N * cfg.C);
-#ifndef BYPASS_SGD
     libxsmm_bfloat16 *dfilter_scratch = (libxsmm_bfloat16*) ((float*)dfilter_f32_ptr + cfg.C * cfg.K) + ltid * bc * bk;
-#endif
 
     LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,  input_tr,    (libxsmm_bfloat16*)tr_inp_ptr, nBlocksMB, bc, bn);
     LIBXSMM_VLA_DECL(4,       float, dfilter_f32,  (float*)dfilter_f32_ptr, nBlocksIFm, bc, bk);
-#ifndef BYPASS_SGD
     LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dfilter_block,  (libxsmm_bfloat16*)dfilter_scratch, bk);
     LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+#ifndef BYPASS_SGD
     LIBXSMM_VLA_DECL(4, float, master_filter, (float*)fil_master, nBlocksIFm, bc, bk);
 #endif
 
@@ -1454,6 +1452,7 @@ if (cfg.upd_2d_blocking == 0) {
             }
             if ((bc % 16 == 0) && (bk % 16 == 0)) {
                 cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb), &blocks);
+#ifndef BYPASS_SGD
                 {
                 __m512 vlr = _mm512_set1_ps( cfg.lr );
                 libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1465,11 +1464,13 @@ if (cfg.upd_2d_blocking == 0) {
                   _mm512_storeu_ps( wt_fp32+i, newfilter );
                 }
               }
+#endif
             } else {
                 cfg.gemm_upd3(&LIBXSMM_VLA_ACCESS(4, tmp_doutput_tr, 0, 0, 0, 0, bn_lp, bk, lpb), &LIBXSMM_VLA_ACCESS(4, tmp_input_tr, ifm1-my_N_start, 0, 0, 0, nBlocksMB, bc, bn), &LIBXSMM_VLA_ACCESS(2, dfilter_block, 0, 0, bk), &blocks);
                 trans_param.in.primary  = &LIBXSMM_VLA_ACCESS(2, dfilter_block, 0, 0, bk);
                 trans_param.out.primary = &LIBXSMM_VLA_ACCESS(5, dfilter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
                 cfg.norm_to_vnni_kernel_wt(&trans_param);
+#ifndef BYPASS_SGD
                 {
                 __m512 vlr = _mm512_set1_ps( cfg.lr );
                 libxsmm_bfloat16 *dwt_bf16 = (libxsmm_bfloat16*)  &LIBXSMM_VLA_ACCESS(5, dfilter,        ofm1, ifm1, 0, 0, 0, nBlocksIFm, bc_lp, bk, lpb);
@@ -1481,6 +1482,7 @@ if (cfg.upd_2d_blocking == 0) {
                   _mm512_storeu_ps( wt_fp32+i, newfilter );
                 }
               }
+#endif
             }
           }
         }
