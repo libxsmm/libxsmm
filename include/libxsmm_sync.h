@@ -466,9 +466,13 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_SYNC_YIELD pthread_yield_np()
-#   elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
-      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
-      LIBXSMM_EXTERN int sched_yield(void); /* sched.h */
+#   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
+      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_THROW;
+#     else
+      LIBXSMM_EXTERN int sched_yield(void);
+#     endif
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)

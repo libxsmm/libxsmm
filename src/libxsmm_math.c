@@ -262,7 +262,7 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
   const unsigned int d = (0 != (n & 1) ? 1 : 2);
   unsigned int result = (1 < n ? 1 : 0), i;
   for (i = (d < n ? (n - 1) : 0); d < i; i -= d) {
-    unsigned int c = (s <= i ? (i - s) : (s - i));
+    const unsigned int c = (s <= i ? (i - s) : (s - i));
     unsigned int a = n, b = c;
     do {
       const unsigned int r = a % b;
