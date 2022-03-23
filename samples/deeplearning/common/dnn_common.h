@@ -1307,6 +1307,34 @@ LIBXSMM_INLINE void tensor_copy_KCRS_to_KCRSck(float *src, float *dst, int K, in
   }
 }
 
+LIBXSMM_INLINE void tensor_copy_KCRS_to_KCRSck_bf16(float *src, libxsmm_bfloat16 *dst, int K, int C, int R, int S, int bc, int bk)
+{
+  int k1, k2, c1, c2, r, s;
+  int cBlocks = C/bc;
+  int kBlocks = K/bk;
+  LIBXSMM_VLA_DECL(4, float, in, src, C, R, S);
+  LIBXSMM_VLA_DECL(7, libxsmm_bfloat16, out, dst, cBlocks, R, S, bc/2, bk, 2);
+
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(c1); LIBXSMM_OMP_VAR(c2); LIBXSMM_OMP_VAR(r); LIBXSMM_OMP_VAR(s);
+# pragma omp parallel for private(k2,c1,c2,r,s)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (k2 = 0; k2 < bk; k2++) {
+      for (c1 = 0; c1 < cBlocks; c1++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          for (r = 0; r < R; r++) {
+            for (s = 0; s < S; s++) {
+              libxsmm_rne_convert_fp32_bf16( &LIBXSMM_VLA_ACCESS(4, in,  k1*bk+k2, c1*bc+c2, r, s, C, R, S),
+                                             &LIBXSMM_VLA_ACCESS(7, out, k1,     c1,         r, s, c2/2, k2, c2%2, cBlocks, R, S, bc/2, bk, 2),     1);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void tensor_copy_KCRSck_to_KCRS(float *src, float *dst, int K, int C, int R, int S, int bc, int bk)
 {
   int k1, k2, c1, c2, r, s;
