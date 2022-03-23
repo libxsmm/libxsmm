@@ -297,7 +297,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.scratch_size =  sizeof(float) * ( sumsq_N_offset /*sum_X_X2 + sumsq_N */ + LIBXSMM_UP2((size_t)res.CP * (size_t)res.N * (size_t)res.bc, 64) /* sumsq_N */ );
 
   if (res.datatype_in == LIBXSMM_DATATYPE_BF16 || res.datatype_out == LIBXSMM_DATATYPE_BF16) {
-    res.scratch_size += 3 /* number of extra fp32 buffers for fwd */ * sizeof(float) * ( LIBXSMM_UP2((size_t)res.bc * (size_t)res.H * (size_t)res.W / (size_t)res.num_HW_blocks, 64) );
+    res.scratch_size += 3 /* number of extra fp32 buffers for fwd */ * sizeof(float) * ( LIBXSMM_UP2( res.threads * (size_t)res.bc * (size_t)res.H * (size_t)res.W / (size_t)res.num_HW_blocks, 64) );
   }
 
   return res;
@@ -626,7 +626,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.scratch_size =  sizeof(float) * ( dbeta_N_offset /* dbeta_N*/ + LIBXSMM_UP2(res.CP * res.N * res.bc, 64) /*dgamma_N */ );
 
   if (res.datatype_in == LIBXSMM_DATATYPE_BF16 || res.datatype_out == LIBXSMM_DATATYPE_BF16) {
-    res.scratch_size += 4 /* max number of extra fp32 buffers for fwd */ * sizeof(float) * ( LIBXSMM_UP2((size_t)res.bc * (size_t)res.H * (size_t)res.W / (size_t)res.num_HW_blocks, 64) );
+    res.scratch_size += 4 /* max number of extra fp32 buffers for fwd */ * sizeof(float) * ( LIBXSMM_UP2( res.threads * (size_t)res.bc * (size_t)res.H * (size_t)res.W / (size_t)res.num_HW_blocks, 64) );
   }
 
   return res;
@@ -928,14 +928,15 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
   LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
 
   /* Extra temporary buffers of size [HW/num_HW_blocks, bc] to store fp32 intermediate data */
+  const libxsmm_blasint fp32_block_size = (HW/num_HW_blocks) * bc;
   const libxsmm_blasint inp_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + sumsq_N_offset + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, float, inp_fp32, ((float*)scratch) + inp_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
+  LIBXSMM_VLA_DECL(2, float, inp_fp32, ((float*)scratch) + inp_fp32_offset + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
   LIBXSMM_ASSUME_ALIGNED(inp_fp32_, 64);
-  const libxsmm_blasint out_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + inp_fp32_offset + (HW/num_HW_blocks)), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out_fp32, ((float*)scratch) + out_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
+  const libxsmm_blasint out_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + inp_fp32_offset + fp32_block_size*cfg.threads), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, out_fp32, ((float*)scratch) + out_fp32_offset + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
   LIBXSMM_ASSUME_ALIGNED(out_fp32_, 64);
-  const libxsmm_blasint inp_add_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + out_fp32_offset + (HW/num_HW_blocks)), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp_add_fp32, ((float*)scratch) + inp_add_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
+  const libxsmm_blasint inp_add_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + out_fp32_offset + fp32_block_size*cfg.threads), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, inp_add_fp32, ((float*)scratch) + inp_add_fp32_offset  + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
   LIBXSMM_ASSUME_ALIGNED(inp_add_fp32_, 64);
 
   libxsmm_meltw_unary_param  all_zero_param;
@@ -1409,41 +1410,44 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  const float scale = 1.0f / ((float)N*HW);                   /* Scaling parameter*/
+  const float scale = 1.0f / ((float)N*HW);                                        /* Scaling parameter*/
 
-  LIBXSMM_VLA_DECL(4,       float, din,    pdin, CP, HW, bc);          /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(4, const float, inp,    pinp, CP, HW, bc);          /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(4,       float, dout,   pdout, CP, HW, bc);         /* [N, CP, HW, bc] */
-  LIBXSMM_VLA_DECL(2, const float, gamma,  pgamma, bc);                /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2, const float, mean,   mean,  bc);                 /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2, const float, var,    var,   bc);                 /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2,       float, dgamma, pdgamma, bc);               /* [CP, bc] */
-  LIBXSMM_VLA_DECL(2,       float, dbeta,  pdbeta, bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(4,       libxsmm_bfloat16, din,    pdin,  CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16, inp,    pinp,  CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4,       libxsmm_bfloat16, dout,   pdout, CP, HW, bc);          /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(2, const float,            gamma,  pgamma,  bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float,            mean,   mean,    bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2, const float,            var,    var,     bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float,            dgamma, pdgamma, bc);                /* [CP, bc] */
+  LIBXSMM_VLA_DECL(2,       float,            dbeta,  pdbeta,  bc);                /* [CP, bc] */
 
-  LIBXSMM_VLA_DECL(4,       float, din_add, pdin_add, CP, HW, bc);     /* [N, CP, HW, bc] */
+  LIBXSMM_VLA_DECL(4,       libxsmm_bfloat16, din_add, pdin_add, CP, HW, bc);      /* [N, CP, HW, bc] */
 
   float alpha = 0.0f;
   LIBXSMM_VLA_DECL(4, const unsigned char, relumask, prelumask, CP, HW, bc/BITS_PER_CHAR);    /* [N, CP, HW, bc/BITS_PER_CHAR] */
 
-  LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, bc);  /* [CP, N, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  N, bc);  /* [CP, N, bc] */
   LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, N, bc);  /* [CP, N, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
+  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
+  LIBXSMM_ASSUME_ALIGNED(dbeta_N_,  64);
 
   /* Extra temporary buffers of size [HW/num_HW_blocks, bc] to store fp32 intermediate data */
-  const libxsmm_blasint inp_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + dbeta_N_offset + CP * N * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, float, inp_fp32, ((float*)scratch) + inp_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
-  LIBXSMM_ASSUME_ALIGNED(inp_fp32_, 64);
-  const libxsmm_blasint dout_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + inp_fp32_offset + (HW/num_HW_blocks)), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dout_fp32, ((float*)scratch) + dout_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dout_fp32_, 64);
-  const libxsmm_blasint din_add_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + dout_fp32_offset + (HW/num_HW_blocks)), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din_add_fp32, ((float*)scratch) + din_add_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
+  const libxsmm_blasint fp32_block_size     = (HW/num_HW_blocks) * bc;
+  const libxsmm_blasint inp_fp32_offset     = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + dbeta_N_offset      + CP * N * bc),                 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  const libxsmm_blasint dout_fp32_offset    = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + inp_fp32_offset     + fp32_block_size*cfg.threads), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  const libxsmm_blasint din_add_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + dout_fp32_offset    + fp32_block_size*cfg.threads), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+  const libxsmm_blasint din_fp32_offset     = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + din_add_fp32_offset + fp32_block_size*cfg.threads), 64) - ((uintptr_t)(scratch))) / sizeof(float);
+
+  LIBXSMM_VLA_DECL(2, float, inp_fp32,     ((float*)scratch) + inp_fp32_offset     + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
+  LIBXSMM_VLA_DECL(2, float, dout_fp32,    ((float*)scratch) + dout_fp32_offset    + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
+  LIBXSMM_VLA_DECL(2, float, din_add_fp32, ((float*)scratch) + din_add_fp32_offset + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
+  LIBXSMM_VLA_DECL(2, float, din_fp32,     ((float*)scratch) + din_fp32_offset     + ltid*fp32_block_size, bc);  /* [HWblock, bc] */
+
+  LIBXSMM_ASSUME_ALIGNED(inp_fp32_,     64);
+  LIBXSMM_ASSUME_ALIGNED(dout_fp32_,    64);
   LIBXSMM_ASSUME_ALIGNED(din_add_fp32_, 64);
-  const libxsmm_blasint din_fp32_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + din_add_fp32_offset + (HW/num_HW_blocks)), 64) - ((uintptr_t)(scratch))) / sizeof(float);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din_fp32, ((float*)scratch) + din_fp32_offset, HW/num_HW_blocks, bc);  /* [HWblock, bc] */
-  LIBXSMM_ASSUME_ALIGNED(din_fp32_, 64);
+  LIBXSMM_ASSUME_ALIGNED(din_fp32_,     64);
 
   libxsmm_matrix_arg arg_array[8];
   libxsmm_matrix_eqn_param eqn_param;
@@ -1495,7 +1499,7 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
       cfg.all_zero_kernel(&all_zero_param);
 
       /* #pragma omp simd */
-      /* for (int cb = 0; cb < bc; cb++) { */
+      /* for (cb = 0; cb < bc; cb++) { */
       /*   lcl_dgamma_ptr[cb] = 0.0f; */
       /*   lcl_dbeta_ptr[cb] = 0.0f; */
       /* } */
@@ -1519,19 +1523,13 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
 
-        copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-        copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
-        cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
-
         copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, dout,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
         cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
 
-        if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, din_add,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-          copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, din_add_fp32, 0, 0, bc);
-          cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
-        }
+        copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
+        cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
 
         if (cfg.fuse_type == MY_BN_FUSE_ELTWISE ||
           cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1545,6 +1543,10 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
             cfg.inv_relu_kernel(&all_relu_param);
           } /* ReLU/mask */
           if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+            copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, din_add,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, din_add_fp32, 0, 0, bc);
+            cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
+
             ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(2, dout_fp32,    0, 0, bc);
             ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(2, din_add_fp32, 0, 0, bc);
             cfg.ewise_copy_kernel(&ewise_copy_param);
