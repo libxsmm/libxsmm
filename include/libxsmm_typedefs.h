@@ -337,7 +337,7 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
   LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
-  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52,
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
