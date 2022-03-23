@@ -284,7 +284,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
-  int i, j;
   int test_stochastic_rnd = 0;
 
   set_opname(op, opname);
@@ -323,6 +322,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
+  /* @TODO this seems to be broekn... it's overwritten below */
   if (test_stochastic_rnd > 0) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
     rng_state = libxsmm_rng_create_extstate( 555 );
@@ -330,6 +330,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
 #endif
     unary_param.op.secondary = (void*)rng_state;
+  } else {
+    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   }
 
   /* compute out_gold */
