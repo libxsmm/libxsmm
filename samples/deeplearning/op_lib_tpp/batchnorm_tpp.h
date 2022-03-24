@@ -213,7 +213,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* TPPs for reducing X and X2 in HW*/
   tmp_ld = bc;
 
-  unary_shape          = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ld, tmp_ld, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+  unary_shape          = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ld, tmp_ld, res.datatype_in, res.datatype_comp, res.datatype_comp);
   unary_flags          = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
   res.reduce_HW_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_HW_kernel == NULL) {
@@ -990,11 +990,7 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
       reduce_HW_param.out.primary   = lcl_sum_X_X2;                                                         /* [2*bc]  */
       for(hwb=0; hwb < num_HW_blocks; hwb++){
 
-        copy_to_fp32_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-        copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
-        cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
-
-        reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
+        reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         cfg.reduce_HW_kernel(&reduce_HW_param);                                                       /* [HW, bc] -----> [2 * bc] */
 
         add_param.in0.primary = sum_ncp_ptr;
