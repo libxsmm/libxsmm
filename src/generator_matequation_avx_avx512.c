@@ -473,6 +473,7 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV ||
          /*node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_EXP ||*/
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU ||
+         ((node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)) ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY ||
          node->info.u_op.type  == LIBXSMM_MELTW_TYPE_UNARY_GATHER ||
