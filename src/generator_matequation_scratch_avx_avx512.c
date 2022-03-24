@@ -170,6 +170,9 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
     gemm_flags, 0);
 
+  /* Enforce overwrite C flag */
+  desc->internal_flags_2 = desc->internal_flags_2 & 0xfb;
+
   /* add more BRGEMM related fields */
   if ( (br_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (br_config.br_unroll_hint != 0) ) {
     desc->c3 = (unsigned char)(((br_config.br_unroll_hint < 255) && (br_config.br_unroll_hint > 0)) ? br_config.br_unroll_hint : 0);
