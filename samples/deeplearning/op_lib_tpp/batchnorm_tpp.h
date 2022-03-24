@@ -1097,7 +1097,7 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
         add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_add_fp32, 0, 0, bc);
         add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         cfg.ewise_add_kernel(&add_param);
-      } else { // just downconvert
+      } else { /* just downconvert to bf16 if ewise_add with bf16 output is not called*/
         copy_from_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
         copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
         cfg.copy_from_fp32_kernel(&copy_from_fp32_param);
