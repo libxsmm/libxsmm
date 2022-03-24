@@ -403,7 +403,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
-    unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape         = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_in, res.datatype_out, res.datatype_comp);
     unary_flags         = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.inv_relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags);
     if ( res.inv_relu_kernel == NULL ) {
@@ -413,7 +413,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_in, res.datatype_out, res.datatype_comp);
     unary_flags           = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.ewise_copy_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, unary_flags);
     if ( res.ewise_copy_kernel == NULL) {
@@ -1523,6 +1523,24 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
 
+        if (cfg.fuse_type == MY_BN_FUSE_ELTWISE ||
+          cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+          if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+            all_relu_param.op.primary   = (void*)(&alpha);
+            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+            all_relu_param.in.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                             (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
+                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
+            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+            cfg.inv_relu_kernel(&all_relu_param);
+          } /* ReLU/mask */
+          if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+            ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(4, dout,    n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(4, din_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+            cfg.ewise_copy_kernel(&ewise_copy_param);
+          } /* Eltwise */
+        }
+
         copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, dout,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
         cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
@@ -1531,27 +1549,6 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
         copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
         cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
 
-        if (cfg.fuse_type == MY_BN_FUSE_ELTWISE ||
-          cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            all_relu_param.op.primary   = (void*)(&alpha);
-            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);      /* [HW,bc] */
-            all_relu_param.in.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                             (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc/8)
-                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
-            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);      /* [HW,bc] */
-            cfg.inv_relu_kernel(&all_relu_param);
-          } /* ReLU/mask */
-          if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, din_add,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-            copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, din_add_fp32, 0, 0, bc);
-            cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
-
-            ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(2, dout_fp32,    0, 0, bc);
-            ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(2, din_add_fp32, 0, 0, bc);
-            cfg.ewise_copy_kernel(&ewise_copy_param);
-          } /* Eltwise */
-        }
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32,  0, 0, bc);
         arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
 
