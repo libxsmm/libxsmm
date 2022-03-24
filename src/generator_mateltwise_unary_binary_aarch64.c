@@ -648,407 +648,390 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
       }
 
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
-      switch(i_mateltwise_desc->param){
-        case LIBXSMM_MELTW_TYPE_UNARY_X2:
-          if( l_is_sve ) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
-          } else {/* ASIMD */
-            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                       cur_vreg, cur_vreg, 0, cur_vreg,
-                                                       l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_NEGATE:
-          if( l_is_sve ) {
-            /* fneg only exists predicated */
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
-                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
-          } else {
-            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
-                                                       l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_INC:
-          if( l_is_sve ) {
-            /* using the immediate-add instruction is 7/6x slower on 64x64 elements on A64FX than using a simple add function with a constant */
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
-                                                     cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg, l_pred_reg, l_sve_type );
-          } else {
-            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
-                                                       cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
-                                                       l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL:
-          if( l_is_sve ) {
-            /* can we improve the performance by using multiple temporary registers? no,still 2.60x faster than ASIMD on 64x64  */
-            /* one iteration step is close to perfect with 1/[1..50] */
-            if(libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE){
-              unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
-                                                       cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
-                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
-                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            } else {/* if we don't really care about precision, we can skip the extra iteration */
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
-                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
-            }
-          } else {
-            /* todo: this is only an approximation */
-            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
-                                                       cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
-                                                       l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT:
-          /* typical relative error in tests (iterations = 0, fp32): 5-8% */
-          /* typical relative error in tests (iterations = 1, fp32): 0.06% */
-          /* typical relative error in tests (iterations = 2, fp32): 0.001% */
-          /* typical relative error in tests (iterations = 3, fp32): 0.00002% */
-          /* typical relative error in tests (iterations = 4, fp32): 0.0002% */
-          {
-            /* number needs to be adjusted, if the type is fp64 or bf16 */
-            /* fp32 is type 0x02; number of iterations for bytes: 0, bf16: 1, fp32: 3, fp64: 7 */
-            unsigned char max_num_iterations = (1 << (unsigned char) l_sve_type) - 1;
-            unsigned char num_iterations = libxsmm_get_ulp_precision() == LIBXSMM_ULP_PRECISION_ESTIMATE ? 0 : max_num_iterations;
-            if( l_is_sve ) {
-              unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
-              unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
-              /* Newton iteration: guess *= (3-guess*guess*x)/2 */
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
-                                                      cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
-              unsigned char i;
-              for(i=0;i<num_iterations;i++){
-                unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                         tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
-                                                         cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                         tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
-              }
-            } else {
-              /* todo: this only is an estimate as well, apply Newton iterations to improve the results */
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
-                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
-                                                      l_tupletype );
-            }
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_SQRT:
-          if( l_is_sve ) {
-            /* the SQRT instruction is very slow on A64FX, only as fast as ASIMD, so maybe even serial performance */
-            /* LIBXSMM is a machine learning oriented library and instructions like 1/x are inexact, so let's make this inexact as well */
-            if(libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE){
-              /* old & slow way */
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
-                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-#if 0
-            } else if(0){/* no iterations at all would result in an approx error of ~9%, and a speedup of 36x compared to the accurate ASIMD function */
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
-                                                       cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
-                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-#endif
-            } else {
-              /* inverse */
-              unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
-                                                       cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
-                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
-                                                       cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-              /* then 1/sqrt */
-              /* fp32, num_iterations=0 -> 0.07    relative error, 27.0x speedup */
-              /* fp32, num_iterations=1 -> 0.0002  relative error, 16.3x speedup */
-              /* fp32, num_iterations=2 -> 0.00007 relative error,  9.6x speedup */
-              unsigned char num_iterations = 1;
-              unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
-              unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
-              /* Newton iteration: guess *= (3-guess*guess*x)/2 */
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
-                                                      cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
-              unsigned char i;
-              for(i=0;i<num_iterations;i++){
-                unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                         tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
-                                                         cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
-                libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                         tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
-              }
-            }
-          } else {
-            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,
+      if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_X2){
+        if( l_is_sve ) {
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                   cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+        } else {/* ASIMD */
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                     cur_vreg, cur_vreg, 0, cur_vreg,
+                                                     l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_NEGATE) {
+        if( l_is_sve ) {
+          /* fneg only exists predicated */
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
+                                                   cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
                                                      cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
                                                      l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_INC){
+        if( l_is_sve ) {
+          /* using the immediate-add instruction is 7/6x slower on 64x64 elements on A64FX than using a simple add function with a constant */
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+                                                   cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg, l_pred_reg, l_sve_type );
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V,
+                                                     cur_vreg, i_micro_kernel_config->vec_ones, 0, cur_vreg,
+                                                     l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL){
+        if( l_is_sve ) {
+          /* can we improve the performance by using multiple temporary registers? no,still 2.60x faster than ASIMD on 64x64  */
+          /* one iteration step is close to perfect with 1/[1..50] */
+          if(libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE){
+            unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
+                                                     cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+          } else {/* if we don't really care about precision, we can skip the extra iteration */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
+                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_EXP:
-          if(l_is_sve){
-            libxsmm_generator_exp_ps_3dts_aarch64_sve(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vec_expmask,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              l_sve_type, l_pred_reg );
-          } else {
-            libxsmm_generator_exp_ps_3dts_aarch64_asimd(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_y,
-              i_micro_kernel_config->vec_z,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config->vec_expmask,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_TANH:
-        case LIBXSMM_MELTW_TYPE_UNARY_TANH_INV:
-          if(l_is_sve) {
-            libxsmm_generator_tanh_ps_rational_78_aarch64_sve(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_x2,
-              i_micro_kernel_config->vec_nom,
-              i_micro_kernel_config->vec_denom,
-              i_micro_kernel_config->mask_hi,
-              i_micro_kernel_config->mask_lo,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_c1_d,
-              i_micro_kernel_config->vec_c2_d,
-              i_micro_kernel_config->vec_c3_d,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              i_micro_kernel_config->vec_ones,
-              i_micro_kernel_config->vec_neg_ones,
-              i_micro_kernel_config->vec_tmp0,
-              l_sve_type, l_pred_reg );
-          } else {
-            libxsmm_generator_tanh_ps_rational_78_aarch64_asimd(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_x2,
-              i_micro_kernel_config->vec_nom,
-              i_micro_kernel_config->vec_denom,
-              i_micro_kernel_config->mask_hi,
-              i_micro_kernel_config->mask_lo,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_c1_d,
-              i_micro_kernel_config->vec_c2_d,
-              i_micro_kernel_config->vec_c3_d,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              i_micro_kernel_config->vec_ones,
-              i_micro_kernel_config->vec_neg_ones,
-              i_micro_kernel_config->vec_tmp0,
-              l_tupletype );
-          }
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
+                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->vec_tmp0,
+                                                     l_tupletype );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,
+                                                     cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
+                                                     l_tupletype );
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                     cur_vreg, i_micro_kernel_config->vec_tmp0, 0, cur_vreg,
+                                                     l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT) {
+        /* typical relative error in tests (iterations = 0, fp32): 5-8% */
+        /* typical relative error in tests (iterations = 1, fp32): 0.06% */
+        /* typical relative error in tests (iterations = 2, fp32): 0.001% */
+        /* typical relative error in tests (iterations = 3, fp32): 0.00002% */
+        /* typical relative error in tests (iterations = 4, fp32): 0.0002% */
 
-          if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV) {/* 1st derivative of tanh(x) = 1-tanh(x)^2 */
-            if(l_is_sve){
+        /* number needs to be adjusted, if the type is fp64 or bf16 */
+        /* fp32 is type 0x02; number of iterations for bytes: 0, bf16: 1, fp32: 3, fp64: 7 */
+        unsigned char max_num_iterations = (1 << (unsigned char) l_sve_type) - 1;
+        unsigned char num_iterations = libxsmm_get_ulp_precision() == LIBXSMM_ULP_PRECISION_ESTIMATE ? 0 : max_num_iterations;
+        if( l_is_sve ) {
+          unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
+          unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
+          /* Newton iteration: guess *= (3-guess*guess*x)/2 */
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
+                                                   cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+          unsigned char i;
+          for(i=0;i<num_iterations;i++){
+            unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                     tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
+                                                     cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                     tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
+          }
+        } else {
+          /* todo: this only is an estimate as well, apply Newton iterations to improve the results */
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRSQRTE_V,
+                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                     l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SQRT){
+        if( l_is_sve ) {
+          /* the SQRT instruction is very slow on A64FX, only as fast as ASIMD, so maybe even serial performance */
+          /* LIBXSMM is a machine learning oriented library and instructions like 1/x are inexact, so let's make this inexact as well */
+          if(libxsmm_get_ulp_precision() != LIBXSMM_ULP_PRECISION_ESTIMATE){
+            /* old & slow way */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P,
+                                                     cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+          } else {
+            /* inverse */
+            unsigned char tmp_vreg = i_micro_kernel_config->tmp_vreg;
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V, /* save the estimate in tmp */
+                                                     cur_vreg, cur_vreg, 0, tmp_vreg, l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V, /* compute the improvement by tmp,cur into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
+                                                     cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
+            /* then 1/sqrt */
+            /* fp32, num_iterations=0 -> 0.07    relative error, 27.0x speedup */
+            /* fp32, num_iterations=1 -> 0.0002  relative error, 16.3x speedup */
+            /* fp32, num_iterations=2 -> 0.00007 relative error,  9.6x speedup */
+            unsigned char num_iterations = 1;
+            unsigned char tmp_guess = i_micro_kernel_config->tmp_vreg;
+            unsigned char tmp_guess_squared = i_micro_kernel_config->tmp_vreg2;
+            /* Newton iteration: guess *= (3-guess*guess*x)/2 */
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
+                                                    cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+            unsigned char i;
+            for(i=0;i<num_iterations;i++){
+              unsigned char dst_reg = i == num_iterations-1 ? cur_vreg : tmp_guess;/* improve the guess; then save it */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
-                                                         cur_vreg, cur_vreg, 0, i_micro_kernel_config->vec_tmp0,
-                                                         l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
-                                                         i_micro_kernel_config->vec_tmp0, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,  i_micro_kernel_config->vec_tmp0,
-                                                         l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
-                                                         i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_neg_ones, 0, cur_vreg,
-                                                         l_pred_reg, l_sve_type );
-            } else {
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                         cur_vreg, cur_vreg, 0, i_micro_kernel_config->vec_tmp0,
-                                                         l_tupletype );
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                         i_micro_kernel_config->vec_tmp0, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0,  i_micro_kernel_config->vec_tmp0,
-                                                         l_tupletype );
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
-                                                         i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_neg_ones, 0, cur_vreg,
-                                                         l_tupletype );
+                                                       tmp_guess, tmp_guess, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V, /* dst = (3-s0*s1)/2 */
+                                                       cur_vreg, tmp_guess_squared, 0, tmp_guess_squared, l_pred_reg, l_sve_type);
+              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                       tmp_guess, tmp_guess_squared, 0, dst_reg, l_pred_reg, l_sve_type);
             }
           }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID:
-        case LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV:
-          if(l_is_sve){
-            libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_x2,
-              i_micro_kernel_config->vec_nom,
-              i_micro_kernel_config->vec_denom,
-              i_micro_kernel_config->mask_hi,
-              i_micro_kernel_config->mask_lo,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_c1_d,
-              i_micro_kernel_config->vec_c2_d,
-              i_micro_kernel_config->vec_c3_d,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              i_micro_kernel_config->vec_ones,
-              i_micro_kernel_config->vec_neg_ones,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_tmp0,
-              l_sve_type, l_pred_reg );
-          } else {
-            libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd(
-              io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_x2,
-              i_micro_kernel_config->vec_nom,
-              i_micro_kernel_config->vec_denom,
-              i_micro_kernel_config->mask_hi,
-              i_micro_kernel_config->mask_lo,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_c3,
-              i_micro_kernel_config->vec_c1_d,
-              i_micro_kernel_config->vec_c2_d,
-              i_micro_kernel_config->vec_c3_d,
-              i_micro_kernel_config->vec_hi_bound,
-              i_micro_kernel_config->vec_lo_bound,
-              i_micro_kernel_config->vec_ones,
-              i_micro_kernel_config->vec_neg_ones,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_tmp0,
-              l_tupletype );
-          }
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSQRT_V,
+                                                     cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, cur_vreg,
+                                                     l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_EXP){
+        if(l_is_sve){
+          libxsmm_generator_exp_ps_3dts_aarch64_sve(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_y,
+            i_micro_kernel_config->vec_z,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_log2e,
+            i_micro_kernel_config->vec_expmask,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            l_sve_type, l_pred_reg );
+        } else {
+          libxsmm_generator_exp_ps_3dts_aarch64_asimd(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_y,
+            i_micro_kernel_config->vec_z,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_log2e,
+            i_micro_kernel_config->vec_expmask,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV){
+        if(l_is_sve) {
+          libxsmm_generator_tanh_ps_rational_78_aarch64_sve(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones,
+            i_micro_kernel_config->vec_tmp0,
+            l_sve_type, l_pred_reg );
+        } else {
+          libxsmm_generator_tanh_ps_rational_78_aarch64_asimd(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones,
+            i_micro_kernel_config->vec_tmp0,
+            l_tupletype );
+        }
 
-          if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
-            if(l_is_sve){
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV) {/* 1st derivative of tanh(x) = 1-tanh(x)^2 */
+          if(l_is_sve){
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                     cur_vreg, cur_vreg, 0, i_micro_kernel_config->vec_tmp0,
+                                                     l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
+                                                     i_micro_kernel_config->vec_tmp0, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,  i_micro_kernel_config->vec_tmp0,
+                                                     l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
+                                                     i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_neg_ones, 0, cur_vreg,
+                                                     l_pred_reg, l_sve_type );
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                                       cur_vreg, cur_vreg, 0, i_micro_kernel_config->vec_tmp0,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
+                                                       i_micro_kernel_config->vec_tmp0, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0,  i_micro_kernel_config->vec_tmp0,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
+                                                       i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_neg_ones, 0, cur_vreg,
+                                                       l_tupletype );
+          }
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID || i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV){
+        if(l_is_sve){
+          libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_tmp0,
+            l_sve_type, l_pred_reg );
+        } else {
+          libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd(
+            io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_x2,
+            i_micro_kernel_config->vec_nom,
+            i_micro_kernel_config->vec_denom,
+            i_micro_kernel_config->mask_hi,
+            i_micro_kernel_config->mask_lo,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c3,
+            i_micro_kernel_config->vec_c1_d,
+            i_micro_kernel_config->vec_c2_d,
+            i_micro_kernel_config->vec_c3_d,
+            i_micro_kernel_config->vec_hi_bound,
+            i_micro_kernel_config->vec_lo_bound,
+            i_micro_kernel_config->vec_ones,
+            i_micro_kernel_config->vec_neg_ones,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_tmp0,
+            l_tupletype );
+        }
+
+        if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
+          if(l_is_sve){
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V,
+                                                     i_micro_kernel_config->vec_ones, cur_vreg, 0, i_micro_kernel_config->vec_x2,
+                                                     l_pred_reg, l_sve_type );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                     i_micro_kernel_config->vec_x2, cur_vreg, 0, cur_vreg,
+                                                     l_pred_reg, l_sve_type );
+          } else {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
                                                        i_micro_kernel_config->vec_ones, cur_vreg, 0, i_micro_kernel_config->vec_x2,
-                                                       l_pred_reg, l_sve_type );
-              libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
+                                                       l_tupletype );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
                                                        i_micro_kernel_config->vec_x2, cur_vreg, 0, cur_vreg,
-                                                       l_pred_reg, l_sve_type );
-            } else {
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V,
-                                                         i_micro_kernel_config->vec_ones, cur_vreg, 0, i_micro_kernel_config->vec_x2,
-                                                         l_tupletype );
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
-                                                         i_micro_kernel_config->vec_x2, cur_vreg, 0, cur_vreg,
-                                                         l_tupletype );
-            }
+                                                       l_tupletype );
           }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_GELU:
-          if(l_is_sve){
-            libxsmm_generator_gelu_ps_minimax3_aarch64_sve( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_xr,
-              i_micro_kernel_config->vec_xa,
-              i_micro_kernel_config->vec_index,
-              i_micro_kernel_config->vec_C0,
-              i_micro_kernel_config->vec_C1,
-              i_micro_kernel_config->vec_C2,
-              i_micro_kernel_config->vec_thres,
-              i_micro_kernel_config->vec_absmask,
-              i_micro_kernel_config->vec_scale,
-              i_micro_kernel_config->vec_shifter,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0, /* expmask */
-              l_sve_type, l_pred_reg );
-          } else {
-            libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_xr,
-              i_micro_kernel_config->vec_xa,
-              i_micro_kernel_config->vec_index,
-              i_micro_kernel_config->vec_C0,
-              i_micro_kernel_config->vec_C1,
-              i_micro_kernel_config->vec_C2,
-              i_micro_kernel_config->vec_thres,
-              i_micro_kernel_config->vec_absmask,
-              i_micro_kernel_config->vec_scale,
-              i_micro_kernel_config->vec_shifter,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0,
-              i_micro_kernel_config->vec_tmp1,
-              l_tupletype );
-          }
-          break;
-        case LIBXSMM_MELTW_TYPE_UNARY_GELU_INV:
-          if(l_is_sve){
-            libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_xr,
-              i_micro_kernel_config->vec_xa,
-              i_micro_kernel_config->vec_index,
-              i_micro_kernel_config->vec_C0,
-              i_micro_kernel_config->vec_C1,
-              i_micro_kernel_config->vec_C2,
-              i_micro_kernel_config->vec_thres,
-              i_micro_kernel_config->vec_absmask,
-              i_micro_kernel_config->vec_scale,
-              i_micro_kernel_config->vec_shifter,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0, /* expmask */
-              l_sve_type, l_pred_reg );
-          } else {
-            libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( io_generated_code,
-              cur_vreg,
-              i_micro_kernel_config->vec_xr,
-              i_micro_kernel_config->vec_xa,
-              i_micro_kernel_config->vec_index,
-              i_micro_kernel_config->vec_C0,
-              i_micro_kernel_config->vec_C1,
-              i_micro_kernel_config->vec_C2,
-              i_micro_kernel_config->vec_thres,
-              i_micro_kernel_config->vec_absmask,
-              i_micro_kernel_config->vec_scale,
-              i_micro_kernel_config->vec_shifter,
-              i_micro_kernel_config->vec_halves,
-              i_micro_kernel_config->vec_c0,
-              i_micro_kernel_config->vec_c1,
-              i_micro_kernel_config->vec_c2,
-              i_micro_kernel_config->vec_tmp0,
-              i_micro_kernel_config->vec_tmp1,
-              l_tupletype );
-          }
-          break;
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU){
+        if(l_is_sve){
+          libxsmm_generator_gelu_ps_minimax3_aarch64_sve( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_xr,
+            i_micro_kernel_config->vec_xa,
+            i_micro_kernel_config->vec_index,
+            i_micro_kernel_config->vec_C0,
+            i_micro_kernel_config->vec_C1,
+            i_micro_kernel_config->vec_C2,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_tmp0, /* expmask */
+            l_sve_type, l_pred_reg );
+        } else {
+          libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_xr,
+            i_micro_kernel_config->vec_xa,
+            i_micro_kernel_config->vec_index,
+            i_micro_kernel_config->vec_C0,
+            i_micro_kernel_config->vec_C1,
+            i_micro_kernel_config->vec_C2,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_tmp0,
+            i_micro_kernel_config->vec_tmp1,
+            l_tupletype );
+        }
+      } else if(i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV){
+        if(l_is_sve){
+          libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_xr,
+            i_micro_kernel_config->vec_xa,
+            i_micro_kernel_config->vec_index,
+            i_micro_kernel_config->vec_C0,
+            i_micro_kernel_config->vec_C1,
+            i_micro_kernel_config->vec_C2,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_tmp0, /* expmask */
+            l_sve_type, l_pred_reg );
+        } else {
+          libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( io_generated_code,
+            cur_vreg,
+            i_micro_kernel_config->vec_xr,
+            i_micro_kernel_config->vec_xa,
+            i_micro_kernel_config->vec_index,
+            i_micro_kernel_config->vec_C0,
+            i_micro_kernel_config->vec_C1,
+            i_micro_kernel_config->vec_C2,
+            i_micro_kernel_config->vec_thres,
+            i_micro_kernel_config->vec_absmask,
+            i_micro_kernel_config->vec_scale,
+            i_micro_kernel_config->vec_shifter,
+            i_micro_kernel_config->vec_halves,
+            i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_tmp0,
+            i_micro_kernel_config->vec_tmp1,
+            l_tupletype );
+        }
       }
     }
   }
