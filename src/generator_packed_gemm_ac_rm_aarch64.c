@@ -325,8 +325,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop_simd_p
   /* advance B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
-                                                 (unsigned long long)((i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in)
-                                                    - (i_n_blocking * i_micro_kernel_config->datatype_size_in)) );
+                                                 (unsigned long long)(((unsigned long long)i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in)
+                                                    - ((unsigned long long)i_n_blocking * i_micro_kernel_config->datatype_size_in)) );
 
   /* close k loop */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_kloop, 1 );
@@ -350,11 +350,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop_simd_p
   /* reset A pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
-                                                 (unsigned long long)(i_xgemm_desc->k * i_packed_width* i_micro_kernel_config->datatype_size_in) );
+                                                 (unsigned long long)((unsigned long long)i_xgemm_desc->k * i_packed_width* i_micro_kernel_config->datatype_size_in) );
 
   /* reset B Pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
-                                                 (unsigned long long)(i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in) );
+                                                 (unsigned long long)((unsigned long long)i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in) );
 }
 

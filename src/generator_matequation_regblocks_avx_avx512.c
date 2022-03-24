@@ -43,7 +43,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
             i_micro_kernel_config->alu_mov_instruction,
             input_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            cur_node->info.arg.in_pos*24,
+            cur_node->info.arg.in_pos*32,
             i_micro_kernel_config->gpr_pool[cur_pos],
             0 );
       } else {
@@ -51,7 +51,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
             i_micro_kernel_config->alu_mov_instruction,
             input_reg,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            cur_node->info.arg.in_pos*24,
+            cur_node->info.arg.in_pos*32,
             temp_reg,
             0 );
         libxsmm_generator_meqn_getaddr_stack_tmpaddr_i( io_generated_code, cur_pos * 8, temp_reg2);
@@ -209,16 +209,13 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_generated_code*        
                                                  unsigned int*                           i_n_unroll_factor,
                                                  unsigned int*                           i_m_assm_trips,
                                                  unsigned int*                           i_n_assm_trips) {
-
-  unsigned int m_trips, n_trips, m_unroll_factor = 32, n_unroll_factor = 32, m_assm_trips = 1, n_assm_trips = 1;
+  unsigned int m_trips, n_trips, m_unroll_factor = 0, n_unroll_factor = 0, m_assm_trips = 1, n_assm_trips = 1;
   unsigned int max_nm_unrolling = 32;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int n_tmp_reg_blocks = i_eqn->eqn_root->reg_score;
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
-    m_unroll_factor = 16;
-    n_unroll_factor = 16;
     max_nm_unrolling = 16;
   }
 

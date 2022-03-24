@@ -45,10 +45,10 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                      libxsmm_blocking_info_t*           n_blocking_info,
                                                      libxsmm_blocking_info_t*           m_blocking_info,
-                                                     unsigned int                       offset_A,
-                                                     unsigned int                       offset_B,
+                                                     long long                          offset_A,
+                                                     long long                          offset_B,
                                                      unsigned int                       is_last_k,
-                                                     int                                i_brgemm_loop,
+                                                     long long                          i_brgemm_loop,
                                                      unsigned int                       fully_unrolled_brloop  );
 
 LIBXSMM_API_INTERN
@@ -59,8 +59,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop_emu( libxsmm_generated_code*       
                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                       libxsmm_blocking_info_t*           n_blocking_info,
                                                       libxsmm_blocking_info_t*           m_blocking_info,
-                                                      unsigned int                       A_offs,
-                                                      unsigned int                       B_offs,
+                                                      long long                          A_offs,
+                                                      long long                          B_offs,
                                                       unsigned int                       fully_unrolled_brloop );
 
 #endif /* GENERATOR_GEMM_AMX_MICROKERNEL_EMU_H */

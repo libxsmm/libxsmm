@@ -212,7 +212,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_cntl,
                                                              const unsigned char     i_sae_cntl,
-                                                             const unsigned short    i_imm8 );
+                                                             const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_3reg( libxsmm_generated_code* io_generated_code,
@@ -239,7 +239,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_imm8( libxsmm_generated_code* io_g
                                                     const unsigned int      i_reg_number_src0,
                                                     const unsigned int      i_reg_number_src1,
                                                     const unsigned int      i_reg_number_dst,
-                                                    const unsigned short    i_imm8 );
+                                                    const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( libxsmm_generated_code* io_generated_code,
@@ -250,7 +250,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_cntl,
                                                              const unsigned char     i_sae_cntl,
-                                                             const unsigned short    i_imm8 );
+                                                             const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_2reg( libxsmm_generated_code* io_generated_code,
@@ -274,7 +274,7 @@ void libxsmm_x86_instruction_vec_compute_2reg_imm8( libxsmm_generated_code* io_g
                                                     const char              i_vector_name,
                                                     const unsigned int      i_reg_number_src0,
                                                     const unsigned int      i_reg_number_dst,
-                                                    const unsigned short    i_imm8 );
+                                                    const unsigned int      i_imm8 );
 
 /**
  * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
@@ -307,7 +307,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
                                                              const unsigned int      i_reg_number_dst,
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_rnd_exp_cntl,
-                                                             const unsigned short    i_imm8 );
+                                                             const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_2reg( libxsmm_generated_code* io_generated_code,
@@ -346,7 +346,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( libxsmm_generated_code* 
                                                         const unsigned int      i_use_broadcast,
                                                         const unsigned int      i_reg_number_src1,
                                                         const unsigned int      i_reg_number_dst,
-                                                        const unsigned short    i_imm8 );
+                                                        const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_1reg_mask_imm8( libxsmm_generated_code* io_generated_code,
@@ -360,7 +360,7 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_mask_imm8( libxsmm_generated_c
                                                              const unsigned int      i_reg_number_dst,
                                                              const unsigned int      i_mask_reg_number,
                                                              const unsigned int      i_mask_rnd_exp_cntl,
-                                                             const unsigned short    i_imm8 );
+                                                             const unsigned int      i_imm8 );
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_1reg( libxsmm_generated_code* io_generated_code,
@@ -396,7 +396,7 @@ void libxsmm_x86_instruction_vec_compute_mem_1reg_imm8( libxsmm_generated_code* 
                                                         const int               i_displacement,
                                                         const unsigned int      i_use_broadcast,
                                                         const unsigned int      i_reg_number_dst,
-                                                        const unsigned short    i_imm8 );
+                                                        const unsigned int      i_imm8 );
 
 
 LIBXSMM_API_INTERN
@@ -471,7 +471,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_alu_instr,
                                           const unsigned int      i_gp_reg_number,
-                                          const size_t            i_immediate );
+                                          const long long         i_immediate );
 
 /**
  * Generates regular all instructions with immediates
@@ -559,7 +559,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_src_0,
                                                const unsigned int      i_mask_reg_number_src_1,
                                                const unsigned int      i_mask_reg_number_dest,
-                                               const unsigned short    i_imm8 );
+                                               const unsigned int      i_imm8 );
 
 /**
  * Generates a label to which one can jump back and pushes it on the loop label stack

@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
   char scaleopresname[50];
   char redopname[50];
   unsigned int use_bf16 = 0;
-  unsigned int bcast_factor = 0;
+  unsigned short bcast_factor = 0;
   unsigned int argop_mode = 0;
   unsigned int idx_mode = 0;
   unsigned int use_regular_vecin = 0;
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
   if ( argc > 12 ) idx_mode        = atoi(argv[12]);
   if ( argc > 13 ) iters       = atoi(argv[13]);
   if ( argc > 14 ) use_bf16    = atoi(argv[14]);
-  if ( argc > 15 ) bcast_factor = atoi(argv[15]);
+  if ( argc > 15 ) bcast_factor = (unsigned short)atoi(argv[15]);
 
   if (op == OP_DIV)  avoid_small_vals = 1;
 
@@ -365,11 +365,11 @@ int main(int argc, char* argv[])
   /* Calculate reference results...  */
   for (jj = 0; jj < n_cols_idx; jj++) {
     float op_res = 0.0f;
-    j = cols_ind_array[jj];
+    j = (unsigned int)cols_ind_array[jj];
     if (use_regular_vecin == 1) {
       _j = 0;
     } else {
-      _j = cols_ind_array2[jj];
+      _j = (unsigned int)cols_ind_array2[jj];
     }
     for (_i = 0; _i < m; _i++) {
       i = _i;
@@ -549,11 +549,11 @@ int main(int argc, char* argv[])
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
       float op_res = 0.0f;
-      j = cols_ind_array[jj];
+      j = (unsigned int)cols_ind_array[jj];
       if (use_regular_vecin == 1) {
         _j = 0;
       } else {
-        _j = cols_ind_array2[jj];
+        _j = (unsigned int)cols_ind_array2[jj];
       }
       for (_i = 0; _i < m; _i++) {
         i = _i;

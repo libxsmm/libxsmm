@@ -27,10 +27,9 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${SED}" ] && [ -e "${CPU}" ]; then
   NC=$1
   if [ ! "${NC}" ] || [ "0" = "${NC}" ]; then
     HERE=$(cd "$(dirname "$0")" && pwd -P)
-    NC=$(${CPU} -nc)
+    NC=$(${CPU} -nt)
   fi
   OMP_NUM_THREADS=1 \
-  OMP_PROC_BIND=TRUE \
   ${XARGS} -I{} -P "${NC}" bash -c "{} || ( \
     1>&2 echo 'ERROR: {}' && exit 255)" < /dev/stdin 2> >( \
     ${SED} "/xargs/d" >&2)

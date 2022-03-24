@@ -626,10 +626,10 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info,
-    unsigned int                       offset_A,
-    unsigned int                       offset_B,
+    long long                          offset_A,
+    long long                          offset_B,
     unsigned int                       is_last_k,
-    int                                i_brgemm_loop,
+    long long                          i_brgemm_loop,
     unsigned int                       fully_unrolled_brloop  ) {
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
@@ -678,8 +678,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
   int _A_tileload_instr[4] = { 0 };
   int _B_tileload_instr[4] = { 0 };
   int _C_tilecomp_instr[4] = { 0 };
-  int _A_offsets[4] = { 0 };
-  int _B_offsets[4] = { 0 };
+  long long _A_offsets[4] = { 0 };
+  long long _B_offsets[4] = { 0 };
   int _im_offset_prefix_sums[4] = { 0 };
   int _in_offset_prefix_sums[4] = { 0 };
 
@@ -888,13 +888,14 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     }
 
     if (_A_tile_id_load[i] > 0) {
+      /* @TODO catch _A_offset overflow */
       libxsmm_x86_instruction_tile_move_emu( io_generated_code,
           i_micro_kernel_config->instruction_set,
           _A_tileload_instr[i],
           gp_reg_a,
           i_gp_reg_mapping->gp_reg_lda,
           4,
-          _A_offsets[i] * i_micro_kernel_config->sparsity_factor_A,
+          (int)(_A_offsets[i] * i_micro_kernel_config->sparsity_factor_A),
           _A_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_brgemm_loop + pf_dist < i_xgemm_desc->c3) {
@@ -904,18 +905,19 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
             n_CL_to_pf,
             i_xgemm_desc->lda * 2,
             i_gp_reg_mapping->gp_reg_a,
-            (unsigned int)(_A_offsets[i] + pf_dist * i_xgemm_desc->c1));
+            _A_offsets[i] + pf_dist * i_xgemm_desc->c1 );
       }
     }
 
     if (_B_tile_id_load[i] > 0) {
-        libxsmm_x86_instruction_tile_move_emu( io_generated_code,
+      /* @TODO catch _B_offset overflow */
+      libxsmm_x86_instruction_tile_move_emu( io_generated_code,
             i_micro_kernel_config->instruction_set,
             _B_tileload_instr[i],
             i_gp_reg_mapping->gp_reg_b,
             i_gp_reg_mapping->gp_reg_ldb,
             4,
-            _B_offsets[i],
+            (int)(_B_offsets[i]),
             _B_tile_id_load[i], i_micro_kernel_config, 0);
 
       if (i_micro_kernel_config->norm_to_normT_B_ext_buf == 1) {
@@ -930,7 +932,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
             n_CL_to_pf,
             i_xgemm_desc->ldb * 2,
             i_gp_reg_mapping->gp_reg_b,
-            (unsigned int)(_B_offsets[i] + pf_dist * i_xgemm_desc->c2));
+            _B_offsets[i] + pf_dist * i_xgemm_desc->c2 );
       }
     }
 
@@ -983,15 +985,15 @@ void libxsmm_generator_gemm_amx_kernel_kloop_emu( libxsmm_generated_code*       
     const libxsmm_gemm_descriptor*     i_xgemm_desc,
     libxsmm_blocking_info_t*           n_blocking_info,
     libxsmm_blocking_info_t*           m_blocking_info,
-    unsigned int                       A_offs,
-    unsigned int                       B_offs,
+    long long                          A_offs,
+    long long                          B_offs,
     unsigned int                       fully_unrolled_brloop ) {
 
   unsigned int l_k_blocking = 16;
   unsigned int k;
-  unsigned int offset_A = 0;
-  unsigned int offset_B = 0;
-  int i_brgemm_loop = -2;
+  long long offset_A = 0;
+  long long offset_B = 0;
+  long long i_brgemm_loop = -2;
   int is_last_k = 0;
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {

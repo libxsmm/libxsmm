@@ -14,10 +14,6 @@
 #include <stdio.h>
 #include <math.h>
 
-/* immintrin.h doesn't exist on A64FX; if this file exists for other platforms than X86, adjust this if condition */
-#if defined(LIBXSMM_PLATFORM_X86)
-# include <immintrin.h>
-#endif
 #define COLS 0
 #define ROWS 1
 #define OFFS 2
@@ -286,6 +282,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
   libxsmm_meltwfunction_unary l_kernel = NULL;
   libxsmm_meltw_unary_param l_unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
   libxsmm_dnn_datatype dtype = (use_16bit_dtype == DTYPE_32BIT) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16;
   libxsmm_blasint m_kernel = 0, n_kernel = 0;
 
@@ -306,7 +303,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   }
   unary_flags = (use_64bit_index == IDX_64BIT) ? (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES | unary_flags) : (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | unary_flags) ;
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
-  l_kernel    = libxsmm_dispatch_meltw_unary(m_kernel, n_kernel, &ld_in_kernel, &ld_out_kernel, dtype, dtype, dtype, unary_flags, unary_type);
+  unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
+  l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   l_unary_param.in.primary   = (use_16bit_dtype == DTYPE_32BIT) ? (void*)sinp : (void*)binp;
   if (use_gather_or_scatter == GATHER) {
     l_unary_param.in.secondary = (use_64bit_index == IDX_64BIT) ? (void*)ind_array_64bit : (void*)ind_array_32bit;

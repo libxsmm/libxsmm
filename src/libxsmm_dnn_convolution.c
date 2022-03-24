@@ -155,7 +155,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_fwd_pixels_gemm( libxsmm_dn
   int result = handle->fwd_ofw_rb * handle->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if ((handle->target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->target_archid <= LIBXSMM_X86_ALLFEAT) && ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) ) {
-    if (handle->desc.R != 1 || handle->desc.R != 1) {
+    if (handle->desc.R != 1 || handle->desc.S != 1) {
       if (handle->ofw < 24) {
         result = (handle->fwd_ofw_rb+2*handle->desc.pad_w) * (handle->fwd_ofh_rb-2) + 2 * (handle->fwd_ofw_rb+handle->desc.pad_w);
       }
@@ -464,7 +464,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_convolution_setup_bwd_pixels_gemm( libxsmm_dn
   int result = handle->bwd_ofw_rb * handle->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
   if ((handle->target_archid == LIBXSMM_X86_AVX512_SPR) && (handle->target_archid <= LIBXSMM_X86_ALLFEAT) && ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) ) {
-    if (handle->desc.R != 1 || handle->desc.R != 1) {
+    if (handle->desc.R != 1 || handle->desc.S != 1) {
       if (handle->ofw < 24) {
         result = (handle->bwd_ofw_rb+2*handle->desc.pad_w) * (handle->bwd_ofh_rb-2) + 2 * (handle->bwd_ofw_rb+handle->desc.pad_w);
       }
@@ -1246,8 +1246,8 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t libxsmm_dnn_convolution_setup( libxsmm_dnn_
     if (handle->desc.R == 1 && handle->desc.S == 1) {
       const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
       const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
-      int stride_a = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in);
-      int stride_b = IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      int stride_a = (int)(handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_in));
+      int stride_b = (int)(IFW * IFH * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in));
       handle->fwd_compute_kernel_strd_f32 = libxsmm_smmdispatch_reducebatch_strd_unroll(handle->ofmblock, handle->fwd_gemm_pixels, handle->ifmblock, stride_a, stride_b, handle->blocksifm_blocking, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
     } else {
       const int IFW = (handle->fwd_padding_copy == 1) ? handle->ifwp + 2*handle->desc.pad_w : ( (handle->pack_input == 1) ? handle->ofwp : handle->ifwp );
