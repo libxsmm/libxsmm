@@ -201,7 +201,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, res.datatype_comp, res.datatype_out, res.datatype_comp);
+    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, res.datatype_in, res.datatype_out, res.datatype_comp);
     binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
     res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
     if ( res.ewise_add_kernel == NULL) {
@@ -243,7 +243,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[0].m    = res.bc;                                      /* x = [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
-  arg_shape[0].type = res.datatype_comp;
+  arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn10;
@@ -281,7 +281,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
   eqn_out_arg_shape.ld   = ld;
-  eqn_out_arg_shape.type = res.datatype_comp;
+  eqn_out_arg_shape.type = res.datatype_out;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn10 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn10 ); */
@@ -455,7 +455,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[0].m    = res.bc;                                      /* inp [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
-  arg_shape[0].type = res.datatype_comp;
+  arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn11;
@@ -479,7 +479,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
   arg_shape[3].ld   = ld;
-  arg_shape[3].type = res.datatype_comp;
+  arg_shape[3].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
   arg_metadata[4].eqn_idx     = my_eqn11;
@@ -521,7 +521,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
-  arg_shape[0].type = res.datatype_comp;
+  arg_shape[0].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
 
   arg_metadata[1].eqn_idx     = my_eqn12;
@@ -575,7 +575,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[1].m    = res.bc;                                      /* dout [HW, bc] */
   arg_shape[1].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[1].ld   = ld;
-  arg_shape[1].type = res.datatype_comp;
+  arg_shape[1].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
 
   ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
@@ -588,7 +588,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[2].m    = res.bc;                                      /* inp [HW, bc] */
   arg_shape[2].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[2].ld   = ld;
-  arg_shape[2].type = res.datatype_comp;
+  arg_shape[2].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   arg_metadata[3].eqn_idx     = my_eqn16;
@@ -610,7 +610,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   eqn_out_arg_shape.m    = res.bc;                                 /* din [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W/res.num_HW_blocks;
   eqn_out_arg_shape.ld   = ld;
-  eqn_out_arg_shape.type = res.datatype_comp;
+  eqn_out_arg_shape.type = res.datatype_out;
 
   /* libxsmm_matrix_eqn_tree_print( my_eqn16 ); */
   /* libxsmm_matrix_eqn_rpn_print ( my_eqn16 ); */
@@ -1078,6 +1078,7 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
 
     for(hwb=0; hwb < num_HW_blocks; hwb++){
 
+#if 0
       copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
       copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
       cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
@@ -1112,6 +1113,30 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
         all_relu_param.out.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (bc/BITS_PER_CHAR)) : NULL );
         cfg.relu_kernel(&all_relu_param);
+#else
+      arg_array[0].primary     = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc); /* [HW, bc] */
+      eqn_param.inputs = arg_array;
+      eqn_param.output.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,  n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc); /* [HW,bc] */
+      cfg.func10(&eqn_param);                                                             /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
+
+      /* Eltwise add */
+      if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+        add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        cfg.ewise_add_kernel(&add_param);
+      }
+
+      /* ReLU */
+      if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
+
+        all_relu_param.op.primary   = (void*)(&alpha);
+        all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+        all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+        all_relu_param.out.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                          (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (bc/BITS_PER_CHAR)) : NULL );
+        cfg.relu_kernel(&all_relu_param);
+#endif
 
       } /* ReLU */
 
@@ -1534,6 +1559,7 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
           } /* Eltwise */
         }
 
+#if 0
         copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, dout,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
         cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
@@ -1544,6 +1570,10 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
 
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32,  0, 0, bc);
         arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
+#else
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+#endif
 
         eqn_param.inputs = arg_array;
         eqn_param.output.primary = lcl_dgamma_ptr;
@@ -1631,7 +1661,7 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
     arg_array[7].primary = c;
 
     for(hwb=0; hwb < num_HW_blocks; hwb++){
-
+#if 0
       copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
       copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
       cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
@@ -1647,14 +1677,23 @@ void my_bn_bwd_exec_bf16( my_bn_bwd_config cfg, libxsmm_bfloat16 *pdout, const l
       arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32,  0, 0, bc);
       arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, dout_fp32, 0, 0, bc);
 
-      eqn_param.inputs = arg_array;
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, din_fp32, 0, 0, bc);
+#else
+      arg_array[0].primary     = (void*)&LIBXSMM_VLA_ACCESS(4, inp,  n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+      arg_array[3].primary     = (void*)&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+
+      eqn_param.output.primary = (void*)&LIBXSMM_VLA_ACCESS(4, din, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);;
+#endif
+
+      eqn_param.inputs = arg_array;
+
       cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
 
+#if 0
       copy_from_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(2, din_fp32, 0, 0, bc);
       copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, din,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
       cfg.copy_from_fp32_kernel(&copy_from_fp32_param);
-
+#endif
     }
   }
 
