@@ -191,7 +191,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    unary_shape     = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape     = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_in, res.datatype_out, res.datatype_comp);
     unary_flags     = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
     res.relu_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
     if ( res.relu_kernel == NULL ) {
@@ -201,7 +201,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, res.datatype_comp, res.datatype_out, res.datatype_comp);
     binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
     res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
     if ( res.ewise_add_kernel == NULL) {
@@ -1085,7 +1085,7 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
       arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);           /* [HW, bc] */
       eqn_param.inputs = arg_array;
       eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);              /* [HW,bc] */
-      cfg.func10(&eqn_param);                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
+      cfg.func10(&eqn_param);                                                             /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
 
       /* Eltwise add */
       if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1095,24 +1095,25 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
 
         add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32,     0, 0, bc);
         add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_add_fp32, 0, 0, bc);
-        add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32,     0, 0, bc);
+        add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         cfg.ewise_add_kernel(&add_param);
+      } else { // just downconvert
+        copy_from_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
+        copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+        cfg.copy_from_fp32_kernel(&copy_from_fp32_param);
       }
 
       /* ReLU */
       if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
 
-        all_relu_param.op.primary    = (void*)(&alpha);
-        all_relu_param.in.primary    = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
-        all_relu_param.out.primary   = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
+        all_relu_param.op.primary   = (void*)(&alpha);
+        all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+        all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
         all_relu_param.out.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (bc/BITS_PER_CHAR)) : NULL );
         cfg.relu_kernel(&all_relu_param);
-      } /* ReLU */
 
-      copy_from_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
-      copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
-      cfg.copy_from_fp32_kernel(&copy_from_fp32_param);
+      } /* ReLU */
 
     }
   }
