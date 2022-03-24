@@ -1073,17 +1073,13 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
     }
     arg_array[1].primary = s;                                                              /* [bc] */
     arg_array[2].primary = b;                                                              /* [bc] */
-    arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);                       /* [bc] */
-    arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta,  cp, 0, bc);                       /* [bc] */
+    arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);                /* [bc] */
+    arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta,  cp, 0, bc);                /* [bc] */
 
     for(hwb=0; hwb < num_HW_blocks; hwb++){
 
-      copy_to_fp32_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+      copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
       copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);
-      cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
-
-      copy_to_fp32_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
-      copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
       cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
 
       arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_fp32, 0, 0, bc);           /* [HW, bc] */
@@ -1093,7 +1089,7 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
 
       /* Eltwise add */
       if (cfg.fuse_type == MY_BN_FUSE_ELTWISE || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-        copy_to_fp32_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
+        copy_to_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);
         copy_to_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(2, inp_add_fp32, 0, 0, bc);
         cfg.copy_to_fp32_kernel(&copy_to_fp32_param);
 
@@ -1106,16 +1102,16 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
       /* ReLU */
       if (cfg.fuse_type == MY_BN_FUSE_RELU || cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
 
-        all_relu_param.op.primary   = (void*)(&alpha);
-        all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
-        all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
+        all_relu_param.op.primary    = (void*)(&alpha);
+        all_relu_param.in.primary    = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
+        all_relu_param.out.primary   = &LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);      /* [HW,bc] */
         all_relu_param.out.secondary = ((cfg.fuse_type == MY_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
                                           (void*)&LIBXSMM_VLA_ACCESS(4, relumask, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (bc/BITS_PER_CHAR)) : NULL );
         cfg.relu_kernel(&all_relu_param);
       } /* ReLU */
 
-      copy_from_fp32_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
-      copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,      n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
+      copy_from_fp32_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(2, out_fp32, 0, 0, bc);
+      copy_from_fp32_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc);      /* [HW,bc] */
       cfg.copy_from_fp32_kernel(&copy_from_fp32_param);
 
     }
