@@ -644,8 +644,8 @@ void destroy_my_bn_bwd(my_bn_bwd_config* cfg) {
   /* when/if libxsmm_matrix_eqn_destroy gets added, destructords for equations should go here */
 }
 
-void my_bn_fwd_exec( my_bn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout,
-                     unsigned char *prelumask, float eps, int start_tid, int my_tid, void *scratch, my_bn_norm_type norm_type ) {
+void my_bn_fwd_exec_f32( my_bn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout,
+                         unsigned char *prelumask, float eps, int start_tid, int my_tid, void *scratch, my_bn_norm_type norm_type ) {
 
   const libxsmm_blasint N  = cfg.N;
   const libxsmm_blasint CP = cfg.CP;
@@ -1129,9 +1129,9 @@ void my_bn_fwd_exec_bf16( my_bn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
 }
 
 
-void my_bn_bwd_exec( my_bn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
-                     float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
-                     int start_tid, int my_tid, void *scratch, my_bn_norm_type norm_type) {
+void my_bn_bwd_exec_f32( my_bn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
+                         float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
+                         int start_tid, int my_tid, void *scratch, my_bn_norm_type norm_type) {
 
   const libxsmm_blasint N  = cfg.N;
   const libxsmm_blasint CP = cfg.CP;
