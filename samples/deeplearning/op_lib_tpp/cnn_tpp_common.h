@@ -173,7 +173,6 @@ typedef struct cnn_tpp_config {
   libxsmm_xmmfunction fwd_compute_kernel2_strd_bf16f32;
   libxsmm_meltwfunction_unary cvt_kernel_fp32bf16;
 
-
   libxsmm_meltwfunction_unary strided_copy_kernel_bf16;
   libxsmm_meltwfunction_unary ifmblock_copy_kernel_bf16;
   libxsmm_meltwfunction_unary ifmblock_zero_kernel_bf16;
@@ -189,10 +188,22 @@ typedef struct cnn_tpp_config {
   libxsmm_xmmfunction bwd_compute_kernel_offs_f32;
   libxsmm_xmmfunction bwd_compute_kernel_fallback_f32;
 
+  libxsmm_xmmfunction bwd_compute_kernel_strd_bf16;
+  libxsmm_xmmfunction bwd_compute_kernel2_strd_bf16;
+  libxsmm_xmmfunction bwd_compute_kernel_strd_bf16f32;
+  libxsmm_xmmfunction bwd_compute_kernel2_strd_bf16f32;
+  libxsmm_xmmfunction bwd_compute_kernel_offs_bf16;
+  libxsmm_xmmfunction bwd_compute_kernel_fallback_bf16;
+  libxsmm_meltwfunction_unary cvt_kernel_bwd_fp32bf16;
   libxsmm_meltwfunction_unary tr_kernel;
+
   libxsmm_meltwfunction_unary ofh_x_ofw_x_ifmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary paddedH_x_paddedW_x_ifmblock_zero_kernel_f32;
   libxsmm_meltwfunction_unary ifhp_x_ifwp_x_ifmblock_zero_kernel_f32;
+
+  libxsmm_meltwfunction_unary ofh_x_ofw_x_ifmblock_zero_kernel_bf16;
+  libxsmm_meltwfunction_unary paddedH_x_paddedW_x_ifmblock_zero_kernel_bf16;
+  libxsmm_meltwfunction_unary ifhp_x_ifwp_x_ifmblock_zero_kernel_bf16;
 
   /* Hoisting the compute kernels for UPD  */
   libxsmm_xmmfunction upd_compute_kernel_no_linearized_tasklist_f32;
@@ -1933,6 +1944,233 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
   }
+
+  if ( res.datatype_in == LIBXSMM_DATATYPE_BF16 ) {
+    libxsmm_blasint ldA;
+    libxsmm_blasint ldB;
+    libxsmm_blasint ldC;
+    float beta;
+    libxsmm_meltw_unary_shape unary_shape;
+    libxsmm_blasint stride_in;
+    libxsmm_blasint stride_out;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+    libxsmm_bitfield l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+    libxsmm_bitfield l_prefetch_flags = 0;
+    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    int brgemm_pf_oob = 0;
+    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+
+    res.A_offsets_bwd = NULL;
+    res.B_offsets_bwd = NULL;
+
+    ldB = (libxsmm_blasint)res.ofmblock;
+    ldA = (libxsmm_blasint)res.ifmblock;
+    ldC = (res.spread_input_bwd == 1) ? (libxsmm_blasint)(res.ifmblock * res.v) : (libxsmm_blasint)res.ifmblock;
+    beta = (res.avoid_acc_load_bwd ? 0.f : 1.f);
+
+    l_flags |= res.bwd_flags;
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    if ( 0 == env_brgemm_pf_oob ) {
+    } else {
+      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+    }
+    if (brgemm_pf_oob > 0) {
+      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+    }
+    l_prefetch_flags = prefetch_mode;
+
+    /* Strided kernel  */
+    libxsmm_blasint stride_a = res.R * res.S * res.ifmblock * res.ofmblock * sizeof(libxsmm_bfloat16);
+    libxsmm_blasint stride_b = res.ofwp * res.ofhp * res.ofmblock * sizeof(libxsmm_bfloat16);
+
+    l_shape.m = res.ifmblock;
+    l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
+    l_shape.k = res.ofmblock;
+    l_shape.lda = ldA;
+    l_shape.ldb = ldB;
+    l_shape.ldc = ldC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+    l_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = stride_a;
+    l_brconfig.br_stride_b_hint = stride_b;
+    l_brconfig.br_unroll_hint   = res.blocksofm_blocking;
+
+    /* Stride-based kernels  */
+    res.bwd_compute_kernel_strd_bf16.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.bwd_compute_kernel_strd_bf16.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel_strd_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    if (res.avoid_fmas_in_rim > 0) {
+      l_shape.n =  res.bwd_ofh_rb*(res.bwd_ofw_rb-1);
+      res.bwd_compute_kernel2_strd_bf16.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.bwd_compute_kernel2_strd_bf16.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel2_strd_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
+    res.bwd_compute_kernel_strd_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.bwd_compute_kernel_strd_bf16f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel_strd_bf16f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    if (res.avoid_fmas_in_rim > 0) {
+      l_shape.n =  res.bwd_ofh_rb*(res.bwd_ofw_rb-1);
+      res.bwd_compute_kernel2_strd_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.bwd_compute_kernel2_strd_bf16f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel2_strd_bf16f32 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+    l_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    /* Offset-based kernel */
+    int n_blocks = res.R * res.S * res.blocksofm_blocking;
+    int i = 0, ofm, ki, kj;
+    l_shape.n = res.bwd_ofh_rb*res.bwd_ofw_rb;
+
+    if ((res.avoid_fmas_in_rim == 0) && (res.R > 1 || res.S > 1)) {
+      res.A_offsets_bwd= (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+      res.B_offsets_bwd = (unsigned long long*) libxsmm_aligned_malloc(n_blocks * sizeof(unsigned long long), 2097152);
+      for (ofm = 0; ofm < res.blocksofm_blocking; ofm++) {
+        for (kj = 0; kj < res.R; kj++) {
+          for (ki = 0; ki < res.S; ki++) {
+            res.A_offsets_bwd[i] = (ofm * res.R * res.S * res.ifmblock * res.ofmblock +
+                kj * res.S * res.ifmblock * res.ofmblock +
+                ki * res.ifmblock * res.ofmblock) * sizeof(libxsmm_bfloat16);
+            res.B_offsets_bwd[i] = (ofm * res.ofhp * res.ofwp * res.ofmblock +
+                kj * res.ofwp * res.ofmblock +
+                ki * res.ofmblock) * sizeof(libxsmm_bfloat16);
+            i++;
+          }
+        }
+      }
+
+      l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
+      l_brconfig.br_stride_a_hint = 0;
+      l_brconfig.br_stride_b_hint = 0;
+
+      res.bwd_compute_kernel_offs_bf16.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.bwd_compute_kernel_offs_bf16.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP bwd_compute_kernel_offs_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    /* Regular GEMM for fallback codepath */
+    ldC = (libxsmm_blasint)(res.v*res.ifmblock);
+    l_shape.m = res.ifmblock;
+    l_shape.n = res.ofw;
+    l_shape.k = res.ofmblock;
+    l_shape.lda = res.ifmblock;
+    l_shape.ldb = res.ofmblock;
+    l_shape.ldc = ldC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+    l_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+
+    res.bwd_compute_kernel_fallback_bf16.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
+
+    /* Eltwise TPPs */
+    stride_in             = res.ofmblock;
+    stride_out            = res.ifmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ifmblock;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+
+    res.tr_kernel= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.tr_kernel  == NULL ) {
+      fprintf( stderr, "JIT for TPP tr_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_out            = (res.pack_input_bwd == 1) ? res.ofw * res.ifmblock : res.ifwp * res.ifmblock;
+    stride_in             = stride_out;
+    unary_shape.m         = res.ofw * res.ifmblock;
+    unary_shape.n         = res.ofh;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    res.ofh_x_ofw_x_ifmblock_zero_kernel_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.ofh_x_ofw_x_ifmblock_zero_kernel_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP ofh_x_ofw_x_ifmblock_zero_kernel_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    stride_out            = (res.pack_input_bwd == 1) ? res.ofw * res.ifmblock : res.ifwp * res.ifmblock;
+    stride_in             = stride_out;
+    unary_shape.m         = res.ofw * res.ifmblock;
+    unary_shape.n         = res.ofh;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    res.ofh_x_ofw_x_ifmblock_zero_kernel_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.ofh_x_ofw_x_ifmblock_zero_kernel_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP ofh_x_ofw_x_ifmblock_zero_kernel_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+    stride_out            = (res.pack_input_bwd == 1) ? res.ofw * res.ifmblock : res.ifwp * res.ifmblock;
+    unary_shape.m         = res.ofw * res.ifmblock;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_out;
+    unary_shape.ldo       = stride_out;
+    res.cvt_kernel_bwd_fp32bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.cvt_kernel_bwd_fp32bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP cvt_kernel_bwd_fp32bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    unary_shape.m         = (res.W + (2 * res.pad_w)) * (res.H + (2 * res.pad_h)) * res.ifmblock;
+    unary_shape.n         = 1;
+    stride_out            = unary_shape.m;
+    stride_in             = stride_out;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    res.paddedH_x_paddedW_x_ifmblock_zero_kernel_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.paddedH_x_paddedW_x_ifmblock_zero_kernel_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP paddedH_x_paddedW_x_ifmblock_zero_kernel_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    unary_shape.m         = res.ifwp * res.ifhp * res.ifmblock;
+    unary_shape.n         = 1;
+    stride_out            = unary_shape.m;
+    stride_in             = stride_out;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    res.ifhp_x_ifwp_x_ifmblock_zero_kernel_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+
+    if (  res.ifhp_x_ifwp_x_ifmblock_zero_kernel_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP ifhp_x_ifwp_x_ifmblock_zero_kernel_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+  }
+
   *inout_cfg = res;
 }
 
@@ -2177,7 +2415,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
   *inout_cfg = res;
 }
 
-cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
+cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cnn_dtype_out, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
     libxsmm_blasint stride_h, libxsmm_blasint stride_w,
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
@@ -2206,8 +2444,8 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype, libxsmm_blasint N, lib
   res.pad_w_out = pad_w_out;
   res.threads = threads;
   res.target_archid = libxsmm_target_archid;
-  res.datatype_in   = cnn_dtype;
-  res.datatype_out  = cnn_dtype;
+  res.datatype_in   = cnn_dtype_in;
+  res.datatype_out  = cnn_dtype_out;
   res.ifhp = res.H + 2*res.pad_h_in;
   res.ifwp = res.W + 2*res.pad_w_in;
   res.ofh = (res.H + 2*res.pad_h - res.R) / res.u + 1;
@@ -2298,7 +2536,7 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype, libxsmm_blasint N, lib
   cnn_tpp_setup_fwd_scratch( &res );
   cnn_tpp_setup_bwd_scratch( &res );
   cnn_tpp_setup_upd_scratch( &res );
-  res.scratch_size = res.fwd_scratch_size;// + res.bwd_scratch_size + res.upd_scratch_size;
+  res.scratch_size = res.fwd_scratch_size + res.bwd_scratch_size;// + res.upd_scratch_size;
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);
