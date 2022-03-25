@@ -1,1 +1,1 @@
-dev/kvoronin/batchnorm_tpp_fp16-1.17-2258
+dnn_refactor-1.17-2247
