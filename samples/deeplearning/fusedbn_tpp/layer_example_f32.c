@@ -295,8 +295,8 @@ int main( int argc, char* argv[] ) {
 
   /* setup TPPs (standalone or through the configs) */
 
-  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
-  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type );
+  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
 
   /* allocate and bind scratch */
   if ( my_bn_fwd.scratch_size > 0 || my_bn_bwd.scratch_size > 0 ) {
@@ -316,7 +316,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_fwd_exec_f32( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,     naive_inp,     N, C, H, W, bc);
@@ -412,7 +412,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_fwd_exec_f32( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -425,7 +425,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_fwd_exec_f32( my_bn_fwd, inp, inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -444,7 +444,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_bwd_exec_f32( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,  naive_inp,  N, C, H, W, bc);
@@ -607,7 +607,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_bwd_exec_f32( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
 
@@ -621,7 +621,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      my_bn_bwd_exec_f32( my_bn_bwd, eqn_dout, inp, mean, var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
 
