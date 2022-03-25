@@ -311,7 +311,7 @@ int main( int argc, char* argv[] ) {
 
     /* compare */
     printf("############################################\n");
-    printf("# Correctness FP32 FWD Batchnorm - Output  #\n");
+    printf("# Correctness BF16 FWD Batchnorm - Output  #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_fwd_out, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_out, naive_eqn_out_fp32, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_out.l1_ref);
@@ -323,7 +323,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_fwd_out.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness FP32 FWD Batchnorm - Mean  #\n");
+    printf("# Correctness BF16 FWD Batchnorm - Mean  #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_fwd_mean, LIBXSMM_DATATYPE_F32, C, 1, naive_mean, eqn_mean, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_mean.l1_ref);
@@ -335,7 +335,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_fwd_mean.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness FP32 FWD Batchnorm - Var  #\n");
+    printf("# Correctness BF16 FWD Batchnorm - Var  #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_fwd_var, LIBXSMM_DATATYPE_F32, C, 1, naive_var, eqn_var, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_var.l1_ref);
@@ -348,7 +348,7 @@ int main( int argc, char* argv[] ) {
 
     if (fuse_type == 4 || fuse_type == 5) {
       printf("############################################\n");
-      printf("# Correctness FP32 FWD Batchnorm - Relumask  #\n");
+      printf("# Correctness BF16 FWD Batchnorm - Relumask  #\n");
       printf("############################################\n");
       libxsmm_matdiff(&norms_fwd_mask, LIBXSMM_DATATYPE_I8, N*CP*HW*bc, 1, relumask, eqn_relumask, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd_mask.l1_ref);
@@ -440,7 +440,7 @@ int main( int argc, char* argv[] ) {
 
     /* compare */
     printf("############################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dinput  #\n");
+    printf("# Correctness BF16 BWD Batchnorm - Dinput  #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp, naive_eqn_dinp_fp32, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_din.l1_ref);
@@ -452,7 +452,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_bwd_din.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dout    #\n");
+    printf("# Correctness BF16 BWD Batchnorm - Dout    #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_bwd_dout, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dout, naive_eqn_dout_fp32, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_dout.l1_ref);
@@ -465,7 +465,7 @@ int main( int argc, char* argv[] ) {
 
     if (fuse_type == 2 || fuse_type == 5) {
       printf("################################################\n");
-      printf("# Correctness FP32 BWD Batchnorm - Dinput add  #\n");
+      printf("# Correctness BF16 BWD Batchnorm - Dinput add  #\n");
       printf("################################################\n");
       libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp_add, naive_eqn_dinp_add_fp32, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd_din.l1_ref);
@@ -478,7 +478,7 @@ int main( int argc, char* argv[] ) {
     }
 
     printf("###########################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dbeta  #\n");
+    printf("# Correctness BF16 BWD Batchnorm - Dbeta  #\n");
     printf("###########################################\n");
     libxsmm_matdiff(&norms_bwd_beta, LIBXSMM_DATATYPE_F32, CP*bc, 1, naive_dbeta, eqn_dbeta, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_beta.l1_ref);
@@ -490,7 +490,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_bwd_beta.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness FP32 BWD Batchnorm - Dgamma  #\n");
+    printf("# Correctness BF16 BWD Batchnorm - Dgamma  #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_bwd_gamma, LIBXSMM_DATATYPE_F32, CP*bc, 1, naive_dgamma, eqn_dgamma, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_gamma.l1_ref);
