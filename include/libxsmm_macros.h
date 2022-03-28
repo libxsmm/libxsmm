@@ -703,10 +703,10 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
     + 0 * LIBXSMM_INDEX1(NDIMS, LIBXSMM_SELECT_TAIL(__VA_ARGS__, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0))) /* dummy-shift to "sink" unused arguments */
 #endif
 
+/** Address of an ARRAY of elements (of TYPESIZE) using linear index according to LIBXSMM_INDEX1. */
+#define LIBXSMM_ACCESS_RAW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
 /** Address of an ARRAY of TYPE (can be const-qualified) using linear index according to LIBXSMM_INDEX1. */
 #define LIBXSMM_ACCESS(NDIMS, TYPE, ARRAY, ...) (((TYPE*)(ARRAY)) + LIBXSMM_INDEX1(NDIMS, __VA_ARGS__))
-/** Like LIBXSMM_ACCESS, but based on Byte-measured index/stride; returns the value (instead of address). */
-#define LIBXSMM_ACCESS_VALUE(NDIMS, TYPE, ARRAY, ...) (*(TYPE*)LIBXSMM_ACCESS(NDIMS, char, ARRAY, __VA_ARGS__))
 
 #if !defined(LIBXSMM_UNUSED)
 # if 0
