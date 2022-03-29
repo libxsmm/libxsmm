@@ -1968,13 +1968,16 @@ void libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( libxsmm_generated_code*
   libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
   libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
   libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
-  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf8_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg ) {
-  libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, io_gp_reg );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
+  libxsmm_x86_instruction_pop_reg( io_generated_code, io_gp_reg );
 }
 
 LIBXSMM_API_INTERN
