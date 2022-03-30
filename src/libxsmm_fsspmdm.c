@@ -521,8 +521,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   /* Also generate a dense kernel */
   if ( NULL != aa_dense ) {
     const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
-      N_dense, M, K, ldb, K, ldc, LIBXSMM_DATATYPE_F64,
-      LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64 );
+      N_dense, M, K, ldb, K, ldc, LIBXSMM_DATATYPE_F32,
+      LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     k_dense = libxsmm_dispatch_gemm_v2( gemm_shape, flags, prefetch_flags );
   }
 

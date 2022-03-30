@@ -1434,7 +1434,13 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64( libxsmm_generated_code*     
                                              i_vec_tmp, i_vec_tmp, 0, i_vec_c0, i_tupletype );
 
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPE_V,
-                                             i_vec_denom, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_vec_denom, i_tupletype );
+                                             i_vec_denom, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_vec_tmp, i_tupletype );
+
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FRECPS_V,
+                                             i_vec_denom, i_vec_tmp, 0, i_vec_denom, i_tupletype );
+
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
+                                             i_vec_denom, i_vec_tmp, 0, i_vec_denom, i_tupletype );
 
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
                                              i_vec_denom, i_vec_nom, 0, i_vec_x, i_tupletype );

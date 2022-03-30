@@ -1960,7 +1960,6 @@ void libxsmm_generator_vcvtneps2bf8_generic_avx512_prep_stack( libxsmm_generated
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 }
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg ) {
