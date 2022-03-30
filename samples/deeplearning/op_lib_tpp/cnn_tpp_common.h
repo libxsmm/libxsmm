@@ -2611,29 +2611,29 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     }
 
     if (res.pixel_blocking % 2 == 0) {
-    l_shape.ldb = res.input_pixels;
-    l_shape.k = LIBXSMM_MAX(2,res.pixel_blocking);
-    l_brconfig.br_unroll_hint = 0;
-    stride_a = res.blocksofm * res.output_pixels * res.ofmblock * sizeof(libxsmm_bfloat16);
-    stride_b = res.blocksifm * res.ifmblock * res.input_pixels * sizeof(libxsmm_bfloat16);
-    l_brconfig.br_stride_a_hint = stride_a;
-    l_brconfig.br_stride_b_hint = stride_b;
+      l_shape.k = LIBXSMM_MAX(2,res.pixel_blocking);
+      l_shape.ldb = LIBXSMM_MAX(l_shape.k, res.input_pixels);
+      l_brconfig.br_unroll_hint = 0;
+      stride_a = res.blocksofm * res.output_pixels * res.ofmblock * sizeof(libxsmm_bfloat16);
+      stride_b = res.blocksifm * res.ifmblock * res.input_pixels * sizeof(libxsmm_bfloat16);
+      l_brconfig.br_stride_a_hint = stride_a;
+      l_brconfig.br_stride_b_hint = stride_b;
 
-    res.upd_compute_kernel3_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-    if (  res.upd_compute_kernel3_bf16f32.gemm  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel3_bf16f32 failed. Bailing...!\n");
-      exit(-1);
-    }
+      res.upd_compute_kernel3_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.upd_compute_kernel3_bf16f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel3_bf16f32 failed. Bailing...!\n");
+        exit(-1);
+      }
 
-    /* Regular GEMM */
-    l_shape.m = res.ofmblock;
-    l_shape.n = res.ifmblock;
-    l_shape.k =  LIBXSMM_MAX(2,res.pixel_blocking);
-    res.upd_compute_kernel4_bf16f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
-    if (  res.upd_compute_kernel4_bf16f32.gemm  == NULL ) {
-      fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel4_bf16f32 failed. Bailing...!\n");
-      exit(-1);
-    }
+      /* Regular GEMM */
+      l_shape.m = res.ofmblock;
+      l_shape.n = res.ifmblock;
+      l_shape.k =  LIBXSMM_MAX(2,res.pixel_blocking);
+      res.upd_compute_kernel4_bf16f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
+      if (  res.upd_compute_kernel4_bf16f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel4_bf16f32 failed. Bailing...!\n");
+        exit(-1);
+      }
     }
 
     /* Generate unary kernels */
@@ -2746,36 +2746,38 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
 
-    stride_in             = res.ifmblock;
-    stride_out            = res.input_pixels;
-    unary_shape.m         = res.ifmblock;
-    unary_shape.n         = res.ifwp;
-    unary_shape.ldi       = stride_in;
-    unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
-    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
-    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+    if (res.input_pixels > 0) {
+      stride_in             = res.ifmblock;
+      stride_out            = res.input_pixels;
+      unary_shape.m         = res.ifmblock;
+      unary_shape.n         = res.ifwp;
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
+      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
-    res.transpose_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
-    if (  res.transpose_input_pixels_bf16  == NULL ) {
-      fprintf( stderr, "JIT for TPP transpose_input_pixels_bf16 failed. Bailing...!\n");
-      exit(-1);
-    }
+      res.transpose_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      if (  res.transpose_input_pixels_bf16  == NULL ) {
+        fprintf( stderr, "JIT for TPP transpose_input_pixels_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
 
-    stride_in             = res.v * res.ifmblock;
-    stride_out            = res.input_pixels;
-    unary_shape.m         = res.ifmblock;
-    unary_shape.n         = res.ifwp/res.v;
-    unary_shape.ldi       = stride_in;
-    unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
-    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
-    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+      stride_in             = res.v * res.ifmblock;
+      stride_out            = res.input_pixels;
+      unary_shape.m         = res.ifmblock;
+      unary_shape.n         = res.ifwp/res.v;
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
+      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+      unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
-    res.transposeNpack_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
-    if (  res.transposeNpack_input_pixels_bf16  == NULL ) {
-      fprintf( stderr, "JIT for TPP transposeNpack_input_pixels_bf16 failed. Bailing...!\n");
-      exit(-1);
+      res.transposeNpack_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      if (  res.transposeNpack_input_pixels_bf16  == NULL ) {
+        fprintf( stderr, "JIT for TPP transposeNpack_input_pixels_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
     }
 
     stride_in             = res.ofmblock;

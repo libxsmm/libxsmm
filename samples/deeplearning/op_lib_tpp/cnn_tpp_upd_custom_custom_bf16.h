@@ -265,9 +265,11 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                       /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
                       if (cfg.on_the_fly_input_packing == 1) {
                         if ((fast_trans == 1) && (cfg.upd_padding_copy == 0)) {
-                          unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*cfg.u+kj, ki, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-                          unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
-                          cfg.transpose_input_pixels_ifwp_strided_extended_bf16( &unary_param );
+                          for (ij = 0; ij < cfg.batchreduce_h_pixels; ij++) {
+                            unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*cfg.u+kj, ki, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
+                            unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                            cfg.transpose_input_pixels_ifwp_strided_extended_bf16( &unary_param );
+                          }
                         } else {
                           if (cfg.upd_padding_copy == 1) {
                             for (ij = 0; ij < cfg.batchreduce_h_pixels; ij++) {
