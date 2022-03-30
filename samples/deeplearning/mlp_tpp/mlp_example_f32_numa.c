@@ -978,16 +978,10 @@ void my_opt_exec( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int 
   const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-  libxsmm_blasint iv = ( (thr_end-thr_begin)/16 ) * 16; /* compute iterations which are vectorizable */
-  __m512 vlr = _mm512_set1_ps( cfg.lr );
-
   /* lazy barrier init */
   libxsmm_barrier_init( cfg.barrier, ltid );
 
-  for ( i = thr_begin; i < thr_begin+iv; i+=16 ) {
-    _mm512_storeu_ps( wt_ptr+i, _mm512_sub_ps( _mm512_loadu_ps( wt_ptr+i ), _mm512_mul_ps( vlr, _mm512_loadu_ps( delwt_ptr + i ) ) ) ) ;
-  }
-  for ( i = thr_begin+iv; i < thr_end; ++i ) {
+  for ( i = thr_begin; i < thr_end; ++i ) {
     wt_ptr[i] = wt_ptr[i] - (cfg.lr*delwt_ptr[i]);
   }
 

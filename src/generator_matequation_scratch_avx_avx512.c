@@ -170,6 +170,9 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
     gemm_flags, 0);
 
+  /* Enforce overwrite C flag */
+  desc->internal_flags_2 = desc->internal_flags_2 & 0xfb;
+
   /* add more BRGEMM related fields */
   if ( (br_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (br_config.br_unroll_hint != 0) ) {
     desc->c3 = (unsigned char)(((br_config.br_unroll_hint < 255) && (br_config.br_unroll_hint > 0)) ? br_config.br_unroll_hint : 0);
@@ -462,7 +465,9 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
   }
 
   /* Setup secondaries if need be */
-  if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER)) {
+  if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
+      ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ||
+       ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ))) {
     if (is_last_op > 0) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
@@ -473,7 +478,11 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
           0 );
       libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg );
     } else {
-      fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
+      if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
+        fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
+      } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
+        fprintf( stderr, "The requested RELU operation with bitmask can only be the head of the equation...\n" );
+      }
       return;
     }
   }
