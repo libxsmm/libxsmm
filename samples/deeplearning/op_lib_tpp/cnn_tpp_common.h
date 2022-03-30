@@ -139,6 +139,7 @@ typedef struct cnn_tpp_config {
   int upd_trans_w_only;
   int fwd_padding_copy;
   int upd_padding_copy;
+  int upd_remaining_pixels;
   int block_fwd_oj;
   int block_fwd_ifm;
   int block_fwd_ofm;
@@ -217,6 +218,34 @@ typedef struct cnn_tpp_config {
   libxsmm_meltwfunction_unary zero_ifmblock_x_ofmblock_kernel_f32;
   libxsmm_meltwfunction_unary wt_reduce_kernel0_f32;
   libxsmm_meltwfunction_unary wt_reduce_kernel1_f32;
+
+  libxsmm_xmmfunction upd_compute_kernel1_bf16f32;
+  libxsmm_xmmfunction upd_compute_kernel2_bf16f32;
+  libxsmm_xmmfunction upd_compute_kernel3_bf16f32;
+  libxsmm_xmmfunction upd_compute_kernel4_bf16f32;
+
+  libxsmm_meltwfunction_unary upd_weight_cvt_f32bf16;
+  libxsmm_meltwfunction_unary upd_weight_vnni_format_bf16;
+  libxsmm_meltwfunction_unary zero_full_weights_f32;
+  libxsmm_meltwfunction_unary zero_partial_weights_f32;
+  libxsmm_meltwfunction_unary zero_ofmblock_pixels_bf16;
+  libxsmm_meltwfunction_unary zero_ifmblock_input_pixels_bf16;
+  libxsmm_meltwfunction_unary zero_ifmblock_input_pixels_extended_bf16;
+  libxsmm_meltwfunction_unary zero_ofmblock_output_pixels_bf16;
+  libxsmm_meltwfunction_unary transpose_input_pixels_bf16;
+  libxsmm_meltwfunction_unary transposeNpack_input_pixels_bf16;
+  libxsmm_meltwfunction_unary transpose_input_pixels_ifwp_extended_bf16;
+  libxsmm_meltwfunction_unary transpose_input_pixels_ifwp_strided_extended_bf16;
+  libxsmm_meltwfunction_unary transpose_input_pixels_ifwp_extended2_bf16;
+  libxsmm_meltwfunction_unary vnni_output_pixels_bf16;
+  libxsmm_meltwfunction_unary vnni_output_pixels_extended_bf16;
+  libxsmm_meltwfunction_unary vnni_output_w_pixels_bf16;
+  libxsmm_meltwfunction_unary vnni_output_w2_pixels_bf16;
+  libxsmm_meltwfunction_unary vnni_output_compute_pixels_bf16;
+  libxsmm_meltwfunction_unary vnni_output_zero_remaining_pixels_bf16;
+
+  libxsmm_meltwfunction_unary wt_reduce_kernel0_bf16;
+  libxsmm_meltwfunction_unary wt_reduce_kernel1_bf16;
 
   unsigned long long *A_offsets;
   unsigned long long *B_offsets;
@@ -527,6 +556,9 @@ int cnn_tpp_setup_blocksifm_blocking( cnn_tpp_config* cfg ) {
     result = cfg->blocksifm;
   }
 
+  if (cfg->datatype_in == LIBXSMM_DATATYPE_BF16) {
+    result = cfg->blocksifm;
+  }
   return result;
 }
 
@@ -606,6 +638,11 @@ int cnn_tpp_setup_avoid_rim_fmas_fwd( cnn_tpp_config* cfg ) {
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8))) {
     result = 0;
   }
+
+  if (cfg->datatype_in == LIBXSMM_DATATYPE_BF16) {
+    result = 0;
+  }
+
   return result;
 }
 
@@ -843,6 +880,11 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_blocksofm_blocking( cnn_tpp_config* cfg ) {
   if (cfg->blocksofm % result != 0) {
     result = 1;
   }
+
+  if (cfg->datatype_in == LIBXSMM_DATATYPE_BF16) {
+    result = cfg->blocksofm;
+  }
+
   return result;
 }
 
@@ -934,6 +976,93 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bwd_scratch( cnn_tpp_config* cfg ) {
 /**********************************************************/
 /* Helper functions for UPD convolutions' parameter setup */
 /**********************************************************/
+
+LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout_cfg ) {
+  cnn_tpp_config res = *inout_cfg;
+  int remainder_pixels, max_init_offset, max_compute_offset_input, input_compute_pad, accum_length_pixels, compute_pixels;
+  const int multiple_target = 2;
+  int IFHP = (res.upd_padding_copy == 1) ? res.ifhp + 2 * res.pad_h : res.ifhp;
+  int IFWP = (res.upd_padding_copy == 1) ? res.ifwp + 2 * res.pad_w : res.ifwp;
+  int OFHP = (res.upd_padding_copy == 1) ? res.ofhp + 2 * res.pad_h : res.ofhp;
+  int OFWP = (res.upd_padding_copy == 1) ? res.ofwp + 2 * res.pad_w : res.ofwp;
+  res.ifwp_extended = IFWP;
+  res.upd_linearized_pixels = 1;
+  if (res.S != 1 && res.v != 1) {
+    res.upd_linearized_pixels = 0;
+    res.upd_trans_w_only = 0;
+  }
+  /* For large images facilitate the "large" transposes by blocking the pixel/reduction domains  */
+  if (res.ofw >= 56 && res.ofh >=56 && res.R == 1 && res.S == 1 && res.u == 1 && res.v == 1) {
+    res.upd_linearized_pixels = 0;
+    res.upd_trans_w_only = 1;
+  }
+
+  res.on_the_fly_input_packing = 0;
+  res.upd_pack_input_upfront = 0;
+  res.use_hybrid_imgofm_parallelization = 0;
+  res.upd_linearized_tasklist = 0;
+
+  if (res.upd_linearized_pixels == 1) {
+    /* Logistics to pad accumulation chainlength */
+    compute_pixels = res.ofw * res.ofh + 2 * res.pad_w * (res.ofh-1);
+    remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
+    accum_length_pixels = compute_pixels + remainder_pixels;
+
+    /* In this case compact input upfront */
+    if (res.R == 1 && res.S == 1 && (res.u != 1 || res.v != 1)) {
+      res.upd_pack_input_upfront = 1;
+    }
+
+    /* Logistics for input transpose and additional pixel padding */
+    max_init_offset = 2 * res.pad_h * IFWP + 2 * res.pad_w;
+    max_compute_offset_input = max_init_offset + accum_length_pixels;
+    input_compute_pad = (max_compute_offset_input > IFWP*IFHP) ? max_compute_offset_input - IFWP*IFHP : 0;
+    res.input_pixels = IFWP * IFHP + input_compute_pad;
+    if (res.upd_pack_input_upfront) {
+      res.input_pixels = accum_length_pixels;
+    }
+    res.output_pixels = accum_length_pixels;
+    res.pixel_blocking = accum_length_pixels;
+    res.n_used_pixels = accum_length_pixels;
+    res.compute_pixels = compute_pixels;
+
+    res.use_intermediate_f32_wt_tensor = (res.pixel_blocking == res.n_used_pixels) ? 0 : 1;
+
+    if (res.ofw <= 14) {
+      res.use_hybrid_imgofm_parallelization = 1;
+      res.weight_copies = cnn_tpp_setup_weight_copies_upd(&res);
+      if (res.ofw == 14 && res.K >= 1024) {
+        res.use_hybrid_imgofm_parallelization = 0;
+        res.weight_copies = res.threads;
+      }
+    } else {
+      res.weight_copies = res.threads;
+    }
+  }
+
+  if (res.upd_linearized_pixels == 0) {
+    res.weight_copies = res.threads;
+    if (res.v !=1) {
+      res.on_the_fly_input_packing = 1;
+    }
+    remainder_pixels = (res.ofw % multiple_target == 0) ? 0 : (res.ofw/multiple_target+1)*multiple_target - res.ofw;
+    res.ofwp_extended = OFWP + remainder_pixels;
+    res.ifwp_extended = IFWP + remainder_pixels;
+    res.output_pixels = OFHP * res.ofwp_extended;
+    /* coverity[identical_branches] */
+    res.batchreduce_h_pixels = (res.upd_trans_w_only) ? 1 : 1; /* TODO: identical_branches */
+    res.use_intermediate_f32_wt_tensor = (res.batchreduce_h_pixels == res.ofh) ? 0 : 1;
+  }
+
+  if (res.N != res.threads) {
+    res.use_intermediate_f32_wt_tensor = 1;
+    res.use_hybrid_imgofm_parallelization = 0;
+    res.weight_copies = LIBXSMM_MIN(res.N, res.threads);
+  }
+
+  *inout_cfg = res;
+}
+
 LIBXSMM_API_INLINE int cnn_tpp_setup_loop_order_upd( cnn_tpp_config* cfg ) {
   int result = 1;
   if (cfg->ofh == 28 && cfg->R == 1 && cfg->u == 1 && cfg->C == 128 && cfg->K == 512) {
@@ -2176,6 +2305,13 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
 
 void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
   cnn_tpp_config res = *inout_cfg;
+  res.A_offsets_upd = NULL;
+  res.B_offsets_upd = NULL;
+  res.A_offsets2_upd = NULL;
+  res.B_offsets2_upd = NULL;
+  res.A_offsets3_upd = NULL;
+  res.B_offsets3_upd = NULL;
+
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint LDA;
     libxsmm_blasint LDB;
@@ -2210,13 +2346,6 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       prefetch_mode = prefetch_mode | libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
     }
     l_prefetch_flags = prefetch_mode;
-
-    res.A_offsets_upd = NULL;
-    res.B_offsets_upd = NULL;
-    res.A_offsets2_upd = NULL;
-    res.B_offsets2_upd = NULL;
-    res.A_offsets3_upd = NULL;
-    res.B_offsets3_upd = NULL;
 
     /* Regular GEMM  -- no tasklist*/
     l_shape.m = res.ofmblock;
@@ -2412,6 +2541,416 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       }
     }
   }
+
+  if ( res.datatype_in == LIBXSMM_DATATYPE_BF16 ) {
+    const int IFWP = (res.upd_padding_copy == 1) ? res.ifwp + 2*res.pad_w :  res.ifwp;
+    const int IFHP = (res.upd_padding_copy == 1) ? res.ifhp + 2*res.pad_h :  res.ifhp;
+    const int OFWP = (res.upd_padding_copy == 1) ? res.ofwp + 2*res.pad_w :  res.ofwp;
+    const int OFHP = (res.upd_padding_copy == 1) ? res.ofhp + 2*res.pad_h :  res.ofhp;
+    libxsmm_blasint LDA = res.ofmblock;
+    libxsmm_blasint LDB = IFHP*res.ifwp_extended;
+    libxsmm_blasint LDC = res.ofmblock;
+    float beta;
+    libxsmm_meltw_unary_shape unary_shape;
+    libxsmm_blasint stride_in;
+    libxsmm_blasint stride_out;
+    libxsmm_gemm_shape l_shape;
+    libxsmm_gemm_batch_reduce_config l_brconfig;
+    libxsmm_bitfield l_flags = LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N');
+    libxsmm_bitfield l_prefetch_flags = 0;
+    int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    int brgemm_pf_oob = 0;
+    const char *const env_brgemm_pf_oob = getenv("BRGEMM_PF_OOB");
+    beta = (res.use_intermediate_f32_wt_tensor ? 1.f : 0.f);
+    l_flags |= ( beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+    if ( 0 == env_brgemm_pf_oob ) {
+    } else {
+      brgemm_pf_oob = atoi(env_brgemm_pf_oob);
+    }
+    if (brgemm_pf_oob > 0) {
+      prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB);
+    }
+    l_prefetch_flags = prefetch_mode;
+
+    /* Strided kernel  */
+    libxsmm_blasint stride_a = res.ofwp_extended * res.ofmblock * sizeof(libxsmm_bfloat16);
+    libxsmm_blasint stride_b = res.ifwp_extended * sizeof(libxsmm_bfloat16);
+    l_shape.m = res.ofmblock;
+    l_shape.n = res.ifmblock;
+    if (res.ofw % 2 == 0) {
+      l_shape.k = res.ofw;
+    } else {
+      l_shape.k = res.ofw + 1;
+    }
+    l_shape.lda = LDA;
+    l_shape.ldb = LDB;
+    l_shape.ldc = LDC;
+    l_shape.a_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.b_in_type = LIBXSMM_DATATYPE_BF16;
+    l_shape.out_type  = LIBXSMM_DATATYPE_F32;
+    l_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
+    l_brconfig.br_stride_a_hint = stride_a;
+    l_brconfig.br_stride_b_hint = stride_b;
+    l_brconfig.br_unroll_hint   = 0;
+
+    /* Stride-based kernels  */
+    res.upd_compute_kernel1_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel1_bf16f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel1_bf16f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    if (res.ofw % 2 == 1) {
+       l_shape.k = res.ofw+1;
+    }
+    res.upd_compute_kernel2_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel2_bf16f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel2_bf16f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    if (res.pixel_blocking % 2 == 0) {
+    l_shape.ldb = res.input_pixels;
+    l_shape.k = LIBXSMM_MAX(2,res.pixel_blocking);
+    l_brconfig.br_unroll_hint = 0;
+    stride_a = res.blocksofm * res.output_pixels * res.ofmblock * sizeof(libxsmm_bfloat16);
+    stride_b = res.blocksifm * res.ifmblock * res.input_pixels * sizeof(libxsmm_bfloat16);
+    l_brconfig.br_stride_a_hint = stride_a;
+    l_brconfig.br_stride_b_hint = stride_b;
+
+    res.upd_compute_kernel3_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+    if (  res.upd_compute_kernel3_bf16f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel3_bf16f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    /* Regular GEMM */
+    l_shape.m = res.ofmblock;
+    l_shape.n = res.ifmblock;
+    l_shape.k =  LIBXSMM_MAX(2,res.pixel_blocking);
+    res.upd_compute_kernel4_bf16f32.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_flags, l_prefetch_flags );
+    if (  res.upd_compute_kernel4_bf16f32.gemm  == NULL ) {
+      fprintf( stderr, "JIT for GEMM TPP upd_compute_kernel4_bf16f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+    }
+
+    /* Generate unary kernels */
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ifmblock;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.upd_weight_vnni_format_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.upd_weight_vnni_format_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP upd_weight_vnni_format_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ifmblock;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.upd_weight_cvt_f32bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.upd_weight_cvt_f32bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP upd_weight_cvt_f32bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock * res.ofmblock * res.S;
+    stride_out            = res.ifmblock * res.ofmblock * res.S;
+    unary_shape.m         = res.ifmblock * res.ofmblock * res.S;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+
+    res.zero_partial_weights_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_partial_weights_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_partial_weights_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.C * res.K * res.R * res.S;
+    stride_out            = res.C * res.K * res.R * res.S;
+    unary_shape.m         = res.C * res.K * res.R * res.S;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
+
+    res.zero_full_weights_f32 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_full_weights_f32  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_full_weights_f32 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock * res.input_pixels;
+    stride_out            = res.ifmblock * res.input_pixels;
+    unary_shape.m         = res.ifmblock * res.input_pixels;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.zero_ifmblock_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_ifmblock_input_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_ifmblock_input_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.C * res.ifhp * res.ifwp_extended;
+    stride_out            = res.C * res.ifhp * res.ifwp_extended;
+    unary_shape.m         = res.C * res.ifhp * res.ifwp_extended;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.zero_ifmblock_input_pixels_extended_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_ifmblock_input_pixels_extended_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_ifmblock_input_pixels_extended_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ofmblock * res.output_pixels;
+    stride_out            = res.ofmblock * res.output_pixels;
+    unary_shape.m         = res.ofmblock * res.output_pixels;
+    unary_shape.n         = 1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+
+    res.zero_ofmblock_output_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.zero_ofmblock_output_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP zero_ofmblock_output_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock;
+    stride_out            = res.input_pixels;
+    unary_shape.m         = res.ifmblock;
+    unary_shape.n         = res.ifwp;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.transpose_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.transpose_input_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP transpose_input_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.v * res.ifmblock;
+    stride_out            = res.input_pixels;
+    unary_shape.m         = res.ifmblock;
+    unary_shape.n         = res.ifwp/res.v;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.transposeNpack_input_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.transposeNpack_input_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP transposeNpack_input_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ofwp;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    if (res.ofwp % 2 == 1) {
+      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    } else {
+      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    }
+    if (  res.vnni_output_w_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP vnni_output_w_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.ofwp-1;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    if ((res.ofwp-1) % 2 == 1) {
+      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    } else {
+      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    }
+    if (  res.vnni_output_w2_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP vnni_output_w2_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ofmblock;
+    stride_out            = res.ofmblock;
+    unary_shape.m         = res.ofmblock;
+    unary_shape.n         = res.compute_pixels;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    if (res.compute_pixels % 2 == 1) {
+      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    } else {
+      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    }
+    if (  res.vnni_output_compute_pixels_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP vnni_output_compute_pixels_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    res.upd_remaining_pixels = res.output_pixels - ((res.compute_pixels+1)/2)*2;
+    if (res.upd_remaining_pixels > 0) {
+      stride_in             = res.upd_remaining_pixels * res.ofmblock;
+      stride_out            = res.upd_remaining_pixels * res.ofmblock;
+      unary_shape.m         = res.upd_remaining_pixels * res.ofmblock;
+      unary_shape.n         = 1;
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
+
+      res.vnni_output_zero_remaining_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      if (  res.vnni_output_zero_remaining_pixels_bf16  == NULL ) {
+        fprintf( stderr, "JIT for TPP vnni_output_zero_remaining_pixels_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
+    }
+
+    stride_in             = res.ifmblock;
+    stride_out            = res.ifhp * res.ifwp_extended;
+    unary_shape.m         = res.ifmblock;
+    unary_shape.n         = res.ifwp;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.transpose_input_pixels_ifwp_extended_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.transpose_input_pixels_ifwp_extended_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP transpose_input_pixels_ifwp_extended_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock * res.v;
+    stride_out            = IFHP * res.ifwp_extended;
+    unary_shape.m         = res.ifmblock;
+    unary_shape.n         = res.ofw;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.transpose_input_pixels_ifwp_strided_extended_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.transpose_input_pixels_ifwp_strided_extended_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP transpose_input_pixels_ifwp_strided_extended_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    stride_in             = res.ifmblock;
+    stride_out            = IFHP * res.ifwp_extended;
+    unary_shape.m         = res.ifmblock;
+    unary_shape.n         = res.ifwp;
+    unary_shape.ldi       = stride_in;
+    unary_shape.ldo       = stride_out;
+    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+    res.transpose_input_pixels_ifwp_extended2_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    if (  res.transpose_input_pixels_ifwp_extended2_bf16  == NULL ) {
+      fprintf( stderr, "JIT for TPP transpose_input_pixels_ifwp_extended2_bf16 failed. Bailing...!\n");
+      exit(-1);
+    }
+
+    /* Reduction kernels.. we generate 2 variants depending on threads/available work */
+    if (res.weight_copies > 1) {
+      int active_copies = res.weight_copies;
+      const int fm_blocking = (res.ofmblock % 16 == 0) ? 16 : res.ofmblock;
+      const int reduce_work = res.blocksofm * res.blocksifm * res.R * res.S * (res.ofmblock/fm_blocking) * res.ifmblock;
+      const int reduce_chunksize = (reduce_work % res.threads == 0) ? (reduce_work / res.threads) : (reduce_work / res.threads) + 1;
+      const int chunk0 = reduce_chunksize * fm_blocking;
+      const int chunk1 = (reduce_work - (reduce_work/reduce_chunksize) * reduce_chunksize) * fm_blocking;
+      const int img_work = res.N;
+      const int img_chunksize = (img_work % res.threads == 0) ? (img_work / res.threads) : (img_work / res.threads) + 1;
+
+      stride_in             = res.K * res.C * res.R * res.S;
+      stride_out            = chunk0;
+      unary_shape.m         = chunk0;
+      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
+      unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
+
+      /* In this case calculate how many weight copies have been indeed computed  */
+      if (res.N != res.threads) {
+        active_copies = 1;
+        while (active_copies * img_chunksize < res.N) {
+          active_copies++;
+        }
+      }
+
+      unary_shape.n         = active_copies;
+      unary_shape.ldi       = stride_in;
+      unary_shape.ldo       = stride_out;
+      res.wt_reduce_kernel0_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
+      if (  res.wt_reduce_kernel0_bf16  == NULL ) {
+        fprintf( stderr, "JIT for TPP wt_reduce_kernel0_bf16 failed. Bailing...!\n");
+        exit(-1);
+      }
+
+      if (chunk1 > 0) {
+        stride_out            = chunk1;
+        unary_shape.m         = chunk1;
+        unary_shape.ldi       = stride_in;
+        unary_shape.ldo       = stride_out;
+        res.wt_reduce_kernel1_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS ) ;
+        if (  res.wt_reduce_kernel1_bf16  == NULL ) {
+          fprintf( stderr, "JIT for TPP wt_reduce_kernel1_bf16 failed. Bailing...!\n");
+          exit(-1);
+        }
+      }
+    }
+  }
+
   *inout_cfg = res;
 }
 
@@ -2529,6 +3068,11 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cn
   res.block_upd_ifm = cnn_tpp_setup_block_upd_IFM(&res);
   res.upd_loop_order = cnn_tpp_setup_loop_order_upd(&res);
   res.upd_padding_copy = cnn_tpp_setup_upd_padding_copy(&res);
+
+  if (cnn_dtype_in == LIBXSMM_DATATYPE_BF16) {
+    cnn_tpp_setup_bf16_upd_algorithms(&res);
+  }
+
   /* Generate UPD kernels  */
   cnn_tpp_generate_upd_kernels(&res);
 
@@ -2536,7 +3080,7 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cn
   cnn_tpp_setup_fwd_scratch( &res );
   cnn_tpp_setup_bwd_scratch( &res );
   cnn_tpp_setup_upd_scratch( &res );
-  res.scratch_size = res.fwd_scratch_size + res.bwd_scratch_size;// + res.upd_scratch_size;
+  res.scratch_size = res.fwd_scratch_size + res.bwd_scratch_size + res.upd_scratch_size;
 
   /* setting up the barrier */
   res.barrier = libxsmm_barrier_create(threads, 1);

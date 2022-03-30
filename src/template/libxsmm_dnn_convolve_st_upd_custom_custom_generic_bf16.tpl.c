@@ -167,10 +167,11 @@ if (handle->upd_linearized_pixels == 1) {
           }
         } else {
           for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+#if 0
             transpose_input_pixels_bf16( (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                 (element_input_type*)&LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels),
                 handle->ifmblock, handle->ifhp*handle->ifwp, handle->ifmblock, handle->input_pixels );
-#if 0
+#else
             for (ij = 0; ij < handle->ifhp; ij++) {
               for (ii = 0; ii < handle->ifwp; ii++) {
                 for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
@@ -223,11 +224,26 @@ if (handle->upd_linearized_pixels == 1) {
         }
       }
     } else {
+#if 0
+  for (img = my_img_start; img < my_img_end; img++) {
+    zero_ptr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, 0, 0, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);
+    memset(zero_ptr_out, 0, handle->desc.K * handle->output_pixels * sizeof(element_output_type));
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+      for (oi = 0; oi < handle->n_used_pixels; oi++) {
+        for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+          LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, oi/2, ofm2, oi%2, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2) =
+            *((element_output_type*)out_ptr + img * handle->blocksofm * handle->ofwp * handle->ofhp * handle->ofmblock + ofm1 * handle->ofwp * handle->ofhp * handle->ofmblock + oi * handle->ofmblock + ofm2);
+        }
+      }
+    }
+  }
+#else
       for (img = my_img_start; img < my_img_end; img++) {
        for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
           TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1);
        }
       }
+#endif
     }
   }
 #if 0
