@@ -23,8 +23,11 @@
 #include "../common/dnn_common.h"
 #include "../op_lib_tpp/cnn_tpp_common.h"
 #include "../op_lib_tpp/cnn_tpp_fwd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_fwd_custom_custom_bf16.h"
 #include "../op_lib_tpp/cnn_tpp_bwd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_bwd_custom_custom_bf16.h"
 #include "../op_lib_tpp/cnn_tpp_upd_custom_custom_f32.h"
+#include "../op_lib_tpp/cnn_tpp_upd_custom_custom_bf16.h"
 
 int main(int argc, char* argv[])
 {
@@ -33,6 +36,10 @@ int main(int argc, char* argv[])
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
   float *bias_libxsmm, *delbias_libxsmm;
+
+  libxsmm_bfloat16 *input_libxsmm_bf16, *filter_libxsmm_bf16, *output_libxsmm_bf16, *dinput_libxsmm_bf16, *dfilter_libxsmm_bf16, *doutput_libxsmm_bf16, *filtertr_libxsmm_bf16;
+  libxsmm_bfloat16 *bias_libxsmm_bf16, *delbias_libxsmm_bf16;
+
   unsigned char *relumask_libxsmm = NULL;
   my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
   cnn_tpp_config cnn_tpp_cfg;
@@ -46,6 +53,7 @@ int main(int argc, char* argv[])
   void* scratch = NULL;
   int fuse_type = 0;
   int zero_output_rims_fwd = 0;
+  libxsmm_datatype cnn_dtype = LIBXSMM_DATATYPE_F32;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -77,6 +85,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0;
   int i;
+  int prec_bf16 = 0;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
   libxsmm_matdiff_clear(&norms_fwd);
@@ -109,6 +118,7 @@ int main(int argc, char* argv[])
   if (argc > i) fuse_type = atoi(argv[i++]);
   if (argc > i) bc = atoi(argv[i++]);
   if (argc > i) bk = atoi(argv[i++]);
+  if (argc > i) prec_bf16 = atoi(argv[i++]);
   if (argc > i) overwrite_output   = atoi(argv[i++]);
   if (argc > i) avoid_bwd_wt_trans = atoi(argv[i++]);
   if (argc > i) zero_output_rims_fwd = atoi(argv[i++]);
@@ -252,6 +262,7 @@ int main(int argc, char* argv[])
   naive_input_nhwc      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   dfilter_rsck          = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+
   input_libxsmm         = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   filter_libxsmm        = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   output_libxsmm        = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
@@ -259,8 +270,19 @@ int main(int argc, char* argv[])
   dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   doutput_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);   /* initialize data */
+  bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
 
+  /* Allocate bf16 counterparts */
+  input_libxsmm_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
+  dinput_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
+  dfilter_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  doutput_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
+  filtertr_libxsmm_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  bias_libxsmm_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*               sizeof(libxsmm_bfloat16), 2097152);
+
+  /* initialize data */
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   } else {
@@ -321,6 +343,21 @@ int main(int argc, char* argv[])
   zero_buf( doutput_libxsmm  , nImg*nOfm*ofhp*ofwp );
   zero_buf( filtertr_libxsmm , nOfm*nIfm*kh*kw );
 
+  if (prec_bf16 > 0) {
+    libxsmm_rne_convert_fp32_bf16( naive_input,      input_libxsmm_bf16,     nImg*nIfm*ifhp*ifwp );
+    libxsmm_convert_bf16_f32( input_libxsmm_bf16, naive_input, nImg*nIfm*ifhp*ifwp );
+    libxsmm_rne_convert_fp32_bf16( naive_input_save,      input_libxsmm_bf16,     nImg*nIfm*ifhp*ifwp );
+    libxsmm_convert_bf16_f32( input_libxsmm_bf16, naive_input_save, nImg*nIfm*ifhp*ifwp );
+    libxsmm_rne_convert_fp32_bf16( naive_filter,     filter_libxsmm_bf16,     nOfm*nIfm*kh*kw );
+    libxsmm_convert_bf16_f32( filter_libxsmm_bf16, naive_filter, nOfm*nIfm*kh*kw );
+    libxsmm_rne_convert_fp32_bf16( naive_output,     output_libxsmm_bf16,     nImg*nOfm*ofhp*ofwp );
+    libxsmm_convert_bf16_f32( output_libxsmm_bf16, naive_output, nImg*nOfm*ofhp*ofwp );
+    libxsmm_rne_convert_fp32_bf16( naive_output_bp,     output_libxsmm_bf16,     nImg*nOfm*ofhp*ofwp );
+    libxsmm_convert_bf16_f32( output_libxsmm_bf16, naive_output_bp, nImg*nOfm*ofhp*ofwp );
+    libxsmm_rne_convert_fp32_bf16( bias_libxsmm,     bias_libxsmm_bf16,     nOfm );
+    libxsmm_convert_bf16_f32( bias_libxsmm_bf16, bias_libxsmm, nOfm );
+  }
+
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
     printf("#         Computing Reference ...        #\n");
@@ -356,8 +393,12 @@ int main(int argc, char* argv[])
   printf("#      Setting Up  (custom-Storage)      #\n");
   printf("##########################################\n");
 
-  cnn_tpp_cfg = setup_cnn_tpp(nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
-      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans, zero_output_rims_fwd );
+  if (prec_bf16 > 0) {
+    cnn_dtype = LIBXSMM_DATATYPE_BF16;
+  }
+
+  cnn_tpp_cfg = setup_cnn_tpp(cnn_dtype, cnn_dtype, nImg, ifh, ifw, nIfm, nOfm, kh, kw, stride_h, stride_w,
+      pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out, bc, bk, nThreads, my_fuse, overwrite_output, avoid_bwd_wt_trans, zero_output_rims_fwd);
 
   /* Copy input/output/weight tensors to correct format */
   tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
@@ -368,13 +409,20 @@ int main(int argc, char* argv[])
   }
   tensor_copy_KCRS_to_KCRSck(naive_filter     , filter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
   if (avoid_bwd_wt_trans > 0) {
-    tensor_transpose_KCRCck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    tensor_transpose_KCRSck_to_CKRSkc(filter_libxsmm, filtertr_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
   }
 
   if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
     size_t alloc_size = cnn_tpp_cfg.scratch_size;
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
+  }
+
+  if (prec_bf16 > 0) {
+    tensor_copy_KCRS_to_KCRSck_bf16(naive_filter,     filter_libxsmm_bf16, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    libxsmm_rne_convert_fp32_bf16( input_libxsmm,     input_libxsmm_bf16,     nImg*nIfm*ifhp*ifwp );
+    libxsmm_rne_convert_fp32_bf16( output_libxsmm,     output_libxsmm_bf16,     nImg*nOfm*ofhp*ofwp );
+    libxsmm_rne_convert_fp32_bf16( bias_libxsmm,     bias_libxsmm_bf16,     nOfm );
   }
 
   if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
@@ -391,10 +439,18 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
-          bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      if (prec_bf16 > 0) {
+        cnn_tpp_fwd_exec_bf16( cnn_tpp_cfg, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
+            bias_libxsmm_bf16, relumask_libxsmm, 0, tid, scratch );
+      } else {
+        cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+            bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      }
     }
     /* copy out data */
+    if (prec_bf16 > 0) {
+      libxsmm_convert_bf16_f32( output_libxsmm_bf16, output_libxsmm, nImg*nOfm*ofhp*ofwp );
+    }
     tensor_copy_NCHWc_to_NCHW (output_libxsmm, naive_libxsmm_output, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
 
     /* compare */
@@ -409,6 +465,12 @@ int main(int argc, char* argv[])
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
   }
 
+  if (prec_bf16 > 0) {
+    if (avoid_bwd_wt_trans > 0) {
+      tensor_transpose_KCRSck_to_CKRSkc_bf16(filter_libxsmm, filtertr_libxsmm_bf16, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    }
+  }
+
   if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_NEQ(0, check) ) {
     printf("##########################################\n");
     printf("#   Correctness - BWD (custom-Storage)   #\n");
@@ -416,6 +478,10 @@ int main(int argc, char* argv[])
     /* let's do some additional init such that we can run passes standalone */
     tensor_copy_NCHW_to_NCHWc (naive_output_bp , doutput_libxsmm,  nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
     tensor_copy_NCHW_to_NCHWc (naive_input_save, dinput_libxsmm, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
+    if (prec_bf16 > 0) {
+      libxsmm_rne_convert_fp32_bf16( dinput_libxsmm,     dinput_libxsmm_bf16,     nImg*nIfm*ifhp*ifwp );
+      libxsmm_rne_convert_fp32_bf16( doutput_libxsmm,   doutput_libxsmm_bf16,     nImg*nOfm*ofhp*ofwp );
+    }
 
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
@@ -427,11 +493,19 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+      if (prec_bf16 > 0) {
+        cnn_tpp_bwd_exec_bf16( cnn_tpp_cfg, filter_libxsmm_bf16, filtertr_libxsmm_bf16,  doutput_libxsmm_bf16, dinput_libxsmm_bf16,
           relumask_libxsmm, 0, tid, scratch );
+      } else {
+        cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+          relumask_libxsmm, 0, tid, scratch );
+      }
     }
 
     /* copy out data */
+    if (prec_bf16 > 0) {
+      libxsmm_convert_bf16_f32( dinput_libxsmm_bf16, dinput_libxsmm, nImg*nIfm*ifhp*ifwp );
+    }
     tensor_copy_NCHWc_to_NCHW (dinput_libxsmm, naive_libxsmm_input, nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
 
     /* compare */
@@ -453,6 +527,11 @@ int main(int argc, char* argv[])
     tensor_copy_NCHW_to_NCHWc (naive_input_save , input_libxsmm,  nImg, nIfm, ifhp, ifwp, cnn_tpp_cfg.ifmblock);
     tensor_copy_NCHW_to_NCHWc (naive_output_wu,   doutput_libxsmm, nImg, nOfm, ofhp, ofwp, cnn_tpp_cfg.ofmblock);
     tensor_copy_KCRS_to_KCRSck(naive_filter     , dfilter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    if (prec_bf16 > 0) {
+      libxsmm_rne_convert_fp32_bf16( input_libxsmm,     input_libxsmm_bf16,     nImg*nIfm*ifhp*ifwp );
+      libxsmm_rne_convert_fp32_bf16( doutput_libxsmm,   doutput_libxsmm_bf16,     nImg*nOfm*ofhp*ofwp );
+      tensor_copy_KCRS_to_KCRSck_bf16(naive_filter,     dfilter_libxsmm_bf16, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    }
 
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
@@ -464,11 +543,18 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
-          NULL, 0, tid, scratch );
+      if (prec_bf16 > 0) {
+        cnn_tpp_upd_exec_bf16( cnn_tpp_cfg, input_libxsmm_bf16, doutput_libxsmm_bf16, dfilter_libxsmm_bf16,
+            NULL, 0, tid, scratch );
+      } else {
+        cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+            NULL, 0, tid, scratch );
+      }
     }
-
-    tensor_copy_KCRSck_to_KCRS(dfilter_libxsmm , naive_libxsmm_filter, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
+    if (prec_bf16 > 0) {
+      tensor_copy_KCRSck_vnni_to_norm_f32( dfilter_libxsmm_bf16, dfilter_libxsmm, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock );
+    }
+    tensor_copy_KCRSck_to_KCRS( dfilter_libxsmm, naive_libxsmm_filter, nOfm, nIfm, kh, kw, cnn_tpp_cfg.ifmblock, cnn_tpp_cfg.ofmblock);
 
     /* compare */
     libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
@@ -497,9 +583,16 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      for (i = 0; i < iters; ++i) {
-        cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
-            bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+      if (prec_bf16 > 0) {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_fwd_exec_bf16( cnn_tpp_cfg, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
+              bias_libxsmm_bf16, relumask_libxsmm, 0, tid, scratch );
+        }
+      } else {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_fwd_exec( cnn_tpp_cfg, filter_libxsmm, input_libxsmm, output_libxsmm,
+              bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
+        }
       }
     }
     l_end = libxsmm_timer_tick();
@@ -531,9 +624,17 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      for (i = 0; i < iters; ++i) {
-        cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+
+      if (prec_bf16 > 0) {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_bwd_exec_bf16( cnn_tpp_cfg, filter_libxsmm_bf16, filtertr_libxsmm_bf16,  doutput_libxsmm_bf16, dinput_libxsmm_bf16,
             relumask_libxsmm, 0, tid, scratch );
+        }
+      } else {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_bwd_exec( cnn_tpp_cfg, filter_libxsmm, filtertr_libxsmm,  doutput_libxsmm, dinput_libxsmm,
+            relumask_libxsmm, 0, tid, scratch );
+        }
       }
     }
     l_end = libxsmm_timer_tick();
@@ -565,9 +666,16 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      for (i = 0; i < iters; ++i) {
-        cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
-            NULL, 0, tid, scratch );
+      if (prec_bf16 > 0) {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_upd_exec_bf16( cnn_tpp_cfg, input_libxsmm_bf16, doutput_libxsmm_bf16, dfilter_libxsmm_bf16,
+              NULL, 0, tid, scratch );
+        }
+      } else {
+        for (i = 0; i < iters; ++i) {
+          cnn_tpp_upd_exec( cnn_tpp_cfg, input_libxsmm, doutput_libxsmm, dfilter_libxsmm,
+             NULL, 0, tid, scratch );
+        }
       }
     }
     l_end = libxsmm_timer_tick();
@@ -625,7 +733,6 @@ int main(int argc, char* argv[])
       exit(EXIT_FAILURE);
     }
   }
-
 
   /* some empty lines at the end */
   printf("\n\n\n");
