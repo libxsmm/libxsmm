@@ -18,6 +18,9 @@
 #define PI 3.14159265358979323846
 #define EPS 1.19209290e-03F
 
+#define RND_RNE 0
+#define RND_STOCHASTIC 1
+
 #define NO_BCAST 0
 #define ROW_BCAST 1
 #define COL_BCAST 2
@@ -270,7 +273,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 }
 
-int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
+int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
   char *out, *out_gold;
   unsigned int *rng_state;
@@ -322,8 +325,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     }
   }
 
-  /* @TODO this seems to be broekn... it's overwritten below */
-  if (test_stochastic_rnd > 0) {
+  if (rnd_mode == RND_STOCHASTIC) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
     rng_state = libxsmm_rng_create_extstate( 555 );
 #ifdef USE_ZERO_RNG_STATE_UNITTEST
@@ -343,7 +345,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_param.op.primary = (void*) &_N;
   }
-  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
@@ -397,7 +398,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     ret = EXIT_FAILURE;
   }
 
-  if (test_stochastic_rnd > 0) {
+  if (rnd_mode == RND_STOCHASTIC) {
     libxsmm_rng_destroy_extstate( rng_state );
   }
   libxsmm_free( out_gold );
@@ -424,11 +425,12 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
+  unsigned int rnd_mode = RND_RNE;
   char opname[256];
   int ret = EXIT_FAILURE;
 
-  if ( argc != 10 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc > 11 ) {
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }
 
@@ -441,6 +443,14 @@ int main( int argc, char* argv[] ) {
   N          = atoi(argv[7]);
   ldi        = atoi(argv[8]);
   ldo        = atoi(argv[9]);
+
+  if (argc > 10 ) {
+    rnd_mode   = atoi(argv[10]);
+  }
+  if ((rnd_mode == RND_STOCHASTIC && dtype_out != 1) || (rnd_mode > RND_STOCHASTIC)) {
+    printf(" Error! rnd_mode = %d is not supported with the selected output precision, prec_out : %d\n", rnd_mode, dtype_out );
+    exit(-1);
+  }
 
   set_opname(op, opname);
 
@@ -466,45 +476,45 @@ int main( int argc, char* argv[] ) {
 
   if ( op == COPY_OP && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary F32 F32 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary BF16 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 1 && dtype_out == 1 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary BF8 BF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary F32 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 4 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary BF16 F32 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary F32 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || (dtype_comp == 2 && op == XOR_OP)) ) {
     printf("Testing unary BF16 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary BF8 BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary BF16 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary BF8 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2/1] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2/1] [prec_out: 4/2] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
     exit(-1);
   }
 
