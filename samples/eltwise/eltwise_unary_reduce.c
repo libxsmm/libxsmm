@@ -453,4 +453,3 @@ int main(int argc, char* argv[])
   fprintf(stdout, "SUCCESS unnary reduce\n" );
   return EXIT_SUCCESS;
 }
-

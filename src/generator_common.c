@@ -1,12 +1,13 @@
 /******************************************************************************
 * Copyright (c) Intel Corporation - All rights reserved.                      *
+*               Friedrich Schiller University - All rights reserved.          *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
@@ -1177,6 +1178,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "wrong ABI (classic, xgemm, xgemm_ext) was used in kernel jit request (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_UNKNOWN_OPERATION:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "operation is unknown (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_MISSING_REDUCE_FLAGS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reduce-kernel needs flags to know whether to reduce rows or columns (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );
@@ -1239,3 +1248,22 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   return l_ret;
 }
 
+LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void){
+  static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+  static int hasBeenInited = 0;
+  if(!hasBeenInited){
+    char* env = getenv("LIBXSMM_ULP_PRECISION");
+    float p = 0;
+    if(env){
+      p = (float)atof(env);/* alternatively to atof, we could use strcmp */
+      if (p == 0.5)
+        precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
+      else if (p == 1.0)
+        precision = LIBXSMM_ULP_PRECISION_ONE_ULP;
+      else
+        precision = LIBXSMM_ULP_PRECISION_ESTIMATE;
+    }
+    hasBeenInited = 1;
+  }
+  return precision;
+}

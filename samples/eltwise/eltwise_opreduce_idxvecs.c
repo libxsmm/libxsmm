@@ -1,13 +1,13 @@
-/******************************************************************************
-* Copyright (c) Intel Corporation - All rights reserved.                      *
-* This file is part of the LIBXSMM library.                                   *
-*                                                                             *
-* For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/libxsmm/libxsmm/                    *
-* SPDX-License-Identifier: BSD-3-Clause                                       *
-******************************************************************************/
-/* Evangelos Georganas (Intel Corp.)
-******************************************************************************/
+/*********************************************************************************************
+* Copyright (c) Intel Corporation, Friedrich Schiller University Jena - All rights reserved. *
+* This file is part of the LIBXSMM library.                                                  *
+*                                                                                            *
+* For information on the license, see the LICENSE file.                                      *
+* Further information: https://github.com/libxsmm/libxsmm/                                   *
+* SPDX-License-Identifier: BSD-3-Clause                                                      *
+*********************************************************************************************/
+/* Evangelos Georganas (Intel Corp.), Antonio Noack (FSU Jena)
+*********************************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,6 +112,12 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
 
+  if(argc == 1){
+    /* probably help is wanted */
+    printf(" Error! Usage: %s [M=64] [N=64] [N_COLS_IDX=32] [LD_IN=64] [OP=0] [OP_ORDER=0] [SCALE_OP_RES=0] [REDOP=0] [REG_VECIN=0] [IMPLICIT_IDX=0] [ARGOP_MODE=0] [IDX_MODE=0] [ITERS=10000] [BF16=0] [BCAST_FACTOR=0]\n", argv[0] );
+    exit(-1);
+  }
+
   if ( argc > 1 ) m           = atoi(argv[1]);
   if ( argc > 2 ) n           = atoi(argv[2]);
   if ( argc > 3 ) n_cols_idx  = atoi(argv[3]);
@@ -157,19 +163,8 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (argop_mode == 1) {
-    argop_vec_0 = 1;
-    argop_vec_1 = 0;
-  } else if (argop_mode == 2) {
-    argop_vec_0 = 0;
-    argop_vec_1 = 1;
-  } else if (argop_mode == 3) {
-    argop_vec_0 = 1;
-    argop_vec_1 = 1;
-  } else {
-    argop_vec_0 = 0;
-    argop_vec_1 = 0;
-  }
+  argop_vec_0 = (argop_mode & 1);
+  argop_vec_1 = (argop_mode & 2) >> 1;
 
   if (idx_mode == 0) {
     idx_dtype = LIBXSMM_DATATYPE_I32;
@@ -250,14 +245,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (argop_mode == 1) {
+  if (argop_vec_0 == 1) {
     opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0;
-  } else if (argop_mode == 2) {
+  }
+  if (argop_vec_1 == 1) {
     opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1;
-  } else if (argop_mode == 3) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0;
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1;
-  } else {
   }
 
   if ((op == OP_COPY) && (use_implicit_idx > 0)) {
@@ -381,7 +373,7 @@ int main(int argc, char* argv[])
     }
     for (_i = 0; _i < m; _i++) {
       i = _i;
-      if (bcast_factor > 0) {
+      if (bcast_factor > 1) {
         i = _i/bcast_factor;
       }
       if (redop == REDOP_NONE) {
@@ -390,73 +382,62 @@ int main(int argc, char* argv[])
         vec_in = inp_matrix2;
       }
 
-      if (op != OP_COPY) {
-        if (op == OP_ADD) {
-          op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
-        }
-        if (op == OP_MUL) {
-          op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
-        }
-        if (op == OP_SUB) {
-          if (op_order == OPORDER_VECIN_VECIDX) {
-            op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
-          }
-          if (op_order == OPORDER_VECIDX_VECIN) {
-            op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
-          }
-        }
-        if (op == OP_DIV) {
-          if (op_order == OPORDER_VECIN_VECIDX) {
-            op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
-          }
-          if (op_order == OPORDER_VECIDX_VECIN) {
-            op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
-          }
-        }
-      } else {
+      if (op == OP_COPY) {
         if (op_order == OPORDER_VECIDX_VECIN) {
          op_res = inp_matrix[j * ld_in + i];
-        } else {
+        } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
          op_res = vec_in[_j * ld_in + i];
         }
-      }
+      } else if (op == OP_ADD) {
+        op_res = inp_matrix[j * ld_in + i] + vec_in[_j * ld_in + i];
+      } else if (op == OP_MUL) {
+        op_res = inp_matrix[j * ld_in + i] * vec_in[_j * ld_in + i];
+      } else if (op == OP_SUB) {
+        if (op_order == OPORDER_VECIN_VECIDX) {
+          op_res = vec_in[_j * ld_in + i] - inp_matrix[j * ld_in + i];
+        } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
+          op_res = inp_matrix[j * ld_in + i] - vec_in[_j * ld_in + i];
+        }
+      } else if (op == OP_DIV) {
+        if (op_order == OPORDER_VECIN_VECIDX) {
+          op_res = vec_in[_j * ld_in + i] / inp_matrix[j * ld_in + i];
+        } else {/* if (op_order == OPORDER_VECIDX_VECIN) */
+          op_res = inp_matrix[j * ld_in + i] / vec_in[_j * ld_in + i];
+        }/* else should not happen */
+      }/* else should not happen */
 
       if (scale_op_res == SCALE_OP_RESULT) {
         op_res = op_res * scale_vals[jj];
       }
 
-      if (redop != REDOP_NONE) {
-        if (redop == REDOP_SUM) {
-          ref_result[_i] += op_res;
-        }
-        if (redop == REDOP_MIN) {
-          if (argop_vec_0 > 0) {
-            if (op_res <= ref_result[_i]) {
-              ref_argop_off_vec_0[_i] = j;
-            }
-          }
-          if (argop_vec_1 > 0) {
-            if (op_res <= ref_result[_i]) {
-              ref_argop_off_vec_1[_i] = _j;
-            }
-          }
-          ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
-        }
-        if (redop == REDOP_MAX) {
-          if (argop_vec_0 > 0) {
-            if (op_res >= ref_result[_i]) {
-              ref_argop_off_vec_0[_i] = j;
-            }
-          }
-          if (argop_vec_1 > 0) {
-            if (op_res >= ref_result[_i]) {
-              ref_argop_off_vec_1[_i] = _j;
-            }
-          }
-          ref_result[_i] = LIBXSMM_MAX(ref_result[_i], op_res);
-        }
-      } else {
+      if (redop == REDOP_NONE) {
         ref_result[_i] = op_res;
+      } else if (redop == REDOP_SUM) {
+        ref_result[_i] += op_res;
+      } else if (redop == REDOP_MIN) {
+        if (argop_vec_0 > 0) {
+          if (op_res <= ref_result[_i]) {
+            ref_argop_off_vec_0[_i] = j;
+          }
+        }
+        if (argop_vec_1 > 0) {
+          if (op_res <= ref_result[_i]) {
+            ref_argop_off_vec_1[_i] = _j;
+          }
+        }
+        ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
+      } else if (redop == REDOP_MAX) {
+        if (argop_vec_0 > 0) {
+          if (op_res >= ref_result[_i]) {
+            ref_argop_off_vec_0[_i] = j;
+          }
+        }
+        if (argop_vec_1 > 0) {
+          if (op_res >= ref_result[_i]) {
+            ref_argop_off_vec_1[_i] = _j;
+          }
+        }
+        ref_result[_i] = LIBXSMM_MAX(ref_result[_i], op_res);
       }
     }
   }
@@ -469,14 +450,14 @@ int main(int argc, char* argv[])
   /* Call JITed kernel */
   params.n            = n_cols_idx;
   if (idx_mode == 0) {
-    params.indices      = cols_ind_array_i32;
+    params.indices    = cols_ind_array_i32;
     if (use_implicit_idx == 0) {
-      params.indices2      = cols_ind_array2_i32;
+      params.indices2 = cols_ind_array2_i32;
     }
   } else {
-    params.indices      = cols_ind_array;
+    params.indices    = cols_ind_array;
     if (use_implicit_idx == 0) {
-      params.indices2      = cols_ind_array2;
+      params.indices2 = cols_ind_array2;
     }
   }
 
@@ -485,18 +466,18 @@ int main(int argc, char* argv[])
     params.out_vec      = result;
     params.scale_vals   = scale_vals;
     if (use_regular_vecin == 1) {
-      params.in_vec       = (redop == REDOP_NONE) ? result : inp_matrix2;
+      params.in_vec     = (redop == REDOP_NONE) ? result : inp_matrix2;
     } else {
-      params.in_matrix2    = inp_matrix2;
+      params.in_matrix2 = inp_matrix2;
     }
   } else {
     params.in_matrix    = inp_matrix_bf16;
     params.out_vec      = result_bf16;
     params.scale_vals   = scale_vals_bf16;
     if (use_regular_vecin == 1) {
-      params.in_vec       = (redop == REDOP_NONE) ? result_bf16 : inp_matrix_bf162;
+      params.in_vec     = (redop == REDOP_NONE) ? result_bf16 : inp_matrix_bf162;
     } else {
-      params.in_matrix2    = inp_matrix_bf162;
+      params.in_matrix2 = inp_matrix_bf162;
     }
   }
 
