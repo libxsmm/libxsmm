@@ -839,6 +839,12 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* 1st phase: let's compute some static information before starting the
      encoding process */
   /* 1 A) determine if SIB addressing mode is needed */
@@ -945,6 +951,12 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   unsigned int opext = (i_instr & 0x00003000) >> 12;
   unsigned int opext_idx = (i_instr & 0x00001000) >> 12;
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* A): writing prefixes */
   /* operand size overwrite prefix */
   if ( (i_instr & 0x0000c000) == 0x00004000 ) {
@@ -1033,6 +1045,12 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   unsigned int l_gp_reg_idx;
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
+
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -1147,6 +1165,12 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
   /* index for VL look-ups, zmm is converted to ymm */
   unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* encoding */
   /* A): writing an insturction template into the byte stream */
   /* const VEX prefix */
@@ -1248,6 +1272,11 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     return;
   }
 #endif
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -1429,6 +1458,11 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
     return;
   }
 #endif
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
@@ -1508,11 +1542,6 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (io_generated_code->code_type > 1) ) {
     libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* as LD/ST semantics have different op codes we need some fix-ups here */
     switch (i_vmove_instr) {
@@ -1767,12 +1796,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_reg_number_src0 = 0;
     unsigned int l_reg_number_src1 = 0;
     unsigned int l_reg_number_dst = 0;
-
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* determine encoder */
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
@@ -2057,12 +2080,6 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
     unsigned int l_reg_number_src1;
     unsigned int l_reg_number_dst = i_reg_number_dst;
-
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* determine encoder */
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {

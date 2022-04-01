@@ -479,7 +479,8 @@ void libxsmm_generator_gemm_setup_stack_frame_fill_stack_vars_v2( libxsmm_genera
   }
 
   if ((is_brgemm == 1) && ( i_micro_kernel_config->decompress_A == 1)) {
-    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, i_gp_reg_mapping->gp_reg_reduce_count );
+    libxsmm_x86_instruction_alu_mem( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_reduce_count, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, temp_reg, 0 );
+    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, temp_reg );
   }
 
   if (is_offset_brgemm == 1) {
@@ -909,6 +910,8 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
   i_micro_kernel_config->stride_b_trans          = 0;
   i_micro_kernel_config->fused_eltwise           = 0;
   i_micro_kernel_config->has_colbias_act_fused   = 0;
+
+  i_micro_kernel_config->vnni_format_C  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_C) > 0) ? 1 : 0;
 
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     i_micro_kernel_config->overwrite_C = ((i_xgemm_desc->internal_flags_2 & 0x4) > 0) ? 0 : 1;

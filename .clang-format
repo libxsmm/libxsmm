@@ -3,11 +3,12 @@ AlignAfterOpenBracket: DontAlign
 AlignEscapedNewlines: DontAlign
 AlignTrailingComments: false
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLoopsOnASingleLine: true
 BraceWrapping:
-  BeforeCatch:     true
-  BeforeElse:      true
+  AfterControlStatement: MultiLine
+  BeforeCatch: true
+  BeforeElse: true
 BreakBeforeBraces: Custom
 ColumnLimit: 132
 ConstructorInitializerIndentWidth: 0

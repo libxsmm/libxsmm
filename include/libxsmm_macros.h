@@ -703,8 +703,10 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
     + 0 * LIBXSMM_INDEX1(NDIMS, LIBXSMM_SELECT_TAIL(__VA_ARGS__, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0))) /* dummy-shift to "sink" unused arguments */
 #endif
 
-/** Access an array of TYPE with Byte-measured stride. */
-#define LIBXSMM_ACCESS(TYPE, ARRAY, STRIDE) (*(TYPE*)((char*)(ARRAY) + (STRIDE)))
+/** Address of an ARRAY of elements (of TYPESIZE) using linear index according to LIBXSMM_INDEX1. */
+#define LIBXSMM_ACCESS_RAW(NDIMS, TYPESIZE, ARRAY, ...) ((void*)(((char*)(ARRAY)) + (TYPESIZE) * LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)))
+/** Address of an ARRAY of TYPE (can be const-qualified) using linear index according to LIBXSMM_INDEX1. */
+#define LIBXSMM_ACCESS(NDIMS, TYPE, ARRAY, ...) (((TYPE*)(ARRAY)) + LIBXSMM_INDEX1(NDIMS, __VA_ARGS__))
 
 #if !defined(LIBXSMM_UNUSED)
 # if 0
@@ -776,6 +778,9 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
 #   define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
 # endif
+# if !defined(_CRT_INTERNAL_NONSTDC_NAMES)
+#   define _CRT_INTERNAL_NONSTDC_NAMES 1
+# endif
 # if !defined(_CRT_SECURE_NO_DEPRECATE)
 #   define _CRT_SECURE_NO_DEPRECATE 1
 # endif
@@ -841,6 +846,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   include <windows.h>
 # else
 #   include <pthread.h>
+#   include <unistd.h>
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT)
