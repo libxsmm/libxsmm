@@ -910,6 +910,8 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
   i_micro_kernel_config->fused_eltwise           = 0;
   i_micro_kernel_config->has_colbias_act_fused   = 0;
 
+  i_micro_kernel_config->vnni_format_C  = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_C) > 0) ? 1 : 0;
+
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     i_micro_kernel_config->overwrite_C = ((i_xgemm_desc->internal_flags_2 & 0x4) > 0) ? 0 : 1;
 
