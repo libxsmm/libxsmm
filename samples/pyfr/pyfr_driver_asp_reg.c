@@ -159,6 +159,8 @@ int my_csr_reader( const char*           i_csr_file_in,
 }
 
 int main(int argc, char* argv[]) {
+  int ret = 0;
+
   char* l_csr_file;
   REALTYPE* l_a_sp;
   unsigned int* l_rowptr;
@@ -334,6 +336,7 @@ int main(int argc, char* argv[]) {
       l_max_error = fabs(l_c_betazero[l_i]-l_c_gold_betazero[l_i]);
     }
   }
+  ret |= l_max_error > 1e-4;
   printf("max error beta=0 (libxmm vs. gold): %f\n", l_max_error);
   l_max_error = (REALTYPE)0.0;
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
@@ -341,6 +344,7 @@ int main(int argc, char* argv[]) {
       l_max_error = fabs(l_c_betaone[l_i]-l_c_gold_betaone[l_i]);
     }
   }
+  ret |= l_max_error > 1e-4;
   printf("max error beta=1 (libxmm vs. gold): %f\n", l_max_error);
   l_max_error = (REALTYPE)0.0;
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
@@ -424,5 +428,5 @@ int main(int argc, char* argv[]) {
   libxsmm_dfsspmdm_destroy( gemm_op_betazero );
   libxsmm_dfsspmdm_destroy( gemm_op_betaone );
 
-  return EXIT_SUCCESS;
+  return ret;
 }

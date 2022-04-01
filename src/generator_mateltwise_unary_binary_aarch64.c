@@ -2545,6 +2545,11 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     }
   }
 
+  if ((op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL) || (op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT)) {
+    i_micro_kernel_config->vec_tmp0 = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+  }
+
   if (op == LIBXSMM_MELTW_TYPE_UNARY_INC) {
     i_micro_kernel_config->vec_ones = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
