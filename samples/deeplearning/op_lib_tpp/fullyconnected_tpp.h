@@ -111,15 +111,9 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldb = bc;
   libxsmm_blasint ldc = bk;
   libxsmm_blasint ld_zero = bk*bn;
-  float alpha = 1.0f;
-  float beta = 1.0f;
-  float zerobeta = 0.0f;
 
   libxsmm_meltw_unary_shape  unary_shape;
-  libxsmm_meltw_binary_shape binary_shape;
-
   libxsmm_bitfield  unary_flags;
-  libxsmm_bitfield  binary_flags;
 
   libxsmm_gemm_shape l_shape;
   libxsmm_gemm_batch_reduce_config l_brconfig;
@@ -491,19 +485,12 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ld_relu_bwd = bk;
   libxsmm_blasint delbias_K = K;
   libxsmm_blasint delbias_N = N;
-  float alpha = 1.0f;
-  float beta = 1.0f;
-  float zerobeta = 0.0f;
-  int updflags = LIBXSMM_GEMM_FLAGS( 'N', 'T' );
   libxsmm_blasint updM;
   libxsmm_blasint updN;
   libxsmm_blasint ldaT = bk;
 
   libxsmm_meltw_unary_shape  unary_shape;
-  libxsmm_meltw_binary_shape binary_shape;
-
   libxsmm_bitfield  unary_flags;
-  libxsmm_bitfield  binary_flags;
 
   libxsmm_gemm_shape l_shape;
   libxsmm_gemm_batch_reduce_config l_brconfig;
@@ -988,7 +975,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
   LIBXSMM_VLA_DECL(4, const float,     filter,      wt_ptr, nBlocksIFm, cfg.bc, cfg.bk);
   LIBXSMM_VLA_DECL(2, const float,       bias,    bias_ptr,                     cfg.bk);
   LIBXSMM_VLA_DECL(4, unsigned char, relubitmask,    relu_ptr, nBlocksOFm, cfg.bn, cfg.bk/8);
-  libxsmm_meltw_unary_param       eltwise_params;
 
   unsigned long long  blocks = nBlocksIFm;
   libxsmm_blasint CB_BLOCKS = nBlocksIFm, BF = 1;

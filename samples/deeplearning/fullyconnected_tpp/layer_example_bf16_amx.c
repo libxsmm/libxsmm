@@ -58,8 +58,8 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_N_hyperpartitions;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
-  libxsmm_bsmmfunction fwd_config_kernel;
-  libxsmm_bsmmfunction tilerelease_kernel;
+  libxsmm_xmmfunction fwd_tileconfig_kernel;
+  libxsmm_xmmfunction fwd_tilerelease_kernel;
   libxsmm_xmmfunction gemm_fwd;
   libxsmm_xmmfunction gemm_fwd2;
   libxsmm_xmmfunction gemm_fwd3;
@@ -101,9 +101,10 @@ typedef struct my_fc_bwd_config {
   size_t          scratch_size;
   size_t  doutput_scratch_mark;
   libxsmm_barrier* barrier;
-  libxsmm_bsmmfunction bwd_config_kernel;
-  libxsmm_bsmmfunction upd_config_kernel;
-  libxsmm_bsmmfunction tilerelease_kernel;
+  libxsmm_xmmfunction bwd_tileconfig_kernel;
+  libxsmm_xmmfunction bwd_tilerelease_kernel;
+  libxsmm_xmmfunction upd_tileconfig_kernel;
+  libxsmm_xmmfunction upd_tilerelease_kernel;
   libxsmm_xmmfunction gemm_bwd;
   libxsmm_xmmfunction gemm_bwd2;
   libxsmm_xmmfunction gemm_bwd3;
@@ -132,12 +133,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ldc = bk;
   libxsmm_blasint ld_zero = bk*bn;
   libxsmm_blasint ld_upconvert = K;
-  float alpha = 1.0f;
-  float beta = 1.0f;
-  float zerobeta = 0.0f;
   libxsmm_blasint unroll_hint;
-  libxsmm_bitfield l_flags, l_tc_flags;
-  libxsmm_bitfield l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+  libxsmm_bitfield l_flags, l_tc_flags, l_tr_flags;
   libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_gemm_shape l_shape;
   libxsmm_gemm_batch_reduce_config l_brconfig;
@@ -210,22 +207,26 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   res.barrier = libxsmm_barrier_create(threads, 1);
 
   /* TPP creation */
-  l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-  unroll_hint = (res.C/res.bc)/res.fwd_bf;
+  l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+  l_shape = libxsmm_create_gemm_shape( res.bk, res.bn, res.bc,
+                                       lda, ldb, ldc,
+                                       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
+                                       LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
-  res.fwd_config_kernel = libxsmm_bsmmdispatch(res.bk, res.bn, res.bc, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.fwd_config_kernel == NULL ) {
+  res.fwd_tileconfig_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
+  if ( res.fwd_tileconfig_kernel.gemm == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
     exit(-1);
   }
-  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
-  if ( res.tilerelease_kernel == NULL ) {
+  res.fwd_tilerelease_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
+  if ( res.fwd_tilerelease_kernel.gemm == NULL ) {
     fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
   l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
+  unroll_hint = (res.C/res.bc)/res.fwd_bf;
   l_shape = libxsmm_create_gemm_shape( res.bk, res.bn, res.bc,
                                        lda, ldb, ldc,
                                        LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
@@ -329,13 +330,9 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint ld_zero_upd = bk;
   libxsmm_blasint delbias_K = K;
   libxsmm_blasint delbias_N = N;
-  float alpha = 1.0f;
-  float beta = 1.0f;
-  float zerobeta = 0.0f;
   libxsmm_blasint updM;
   libxsmm_blasint updN;
-  libxsmm_bitfield l_flags, l_tc_flags;
-  libxsmm_bitfield l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+  libxsmm_bitfield l_flags, l_tc_flags, l_tr_flags;
   libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_blasint unroll_hint;
   size_t size_bwd_scratch;
@@ -468,9 +465,19 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   /* TPP creation */
   /* BWD GEMM */
   l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-  res.bwd_config_kernel = libxsmm_bsmmdispatch(res.bc, res.bn, res.bk, &ldb, &lda, &ldb, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.bwd_config_kernel == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP bwd_config_kernel failed. Bailing...!\n");
+  l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+  l_shape = libxsmm_create_gemm_shape( res.bc, res.bn, res.bk,
+                                       ldb, lda, ldb,
+                                       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
+                                       LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  res.bwd_tileconfig_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
+  if ( res.bwd_tileconfig_kernel.gemm == NULL ) {
+    fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+  res.bwd_tilerelease_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
+  if ( res.bwd_tilerelease_kernel.gemm == NULL ) {
+    fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -550,13 +557,18 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   updN = res.bc/res.ifm_subtasks;
 
   l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-  res.upd_config_kernel = libxsmm_bsmmdispatch(updM, updN, res.bn, &lda, &ldb, &ldc, NULL, &beta, &l_tc_flags, NULL);
-  if ( res.upd_config_kernel == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP upd_config_kernel failed. Bailing...!\n");
+  l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
+  l_shape = libxsmm_create_gemm_shape( updM, updN, res.bn,
+                                       lda, ldb, ldc,
+                                       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
+                                       LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  res.upd_tileconfig_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
+  if ( res.upd_tileconfig_kernel.gemm == NULL ) {
+    fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
     exit(-1);
   }
-  res.tilerelease_kernel = libxsmm_bsmmdispatch(res.bk, res.bk, res.bk, NULL, NULL, NULL, NULL, NULL, &l_tr_flags, NULL);
-  if ( res.tilerelease_kernel == NULL ) {
+  res.upd_tilerelease_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
+  if ( res.upd_tilerelease_kernel.gemm == NULL ) {
     fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
@@ -683,7 +695,6 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,  input,   in_act_ptr,  nBlocksIFm, cfg.bn, cfg.bc);
   LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter,       wt_ptr, nBlocksIFm, bc_lp, cfg.bk, lpb);
   LIBXSMM_VLA_DECL(4, float, output_f32, (float*)scratch, nBlocksOFm, bn, bk);
-  float* fp32_bias_scratch =  ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) ? (float*)scratch + ltid * cfg.K : NULL;
   LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, bias, ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) == MY_ELTWISE_FUSE_BIAS) ? (libxsmm_bfloat16*) bias_ptr : NULL, cfg.bk);
   LIBXSMM_VLA_DECL(4, __mmask32,  relubitmask, ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) ? (__mmask32*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
 
@@ -728,7 +739,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  cfg.fwd_config_kernel(NULL, NULL, NULL);
+  cfg.fwd_tileconfig_kernel.gemm( NULL );
 
   if (use_2d_blocking == 1) {
     if ((BF > 1) || (cfg.K % 32 != 0)) {
@@ -853,7 +864,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
     }
   }
 
-  cfg.tilerelease_kernel(NULL, NULL, NULL);
+  cfg.fwd_tilerelease_kernel.gemm( NULL );
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
@@ -912,14 +923,12 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
   libxsmm_meltw_unary_param   eltwise_params;
   libxsmm_meltw_unary_param          copy_params;
   libxsmm_meltw_unary_param        delbias_params;
-  libxsmm_meltw_gemm_param          eltwise_params_bwd;
   libxsmm_gemm_param gemm_param;
 
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
-  cfg.bwd_config_kernel(NULL, NULL, NULL);
 
   /* Apply to doutput potential fusions */
   if (((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU)) {
@@ -987,6 +996,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
     BF = cfg.bwd_bf;
     KB_BLOCKS = nBlocksOFm/BF;
     blocks = KB_BLOCKS;
+
+    cfg.bwd_tileconfig_kernel.gemm( NULL );
 
     if (use_2d_blocking == 1) {
       int _ltid, M_hyperpartition_id, N_hyperpartition_id, _nBlocksIFm, _nBlocksMB, hyperteam_id;
@@ -1104,6 +1115,7 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
       }
     }
 
+    cfg.bwd_tilerelease_kernel.gemm( NULL );
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
 
@@ -1153,6 +1165,8 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
     const libxsmm_blasint tr_inp_chunksize = (tr_inp_work % cfg.threads == 0) ? (tr_inp_work / cfg.threads) : ((tr_inp_work / cfg.threads) + 1);
     const libxsmm_blasint tr_inp_thr_begin = (ltid * tr_inp_chunksize < tr_inp_work) ? (ltid * tr_inp_chunksize) : tr_inp_work;
     const libxsmm_blasint tr_inp_thr_end = ((ltid + 1) * tr_inp_chunksize < tr_inp_work) ? ((ltid + 1) * tr_inp_chunksize) : tr_inp_work;
+
+    cfg.upd_tileconfig_kernel.gemm( NULL );
 
     if (use_2d_blocking == 1) {
       int _ltid, M_hyperpartition_id, N_hyperpartition_id, _nBlocksOFm,  _nBlocksIFm, hyperteam_id;
@@ -1314,9 +1328,9 @@ void my_fc_bwd_exec( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bf
         }
       }
     }
+    cfg.upd_tilerelease_kernel.gemm( NULL );
     libxsmm_barrier_wait(cfg.barrier, ltid);
   }
-  cfg.tilerelease_kernel(NULL, NULL, NULL);
 }
 
 int main(int argc, char* argv[])
