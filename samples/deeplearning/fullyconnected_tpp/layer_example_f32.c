@@ -92,8 +92,8 @@ int main(int argc, char* argv[])
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only). 'M' (BPUP-fused only)\n");
     return -1;
   }
-  if ( (fuse_type < 0) || (fuse_type > 7) || fuse_type == 3 || fuse_type == 5 ) {
-    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU), 6 (ReLU with a mask), 7 (Bias+ReLU with a mask)\n");
+  if ( (fuse_type < 0) || (fuse_type > 5) ) {
+    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU,mask), 3 (Bias+ReLU,mask), 4 (ReLU), 5 (Bias+ReLU)\n");
     return -1;
   }
 
@@ -195,19 +195,23 @@ int main(int argc, char* argv[])
   } else if ( fuse_type == 1 ) {
     my_fuse = MY_FC_ELTW_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
-    my_fuse = MY_FC_ELTW_FUSE_RELU;
-  } else if ( fuse_type == 4 ) {
-    my_fuse = MY_FC_ELTW_FUSE_BIAS_RELU;
-  } else if ( fuse_type == 6 ) {
     my_fuse = MY_FC_ELTW_FUSE_RELU_WITH_MASK;
-  } else if ( fuse_type == 7 ) {
+  } else if ( fuse_type == 3 ) {
     my_fuse = MY_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK;
+  } else if ( fuse_type == 4 ) {
+    my_fuse = MY_FC_ELTW_FUSE_RELU;
+  } else if ( fuse_type == 5 ) {
+    my_fuse = MY_FC_ELTW_FUSE_BIAS_RELU;
   } else {
     /* cannot happen */
   }
 
-  my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
-  my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse);
+  if (type == 'A' || type == 'F') {
+    my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  }
+  if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
+    my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  }
 
   /* we can also use the layout functions and set the data on our
      own external to the library */
@@ -290,7 +294,7 @@ int main(int argc, char* argv[])
     printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
     printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
-    if ( (fuse_type == 1) || (fuse_type == 4) ) {
+    if ( (fuse_type == 1) || (fuse_type == 3) ) {
       libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nOFm, 1, naive_delbias, delbias_libxsmm, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);

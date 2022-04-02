@@ -309,11 +309,11 @@ int main(int argc, char* argv[])
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU;
-  } else if ( fuse_type == 3 ) {
+  } else if ( fuse_type == 8 ) {
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID;
-  } else if ( fuse_type == 4 ) {
+  } else if ( fuse_type == 3 ) {
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU;
-  } else if ( fuse_type == 5 ) {
+  } else if ( fuse_type == 9 ) {
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID;
   } else {
     /* cannot happen */

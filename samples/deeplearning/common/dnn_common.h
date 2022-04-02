@@ -2387,19 +2387,19 @@ LIBXSMM_INLINE void naive_fullyconnected_fused_fp(naive_fullyconnected_t* param,
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
       } else if ( param->fuse_type == 2 ) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
-      } else if ( param->fuse_type == 3 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
       } else if ( param->fuse_type == 4 ) {
+        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+      } else if ( param->fuse_type == 8 ) {
+        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
+      } else if ( param->fuse_type == 3 ) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
       } else if ( param->fuse_type == 5 ) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
-      } else if ( param->fuse_type == 6 ) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
-      } else if ( param->fuse_type == 7 ) {
+      } else if ( param->fuse_type == 9 ) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
       }
     }
   }
@@ -2430,18 +2430,18 @@ LIBXSMM_INLINE void naive_fullyconnected_fused_bp(naive_fullyconnected_t* param,
           dbias += LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
         } else if ( param->fuse_type == 2 ) {
           LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
-        } else if ( param->fuse_type == 3 ) {
-          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm)*(1.0f-LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm));
         } else if ( param->fuse_type == 4 ) {
+          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
+        } else if ( param->fuse_type == 8 ) {
+          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm)*(1.0f-LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm));
+        } else if ( param->fuse_type == 3 ) {
           LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
           dbias += LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
         } else if ( param->fuse_type == 5 ) {
-          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm)*(1.0f-LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm));
+          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
           dbias += LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
-        } else if ( param->fuse_type == 6 ) {
-          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
-        } else if ( param->fuse_type == 7 ) {
-          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) : 0;
+        } else if ( param->fuse_type == 9 ) {
+          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) = LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm)*(1.0f-LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm));
           dbias += LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
         }
       }
