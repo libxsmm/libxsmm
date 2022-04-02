@@ -938,7 +938,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
+void my_fc_fwd_exec_f32( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
     const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
@@ -1157,7 +1157,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const float* wt_ptr, const float* in_
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_fc_bwd_exec( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
+void my_fc_bwd_exec_f32( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
     float* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */

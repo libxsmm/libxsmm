@@ -58,12 +58,11 @@ typedef struct my_fc_fwd_config {
   libxsmm_blasint fwd_N_hyperpartitions;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
-  libxsmm_xmmfunction fwd_tileconfig_kernel;
-  libxsmm_xmmfunction fwd_tilerelease_kernel;
-  libxsmm_xmmfunction gemm_fwd;
-  libxsmm_xmmfunction gemm_fwd2;
-  libxsmm_xmmfunction gemm_fwd3;
-  libxsmm_xmmfunction gemm_fwd4;
+  libxsmm_gemmfunction fwd_tileconfig_kernel;
+  libxsmm_gemmfunction fwd_tilerelease_kernel;
+  libxsmm_gemmfunction fwd_compute_kernel_strd;
+  libxsmm_gemmfunction fwd_compute_kernel2_strd;
+  libxsmm_gemmfunction_ext fwd_compute_kernel5_strd_fused;
   libxsmm_meltwfunction_unary fwd_cvtfp32bf16_kernel;
   libxsmm_meltwfunction_unary fwd_cvtfp32bf16_relu_kernel;
   libxsmm_meltwfunction_unary fwd_sigmoid_cvtfp32bf16_kernel;
@@ -333,13 +332,13 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
                                        LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
-  res.fwd_tileconfig_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
-  if ( res.fwd_tileconfig_kernel.gemm == NULL ) {
+  res.fwd_tileconfig_kernel = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
+  if ( res.fwd_tileconfig_kernel == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
     exit(-1);
   }
-  res.fwd_tilerelease_kernel.gemm = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
-  if ( res.fwd_tilerelease_kernel.gemm == NULL ) {
+  res.fwd_tilerelease_kernel = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
+  if ( res.fwd_tilerelease_kernel == NULL ) {
     fprintf( stderr, "JIT for TPP tilerelease_kernel failed. Bailing...!\n");
     exit(-1);
   }
@@ -355,24 +354,17 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
                                                         res.bc*res.bn*sizeof(libxsmm_bfloat16),
                                                         unroll_hint );
   /* strided BRGEMM, FP32 out, Beta = 1 */
-  res.gemm_fwd.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-  if ( res.gemm_fwd.gemm == NULL ) {
+  res.fwd_compute_kernel_strd = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  if ( res.fwd_compute_kernel_strd == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd failed. Bailing...!\n");
     exit(-1);
   }
 
   l_flags = l_flags | LIBXSMM_GEMM_FLAG_BETA_0;
-  /* strdied BRGEMM, FP32 out, Beta= 0 */
-  res.gemm_fwd2.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-  if ( res.gemm_fwd2.gemm == NULL ) {
-    fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd2 failed. Bailing...!\n");
-    exit(-1);
-  }
-
   l_shape.out_type = LIBXSMM_DATATYPE_BF16;
   /* strdied BRGEMM, BF16 out, Betat = 0 */
-  res.gemm_fwd3.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-  if ( res.gemm_fwd3.gemm == NULL ) {
+  res.fwd_compute_kernel2_strd = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  if ( res.fwd_compute_kernel2_strd == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd3 failed. Bailing...!\n");
     exit(-1);
   }
@@ -388,8 +380,8 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   }
 
-  res.gemm_fwd4.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
-  if ( res.gemm_fwd4.gemm_ext == NULL ) {
+  res.fwd_compute_kernel5_strd_fused = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
+  if ( res.fwd_compute_kernel5_strd_fused == NULL ) {
     fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd4 failed. Bailing...!\n");
     exit(-1);
   }
@@ -1084,7 +1076,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  cfg.fwd_tileconfig_kernel.gemm( NULL );
+  cfg.fwd_tileconfig_kernel( NULL );
 
   if (use_2d_blocking == 1) {
     if ((BF > 1) || (cfg.K % 32 != 0)) {
@@ -1105,7 +1097,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
             gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb);
             gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bn, cfg.bc);
             gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
-            cfg.gemm_fwd.gemm( &gemm_param );
+            cfg.fwd_compute_kernel_strd( &gemm_param );
             if ( ifm1 == BF-1  ) {
               if ( (cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU ) {
                 eltwise_params_act.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
@@ -1135,13 +1127,13 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
             if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
               gemm_ext_param.c.secondary = (void*)&LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
             }
-            cfg.gemm_fwd4.gemm_ext( &gemm_ext_param );
+            cfg.fwd_compute_kernel5_strd_fused( &gemm_ext_param );
           } else {
             gemm_param.op.tertiary = (void*)&blocks;
             gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb);
             gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, 0, 0, 0, nBlocksIFm, cfg.bn, cfg.bc);
             gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
-            cfg.gemm_fwd3.gemm( &gemm_param );
+            cfg.fwd_compute_kernel2_strd( &gemm_param );
           }
         }
       }
@@ -1167,7 +1159,7 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
           gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb);
           gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, cfg.bn, cfg.bc);
           gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
-          cfg.gemm_fwd.gemm( &gemm_param );
+          cfg.fwd_compute_kernel_strd( &gemm_param );
           if ( ifm1 == BF-1  ) {
             if ( (cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU ) {
               eltwise_params_act.in.primary = &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
@@ -1197,19 +1189,19 @@ void my_fc_fwd_exec( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const
           if ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) == MY_ELTWISE_FUSE_RELU) {
             gemm_ext_param.c.secondary = (void*)&LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk/32);
           }
-          cfg.gemm_fwd4.gemm_ext( &gemm_ext_param );
+          cfg.fwd_compute_kernel5_strd_fused( &gemm_ext_param );
         } else {
           gemm_param.op.tertiary = (void*)&blocks;
           gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, cfg.bk, lpb);
           gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, 0, 0, 0, nBlocksIFm, cfg.bn, cfg.bc);
           gemm_param.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, cfg.bn, cfg.bk);
-          cfg.gemm_fwd3.gemm( &gemm_param );
+          cfg.fwd_compute_kernel2_strd( &gemm_param );
         }
       }
     }
   }
 
-  cfg.fwd_tilerelease_kernel.gemm( NULL );
+  cfg.fwd_tilerelease_kernel( NULL );
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 

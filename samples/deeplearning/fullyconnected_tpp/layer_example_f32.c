@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+      my_fc_fwd_exec_f32( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
           bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
     }
 
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+      my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
           input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
     }
 
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_fc_fwd_exec( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+        my_fc_fwd_exec_f32( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
             bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       for (i = 0; i < iters; ++i) {
-        my_fc_bwd_exec( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+        my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
             input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
       }
     }
