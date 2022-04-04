@@ -85,28 +85,31 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters MB bn bk bc C1 C2 ... CN\n", argv[0]);
+    printf("Usage: %s iters MB bn bk bc [C1 C2 ... CN-1]\n", argv[0]);
     return 0;
   }
   libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
-  num_layers = argc - 7;
+  num_layers = ( argc > 6 ) ? (argc - 7) + 2 : 1;
   if (argc > i) iters      = atoi(argv[i++]);
   if (argc > i) MB         = atoi(argv[i++]);
   if (argc > i) bn         = atoi(argv[i++]);
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
   /* allocate the number of channles buffer */
-  if ( num_layers < 1 ) {
-    printf("Usage: %s iters MB bn bk bc C1 C2 ... CN\n", argv[0]);
-    return 0;
-  }
   C = (int*)malloc((num_layers+2)*sizeof(int));
-  for (j = 0 ; i < argc; ++i, ++j ) {
-    C[j] = atoi(argv[i]);
+  C[0] = 784;
+  if ( argc > 6 ) {
+    for (j = 1 ; i < argc; ++i, ++j ) {
+      C[j] = atoi(argv[i]);
+    }
+  } else {
+    j=1;
   }
+  C[j] = 10;
+
   /* handle softmax config */
   C[num_layers+1] = C[num_layers];
 
