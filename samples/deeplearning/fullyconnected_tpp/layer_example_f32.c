@@ -383,8 +383,12 @@ int main(int argc, char* argv[])
   }
 
   /* deallocate data */
-  destroy_my_fc_fwd(&my_fc_fwd);
-  destroy_my_fc_bwd(&my_fc_bwd);
+  if (type == 'A' || type == 'F') {
+    destroy_my_fc_fwd(&my_fc_fwd);
+  }
+  if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
+    destroy_my_fc_bwd(&my_fc_bwd);
+  }
 
   if ( scratch != NULL ) {
     libxsmm_free(scratch);
