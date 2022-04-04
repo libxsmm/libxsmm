@@ -9,6 +9,8 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+SORT=$(command -v sort)
+TAIL=$(command -v tail)
 GIT=$(command -v git)
 
 SHIFT=0
@@ -17,7 +19,11 @@ if [ "$1" ]; then
 fi
 
 NAME=$(${GIT} rev-parse --abbrev-ref HEAD 2>/dev/null)
-MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
+if [ "${SORT}" ] && [ "${TAIL}" ]; then
+  MAIN=$(${GIT} tag | ${SORT} -n -t. -k1,1 -k2,2 -k3,3 | ${TAIL} -n1)
+else
+  MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
+fi
 
 if [ "${MAIN}" ]; then
   VERSION="${NAME}-${MAIN}"
