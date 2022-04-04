@@ -997,9 +997,11 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   bbc = (res.upd_2d_blocking == 1) ? bc : bc/res.ifm_subtasks;
 
   /* @TODO egeor, we hopefully get a kernel fix here soon */
+#if 0
   if ( libxsmm_cpuid() < LIBXSMM_X86_AVX512_SPR ) {
     res.upd_bf = (res.upd_bf == 1) ? 2 : res.upd_bf;
   }
+#endif
 
 #if 0
   res.bwd_bf = atoi(getenv("BWD_BF"));
