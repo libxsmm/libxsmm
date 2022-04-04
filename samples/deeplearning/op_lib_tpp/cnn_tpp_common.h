@@ -976,6 +976,36 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bwd_scratch( cnn_tpp_config* cfg ) {
 /**********************************************************/
 /* Helper functions for UPD convolutions' parameter setup */
 /**********************************************************/
+LIBXSMM_API_INLINE int cnn_tpp_setup_weight_copies_upd( cnn_tpp_config* cfg ) {
+  int result = cfg->threads;
+  if (cfg->ofw <= 14) {
+    result = 9;
+  }
+  if (cfg->ofw == 14 && cfg->N == 92 && cfg->threads == 92) {
+    result = 23;
+  }
+  if (cfg->ofw == 7 && cfg->N == 92 && cfg->threads == 92 && cfg->R == 3 && cfg->S == 3 && cfg->u == 1 && cfg->v == 1) {
+    result = 23;
+  }
+  while (cfg->threads % result != 0) {
+    result--;
+  }
+  /* FIXME: Hardcoded logic for N=27, N=26 */
+  if (cfg->N == 27 && cfg->threads == 27 && cfg->R == 1 && cfg->ofw == 14 && cfg->u == 1) {
+    result = 7;
+  }
+  if (((cfg->ofh == 14) || (cfg->ofw == 7 && cfg->u == 2)) && cfg->N == 26 && cfg->threads == 26) {
+    result = 13;
+  }
+  if ((cfg->N != cfg->threads) && !(cfg->upd_linearized_tasklist == 0 && cfg->upd_use_batchreduce == 0)) {
+    result = cfg->N;
+  }
+  /* Make sure a single copy when we use linearized-task view */
+  if (cfg->upd_linearized_tasklist == 1) {
+    result = 1;
+  }
+  return result;
+}
 
 LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout_cfg ) {
   cnn_tpp_config res = *inout_cfg;
@@ -1181,37 +1211,6 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_use_batchreduce_upd( cnn_tpp_config* cfg ) 
     result = 1;
   }
 
-  return result;
-}
-
-LIBXSMM_API_INLINE int cnn_tpp_setup_weight_copies_upd( cnn_tpp_config* cfg ) {
-  int result = cfg->threads;
-  if (cfg->ofw <= 14) {
-    result = 9;
-  }
-  if (cfg->ofw == 14 && cfg->N == 92 && cfg->threads == 92) {
-    result = 23;
-  }
-  if (cfg->ofw == 7 && cfg->N == 92 && cfg->threads == 92 && cfg->R == 3 && cfg->S == 3 && cfg->u == 1 && cfg->v == 1) {
-    result = 23;
-  }
-  while (cfg->threads % result != 0) {
-    result--;
-  }
-  /* FIXME: Hardcoded logic for N=27, N=26 */
-  if (cfg->N == 27 && cfg->threads == 27 && cfg->R == 1 && cfg->ofw == 14 && cfg->u == 1) {
-    result = 7;
-  }
-  if (((cfg->ofh == 14) || (cfg->ofw == 7 && cfg->u == 2)) && cfg->N == 26 && cfg->threads == 26) {
-    result = 13;
-  }
-  if ((cfg->N != cfg->threads) && !(cfg->upd_linearized_tasklist == 0 && cfg->upd_use_batchreduce == 0)) {
-    result = cfg->N;
-  }
-  /* Make sure a single copy when we use linearized-task view */
-  if (cfg->upd_linearized_tasklist == 1) {
-    result = 1;
-  }
   return result;
 }
 
@@ -2963,6 +2962,8 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cn
     libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
     libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans, libxsmm_blasint zero_fwd_output_rim) {
   cnn_tpp_config res;
+
+  memset(&res, 0, sizeof(cnn_tpp_config));
 
   /* init libxsmm */
   LIBXSMM_INIT
