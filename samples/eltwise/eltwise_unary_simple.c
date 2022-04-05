@@ -287,7 +287,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
-  int test_stochastic_rnd = 0;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
