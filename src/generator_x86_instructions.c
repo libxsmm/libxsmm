@@ -1458,6 +1458,7 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
     return;
   }
 #endif
+
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
