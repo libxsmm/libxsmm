@@ -113,6 +113,17 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
 LIBXSMM_API void libxsmm_free(const void* memory);
 
 /**
+ * Initialize the pool by drawing from the given storage a number of chunks of the given size.
+ * If the capacity of the pool is num, the storage must be at least num x size.
+ * The same num-counter must be used for pmalloc/pfree when referring to the same pool.
+ */
+LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], void* storage);
+/** Allocate from the given pool by using the original num-counter (libxsmm_pmalloc_init). */
+LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i);
+/** Bring pointer back into the pool by using original num-counter (libxsmm_pmalloc_init). */
+LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i);
+
+/**
  * Release the entire scratch memory regardless
  * of whether it is still referenced or not.
  */

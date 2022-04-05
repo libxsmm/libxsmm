@@ -131,6 +131,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_SEED)
 # define LIBXSMM_MALLOC_SEED 1051981
 #endif
+#if !defined(LIBXSMM_MALLOC_NLOCKS)
+# define LIBXSMM_MALLOC_NLOCKS 16
+#endif
 
 #if !defined(LIBXSMM_MALLOC_HOOK_KMP) && 0
 # define LIBXSMM_MALLOC_HOOK_KMP
@@ -406,6 +409,7 @@ LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_local_cur);
 LIBXSMM_APIVAR_DEFINE(int internal_malloc_recursive);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR_DEFINE(int internal_malloc_kind);
+LIBXSMM_APIVAR_DEFINE(volatile int internal_pmallocs[LIBXSMM_MALLOC_NLOCKS]);
 #if defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)
 /* Interval of bytes that permit interception (internal_malloc_kind) */
 LIBXSMM_APIVAR_DEFINE(size_t internal_malloc_limit[2]);
@@ -500,7 +504,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
         || (2 > libxsmm_ninit) /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
 # if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-        || result->hash != LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &result)
+        || result->hash != LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, result)
 # else
         || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
             (const char*)&result->hash - (const char*)result)
@@ -2082,7 +2086,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
 #endif /* info must be initialized to calculate correct checksum */
 #if !defined(LIBXSMM_MALLOC_CRC_OFF)
 # if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-        buffer_info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &buffer_info);
+        buffer_info->hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, buffer_info);
 # else
         buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
           (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
@@ -2277,7 +2281,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) /* update checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
           { const internal_malloc_info_type *const code_info = internal_malloc_info(code_ptr, 0/*no check*/);
-            info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &code_info);
+            info->hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, code_info);
           }
 #   else
           info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
@@ -2292,7 +2296,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         else { /* malloc-based fallback */
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* check checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-          assert(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info)); /* !LIBXSMM_ASSERT */
+          assert(info->hash == LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, info)); /* !LIBXSMM_ASSERT */
 #   else
           assert(info->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED, info, /* !LIBXSMM_ASSERT */
             /* info size minus actual hash value */
@@ -2643,3 +2647,46 @@ LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi)
   return internal_malloc_kind;
 }
 
+
+LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], void* storage)
+{
+  char* p = (char*)storage;
+  volatile int* lock;
+  size_t n, i = 0;
+  LIBXSMM_ASSERT(0 < size && NULL != num && NULL != pool && NULL != storage);
+  LIBXSMM_INIT /* CRC-facility must be initialized upfront */
+  lock = internal_pmallocs + LIBXSMM_MOD2(LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool), LIBXSMM_MALLOC_NLOCKS);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  for (n = *num; i < n; ++i, p += size) pool[i] = p;
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+}
+
+
+LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
+{
+  const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
+  volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
+  void* pointer;
+  LIBXSMM_ASSERT(NULL != pool && NULL != i);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ASSERT(0 < *i && ((size_t)-1) != *i);
+  pointer = pool[--(*i)];
+#if !defined(NDEBUG)
+  pool[*i] = NULL;
+#endif
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ASSERT(NULL != pointer);
+  return pointer;
+}
+
+
+LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i)
+{
+  const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
+  volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
+  LIBXSMM_ASSERT(NULL != pointer && NULL != pool && NULL != i);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  assert(NULL == pool[*i]); /* !LIBXSMM_ASSERT */
+  pool[(*i)++] = pointer;
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+}

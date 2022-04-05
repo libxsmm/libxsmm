@@ -394,6 +394,9 @@ libxsmm_otrans_s1
 libxsmm_otrans_s2
 libxsmm_otrans_task
 libxsmm_otrans_task_internal
+libxsmm_pfree
+libxsmm_pmalloc
+libxsmm_pmalloc_init
 libxsmm_primes_u32
 libxsmm_product_limit
 libxsmm_ptr_b0
