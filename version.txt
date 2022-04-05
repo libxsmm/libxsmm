@@ -1,1 +1,1 @@
-libxsmm-avx512vl-1.16.1-2223
+avx512-eltwise-commit-1.16.1-2275

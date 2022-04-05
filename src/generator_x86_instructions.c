@@ -1272,14 +1272,11 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     return;
   }
 #endif
-<<<<<<< HEAD
-=======
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
     return;
   }
->>>>>>> e94ff7ca55fbddf7d2c96f914e6c81c473e4560b
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -1461,14 +1458,12 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
     return;
   }
 #endif
-<<<<<<< HEAD
-=======
+
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
     return;
   }
->>>>>>> e94ff7ca55fbddf7d2c96f914e6c81c473e4560b
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
