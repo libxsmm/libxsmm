@@ -2920,6 +2920,42 @@ LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_co
 }
 
 
+LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( const libxsmm_blasint ldap, const libxsmm_meltw_unary_type ap_unary_type, const libxsmm_bitfield ap_unary_flags, const libxsmm_blasint store_ap,
+                                                                                const libxsmm_blasint ldbp, const libxsmm_meltw_unary_type bp_unary_type, const libxsmm_bitfield bp_unary_flags, const libxsmm_blasint store_bp,
+                                                                                const libxsmm_blasint ldcp, const libxsmm_meltw_unary_type cp_unary_type, const libxsmm_bitfield cp_unary_flags, const libxsmm_blasint store_cp )
+{
+  libxsmm_gemm_ext_unary_argops res;
+
+  res.ldap = ldap;
+  res.ap_unary_type = ap_unary_type;
+  res.ap_unary_flags = ap_unary_flags;
+  res.store_ap = store_ap;
+  res.ldbp = ldbp;
+  res.bp_unary_type = bp_unary_type;
+  res.bp_unary_flags = bp_unary_flags;
+  res.store_bp = store_bp;
+  res.ldcp = ldcp;
+  res.cp_unary_type = cp_unary_type;
+  res.cp_unary_flags = cp_unary_flags;
+  res.store_cp = store_cp;
+
+  return res;
+}
+
+
+LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_postops( const libxsmm_blasint ldd, const libxsmm_datatype d_in_type, const libxsmm_meltw_binary_type d_binary_type, const libxsmm_bitfield d_binary_flags )
+{
+  libxsmm_gemm_ext_binary_postops res;
+
+  res.ldd = ldd;
+  res.d_in_type = d_in_type;
+  res.d_binary_type = d_binary_type;
+  res.d_binary_flags = d_binary_flags;
+
+  return res;
+}
+
+
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
@@ -3090,7 +3126,7 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
   desc->meltw_flags = (unsigned short)binary_postops.d_binary_flags;
   desc->meltw_param = (unsigned short)binary_postops.d_binary_type;
   desc->meltw_operation = ( binary_postops.d_binary_type == LIBXSMM_MELTW_TYPE_BINARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_BINARY;
-  desc->meltw_ldx = (NULL != binary_postops.ldd) ? *(binary_postops.ldd) : gemm_shape.m;
+  desc->meltw_ldx = binary_postops.ldd;
   desc->meltw_ldy = 0;
   desc->meltw_ldz = 0;
 
@@ -3099,19 +3135,19 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
   desc->eltw_ap_op = ( unary_argops.ap_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
   desc->eltw_ap_flags = (unsigned short)unary_argops.ap_unary_flags;
   desc->eltw_ap_param = (unsigned short)unary_argops.ap_unary_type;
-  desc->ldap = (NULL != unary_argops.ldap) ? *(unary_argops.ldap) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? gemm_shape.m : gemm_shape.k);
+  desc->ldap = unary_argops.ldap;
   desc->internal_flags_2 |= (unary_argops.store_ap != 0) ? 0x1 : 0x0;
 
   desc->eltw_bp_op = ( unary_argops.bp_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
   desc->eltw_bp_flags = (unsigned short)unary_argops.bp_unary_flags;
   desc->eltw_bp_param = (unsigned short)unary_argops.bp_unary_type;
-  desc->ldbp = (NULL != unary_argops.ldbp) ? *(unary_argops.ldbp) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? gemm_shape.k : gemm_shape.n);
+  desc->ldbp = unary_argops.ldbp;
   desc->internal_flags_2 |= (unary_argops.store_bp != 0) ? 0x2 : 0x0;
 
   desc->eltw_cp_op = ( unary_argops.cp_unary_type == LIBXSMM_MELTW_TYPE_UNARY_NONE ) ? LIBXSMM_MELTW_OPERATION_NONE : LIBXSMM_MELTW_OPERATION_UNARY;
   desc->eltw_cp_flags = (unsigned short)unary_argops.cp_unary_flags;
   desc->eltw_cp_param = (unsigned short)unary_argops.cp_unary_type;
-  desc->ldcp = (NULL != unary_argops.ldcp) ? *(unary_argops.ldcp) : gemm_shape.m;
+  desc->ldcp = unary_argops.ldcp;
   desc->internal_flags_2 |= (unary_argops.store_cp != 0) ? 0x4 : 0x0;
 
   /* JIT! */

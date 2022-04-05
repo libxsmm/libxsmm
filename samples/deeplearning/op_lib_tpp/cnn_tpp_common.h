@@ -1423,10 +1423,11 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       l_postops.d_in_type      = LIBXSMM_DATATYPE_F32;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = NULL;
+      l_postops.ldd            = ldC;
     }
     if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+      l_argops.ldcp           = ldC;
     }
 
     /* Stride-based kernels  */
@@ -1662,10 +1663,11 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       l_postops.d_in_type      = LIBXSMM_DATATYPE_BF16;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = NULL;
+      l_postops.ldd            = ldC;
     }
     if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+      l_argops.ldcp           = ldC;
     }
 
     /* Stride-based kernels  */

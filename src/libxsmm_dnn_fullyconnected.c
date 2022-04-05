@@ -809,7 +809,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
 
               l_argops.ap_unary_type  = sparsity_type;
               l_argops.store_ap = 1;
-              l_argops.ldap = &ldap;
+              l_argops.ldap = ldap;
               handle->sparse_gemm9.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
               _l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
               handle->sparse_gemm10.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
@@ -819,7 +819,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
               l_postops.d_in_type      = LIBXSMM_DATATYPE_F32;
               l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
               l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-              l_postops.ldd            = NULL;
+              l_postops.ldd            = ldc;
               handle->sparse_gemm12.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
               l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
               handle->sparse_gemm15.gemm_ext = libxsmm_dispatch_brgemm_ext_v2( l_shape, _l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );

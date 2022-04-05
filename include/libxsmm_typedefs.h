@@ -939,25 +939,25 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_c
 } libxsmm_gemm_batch_reduce_config;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_unary_argops {
-  libxsmm_blasint* ldap;                      /* leading dimensions of Ap */
-  libxsmm_meltw_unary_flags ap_unary_flags;   /* flags for Ap = unary( A ) */
+  libxsmm_blasint ldap;                       /* leading dimensions of Ap */
   libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
+  libxsmm_bitfield ap_unary_flags;            /* flags for Ap = unary( A ) */
   libxsmm_blasint store_ap;                   /* nonzero for storing Ap */
-  libxsmm_blasint* ldbp;                      /* leading dimensions of Bp */
-  libxsmm_meltw_unary_flags bp_unary_flags;   /* flags for Bp = unary( B ) */
+  libxsmm_blasint ldbp;                       /* leading dimensions of Bp */
   libxsmm_meltw_unary_type bp_unary_type;     /* op type for Bp = unary( B ) */
+  libxsmm_bitfield bp_unary_flags;            /* flags for Bp = unary( B ) */
   libxsmm_blasint store_bp;                   /* nonzero for storing Bp */
-  libxsmm_blasint* ldcp;                      /* leading dimensions of Cp */
-  libxsmm_meltw_unary_flags cp_unary_flags;   /* flags for Cp = unary( C ) */
+  libxsmm_blasint ldcp;                       /* leading dimensions of Cp */
   libxsmm_meltw_unary_type cp_unary_type;     /* op type for Cp = unary( C ) */
+  libxsmm_bitfield cp_unary_flags;           /* flags for Cp = unary( C ) */
   libxsmm_blasint store_cp;                   /* nonzero for storing Cp */
 } libxsmm_gemm_ext_unary_argops;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_binary_postops {
-  libxsmm_blasint* ldd;                       /* leading dimensions of D */
+  libxsmm_blasint ldd;                        /* leading dimensions of D */
   libxsmm_datatype d_in_type;                 /* datatype of D */
-  libxsmm_meltw_binary_flags d_binary_flags;  /* flags for C = binary( C, D ) */
   libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+  libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */

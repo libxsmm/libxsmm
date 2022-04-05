@@ -378,6 +378,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       else
         l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
       l_argops.cp_unary_type    = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+      l_argops.ldcp             = ldc;
 
       res.fwd_compute_kernel_strd_fused_f32 = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
           l_argops, l_postops );
@@ -403,7 +404,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       l_postops.d_in_type      = dtype;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = NULL;
+      l_postops.ldd            = ldc;
 
       res.fwd_compute_kernel2_strd_fused_f32 = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
           l_argops, l_postops );
@@ -422,13 +423,14 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       l_postops.d_in_type      = dtype;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = NULL;
+      l_postops.ldd            = ldc;
 
       if (res.fuse_type == MY_FC_ELTW_FUSE_RELU_WITH_MASK || res.fuse_type == MY_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK)
         l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
       else
         l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
       l_argops.cp_unary_type    = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+      l_argops.ldcp             = ldc;
 
       res.fwd_compute_kernel3_strd_fused_f32 = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
           l_argops, l_postops );
@@ -448,6 +450,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       else
         l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
       l_argops.cp_unary_type    = LIBXSMM_MELTW_TYPE_UNARY_RELU;
+      l_argops.ldcp             = ldc;
 
       res.fwd_compute_kernel4_strd_fused_f32 = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig,
           l_argops, l_postops );
@@ -538,15 +541,17 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       l_postops.d_in_type      = LIBXSMM_DATATYPE_BF16;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = &ldc;
+      l_postops.ldd            = ldc;
     }
     if ( (fuse_type & MY_FC_ELTW_FUSE_RELU) == MY_FC_ELTW_FUSE_RELU ) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+      l_argops.ldcp           = ldc;
     }
     if ( (fuse_type & MY_FC_ELTW_FUSE_RELU_WITH_MASK) == MY_FC_ELTW_FUSE_RELU_WITH_MASK ) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
+      l_argops.ldcp           = ldc;
     }
 
     res.fwd_compute_kernel5_strd_fused = libxsmm_dispatch_brgemm_ext_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig, l_argops, l_postops );
