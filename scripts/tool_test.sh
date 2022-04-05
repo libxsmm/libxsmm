@@ -182,7 +182,7 @@ then
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
-  elif [[ ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") || (-d "$1") ]]; then
+  elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
     TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"

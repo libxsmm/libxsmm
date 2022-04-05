@@ -1335,7 +1335,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
 
     /* open m loop */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_m_loop, 0);
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                      i_gp_reg_m_loop, 8 );
@@ -1343,7 +1343,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     /* transpose 32x8 blocks */
     if ( l_n_32mul > 0 ) {
       /* open n loop */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0);
       libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 32 );
 
@@ -1422,7 +1422,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     /* transpose 32 x m_8rem blocks */
     if ( l_n_32mul > 0 ) {
       /* open n loop */
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0 );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0 );
       libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 32 );
 
@@ -2341,19 +2341,19 @@ void libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( libxsmm_
   /* set masks */
   if ( l_m_remainder > 0 ) {
     /* load mask */
-    const unsigned long long l_load_mask = ( 1 << l_m_remainder ) - 1;
+    const unsigned long long l_load_mask = ( (unsigned long long)1 << l_m_remainder ) - 1;
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_load_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_0 );
 
     /* create store masking */
     if ( l_m_remainder > 16 ) {
       /* load mask */
-      const unsigned long long l_store_mask = ( 1 << ((l_m_remainder - 16) * 2) ) - 1;
+      const unsigned long long l_store_mask = ( (unsigned long long)1 << ((l_m_remainder - 16) * 2) ) - 1;
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_1 );
     } else {
       /* load mask */
-      const unsigned long long l_store_mask = ( l_m_remainder == 16 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( 1 << (l_m_remainder * 2) ) - 1);
+      const unsigned long long l_store_mask = ( l_m_remainder == 16 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( (unsigned long long)1 << (l_m_remainder * 2) ) - 1);
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_1 );
     }
@@ -2508,8 +2508,8 @@ void libxsmm_generator_transform_norm_padnm_mod2_16bit_avx512_microkernel( libxs
   /* set masks */
   if ( l_m_remainder_in > 0 ) {
     /* load mask */
-    const unsigned long long l_load_mask = ( 1 << l_m_remainder_in ) - 1;
-    const unsigned long long l_store_mask = ( l_m_remainder_out == 32 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( 1 << l_m_remainder_out ) - 1);
+    const unsigned long long l_load_mask = ((unsigned long long)1 << l_m_remainder_in ) - 1;
+    const unsigned long long l_store_mask = ( l_m_remainder_out == 32 ) ? (unsigned long long)0xffffffff : (unsigned long long)(((unsigned long long)1 << l_m_remainder_out ) - 1);
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_load_mask );
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, i_mask_reg_0 );
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );

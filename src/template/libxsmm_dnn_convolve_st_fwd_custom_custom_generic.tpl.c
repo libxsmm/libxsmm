@@ -422,7 +422,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                       LIBXSMM_UNUSED( ifm2 );
                       LIBXSMM_UNUSED( kj );
                       LIBXSMM_UNUSED( ki );
-                      n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
+                      n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
                       if (handle->desc.R == 1 && handle->desc.S == 1) {
                         br_gemm_kernel_strd( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
                                              &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
@@ -493,7 +493,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                     LIBXSMM_UNUSED( ifm2 );
                     LIBXSMM_UNUSED( kj );
                     LIBXSMM_UNUSED( ki );
-                    n_blocks = handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
+                    n_blocks = (unsigned long long)handle->blocksifm_blocking * handle->desc.R * handle->desc.S;
                     if (handle->desc.R == 1 && handle->desc.S == 1) {
                       br_gemm_kernel_strd( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
                                            &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij_use, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),

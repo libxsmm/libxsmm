@@ -839,6 +839,12 @@ void libxsmm_x86_instruction_rex_compute_1reg_mem( libxsmm_generated_code*     i
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* 1st phase: let's compute some static information before starting the
      encoding process */
   /* 1 A) determine if SIB addressing mode is needed */
@@ -945,6 +951,12 @@ void libxsmm_x86_instruction_rex_compute_2reg( libxsmm_generated_code*     io_ge
   unsigned int opext = (i_instr & 0x00003000) >> 12;
   unsigned int opext_idx = (i_instr & 0x00001000) >> 12;
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* A): writing prefixes */
   /* operand size overwrite prefix */
   if ( (i_instr & 0x0000c000) == 0x00004000 ) {
@@ -1034,6 +1046,12 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+
   /* 1st phase: let's compute some static information before starting the
      encoding process */
   /* 1 A) determine if SIB addressing mode is needed */
@@ -1074,7 +1092,7 @@ void libxsmm_x86_instruction_vex_compute_2reg_mem( libxsmm_generated_code*     i
   /* R */
   code[p0   ] |= (unsigned char)(( i_vec_reg_number_dst < 8 ) ? 0x80 : 0x00);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_vex_vvvv[i_vec_reg_number_src];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_src < 16) ? tbl_vex_vvvv[i_vec_reg_number_src] : tbl_vex_vvvv[0]);
   /* VL: 128bit,256bit */
   code[p1   ] |= (unsigned char)tbl_vl[l_vl_idx];
 
@@ -1146,6 +1164,12 @@ void libxsmm_x86_instruction_vex_compute_3reg( libxsmm_generated_code*     io_ge
   unsigned char tbl_vl[2]          = {0x00, 0x04};
   /* index for VL look-ups, zmm is converted to ymm */
   unsigned int l_vl_idx = LIBXSMM_MIN( (unsigned int)i_vector_name, 0x1 );
+
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
@@ -1248,6 +1272,14 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     return;
   }
 #endif
+<<<<<<< HEAD
+=======
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+>>>>>>> e94ff7ca55fbddf7d2c96f914e6c81c473e4560b
 
   /* 1st phase: let's compute some static information before starting the
      encoding process */
@@ -1318,14 +1350,14 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
 
   /* 2 B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char) tbl_evex_RRp[i_vec_reg_number_dst];
+  code[p0   ] |= (unsigned char)((i_vec_reg_number_dst < 32) ? tbl_evex_RRp[i_vec_reg_number_dst] : tbl_evex_RRp[0]);
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
+  code[p1   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vvvv[i_vec_reg_number_src] : tbl_evex_vvvv[0]);
   /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
   if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
-    code[p2   ] |= (unsigned char)  tbl_evex_vp[l_reg_idx];
+    code[p2   ] |= (unsigned char)((l_reg_idx < 16 ) ? tbl_evex_vp[l_reg_idx] : tbl_evex_vp[0]);
   } else {
-    code[p2   ] |= (unsigned char)  tbl_evex_vp[i_vec_reg_number_src];
+    code[p2   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vp[i_vec_reg_number_src] : tbl_evex_vp[0]);
   }
   /* VL: 128bit,256bit,512bit */
   code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
@@ -1429,6 +1461,14 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
     return;
   }
 #endif
+<<<<<<< HEAD
+=======
+  /* check if we have enough code buffer space left */
+  if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+    return;
+  }
+>>>>>>> e94ff7ca55fbddf7d2c96f914e6c81c473e4560b
 
   /* encoding */
   /* A): writing an insturction template into the byte stream */
@@ -1508,11 +1548,6 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) &&
        (io_generated_code->code_type > 1) ) {
     libxsmm_x86_simd_name l_simd_name = LIBXSMM_X86_SIMD_NAME_XMM;
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* as LD/ST semantics have different op codes we need some fix-ups here */
     switch (i_vmove_instr) {
@@ -1767,12 +1802,6 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_reg_number_src0 = 0;
     unsigned int l_reg_number_src1 = 0;
     unsigned int l_reg_number_dst = 0;
-
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* determine encoder */
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
@@ -2057,12 +2086,6 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     unsigned int l_encoder_instr = ((i_vec_instr >> 30) & 0x03);
     unsigned int l_reg_number_src1;
     unsigned int l_reg_number_dst = i_reg_number_dst;
-
-    /* check if we have enough code buffer space left */
-    if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
-      return;
-    }
 
     /* determine encoder */
     if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
@@ -3348,6 +3371,8 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   /*const*/ unsigned int i_scale = 1;
 
   /* @TODO: check instruction set */
+  LIBXSMM_UNUSED( i_scale );
+  LIBXSMM_UNUSED( i_gp_reg_idx );
   LIBXSMM_UNUSED( i_instruction_set );
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
@@ -3458,8 +3483,10 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
        buf[i++] = (unsigned char)(0xff);
        io_generated_code->code_size = i;
     } else {
+#if 0
        if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
        {
+#endif
           buf[i++] = (unsigned char)(0xc4);
           buf[i++] = (unsigned char)(0xe2 - l_gp8 * 0x20);
           buf[i++] = (unsigned char)(0x78 + l_third);
@@ -3467,6 +3494,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           l_place = i - 1;
           buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_fifth);
           if ( l_regbas0 == 4 ) buf[i++] = (unsigned char)(0x24);
+#if 0
        } else {
           int l_regidx  = i_gp_reg_idx  % 8;
           int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
@@ -3484,6 +3512,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           l_place  = i - 1;
           buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
        }
+#endif
 
        if ( (l_regbas0 == 5) && (i_displacement==0) )
        {
