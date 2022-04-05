@@ -614,8 +614,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   libxsmm_blasint bbk;
   libxsmm_blasint bbc;
   /* @TODO egeor, kvoronin: can you please double check */
-  /*libxsmm_blasint ldaT = bk;*/
-  libxsmm_blasint ldaT = bc;
+  libxsmm_blasint ldaT = bk;
   libxsmm_blasint ldb_orig= bc;
 
   libxsmm_meltw_unary_shape  l_unary_shape;
@@ -1026,7 +1025,6 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     libxsmm_blasint stride_a = res.bk*res.bc*sizeof(float);
     libxsmm_blasint stride_b = res.bk*res.bn*sizeof(float);
     /* @TODO: egeor, kvorinon: setting FP32 back to its old value */
-    ldaT = bk;
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
     l_shape                         = libxsmm_create_gemm_shape(res.bc, res.bn, res.bk, lda, ldb, ldc, dtype, dtype, dtype, dtype);
@@ -1140,12 +1138,12 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_shape = libxsmm_create_gemm_shape( res.bc, res.bn, res.bk,
-                                         ldb, lda, ldb,
+                                         lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     res.bwd_tileconfig_kernel = libxsmm_dispatch_gemm_v2( l_shape, l_tc_flags, l_prefetch_flags );
     if ( res.bwd_tileconfig_kernel == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP fwd_config_kernel failed. Bailing...!\n");
+      fprintf( stderr, "JIT for BRGEMM TPP bwd_config_kernel failed. Bailing...!\n");
       exit(-1);
     }
     res.bwd_tilerelease_kernel = libxsmm_dispatch_gemm_v2( l_shape, l_tr_flags, l_prefetch_flags );
@@ -1157,7 +1155,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
     unroll_hint = (res.K/res.bk)/res.bwd_bf;
     l_shape = libxsmm_create_gemm_shape( res.bc, res.bn, res.bk,
-                                         ldb, lda, ldb,
+                                         lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
@@ -1179,7 +1177,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldb, ldb, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     /* Also JIT eltwise TPPs... */
     res.bwd_store_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.bwd_store_kernel == NULL ) {
@@ -1187,7 +1185,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldb, ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     res.bwd_relu_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT );
     if ( res.bwd_relu_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP bwd_relu_kernel failed. Bailing...!\n");
@@ -1209,7 +1207,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     }
 
     /* JITing the tranpose kernel */
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bc, lda, ldaT, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bc, ldaT, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.vnni_to_vnniT_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.vnni_to_vnniT_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP vnni_to_vnniT_kernel failed. Bailing...!\n");
