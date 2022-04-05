@@ -228,11 +228,9 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
 
                       /* Convert fully accumulated buffer to bf16 weight buffer in case of full accumulation has happened */
                       if ((oj + cfg.batchreduce_h_pixels >= cfg.ofh) && (img == my_img_end - 1)) {
-                        libxsmm_bfloat16 _tmp[32*32];
                         unary_param.in.primary = (void*) dst_ptr;
-                        unary_param.out.primary= (void*) _tmp;
+                        unary_param.out.primary= (void*) dst_ptr;
                         cfg.upd_weight_cvt_f32bf16( &unary_param );
-                        unary_param.in.primary= (void*) _tmp;
                         unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, 0, 0, 0, cfg.blocksifm, cfg.R, cfg.S, cfg.ifmblock/2, cfg.ofmblock, 2);
                         cfg.upd_weight_vnni_format_bf16( &unary_param );
                       }
