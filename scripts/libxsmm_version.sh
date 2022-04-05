@@ -10,8 +10,14 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 SORT=$(command -v sort)
-TAIL=$(command -v tail)
+HEAD=$(command -v head)
+SED=$(command -v gsed)
 GIT=$(command -v git)
+
+# GNU sed is desired (macOS)
+if [ ! "${SED}" ]; then
+  SED=$(command -v sed)
+fi
 
 SHIFT=0
 if [ "$1" ]; then
@@ -19,8 +25,10 @@ if [ "$1" ]; then
 fi
 
 NAME=$(${GIT} rev-parse --abbrev-ref HEAD 2>/dev/null)
-if [ "${SORT}" ] && [ "${TAIL}" ]; then
-  MAIN=$(${GIT} tag | ${SORT} -n -t. -k1,1 -k2,2 -k3,3 | ${TAIL} -n1)
+if [ "${SED}" ] && [ "${HEAD}" ]; then
+  MAIN=$(${GIT} tag --sort -v:refname | ${SED} -n "/^[0-9][0-9]*\(\.[0-9][0-9]*\)*$/p" | ${HEAD} -n1)
+elif [ "${SORT}" ] && [ "${HEAD}" ]; then
+  MAIN=$(${GIT} tag | ${SORT} -nr -t. -k1,1 -k2,2 -k3,3 | ${HEAD} -n1)
 else
   MAIN=$(${GIT} describe --tags --match "[0-9]*" --abbrev=0 2>/dev/null)
 fi
