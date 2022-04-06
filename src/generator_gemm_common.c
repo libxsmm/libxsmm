@@ -108,7 +108,7 @@ void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generate
         i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
         i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
         i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-        i_micro_kernel_config_mod->vec_neg_ones, 'y' );
+        i_micro_kernel_config_mod->vec_neg_ones );
   }
 }
 

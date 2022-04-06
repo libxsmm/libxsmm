@@ -231,7 +231,6 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
     }
 
     if (i_micro_kernel_config->fused_sigmoid == 1) {
-
       if (tile1 >= 0) {
         libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, reg_0, i_micro_kernel_config->vec_x2,
             i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom,
@@ -239,7 +238,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
             i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
             i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
             i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z');
+            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -540,7 +539,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
   if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-      libxsmm_x86_instruction_tile_move( io_generated_code,
+    libxsmm_x86_instruction_tile_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,
         i_gp_reg_mapping->gp_reg_c,

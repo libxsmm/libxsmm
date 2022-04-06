@@ -707,6 +707,15 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_PACKUSDW:
     case LIBXSMM_X86_INSTR_PTEST:
     case LIBXSMM_X86_INSTR_PCMPGTQ:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD:
+    case LIBXSMM_X86_INSTR_VBROADCASTSS:
+    case LIBXSMM_X86_INSTR_VBROADCASTSD_VEX:
+    case LIBXSMM_X86_INSTR_VBROADCASTI32X2:
+    case LIBXSMM_X86_INSTR_VPBROADCASTD:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX:
+    case LIBXSMM_X86_INSTR_VPBROADCASTB:
+    case LIBXSMM_X86_INSTR_VPBROADCASTW:
       break;
     default:
       l_return = 0;
@@ -720,16 +729,7 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
   unsigned int l_return = 1;
 
   switch ( i_instr ) {
-    case LIBXSMM_X86_INSTR_VPBROADCASTD:
-    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
-    case LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX:
-    case LIBXSMM_X86_INSTR_VPBROADCASTB:
-    case LIBXSMM_X86_INSTR_VPBROADCASTW:
-    case LIBXSMM_X86_INSTR_VBROADCASTSD:
-    case LIBXSMM_X86_INSTR_VBROADCASTSS:
-    case LIBXSMM_X86_INSTR_VBROADCASTSD_VEX:
     case LIBXSMM_X86_INSTR_VBROADCASTI128:
-    case LIBXSMM_X86_INSTR_VBROADCASTI32X2:
     case LIBXSMM_X86_INSTR_VBROADCASTI32X4:
     case LIBXSMM_X86_INSTR_VBROADCASTI64X2:
     case LIBXSMM_X86_INSTR_VBROADCASTI32X8:
@@ -4005,20 +4005,20 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const char i_vector_name,
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
-  int clx_regsize_encodng = 0;
+  unsigned char vlen_encoding = 0;
 
   switch ( i_vector_name ) {
     case 'x':
       number_of_bytes_to_load = 16;
-      clx_regsize_encodng = 0x08;
+      vlen_encoding = 0x08;
       break;
     case 'y':
       number_of_bytes_to_load = 32;
-      clx_regsize_encodng = 0x28;
+      vlen_encoding = 0x28;
       break;
     case 'z':
       number_of_bytes_to_load = 64;
-      clx_regsize_encodng = 0x48;
+      vlen_encoding = 0x48;
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: strange input for i_vector_name: %c\n",i_vector_name);
@@ -4094,7 +4094,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       }
       /* AVx512VL bits chnage this Avx512VL 0x28  f ox is 08*/
       buf[i+2] = 0x7c;
-      buf[i+3] = clx_regsize_encodng;
+      buf[i+3] = vlen_encoding;
       i += 4;
     } else {
       buf[i] = 0xc5;
