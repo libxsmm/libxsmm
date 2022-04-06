@@ -719,7 +719,7 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
               i_micro_kernel_config->vec_c3,
               i_micro_kernel_config->vec_halves,
               i_micro_kernel_config->vec_log2e,
-              i_micro_kernel_config_mod->vector_name  );
+              i_micro_kernel_config->vector_name  );
         }
       } else if (i_op_type == LIBXSMM_MELTW_TYPE_UNARY_TANH || i_op_type == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV ) {
 
@@ -741,7 +741,7 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
             i_micro_kernel_config->vec_lo_bound,
             i_micro_kernel_config->vec_ones,
             i_micro_kernel_config->vec_neg_ones,
-            i_micro_kernel_config_mod->vector_name  );
+            i_micro_kernel_config->vector_name  );
 
         if (i_op_type == LIBXSMM_MELTW_TYPE_UNARY_TANH_INV) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -768,7 +768,7 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
             i_micro_kernel_config->vec_ones,
             i_micro_kernel_config->vec_neg_ones,
             i_micro_kernel_config->vec_halves,
-            i_micro_kernel_config_mod->vector_name );
+            i_micro_kernel_config->vector_name );
 
         if (i_op_type == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
