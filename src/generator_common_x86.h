@@ -512,7 +512,7 @@ void libxsmm_generator_sigmoid_ps_rational_78_avx512( libxsmm_generated_code*   
     const unsigned int                             i_vec_ones,
     const unsigned int                             i_vec_neg_ones,
     const unsigned int                             i_vec_halves,
-    const unsigned char                            i_vname     );
+    const unsigned char                            i_vname);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
