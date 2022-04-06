@@ -18,6 +18,8 @@ deeplearning/fusedgndriver/layer_example_*
 deeplearning/convcaps/layer_example_*
 deeplearning/mlpdriver/mlp_example_*
 deeplearning/mlpdriver/mlp_mnist_*
+deeplearning/mlp_tpp_old/mlp_example_*
+deeplearning/mlp_tpp_old/mlp_mnist_*
 deeplearning/mlp_tpp/mlp_example_*
 deeplearning/mlp_tpp/mlp_mnist_*
 deeplearning/rnndriver/rnndriver_*
