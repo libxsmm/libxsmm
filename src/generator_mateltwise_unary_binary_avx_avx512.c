@@ -1097,8 +1097,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
           libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vblend_instr, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->zero_vreg, cur_vreg, cur_mask_reg, 0 );
         } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU ) {
           /* Compute exp */
-          const char i_vname = (io_generated_code->arch <=LIBXSMM_X86_AVX512_VL256_CPX) ? 'y' : 'z';
-          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_vname, cur_vreg, i_micro_kernel_config->tmp_vreg2 );
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_micro_kernel_config_mod->vector_name , cur_vreg, i_micro_kernel_config->tmp_vreg2 );
           libxsmm_generator_exp_ps_3dts_avx512( io_generated_code,
                                                 i_micro_kernel_config->tmp_vreg2,
                                                 i_micro_kernel_config->tmp_vreg,
@@ -1109,10 +1108,10 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
                                                 i_micro_kernel_config->vec_c3,
                                                 i_micro_kernel_config->vec_halves,
                                                 i_micro_kernel_config->vec_log2e,
-                                                i_vname);
+                                                i_micro_kernel_config_mod->vector_name );
 
           /* FMA */
-          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VFMSUB213PS, i_vname,
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VFMSUB213PS, i_micro_kernel_config_mod->vector_name ,
                                                     i_micro_kernel_config->fam_lu_vreg_alpha, i_micro_kernel_config->fam_lu_vreg_alpha, i_micro_kernel_config->tmp_vreg2 );
 
           /* Blend exp-fma result with input reg based on elu mask */
@@ -2143,7 +2142,6 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_hi_bound,
           i_micro_kernel_config->vec_lo_bound );
     } else {
-      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
 
       reserved_zmms += 6;
       i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
@@ -2160,7 +2158,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_c3,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_log2e,
-          i_vname );
+          i_micro_kernel_config_mod->vector_name);
     }
 
     i_micro_kernel_config->reserved_zmms = reserved_zmms;
@@ -2203,7 +2201,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_ones,
           i_micro_kernel_config->vec_neg_ones );
     } else {
-      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+
       libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( io_generated_code,
           i_micro_kernel_config->vec_c0,
           i_micro_kernel_config->vec_c1,
@@ -2216,7 +2214,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_lo_bound,
           i_micro_kernel_config->vec_ones,
           i_micro_kernel_config->vec_neg_ones,
-          i_vname );
+          i_micro_kernel_config_mod->vector_name );
     }
 
     i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
@@ -2265,7 +2263,6 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
          i_micro_kernel_config->vec_ones,
          i_micro_kernel_config->vec_neg_ones );
     } else {
-      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
       libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code,
          i_micro_kernel_config->vec_c0,
          i_micro_kernel_config->vec_c1,
@@ -2279,7 +2276,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
          i_micro_kernel_config->vec_ones,
          i_micro_kernel_config->vec_neg_ones,
          i_micro_kernel_config->vec_halves,
-         i_vname);
+         i_micro_kernel_config_mod->vector_name );
     }
 
     i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
