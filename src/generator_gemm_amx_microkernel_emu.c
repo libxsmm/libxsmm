@@ -186,7 +186,6 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
     }
 
     if (i_micro_kernel_config->fused_sigmoid == 1) {
-      const char i_vname = 'z';
       if (tile1 >= 0) {
         libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, reg_0, i_micro_kernel_config->vec_x2,
             i_micro_kernel_config->vec_nom, i_micro_kernel_config->vec_denom,
@@ -194,7 +193,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
             i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
             i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
             i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, i_vname);
+            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
         }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -212,7 +211,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
           i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
           i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
           i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, i_vname );
+          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
 
       if (i_micro_kernel_config->emulate_cvt2bf16fp32 == 0) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
