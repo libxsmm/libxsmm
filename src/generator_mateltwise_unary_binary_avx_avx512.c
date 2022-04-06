@@ -2161,6 +2161,8 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_lo_bound,
           'y' );
     } else {
+      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+
       reserved_zmms += 6;
       i_micro_kernel_config->vec_halves     = reserved_zmms - 1;
       i_micro_kernel_config->vec_c0         = reserved_zmms - 2;
@@ -2169,7 +2171,6 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->vec_c3         = reserved_zmms - 5;
       i_micro_kernel_config->vec_log2e      = reserved_zmms - 6;
 
-      const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
       libxsmm_generator_prepare_coeffs_exp_ps_3dts_avx512( io_generated_code,
           i_micro_kernel_config->vec_c0,
           i_micro_kernel_config->vec_c1,
