@@ -1387,7 +1387,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
     libxsmm_matequation_kernel_config*      i_micro_kernel_config,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
-    libxsmm_matrix_eqn_arg_v2              *arg_info;
+  libxsmm_matrix_eqn_arg_v2              *arg_info;
   unsigned int arg_id = 0, i = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   if ( eqn == NULL ) {
