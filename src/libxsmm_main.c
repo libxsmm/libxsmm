@@ -2209,8 +2209,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # else
     void* code_buffer_ptr = &code_buffer;
 # endif
-    const size_t total_size = (size_t)generated_code.code_size + generated_code.data_size;
+    const size_t code_size = (size_t)generated_code.code_size;
     const size_t data_size = generated_code.data_size;
+    const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
@@ -2241,9 +2242,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       result = libxsmm_malloc_attrib((void**)code_buffer_ptr,
         LIBXSMM_MALLOC_FLAG_X, jit_name, &data_size);
       if (EXIT_SUCCESS == result && 0 != data_size) { /* check for success */
-        void *const data_buffer = code_buffer + generated_code.code_size;
+        const size_t data_padding = LIBXSMM_UP( code_size, LIBXSMM_PAGE_MINSIZE ) - code_size;
+        void *const data_buffer = code_buffer + code_size + data_padding;
         /* attribute and protect constant data by setting only necessary flags */
-        result = libxsmm_malloc_xattrib(data_buffer, LIBXSMM_MALLOC_FLAG_R, data_size);
+        result = libxsmm_malloc_xattrib(data_buffer, LIBXSMM_MALLOC_FLAG_R, data_size - data_padding );
       }
       if (EXIT_SUCCESS == result) { /* check for success */
         code->ptr = code_buffer; /* commit buffer */
