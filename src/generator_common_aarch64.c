@@ -2430,6 +2430,7 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
   unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;/* number of bytes per vector */
   unsigned int l_remainder = l_bytes_length % l_vector_length;
   unsigned int l_i;
+  unsigned int l_incremented_size = l_bytes_length - l_remainder;
 
   /* the offset of the instructions could be used, but that would make things more complicated and
    * we're L1 cache bound probably anyways */
@@ -2462,12 +2463,10 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
   }
 
   /* decrement source and destination registers */
-  unsigned int l_incremented_size = l_bytes_length - l_remainder;
   if(l_incremented_size > 0){
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
                                                    i_gp_reg_src, i_gp_reg_src, l_incremented_size, 0 );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
                                                    i_gp_reg_dst, i_gp_reg_dst, l_incremented_size, 0 );
   }
-
 }
