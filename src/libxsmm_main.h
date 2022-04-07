@@ -267,6 +267,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
   /** Size of data element. */
   unsigned char datatype;
+  unsigned char datatype1;
   unsigned char datatype2;
   /** Set of flags */
   unsigned short flags;

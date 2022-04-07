@@ -145,7 +145,7 @@ my_pooling_fwd_config setup_my_pooling_fwd( const libxsmm_blasint N, const libxs
   } else {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
-    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_out, datatype_comp );
+    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
     binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     res.fwd_scale_kernel = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, binary_shape, binary_flags );
   }
@@ -224,7 +224,7 @@ my_pooling_bwd_config setup_my_pooling_bwd( const libxsmm_blasint N, const libxs
     libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape, arg_singular_attr);
     res.func_bwd_max_pool = libxsmm_dispatch_matrix_eqn_v2( eqn_idx, arg_shape );
   } else {
-    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_out, datatype_comp );
+    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
     binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     res.func_bwd_avg_pool = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MULADD, binary_shape, binary_flags );
   }

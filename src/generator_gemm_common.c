@@ -24,7 +24,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
     const libxsmm_gemm_descriptor*     i_xgemm_desc) {
   libxsmm_descriptor_blob blob;
   const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
-    LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, i_xgemm_desc->m, i_xgemm_desc->n,
+    LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, i_xgemm_desc->m, i_xgemm_desc->n,
     i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0,
     (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, LIBXSMM_MELTW_OPERATION_UNARY);
   libxsmm_mateltwise_kernel_config l_trans_config;

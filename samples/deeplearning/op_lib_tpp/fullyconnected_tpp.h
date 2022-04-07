@@ -577,7 +577,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
     }
 
-    l_unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+    l_unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
     l_unary_shape.out_type = LIBXSMM_DATATYPE_F32;
     res.fwd_colbcast_load_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL );
     if ( res.fwd_colbcast_load_kernel == NULL ) {

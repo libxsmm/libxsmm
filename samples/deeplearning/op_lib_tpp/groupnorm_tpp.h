@@ -163,7 +163,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   }
 
   if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, dtype, dtype, dtype);
+    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, dtype, dtype, dtype, dtype);
     binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
     res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
     if ( res.ewise_add_kernel == NULL) {
@@ -184,7 +184,7 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
       exit(-1);
   }
 
-  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype);
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype, dtype);
   binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
@@ -356,7 +356,7 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
 
   ld = res.bc;
   binary_flags   = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype);
+  binary_shape   = libxsmm_create_meltw_binary_shape(res.bc, 1, ld, ld, ld, dtype, dtype, dtype, dtype);
   res.add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.add_kernel == NULL) {
       fprintf( stderr, "JIT for initialization of add_kernel failed for fwd. Bailing...!\n");

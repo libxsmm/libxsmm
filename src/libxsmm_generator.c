@@ -358,7 +358,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
 
 
 LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_descriptor_blob* blob,
-  libxsmm_datatype in_type, libxsmm_datatype in2_type, libxsmm_datatype out_type, libxsmm_datatype out2_type,
+  libxsmm_datatype in0_type, libxsmm_datatype in1_type, libxsmm_datatype in2_type, libxsmm_datatype comp_type, libxsmm_datatype out_type,
   libxsmm_blasint m, libxsmm_blasint n,
   libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldi2, libxsmm_blasint ldi3,
   unsigned short flags, unsigned short param, unsigned char operation)
@@ -369,8 +369,9 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   } result;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
-  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
-  result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(in2_type, out2_type);
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in0_type, out_type);
+  result.ptr->datatype1 = (unsigned char)LIBXSMM_GETENUM(in1_type, in2_type);
+  result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(comp_type, out_type);
   result.ptr->flags = (unsigned short)flags;
   result.ptr->operation = (unsigned char)operation;
   result.ptr->param = (unsigned short)param;

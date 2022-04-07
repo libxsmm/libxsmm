@@ -166,10 +166,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unary_shape.out_type = LIBXSMM_DATATYPE_F16;
 #else
   if (use_bf16 == 0) {
-    unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   } else {
-    unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   }
 #endif

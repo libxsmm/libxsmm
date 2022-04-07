@@ -157,7 +157,7 @@ my_bn_fwd_config setup_my_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  binary_shape          = libxsmm_create_meltw_binary_shape(res.bc, 1, ldo, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+  binary_shape          = libxsmm_create_meltw_binary_shape(res.bc, 1, ldo, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp, res.datatype_comp);
   binary_flags          = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.helper_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.helper_add_kernel == NULL) {
@@ -359,7 +359,7 @@ my_bn_bwd_config setup_my_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  binary_shape          = libxsmm_create_meltw_binary_shape(res.bc, 1, ldo, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+  binary_shape          = libxsmm_create_meltw_binary_shape(res.bc, 1, ldo, ldo, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp, res.datatype_comp);
   binary_flags          = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.helper_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.helper_add_kernel == NULL) {

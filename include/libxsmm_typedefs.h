@@ -753,7 +753,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint n;                    /* number of cols */
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_unary_shape;
@@ -764,7 +764,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape 
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_binary_shape;
@@ -776,7 +777,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldi3;                 /* leading dimension of third input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
+  libxsmm_datatype in2_type;            /* datatype of input 2 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_ternary_shape;

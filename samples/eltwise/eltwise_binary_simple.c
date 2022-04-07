@@ -154,7 +154,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
-  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];

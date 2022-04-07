@@ -1497,7 +1497,7 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ifmblock;
     unary_shape.m         = res.ifmblock;
     unary_shape.n         = res.ofw;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
     unary_shape.ldi       = stride_in;
@@ -1581,7 +1581,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       stride_out             = res.ofmblock;
       binary_shape.m         = res.ofmblock;
       binary_shape.n         = res.fwd_ofw_rb;
-      binary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+      binary_shape.in0_type  = LIBXSMM_DATATYPE_F32;
+      binary_shape.in1_type  = LIBXSMM_DATATYPE_F32;
       binary_shape.comp_type = LIBXSMM_DATATYPE_F32;
       binary_shape.out_type  = LIBXSMM_DATATYPE_F32;
       binary_shape.ldi       = stride_in;
@@ -1754,7 +1755,7 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ifmblock;
     unary_shape.m         = res.ifmblock;
     unary_shape.n         = res.ofw;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
     unary_shape.ldi       = stride_in;
@@ -1818,7 +1819,7 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
 
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
 
@@ -1844,7 +1845,7 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       fprintf( stderr, "JIT for TPP ofw_x_ofmblock_zero_kernel_f32 failed. Bailing...!\n");
       exit(-1);
     }
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
     stride_out            = res.ofwp * res.ofmblock;
@@ -1857,7 +1858,7 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       fprintf( stderr, "JIT for TPP cvt_kernel_fp32bf16 failed. Bailing...!\n");
       exit(-1);
     }
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -1880,7 +1881,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
       stride_out             = res.ofmblock;
       binary_shape.m         = res.ofmblock;
       binary_shape.n         = res.fwd_ofw_rb;
-      binary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      binary_shape.in0_type  = LIBXSMM_DATATYPE_BF16;
+      binary_shape.in1_type  = LIBXSMM_DATATYPE_BF16;
       binary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
       binary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
       binary_shape.ldi       = stride_in;
@@ -2023,7 +2025,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ifmblock;
     unary_shape.m         = res.ofmblock;
     unary_shape.n         = res.ifmblock;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
     unary_shape.ldi       = stride_in;
@@ -2217,7 +2219,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.ifmblock;
     unary_shape.m         = res.ofmblock;
     unary_shape.n         = res.ifmblock;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
     unary_shape.ldi       = stride_in;
@@ -2242,7 +2244,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
 
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
     stride_out            = (res.pack_input_bwd == 1) ? res.ofw * res.ifmblock : res.ifwp * res.ifmblock;
@@ -2270,7 +2272,7 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
       exit(-1);
     }
 
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2487,7 +2489,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     stride_out            = res.K * res.C * res.R * res.S;
     unary_shape.m         = res.K * res.C * res.R * res.S;
     unary_shape.n         = 1;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
     unary_shape.ldi       = stride_in;
@@ -2644,7 +2646,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ifmblock;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2660,7 +2662,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ifmblock;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2676,7 +2678,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
 
@@ -2692,7 +2694,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_F32;
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type  = LIBXSMM_DATATYPE_F32;
 
@@ -2708,7 +2710,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2724,7 +2726,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = 1;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2754,7 +2756,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       unary_shape.n         = res.ifwp;
       unary_shape.ldi       = stride_in;
       unary_shape.ldo       = stride_out;
-      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
       unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
       unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2770,7 +2772,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       unary_shape.n         = res.ifwp/res.v;
       unary_shape.ldi       = stride_in;
       unary_shape.ldo       = stride_out;
-      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
       unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
       unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2787,7 +2789,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ofwp;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2807,7 +2809,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ofwp-1;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2827,7 +2829,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.compute_pixels;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2863,7 +2865,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ifwp;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2879,7 +2881,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ofw;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2895,7 +2897,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     unary_shape.n         = res.ifwp;
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
-    unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
@@ -2919,7 +2921,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
       stride_in             = res.K * res.C * res.R * res.S;
       stride_out            = chunk0;
       unary_shape.m         = chunk0;
-      unary_shape.in_type   = LIBXSMM_DATATYPE_BF16;
+      unary_shape.in0_type   = LIBXSMM_DATATYPE_BF16;
       unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
       unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
