@@ -1019,6 +1019,17 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned int             i_vec_reg_dst,
                                               const unsigned int             i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
+  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
+  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
+
+  unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
+  unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
+  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_AND_V;
+  unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
+  unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
+
+  unsigned int l_vec_instr = i_vec_instr;
+
   if ( io_generated_code->arch < LIBXSMM_AARCH64_A64FX ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM A64FX needs to be specified as target arch!\n");
     exit(-1);
@@ -1076,20 +1087,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       exit(-1);
   }
 
-  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
-  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
-
-  unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
-  unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
-  unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_AND_V;
-  unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
-  unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
-
-  unsigned int l_vec_instr = i_vec_instr;
   /* fp compare less than is a pseudo instruction: greater than or equal with switched source registers */
   if( l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V ){
-    l_vec_instr = LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V;
     unsigned char l_tmp = l_vec_reg_src_0;
+    l_vec_instr = LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V;
     l_vec_reg_src_0 = l_vec_reg_src_1;
     l_vec_reg_src_1 = l_tmp;
   }
@@ -1140,15 +1141,17 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_0) << 5);
     if( l_has_logical_shift_imm ){
       unsigned char l_elementSizeBits = 8 << (int) i_type;/* B -> 8, H -> 16, S -> 32, D -> 64 */
+     /* the encoding for right shift is reversed */
+      unsigned char l_index = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V ? i_index : LIBXSMM_MAX( l_elementSizeBits - i_index, 0 );
+      /* left/right shift (immediate) has a special encoding, which was not used before */
+      unsigned int l_shifted_size = 1 << (int) i_type;/* B -> 1, H -> 10, S -> 100, D -> 1000 */
+
       if(i_index >= l_elementSizeBits){
         /* the index must be within bounds */
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
         exit(-1);
       }
-      /* the encoding for right shift is reversed */
-      unsigned char l_index = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V ? i_index : l_elementSizeBits - i_index;
-      /* left/right shift (immediate) has a special encoding, which was not used before */
-      unsigned int l_shifted_size = 1 << (int) i_type;/* B -> 1, H -> 10, S -> 100, D -> 1000 */
+
       code[code_head] |= (unsigned int)((l_shifted_size >> 2) << 22);/* tszh in ARM docs */
       code[code_head] |= (unsigned int)((l_shifted_size & 0x3) << 19);/* tszl in ARM docs */
       code[code_head] |= (unsigned int)(l_index << 16); /* immediate value */

@@ -148,8 +148,8 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
     }
 
     for (im = 0; im < m_inner_trips; im++) {
-      cur_acc0 = m_unroll_factor + im;
       unsigned char _mask_count2 = ((use_m_masking == 1) && (iM == m_outer_trips-1) && (im == m_inner_trips-1)) ? mask_count : 0;
+      cur_acc0 = m_unroll_factor + im;
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, cur_acc0, i_micro_kernel_config->datatype_size_out,
           _mask_count2, 1, 1, _mask_count2 ? pred_reg_mask : pred_reg_all );
     }

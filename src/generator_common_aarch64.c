@@ -216,13 +216,13 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
 
   if( l_is_sve ) {
     int l_pred_reg = 0;/* todo find suitable predicate register */
-    /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? (int)(i_masked_elems * i_datatype_size) : -1, i_gp_reg_scratch );
     /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
     int l_instr = i_datatype_size == 1 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF :
                   i_datatype_size == 2 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
                   i_datatype_size == 4 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF :
                                          LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF ;
+     /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? (int)(i_masked_elems * i_datatype_size) : -1, i_gp_reg_scratch );
     libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
     if( l_offset ){/* post increment address by offset */
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
