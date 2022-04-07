@@ -161,7 +161,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
     if (cfg.upd_trans_w_only == 0) {
       if (cfg.on_the_fly_input_packing == 0) {
         for (img = my_img_start; img < my_img_end; img++) {
-          zero_ptr_in = (libxsmm_bfloat16*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+          zero_ptr_in = (libxsmm_bfloat16*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
           unary_param.out.primary = (void*) zero_ptr_in;
           cfg.zero_ifmblock_input_pixels_extended_bf16( &unary_param );
           for (ifm1 = 0; ifm1 < cfg.blocksifm; ifm1++) {
@@ -202,14 +202,14 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                 /* Transpose output block */
                 for (j=0; j < cfg.batchreduce_h_pixels; j++) {
                   unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj+j, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-                  unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, j, 0, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp_extended/2, cfg.ofmblock, 2);
+                  unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, j, 0, 0, 0, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
                   cfg.vnni_output_w_pixels_bf16( &unary_param );
                 }
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+cfg.block_upd_ifm, cfg.blocksifm); ifm1++) {
                   /* Transpose input block */
                   for (j=0; j < cfg.batchreduce_h_pixels; j++) {
                     unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj+j, 0, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-                    unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, j, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                    unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, j, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
                     cfg.transpose_input_pixels_ifwp_extended_bf16( &unary_param );
                   }
                   for (kj = 0; kj < cfg.R; ++kj) {
@@ -221,8 +221,8 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                         dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, cfg.ofmblock);
                       }
                       gemm_param.op.tertiary  = (void*) &n_blocks;
-                      gemm_param.a.primary    = (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, 0, 0, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp_extended/2, cfg.ofmblock, 2);
-                      gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                      gemm_param.a.primary    = (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, 0, 0, 0, 0, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
+                      gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
                       gemm_param.c.primary    = (void*) dst_ptr;
                       cfg.upd_compute_kernel1_bf16f32.gemm( &gemm_param );
 
@@ -265,7 +265,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                         if ((fast_trans == 1) && (cfg.upd_padding_copy == 0)) {
                           for (ij = 0; ij < cfg.batchreduce_h_pixels; ij++) {
                             unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*cfg.u+kj, ki, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-                            unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                            unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
                             cfg.transpose_input_pixels_ifwp_strided_extended_bf16( &unary_param );
                           }
                         } else {
@@ -289,7 +289,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                           } else {
                             for (ij = 0; ij < cfg.batchreduce_h_pixels; ij++) {
                               unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*cfg.u+kj, ki, 0, cfg.blocksifm, cfg.ifhp, cfg.ifwp, cfg.ifmblock);
-                              unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                              unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
                               cfg.transpose_input_pixels_ifwp_strided_extended_bf16( &unary_param );
                             }
                           }
@@ -298,7 +298,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
 
                       gemm_param.op.tertiary  = (void*) &n_blocks;
                       gemm_param.a.primary    = (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, 0, 0, 0, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
-                      gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, cfg.ifhp, cfg.ifwp_extended);
+                      gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
                       gemm_param.c.primary    = (void*) dst_ptr;
                       cfg.upd_compute_kernel2_bf16f32.gemm( &gemm_param );
 
