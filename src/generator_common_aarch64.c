@@ -217,7 +217,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
   if( l_is_sve ) {
     int l_pred_reg = 0;/* todo find suitable predicate register */
     /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? i_masked_elems * i_datatype_size : -1, i_gp_reg_scratch );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? (int)(i_masked_elems * i_datatype_size) : -1, i_gp_reg_scratch );
     /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
     int l_instr = i_datatype_size == 1 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF :
                   i_datatype_size == 2 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF :
@@ -1034,17 +1034,8 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_gene
                                                                     const unsigned int                    i_vec_shifter,
                                                                     const unsigned int                    i_vec_half,
                                                                     const unsigned int                    i_vec_c0,
-                                                                    const unsigned int                    i_vec_c01,
-                                                                    const unsigned int                    i_vec_c02,
-                                                                    const unsigned int                    i_vec_c03,
                                                                     const unsigned int                    i_vec_c1,
-                                                                    const unsigned int                    i_vec_c11,
-                                                                    const unsigned int                    i_vec_c12,
-                                                                    const unsigned int                    i_vec_c13,
                                                                     const unsigned int                    i_vec_c2,
-                                                                    const unsigned int                    i_vec_c21,
-                                                                    const unsigned int                    i_vec_c22,
-                                                                    const unsigned int                    i_vec_c23,
                                                                     const unsigned int                    i_vec_exp_mask,
                                                                     const unsigned int                    i_gp_reg_tmp,
                                                                     const unsigned int                    i_gp_reg_tmp1,
@@ -1144,17 +1135,8 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
                                                                         const unsigned int                    i_vec_shifter,
                                                                         const unsigned int                    i_vec_half,
                                                                         const unsigned int                    i_vec_c0,
-                                                                        const unsigned int                    i_vec_c01,
-                                                                        const unsigned int                    i_vec_c02,
-                                                                        const unsigned int                    i_vec_c03,
                                                                         const unsigned int                    i_vec_c1,
-                                                                        const unsigned int                    i_vec_c11,
-                                                                        const unsigned int                    i_vec_c12,
-                                                                        const unsigned int                    i_vec_c13,
                                                                         const unsigned int                    i_vec_c2,
-                                                                        const unsigned int                    i_vec_c21,
-                                                                        const unsigned int                    i_vec_c22,
-                                                                        const unsigned int                    i_vec_c23,
                                                                         const unsigned int                    i_vec_exp_mask,
                                                                         const unsigned int                    i_gp_reg_tmp,
                                                                         const unsigned int                    i_gp_reg_tmp1,

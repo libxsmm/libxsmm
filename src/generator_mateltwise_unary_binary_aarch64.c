@@ -1079,7 +1079,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
                                                                                 i_gp_reg_mapping->gp_reg_relumask,
                                                                                 l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1,
                                                                                 i_gp_reg_mapping->gp_reg_scratch_0,
-                                                                                i_gp_reg_mapping->gp_reg_scratch_1,
                                                                                 &l_mask_adv );
           }
 
@@ -1630,11 +1629,9 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                                                          const unsigned char     i_tmp_pred_reg0,
                                                                          const unsigned char     i_tmp_pred_reg1,
                                                                          const unsigned char     i_gp_reg_scratch,
-                                                                         const unsigned char     i_gp_xsp2,
                                                                          unsigned int* const     io_mask_adv ) {
 
   /* store bitflags (l_blend_reg) to bitflag array in memory */
-
 #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* mv l_blend_reg into l_tmp_pred_reg */
   /* UZP_P_E, 16 bits */
@@ -1802,7 +1799,6 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                                               i_gp_reg_mapping->gp_reg_dropoutmask,
                                                                               l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1,
                                                                               i_gp_reg_mapping->gp_reg_scratch_0,
-                                                                              i_gp_reg_mapping->gp_reg_scratch_1,
                                                                               &l_mask_adv
           );
         }
@@ -2555,7 +2551,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
     if (l_is_sve){/* while sve has an inc instruction, that one is slower for 64x64 (2.95x -> 3.49x speedup vs ASIMD on A64FX) */
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_micro_kernel_config->vec_ones, i_gp_reg_tmp0,
-                                                            l_tupletype, l_pred_reg, 0x3f800000 );
+                                                            l_sve_type, l_pred_reg, 0x3f800000 );
     } else {
       libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_micro_kernel_config->vec_ones, i_gp_reg_tmp0,
                                                             l_tupletype, 0x3f800000 );
@@ -2571,7 +2567,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU || op == LIBXSMM_MELTW_TYPE_UNARY_GELU_INV) {
     unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
 
-    reserved_zmms += l_is_sve ? 24 : 25;
+    reserved_zmms += l_is_sve ? 15 : 25;
 
     i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
     i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
@@ -2584,21 +2580,21 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
     i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
     i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
-    i_micro_kernel_config->vec_c03        = reserved_zmms - 12;
-    i_micro_kernel_config->vec_c02        = reserved_zmms - 13;
-    i_micro_kernel_config->vec_c01        = reserved_zmms - 14;
-    i_micro_kernel_config->vec_c0         = reserved_zmms - 15;
-    i_micro_kernel_config->vec_c13        = reserved_zmms - 16;
-    i_micro_kernel_config->vec_c12        = reserved_zmms - 17;
-    i_micro_kernel_config->vec_c11        = reserved_zmms - 18;
-    i_micro_kernel_config->vec_c1         = reserved_zmms - 19;
-    i_micro_kernel_config->vec_c23        = reserved_zmms - 20;
-    i_micro_kernel_config->vec_c22        = reserved_zmms - 21;
-    i_micro_kernel_config->vec_c21        = reserved_zmms - 22;
-    i_micro_kernel_config->vec_c2         = reserved_zmms - 23;
-    i_micro_kernel_config->vec_tmp0       = reserved_zmms - 24;
+    i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
+    i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
+    i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
+    i_micro_kernel_config->vec_tmp0       = reserved_zmms - 15;
 
     if(!l_is_sve) {
+      i_micro_kernel_config->vec_c03      = reserved_zmms - 16;
+      i_micro_kernel_config->vec_c02      = reserved_zmms - 17;
+      i_micro_kernel_config->vec_c01      = reserved_zmms - 18;
+      i_micro_kernel_config->vec_c13      = reserved_zmms - 19;
+      i_micro_kernel_config->vec_c12      = reserved_zmms - 20;
+      i_micro_kernel_config->vec_c11      = reserved_zmms - 21;
+      i_micro_kernel_config->vec_c23      = reserved_zmms - 22;
+      i_micro_kernel_config->vec_c22      = reserved_zmms - 23;
+      i_micro_kernel_config->vec_c21      = reserved_zmms - 24;
       i_micro_kernel_config->vec_tmp1     = reserved_zmms - 25;
     }
 
@@ -2611,17 +2607,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_shifter,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c01,
-          i_micro_kernel_config->vec_c02,
-          i_micro_kernel_config->vec_c03,
           i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c11,
-          i_micro_kernel_config->vec_c12,
-          i_micro_kernel_config->vec_c13,
           i_micro_kernel_config->vec_c2,
-          i_micro_kernel_config->vec_c21,
-          i_micro_kernel_config->vec_c22,
-          i_micro_kernel_config->vec_c23,
           i_micro_kernel_config->vec_tmp0, /* expmask */
           i_gp_reg_tmp0,
           i_gp_reg_tmp1,
@@ -2662,17 +2649,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           i_micro_kernel_config->vec_shifter,
           i_micro_kernel_config->vec_halves,
           i_micro_kernel_config->vec_c0,
-          i_micro_kernel_config->vec_c01,
-          i_micro_kernel_config->vec_c02,
-          i_micro_kernel_config->vec_c03,
           i_micro_kernel_config->vec_c1,
-          i_micro_kernel_config->vec_c11,
-          i_micro_kernel_config->vec_c12,
-          i_micro_kernel_config->vec_c13,
           i_micro_kernel_config->vec_c2,
-          i_micro_kernel_config->vec_c21,
-          i_micro_kernel_config->vec_c22,
-          i_micro_kernel_config->vec_c23,
           i_micro_kernel_config->vec_tmp0, /* expmask */
           i_gp_reg_tmp0,
           i_gp_reg_tmp1,

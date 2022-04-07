@@ -250,20 +250,20 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_asimd( libxsmm_generated_code* io_generated_code,
                                                                           const unsigned int      im,
                                                                           const unsigned int      i_m_blocking,
-                                                                          const unsigned char     i_mask_helper0_vreg, // i_micro_kernel_config->mask_helper0_vreg
-                                                                          const unsigned char     i_mask_helper1_vreg, // i_micro_kernel_config->mask_helper1_vreg
-                                                                          const unsigned char     i_tmp0_vreg, // i_micro_kernel_config->dropout_vreg_tmp0
-                                                                          const unsigned char     i_gp_reg_mask, // i_gp_reg_mapping->gp_reg_dropoutmask
+                                                                          const unsigned char     i_mask_helper0_vreg, /* i_micro_kernel_config->mask_helper0_vreg */
+                                                                          const unsigned char     i_mask_helper1_vreg, /* i_micro_kernel_config->mask_helper1_vreg */
+                                                                          const unsigned char     i_tmp0_vreg, /* i_micro_kernel_config->dropout_vreg_tmp0 */
+                                                                          const unsigned char     i_gp_reg_mask, /* i_gp_reg_mapping->gp_reg_dropoutmask */
                                                                           unsigned int* const     io_mask_adv );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
                                                                         const unsigned int      im,
                                                                         const unsigned int      i_m_blocking,
-                                                                        const unsigned char     i_tmp0_vreg, // i_micro_kernel_config->dropout_vreg_tmp0
-                                                                        const unsigned char     i_gp_reg_mask, // i_gp_reg_mapping->gp_reg_dropoutmask
+                                                                        const unsigned char     i_tmp0_vreg, /* i_micro_kernel_config->dropout_vreg_tmp0 */
+                                                                        const unsigned char     i_gp_reg_mask, /* i_gp_reg_mapping->gp_reg_dropoutmask */
                                                                         const unsigned char     i_blend_reg,
-                                                                        const unsigned char     i_scratch_gp_reg, // i_gp_reg_mapping->gp_reg_scratch_0
+                                                                        const unsigned char     i_scratch_gp_reg, /* i_gp_reg_mapping->gp_reg_scratch_0 */
                                                                         const unsigned char     i_tmp_pred_reg,
                                                                         unsigned int* const     io_mask_adv );
 
@@ -271,11 +271,11 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_asimd( libxsmm_generated_code* io_generated_code,
                                                                            const unsigned int      im,
                                                                            const unsigned int      i_m_blocking,
-                                                                           const unsigned char     i_mask_helper0_vreg, // i_micro_kernel_config->mask_helper1_vreg
-                                                                           const unsigned char     i_mask_helper1_vreg, // i_micro_kernel_config->mask_helper1_vreg
-                                                                           const unsigned char     i_tmp_vreg0, // i_micro_kernel_config->dropout_vreg_tmp0
-                                                                           const unsigned char     i_tmp_vreg1, // i_micro_kernel_config->dropout_vreg_tmp1
-                                                                           const unsigned char     i_tmp_vreg2, // i_micro_kernel_config->dropout_vreg_tmp2
+                                                                           const unsigned char     i_mask_helper0_vreg, /* i_micro_kernel_config->mask_helper1_vreg */
+                                                                           const unsigned char     i_mask_helper1_vreg, /* i_micro_kernel_config->mask_helper1_vreg */
+                                                                           const unsigned char     i_tmp_vreg0, /* i_micro_kernel_config->dropout_vreg_tmp0 */
+                                                                           const unsigned char     i_tmp_vreg1, /* i_micro_kernel_config->dropout_vreg_tmp1 */
+                                                                           const unsigned char     i_tmp_vreg2, /* i_micro_kernel_config->dropout_vreg_tmp2 */
                                                                            const unsigned char     i_gp_reg_mask,
                                                                            unsigned int* const     io_mask_adv );
 
@@ -283,13 +283,12 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
                                                                          const unsigned int      im,
                                                                          const unsigned int      i_m_blocking,
-                                                                         const unsigned char     i_tmp_vreg0, // i_micro_kernel_config->dropout_vreg_tmp0
+                                                                         const unsigned char     i_tmp_vreg0, /* i_micro_kernel_config->dropout_vreg_tmp0 */
                                                                          const unsigned char     i_gp_reg_mask,
                                                                          const unsigned char     i_blend_reg,
                                                                          const unsigned char     i_tmp_pred_reg0,
                                                                          const unsigned char     i_tmp_pred_reg1,
                                                                          const unsigned char     i_gp_reg_scratch,
-                                                                         const unsigned char     i_gp_reg_xsp2,
                                                                          unsigned int* const     io_mask_adv );
 
 #endif /* GENERATOR_MATELTWISE_UNARY_BINARY_AARCH64_H */

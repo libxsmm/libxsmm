@@ -1142,7 +1142,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       unsigned char l_elementSizeBits = 8 << (int) i_type;/* B -> 8, H -> 16, S -> 32, D -> 64 */
       if(i_index >= l_elementSizeBits){
         /* the index must be within bounds */
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, i_type, l_elementSizeBits);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
         exit(-1);
       }
       /* the encoding for right shift is reversed */
