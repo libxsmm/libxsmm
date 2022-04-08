@@ -63,13 +63,11 @@ void lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int wi
 
 void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out, unsigned char *dropout_mask, void* rng_state, const float p) {
   float vrng[16];
-  unsigned int w;
   unsigned int i;
   unsigned int j;
   float pn = 1 - p;
   float pi = 1/pn;
-
-  w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
+  unsigned int w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
 
   for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
     lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
