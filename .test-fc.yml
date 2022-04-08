@@ -13,27 +13,27 @@ script:
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 0 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 1 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 2 32 32 32 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 8 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 3 32 32 32 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 4 32 32 32 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 5 32 32 32 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 9 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 0 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 1 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 2 64 64 64 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 8 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 3 64 64 64 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 4 64 64 64 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 5 64 64 64 )
+   (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh B f32 1 1024 A 9 64 64 64 )
 
   - make -e ${MAKEJ} && cd samples/deeplearning/fullyconnecteddriver && make -e ${MAKEJ} &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 0 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 1 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 2 32 32 32 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 8 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 3 32 32 32 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 4 32 32 32 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 5 32 32 32 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 9 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 0 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 1 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 2 64 64 64 ) &&
+   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 8 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 3 64 64 64 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 4 64 64 64 ) &&
-   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 5 64 64 64 )
+   (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh B bf16 1 1024 A 9 64 64 64 )
 
