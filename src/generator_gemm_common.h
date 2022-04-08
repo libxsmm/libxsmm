@@ -15,6 +15,13 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*            io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*             io_generated_code,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
     const unsigned int                 zero_vreg,

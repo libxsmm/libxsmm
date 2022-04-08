@@ -344,6 +344,11 @@ int main(int argc, char* argv[])
   sfill_matrix ( inp_matrix, ld_in, m, n, avoid_small_vals );
   sfill_matrix ( inp_matrix2, ld_in, m, _n, avoid_small_vals );
   sfill_matrix ( ref_result, ld_in, m, 1, avoid_small_vals );
+#if 0
+  for (jj = 0; jj < ld_in; jj++) {
+    ref_result[jj] = -FLT_MAX;
+  }
+#endif
   memcpy(result, ref_result, ld_in * sizeof(float));
   sfill_matrix ( scale_vals, n_cols_idx, n_cols_idx, 1, avoid_small_vals );
 
