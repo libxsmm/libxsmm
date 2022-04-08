@@ -819,6 +819,24 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
 }
 
 LIBXSMM_API_INTERN
+int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwise_desc,
+                                     libxsmm_meltw_field_type        type) {
+  int result = 0;
+  if (type == LIBXSMM_MELTW_FIELD_IN0) {
+    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype );
+  } else if (type == LIBXSMM_MELTW_FIELD_IN1) {
+    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype1 );
+  } else if (type == LIBXSMM_MELTW_FIELD_IN2) {
+    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype1 );
+  } else if (type == LIBXSMM_MELTW_FIELD_OUT) {
+    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
+  } else if (type == LIBXSMM_MELTW_FIELD_COMP) {
+    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   memset(io_loop_label_tracker, 0, sizeof(*io_loop_label_tracker));
 }
