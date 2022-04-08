@@ -281,7 +281,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
 
-  const unsigned int l_perm_consts[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+  const unsigned int l_perm_consts[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
   unsigned int l_need_bcast_reg = 0;
   unsigned int l_bcast_reg_vals[31], l_base_bcast_reg = ~0U, l_nbcast_regs = 0, l_cur_bcast_reg = 0;
@@ -361,9 +361,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     l_num_reg = 32;
 
     if ( l_fp64 ) {
-      l_preg_unique = (32 - l_n_blocking - 1 - 8)*8;
+      l_preg_unique = (32 - l_n_blocking - 1 - 7)*8;
     } else {
-      l_preg_unique = (32 - l_n_blocking - 1 - 16)*16;
+      l_preg_unique = (32 - l_n_blocking - 1 - 15)*16;
     }
   }
 
@@ -473,8 +473,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   } else if ( l_unique <= l_preg_unique ) {
     /* Determine the optimal number of values to pack into each register */
     for ( l_z = 2, l_n = l_unique; l_z <= l_values_per_reg; l_z++ ) {
-      if ( LIBXSMM_UPDIV( l_unique, l_z ) + l_z < l_n ) {
-        l_n = LIBXSMM_UPDIV( l_unique, l_z ) + l_z;
+      if ( LIBXSMM_UPDIV( l_unique, l_z ) + l_z - 1 < l_n ) {
+        l_n = LIBXSMM_UPDIV( l_unique, l_z ) + l_z - 1;
         l_packed_values_per_reg = l_z;
       }
     }
@@ -497,12 +497,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
     /* Copy the permutation constants into the data segment */
     l_poff = libxsmm_x86_instruction_add_data( io_generated_code,
-                                               (unsigned char*) l_perm_consts,
+                                               (unsigned char*) (l_perm_consts + l_fp64),
                                                sizeof(l_perm_consts), 8, 1,
                                                &l_const_data_tracker );
 
     /* Broadcast permute constants into registers */
-    for ( l_z = 0; l_z < l_packed_values_per_reg; l_z++ ) {
+    for ( l_z = 0; l_z < l_packed_values_per_reg - 1; l_z++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         l_micro_kernel_config.instruction_set,
                                         l_broadcast_insn,
@@ -514,7 +514,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
     }
 
     /* Update the register count */
-    l_used_reg += l_packed_values_per_reg;
+    l_used_reg += l_packed_values_per_reg - 1;
 
     /* Mark that we also need at least one broadcast register */
     l_need_bcast_reg = 1;
@@ -650,13 +650,20 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                 l_u*l_fbytes - 0x300,
                                                 l_micro_kernel_config.vector_name,
                                                 l_rva, 0, 0, 0 );
+            /* Broadcast from lane zero of a packed register */
+            } else if ( 0 == l_u % l_packed_values_per_reg ) {
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                                                        l_broadcast_insn,
+                                                        l_micro_kernel_config.vector_name,
+                                                        l_u / l_packed_values_per_reg,
+                                                        l_rva );
             /* Broadcast from a packed register */
             } else {
               libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                         LIBXSMM_X86_INSTR_VPERMD,
                                                         l_micro_kernel_config.vector_name,
                                                         l_u / l_packed_values_per_reg,
-                                                        l_base_perm_reg + l_u % l_packed_values_per_reg,
+                                                        l_base_perm_reg + l_u % l_packed_values_per_reg - 1,
                                                         l_rva );
             }
 
