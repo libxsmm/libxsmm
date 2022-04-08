@@ -80,7 +80,7 @@ void libxsmm_generator_mateltwise_aarch64_sve_kernel( libxsmm_generated_code*   
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
 
   /* being BLAS aligned, for empty kernels, do nothing */
-  if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX)) ) {
+  if ( (i_mateltwise_desc->m > 0) && ((i_mateltwise_desc->n > 0) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD)) ) {
     /* Stack management for melt kernel */
     libxsmm_generator_meltw_setup_stack_frame_aarch64_sve( io_generated_code, i_mateltwise_desc, &l_gp_reg_mapping, &l_kernel_config);
 
@@ -99,7 +99,7 @@ void libxsmm_generator_mateltwise_aarch64_sve_kernel( libxsmm_generated_code*   
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_MISSING_REDUCE_FLAGS );
           return;
         }
-      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX) {
+      } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD) {
         libxsmm_generator_reduce_cols_index_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
       } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
         libxsmm_generator_replicate_col_var_aarch64_microkernel( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_kernel_config, i_mateltwise_desc );
