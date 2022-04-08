@@ -23,8 +23,14 @@ CP=$(command -v cp)
 MV=$(command -v mv)
 
 if [ "${CPPCHECK}" ] && [ "${CAT}" ]; then
-  ${CPPCHECK} "${HERE}/../src" -isrc/template --file-filter="*.c*" \
-    --error-exitcode=111 --force --suppress=unknownMacro \
+  ${CPPCHECK} "${HERE}/../src" -isrc/template --file-filter="*.c*" -I"${HERE}/../include" \
+    --error-exitcode=111 --force \
+    --suppress=ConfigurationNotChecked \
+    --suppress=missingIncludeSystem \
+    --suppress=unmatchedSuppression \
+    --suppress=unusedFunction \
+    --suppress=unknownMacro \
+    -DLIBXSMM_PLATFORM_X86 \
   2>.analyze.log
   RESULT=$?
   echo
