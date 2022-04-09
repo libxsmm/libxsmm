@@ -151,8 +151,8 @@ int main(int argc, char* argv[])
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only). 'M' (BPUP-fused only)\n");
     return -1;
   }
-  if ( (fuse_type < 0) || (fuse_type > 5) ) {
-    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 3 (Sigmoid), 4 (Bias+ReLU), 5 (Bias+Sigmoid)\n");
+  if ( (fuse_type < 0) || (fuse_type > 9) ) {
+    printf("fuse type needs to be 0 (None), 1 (Bias), 2 (ReLU), 8 (Sigmoid), 3 (Bias+ReLU), 9 (Bias+Sigmoid)\n");
     return -1;
   }
   if (format != 'L' && format != 'B') {
@@ -285,11 +285,11 @@ int main(int argc, char* argv[])
       fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS;
     } else if ( fuse_type == 2 ) {
       fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU;
-    } else if ( fuse_type == 3 ) {
+    } else if ( fuse_type == 8 ) {
       fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID;
-    } else if ( fuse_type == 4 ) {
+    } else if ( fuse_type == 3 ) {
       fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU;
-    } else if ( fuse_type == 5 ) {
+    } else if ( fuse_type == 9 ) {
       fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID;
     } else {
       /* cannot happen */

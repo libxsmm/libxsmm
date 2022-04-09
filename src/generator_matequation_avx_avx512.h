@@ -37,6 +37,13 @@ void libxsmm_generator_matequation_apply_xgemm_fusion_pattern_transformation(lib
                                                unsigned int                           last_timestamp );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
+                                               libxsmm_matrix_eqn_elem                *cur_node,
+                                               libxsmm_matrix_eqn_elem                *new_arg_node,
+                                               unsigned int                           *timestamp,
+                                               unsigned int                           last_timestamp );
+
+LIBXSMM_API_INTERN
 int libxsmm_generator_matequation_find_in_pos_for_colbias(libxsmm_matrix_eqn_elem *colbias_add_node);
 
 LIBXSMM_API_INTERN
@@ -47,6 +54,12 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_fusion
 
 LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node);
+
+LIBXSMM_API_INTERN
+libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_gather_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *gather_node);
+
+LIBXSMM_API_INTERN
+int libxsmm_generator_matequation_is_gather_node(libxsmm_matrix_eqn_elem  *cur_node);
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node);

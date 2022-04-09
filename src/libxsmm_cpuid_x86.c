@@ -79,7 +79,7 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
   status = syscall(SYS_arch_prctl, 0x1022, &bitmask);
 
   /* setup failed */
-  if (0 != status || !(bitmask & (1<18))) return -1;
+  if (0 != status || !(bitmask & (1<<18))) return -1;
 
   /* setup successfull */
   return 0;
@@ -373,7 +373,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_X86_AVX <= id) {
     result = 8;
   }
-  else if (LIBXSMM_X86_SSE42 <= id) {
+  else if (LIBXSMM_X86_GENERIC <= id) {
     result = 4;
   }
   else

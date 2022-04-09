@@ -75,7 +75,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
   unary_shape.out_type = LIBXSMM_DATATYPE_I8;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -90,7 +90,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   }
   unary_kernel_quant( &unary_param );
 
-  unary_shape.in_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -206,7 +206,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
   unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -221,7 +221,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
-  unary_shape.in_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -337,7 +337,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
   unary_shape.out_type = LIBXSMM_DATATYPE_I32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -352,7 +352,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
-  unary_shape.in_type = LIBXSMM_DATATYPE_I32;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I32;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 

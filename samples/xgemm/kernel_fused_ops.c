@@ -721,18 +721,21 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_postops.d_in_type      = i_gemm_def->out_type;
     l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
     l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-    l_postops.ldd            = NULL;
+    l_postops.ldd            = i_gemm_def->ldc;
   }
 
   if (i_gemm_def->unary_postop == SIGMOID) {
+    l_argops.ldcp = i_gemm_def->ldc;
     l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_SIGMOID;
   }
 
   if (i_gemm_def->unary_postop == RELU_NOBITMASK) {
+    l_argops.ldcp = i_gemm_def->ldc;
     l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
   }
 
   if (i_gemm_def->unary_postop == RELU_BITMASK) {
+    l_argops.ldcp = i_gemm_def->ldc;
     l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
     l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   }
