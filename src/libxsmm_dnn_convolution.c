@@ -8,7 +8,6 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke, Evangelos Georganas, Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 #include "libxsmm_dnn_convolution_forward.h"
 #include "libxsmm_dnn_convolution_backward.h"

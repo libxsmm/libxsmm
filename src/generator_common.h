@@ -1456,8 +1456,12 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
   unsigned int datatype_size_in;
+  unsigned int datatype_size_in1;
+  unsigned int datatype_size_in2;
   unsigned int datatype_size_out;
   unsigned int vmove_instruction_in;
+  unsigned int vmove_instruction_in1;
+  unsigned int vmove_instruction_in2;
   unsigned int vmove_instruction_out;
   unsigned int alu_add_instruction;
   unsigned int alu_sub_instruction;
@@ -1577,12 +1581,16 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 
   /* Aux variables for kernel config  */
   unsigned int vlen_in;
+  unsigned int vlen_in1;
+  unsigned int vlen_in2;
   unsigned int vlen_out;
   unsigned int vlen_comp;
   unsigned int loop_order;
   unsigned int skip_pushpops_callee_gp_reg;
   unsigned int use_stack_vars;
   char vector_name;
+  unsigned int opreduce_use_unary_arg_reading;
+  unsigned int opreduce_avoid_acc_load;
 } libxsmm_mateltwise_kernel_config;
 
 /* structure for storing the current gp reg mapping for matequation */
@@ -1682,6 +1690,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_blocking_info_t {
   unsigned int blocking;
   unsigned int block_size;
 } libxsmm_blocking_info_t;
+
+typedef enum libxsmm_meltw_field_type {
+  LIBXSMM_MELTW_FIELD_IN0              =  0,
+  LIBXSMM_MELTW_FIELD_IN1              =  1,
+  LIBXSMM_MELTW_FIELD_IN2              =  2,
+  LIBXSMM_MELTW_FIELD_OUT              =  3,
+  LIBXSMM_MELTW_FIELD_COMP             =  4
+} libxsmm_meltw_field_type;
 
 /* Auxiliary stack variable enumeration for kernels */
 typedef enum libxsmm_meltw_stack_var {
@@ -1885,6 +1901,10 @@ typedef enum libxsmm_meltw_comp_flags {
   LIBXSMM_MELTW_COMP_FLAG_ACT_GELU_OVERWRITE_C         = 19
 } libxsmm_meltw_comp_flags;
 #endif
+
+LIBXSMM_API_INTERN
+int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwise_desc,
+                                     libxsmm_meltw_field_type        type);
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
