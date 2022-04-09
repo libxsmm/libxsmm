@@ -33,7 +33,7 @@ do
   echo ${M} ${N} ${LDI} ${LDI}
   for BCAST in 0 1 2 3 4 5 6
   do
-    ./eltwise_binary_simple ${BINARY_OP} ${BCAST} 4 4 4 ${M} ${N} ${LDI} ${LDI}
+    ./eltwise_binary_simple ${BINARY_OP} ${BCAST} 4 4 4 4 ${M} ${N} ${LDI} ${LDI}
   done
 done
 
