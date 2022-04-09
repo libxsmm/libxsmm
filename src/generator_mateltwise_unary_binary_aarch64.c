@@ -2308,7 +2308,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
                                                           unsigned int                            i_gp_reg_tmp1,
                                                           const unsigned int                      i_gp_reg_aux0,
                                                           const unsigned int                      i_gp_reg_aux1 ) {
-  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  unsigned char l_is_sve = (io_generated_code->arch == LIBXSMM_AARCH64_A64FX);
   unsigned char l_pred_reg = 0;/* todo decide which predicate register to use */
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(i_micro_kernel_config->datatype_size_in);
   libxsmm_aarch64_asimd_tupletype l_tupletype = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
@@ -2564,33 +2564,48 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
 
     reserved_zmms += l_is_sve ? 15 : 25;
 
-    i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
-    i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
-    i_micro_kernel_config->vec_index      = reserved_zmms - 3;
-    i_micro_kernel_config->vec_C0         = reserved_zmms - 4;
-    i_micro_kernel_config->vec_C1         = reserved_zmms - 5;
-    i_micro_kernel_config->vec_C2         = reserved_zmms - 6;
-    i_micro_kernel_config->vec_thres      = reserved_zmms - 7;
-    i_micro_kernel_config->vec_absmask    = reserved_zmms - 8;
-    i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
-    i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
-    i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
-    i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
-    i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
-    i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
-    i_micro_kernel_config->vec_tmp0       = reserved_zmms - 15;
-
-    if(!l_is_sve) {
-      i_micro_kernel_config->vec_c03      = reserved_zmms - 16;
-      i_micro_kernel_config->vec_c02      = reserved_zmms - 17;
-      i_micro_kernel_config->vec_c01      = reserved_zmms - 18;
-      i_micro_kernel_config->vec_c13      = reserved_zmms - 19;
-      i_micro_kernel_config->vec_c12      = reserved_zmms - 20;
-      i_micro_kernel_config->vec_c11      = reserved_zmms - 21;
-      i_micro_kernel_config->vec_c23      = reserved_zmms - 22;
-      i_micro_kernel_config->vec_c22      = reserved_zmms - 23;
-      i_micro_kernel_config->vec_c21      = reserved_zmms - 24;
-      i_micro_kernel_config->vec_tmp1     = reserved_zmms - 25;
+    if(l_is_sve) {
+      i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
+      i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
+      i_micro_kernel_config->vec_index      = reserved_zmms - 3;
+      i_micro_kernel_config->vec_C0         = reserved_zmms - 4;
+      i_micro_kernel_config->vec_C1         = reserved_zmms - 5;
+      i_micro_kernel_config->vec_C2         = reserved_zmms - 6;
+      i_micro_kernel_config->vec_thres      = reserved_zmms - 7;
+      i_micro_kernel_config->vec_absmask    = reserved_zmms - 8;
+      i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
+      i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
+      i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
+      i_micro_kernel_config->vec_c0         = reserved_zmms - 12;
+      i_micro_kernel_config->vec_c1         = reserved_zmms - 13;
+      i_micro_kernel_config->vec_c2         = reserved_zmms - 14;
+      i_micro_kernel_config->vec_tmp0       = reserved_zmms - 15;
+    } else {
+      i_micro_kernel_config->vec_xr         = reserved_zmms - 1;
+      i_micro_kernel_config->vec_xa         = reserved_zmms - 2;
+      i_micro_kernel_config->vec_index      = reserved_zmms - 3;
+      i_micro_kernel_config->vec_C0         = reserved_zmms - 4;
+      i_micro_kernel_config->vec_C1         = reserved_zmms - 5;
+      i_micro_kernel_config->vec_C2         = reserved_zmms - 6;
+      i_micro_kernel_config->vec_thres      = reserved_zmms - 7;
+      i_micro_kernel_config->vec_absmask    = reserved_zmms - 8;
+      i_micro_kernel_config->vec_scale      = reserved_zmms - 9;
+      i_micro_kernel_config->vec_shifter    = reserved_zmms - 10;
+      i_micro_kernel_config->vec_halves     = reserved_zmms - 11;
+      i_micro_kernel_config->vec_c03        = reserved_zmms - 12;
+      i_micro_kernel_config->vec_c02        = reserved_zmms - 13;
+      i_micro_kernel_config->vec_c01        = reserved_zmms - 14;
+      i_micro_kernel_config->vec_c0         = reserved_zmms - 15;
+      i_micro_kernel_config->vec_c13        = reserved_zmms - 16;
+      i_micro_kernel_config->vec_c12        = reserved_zmms - 17;
+      i_micro_kernel_config->vec_c11        = reserved_zmms - 18;
+      i_micro_kernel_config->vec_c1         = reserved_zmms - 19;
+      i_micro_kernel_config->vec_c23        = reserved_zmms - 20;
+      i_micro_kernel_config->vec_c22        = reserved_zmms - 21;
+      i_micro_kernel_config->vec_c21        = reserved_zmms - 22;
+      i_micro_kernel_config->vec_c2         = reserved_zmms - 23;
+      i_micro_kernel_config->vec_tmp0       = reserved_zmms - 24;
+      i_micro_kernel_config->vec_tmp1       = reserved_zmms - 25;
     }
 
     if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
@@ -2676,7 +2691,6 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
           l_tupletype );
       }
     }
-
 
     i_micro_kernel_config->reserved_zmms = reserved_zmms;
   }

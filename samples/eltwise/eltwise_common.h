@@ -223,8 +223,9 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
   double l_performance[MAX_BENCHMARK_ARCHITECTURES];
   const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES];
   const char* l_arch = NULL;
+  int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
-  for (int l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
+  for (l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
     if (l_targetRuntimeSeconds > 0){
       l_arch = l_archNames[l_archIndex] = getBenchmarkedArch(l_archIndex);
       if (!l_arch) break;
@@ -276,8 +277,9 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
   double l_performance[MAX_BENCHMARK_ARCHITECTURES];
   const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES];
   const char* l_arch = NULL;
+  int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
-  for (int l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
+  for (l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
     if (l_targetRuntimeSeconds > 0){
       l_arch = l_archNames[l_archIndex] = getBenchmarkedArch(l_archIndex);
       if (!l_arch) break;
