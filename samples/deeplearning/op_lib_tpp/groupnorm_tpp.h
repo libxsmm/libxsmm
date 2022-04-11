@@ -289,8 +289,8 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   eqn_out_arg_shape.ld   = ld;
   eqn_out_arg_shape.type = res.datatype_out;
 
-  libxsmm_matrix_eqn_tree_print( my_eqn10 );
-  libxsmm_matrix_eqn_rpn_print ( my_eqn10 );
+  /* libxsmm_matrix_eqn_tree_print( my_eqn10 ); */
+  /* libxsmm_matrix_eqn_rpn_print ( my_eqn10 ); */
   res.func10 = libxsmm_dispatch_matrix_eqn_v2( my_eqn10, eqn_out_arg_shape );
   if ( res.func10 == NULL) {
     fprintf( stderr, "JIT for TPP fwd func10 (eqn10) failed. Bailing...!\n");
