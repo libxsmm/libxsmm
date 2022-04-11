@@ -1695,7 +1695,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
     if (i_vlen_in == i_vlen_out) {
       mask_reg_out = mask_reg_in;
     } else {
-      if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+      if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
         libxsmm_datatype fake_dt;
         if (i_vlen_out == 64) {
           fake_dt = LIBXSMM_DATATYPE_I8;
