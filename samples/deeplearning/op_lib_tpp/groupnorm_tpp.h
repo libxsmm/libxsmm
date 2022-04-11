@@ -55,9 +55,7 @@ typedef struct my_gn_fwd_config {
   libxsmm_meltwfunction_unary  all_zero_G_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
-  libxsmm_meltwfunction_unary  relu_kernel;
-  libxsmm_meltwfunction_binary ewise_add_kernel;
-  my_gn_fuse        fuse_type;
+  my_gn_fuse                   fuse_type;
 } my_gn_fwd_config;
 
 typedef struct my_gn_bwd_config {
@@ -86,7 +84,7 @@ typedef struct my_gn_bwd_config {
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_unary  inv_relu_kernel;
   libxsmm_meltwfunction_unary  ewise_copy_kernel;
-  my_gn_fuse        fuse_type;
+  my_gn_fuse                   fuse_type;
 } my_gn_bwd_config;
 
 my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
@@ -157,31 +155,6 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     exit(-1);
   }
 
-  if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
-    if ((res.fuse_type == 4 || res.fuse_type == 5) && res.bc % 16 != 0) {
-      fprintf( stderr, "Fused ReLU with a mask does not work for sizes which are not a multiple of 16 (2BYTE limitation). Bailing...!\n");
-      exit(-1);
-    }
-
-    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, res.datatype_in, res.datatype_out, res.datatype_comp);
-    unary_flags           = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
-    res.relu_kernel       = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags);
-    if ( res.relu_kernel == NULL ) {
-      fprintf( stderr, "JIT for TPP fwd_relu_kernel failed. Bailing...!\n");
-      exit(-1);
-    }
-  }
-
-  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
-    binary_shape         = libxsmm_create_meltw_binary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ldo, ldo, ldo, res.datatype_in, res.datatype_in, res.datatype_out, res.datatype_comp);
-    binary_flags         = LIBXSMM_MELTW_FLAG_BINARY_NONE;
-    res.ewise_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
-    if ( res.ewise_add_kernel == NULL) {
-      fprintf( stderr, "JIT for TPP fwd ewise_add_kernel failed. Bailing...!\n");
-      exit(-1);
-    }
-  }
-
   /* TPPs for reducing X and X2 in HW*/
   ld = res.bc;
   tmp_ld = res.bc;
@@ -230,41 +203,31 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   ld = res.bc;
   tmp_ld = 1;
   tmp_ld2 = 1;
-  my_eqn10 = libxsmm_matrix_eqn_create();                          /* y = (s*x + b)*gamma + beta */
 
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  my_eqn10 = libxsmm_matrix_eqn_create();                          /* y = relu ( ( (s*x + b)*gamma + beta ) + inp_add) */
+
+  if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
+    unary_flags                 = ( (res.fuse_type == 4 || res.fuse_type == 5) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    op_metadata[3].eqn_idx      = my_eqn10;
+    op_metadata[3].op_arg_pos   = -1;
+
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[3], LIBXSMM_MELTW_TYPE_UNARY_RELU, res.datatype_out, unary_flags);
+
+    if (res.datatype_out == LIBXSMM_DATATYPE_BF16)
+      libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[3], LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, res.datatype_out, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  }
+
+  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
+    binary_flags                = LIBXSMM_MELTW_FLAG_BINARY_NONE;
+    op_metadata[2].eqn_idx      = my_eqn10;
+    op_metadata[2].op_arg_pos   = -1;
+    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[2], LIBXSMM_MELTW_TYPE_BINARY_ADD, res.datatype_comp, binary_flags);
+  }
+
+  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
   op_metadata[0].eqn_idx      = my_eqn10;
   op_metadata[0].op_arg_pos   = -1;
   libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, res.datatype_comp, ternary_flags);
-
-  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
-  op_metadata[1].eqn_idx      = my_eqn10;
-  op_metadata[1].op_arg_pos   = -1;
-  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, res.datatype_comp, ternary_flags);
-
-  arg_metadata[0].eqn_idx     = my_eqn10;
-  arg_metadata[0].in_arg_pos  = 0;
-  arg_shape[0].m              = res.bc;                            /* x = [HW, bc] */
-  arg_shape[0].n              = res.H*res.W /res.num_HW_blocks;
-  arg_shape[0].ld             = ld;
-  arg_shape[0].type           = res.datatype_in;
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
-
-  arg_metadata[1].eqn_idx     = my_eqn10;
-  arg_metadata[1].in_arg_pos  = 1;
-  arg_shape[1].m    = res.bc;                                      /* s = [bc] */
-  arg_shape[1].n    = 1;
-  arg_shape[1].ld   = tmp_ld;
-  arg_shape[1].type = res.datatype_comp;
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
-
-  arg_metadata[2].eqn_idx     = my_eqn10;
-  arg_metadata[2].in_arg_pos  = 2;
-  arg_shape[2].m    = res.bc;                                      /* b = [bc] */
-  arg_shape[2].n    = 1;
-  arg_shape[2].ld   = tmp_ld;
-  arg_shape[2].type = res.datatype_comp;
-  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
 
   arg_metadata[3].eqn_idx     = my_eqn10;
   arg_metadata[3].in_arg_pos  = 3;
@@ -274,6 +237,35 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[3].type = res.datatype_comp;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
 
+  ternary_flags               = LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_COL_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT;
+  op_metadata[1].eqn_idx      = my_eqn10;
+  op_metadata[1].op_arg_pos   = -1;
+  libxsmm_matrix_eqn_push_back_ternary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_TERNARY_MULADD, res.datatype_comp, ternary_flags);
+
+  arg_metadata[1].eqn_idx     = my_eqn10;
+  arg_metadata[1].in_arg_pos  = 1;
+  arg_shape[1].m    = res.bc;                                      /* s = [bc] */
+  arg_shape[1].n    = 1;
+  arg_shape[1].ld   = tmp_ld;
+  arg_shape[1].type = res.datatype_comp;
+  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
+
+  arg_metadata[0].eqn_idx     = my_eqn10;
+  arg_metadata[0].in_arg_pos  = 0;
+  arg_shape[0].m    = res.bc;                                      /* x = [HW, bc] */
+  arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+  arg_shape[0].ld   = ld;
+  arg_shape[0].type = res.datatype_in;
+  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
+
+  arg_metadata[2].eqn_idx     = my_eqn10;
+  arg_metadata[2].in_arg_pos  = 2;
+  arg_shape[2].m    = res.bc;                                      /* b = [bc] */
+  arg_shape[2].n    = 1;
+  arg_shape[2].ld   = tmp_ld;
+  arg_shape[2].type = res.datatype_comp;
+  libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
+
   arg_metadata[4].eqn_idx     = my_eqn10;
   arg_metadata[4].in_arg_pos  = 4;
   arg_shape[4].m    = res.bc;                                      /* beta = [bc] */
@@ -281,6 +273,16 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   arg_shape[4].ld   = tmp_ld2;
   arg_shape[4].type = res.datatype_comp;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[4], arg_shape[4], arg_singular_attr);
+
+  if (res.fuse_type == 2 || res.fuse_type == 3 || res.fuse_type == 5) {
+    arg_metadata[5].eqn_idx     = my_eqn10;
+    arg_metadata[5].in_arg_pos  = 5;
+    arg_shape[5].m    = res.bc;                                      /* inp_add = [HW, bc] */
+    arg_shape[5].n    = res.H*res.W / res.num_HW_blocks;
+    arg_shape[5].ld   = ld;
+    arg_shape[5].type = res.datatype_in;
+    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[5], arg_shape[5], arg_singular_attr);
+  }
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
@@ -790,7 +792,7 @@ void my_gn_fwd_exec_f32( my_gn_fwd_config cfg, const float *pinp, const float *p
   libxsmm_meltw_unary_param  v_reduce_groups_param;
   libxsmm_meltw_unary_param  all_relu_param;
 
-  libxsmm_matrix_arg arg_array[5];
+  libxsmm_matrix_arg arg_array[6];
   libxsmm_matrix_eqn_param eqn_param;
 
   memset( &all_zero_param,        0, sizeof(all_zero_param));
@@ -872,27 +874,18 @@ void my_gn_fwd_exec_f32( my_gn_fwd_config cfg, const float *pinp, const float *p
       arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                              /* [CB] */
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
-        eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
-        cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-
-        /* Eltwise add */
-        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          cfg.ewise_add_kernel(&add_param);
+        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
         }
 
-        /* ReLU */
         if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          all_relu_param.op.primary   = (void*)(&alpha);
-          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                            (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
-          cfg.relu_kernel(&all_relu_param);
-        } /* ReLU */
+          eqn_param.output.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                        (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+        }
+
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
+        eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
+        cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = relu(((s*x + b)*gamma + beta) + inp_add) */
       }
     }
   } else{                                                         /* Case when group_size > CB */
@@ -989,27 +982,18 @@ void my_gn_fwd_exec_f32( my_gn_fwd_config cfg, const float *pinp, const float *p
         arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                           /* [CB] */
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);  /* [HW, CB] */
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);     /* [HW,CB] */
-          cfg.func10(&eqn_param);                                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-
-          /* Eltwise add */
-          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            cfg.ewise_add_kernel(&add_param);
+          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
+            arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
           }
-          /* ReLU */
+
           if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            all_relu_param.op.primary   = (void*)(&alpha);
-            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                              (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
-            cfg.relu_kernel(&all_relu_param);
-          } /* ReLU */
+            eqn_param.output.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                          (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+          }
+
+          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
+          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
+          cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = relu(((s*x + b)*gamma + beta) + inp_add) */
         }
       }
     }
@@ -1076,7 +1060,7 @@ void my_gn_fwd_exec_bf16( my_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
   libxsmm_meltw_unary_param  v_reduce_groups_param;
   libxsmm_meltw_unary_param  all_relu_param;
 
-  libxsmm_matrix_arg arg_array[5];
+  libxsmm_matrix_arg arg_array[6];
   libxsmm_matrix_eqn_param eqn_param;
 
   memset( &all_zero_param,        0, sizeof(all_zero_param));
@@ -1158,27 +1142,18 @@ void my_gn_fwd_exec_bf16( my_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
       arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                              /* [CB] */
 
       for(hwb=0; hwb < num_HW_blocks; hwb++){
-        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
-        eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
-        cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-
-        /* Eltwise add */
-        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-          cfg.ewise_add_kernel(&add_param);
+        if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
         }
 
-        /* ReLU */
         if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          all_relu_param.op.primary   = (void*)(&alpha);
-          all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-          all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                            (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
-          cfg.relu_kernel(&all_relu_param);
-        } /* ReLU */
+          eqn_param.output.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                        (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+        }
+
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
+        eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
+        cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = relu(((s*x + b)*gamma + beta) + inp_add) */
       }
     }
   } else{                                                         /* Case when group_size > CB */
@@ -1275,27 +1250,18 @@ void my_gn_fwd_exec_bf16( my_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
         arg_array[4].primary = (void*)&LIBXSMM_VLA_ACCESS(2, beta, cp, 0, CB);                           /* [CB] */
 
         for(hwb=0; hwb < num_HW_blocks; hwb++){
-          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);  /* [HW, CB] */
-          eqn_param.inputs = arg_array;
-          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);     /* [HW,CB] */
-          cfg.func10(&eqn_param);                                                                                    /* Normalization equation -> y = ((s*x + b)*gamma + beta) */
-
-          /* Eltwise add */
-          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            add_param.in0.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            add_param.in1.primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            add_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(4, out,     np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);
-            cfg.ewise_add_kernel(&add_param);
+          if (cfg.fuse_type == MY_GN_FUSE_ELTWISE || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
+            arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp_add, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
           }
-          /* ReLU */
+
           if (cfg.fuse_type == MY_GN_FUSE_RELU || cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            all_relu_param.op.primary   = (void*)(&alpha);
-            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);      /* [HW,CB] */
-            all_relu_param.out.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                              (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
-            cfg.relu_kernel(&all_relu_param);
-          } /* ReLU */
+            eqn_param.output.secondary = ((cfg.fuse_type == MY_GN_FUSE_RELU_WITH_MASK || cfg.fuse_type == MY_GN_FUSE_ELTWISE_RELU_WITH_MASK) ?
+                                          (void*)&LIBXSMM_VLA_ACCESS(4, relumask, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, (CB/BITS_PER_CHAR)) : NULL );
+          }
+
+          arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(4, inp, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB); /* [HW, CB] */
+          eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(4, out, np, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, CB);    /* [HW, CB] */
+          cfg.func10(&eqn_param);                                                                                   /* Normalization equation -> y = relu(((s*x + b)*gamma + beta) + inp_add) */
         }
       }
     }
