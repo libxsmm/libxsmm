@@ -1014,28 +1014,28 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)) ? 1 : 0;
   unsigned int flag_reduce_op_max = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ? 1 : 0;
 
-  // if ( (io_generated_code->arch > LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
-  //   vlen = 8;
-  //   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-  //     vname_in = 'x';
-  //     vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVDQU16;
-  //   }
+  if ( (io_generated_code->arch > LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+    vlen = 8;
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+      vname_in = 'x';
+      vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVDQU16;
+    }
 
-  //   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-  //     vname_out = 'x';
-  //     vmove_instruction_out = LIBXSMM_X86_INSTR_VMOVDQU16;
-  //   }
-  // }
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+      vname_out = 'x';
+      vmove_instruction_out = LIBXSMM_X86_INSTR_VMOVDQU16;
+    }
+  }
 
-  // if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
-  //   vname_in = 'y';
-  //   vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVDQU16;
-  // }
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+    vname_in = 'y';
+    vmove_instruction_in = LIBXSMM_X86_INSTR_VMOVDQU16;
+  }
 
-  // if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-  //   vname_out = 'y';
-  //   vmove_instruction_out = LIBXSMM_X86_INSTR_VMOVDQU16;
-  // }
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+    vname_out = 'y';
+    vmove_instruction_out = LIBXSMM_X86_INSTR_VMOVDQU16;
+  }
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
