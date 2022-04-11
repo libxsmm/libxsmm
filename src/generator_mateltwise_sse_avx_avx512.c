@@ -520,7 +520,6 @@ void libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( lib
         return;
       }
     }
-
     /* Configure output specific microkernel options */
     if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) {
       io_micro_kernel_config->datatype_size_out = 8;
