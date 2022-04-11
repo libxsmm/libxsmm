@@ -64,7 +64,6 @@ int main( int argc, char* argv[] ) {
   int pad_w_in  = 0; /* padding mode */
   int pad_h_out = 0; /* padding mode */
   int pad_w_out = 0; /* padding mode */
-  int norm_type = 0; /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type = 5; /* 0: nothing fused, 1: relu fused, 2: ewise fused, 3: relu and ewise fused, 4: relu with mask, 5: relu and ewise with mask  */
 
   const char *const env_check = getenv("CHECK");
@@ -87,7 +86,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_clear(&norms_bwd_gamma);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters N CP HW bc num_HW_blocks\n", argv[0]);
+    printf("Usage: %s iters N C H W G bc pad_w_in pad_h_in pad_w_out pad_h_out stride fuse_type\n", argv[0]);
     return 0;
   }
 
@@ -107,7 +106,6 @@ int main( int argc, char* argv[] ) {
   if ( argc > i ) pad_w_out  = atoi(argv[i++]);
   if ( argc > i ) pad_h_out  = atoi(argv[i++]);
   if ( argc > i ) stride     = atoi(argv[i++]);
-  if ( argc > i ) norm_type  = atoi(argv[i++]);
   if ( argc > i ) fuse_type  = atoi(argv[i++]);
 
   CP = C / bc;
@@ -130,11 +128,6 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
 
-  if ( norm_type != 0 ) {
-    printf("Only full norm (norm_type = 0) is supported \n");
-    return -1;
-  }
-
   if ((fuse_type == 4 || fuse_type == 5) && bc % 16 != 0) {
     fprintf( stderr, "Fused ReLU with a mask will not work for sizes which are not a multiple of 16 (2BYTE limitation). Bailing...!\n");
     return -1;
@@ -147,7 +140,7 @@ int main( int argc, char* argv[] ) {
 
   /* set struct for naive batch normalization */
   naive_param.N = N;
-  naive_param.C = CP*bc;
+  naive_param.C = C;
   naive_param.G = G;
   naive_param.H = H;
   naive_param.W = W;
@@ -264,8 +257,8 @@ int main( int argc, char* argv[] ) {
 
   init_buf(cache_fl,  1024*1024, 1, 0);
 
-  my_gn_fwd = setup_my_gn_fwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type );
-  my_gn_bwd = setup_my_gn_bwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type );
+  my_gn_fwd = setup_my_gn_fwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  my_gn_bwd = setup_my_gn_bwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 
   /* allocate and bind scratch */
   if ( my_gn_fwd.scratch_size > 0 || my_gn_bwd.scratch_size > 0 ) {
@@ -285,7 +278,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_gn_fwd_exec_f32( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
 
     tensor_copy_NCHWc_to_NCHW (inp,     naive_inp,     N, C, H, W, bc);
@@ -381,7 +374,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
+      my_gn_fwd_exec_f32( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch);
     }
 
   l_start = libxsmm_timer_tick();
@@ -395,7 +388,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_fwd_exec( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+      my_gn_fwd_exec_f32( my_gn_fwd, inp, inp_add, gamma, beta, mean, var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -414,7 +407,7 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
 
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec_f32( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 
 
@@ -616,7 +609,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec_f32( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -629,7 +622,7 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_gn_bwd_exec( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+      my_gn_bwd_exec_f32( my_gn_bwd, eqn_dout, inp, mean, var, gamma, eqn_relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();
