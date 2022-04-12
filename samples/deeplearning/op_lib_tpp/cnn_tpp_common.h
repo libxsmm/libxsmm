@@ -309,11 +309,11 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   LIBXSMM_INIT
 
   /* C */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CPX)
+  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid >= LIBXSMM_X86_AVX512_VL256_CPX)
           || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
         ){
     tmp_max_c_block = LIBXSMM_BLOCK_SIZE;
-  } else if ( ((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||
+  } else if ( /*((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||*/
        (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
     tmp_max_c_block = 32;
   } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
@@ -330,11 +330,11 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   }
 
   /* K */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CPX)
+  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid >= LIBXSMM_X86_AVX512_VL256_CPX)
         || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
       ){
     tmp_max_k_block = LIBXSMM_BLOCK_SIZE;
-  } else if ( ((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||
+  } else if ( /*((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||*/
        (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
     tmp_max_k_block = 32;
   } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
@@ -438,12 +438,14 @@ int cnn_tpp_setup_pack_input_fwd( cnn_tpp_config* cfg ) {
     result = 1;
   }
 
+#if 0
   /* For SPR we allow packing more aggressively to generate more efficient BRGEMMs */
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     if ((cfg->ofw <= 14) && (cfg->R == 1) && (cfg->S == 1) && (cfg->u == 2) && (cfg->v == 2)) {
       result = 1;
     }
   }
+#endif
 
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (cfg->N != cfg->threads) {
@@ -468,6 +470,7 @@ int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
     result = 1;
   }
 
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     if (cfg->ofw == 7 && cfg->ofh == 7 && cfg->R == 3 && cfg->S == 3) {
       result = 7;
@@ -476,6 +479,7 @@ int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
       result = 2;
     }
   }
+#endif
 
   /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
   if ((cfg->pack_input == 0) && ((cfg->u !=1 ) || (cfg->v != 1))) {
@@ -488,6 +492,7 @@ int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
 int cnn_tpp_setup_fwd_pixels_gemm( cnn_tpp_config* cfg ) {
   int result = cfg->fwd_ofw_rb * cfg->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     if (cfg->R != 1 || cfg->S != 1) {
       if (cfg->ofw < 24) {
@@ -495,12 +500,14 @@ int cnn_tpp_setup_fwd_pixels_gemm( cnn_tpp_config* cfg ) {
       }
     }
   }
+#endif
   return result;
 }
 
 int cnn_tpp_setup_fwd_block_H( cnn_tpp_config* cfg ) {
   int result = 14;
 
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     /* Spatial dimension block tuning for SPR */
     if ((cfg->ofh == 7 && cfg->u == 2) || (cfg->ofh == 14 && cfg->R != 3 ) ||  cfg->ofh == 27 || (cfg->ofh == 28 && cfg->R == 1) || cfg->ofh == 48 || cfg->ofh == 54 || cfg->ofh == 56 || cfg->ofh == 112 ) {
@@ -515,6 +522,15 @@ int cnn_tpp_setup_fwd_block_H( cnn_tpp_config* cfg ) {
       result = 14;
     }
   }
+#else
+  /* Block H only for large images  */
+  if (cfg->ofh >= 28) {
+    result = 4;
+  }
+  if (cfg->ofh == 28 && cfg->R == 3 ) {
+    result = 14;
+  }
+#endif
   /* Make sure it is divisible bu the ofh_rb factor in the kernel */
   while ( result % cfg->fwd_ofh_rb != 0 ) {
     result--;
@@ -548,9 +564,11 @@ int cnn_tpp_setup_blocksifm_blocking( cnn_tpp_config* cfg ) {
   }
 
   /* In case of SPR bring always in all accumulation */
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8))) {
     result = cfg->blocksifm;
   }
+#endif
 
   if (cfg->datatype_in == LIBXSMM_DATATYPE_I8) {
     result = cfg->blocksifm;
@@ -613,11 +631,13 @@ int cnn_tpp_setup_use_ofm_parallelization( cnn_tpp_config* cfg ) {
   if ((cfg->ofw <= 7) && (cfg->C == 1024) && (cfg->K == 512)) {
     result = 1;
   }
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8))) {
     if (cfg->ofw == 7) {
       result = 1;
     }
   }
+#endif
   return result;
 }
 
@@ -635,9 +655,11 @@ int cnn_tpp_setup_avoid_rim_fmas_fwd( cnn_tpp_config* cfg ) {
       result = 0;
     }
   }
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8))) {
     result = 0;
   }
+#endif
 
   if (cfg->datatype_in == LIBXSMM_DATATYPE_BF16) {
     result = 0;
@@ -661,9 +683,11 @@ int cnn_tpp_setup_shuffle_filter_accesses( cnn_tpp_config* cfg ) {
   if (cfg->ofw == 7 && cfg->R == 1 && cfg->C == 2048 && cfg->K == 512) {
     result = 1;
   }
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) )  {
     result = 0;
   }
+#endif
   return result;
 }
 
@@ -704,10 +728,11 @@ int cnn_tpp_setup_init_fwd_gemm_flags( cnn_tpp_config* cfg ) {
 #else
   LIBXSMM_UNUSED(cfg);
 #endif
-
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8))) {
     result = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   }
+#endif
 
   return result;
 }
@@ -805,6 +830,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_ofh_rb( cnn_tpp_config* cfg ) {
 LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_pixels_gemm( cnn_tpp_config* cfg ) {
   int result = cfg->bwd_ofw_rb * cfg->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     if (cfg->R != 1 || cfg->S != 1) {
       if (cfg->ofw < 24) {
@@ -812,6 +838,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_pixels_gemm( cnn_tpp_config* cfg ) {
       }
     }
   }
+#endif
   return result;
 }
 
@@ -872,10 +899,11 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_blocksofm_blocking( cnn_tpp_config* cfg ) {
       result = 2;
     }
   }
-
+#if  0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     result = cfg->blocksofm;
   }
+#endif
 
   if (cfg->blocksofm % result != 0) {
     result = 1;
@@ -890,9 +918,11 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_blocksofm_blocking( cnn_tpp_config* cfg ) {
 
 LIBXSMM_API_INLINE int cnn_tpp_setup_init_bwd_gemm_flags( cnn_tpp_config* cfg ) {
   int result = 0;
+#if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
     result = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
   }
+#endif
   return result;
 }
 
@@ -1269,6 +1299,7 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
   }
   /* output/input buffer to transpose when we use bf16 */
   if ( cfg->datatype_in == LIBXSMM_DATATYPE_BF16 ) {
+#if 0
     if  (cfg->target_archid >= LIBXSMM_X86_AVX512_SPR) {
       int OFHP = (cfg->upd_padding_copy == 1) ? cfg->ofhp + 2 * cfg->pad_h : cfg->ofhp;
       int IFHP = (cfg->upd_padding_copy == 1) ? cfg->ifhp + 2 * cfg->pad_h : cfg->ifhp;
@@ -1283,6 +1314,8 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
         cfg->upd_lp_input_full_scratch_size = (size_t) (cfg->N * IFHP * cfg->ifwp_extended * cfg->C * sizeof(cfg->datatype_in));
       }
     } else {
+#endif
+    if (1) {
       const int multiple_target = 2;
       int IFHP = (cfg->upd_padding_copy == 1) ? cfg->ifhp + 2 * cfg->pad_h : cfg->ifhp;
       int IFWP = (cfg->upd_padding_copy == 1) ? cfg->ifwp + 2 * cfg->pad_w : cfg->ifwp;
