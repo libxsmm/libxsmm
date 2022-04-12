@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
     my_fuse = MY_ELTWISE_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
     my_fuse = MY_ELTWISE_FUSE_RELU;
-  } else if ( fuse_type == 4 ) {
+  } else if ( fuse_type == 3 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
   } else {
     /* cannot happen */

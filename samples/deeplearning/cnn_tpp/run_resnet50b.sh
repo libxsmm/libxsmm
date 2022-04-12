@@ -16,24 +16,28 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 7 ]
+if [ $# -ne 9 ]
 then
-  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) TYPE ('A'-ALL/'F'-FP/'B'-BP/'U'-WU) FORMAT ('A'-ALL/'L'-LIBXSMM/'T'-Tensorflow/'M'-Mixed) padding; using default values; using default values: 64 1000 1 f32 A L 1"
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) TYPE ('A'-ALL/'F'-FP/'B'-BP/'U'-WU) Padding Fuse(0 nothing, 1 Bias, 2 ReLU, 3 ReLU+Bias) BC BK, using default values: 64 1000 1 f32 A 1 0 64 64"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
   NUMA=-1
   BIN=f32
   TYPE="A"
-  FORMAT="L"
   PAD=1
+  FUSE=0
+  BC=64
+  BK=64
 else
   MB=$1
   ITERS=$2
   NUMA=$3
   BIN=$4
   TYPE=$5
-  FORMAT=$6
-  PAD=$7
+  PAD=$6
+  FUSE=$7
+  BC=$8
+  BK=$9
 fi
 
 if [ "${UNAME}" ] && [ "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
@@ -94,31 +98,37 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
 #
-if [ "${BIN}" != "f32" ]; then
-  true
+if [ "f32" == "${BIN}" ]; then
+  PREC_BF16=0
 else
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  224 224 ${MB}     3   64 7 7 3 3 2 ${TYPE} ${FORMAT} ${PAD}
+  PREC_BF16=1
 fi
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}   128  128 3 3 1 1 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}    64   64 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}   256  512 1 1 0 0 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}    64   64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}    64  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}   256   64 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   56  56 ${MB}   256  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   256  256 3 3 1 1 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   128  128 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   512 1024 1 1 0 0 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   512  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   512  128 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   28  28 ${MB}   128  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}   512  512 3 3 1 1 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}   256  256 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}  1024 2048 1 1 0 0 2 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}   256 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}  1024  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   14  14 ${MB}  1024  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}    7   7 ${MB}   512  512 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}    7   7 ${MB}   512 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}    7   7 ${MB}  2048  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
+
+if [ ${PREC_BF16} -eq 0 ]; then
+${NUMACTL} ./layer_example ${ITERS}  224 224 ${MB}     3   64 7 7 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+else
+${NUMACTL} ./layer_example ${ITERS}  224 224 ${MB}     4   64 7 7 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+fi
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}   128  128 3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}    64   64 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}   256  512 1 1 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}    64   64 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}    64  256 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}   256   64 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   56  56 ${MB}   256  128 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   256  256 3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   128  128 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   512 1024 1 1 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   512  256 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   512  128 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   28  28 ${MB}   128  512 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}   512  512 3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}   256  256 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}  1024 2048 1 1 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}   256 1024 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}  1024  512 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}   14  14 ${MB}  1024  256 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}    7   7 ${MB}   512  512 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}    7   7 ${MB}   512 2048 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}    7   7 ${MB}  2048  512 1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 
