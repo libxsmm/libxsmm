@@ -258,7 +258,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
   }
 
   if (use_m_masking == 1) {
-    if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
       unsigned int precision = (LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ? LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) : LIBXSMM_DATATYPE_F32  ;
       mask_inout = 1;
       mask_out_count = vlen - (m % vlen);
