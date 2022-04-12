@@ -7,7 +7,6 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 WC=$(command -v wc)
 TR=$(command -v tr)
-NUMA=-1
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=64; fi
@@ -17,20 +16,22 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 5 ]
+if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) bin=(f32, bf16) iters MB type=(A, F, B) fuse=(0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU))"
-  BIN=bf16
-  ITERS=100
-  MB=1024
-  TYPE=A
-  FUSE=4
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) NORM (0,1) FUSE (0,1,2,3) ; using default values; using default values: 64 1000 1 f32 0 0"
+  MB=${CHECK_DNN_MB}
+  ITERS=${CHECK_DNN_ITERS}
+  NUMA=-1
+  BIN=f32
+  NORM=0
+  FUSE=0
 else
-  BIN=$1
+  MB=$1
   ITERS=$2
-  MB=$3
-  TYPE=$4
-  FUSE=$5
+  NUMA=$3
+  BIN=$4
+  NORM=$5
+  FUSE=$6
 fi
 
 if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
@@ -91,17 +92,48 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 14 512 ${FUSE} ${TYPE} 64 32 14
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 256 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 256 128 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 480 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 512 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 256 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 256 1 1 ${TYPE} 64 1 32
+if [ "f32" == "${BIN}" ]; then
+  PREC_BF16=0
+else
+  PREC_BF16=1
+fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 512 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 64 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 100 1024 ${FUSE} ${TYPE} 64 32 50
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1 0 A 64 1 32
+echo "PREC_BF16 = ${PREC_BF16}"
+
+# ./layer_example iters N C H W CB pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type prec_bf16
+#
+CB=64
+
+FUSE=4
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   112 112 ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+FUSE=4
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=0
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+FUSE=5
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=4
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 128  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=0
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+FUSE=5
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=4
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=0
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+FUSE=5
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=4
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512   7   7  ${CB}  1 1 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+
+FUSE=0
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+FUSE=5
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
