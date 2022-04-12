@@ -22,6 +22,7 @@ deeplearning/mlp_tpp_old/mlp_example_*
 deeplearning/mlp_tpp_old/mlp_mnist_*
 deeplearning/mlp_tpp/mlp_example_*
 deeplearning/mlp_tpp/mlp_mnist_*
+deeplearning/cnn_tpp/layer_example*
 deeplearning/rnndriver/rnndriver_*
 deeplearning/fullyconnected_tpp/layer_example_*
 eltwise/eltwise_*

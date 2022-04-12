@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
     my_fuse = MY_ELTWISE_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
     my_fuse = MY_ELTWISE_FUSE_RELU;
-  } else if ( fuse_type == 4 ) {
+  } else if ( fuse_type == 3 ) {
     my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
   } else {
     /* cannot happen */
@@ -218,11 +218,11 @@ int main(int argc, char* argv[])
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf(" InImg %dx%d Padded (%dx%d)\n", ifh, ifw, ifhp, ifwp);
   printf("OutImg %dx%d Padded (%dx%d)\n", ofh, ofw, ofhp, ofwp);
-  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIfm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nOfm*ofhp*ofwp*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIfm*ifhp*ifwp*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOfm*ofhp*ofwp*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Weight     : %10.2f MiB\n", (double)(nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input  (MB): %10.2f MiB\n", (double)((size_t)nImg*nIfm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Output (MB): %10.2f MiB\n", (double)((size_t)nImg*nOfm*ofhp*ofwp*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input   (1): %10.2f MiB\n", (double)((size_t)1*nIfm*ifhp*ifwp*   sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Output  (1): %10.2f MiB\n", (double)((size_t)1*nOfm*ofhp*ofwp*   sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Weight     : %10.2f MiB\n", (double)((size_t)nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
   if (overwrite_output > 0 ) {
     printf("Using Overwrite Option\n");
   }
@@ -241,52 +241,52 @@ int main(int argc, char* argv[])
     /* cannot happen */
   }
   /* allocate data */
-  naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_input_save      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_output_save     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_output_bp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_output_wu       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_libxsmm_input   = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_filter          = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  naive_filter_save     = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  naive_filter_wu       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  naive_filter_kcrs     = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  naive_libxsmm_filter  = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  input_nhwc            = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  doutput_nhwc          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  dinput_nhwc           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  output_nhwc           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_output_nhwc     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_input_nhwc      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  dfilter_rsck          = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_input           = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_input_save      = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_output          = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_save     = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_bp       = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_wu       = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_input   = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_filter          = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_filter_save     = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_filter_wu       = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_filter_kcrs     = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_libxsmm_filter  = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  input_nhwc            = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  doutput_nhwc          = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  dinput_nhwc           = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  output_nhwc           = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_nhwc     = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_input_nhwc      = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  filter_rsck           = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  dfilter_rsck          = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
 
-  input_libxsmm         = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  filter_libxsmm        = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  output_libxsmm        = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  dinput_libxsmm        = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  doutput_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
+  input_libxsmm         = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  filter_libxsmm        = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  output_libxsmm        = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  dinput_libxsmm        = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  doutput_libxsmm       = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  bias_libxsmm          = (float*)libxsmm_aligned_malloc( (size_t)nOfm*               sizeof(float), 2097152);
 
   /* Allocate bf16 counterparts */
-  input_libxsmm_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
-  filter_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
-  output_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
-  dinput_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
-  dfilter_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
-  doutput_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
-  filtertr_libxsmm_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
-  bias_libxsmm_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*               sizeof(libxsmm_bfloat16), 2097152);
+  input_libxsmm_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
+  dinput_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
+  dfilter_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  doutput_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
+  filtertr_libxsmm_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  bias_libxsmm_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( (size_t)nOfm*               sizeof(libxsmm_bfloat16), 2097152);
 
   /* initialize data */
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   } else {
-    float *naive_input_tmp = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+    float *naive_input_tmp = (float*)libxsmm_aligned_malloc( (size_t)nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
     init_buf(naive_input_tmp,          nImg*nIfm*ifh*ifw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
     libxsmm_free(naive_input_tmp);
@@ -296,8 +296,8 @@ int main(int argc, char* argv[])
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
     init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
-    float *naive_output_bp_tmp = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-    float *naive_output_wu_tmp = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+    float *naive_output_bp_tmp = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+    float *naive_output_wu_tmp = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
     init_buf(naive_output_wu_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
   if (padding_mode == 0 ) {
     init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
-    float *naive_output_tmp = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+    float *naive_output_tmp = (float*)libxsmm_aligned_malloc( (size_t)nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_output_tmp,       nImg*nOfm*ofh*ofw, 0, 0);
     libxsmm_free(naive_output_tmp);
   }
