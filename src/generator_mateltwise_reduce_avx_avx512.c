@@ -1175,13 +1175,23 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
         /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
         if ((use_m_masking == 1) && (im == (m_trips-1))) {
-          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                    LIBXSMM_X86_INSTR_VBLENDVPS,
-                    'y',
-                    reg_sum,
-                    aux_vreg,
-                    reg_sum,
-                    0, 0, 0, (mask_reg) << 4 );
+          if (io_generated_code->arch <= LIBXSMM_X86_AVX2) {
+            libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+                      LIBXSMM_X86_INSTR_VBLENDVPS,
+                      'y',
+                      reg_sum,
+                      aux_vreg,
+                      reg_sum,
+                      0, 0, 0, (mask_reg) << 4 );
+          }else{
+            libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
+                                                          LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                          'y',
+                                                          reg_sum,
+                                                          aux_vreg,
+                                                          reg_sum,
+                                                          mask_reg, 0 );
+          }
         }
       }
     }
@@ -1205,13 +1215,23 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
       /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
       if ( (flag_reduce_op_max > 0) && (im == m_trips-1) && (use_m_masking > 0)) {
-        libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                  LIBXSMM_X86_INSTR_VBLENDVPS,
-                  'y',
-                  cur_vreg,
-                  aux_vreg,
-                  cur_vreg,
-                  0, 0, 0, (mask_reg) << 4 );
+          if (io_generated_code->arch <= LIBXSMM_X86_AVX2) {
+          libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
+                    LIBXSMM_X86_INSTR_VBLENDVPS,
+                    'y',
+                    cur_vreg,
+                    aux_vreg,
+                    cur_vreg,
+                    0, 0, 0, (mask_reg) << 4 );
+          }else{
+            libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
+                                                          LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                          'y',
+                                                          cur_vreg,
+                                                          aux_vreg,
+                                                          cur_vreg,
+                                                          mask_reg, 0 );
+          }
       }
 
       if ( compute_plain_vals_reduce > 0 ) {
