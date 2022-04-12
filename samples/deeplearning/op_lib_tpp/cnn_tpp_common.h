@@ -2627,20 +2627,22 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
     l_brconfig.br_stride_b_hint = stride_b;
     l_brconfig.br_unroll_hint   = 0;
 
-    /* Stride-based kernels  */
-    res.upd_compute_kernel1_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-    if (  res.upd_compute_kernel1_bf16f32.gemm  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel1_bf16f32 failed. Bailing...!\n");
-      exit(-1);
-    }
+    if ((stride_a > 0) && (stride_b > 0)) {
+      /* Stride-based kernels  */
+      res.upd_compute_kernel1_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.upd_compute_kernel1_bf16f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel1_bf16f32 failed. Bailing...!\n");
+        exit(-1);
+      }
 
-    if (res.ofw % 2 == 1) {
-       l_shape.k = res.ofw+1;
-    }
-    res.upd_compute_kernel2_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
-    if (  res.upd_compute_kernel2_bf16f32.gemm  == NULL ) {
-      fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel2_bf16f32 failed. Bailing...!\n");
-      exit(-1);
+      if (res.ofw % 2 == 1) {
+         l_shape.k = res.ofw+1;
+      }
+      res.upd_compute_kernel2_bf16f32.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+      if (  res.upd_compute_kernel2_bf16f32.gemm  == NULL ) {
+        fprintf( stderr, "JIT for BRGEMM TPP upd_compute_kernel2_bf16f32 failed. Bailing...!\n");
+        exit(-1);
+      }
     }
 
     if (res.pixel_blocking % 2 == 0) {

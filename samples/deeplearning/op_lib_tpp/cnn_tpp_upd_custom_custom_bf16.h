@@ -419,10 +419,21 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                     zero_ptr_out = (libxsmm_bfloat16*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, 0, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
                     unary_param.out.primary = (void*) zero_ptr_out;
                     cfg.zero_ofmblock_output_pixels_bf16( &unary_param );
-                    for (oj = 0; oj < cfg.ofhp; oj++) {
-                      unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-                      unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP)/2, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
-                      cfg.vnni_output_w_pixels_bf16( &unary_param );
+                    if (OFWP % 2 == 1) {
+                      for (oj = 0; oj < cfg.ofhp; oj++) {
+                        for (oi = 0; oi < cfg.ofwp; oi++) {
+                          for (ofm2 = 0; ofm2 < cfg.ofmblock; ofm2++) {
+                            LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP+oi)/2, ofm2, (oj*OFWP+oi)%2, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2) =
+                              LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                          }
+                        }
+                      }
+                    } else {
+                      for (oj = 0; oj < cfg.ofhp; oj++) {
+                        unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP)/2, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
+                        cfg.vnni_output_w_pixels_bf16( &unary_param );
+                      }
                     }
                   } else {
                     unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
