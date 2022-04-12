@@ -44,6 +44,9 @@ libxsmm_bsmmdispatch_reducebatch_strd_meltwfused
 libxsmm_bsmmdispatch_reducebatch_strd_meltwfused_unroll
 libxsmm_bsmmdispatch_reducebatch_strd_unroll
 libxsmm_convert_bf16_f32
+libxsmm_convert_bf8_f32
+libxsmm_convert_f16_to_f32
+libxsmm_convert_f32_to_f16
 libxsmm_cpuid
 libxsmm_cpuid_arm
 libxsmm_cpuid_name
@@ -51,9 +54,12 @@ libxsmm_cpuid_vlen32
 libxsmm_cpuid_x86
 libxsmm_create_dcsr_reg
 libxsmm_create_gemm_batch_reduce_config
+libxsmm_create_gemm_ext_binary_postops
+libxsmm_create_gemm_ext_unary_argops
 libxsmm_create_gemm_shape
 libxsmm_create_matrix_arg_attributes
 libxsmm_create_matrix_eqn_arg_metadata
+libxsmm_create_matrix_eqn_op_metadata
 libxsmm_create_meltw_binary_shape
 libxsmm_create_meltw_ternary_shape
 libxsmm_create_meltw_unary_shape
@@ -68,6 +74,7 @@ libxsmm_create_packed_xgemm_ac_rm
 libxsmm_create_packed_xgemm_bc_rm
 libxsmm_create_scsr_reg
 libxsmm_create_spgemm_csr_areg_v2
+libxsmm_dequantize_i16
 libxsmm_dfsspmdm_create
 libxsmm_dfsspmdm_destroy
 libxsmm_dfsspmdm_execute
@@ -133,7 +140,6 @@ libxsmm_dnn_create_pooling
 libxsmm_dnn_create_rnncell
 libxsmm_dnn_create_softmaxloss
 libxsmm_dnn_create_tensor_datalayout
-libxsmm_dnn_dequantize
 libxsmm_dnn_destroy_conv_layer
 libxsmm_dnn_destroy_fullyconnected
 libxsmm_dnn_destroy_fusedbatchnorm
@@ -202,7 +208,6 @@ libxsmm_dnn_pooling_get_scratch_size
 libxsmm_dnn_pooling_get_tensor
 libxsmm_dnn_pooling_release_scratch
 libxsmm_dnn_pooling_release_tensor
-libxsmm_dnn_quantize
 libxsmm_dnn_quantize_act
 libxsmm_dnn_quantize_fil
 libxsmm_dnn_release_scratch
@@ -429,6 +434,7 @@ libxsmm_ptr_w2
 libxsmm_ptr_z0
 libxsmm_ptr_z1
 libxsmm_ptr_z2
+libxsmm_quantize_i16
 libxsmm_realloc
 libxsmm_release_dmmkernel
 libxsmm_release_kernel
@@ -438,6 +444,7 @@ libxsmm_release_smmkernel
 libxsmm_remainder
 libxsmm_rnaz_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf16
+libxsmm_rne_convert_fp32_bf8
 libxsmm_rng_create_extstate
 libxsmm_rng_destroy_extstate
 libxsmm_rng_f32_seq
@@ -516,6 +523,7 @@ libxsmm_ssbimmdispatch_reducebatch_offs_unroll
 libxsmm_ssbimmdispatch_reducebatch_strd
 libxsmm_ssbimmdispatch_reducebatch_strd_unroll
 libxsmm_ssqrt
+libxsmm_stochastic_convert_fp32_bf8
 libxsmm_strerror
 libxsmm_stristr
 libxsmm_subimmdispatch

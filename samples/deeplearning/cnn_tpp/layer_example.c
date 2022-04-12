@@ -35,10 +35,10 @@ int main(int argc, char* argv[])
   float *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save, *naive_filter_save, *naive_filter_kcrs;
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
-  float *bias_libxsmm, *delbias_libxsmm;
+  float *bias_libxsmm;
 
   libxsmm_bfloat16 *input_libxsmm_bf16, *filter_libxsmm_bf16, *output_libxsmm_bf16, *dinput_libxsmm_bf16, *dfilter_libxsmm_bf16, *doutput_libxsmm_bf16, *filtertr_libxsmm_bf16;
-  libxsmm_bfloat16 *bias_libxsmm_bf16, *delbias_libxsmm_bf16;
+  libxsmm_bfloat16 *bias_libxsmm_bf16;
 
   unsigned char *relumask_libxsmm = NULL;
   my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
@@ -124,7 +124,6 @@ int main(int argc, char* argv[])
   if (argc > i) zero_output_rims_fwd = atoi(argv[i++]);
 
   LIBXSMM_UNUSED(format);
-  LIBXSMM_UNUSED(delbias_libxsmm);
 
   if ( fuse_type == 0 ) {
     my_fuse = MY_ELTWISE_FUSE_NONE;
@@ -721,6 +720,14 @@ int main(int argc, char* argv[])
   libxsmm_free(doutput_libxsmm);
   libxsmm_free(filtertr_libxsmm);
   libxsmm_free(bias_libxsmm);
+  libxsmm_free(input_libxsmm_bf16);
+  libxsmm_free(filter_libxsmm_bf16);
+  libxsmm_free(output_libxsmm_bf16);
+  libxsmm_free(dinput_libxsmm_bf16);
+  libxsmm_free(dfilter_libxsmm_bf16);
+  libxsmm_free(doutput_libxsmm_bf16);
+  libxsmm_free(filtertr_libxsmm_bf16);
+  libxsmm_free(bias_libxsmm_bf16);
   if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
     libxsmm_free(scratch);
   }
