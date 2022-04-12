@@ -18,7 +18,7 @@ fi
 
 if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) NORM (0,1) FUSE (0,1,2,3) ; using default values; using default values: 64 1000 1 f32 0 0 A"
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) NORM (0,1) FUSE (0,1,2,3) ; using default values; using default values: 64 1000 1 f32 0 0"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
   NUMA=-1
@@ -92,27 +92,34 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-# ./layer_example_${BIN} iters N C H W CB pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type
+if [ "f32" == "${BIN}" ]; then
+  PREC_BF16=0
+else
+  PREC_BF16=1
+fi
+echo "PREC_BF16 = ${PREC_BF16}"
+
+# ./layer_example iters N C H W CB pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type prec_bf16
 #
 CB=64
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   112 112 ${CB}  3 3 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  28  28  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 128  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  14  14  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 256  14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048 14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512  14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512   7   7  ${CB}  1 1 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  ${MB} 512   7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   112 112 ${CB}  3 3 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   56  56  ${CB}  1 1 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 64   56  56  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 128  56  56  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 128  28  28  ${CB}  1 1 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 128  28  28  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 1024 28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  28  28  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  14  14  ${CB}  1 1 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 1024 14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 256  14  14  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 2048 14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512  14  14  ${CB}  0 0 0 0 2 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512   7   7  ${CB}  1 1 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 2048  7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS}  ${MB} 512   7   7  ${CB}  0 0 0 0 1 ${NORM} ${FUSE} ${PREC_BF16}
 

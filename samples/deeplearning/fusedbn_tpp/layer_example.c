@@ -30,14 +30,15 @@ int main( int argc, char* argv[] ) {
 
   const float eps = FLT_EPSILON;
   libxsmm_blasint i, it;
-  libxsmm_bfloat16 *eqn_inp, *eqn_inp_add, *eqn_dinp, *eqn_dout, *eqn_dinp_add, *eqn_out;
-  libxsmm_bfloat16 *naive_eqn_out, *naive_eqn_dinp, *naive_eqn_dinp_add, *naive_eqn_dout; /* LIBXSMM output tensors (NCHWc) reordered into NCHW (bf16) */
-  float *naive_eqn_out_fp32, *naive_eqn_dinp_fp32, *naive_eqn_dinp_add_fp32, *naive_eqn_dout_fp32; /* LIBXSMM output tensors (NCHWc) reordered into NCHW (fp32) */
+  float            *eqn_inp,      *eqn_inp_add,      *eqn_dinp,      *eqn_dout,      *eqn_dinp_add,      *eqn_out;
+  libxsmm_bfloat16 *eqn_inp_bf16, *eqn_inp_add_bf16, *eqn_dinp_bf16, *eqn_dout_bf16, *eqn_dinp_add_bf16, *eqn_out_bf16;
+
+  float            *naive_eqn_out, *naive_eqn_dinp, *naive_eqn_dinp_add, *naive_eqn_dout; /* LIBXSMM output tensors (NCHWc) reordered into NCHW (bf16) */
 
   float *eqn_dbeta, *eqn_dgamma, *gamma, *beta, *naive_mean, *naive_var, *eqn_mean, *eqn_var, sum = 0.0;
   float *cache_fl;
   unsigned char *relumask_uncompressed, *relumask, *eqn_relumask;
-  float *naive_inp, *naive_inp_add, *naive_out, *naive_dinp, *naive_dout, *naive_dinp_add;
+  float            *naive_inp,      *naive_inp_add,      *naive_out,      *naive_dinp,      *naive_dout,      *naive_dinp_add;
   libxsmm_bfloat16 *naive_inp_bf16, *naive_inp_add_bf16, *naive_out_bf16, *naive_dinp_bf16, *naive_dout_bf16, *naive_dinp_add_bf16;
   float *naive_rcpstdev, *naive_dbeta, *naive_dgamma;
   unsigned char *naive_relumask;
@@ -60,6 +61,10 @@ int main( int argc, char* argv[] ) {
 
   int stride_h = 0;  /* defined later */
   int stride_w = 0;  /* defined later */
+
+  int prec_bf16 = 0;
+
+  libxsmm_datatype bn_dtype = LIBXSMM_DATATYPE_F32;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -86,7 +91,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_clear(&norms_bwd_gamma);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters N CP H W bc pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type (tail is optional) \n", argv[0]);
+    printf("Usage: %s iters N CP H W bc pad_w_in pad_h_in pad_w_out pad_h_out stride norm_type fuse_type prec_bf16 (tail is optional) \n", argv[0]);
     return 0;
   }
 
@@ -107,6 +112,7 @@ int main( int argc, char* argv[] ) {
   if ( argc > i ) stride     = atoi(argv[i++]);
   if ( argc > i ) norm_type  = atoi(argv[i++]);
   if ( argc > i ) fuse_type  = atoi(argv[i++]);
+  if ( argc > i ) prec_bf16  = atoi(argv[i++]);
 
   CP = C / bc;
 
@@ -148,6 +154,10 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
 
+  if (prec_bf16 > 0) {
+    bn_dtype = LIBXSMM_DATATYPE_BF16;
+  }
+
   stride_w = stride;
   stride_h = stride;
 
@@ -172,31 +182,32 @@ int main( int argc, char* argv[] ) {
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
   printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d (PADDING: must be 0s)\n", N, CP*bc, CP, bc, H, W, stride);
-  printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
   printf("PARAMS: NORM TYPE:%d\n", norm_type);
+  printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
+  printf("PARAMS: PREC     :%d\n", prec_bf16);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output (MB): %10.2f MiB\n", (double)(N*CP*HW*bc*sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
-  eqn_inp        = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  eqn_inp_add    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_inp        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_inp_add    = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_dinp       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_dout       = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_dinp_add   = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_out        = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
 
-  eqn_dinp   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dinp  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dinp_fp32 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  eqn_inp_bf16      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_inp_add_bf16  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_dinp_bf16     = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_dout_bf16     = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_dinp_add_bf16 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
+  eqn_out_bf16      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
 
-  eqn_dout   = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dout  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dout_fp32 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
-
-  eqn_dinp_add = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dinp_add  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_dinp_add_fp32 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
-
-  eqn_out    = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*CP*HW*bc,   2097152);
-  naive_eqn_out_fp32 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  naive_eqn_dinp     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  naive_eqn_dout     = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  naive_eqn_dinp_add = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
+  naive_eqn_out      = (float*) libxsmm_aligned_malloc( sizeof(float)*N*CP*HW*bc,   2097152);
 
   eqn_dgamma = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
   eqn_dbeta  = (float*) libxsmm_aligned_malloc( sizeof(float)*CP*bc,   2097152);
@@ -225,6 +236,7 @@ int main( int argc, char* argv[] ) {
   naive_rcpstdev = (float*) libxsmm_aligned_malloc( sizeof(float)*C,       2097152);
   naive_relumask = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*C*H*W, 2097152);
 
+  /* Allocate bf16 counterparts */
   naive_inp_bf16      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*C*H*W, 2097152);
   naive_out_bf16      = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*C*H*W, 2097152);
   naive_inp_add_bf16  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*C*H*W, 2097152);
@@ -268,10 +280,51 @@ int main( int argc, char* argv[] ) {
 
   init_buf(cache_fl, 1024*1024, 1, 0);
 
+  /* first touch LIBXSMM */
+  zero_buf(eqn_inp,      N*CP*HW*bc);
+  zero_buf(eqn_inp_add,  N*CP*HW*bc);
+  zero_buf(eqn_out,      N*CP*HW*bc);
+  zero_buf(eqn_dinp,     N*CP*HW*bc);
+  zero_buf(eqn_dout,     N*CP*HW*bc);
+
+  if (prec_bf16 > 0) {
+    libxsmm_rne_convert_fp32_bf16( naive_inp,          naive_inp_bf16,     N*C*H*W );
+    libxsmm_convert_bf16_f32     ( naive_inp_bf16,     naive_inp,          N*C*H*W );
+    libxsmm_rne_convert_fp32_bf16( naive_inp_add,      naive_inp_add_bf16, N*C*H*W );
+    libxsmm_convert_bf16_f32     ( naive_inp_add_bf16, naive_inp_add,      N*C*H*W );
+    libxsmm_rne_convert_fp32_bf16( naive_dinp,         naive_dinp_bf16,    N*C*H*W );
+    libxsmm_convert_bf16_f32     ( naive_dinp_bf16,    naive_dinp,         N*C*H*W );
+    libxsmm_rne_convert_fp32_bf16( naive_dout,         naive_dout_bf16,    N*C*H*W );
+    libxsmm_convert_bf16_f32     ( naive_dout_bf16,    naive_dout,         N*C*H*W );
+  }
+
+  if (LIBXSMM_NEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#         Computing Reference ...        #\n");
+    printf("##########################################\n");
+
+    naive_fusedbatchnorm_fp(&naive_param, naive_inp, naive_out, naive_inp_add,
+                                        beta, gamma, eps, naive_mean, naive_rcpstdev, naive_var, naive_relumask);
+
+    naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
+                                       beta, naive_dbeta, gamma, naive_dgamma, naive_mean, naive_rcpstdev);
+
+    tensor_copy_NCHW_to_NCHWc_uint8 (naive_relumask, relumask_uncompressed, N, C, H, W, bc);
+    /* since naive implementation returnes the mask with 1 char per entry, after changing layout, a compression into bitmask is needed */
+    mask_compress_uint8 (relumask_uncompressed, relumask, N*CP*H*W*bc);
+
+    printf("##########################################\n");
+    printf("#      Computing Reference ... done      #\n");
+    printf("##########################################\n");
+  }
+
+  printf("##########################################\n");
+  printf("#          Setting Up (TPP)              #\n");
+  printf("##########################################\n");
   /* setup TPPs (standalone or through the configs) */
 
-  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
+  my_bn_fwd = setup_my_bn_fwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, bn_dtype, bn_dtype, LIBXSMM_DATATYPE_F32);
+  my_bn_bwd = setup_my_bn_bwd(N, C, H, W, bc, nThreads, (my_bn_fuse)fuse_type, bn_dtype, bn_dtype, LIBXSMM_DATATYPE_F32);
 
   /* allocate and bind scratch */
   if ( my_bn_fwd.scratch_size > 0 || my_bn_bwd.scratch_size > 0 ) {
@@ -280,9 +333,14 @@ int main( int argc, char* argv[] ) {
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
 
-  /* copy tensor into the right format */
-  tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_bf16,     eqn_inp,     N, C, H, W, bc );
-  tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_add_bf16, eqn_inp_add, N, C, H, W, bc );
+  /* copy tensors into the right format */
+  if (prec_bf16 > 0) {
+    tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_bf16,     eqn_inp_bf16,     N, C, H, W, bc );
+    tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_add_bf16, eqn_inp_add_bf16, N, C, H, W, bc );
+  } else {
+    tensor_copy_NCHW_to_NCHWc( naive_inp,     eqn_inp,     N, C, H, W, bc );
+    tensor_copy_NCHW_to_NCHWc( naive_inp_add, eqn_inp_add, N, C, H, W, bc );
+  }
 
   /* Check correctness */
   if (LIBXSMM_NEQ(0, check)) {
@@ -295,25 +353,23 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_fwd_exec_f32 ( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     /* copy out data */
-    tensor_copy_NCHWc_to_NCHW_bf16( eqn_out, naive_eqn_out, N, C, H, W, bc );
-    libxsmm_convert_bf16_f32( naive_eqn_out, naive_eqn_out_fp32, N*C*H*W );
+    if (prec_bf16 > 0)
+      libxsmm_convert_bf16_f32( eqn_out_bf16, eqn_out, N*C*H*W );
 
-    naive_fusedbatchnorm_fp(&naive_param, naive_inp, naive_out, naive_inp_add,
-                                        beta, gamma, eps, naive_mean, naive_rcpstdev, naive_var, naive_relumask);
-
-    tensor_copy_NCHW_to_NCHWc_uint8 (naive_relumask, relumask_uncompressed, N, C, H, W, bc);
-    /* since naive implementation returnes the mask with 1 char per entry, after changing layout, a compression into bitmask is needed */
-    mask_compress_uint8 (relumask_uncompressed, relumask, N*CP*H*W*bc);
+    tensor_copy_NCHWc_to_NCHW( eqn_out, naive_eqn_out, N, C, H, W, bc );
 
     /* compare */
     printf("############################################\n");
-    printf("# Correctness BF16 FWD Batchnorm - Output  #\n");
+    printf("# Correctness FWD Batchnorm - Output       #\n");
     printf("############################################\n");
-    libxsmm_matdiff(&norms_fwd_out, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_out, naive_eqn_out_fp32, 0, 0);
+    libxsmm_matdiff(&norms_fwd_out, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_out, naive_eqn_out, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_out.l1_ref);
     printf("L1 test       : %.25g\n", norms_fwd_out.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_fwd_out.l2_abs);
@@ -323,7 +379,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_fwd_out.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness BF16 FWD Batchnorm - Mean  #\n");
+    printf("# Correctness FWD Batchnorm - Mean         #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_fwd_mean, LIBXSMM_DATATYPE_F32, C, 1, naive_mean, eqn_mean, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_mean.l1_ref);
@@ -335,7 +391,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_fwd_mean.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness BF16 FWD Batchnorm - Var  #\n");
+    printf("# Correctness FWD Batchnorm - Var          #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_fwd_var, LIBXSMM_DATATYPE_F32, C, 1, naive_var, eqn_var, 0, 0);
     printf("L1 reference  : %.25g\n", norms_fwd_var.l1_ref);
@@ -348,7 +404,7 @@ int main( int argc, char* argv[] ) {
 
     if (fuse_type == 4 || fuse_type == 5) {
       printf("############################################\n");
-      printf("# Correctness BF16 FWD Batchnorm - Relumask  #\n");
+      printf("# Correctness FWD Batchnorm - Relumask     #\n");
       printf("############################################\n");
       libxsmm_matdiff(&norms_fwd_mask, LIBXSMM_DATATYPE_I8, N*CP*HW*bc, 1, relumask, eqn_relumask, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd_mask.l1_ref);
@@ -386,7 +442,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_fwd_exec_f32 ( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -399,7 +458,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_fwd_exec_bf16( my_bn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_fwd_exec_f32 ( my_bn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -407,9 +469,14 @@ int main( int argc, char* argv[] ) {
   printf("TPP batchnorm time FWD  = %.5g\n", ((double)(l_total2)));
   printf("Speedup FWD is %.5g\n", l_total/l_total2);
 
-  /* copy tensor into the right format */
-  tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_bf16,      eqn_inp,      N, C, H, W, bc );
-  tensor_copy_NCHW_to_NCHWc_bf16( naive_dout_bf16,     eqn_dout, N, C, H, W, bc );
+  /* copy tensors into the right format */
+  if (prec_bf16 > 0) {
+    tensor_copy_NCHW_to_NCHWc_bf16( naive_inp_bf16,     eqn_inp_bf16,     N, C, H, W, bc );
+    tensor_copy_NCHW_to_NCHWc_bf16( naive_dout_bf16, eqn_dout_bf16, N, C, H, W, bc );
+  } else {
+    tensor_copy_NCHW_to_NCHWc( naive_inp,     eqn_inp,     N, C, H, W, bc );
+    tensor_copy_NCHW_to_NCHWc( naive_dout, eqn_dout, N, C, H, W, bc );
+  }
 
   if (LIBXSMM_NEQ(0, check)) {
 #if defined(_OPENMP)
@@ -421,28 +488,28 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-
-      my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_bwd_exec_f32 ( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
 
     /* copy out data */
-    tensor_copy_NCHWc_to_NCHW_bf16( eqn_dinp, naive_eqn_dinp, N, C, H, W, bc );
-    libxsmm_convert_bf16_f32( naive_eqn_dinp, naive_eqn_dinp_fp32, N*C*H*W );
+    if (prec_bf16 > 0) {
+      libxsmm_convert_bf16_f32( eqn_dinp_bf16, eqn_dinp, N*C*H*W );
+      libxsmm_convert_bf16_f32( eqn_dinp_add_bf16, eqn_dinp_add, N*C*H*W );
+      libxsmm_convert_bf16_f32( eqn_dout_bf16, eqn_dout, N*C*H*W );
+    }
 
-    tensor_copy_NCHWc_to_NCHW_bf16( eqn_dinp_add, naive_eqn_dinp_add, N, C, H, W, bc );
-    libxsmm_convert_bf16_f32( naive_eqn_dinp_add, naive_eqn_dinp_add_fp32, N*C*H*W );
-
-    tensor_copy_NCHWc_to_NCHW_bf16( eqn_dout, naive_eqn_dout, N, C, H, W, bc );
-    libxsmm_convert_bf16_f32( naive_eqn_dout, naive_eqn_dout_fp32, N*C*H*W );
-
-    naive_fusedbatchnorm_bp(&naive_param, naive_inp, naive_dinp, naive_out, naive_dout, naive_dinp_add,
-                                       beta, naive_dbeta, gamma, naive_dgamma, naive_mean, naive_rcpstdev);
+    tensor_copy_NCHWc_to_NCHW( eqn_dinp, naive_eqn_dinp, N, C, H, W, bc );
+    tensor_copy_NCHWc_to_NCHW( eqn_dinp_add, naive_eqn_dinp_add, N, C, H, W, bc );
+    tensor_copy_NCHWc_to_NCHW( eqn_dout, naive_eqn_dout, N, C, H, W, bc );
 
     /* compare */
     printf("############################################\n");
-    printf("# Correctness BF16 BWD Batchnorm - Dinput  #\n");
+    printf("# Correctness BWD Batchnorm - Dinput       #\n");
     printf("############################################\n");
-    libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp, naive_eqn_dinp_fp32, 0, 0);
+    libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp, naive_eqn_dinp, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_din.l1_ref);
     printf("L1 test       : %.25g\n", norms_bwd_din.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_bwd_din.l2_abs);
@@ -452,9 +519,9 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_bwd_din.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness BF16 BWD Batchnorm - Dout    #\n");
+    printf("# Correctness BWD Batchnorm - Dout         #\n");
     printf("############################################\n");
-    libxsmm_matdiff(&norms_bwd_dout, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dout, naive_eqn_dout_fp32, 0, 0);
+    libxsmm_matdiff(&norms_bwd_dout, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dout, naive_eqn_dout, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_dout.l1_ref);
     printf("L1 test       : %.25g\n", norms_bwd_dout.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_bwd_dout.l2_abs);
@@ -465,9 +532,9 @@ int main( int argc, char* argv[] ) {
 
     if (fuse_type == 2 || fuse_type == 5) {
       printf("################################################\n");
-      printf("# Correctness BF16 BWD Batchnorm - Dinput add  #\n");
+      printf("# Correctness BWD Batchnorm - Dinput add       #\n");
       printf("################################################\n");
-      libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp_add, naive_eqn_dinp_add_fp32, 0, 0);
+      libxsmm_matdiff(&norms_bwd_din, LIBXSMM_DATATYPE_F32, N*CP*HW*bc, 1, naive_dinp_add, naive_eqn_dinp_add, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd_din.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd_din.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd_din.l2_abs);
@@ -478,7 +545,7 @@ int main( int argc, char* argv[] ) {
     }
 
     printf("###########################################\n");
-    printf("# Correctness BF16 BWD Batchnorm - Dbeta  #\n");
+    printf("# Correctness BWD Batchnorm - Dbeta       #\n");
     printf("###########################################\n");
     libxsmm_matdiff(&norms_bwd_beta, LIBXSMM_DATATYPE_F32, CP*bc, 1, naive_dbeta, eqn_dbeta, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_beta.l1_ref);
@@ -490,7 +557,7 @@ int main( int argc, char* argv[] ) {
     printf("Check-norm    : %.24f\n\n", norms_bwd_beta.normf_rel);
 
     printf("############################################\n");
-    printf("# Correctness BF16 BWD Batchnorm - Dgamma  #\n");
+    printf("# Correctness BWD Batchnorm - Dgamma       #\n");
     printf("############################################\n");
     libxsmm_matdiff(&norms_bwd_gamma, LIBXSMM_DATATYPE_F32, CP*bc, 1, naive_dgamma, eqn_dgamma, 0, 0);
     printf("L1 reference  : %.25g\n", norms_bwd_gamma.l1_ref);
@@ -527,7 +594,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_bwd_exec_f32 ( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   l_start = libxsmm_timer_tick();
 
@@ -541,7 +611,10 @@ int main( int argc, char* argv[] ) {
 #else
       const int tid = 0;
 #endif
-      my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      if (prec_bf16 > 0)
+        my_bn_bwd_exec_bf16( my_bn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
+      else
+        my_bn_bwd_exec_f32 ( my_bn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch, (my_bn_norm_type)norm_type );
     }
   }
 
@@ -577,6 +650,13 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(eqn_mean);
   libxsmm_free(eqn_var);
 
+  libxsmm_free(eqn_inp_bf16);
+  libxsmm_free(eqn_inp_add_bf16);
+  libxsmm_free(eqn_dinp_bf16);
+  libxsmm_free(eqn_dinp_add_bf16);
+  libxsmm_free(eqn_dout_bf16);
+  libxsmm_free(eqn_out_bf16);
+
   libxsmm_free(naive_mean);
   libxsmm_free(naive_var);
   libxsmm_free(gamma);
@@ -610,11 +690,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(naive_eqn_dout);
   libxsmm_free(naive_eqn_dinp_add);
   libxsmm_free(naive_eqn_out);
-
-  libxsmm_free(naive_eqn_dinp_fp32);
-  libxsmm_free(naive_eqn_dout_fp32);
-  libxsmm_free(naive_eqn_dinp_add_fp32);
-  libxsmm_free(naive_eqn_out_fp32);
 
   return 0;
 }
