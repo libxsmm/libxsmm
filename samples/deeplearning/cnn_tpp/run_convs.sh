@@ -149,46 +149,64 @@ ${NUMACTL} ./layer_example ${ITERS}  13  13  ${MB}  256  256  3  3 1 1 1 ${TYPE}
 fi
 
 if [ ${TOPO} -eq 3 ] || [ ${TOPO} -eq 0 ]; then
+if [ ${PREC_BF16} -eq 0 ]; then
+${NUMACTL} ./layer_example ${ITERS}  64  64  ${MB}    3   64  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+else
+${NUMACTL} ./layer_example ${ITERS}  64  64  ${MB}    4   64  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+fi
 ${NUMACTL} ./layer_example ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS}   4   4  ${MB}  512   96  4  4 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS}   8   8  ${MB}  256  512  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS}  16  16  ${MB}  128  256  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS}  32  32  ${MB}   64  128  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL} ./layer_example ${ITERS}  64  64  ${MB}    3   64  4  4 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS}   4   4  ${MB}  512  512  4  4 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 fi
 
 if [ ${TOPO} -eq 4 ] || [ ${TOPO} -eq 0 ]; then
+if [ ${PREC_BF16} -eq 0 ]; then
+${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     3   64   7 7 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     3   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  108 108  8     3   64   3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  224 224  8     3   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  700 161  4     1   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  700 161  8     1   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  700 161 16     1   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  700 161 32     1   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  480  48 16     1   16   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161 16     1   64   5 5 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+else
+${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     4   64   7 7 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     4   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  108 108  8     4   64   3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  224 224  8     4   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161  4     2   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161  8     2   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161 16     2   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161 32     2   32  20 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  480  48 16     2   16   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+${NUMACTL}  ./layer_example  ${ITERS}  700 161 16     2   64   5 5 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
+fi
 ${NUMACTL}  ./layer_example  ${ITERS}  341  79  4    32   32  10 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  341  79  8    32   32  10 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  341  79 16    32   32  10 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  341  79 32    32   32  10 5 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  480  48 16     1   16   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  240  24 16    16   32   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  120  12 16    32   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   60   6 16    64  128   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  108 108  8     3   64   3 3 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   54  54  8    64   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   27  27  8   128  128   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   14  14  8   128  256   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}    7   7  8   256  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  224 224  8     3   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  112 112  8    64  128   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   56  56  8   128  256   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   28  28  8   256  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   14  14  8   512  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}    7   7  8   512  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     3   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  112 112 16    64  128   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   56  56 16   128  256   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   28  28 16   256  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   14  14 16   512  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}    7   7 16   512  512   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  224 224 16     3   64   7 7 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   28  28 16   192   32   5 5 2 2 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   28  28 16   192   64   1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}   14  14 16   512   48   5 5 2 2 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
@@ -213,7 +231,6 @@ ${NUMACTL}  ./layer_example  ${ITERS}   14  14 16   256  256   3 3 1 1 1 ${TYPE}
 ${NUMACTL}  ./layer_example  ${ITERS}   14  14 16   256 1024   1 1 0 0 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}    7   7 16   512  512   1 1 0 0 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}    7   7 16  2048  512   1 1 3 3 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
-${NUMACTL}  ./layer_example  ${ITERS}  700 161 16     1   64   5 5 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  350  80 16    64   64   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  350  80 16    64  128   5 5 1 1 2 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL}  ./layer_example  ${ITERS}  175  40 16   128  128   3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
@@ -433,7 +450,7 @@ ${NUMACTL} ./layer_example ${ITERS}  28  28  ${MB}  512  512  3  3 1 1 1 ${TYPE}
 ${NUMACTL} ./layer_example ${ITERS}  14  14  ${MB}  512  512  3  3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 fi
 
-if [ ${TOPO} -eq 10 ] || [ ${TOPO} -eq 0 ]; then
+if [ ${TOPO} -eq 10 ]; then
 if [ ${PREC_BF16} -eq 0 ]; then
 ${NUMACTL} ./layer_example ${ITERS} 3840 2160 ${MB}   3  64 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
 ${NUMACTL} ./layer_example ${ITERS} 1920 1080 ${MB}   3  64 3 3 1 1 1 ${TYPE} L ${PAD} ${FUSE} ${BC} ${BK} ${PREC_BF16}
