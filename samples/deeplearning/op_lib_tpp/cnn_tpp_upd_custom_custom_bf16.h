@@ -10,7 +10,7 @@
 ******************************************************************************/
 void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_ptr, const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dfilter_ptr,
     unsigned char* bias_ptr, int start_tid, int my_tid, void* scratch ) {
-  int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
+  int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
   /* computing first logical thread */
   const int ltid = my_tid - start_tid;
   libxsmm_gemm_param        gemm_param;
@@ -50,14 +50,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
   LIBXSMM_VLA_DECL(6, libxsmm_bfloat16, tr_output_2, (libxsmm_bfloat16*) scratch_tr_output, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
 
   /* transpose, copy and reduce work-related variables  */
-  const int reduce_work = (cfg.C * cfg.K * cfg.R * cfg.S)/16;
-  const int reduce_chunksize = (reduce_work % cfg.threads == 0) ? (reduce_work / cfg.threads) : (reduce_work / cfg.threads) + 1;
-  const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
-  const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
   float *dst_ptr;
-  /* Related to the output transpose */
-  libxsmm_bfloat16 *tr_out, *src_out;
 
   /* Batch reduce related variables */
   unsigned long long n_blocks;
