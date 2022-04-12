@@ -2546,10 +2546,7 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
   }
 
   if ( res.datatype_in == LIBXSMM_DATATYPE_BF16 ) {
-    const int IFWP = (res.upd_padding_copy == 1) ? res.ifwp + 2*res.pad_w :  res.ifwp;
     const int IFHP = (res.upd_padding_copy == 1) ? res.ifhp + 2*res.pad_h :  res.ifhp;
-    const int OFWP = (res.upd_padding_copy == 1) ? res.ofwp + 2*res.pad_w :  res.ofwp;
-    const int OFHP = (res.upd_padding_copy == 1) ? res.ofhp + 2*res.pad_h :  res.ofhp;
     libxsmm_blasint LDA = res.ofmblock;
     libxsmm_blasint LDB = IFHP*res.ifwp_extended;
     libxsmm_blasint LDC = res.ofmblock;
