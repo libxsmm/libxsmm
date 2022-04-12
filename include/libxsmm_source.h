@@ -131,6 +131,7 @@
 #include "../src/libxsmm_gemm.c"
 #include "../src/libxsmm_generator.c"
 #include "../src/libxsmm_hash.c"
+#include "../src/libxsmm_lpflt_quant.c"
 #include "../src/libxsmm_main.c"
 #include "../src/libxsmm_malloc.c"
 #include "../src/libxsmm_math.c"
