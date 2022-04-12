@@ -180,7 +180,7 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 
@@ -278,7 +278,7 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 
@@ -372,7 +372,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 
@@ -462,7 +462,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 
@@ -553,7 +553,7 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 

@@ -267,33 +267,33 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
 # include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
 
   if (handle->compressed_A == 1) {
-    libxsmm_bsmmfunction_reducebatch_strd_meltwfused batchreduce_kernel_decompress = handle->gemm_fwd9.xgemm.bsmrs_meltwfused;
-    libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_decompress = handle->gemm_fwd11.xgemm.bmrs_meltwfused;
+    libxsmm_xmmfunction batchreduce_kernel_decompress = handle->sparse_gemm9;
+    libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_decompress = handle->sparse_gemm11;
     if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_NONE
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd4.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd12.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm12;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd5.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd13.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm13;
 #define LIBXSMM_DNN_FC_FWD_FUSE_RELU
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd6.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd14.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm14;
 #define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd7.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd15.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm15;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_FWD_FUSE_RELU
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
@@ -301,7 +301,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx(libx
 #undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd8.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd16.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm16;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
@@ -380,33 +380,33 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx_emu(
 # include "template/libxsmm_dnn_bf16_macros_define.tpl.c"
 
   if (handle->compressed_A == 1) {
-    libxsmm_bsmmfunction_reducebatch_strd_meltwfused batchreduce_kernel_decompress = handle->gemm_fwd9.xgemm.bsmrs_meltwfused;
-    libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_decompress = handle->gemm_fwd11.xgemm.bmrs_meltwfused;
+    libxsmm_xmmfunction batchreduce_kernel_decompress = handle->sparse_gemm9;
+    libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_decompress = handle->sparse_gemm11;
     if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #define LIBXSMM_DNN_FC_FWD_FUSE_NONE
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_NONE
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd4.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd12.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm12;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_RELU ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd5.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd13.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm13;
 #define LIBXSMM_DNN_FC_FWD_FUSE_RELU
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_RELU
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_SIGMOID ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd6.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd14.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm14;
 #define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
 #undef LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_RELU ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd7.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd15.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm15;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_FWD_FUSE_RELU
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"
@@ -414,7 +414,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16_amx_emu(
 #undef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
     } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_BIAS_SIGMOID ) {
       libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise = handle->gemm_fwd8.xgemm.bmrs_meltwfused;
-      libxsmm_bmmfunction_reducebatch_strd_meltwfused bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->gemm_fwd16.xgemm.bmrs_meltwfused;
+      libxsmm_xmmfunction bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress = handle->sparse_gemm16;
 #define LIBXSMM_DNN_FC_FWD_FUSE_BIAS
 #define LIBXSMM_DNN_FC_FWD_FUSE_SIGMOID
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16_sparse_A_amx.tpl.c"

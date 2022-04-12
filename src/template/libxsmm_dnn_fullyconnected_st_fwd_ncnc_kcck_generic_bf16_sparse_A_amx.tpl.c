@@ -35,7 +35,10 @@ LIBXSMM_VLA_DECL(4, element_filter_type, decompressed_filter, (element_filter_ty
 
 float* temp_output = (float*)handle->scratch + (handle->desc.threads * handle->desc.C * handle->bk)/2;
 LIBXSMM_VLA_DECL(4, float, output_f32, (float*) temp_output, nBlocksOFm, bn, bk);
+#ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 libxsmm_meltw_gemm_param gemm_eltwise_params;
+#endif
+libxsmm_gemm_ext_param  gemm_param_ext;
 
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #if defined(LIBXSMM_DNN_FC_FWD_FUSE_BIAS)
@@ -173,11 +176,13 @@ if (handle->sparsity_factor_A == 1) {
           }
 #endif
           if (mb1 == my_im_start) {
-            gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-            gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-            batchreduce_kernel_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-                &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
-                &LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, &gemm_eltwise_params);
+            gemm_param_ext.op.tertiary = &blocks;
+            gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb);
+            gemm_param_ext.a.tertiary = (void*)&LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, ifm1*CB_BLOCKS, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+            gemm_param_ext.ap.primary = (void*)&LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+            gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc);
+            gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output_f32, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk);
+            batchreduce_kernel_decompress.gemm_ext( &gemm_param_ext );
           } else {
             batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
                 &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1*CB_BLOCKS, 0, 0, nBlocksIFm, handle->bn, handle->bc),
@@ -208,16 +213,19 @@ if (handle->sparsity_factor_A == 1) {
 #ifndef LIBXSMM_DNN_FC_FWD_FUSE_NONE
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_BIAS
         gemm_eltwise_params.bias_ptr  = (float*) fp32_bias_scratch + ofm1 * handle->bk;
+        gemm_param_ext.d.primary = (void*)((float*) fp32_bias_scratch + ofm1 * handle->bk);
 #endif
 #ifdef LIBXSMM_DNN_FC_FWD_FUSE_RELU
         gemm_eltwise_params.out_ptr   = &LIBXSMM_VLA_ACCESS(4, relubitmask, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk/32);
 #endif
         if (mb1 == my_im_start) {
-          gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-          gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-          bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+          gemm_param_ext.op.tertiary = &blocks;
+          gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb);
+          gemm_param_ext.a.tertiary = (void*)&LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+          gemm_param_ext.ap.primary = (void*)&LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+          gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc);
+          gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk);
+          bf16_batchreduce_kernel_zerobeta_fused_eltwise_decompress.gemm_ext( &gemm_param_ext );
         } else {
           bf16_batchreduce_kernel_zerobeta_fused_eltwise( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
               &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
@@ -225,11 +233,13 @@ if (handle->sparsity_factor_A == 1) {
         }
 #else
         if (mb1 == my_im_start) {
-          gemm_eltwise_params.sparse_bitmap     = &LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
-          gemm_eltwise_params.decompress_buffer = &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
-          bf16_batchreduce_kernel_zerobeta_decompress( &LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb),
-              &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-              &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk), &blocks, &gemm_eltwise_params);
+          gemm_param_ext.op.tertiary = &blocks;
+          gemm_param_ext.a.primary = (void*)&LIBXSMM_VLA_ACCESS(5, filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/handle->sparsity_factor_A, lpb);
+          gemm_param_ext.a.tertiary = (void*)&LIBXSMM_VLA_ACCESS(5, idx_filter_compressed, ofm1, 0, 0, 0, 0, nBlocksIFm, bc_lp, handle->bk/32, lpb);
+          gemm_param_ext.ap.primary = (void*)&LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb);
+          gemm_param_ext.b.primary = (void*)&LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc);
+          gemm_param_ext.c.primary = (void*)&LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm, bn, bk);
+          bf16_batchreduce_kernel_zerobeta_decompress.gemm_ext( &gemm_param_ext );
         } else {
           bf16_batchreduce_kernel_zerobeta( &LIBXSMM_VLA_ACCESS(4, decompressed_filter, 0, 0, 0, 0, bc_lp, handle->bk, lpb),
               &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),

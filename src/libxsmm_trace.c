@@ -126,13 +126,13 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
     { const char *const env = getenv("LIBXSMM_TRACE");
       if (NULL != env && 0 != *env) {
         char buffer[32] = { 0 };
-        if (1 == sscanf(env, "%32[^,],", buffer)) {
+        if (1 == sscanf(env, "%31[^,],", buffer)) {
           result = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
-        if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
+        if (1 == sscanf(env, "%*[^,],%31[^,],", buffer)) {
           result = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
-        if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
+        if (1 == sscanf(env, "%*[^,],%*[^,],%31s", buffer)) {
           result = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         else {
@@ -250,7 +250,8 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   LIBXSMM_ASSERT(NULL != address && NULL != map);
   backtrace_symbols_fd((void**)&address, 1, fd);
   if (fdoff == lseek(fd, fdoff, SEEK_SET) /* reset map */
-    && 1 == sscanf(map, "%*[^(](%s0x", map))
+    /* limit input to 256 characters (LIBXSMM_TRACE_SYMBOLSIZE) */
+    && 1 == sscanf(map, "%*[^(](%256s0x", map))
   {
     char* c = map;
     for (; '+' != *c && 0 != *c; ++c);
@@ -297,10 +298,9 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
       const int maxnsyms = (NULL != filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms);
       const void *stacktrace[LIBXSMM_TRACE_MAXDEPTH];
       const int n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_MAXDEPTH, 0);
-      int symbol = 0;
       if (0 < n) {
         const int filter = (NULL != filter_threadid ? *filter_threadid : internal_trace_threadid);
-        int abs_tid = 0;
+        int symbol = 0, abs_tid = 0;
 # if defined(_WIN32) || defined(__CYGWIN__) || defined(LIBXSMM_TRACE_DLINFO)
         static LIBXSMM_TLS struct {
 #   if defined(_WIN32) || defined(__CYGWIN__)
@@ -568,4 +568,3 @@ LIBXSMM_API void __cyg_profile_func_exit(void* this_fn, void* call_site)
 }
 
 #endif /*defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
-

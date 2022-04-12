@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -eo pipefail
 
 UNAME=$(command -v uname)
 SORT=$(command -v sort)
@@ -7,7 +6,6 @@ GREP=$(command -v grep)
 CUT=$(command -v cut)
 WC=$(command -v wc)
 TR=$(command -v tr)
-NUMA=-1
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=64; fi
@@ -17,20 +15,22 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 5 ]
+if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) bin=(f32, bf16) iters MB type=(A, F, B) fuse=(0 (None), 1 (Bias), 2 (ReLU), 4 (Bias+ReLU))"
-  BIN=bf16
-  ITERS=100
-  MB=1024
-  TYPE=A
-  FUSE=4
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) TYPE (0-max, 1-avg) PASS ('A'-ALL/'F'-FP/'B'-BP) PAD (0-logical,1-physcial) ; using default values; using default values: 64 1000 1 f32 0 A"
+  MB=${CHECK_DNN_MB}
+  ITERS=${CHECK_DNN_ITERS}
+  NUMA=-1
+  BIN=f32
+  TYPE=0
+  PASS="A"
 else
-  BIN=$1
+  MB=$1
   ITERS=$2
-  MB=$3
-  TYPE=$4
-  FUSE=$5
+  NUMA=$3
+  BIN=$4
+  TYPE=$5
+  PASS=$6
 fi
 
 if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
@@ -91,17 +91,10 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 14 512 ${FUSE} ${TYPE} 64 32 14
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 256 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 256 128 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 480 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 512 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 256 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 256 1 1 ${TYPE} 64 1 32
+# ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh padw_in padh_in padw_out padw_in stride type pass
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 512 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 64 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 100 1024 ${FUSE} ${TYPE} 64 32 50
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} 64 32 32
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1 0 A 64 1 32
+#max pooling
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  112  112  ${MB}  64 3 3 1 1 0 0 0 0 2 ${TYPE} ${PASS}
+
+#avg pooling
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  7  7  ${MB}  2048 7 7 0 0 0 0 0 0 1 ${TYPE} ${PASS}
