@@ -10,7 +10,7 @@
 ******************************************************************************/
 void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_ptr, const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dfilter_ptr,
     unsigned char* bias_ptr, int start_tid, int my_tid, void* scratch ) {
-  int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
+  int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
   /* computing first logical thread */
   const int ltid = my_tid - start_tid;
   libxsmm_gemm_param        gemm_param;
@@ -50,14 +50,7 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
   LIBXSMM_VLA_DECL(6, libxsmm_bfloat16, tr_output_2, (libxsmm_bfloat16*) scratch_tr_output, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
 
   /* transpose, copy and reduce work-related variables  */
-  const int reduce_work = (cfg.C * cfg.K * cfg.R * cfg.S)/16;
-  const int reduce_chunksize = (reduce_work % cfg.threads == 0) ? (reduce_work / cfg.threads) : (reduce_work / cfg.threads) + 1;
-  const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
-  const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
   float *dst_ptr;
-  /* Related to the output transpose */
-  libxsmm_bfloat16 *tr_out, *src_out;
 
   /* Batch reduce related variables */
   unsigned long long n_blocks;
@@ -426,10 +419,21 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
                     zero_ptr_out = (libxsmm_bfloat16*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, 0, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
                     unary_param.out.primary = (void*) zero_ptr_out;
                     cfg.zero_ofmblock_output_pixels_bf16( &unary_param );
-                    for (oj = 0; oj < cfg.ofhp; oj++) {
-                      unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
-                      unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP)/2, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
-                      cfg.vnni_output_w_pixels_bf16( &unary_param );
+                    if (OFWP % 2 == 1) {
+                      for (oj = 0; oj < cfg.ofhp; oj++) {
+                        for (oi = 0; oi < cfg.ofwp; oi++) {
+                          for (ofm2 = 0; ofm2 < cfg.ofmblock; ofm2++) {
+                            LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP+oi)/2, ofm2, (oj*OFWP+oi)%2, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2) =
+                              LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                          }
+                        }
+                      }
+                    } else {
+                      for (oj = 0; oj < cfg.ofhp; oj++) {
+                        unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);
+                        unary_param.out.primary= (void*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, (oj*OFWP)/2, 0, 0, cfg.blocksofm, cfg.output_pixels/2, cfg.ofmblock, 2);
+                        cfg.vnni_output_w_pixels_bf16( &unary_param );
+                      }
                     }
                   } else {
                     unary_param.in.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, cfg.blocksofm, cfg.ofhp, cfg.ofwp, cfg.ofmblock);

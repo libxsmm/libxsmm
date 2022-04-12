@@ -102,12 +102,23 @@ typedef unsigned int libxsmm_bitfield;
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
+typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned short libxsmm_float16;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
+  float f;
+  unsigned int u;
+} libxsmm_float_uint;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
   libxsmm_bfloat16 i[2];
   float f;
 } libxsmm_bfloat16_hp;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_qp {
+  libxsmm_bfloat8 i[2];
+  libxsmm_float16 hf;
+} libxsmm_bfloat8_qp;
 
 #if defined(__cplusplus)
 namespace Eigen { struct bfloat16; }
