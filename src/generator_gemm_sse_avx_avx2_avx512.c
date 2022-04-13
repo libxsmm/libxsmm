@@ -172,15 +172,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     l_xgemm_desc_opa = i_xgemm_desc;
   }
 
-  l_xgemm_desc_opa = (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A ?
-    libxsmm_sgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
-      lda_transpose,
-      i_xgemm_desc->ldb,
-      i_xgemm_desc->ldc,
-      1. /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
-      (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch)
-    : i_xgemm_desc);
-
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc_opa, 0 );
 
