@@ -43,7 +43,8 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
 LIBXSMM_INLINE
 void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld_in, libxsmm_blasint n_cols_idx,
                               float *sinp, float *ref_result_reduce_elts, float *ref_result_reduce_elts_squared, unsigned long long *cols_ind_array,
-                              unsigned int reduce_op, unsigned int reduce_rows ) {
+                              unsigned int reduce_op, unsigned int reduce_rows,
+                              unsigned int record_idx, unsigned long long *ref_argop_off ) {
   libxsmm_blasint i = 0, j = 0, jj = 0;
 
   if (reduce_op == 0) {
@@ -87,11 +88,28 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         }
       }
     } else {
-      /* In this case we reduce columns */
-      for (i = 0; i < m; i++) {
-        ref_result_reduce_elts[i] = sinp[i];
-        for (j = 0; j < n; j++) {
-          ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+      if (n_cols_idx == 0) {
+        /* In this case we reduce columns */
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = sinp[i];
+          for (j = 0; j < n; j++) {
+            ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+          }
+        }
+      } else {
+        for (i = 0; i < m; i++) {
+          ref_result_reduce_elts[i] = -FLT_MAX;
+          for (jj = 0; jj < n_cols_idx; jj++) {
+            j = cols_ind_array[jj];
+            if (record_idx > 0) {
+              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+                ref_result_reduce_elts[i] = sinp[j*ld_in + i];
+                ref_argop_off[i] = j;
+              }
+            } else {
+              ref_result_reduce_elts[i] = LIBXSMM_MAX( sinp[j*ld_in + i], ref_result_reduce_elts[i]);
+            }
+          }
         }
       }
     }
@@ -107,7 +125,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 #ifdef FP16_REDUCE_COLSIDX
   unsigned short *sinp_hp, unsigned short *result_reduce_elts_hp,
 #endif
-  unsigned long long *cols_ind_array, unsigned int *cols_ind_array_32bit ) {
+  unsigned long long *cols_ind_array, unsigned int *cols_ind_array_32bit,
+  unsigned int record_idx, unsigned long long *argop_off, unsigned int *argop_off_i32 ) {
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
   libxsmm_meltw_unary_shape unary_shape;
@@ -147,10 +166,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unary_shape.out_type = LIBXSMM_DATATYPE_F16;
 #else
   if (use_bf16 == 0) {
-    unary_shape.in_type = LIBXSMM_DATATYPE_F32;
+    unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   } else {
-    unary_shape.in_type = LIBXSMM_DATATYPE_BF16;
+    unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
   }
 #endif
@@ -165,9 +184,22 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     } else {
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
     }
-    unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
     unary_shape.n = 0;
-    kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX, unary_shape, unary_flags );
+    if (reduce_op == 0) {
+      unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
+      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
+    } else {
+      unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
+      if (record_idx > 0) {
+        unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP;
+        if (idx_type == 0) {
+          params2.out.secondary = argop_off;
+        } else {
+          params2.out.secondary = argop_off_i32;
+        }
+      }
+      kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+    }
   }
 
   /* Setup param struct  */
@@ -207,8 +239,11 @@ int main(int argc, char* argv[])
   unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0, use_bf16 = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
+  unsigned int record_idx = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
+  unsigned long long *ref_argop_off, *argop_off;
+  unsigned int *ref_argop_off_i32, *argop_off_i32;
   libxsmm_bfloat16 *sinp_bf16 = NULL;
   libxsmm_bfloat16 *result_reduce_elts_bf16 = NULL;
   libxsmm_bfloat16 *result_reduce_elts_squared_bf16 = NULL;
@@ -245,6 +280,7 @@ int main(int argc, char* argv[])
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
   if ( argc > 10 ) iters = atoi(argv[10]);
   if ( argc > 11 ) idx_type = atoi(argv[11]);
+  if ( argc > 12 ) record_idx = atoi(argv[12]);
 
   printf("CL is: %d %d %d %d %d %d %d %d %llu %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters);
 
@@ -269,6 +305,11 @@ int main(int argc, char* argv[])
   ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array_32bit = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
+  ref_argop_off        = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  ref_argop_off_i32    = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+  argop_off            = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
+  argop_off_i32        = (unsigned int*) malloc(ld_in*sizeof(unsigned int));
+
   result_reduce_elts_squared = NULL;
 
   if (reduce_op == 0) {
@@ -313,8 +354,7 @@ int main(int argc, char* argv[])
     }
   }
 #endif
-
-  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
+  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off );
 
   printf("JITing reduce kernel... \n");
 #ifdef FP16_REDUCE_COLSIDX
@@ -322,12 +362,14 @@ int main(int argc, char* argv[])
       sinp, result_reduce_elts,
       sinp_bf16, result_reduce_elts_bf16,
       sinp_hp, result_reduce_elts_hp,
-      cols_ind_array, cols_ind_array_32bit );
+      cols_ind_array, cols_ind_array_32bit,
+      record_idx, argop_off, argop_off_i32 );
 #else
   setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
       sinp, result_reduce_elts,
       sinp_bf16, result_reduce_elts_bf16,
-      cols_ind_array, cols_ind_array_32bit );
+      cols_ind_array, cols_ind_array_32bit,
+      record_idx, argop_off, argop_off_i32 );
 #endif
 
   if (n_cols_idx == 0) {
@@ -407,10 +449,33 @@ int main(int argc, char* argv[])
     }
   }
 
+  if (record_idx > 0) {
+    for (k = 0; k < m; k++) {
+      ref_argop_off_i32[k] = ref_argop_off[k];
+    }
+    if (idx_type == 0) {
+      for (k = 0; k < m; k++) {
+        argop_off_i32[k] = argop_off[k];
+      }
+    }
+    printf("##########################################\n");
+    printf("# Arg idx correctness  #\n");
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
+    printf("L1 test       : %.25g\n", norms_elts.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_elts.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_elts.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_elts.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_elts.normf_rel);
+    libxsmm_matdiff_reduce(&diff, &norms_elts);
+  }
+
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows );
+    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);

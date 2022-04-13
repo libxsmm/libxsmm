@@ -17,7 +17,7 @@
  * without including libxsmm_sync. However, libxsmm_sync.h shall be
  * an explicit include separate from including libxsmm.h.
  */
-#include "libxsmm_sync.h"
+#include <libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -267,6 +267,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
   /** Size of data element. */
   unsigned char datatype;
+  unsigned char datatype1;
   unsigned char datatype2;
   /** Set of flags */
   unsigned short flags;
@@ -695,6 +696,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_code_pointer gemm_fwd14;   /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd15;   /* ability to hoist forward GEMMs */
   libxsmm_code_pointer gemm_fwd16;   /* ability to hoist forward GEMMs */
+
+  libxsmm_xmmfunction sparse_gemm9;
+  libxsmm_xmmfunction sparse_gemm10;
+  libxsmm_xmmfunction sparse_gemm11;
+  libxsmm_xmmfunction sparse_gemm12;
+  libxsmm_xmmfunction sparse_gemm13;
+  libxsmm_xmmfunction sparse_gemm14;
+  libxsmm_xmmfunction sparse_gemm15;
+  libxsmm_xmmfunction sparse_gemm16;
 
   libxsmm_code_pointer gemm_bwd;     /* ability to hoist backward GEMMs */
   libxsmm_code_pointer gemm_bwd2;    /* ability to hoist backward GEMMs */

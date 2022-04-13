@@ -93,27 +93,39 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
 
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
                     const void *in, const void *in2, char *out, const unsigned int op,
-                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
+                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   size_t i,j;
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
-    const float* f_in2 = (const float*)in2;
     float* f_out = (float*)out;
+    float in2_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
-        f_out[(j*ldo) + i] = fp32_binary_compute(f_in[(j*ldi) + i], f_in2[(j*ldi2) + i], f_out[(j*ldo) + i], op);
+        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
+          const float* f_in2 = (const float*)in2;
+          in2_value = f_in2[(j*ldi2) + i];
+        } else {
+          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
+          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+        }
+        f_out[(j*ldo) + i] = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, f_out[(j*ldo) + i], op);
       }
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const libxsmm_bfloat16* bf_in = (const libxsmm_bfloat16*)in;
-    const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
     libxsmm_bfloat16* bf_out = (libxsmm_bfloat16*)out;
     float in_value, in2_value, out_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
+        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
+          const float* f_in2 = (const float*)in2;
+          in2_value = f_in2[(j*ldi2) + i];
+        } else {
+          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
+          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+        }
         libxsmm_convert_bf16_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
         libxsmm_convert_bf16_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
         out_value = fp32_binary_compute(in_value, in2_value, out_value, op);
         libxsmm_rne_convert_fp32_bf16(&out_value, &(bf_out[(j*ldo) + i]), 1);
@@ -121,25 +133,36 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
-    const float* f_in2 = (const float*)in2;
     libxsmm_bfloat16* bf_out = (libxsmm_bfloat16*)out;
-    float out_value;
+    float out_value, in2_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
+        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
+          const float* f_in2 = (const float*)in2;
+          in2_value = f_in2[(j*ldi2) + i];
+        } else {
+          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
+          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+        }
         libxsmm_convert_bf16_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
-        out_value = fp32_binary_compute(f_in[(j*ldi) + i], f_in2[(j*ldi2) + i], out_value, op);
+        out_value = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, out_value, op);
         libxsmm_rne_convert_fp32_bf16(&out_value, &(bf_out[(j*ldo) + i]), 1);
       }
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const libxsmm_bfloat16* bf_in = (const libxsmm_bfloat16*)in;
-    const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
     float* f_out = (float*)out;
     float in_value, in2_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
+        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
+          const float* f_in2 = (const float*)in2;
+          in2_value = f_in2[(j*ldi2) + i];
+        } else {
+          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
+          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+        }
         libxsmm_convert_bf16_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
         f_out[(j*ldo) + i] = fp32_binary_compute(in_value, in2_value, f_out[(j*ldo) + i], op);
       }
     }
@@ -149,13 +172,13 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
 }
 
 int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast,
-                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
+                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_binary_param binary_param;
   libxsmm_meltw_binary_flags binary_flags;
-  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_binary_type  binary_type;
   char opname[256];
@@ -164,18 +187,18 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   set_binarytype(op, &binary_type);
 
   if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
-    fprintf( stderr, "test_binary_%s %i %i %i: ldi needs to be equal to or bigger than M\n", opname, dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_binary_%s %i %i %i: ldo needs to be equal to or bigger than N\n", opname, dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
     exit(-1);
   }
 
   libxsmm_rng_set_seed(1);
 
   in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi),   64);
-  in2       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi),   64);
+  in2       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in1)*N*LIBXSMM_MAX(M,ldi),   64);
   out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
   out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
   _in       = in;
@@ -183,7 +206,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
-  init_random_matrix( dtype_in,  in2,      1, ldi, N, 0 );
+  init_random_matrix( dtype_in1,  in2,      1, ldi, N, 0 );
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 
@@ -198,18 +221,18 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
       apply_scalar_bcast_matrix( dtype_in, in, ldi, M, N );
     }
     if (use_bcast == ROW_BCAST_IN1) {
-      apply_row_bcast_matrix( dtype_in, in2, ldi, M, N );
+      apply_row_bcast_matrix( dtype_in1, in2, ldi, M, N );
     }
     if (use_bcast == COL_BCAST_IN1) {
-      apply_col_bcast_matrix( dtype_in, in2, ldi, M, N );
+      apply_col_bcast_matrix( dtype_in1, in2, ldi, M, N );
     }
     if (use_bcast == SCALAR_BCAST_IN1) {
-      apply_scalar_bcast_matrix( dtype_in, in2, ldi, M, N );
+      apply_scalar_bcast_matrix( dtype_in1, in2, ldi, M, N );
     }
   }
 
   /* compute out_gold */
-  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_out, dtype_comp );
+  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
 
   /* use jited tranpose */
   binary_param.in0.primary  = (void*)_in;
@@ -257,7 +280,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_in1 == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
     }
@@ -275,9 +298,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   libxsmm_free( in2 );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS binary simple %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("SUCCESS binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
   } else {
-    printf("FAILURE binary simple %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("FAILURE binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
   }
 
   return ret;
@@ -285,6 +308,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype_in;
+  libxsmm_blasint dtype_in1;
   libxsmm_blasint dtype_out;
   libxsmm_blasint dtype_comp;
   libxsmm_blasint op;
@@ -295,22 +319,24 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
   char opname[256];
+  char in1_dt_name[256];
   int res = EXIT_FAILURE;
 
-  if ( argc != 10 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+  if ( argc != 11 ) {
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: 4/2] [prec_in1: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   op         = atoi(argv[1]);
   use_bcast  = atoi(argv[2]);
   dtype_in   = atoi(argv[3]);
-  dtype_comp = atoi(argv[4]);
-  dtype_out  = atoi(argv[5]);
-  M          = atoi(argv[6]);
-  N          = atoi(argv[7]);
-  ldi        = atoi(argv[8]);
-  ldo        = atoi(argv[9]);
+  dtype_in1  = atoi(argv[4]);
+  dtype_comp = atoi(argv[5]);
+  dtype_out  = atoi(argv[6]);
+  M          = atoi(argv[7]);
+  N          = atoi(argv[8]);
+  ldi        = atoi(argv[9]);
+  ldo        = atoi(argv[10]);
 
   set_opname(op, opname);
 
@@ -337,18 +363,24 @@ int main( int argc, char* argv[] ) {
     }
   }
 
+  if (dtype_in1 == 4) {
+    sprintf(in1_dt_name, "F32");
+  } else {
+    sprintf(in1_dt_name, "BF16");
+  }
+
   if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary F32 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    printf("Testing binary (F32, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
+    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary BF16 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    printf("Testing binary (BF16, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
+    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary F32 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    printf("Testing binary (F32, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
+    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binry BF16 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    printf("Testing binary (BF16, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
+    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
   } else {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6]] [prec_in: 4/2] compute_prec: 4 [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
