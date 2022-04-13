@@ -17,7 +17,7 @@
     move them into some main part of LIBXSMM */
 
 /* F32 masking defines */
-#define LIBXSNN_MASK_SIGN_F32      0x80000000
+#define LIBXSMM_MASK_SIGN_F32      0x80000000
 #define LIBXSMM_MASK_EXP_F32       0x7f800000
 #define LIBXSMM_MASK_MANT_F32      0x007fffff
 #define LIBXSMM_MASK_ABS_F32       0x7fffffff
@@ -27,7 +27,7 @@
 
 /* DFP16 masking defines */
 #define LIBXSMM_MANT_DFP16         15
-#define LIXSMMM_RES_DFP16          libxsmm_sexp2_i8i(-(LIBXSMM_MANT_DFP16))
+#define LIBXSMM_RES_DFP16          libxsmm_sexp2_i8i(-(LIBXSMM_MANT_DFP16))
 
 /* Quantization Rounding Defines */
 #define LIBXSMM_QUANT_NO_ROUND       80000
