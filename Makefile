@@ -338,6 +338,7 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$
           $(ROOTDIR)/include/libxsmm_dnn_softmaxloss.h \
           $(ROOTDIR)/include/libxsmm_dnn_optimizer.h \
           $(ROOTDIR)/include/libxsmm_rng.h \
+          $(ROOTDIR)/include/libxsmm_lpflt_quant.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
@@ -354,7 +355,7 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.c libxsmm_xcopy.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
+          libxsmm_gemm.c libxsmm_xcopy.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c \
           libxsmm_dnn.c libxsmm_dnn_tensor.c libxsmm_dnn_convolution.c  libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \

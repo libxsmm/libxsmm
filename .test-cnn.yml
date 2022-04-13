@@ -1,0 +1,109 @@
+script:
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST ResNet-50 (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 1 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 1 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 1 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST AlexNet (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 2 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 2 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 2 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST Overfeat (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 8 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 8 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 8 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST GoogleNet-v1 (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 5 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 5 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 5 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST GoogleNet-v3 (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 6 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 6 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 6 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST dcGAN (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 3 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 3 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 3 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export CHECK=1 ITERS=1;
+    for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      export OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      for PAD in 0 1; do
+        echo; echo "--- TEST VGGa (pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 F ${PAD} 0 64 64 9 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 B ${PAD} 0 64 64 9 &&
+        ./run_convs.sh ${MB} ${ITERS} -1 f32 U ${PAD} 0 64 64 9 ;
+      done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
+    export CHECK=1 ITERS=1;
+    for PAD in 0 1; do
+      echo; echo "--- TEST DeepBench (pad=${PAD})";
+      ./run_convs.sh ${ITERS} -1 f32 F ${PAD} 0 64 64 4 &&
+      ./run_convs.sh ${ITERS} -1 f32 B ${PAD} 0 64 64 4 &&
+      ./run_convs.sh ${ITERS} -1 f32 U ${PAD} 0 64 64 4 ;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnn_tpp && make -e ${MAKEJ} &&
+   (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
+    export CHECK=1 CHECK_SCALE=1 ITERS=1 MB=${OMP_NUM_THREADS};
+    for KIND in F B U; do
+      echo; echo "--- TEST ResNet-50 (precision=bf16 kind=${KIND} mb=${MB} nt=${OMP_NUM_THREADS})";
+      ./run_convs.sh ${MB} ${ITERS} -1 bf16 ${KIND} 1 0 64 64 1 ;
+    done)

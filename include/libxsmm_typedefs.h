@@ -264,24 +264,29 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_SUM              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL_REDOP_SUM               = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL  | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS            = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP      = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0 | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX
 } libxsmm_meltw_opreduce_vecs_flags;
 
 typedef enum libxsmm_meltw_unary_flags {
-  LIBXSMM_MELTW_FLAG_UNARY_NONE              = 0,
-  LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT = 1,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW         = 2,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL         = 4,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR      = 8,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS       = 16,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES   = 128,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS           = 512,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS           = 1024,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048,
-  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND  = 4096
+  LIBXSMM_MELTW_FLAG_UNARY_NONE               = 0,
+  LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT  = 1,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW          = 2,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL          = 4,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR       = 8,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS        = 16,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS        = 32,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC     = 64,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES    = 128,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES    = 256,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS            = 512,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS            = 1024,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 2048,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC = 4096,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP= 8192,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 16384,
+  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND   = 32768
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -329,7 +334,7 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2         = 41,
   LIBXSMM_MELTW_TYPE_UNARY_QUANT                        = 42,
   LIBXSMM_MELTW_TYPE_UNARY_DEQUANT                      = 43,
-  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX              = 44,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD       = 44,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1   = 45,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2   = 46,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4   = 47,
@@ -337,7 +342,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
   LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
-  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX       = 53
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -765,7 +771,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint n;                    /* number of cols */
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_unary_shape;
@@ -776,7 +782,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape 
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_binary_shape;
@@ -788,7 +795,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldi3;                 /* leading dimension of third input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
+  libxsmm_datatype in2_type;            /* datatype of input 2 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_ternary_shape;
@@ -951,25 +960,25 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_c
 } libxsmm_gemm_batch_reduce_config;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_unary_argops {
-  libxsmm_blasint* ldap;                      /* leading dimensions of Ap */
-  libxsmm_meltw_unary_flags ap_unary_flags;   /* flags for Ap = unary( A ) */
+  libxsmm_blasint ldap;                       /* leading dimensions of Ap */
   libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
+  libxsmm_bitfield ap_unary_flags;            /* flags for Ap = unary( A ) */
   libxsmm_blasint store_ap;                   /* nonzero for storing Ap */
-  libxsmm_blasint* ldbp;                      /* leading dimensions of Bp */
-  libxsmm_meltw_unary_flags bp_unary_flags;   /* flags for Bp = unary( B ) */
+  libxsmm_blasint ldbp;                       /* leading dimensions of Bp */
   libxsmm_meltw_unary_type bp_unary_type;     /* op type for Bp = unary( B ) */
+  libxsmm_bitfield bp_unary_flags;            /* flags for Bp = unary( B ) */
   libxsmm_blasint store_bp;                   /* nonzero for storing Bp */
-  libxsmm_blasint* ldcp;                      /* leading dimensions of Cp */
-  libxsmm_meltw_unary_flags cp_unary_flags;   /* flags for Cp = unary( C ) */
+  libxsmm_blasint ldcp;                       /* leading dimensions of Cp */
   libxsmm_meltw_unary_type cp_unary_type;     /* op type for Cp = unary( C ) */
+  libxsmm_bitfield cp_unary_flags;           /* flags for Cp = unary( C ) */
   libxsmm_blasint store_cp;                   /* nonzero for storing Cp */
 } libxsmm_gemm_ext_unary_argops;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_binary_postops {
-  libxsmm_blasint* ldd;                       /* leading dimensions of D */
+  libxsmm_blasint ldd;                        /* leading dimensions of D */
   libxsmm_datatype d_in_type;                 /* datatype of D */
-  libxsmm_meltw_binary_flags d_binary_flags;  /* flags for C = binary( C, D ) */
   libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+  libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */

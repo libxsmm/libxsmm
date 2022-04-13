@@ -35,7 +35,8 @@ LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_fusion_pattern_type {
   LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE                    = 0,
   LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_UNARY             = 1,
   LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD       = 2,
-  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD_UNARY = 3
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_XGEMM_COLBIAS_ADD_UNARY = 3,
+  LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS = 4
 } libxsmm_matrix_eqn_fusion_pattern_type;
 
 LIBXSMM_EXTERN_C typedef enum libxsmm_matrix_eqn_bcast_type {
@@ -125,12 +126,20 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_xgemm_fu
   libxsmm_datatype  colbias_dtype;
 } libxsmm_matrix_eqn_xgemm_fusion_info;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_gather_fusion_info {
+  libxsmm_blasint   fused_reduce_cols_add;
+  libxsmm_blasint   fused_reduce_cols_max;
+  libxsmm_blasint   idx_array_pos_in_arg;
+  libxsmm_datatype  idx_dtype;
+} libxsmm_matrix_eqn_gather_fusion_info;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_fusion_knobs {
   libxsmm_blasint   may_fuse_xgemm;
 } libxsmm_matrix_eqn_fusion_knobs;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_matrix_eqn_fusion_info {
   libxsmm_matrix_eqn_xgemm_fusion_info   xgemm;
+  libxsmm_matrix_eqn_gather_fusion_info  gather;
 } libxsmm_matrix_eqn_fusion_info;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_matrix_eqn_elem {
@@ -168,6 +177,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eq
 LIBXSMM_API_INTERN void libxsmm_generator_matequation_assign_timestamps(libxsmm_matrix_eqn *eqn);
 LIBXSMM_API_INTERN void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn);
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_adjust_tmp_sizes( libxsmm_matrix_eqn_elem* cur_node );
+LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_transform_kernel (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar (unsigned int opcode);

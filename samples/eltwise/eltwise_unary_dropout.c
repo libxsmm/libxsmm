@@ -63,45 +63,11 @@ void lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int wi
 
 void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out, unsigned char *dropout_mask, void* rng_state, const float p) {
   float vrng[16];
-  unsigned int w;
   unsigned int i;
   unsigned int j;
   float pn = 1 - p;
   float pi = 1/pn;
-  unsigned int cpuid = libxsmm_cpuid();
-  const char *env_cpuid = getenv("LIBXSMM_TARGET");
-  int is_512bit = 0;
-  int is_256bit = 0;
-
-  if ( env_cpuid != NULL ) {
-    is_512bit = ( env_cpuid == libxsmm_stristr(env_cpuid, "cpx") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "clx") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "skx") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "skl") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "avx3") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "avx512") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "knm") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "knl") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "mic") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "spr") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "amx") );
-    is_256bit = ( env_cpuid == libxsmm_stristr(env_cpuid, "hsw") ||
-                  env_cpuid == libxsmm_stristr(env_cpuid, "avx2") );
-  } else {
-    if ( ((cpuid >= LIBXSMM_X86_AVX512_MIC) && (cpuid <= LIBXSMM_X86_ALLFEAT)) ) {
-      is_512bit = 1;
-    } else if ( cpuid == LIBXSMM_X86_AVX2 ) {
-      is_256bit = 1;
-    }
-  }
-
-  if ( is_512bit != 0 ) {
-    w = 16;
-  } else if ( is_256bit != 0 ) {
-    w = 8;
-  } else {
-    w = 4;
-  }
+  unsigned int w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
 
   for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
     lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
