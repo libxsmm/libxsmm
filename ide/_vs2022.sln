@@ -141,26 +141,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "math", "..\tests\math.vcxpr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deeplearning", "deeplearning", "{19D4CE59-98AA-421B-B824-34017E235623}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cnnlayer", "cnnlayer", "{C903E721-1D95-4050-A5F3-BA614BABADB8}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_f32", "..\samples\deeplearning\cnnlayer\layer_example_f32.vcxproj", "{63B474A0-5BC5-4212-888E-88D30CAA791B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_i8i32", "..\samples\deeplearning\cnnlayer\layer_example_i8i32.vcxproj", "{E5AF3D43-4860-4F28-8674-D641A954C7C9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_bf16", "..\samples\deeplearning\cnnlayer\layer_example_bf16.vcxproj", "{0176F1E0-2816-4D47-89A2-96337E1B5755}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemm", "..\tests\gemm.vcxproj", "{CDCBFA7A-54BC-4D49-B57A-8B9E9A107320}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
@@ -194,8 +174,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spmdm", "..\samples\spmdm\s
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rnndriver", "rnndriver", "{B697978C-2BFF-4AA4-A508-0953EA1D9F16}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmmnoblas", "libxsmmnoblas.vcxproj", "{7C7D5D58-A367-414E-87B4-C23B8A578EC5}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -235,14 +213,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sync_barrier", "..\samples\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "autobatch", "..\samples\utilities\wrap\autobatch.vcxproj", "{7C20EC72-D155-4C70-87EB-855CA95733A8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lstmdriver", "lstmdriver", "{1AF26C8C-7D46-4C51-BDC3-1D05CAE09182}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_ck_bf16", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_ck_bf16.vcxproj", "{5A6F2BEB-65C8-4D93-9A5A-E2AA05466719}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
@@ -292,26 +262,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trans", "..\tests\trans.vcxproj", "{C9CA7758-C0C9-4A50-9757-115410B599B0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_kcck_bf16", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_kcck_bf16.vcxproj", "{B0027BD6-DCDF-4DCD-8D1B-4FB8BCA1EE9F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fusedbndriver", "fusedbndriver", "{F97A06B1-22C1-44B8-99E4-F7E9BA3D659D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_bf16", "..\samples\deeplearning\fusedbndriver\layer_example_bf16.vcxproj", "{2723C222-5053-4CDE-93B8-A5CF62E51FD6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_f32", "..\samples\deeplearning\fusedbndriver\layer_example_f32.vcxproj", "{8D23BCAE-ECF1-4C6D-AB18-0D028EEDE39D}"
-	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
@@ -369,36 +319,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "registry", "..\tests\regist
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bf16sgemm", "..\samples\xgemm\bf16sgemm.vcxproj", "{0832FF15-970D-4241-A991-16F4166A4B09}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rnndriver_nc_ck_f32", "..\samples\deeplearning\rnndriver\rnndriver_nc_ck_f32.vcxproj", "{9776BA53-EEDA-4A39-89A8-9DAB45F4D82A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rnndriver_nc_kcck_f32", "..\samples\deeplearning\rnndriver\rnndriver_nc_kcck_f32.vcxproj", "{48FA5AA0-62D7-462F-B32A-69F8C2DCA062}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rnndriver_ncnc_kcck_f32", "..\samples\deeplearning\rnndriver\rnndriver_ncnc_kcck_f32.vcxproj", "{632FA101-8478-4D32-A1E3-B7A02E6C87DE}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_ck_f32", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_ck_f32.vcxproj", "{368B8E7B-305A-4736-A196-B236B0172BA7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lstmdriver_nc_kcck_f32", "..\samples\deeplearning\lstmdriver\lstmdriver_nc_kcck_f32.vcxproj", "{4B1FF769-DEE3-441D-9939-C60F5487F2A0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
