@@ -226,11 +226,18 @@ int main(int argc, char* argv[])
     /* cannot happen */
   }
 
+  /* scratch memory size */
+  size_t alloc_size = 0;
+
   if (type == 'A' || type == 'F') {
     my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+
+    alloc_size = my_fc_fwd.scratch_size;
   }
   if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
     my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
+
+    alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
   }
 
   /* we can also use the layout functions and set the data on our
@@ -246,7 +253,6 @@ int main(int argc, char* argv[])
 
   /* let's allocate and bind scratch */
   if ( my_fc_fwd.scratch_size > 0 || my_fc_bwd.scratch_size > 0 ) {
-    size_t alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
