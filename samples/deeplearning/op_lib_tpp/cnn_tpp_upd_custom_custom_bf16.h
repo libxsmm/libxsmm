@@ -291,7 +291,11 @@ void cnn_tpp_upd_exec_bf16( cnn_tpp_config cfg, const libxsmm_bfloat16* in_act_p
 
                       gemm_param.op.tertiary  = (void*) &n_blocks;
                       gemm_param.a.primary    = (void*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, 0, 0, 0, cfg.blocksofm, OFHP, cfg.ofwp_extended/2, cfg.ofmblock, 2);
-                      gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
+                      if (cfg.on_the_fly_input_packing == 1) {
+                        gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
+                      } else {
+                        gemm_param.b.primary    = (void*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, oj+kj, ki, cfg.blocksifm, cfg.ifmblock, IFHP, cfg.ifwp_extended);
+                      }
                       gemm_param.c.primary    = (void*) dst_ptr;
                       cfg.upd_compute_kernel2_bf16f32.gemm( &gemm_param );
 
