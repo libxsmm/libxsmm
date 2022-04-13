@@ -1071,7 +1071,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
           }
 
           if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) {
-            libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, im, i_m_blocking,
+            libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_mateltwise_desc->m, im, i_m_blocking,
                                                                                 i_micro_kernel_config->tmp_vreg,
                                                                                 i_gp_reg_mapping->gp_reg_relumask,
                                                                                 l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1,
@@ -1269,7 +1269,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
         unsigned int cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
         if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU_INV) ) {
-          libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( io_generated_code, im, i_m_blocking,
+          libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( io_generated_code, i_mateltwise_desc->m, im, i_m_blocking,
                                                                              i_micro_kernel_config->tmp_vreg,
                                                                              i_gp_reg_mapping->gp_reg_relumask,
                                                                              l_blend_reg,
@@ -1512,12 +1512,13 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_asimd( libxs
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
+                                                                        const unsigned int      m,
                                                                         const unsigned int      im,
                                                                         const unsigned int      i_m_blocking,
-                                                                        const unsigned char     i_tmp0_vreg, /* i_micro_kernel_config->dropout_vreg_tmp0 */
-                                                                        const unsigned char     i_gp_reg_mask, /* i_gp_reg_mapping->gp_reg_dropoutmask */
+                                                                        const unsigned char     i_tmp0_vreg,
+                                                                        const unsigned char     i_gp_reg_mask,
                                                                         const unsigned char     i_blend_reg,
-                                                                        const unsigned char     i_scratch_gp_reg, /* i_gp_reg_mapping->gp_reg_scratch_0 */
+                                                                        const unsigned char     i_scratch_gp_reg,
                                                                         const unsigned char     i_tmp_pred_reg,
                                                                         unsigned int* const     io_mask_adv ) {
 
@@ -1527,8 +1528,8 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
 
 #ifdef SVE_MASKS_HAVE_PADDING
   /* Warning! this code is specific to a sve vector length of 512 bits (A64FX)
-   * and it writes over the end of the mask space (which is UB).
-   * If the caller ensures there is enough padding, it will be fine. */
+ *    * and it writes over the end of the mask space (which is UB).
+ *       * If the caller ensures there is enough padding, it will be fine. */
 
   /* load 2 bytes from memory into first 16 bits of predicate register */
   libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF,
@@ -1536,7 +1537,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
 #elif defined(SVE_SLOW_COPY)
   /* for 64x8 on A64FX, this is 3x slower */
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
-   * 1024 needs to respect the size of the mask data array */
+ *    * 1024 needs to respect the size of the mask data array */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, i_scratch_gp_reg, LIBXSMM_AARCH64_GP_REG_XSP, l_vector_length );
 
@@ -1554,13 +1555,15 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
                                                  LIBXSMM_AARCH64_GP_REG_XSP, i_scratch_gp_reg, LIBXSMM_AARCH64_GP_REG_XSP, l_vector_length );
 #else
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
-   * 1024 needs to respect the size of the mask data array */
+ *    * 1024 needs to respect the size of the mask data array */
   unsigned char im_mod = im & 3;/* 4 = number of bits per float within predicate register */
   if(im_mod == 0){
     /* count of sections, that will be loaded: max 4, max i_m_blocking & 3 at the end */
     unsigned int copied_sections = i_m_blocking - im < 3 ? i_m_blocking & 3 : 4;
-    unsigned int copied_length = copied_sections * l_data_length;
-    unsigned int stack_offset = (copied_length+15) & (~15);/* stack addresses need to be aligned to 16 bytes */
+    unsigned int l_mask_length_bytes = LIBXSMM_UPDIV(m,16)*2;
+    unsigned int l_remaining_data = l_mask_length_bytes - io_mask_adv[0];
+    unsigned int copied_length = LIBXSMM_MIN(copied_sections * l_data_length, l_remaining_data);
+    unsigned int stack_offset = LIBXSMM_UPDIV(copied_length,16)*16;/* stack addresses need to be aligned to 16 bytes */
     /* starting a new "chunk", sp -= pl */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    LIBXSMM_AARCH64_GP_REG_XSP, i_scratch_gp_reg, LIBXSMM_AARCH64_GP_REG_XSP, stack_offset );
@@ -1617,16 +1620,16 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
+                                                                         const unsigned int      m,
                                                                          const unsigned int      im,
                                                                          const unsigned int      i_m_blocking,
-                                                                         const unsigned char     i_tmp_vreg0, /* i_micro_kernel_config->dropout_vreg_tmp0 */
+                                                                         const unsigned char     i_tmp_vreg0,
                                                                          const unsigned char     i_gp_reg_mask,
                                                                          const unsigned char     i_blend_reg,
                                                                          const unsigned char     i_tmp_pred_reg0,
                                                                          const unsigned char     i_tmp_pred_reg1,
                                                                          const unsigned char     i_gp_reg_scratch,
                                                                          unsigned int* const     io_mask_adv ) {
-
   /* store bitflags (l_blend_reg) to bitflag array in memory */
 #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* mv l_blend_reg into l_tmp_pred_reg */
@@ -1668,9 +1671,11 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
 
   if(im_mod == 3 || im == i_m_blocking-1){
     unsigned int copied_sections = im_mod + 1;
-    unsigned int copied_length = copied_sections * l_data_length;
+    unsigned int l_mask_length_bytes = LIBXSMM_UPDIV(m, 16)*2;
+    unsigned int l_remaining_data = l_mask_length_bytes - io_mask_adv[0];
+    unsigned int copied_length = LIBXSMM_MIN(copied_sections * l_data_length, l_remaining_data);
     /* save the result to sp, into vreg, save to mask_reg, inc mask reg ptr */
-    unsigned int l_stack_offset = LIBXSMM_UPDIV(l_predicate_length, 16) * 16;/* for sp alignment */
+    unsigned int l_stack_offset = LIBXSMM_UPDIV(l_predicate_length,16)*16;/* for sp alignment */
      /* finish 4-part-block, save it; depending on how many elements we collected, we need different methods to join all values */
     if(im_mod == 0){
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E,
@@ -1790,7 +1795,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                  i_mask_reg, l_sve_type );
 
         if ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0 ) {
-          libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, im, i_m_blocking,
+          libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_mateltwise_desc->m, im, i_m_blocking,
                                                                               i_micro_kernel_config->dropout_vreg_tmp0,
                                                                               i_gp_reg_mapping->gp_reg_dropoutmask,
                                                                               l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1,
@@ -1906,7 +1911,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout_inv( libxsmm_generated_c
         unsigned char l_tmp_pred_reg = 6;
         unsigned char l_blend_reg = 7;
 
-        libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( io_generated_code, im, i_m_blocking,
+        libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( io_generated_code, i_mateltwise_desc->m, im, i_m_blocking,
                                                                            i_micro_kernel_config->dropout_vreg_tmp0,
                                                                            i_gp_reg_mapping->gp_reg_dropoutmask,
                                                                            l_blend_reg,

@@ -258,6 +258,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_asimd( libxsm
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
+                                                                        const unsigned int      m,
                                                                         const unsigned int      im,
                                                                         const unsigned int      i_m_blocking,
                                                                         const unsigned char     i_tmp0_vreg, /* i_micro_kernel_config->dropout_vreg_tmp0 */
@@ -281,6 +282,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_asimd( libxs
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm_generated_code* io_generated_code,
+                                                                         const unsigned int      m,
                                                                          const unsigned int      im,
                                                                          const unsigned int      i_m_blocking,
                                                                          const unsigned char     i_tmp_vreg0, /* i_micro_kernel_config->dropout_vreg_tmp0 */
