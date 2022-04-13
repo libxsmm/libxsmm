@@ -243,7 +243,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
   return l_cl_width_bytes/libxsmm_dnn_typesize(datatype);
 }
 
-LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length ) {
+LIBXSMM_API_INLINE float libxsmm_dnn_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
 #ifdef _OPENMP
@@ -276,12 +276,12 @@ LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length 
 }
 
 
-LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
+LIBXSMM_API_INLINE unsigned char libxsmm_dnn_internal_get_max_exp( float* in_buffer, int length ) {
   libxsmm_intfloat val_exp;
   unsigned char max_exp = 0;
 
   /* bit-wise conversion to int */
-  val_exp.f = libxsmm_internal_get_max( in_buffer, length );
+  val_exp.f = libxsmm_dnn_internal_get_max( in_buffer, length );
   /* shift by mantissa to the right and convert to char */
   max_exp = (unsigned char)((val_exp.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
 
@@ -289,7 +289,7 @@ LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer,
 }
 
 
-LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
+LIBXSMM_API_INLINE short libxsmm_dnn_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
   libxsmm_intfloat value;
   unsigned int qvalue = 0;
   unsigned int mant = 0;
@@ -370,71 +370,6 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 }
 
 
-/* @TODO make this routine aware of any int type */
-LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
-  int i = 0;
-
-  /* init libxsmm */
-  LIBXSMM_INIT
-
-  /* in case we are using FP-Mul based quantization we use a different path for now
-     @TODO let's unify the paths by using the similar vectorization for both */
-  if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    const float max_value = libxsmm_internal_get_max( in_buffer, length );
-    int maxexp = 0;
-    /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
-    float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
-    maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
-    scfq = libxsmm_sexp2_i8i(-maxexp);
-
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
-    if ( length % 16 == 0 ) {
-      __m512 vscfq = _mm512_set1_ps(scfq);
-#ifdef _OPENMP
-#     pragma omp parallel for private(i)
-#endif
-      for (i = 0; i < length; i+=16 ) {
-        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i]), vscfq ) );
-      }
-    } else {
-#endif
-#ifdef _OPENMP
-#     pragma omp parallel for private(i)
-#endif
-      for (i = 0; i < length; ++i ) {
-        out_buffer[i] = (short)LIBXSMM_ROUNDF(in_buffer[i] * scfq);
-      }
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
-    }
-#endif
-    /* @TODO, we need to potentially fix this unsigned char problem */
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (maxexp > 0) {
-      fprintf(stderr, "error quant fil\n");
-    }
-#endif
-    *scf = (unsigned char)(-maxexp);
-  } else {
-    /* get max exponent */
-    unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, length );
-
-    /* if we go for stochastic rounding, let's initialize random seed */
-    if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
-      srand(libxsmm_timer_tick() % ((unsigned int)-1));
-    }
-
-#ifdef _OPENMP
-#   pragma omp parallel for private(i)
-#endif
-    for (i = 0; i < length; ++i ) {
-      out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
-    }
-
-    *scf = (unsigned char)(14 - add_shift - (max_exp - 127));
-  }
-}
-
-
 LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, unsigned int N, unsigned int C, unsigned int H, unsigned int W, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   LIBXSMM_VLA_DECL(5, const float, in,  in_buffer,  C/cblk_f32, H, W, cblk_f32);
   LIBXSMM_VLA_DECL(6, short, out, out_buffer, C/(cblk_i16*lp_blk), H, W, cblk_i16, lp_blk);
@@ -451,7 +386,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    const float max_value = libxsmm_internal_get_max( in_buffer, N*C*H*W );
+    const float max_value = libxsmm_dnn_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
     /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
     float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
@@ -505,7 +440,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     *scf = (unsigned char)(-maxexp);
   } else {
     /* get max exponent */
-    unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, N*C*H*W );
+    unsigned char max_exp = libxsmm_dnn_internal_get_max_exp( in_buffer, N*C*H*W );
 
     /* if we go for stochastic rounding, let's initialize random seed */
     if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
@@ -526,7 +461,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
                 const int fi3 = i3;
                 const int fi4 = i4;
                 const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
-                LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = libxsmm_internal_quantize_scalar_no_scf(
+                LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = libxsmm_dnn_internal_quantize_scalar_no_scf(
                 LIBXSMM_VLA_ACCESS(5, in, fi1, fi2, fi3, fi4, fi5, C / cblk_f32, H, W, cblk_f32), max_exp, add_shift, round_mode);
               }
             }
@@ -560,7 +495,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    const float max_value = libxsmm_internal_get_max( in_buffer, K*C*R*S );
+    const float max_value = libxsmm_dnn_internal_get_max( in_buffer, K*C*R*S );
     int maxexp = 0;
     /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
     float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
@@ -636,7 +571,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     *scf = (unsigned char)(-maxexp);
   } else {
     /* get max exponent */
-    unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, K*C*R*S );
+    unsigned char max_exp = libxsmm_dnn_internal_get_max_exp( in_buffer, K*C*R*S );
 
     /* if we go for stochastic rounding, let's initialize random seed */
     if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
@@ -659,7 +594,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
                   const int fi4 = i4;
                   const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
                   const int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
-                  LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = libxsmm_internal_quantize_scalar_no_scf(
+                  LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = libxsmm_dnn_internal_quantize_scalar_no_scf(
                   LIBXSMM_VLA_ACCESS(6, in, fi1, fi2, fi3, fi4, fi5, fi6, C / cblk_f32, R, S, cblk_f32, kblk_f32), max_exp, add_shift, round_mode);
                 }
               }
@@ -670,103 +605,6 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     }
 
     *scf = (unsigned char)(14 - add_shift - (max_exp - 127));
-  }
-}
-
-
-LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
-  const float val_exp = libxsmm_sexp2_i8i(-scf);
-  int i = 0;
-
-#ifdef _OPENMP
-# pragma omp parallel for private(i)
-#endif
-  for ( i = 0; i < length; ++i ) {
-    out_buffer[i] = ((float)in_buffer[i])*val_exp;
-  }
-}
-
-
-LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int length) {
-  unsigned int i = 0;
-
-  /* truncate buffer to bf16 */
-  for ( i = 0; i < length; ++i ) {
-    libxsmm_bfloat16_hp t;
-
-    t.f = in[i];
-    out[i] = t.i[1];
-  }
-}
-
-
-LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
-  unsigned int i = 0;
-
-  /* truncate buffer to bf16 */
-  for ( i = 0; i < len; ++i ) {
-    unsigned int int_round = 0;
-    unsigned int do_round = 1;
-
-    int_round = *((unsigned int*)&(in[i]));
-
-    /* we don't round NaN and inf */
-    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
-      do_round = 0;
-    }
-
-    /* perform round nearest tie away from zero */
-    if ( do_round != 0 ) {
-      int_round = int_round + 0x00008000;
-    }
-
-    /* create the bf16 value by shifting out the lower 16bits */
-    int_round = int_round >> 16;
-
-    out[i] = (libxsmm_bfloat16)int_round;
-  }
-}
-
-
-LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
-  unsigned int i = 0;
-
-  /* truncate buffer to bf16 */
-  for ( i = 0; i < len; ++i ) {
-    unsigned int int_round = 0;
-    unsigned int do_round = 1;
-
-    int_round = *((unsigned int*)&(in[i]));
-
-    /* we don't round NaN and inf */
-    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
-      do_round = 0;
-    }
-
-    /* perform round nearest tie even */
-    if ( do_round != 0 ) {
-      unsigned int fixup = (int_round >> 16) & 1;
-      int_round = int_round + 0x00007fff + fixup;
-    }
-
-    /* create the bf16 value by shifting out the lower 16bits */
-    int_round = int_round >> 16;
-
-    out[i] = (unsigned short)int_round;
-  }
-}
-
-
-LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length) {
-  unsigned int i = 0;
-
-  /* up-convert is super simple */
-  for ( i = 0; i < length; ++i ) {
-    libxsmm_bfloat16_hp t;
-
-    t.i[1] = in[i];
-    t.i[0] = 0;
-    out[i] = t.f;
   }
 }
 
