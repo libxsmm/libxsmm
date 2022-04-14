@@ -97,7 +97,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
     mant = ((0x1 << LIBXSMM_MANT_SZ_F32) | (value.u & LIBXSMM_MASK_MANT_F32));
     /* extract sign */
     /* __mmask16 smask =  _mm512_cmplt_ps_mask (inp, _mm512_set1_ps(0)); */
-    sign = ((value.u & LIBXSNN_DNN_MASK_SIGN_F32) >> (LIBXSMM_SZ_F32-1));
+    sign = ((value.u & LIBXSMM_MASK_SIGN_F32) >> (LIBXSMM_SZ_F32-1));
     /* calculate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
     rhs = (unsigned char)((LIBXSMM_MANT_SZ_F32+1) - LIBXSMM_MANT_DFP16 + exp_off + add_shift);
     /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM WARNING: that we shifted out the entire mantissa */
@@ -127,7 +127,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
       }
     } else if (round_mode == LIBXSMM_QUANT_STOCH_ROUND) {
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
-      const float eps = LIXSMMM_DNN_RES_DFP16;
+      const float eps = LIBXSMM_RES_DFP16;
       /* coverity[dont_call] */
       const float r = (float)rand();
       libxsmm_float_uint fvalue;

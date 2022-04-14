@@ -22,8 +22,6 @@
 
    PlaidML tensor compiler <https://github.com/plaidml/plaidml>
    Intel Extension for PyTorch <https://github.com/intel/intel-extension-for-pytorch>
-   GxM Deeplearning <gxm.md>
-   TensorFlow <tensorflow.md>
 
 .. toctree::
    :caption: Scientific (HPC)
