@@ -75,9 +75,9 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 * [Batched multiplication (explicit interface)](documentation/libxsmm_mm.md#batched-multiplication)
 * [Call wrapper (static and dynamic linkage)](documentation/libxsmm_mm.md#call-wrapper)
 
-### Deep Learning<a name="interface-for-convolutions"></a>
+### Deep Learning<a name="interface-for-dl"></a>
 
-This domain (DL) is detailed by a separate [document](documentation/libxsmm_dl.md). It may be inspiring to have a look at the lightweight GxM framework, which uses LIBXSMM for end-to-end Deep Learning.
+This Deep Learning domain is detailed in the following sample codes [TPP OP Lib](https://github.com/libxsmm/libxsmm/tree/aarch64_eltwise/samples/deeplearning/op_lib_tpp). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by libxsmm. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/aarch64_eltwise/samples/deeplearning/) and postfixed by "tpp".  
 
 ### Service Functions
 
@@ -344,6 +344,8 @@ Please note that comparing performance results depends on whether the operands o
 <b>[5]&#160;</b>[https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D](https://www.computer.org/csdl/proceedings-article/sc/2016/8815a981/12OmNCeaQ1D): LIBXSMM: Accelerating Small Matrix Multiplications by Runtime Code Generation. SC'16: The International Conference for High Performance Computing, Networking, Storage and Analysis, Salt Lake City (Utah).
 
 <b>[6]&#160;</b>[http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html): LIBXSMM: A High Performance Library for Small Matrix Multiplications ([poster](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file2.pdf) and [abstract](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/poster_files/post137s2-file3.pdf)). SC'15: The International Conference for High Performance Computing, Networking, Storage and Analysis, Austin (Texas).
+
+<b>[7]&#160;</b>[Tensor Processing Primitives: A Programming Abstraction for Efficiency and Portability in Deep Learning & HPC Workloads](https://arxiv.org/abs/2104.05755) SC'21: The International Conference for High Performance Computing, Networking, Storage and Analysis, St Louis.
 
 ## Articles
 
