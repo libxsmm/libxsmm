@@ -1,1 +1,1 @@
-aarch64_eltwise-1.17-2260
+libxsmm_dnn_rip-1.17-2255

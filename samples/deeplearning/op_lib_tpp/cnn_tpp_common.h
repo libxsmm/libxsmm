@@ -25,10 +25,6 @@
 #define HWCK 4
 #define  LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 
-#define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
-  fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
-}
-
 #define LIBXSMM_BLOCK64
 #if defined LIBXSMM_BLOCK64
 # define LIBXSMM_BLOCK_SIZE 64
