@@ -77,7 +77,7 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-This Deep Learning domain is detailed in the following sample codes [TPP OP Lib](https://github.com/libxsmm/libxsmm/tree/aarch64_eltwise/samples/deeplearning/op_lib_tpp). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by libxsmm. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/aarch64_eltwise/samples/deeplearning/) and postfixed by "tpp".  
+This Deep Learning domain is detailed in the following sample codes [TPP OP Lib](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/op_lib_tpp). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by libxsmm. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/) and postfixed by "tpp".  
 
 ### Service Functions
 
