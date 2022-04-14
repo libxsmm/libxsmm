@@ -1,1 +1,0 @@
-../samples/deeplearning/gxm/README.md

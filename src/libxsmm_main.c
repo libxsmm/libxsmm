@@ -1055,7 +1055,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       memset(new_cache, 0, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type));
 #endif
       libxsmm_xcopy_init(libxsmm_target_archid);
-      libxsmm_dnn_init(libxsmm_target_archid);
       { const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
 #if (defined(_WIN32) || defined(__CYGWIN__))
         libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
@@ -1323,7 +1322,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
       libxsmm_xcopy_finalize();
       libxsmm_gemm_finalize();
-      libxsmm_dnn_finalize();
       /* coverity[check_return] */
       LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
