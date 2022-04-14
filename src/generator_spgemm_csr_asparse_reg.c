@@ -1467,7 +1467,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         } else {
           l_rva = l_u - l_npacked_reg*(l_npacked_values_per_reg - 1);
           l_idx = 0;
-          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V;
+          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P;
         }
 
         /* If necessary, broadcast a unique value from memory */
@@ -1526,7 +1526,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                   LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
 
         if ( l_neg ) {
-          libxsmm_aarch64_instruction_sve_compute ( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V,
+          libxsmm_aarch64_instruction_sve_compute ( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
                                                     l_rvc + l_n, 0, 0, l_rvc + l_n,
                                                     LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
         }
