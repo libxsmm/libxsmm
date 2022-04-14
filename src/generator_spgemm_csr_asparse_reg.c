@@ -858,7 +858,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X24;
@@ -875,13 +874,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR,
                                                          l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1,
                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-    /* A pointer */
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mapping.gp_reg_a );
+
     /* B pointer */
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                      l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mapping.gp_reg_b );
@@ -1199,6 +1195,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
   unsigned int l_vlen, l_vbytes;
   unsigned int l_npacked_reg, l_npacked_values_per_reg;
+  unsigned int l_na_off_reg = 0, l_base_a_off_reg = 0;
 
   const unsigned int l_c_is_nt = !!(LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags);
   const unsigned int l_beta0 = !!(LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags);
@@ -1256,16 +1253,16 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* Init config */
   if ( l_fp64 ) {
-    l_npacked_reg = 0;
+    l_npacked_reg = 16;
     l_npacked_values_per_reg = 2;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_D;
   } else {
-    l_npacked_reg = 0;
+    l_npacked_reg = 8;
     l_npacked_values_per_reg = 4;
     l_svet = LIBXSMM_AARCH64_SVE_TYPE_S;
   }
 
-  l_reg_unique = l_npacked_reg*l_npacked_values_per_reg + (32 - l_n_blocking - 1 - l_npacked_reg);
+  l_reg_unique = (32 - l_n_blocking - 2)*l_npacked_values_per_reg;
 
   /* prerequisite */
   LIBXSMM_ASSERT(0 != i_values);
@@ -1292,13 +1289,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
 
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_AARCH64_GP_REG_X2;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X27;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X28;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X29;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_AARCH64_GP_REG_X30;
+  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_AARCH64_GP_REG_X28;
+  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_AARCH64_GP_REG_X29;
+  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_AARCH64_GP_REG_X30;
 
   memset( l_bcast_reg_vals, ~0, sizeof(l_bcast_reg_vals) );
   libxsmm_reset_const_data_tracker( &l_const_data_tracker );
@@ -1311,13 +1306,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
-    /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR,
                                                          l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_param_struct, l_gp_reg_mapping.gp_reg_help_1,
                                                          0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-    /* A pointer */
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
-                                     l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, l_gp_reg_mapping.gp_reg_a );
+
     /* B pointer */
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                      l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, l_gp_reg_mapping.gp_reg_b );
@@ -1364,31 +1356,24 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                             &l_const_data_tracker );
     }
 
+    /* In the overflow case Z[0] is needed as a scratch register */
+    if ( l_unique > l_npacked_values_per_reg*l_npacked_reg ) {
+      l_used_reg++;
+    }
+
     /* Pre-load A into registers */
     l_n = 0;
     while ( 1 ) {
-      unsigned int l_inc, l_ld_insn;
-
-      /* Packed register; load with 128-bit replication */
-      if ( l_used_reg < l_npacked_reg ) {
-        l_inc = l_npacked_values_per_reg;
-        l_ld_insn = LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF;
-      /* Broadcast register; load with 32-/64-bit replication */
-      } else {
-        l_inc = 1;
-        l_ld_insn = l_ldr_tbl[l_fp64];
-      }
-
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_insn,
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1RQD_I_OFF,
                                             l_gp_reg_mapping.gp_reg_help_2, 0, 0,
                                             l_used_reg++, LIBXSMM_AARCH64_SVE_REG_P0 );
-      l_n += l_inc;
+      l_n += l_npacked_values_per_reg;
 
       if ( l_n < l_unique ) {
         libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                        l_gp_reg_mapping.gp_reg_help_2,
                                                        l_gp_reg_mapping.gp_reg_help_2,
-                                                       l_inc*l_fbytes, 0 );
+                                                       l_npacked_values_per_reg*l_fbytes, 0 );
       } else {
         break;
       }
@@ -1408,6 +1393,19 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
     l_ld_reg = l_base_c_reg - 1;
     l_nbcast_vals = l_ld_reg;
     l_npacked_reg = 0;
+
+    /* Load A + offsets into GPRs to enable loads with immediate offsets */
+    l_base_a_off_reg = l_base_c_gp_reg + l_m_blocking;
+    l_na_off_reg = l_gp_reg_mapping.gp_reg_help_0 - l_base_a_off_reg;
+
+    libxsmm_generator_mov_aarch64( io_generated_code, l_gp_reg_mapping.gp_reg_help_2, l_base_a_off_reg );
+
+    for ( l_n = 1; l_n < l_na_off_reg && 64*l_n < l_unique; l_n++ ) {
+      libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                     l_base_a_off_reg + l_n - 1,
+                                                     l_base_a_off_reg + l_n,
+                                                     64*l_fbytes, 0 );
+    }
   }
 
   /* Sequence the operations */
@@ -1458,20 +1456,39 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         unsigned int l_neg = 0;
         unsigned int l_fma_insn;
 
-        /* Constant is packed in its register */
-        if ( l_u < l_npacked_reg*l_npacked_values_per_reg ) {
+        /* Constants are packed in registers */
+        if ( l_unique <= l_reg_unique ) {
+          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I;
+
           l_rva = l_u / l_npacked_values_per_reg;
           l_idx = (unsigned char)(l_u % l_npacked_values_per_reg);
-          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I;
-        /* Constant is broadcasted in its register or will be loaded */
-        } else {
-          l_rva = l_u - l_npacked_reg*(l_npacked_values_per_reg - 1);
-          l_idx = 0;
-          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V;
-        }
 
-        /* If necessary, broadcast a unique value from memory */
-        if ( l_unique > l_reg_unique ) {
+          /* Handle the overflow case */
+          if ( l_unique > l_npacked_values_per_reg*l_npacked_reg ) {
+            l_rva++;
+
+            /* See if we need to copy from Z[l_rva] to Z[0] */
+            if ( l_rva >= l_npacked_reg ) {
+              if ( l_bcast_reg_vals[0] != l_rva ) {
+                /* Move */
+                libxsmm_aarch64_instruction_sve_compute( io_generated_code,
+                                                         LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+                                                         l_rva, l_rva, 0, 0,
+                                                         LIBXSMM_AARCH64_SVE_REG_UNDEF,
+                                                         LIBXSMM_AARCH64_SVE_TYPE_D );
+
+                /* Update our records */
+                l_bcast_reg_vals[0] = l_rva;
+              }
+
+              l_rva = 0;
+            }
+          }
+        /* Else, constants are read in from memory */
+        } else {
+          l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P;
+          l_idx = 0;
+
           /* See if we already have it in a register */
           for ( l_v = 0, l_rva = ~0U; l_v < l_nbcast_vals; l_v++ ) {
             if ( l_bcast_reg_vals[l_v] == l_u ) {
@@ -1482,16 +1499,28 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
           /* Otherwise pick a register to broadcast into */
           if ( ~0U == l_rva ) {
+            int l_rsrc, l_disp;
+
             l_rva = libxsmm_asparse_reg_pick_bcast_reg( l_bcast_reg_vals, l_nbcast_vals,
                                                         l_ops + l_op_idx + 1, l_n_ops - l_op_idx - 1 );
 
-            libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                           l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_0,
-                                                           l_gp_reg_mapping.gp_reg_help_3, l_u*l_fbytes );
+            /* See if we can load directly using a GPR + immediate */
+            if ( l_u < 64*l_na_off_reg ) {
+              l_rsrc = l_base_a_off_reg + l_u / 64;
+              l_disp = l_fbytes*(l_u % 64);
+            /* Otherwise, use a helper register */
+            } else {
+              l_rsrc = l_gp_reg_mapping.gp_reg_help_2;
+              l_disp = 0;
+
+              libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                             l_base_a_off_reg, l_gp_reg_mapping.gp_reg_help_0,
+                                                             l_gp_reg_mapping.gp_reg_help_2, l_u*l_fbytes );
+            }
 
             /* Load */
             libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ldr_tbl[l_fp64],
-                                                  l_gp_reg_mapping.gp_reg_help_3, 0, 0,
+                                                  l_rsrc, 0, l_disp,
                                                   l_rva, LIBXSMM_AARCH64_SVE_REG_P0 );
 
             /* Update our records */
@@ -1504,8 +1533,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
           /* Save offset into a GPR for later reuse */
           if ( 0 == l_n ) {
             libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                          l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                                                          l_rg, l_c_disp );
+                                                           l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+                                                           l_rg, l_c_disp );
           }
 
           /* Zero (elide through FMUL + optional FNEG) */
@@ -1526,7 +1555,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
                                                   LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
 
         if ( l_neg ) {
-          libxsmm_aarch64_instruction_sve_compute ( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V,
+          libxsmm_aarch64_instruction_sve_compute ( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P,
                                                     l_rvc + l_n, 0, 0, l_rvc + l_n,
                                                     LIBXSMM_AARCH64_SVE_REG_P0, l_svet );
         }

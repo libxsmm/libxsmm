@@ -25,10 +25,6 @@
 #define HWCK 4
 #define  LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
 
-#define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
-  fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
-}
-
 #define LIBXSMM_BLOCK64
 #if defined LIBXSMM_BLOCK64
 # define LIBXSMM_BLOCK_SIZE 64
@@ -1051,6 +1047,12 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout
     res.upd_linearized_pixels = 0;
     res.upd_trans_w_only = 0;
   }
+  if ((res.S != 1 && res.pad_w == 0) ||
+      (res.R != 1 && res.pad_h == 0) ) {
+    res.upd_linearized_pixels = 0;
+    res.upd_trans_w_only = 0;
+  }
+
   /* For large images facilitate the "large" transposes by blocking the pixel/reduction domains  */
   if (res.ofw >= 56 && res.ofh >=56 && res.R == 1 && res.S == 1 && res.u == 1 && res.v == 1) {
     res.upd_linearized_pixels = 0;
@@ -1108,6 +1110,9 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout
     remainder_pixels = (res.ofw % multiple_target == 0) ? 0 : (res.ofw/multiple_target+1)*multiple_target - res.ofw;
     res.ofwp_extended = OFWP + remainder_pixels;
     res.ifwp_extended = IFWP + remainder_pixels;
+    if (res.ifwp_extended % 2 == 1) {
+      res.ifwp_extended = res.ifwp_extended + 1;
+    }
     res.output_pixels = OFHP * res.ofwp_extended;
     /* coverity[identical_branches] */
     res.batchreduce_h_pixels = (res.upd_trans_w_only) ? 1 : 1; /* TODO: identical_branches */

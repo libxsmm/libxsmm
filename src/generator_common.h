@@ -1183,6 +1183,8 @@
 #define LIBXSMM_ERR_GP_TEMP_MAPPING       90044
 #define LIBXSMM_ERR_BITMASK_REQUIRED      90045
 #define LIBXSMM_ERR_ILLEGAL_ABI           90046
+#define LIBXSMM_ERR_UNKNOWN_OPERATION     90047
+#define LIBXSMM_ERR_MISSING_REDUCE_FLAGS  90048
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1984,6 +1986,17 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int i_size, unsigned int i_max_block,
   unsigned int* o_range_1, unsigned int* o_block_1,
   unsigned int* o_range_2, unsigned int* o_block_2 );
+
+typedef enum libxsmm_ulp_precision {
+  LIBXSMM_ULP_PRECISION_HALF_ULP, /* rounded correctly */
+  LIBXSMM_ULP_PRECISION_ONE_ULP, /* perfect except for last bit */
+  LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
+} libxsmm_ulp_precision;
+
+/** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
+ * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}
+ */
+LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void);
 
 #endif /* GENERATOR_COMMON_H */
 
