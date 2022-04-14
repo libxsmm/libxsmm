@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+export LIBXSMM_TARGET=A64FX
+
+# all kernels, which haven't been implemented for SVE, are commented out
 cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_trans_08b_eqld.sh
 ./kernel_test/unary_trans_08b_gtld.sh
@@ -39,16 +42,16 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_rcp_sqrt_32b_gtld.sh
 ./kernel_test/unary_relu_32b_eqld.sh
 ./kernel_test/unary_relu_32b_gtld.sh
-./kernel_test/unary_dropout_32b_eqld.sh 33
-./kernel_test/unary_dropout_32b_gtld.sh 33
+./kernel_test/unary_dropout_32b_eqld.sh 65
+./kernel_test/unary_dropout_32b_gtld.sh 65
 ./kernel_test/binary_add_32b_eqld.sh
 ./kernel_test/binary_add_32b_gtld.sh
 ./kernel_test/binary_mul_32b_eqld.sh
 ./kernel_test/binary_mul_32b_gtld.sh
 ./kernel_test/binary_sub_32b_eqld.sh
 ./kernel_test/binary_sub_32b_gtld.sh
-./kernel_test/binary_div_32b_gtld.sh
 ./kernel_test/binary_div_32b_eqld.sh
+./kernel_test/binary_div_32b_gtld.sh
 ./kernel_test/binary_muladd_32b_gtld.sh
 ./kernel_test/binary_muladd_32b_eqld.sh
 ./kernel_test/unary_gelu_32b_eqld.sh
@@ -66,4 +69,4 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 EOM
 
 rm -f tmp.??????????
-
+unset LIBXSMM_TARGET
