@@ -1,1 +1,1 @@
-libxsmm_dnn_rip-1.17-2252
+libxsmm_dnn_rip-1.17-2253
