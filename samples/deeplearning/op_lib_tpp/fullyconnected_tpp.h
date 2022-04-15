@@ -2192,7 +2192,7 @@ void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr,
 
     LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter,    wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
     LIBXSMM_VLA_DECL(4,       libxsmm_bfloat16, dinput,    din_act_ptr, nBlocksIFm, bn, bc);
-    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter_tr, scratch, nBlocksOFm, bk_lp, bc, lpb);
+    LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter_tr, (libxsmm_bfloat16*)scratch, nBlocksOFm, bk_lp, bc, lpb);
     float* temp_output = (float*)scratch + (cfg.C * cfg.K)/2;
     LIBXSMM_VLA_DECL(4,        float,           dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
 
