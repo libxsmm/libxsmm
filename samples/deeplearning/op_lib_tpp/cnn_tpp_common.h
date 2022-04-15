@@ -3165,6 +3165,15 @@ void cnn_tpp_free_offset_brgemm_aux_arrays( cnn_tpp_config* cfg) {
   }
 }
 
+void destroy_cnn_tpp(cnn_tpp_config* cfg) {
+
+  cnn_tpp_free_offset_brgemm_aux_arrays(cfg);
+
+  libxsmm_barrier_destroy(cfg->barrier);
+
+  /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
+}
+
 
 
 

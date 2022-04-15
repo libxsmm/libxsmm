@@ -2073,7 +2073,7 @@ void my_fc_bwd_exec_f32( my_fc_bwd_config cfg, const float* wt_ptr, float* din_a
   }
 }
 
-void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                           const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                           libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch )
 {
