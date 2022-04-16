@@ -25,8 +25,8 @@
 #define LP_BLOCKING 2
 
 /* function-pointer to LIBXSMM kernel */
-libxsmm_bmmfunction_reducebatch_offs fwd_brgemmz;
-libxsmm_bmmfunction_reducebatch_offs fwd_brgemma;
+libxsmm_gemmfunction fwd_brgemmz;
+libxsmm_gemmfunction fwd_brgemma;
 
 typedef struct {
   int nImg;
@@ -383,16 +383,20 @@ LIBXSMM_INLINE void gemm_convcaps_fp(gemm_conv_t* param, const libxsmm_bfloat16*
             for (rk = 0; rk < RK; ++rk ) {
               for (oj = 0; oj < ofh; ++oj) {
                 ij = oj * stride_h - pad_h;
-                if ( rk == 0 && ifm1 == 0 ) {
-                  fwd_brgemmz( &LIBXSMM_VLA_ACCESS(9, filter_t, ofm1, ifm1, mi, rk, 0,  0, 0, 0, 0, nBIfm, Mw, RK, kh, kw, nbIfm/nlpb, nbOfm, nlpb)    /* A */,
-                               &LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij, 0, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm)                        /* B */,
-                               &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, 0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm)                        /* C */,
-                               &brcount, aoff, boff );
-                } else {
-                  fwd_brgemma( &LIBXSMM_VLA_ACCESS(9, filter_t, ofm1, ifm1, mi, rk, 0,  0, 0, 0, 0, nBIfm, Mw, RK, kh, kw, nbIfm/nlpb, nbOfm, nlpb)    /* A */,
-                               &LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij, 0, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm)                        /* B */,
-                               &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, 0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm)                        /* C */,
-                               &brcount, aoff, boff );
+                {
+                  libxsmm_gemm_param gemm_param;
+                  gemm_param.a.primary = (void*)&LIBXSMM_VLA_ACCESS(9, filter_t, ofm1, ifm1, mi, rk, 0,  0, 0, 0, 0, nBIfm, Mw, RK, kh, kw, nbIfm/nlpb, nbOfm, nlpb);
+                  gemm_param.a.secondary = aoff;
+                  gemm_param.b.primary = (void*)&LIBXSMM_VLA_ACCESS(7,  poses_t,  img, ifm1, mj, rk, ij, 0, 0, nBIfm, Mh, RK, ifhp, ifwp, nbIfm);
+                  gemm_param.b.secondary = boff;
+                  gemm_param.c.primary = &LIBXSMM_VLA_ACCESS(7,  votes_t,  img, ofm1, mj, mi, oj, 0, 0, nBOfm, Mh, Mw, ofhp, ofwp, nbOfm);
+                  gemm_param.op.tertiary = &brcount;
+
+                  if ( rk == 0 && ifm1 == 0 ) {
+                    fwd_brgemmz( &gemm_param );
+                  } else {
+                    fwd_brgemma( &gemm_param );
+                  }
                 }
               }
             }
@@ -436,6 +440,11 @@ int main(int argc, char* argv[])
   int ldx;
   int brcount;
 
+  libxsmm_gemm_shape l_shape;
+  libxsmm_gemm_batch_reduce_config l_brconfig;
+  libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  libxsmm_bitfield l_prefetch_flags = LIBXSMM_PREFETCH_NONE;
+
   naive_conv_t naive_param;
   gemm_conv_t gemm_param;
 
@@ -468,7 +477,6 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0;
   int i;
-  float beta=0.0f;
 
   memset(&norms_fwd, 0, sizeof(norms_fwd));
 
@@ -617,8 +625,14 @@ int main(int argc, char* argv[])
   /* apply stride in both dimensions */
   /* JIT GEMM kernel */
   ldx = stride_w*CHANNEL_BLOCKING;
-  fwd_brgemmz = libxsmm_bmmdispatch_reducebatch_offs_unroll(CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, brcount, NULL, &ldx, NULL, NULL, &beta, NULL, NULL);
-  fwd_brgemma = libxsmm_bmmdispatch_reducebatch_offs_unroll(CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, brcount, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
+  l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+  l_shape = libxsmm_create_gemm_shape( CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING,
+                                       CHANNEL_BLOCKING, ldx, CHANNEL_BLOCKING,
+                                       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+  l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_OFFSET, 0, 0, brcount );
+  fwd_brgemma = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
+  l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
+  fwd_brgemmz = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 
   printf("BRGEMM FWD col-major: m=%d, n=%d, k=%d, lda=%d, ldb=%d, ldc=%d, transa='n', transb='n', alpha=1.0, beta=1.0, brcount=%d\n", CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING, CHANNEL_BLOCKING, stride_w*CHANNEL_BLOCKING, CHANNEL_BLOCKING, brcount);
 
