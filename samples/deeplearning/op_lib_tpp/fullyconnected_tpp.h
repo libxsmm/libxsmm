@@ -2073,7 +2073,7 @@ void my_fc_bwd_exec_f32( my_fc_bwd_config cfg, const float* wt_ptr, float* din_a
   }
 }
 
-void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                           const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                           libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch )
 {
@@ -2116,7 +2116,7 @@ void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxs
 
   libxsmm_bfloat16 *grad_output_ptr = (((cfg.fuse_type & MY_FC_ELTW_FUSE_RELU) == MY_FC_ELTW_FUSE_RELU)) ? (libxsmm_bfloat16*)((char*)scratch + cfg.doutput_scratch_mark) : (libxsmm_bfloat16*)dout_act_ptr;
   libxsmm_bfloat16 *tr_doutput_ptr = (((cfg.fuse_type & MY_FC_ELTW_FUSE_RELU) == MY_FC_ELTW_FUSE_RELU)) ? (libxsmm_bfloat16*)grad_output_ptr + cfg.N * cfg.K : (libxsmm_bfloat16*)scratch;
-  LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,   doutput_orig, (libxsmm_bfloat16*)dout_act_ptr, nBlocksOFm, bn, bk);
+  LIBXSMM_VLA_DECL(4, const libxsmm_bfloat16,   doutput_orig, dout_act_ptr, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(4, libxsmm_bfloat16,   doutput, grad_output_ptr, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, doutput_tr, tr_doutput_ptr, nBlocksMB, bn_lp, bk, lpb);
 
@@ -2190,11 +2190,11 @@ void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  libxsmm_bfloat16* wt_ptr, libxs
     libxsmm_blasint ifm1 = 0, ifm1ofm1 = 0, mb1ifm1 = 0;
     libxsmm_blasint N_tasks_per_thread = 0, M_tasks_per_thread = 0, my_M_start = 0, my_M_end = 0, my_N_start = 0, my_N_end = 0, my_col_id = 0, my_row_id = 0, col_teams = 0, row_teams = 0;
 
-    LIBXSMM_VLA_DECL(5,  libxsmm_bfloat16, filter, (libxsmm_bfloat16*)wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
-    LIBXSMM_VLA_DECL(4,        libxsmm_bfloat16,    dinput, (libxsmm_bfloat16* )din_act_ptr, nBlocksIFm, bn, bc);
+    LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter,    wt_ptr, nBlocksIFm, bc_lp, bk, lpb);
+    LIBXSMM_VLA_DECL(4,       libxsmm_bfloat16, dinput,    din_act_ptr, nBlocksIFm, bn, bc);
     LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16, filter_tr, (libxsmm_bfloat16*)scratch, nBlocksOFm, bk_lp, bc, lpb);
     float* temp_output = (float*)scratch + (cfg.C * cfg.K)/2;
-    LIBXSMM_VLA_DECL(4,        float,    dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
+    LIBXSMM_VLA_DECL(4,        float,           dinput_f32, (float*) temp_output, nBlocksIFm, bn, bc);
 
     unsigned long long  blocks = nBlocksOFm;
     libxsmm_blasint KB_BLOCKS = nBlocksOFm, BF = 1;

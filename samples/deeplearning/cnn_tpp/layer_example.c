@@ -731,7 +731,8 @@ int main(int argc, char* argv[])
   if ( (cnn_tpp_cfg.scratch_size) > 0 ) {
     libxsmm_free(scratch);
   }
-  cnn_tpp_free_offset_brgemm_aux_arrays( &cnn_tpp_cfg );
+
+  destroy_cnn_tpp(&cnn_tpp_cfg );
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
