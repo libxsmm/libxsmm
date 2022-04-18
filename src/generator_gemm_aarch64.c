@@ -452,7 +452,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
     /* issue FMAs */
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                               LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,
+                                               LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                                1 + l_m,
                                                0,
                                                (unsigned char)-1,
@@ -462,7 +462,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
     }
     if( l_m_blocks[1] > 0 ) {
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                               LIBXSMM_AARCH64_INSTR_SVE_FMLA_V,
+                                               LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                                1 + l_m_blocks[0],
                                                0,
                                                (unsigned char)-1,

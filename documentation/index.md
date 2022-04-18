@@ -75,7 +75,7 @@ The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 
 ### Deep Learning<a name="interface-for-convolutions"></a>
 
-This domain (DL) is detailed by a separate [document](libxsmm_dl.md). It may be inspiring to have a look at the lightweight GxM framework, which uses LIBXSMM for end-to-end Deep Learning.
+This Deep Learning domain is detailed in the following sample codes [TPP OP Lib](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/op_lib_tpp). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by libxsmm. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/) and postfixed by "tpp".
 
 ### Service Functions
 
