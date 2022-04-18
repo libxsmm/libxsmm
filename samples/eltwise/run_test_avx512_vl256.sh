@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export LIBXSMM_TARGET=avx512_vl256_clx
+# export LIBXSMM_TARGET=avx512_vl256_clx
 
 cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/binary_add_32b_eqld.sh
@@ -121,32 +121,32 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/reduce_add_cols_x2_32b_gtld.sh
 ./kernel_test/reduce_add_cols_x_32b_eqld.sh
 ./kernel_test/reduce_add_cols_x_32b_gtld.sh
-#./kernel_test/reduce_add_cols_x_x2_16b_eqld.sh
-#./kernel_test/reduce_add_cols_x_x2_16b_gtld.sh
-#./kernel_test/reduce_add_cols_x_x2_32b_eqld.sh
-#./kernel_test/reduce_add_cols_x_x2_32b_gtld.sh
+./kernel_test/reduce_add_cols_x_x2_16b_eqld.sh
+./kernel_test/reduce_add_cols_x_x2_16b_gtld.sh
+./kernel_test/reduce_add_cols_x_x2_32b_eqld.sh
+./kernel_test/reduce_add_cols_x_x2_32b_gtld.sh
 ./kernel_test/reduce_add_idxcols_16b_eqld.sh
 ./kernel_test/reduce_add_idxcols_16b_gtld.sh
 ./kernel_test/reduce_add_idxcols_32b_eqld.sh
 ./kernel_test/reduce_add_idxcols_32b_gtld.sh
-#./kernel_test/reduce_add_rows_x_16b_eqld.sh
-#./kernel_test/reduce_add_rows_x_16b_gtld.sh
-#./kernel_test/reduce_add_rows_x2_16b_eqld.sh
-#./kernel_test/reduce_add_rows_x2_16b_gtld.sh
+./kernel_test/reduce_add_rows_x_16b_eqld.sh
+./kernel_test/reduce_add_rows_x_16b_gtld.sh
+./kernel_test/reduce_add_rows_x2_16b_eqld.sh
+./kernel_test/reduce_add_rows_x2_16b_gtld.sh
 ./kernel_test/reduce_add_rows_x2_32b_eqld.sh
 ./kernel_test/reduce_add_rows_x2_32b_gtld.sh
 ./kernel_test/reduce_add_rows_x_32b_eqld.sh
 ./kernel_test/reduce_add_rows_x_32b_gtld.sh
-#./kernel_test/reduce_add_rows_x_x2_16b_eqld.sh
-#./kernel_test/reduce_add_rows_x_x2_16b_gtld.sh
-#./kernel_test/reduce_add_rows_x_x2_32b_eqld.sh
-#./kernel_test/reduce_add_rows_x_x2_32b_gtld.sh
+./kernel_test/reduce_add_rows_x_x2_16b_eqld.sh
+./kernel_test/reduce_add_rows_x_x2_16b_gtld.sh
+./kernel_test/reduce_add_rows_x_x2_32b_eqld.sh
+./kernel_test/reduce_add_rows_x_x2_32b_gtld.sh
 ./kernel_test/reduce_max_cols_16b_eqld.sh
 ./kernel_test/reduce_max_cols_16b_gtld.sh
 ./kernel_test/reduce_max_cols_32b_eqld.sh
 ./kernel_test/reduce_max_cols_32b_gtld.sh
-#./kernel_test/reduce_max_rows_16b_eqld.sh
-#./kernel_test/reduce_max_rows_16b_gtld.sh
+./kernel_test/reduce_max_rows_16b_eqld.sh
+./kernel_test/reduce_max_rows_16b_gtld.sh
 ./kernel_test/reduce_max_rows_32b_eqld.sh
 ./kernel_test/reduce_max_rows_32b_gtld.sh
 ./kernel_test/unary_gather_16b_eqld.sh
