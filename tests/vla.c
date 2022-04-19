@@ -35,11 +35,21 @@ int main(/*int argc, char* argv[]*/)
     for (j = 0; j < nj; ++j) {
       for (k = 0; k < nk; ++k) {
         const ELEM_TYPE gold0 = input[linear];
-        const ELEM_TYPE test0 = VLA_IJK_INDX(3, jk3, i, j, k, nj, nk);
+        const ELEM_TYPE test0a = VLA_IJK_INDX(3, jk3, i, j, k, nj, nk);
+        const void *const vjk3 = LIBXSMM_CONCATENATE(jk3, LIBXSMM_VLA_POSTFIX);
+        const void *const vpjk = LIBXSMM_ACCESS_RAW(3, sizeof(ELEM_TYPE), vjk3, i, j, k, nj, nk);
+        const ELEM_TYPE test0b = *(const ELEM_TYPE*)vpjk;
+        const ELEM_TYPE test0c = *LIBXSMM_ACCESS(3, ELEM_TYPE, vjk3, i, j, k, nj, nk);
         const ELEM_TYPE gold1 = VLA_IJK_INDX(3, kj3, i, k, j, nk, nj);
-        const ELEM_TYPE test1 = VLA_IKJ_INDX(3, kj3, i, j, k, nj, nk);
+        const ELEM_TYPE test1a = VLA_IKJ_INDX(3, kj3, i, j, k, nj, nk);
+        const void *const vkj3 = LIBXSMM_CONCATENATE(kj3, LIBXSMM_VLA_POSTFIX);
+        const void *const vpkj = LIBXSMM_ACCESS_RAW(3, sizeof(ELEM_TYPE), vkj3, i, k, j, nk, nj);
+        const ELEM_TYPE test1b = *(const ELEM_TYPE*)vpkj;
+        const ELEM_TYPE test1c = *LIBXSMM_ACCESS(3, ELEM_TYPE, vkj3, i, k, j, nk, nj);
         if (gold0 != LIBXSMM_VLA_ACCESS(1, in1, linear) ||
-            gold0 != test0 || gold1 != test1)
+            gold0 != test0a || gold1 != test1a ||
+            test0a != test0b || test0b != test0c ||
+            test1a != test1b || test1b != test1c)
         {
           result = EXIT_FAILURE;
           j = nj; break;

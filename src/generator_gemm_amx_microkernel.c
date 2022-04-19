@@ -238,7 +238,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
             i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
             i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
             i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
+            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -256,7 +256,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
           i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
           i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
           i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
+          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
 
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
                                                 i_micro_kernel_config->vector_name, reg_1, reg_0, reg_0 );

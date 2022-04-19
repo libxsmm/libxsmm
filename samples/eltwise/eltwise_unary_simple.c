@@ -1,12 +1,13 @@
 /******************************************************************************
 * Copyright (c) Intel Corporation - All rights reserved.                      *
+*               Friedrich Schiller University Jena - All rights reserved.     *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -342,6 +343,8 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if ( norms_out.normf_rel > error_bound ) {
     ret = EXIT_FAILURE;
   }
+
+  benchmark_unary(unary_type, unary_shape, unary_flags, unary_param);
 
   libxsmm_free( out_gold );
   libxsmm_free( out );

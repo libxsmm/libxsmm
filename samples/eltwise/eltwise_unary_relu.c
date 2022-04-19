@@ -1,12 +1,13 @@
 /******************************************************************************
 * Copyright (c) Intel Corporation - All rights reserved.                      *
+*               Friedrich Schiller University Jena - All rights reserved.     *
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -191,6 +192,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : ((ldo+15)-((ldo+15)%16))/8;
+  libxsmm_meltw_unary_type unary_type;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_fwd %i %i %i: ldi needs to be equal to or bigger than M\n", dtype_in, dtype_out, dtype_comp);
@@ -225,14 +227,18 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   if ( type == 0 ) {
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RELU;
   } else if ( type == 1 ) {
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU;
   } else if ( type == 2 ) {
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_ELU;
   } else {
-    unary_kernel = 0;
+    fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
+    exit(-1);
   }
+
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);
@@ -287,6 +293,8 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
     }
   }
 
+  benchmark_unary(unary_type, unary_shape, unary_flags, unary_param);
+
   libxsmm_free( out_gold );
   libxsmm_free( out );
   libxsmm_free( in );
@@ -318,6 +326,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_blasint mask_ld = ((ldi+15)-((ldi+15)%16))/8;
+  libxsmm_meltw_unary_type unary_type;
 
   if ( M > ldi ) {
     fprintf( stderr, "test_relu_bwd %i %i %i: ldi needs to be equal to or bigger than M\n", dtype_in, dtype_out, dtype_comp);
@@ -363,18 +372,23 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unary_param.in.primary    = (void*)in;
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
   unary_param.out.primary   = (void*)out;
+
   if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_RELU_INV;
   } else if ( type == 1 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV;
   } else if ( type == 2 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-    unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_ELU_INV, unary_shape, unary_flags );
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_ELU_INV;
   } else {
-    unary_kernel = 0;
+    fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
+    exit(-1);
   }
+
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
     exit(-1);

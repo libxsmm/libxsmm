@@ -41,14 +41,7 @@
  * - libxsmm_sync.h
  * - libxsmm_mhd.h
 */
-#include "libxsmm_dnn_convolution.h"
-#include "libxsmm_dnn_fullyconnected.h"
-#include "libxsmm_dnn_fusedbatchnorm.h"
-#include "libxsmm_dnn_fusedgroupnorm.h"
-#include "libxsmm_dnn_pooling.h"
-#include "libxsmm_dnn_rnncell.h"
-#include "libxsmm_dnn_softmaxloss.h"
-#include "libxsmm_dnn_optimizer.h"
+#include "libxsmm_lpflt_quant.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
@@ -131,6 +124,11 @@ LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint 
 LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_config( const libxsmm_gemm_batch_reduce_type br_type,
                                                                                       const libxsmm_blasint br_stride_a_hint, const libxsmm_blasint br_stride_b_hint,
                                                                                       const unsigned char br_unroll_hint );
+LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( const libxsmm_blasint ldap, const libxsmm_meltw_unary_type ap_unary_type, const libxsmm_bitfield ap_unary_flags, const libxsmm_blasint store_ap,
+                                                                                const libxsmm_blasint ldbp, const libxsmm_meltw_unary_type bp_unary_type, const libxsmm_bitfield bp_unary_flags, const libxsmm_blasint store_bp,
+                                                                                const libxsmm_blasint ldcp, const libxsmm_meltw_unary_type cp_unary_type, const libxsmm_bitfield cp_unary_flags, const libxsmm_blasint store_cp );
+LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_postops( const libxsmm_blasint ldd, const libxsmm_datatype d_in_type, const libxsmm_meltw_binary_type d_binary_type, const libxsmm_bitfield d_binary_flags );
+
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 /** Query or JIT-generate SMM-kernel general mixed precision options and batch reduce; returns NULL if it does not exist or if JIT is not supported */
@@ -525,13 +523,13 @@ LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary( const 
                                                                           const libxsmm_meltw_ternary_flags flags, const libxsmm_meltw_ternary_type type );
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,
-                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+                                                                        const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
 LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                           const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
-                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+                                                                          const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
 LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                             const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
-                                                                            const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
+                                                                            const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype in2_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
 LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary_v2( const libxsmm_meltw_unary_type unary_type, const libxsmm_meltw_unary_shape unary_shape, const libxsmm_bitfield unary_flags );
 LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary_v2( const libxsmm_meltw_binary_type binary_type, const libxsmm_meltw_binary_shape binary_shape, const libxsmm_bitfield binary_flags );
 LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary_v2( const libxsmm_meltw_ternary_type ternary_type, const libxsmm_meltw_ternary_shape ternary_shape, const libxsmm_bitfield ternary_flags );
@@ -547,6 +545,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
 LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_datatype type );
 LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_create_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint );
 LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_create_matrix_eqn_arg_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint in_arg_pos );
+LIBXSMM_API libxsmm_matrix_eqn_op_metadata libxsmm_create_matrix_eqn_op_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint op_arg_pos );
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_matrix_eqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr);
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2( const libxsmm_matrix_eqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2( const libxsmm_matrix_eqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags);
