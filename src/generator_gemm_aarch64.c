@@ -576,8 +576,6 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   }
 }
 
-#define NEW_STUFF
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_generated_code,
                                             const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -602,6 +600,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   unsigned int                      l_trans_extra_stack_size   = 80;
   unsigned int                      l_transpose_stack_register = LIBXSMM_AARCH64_GP_REG_UNDEF;
   const libxsmm_meltw_descriptor *  l_mateltwise_desc;
+  int gemm_stack_frame_is_set = 0;
 
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
@@ -735,15 +734,13 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                   l_gp_reg_mapping.gp_reg_help_0 );
   }
 
-  int gemm_stack_frame_is_set = 0;
-
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ( !gemm_stack_frame_is_set ) {
+      unsigned int temp_reg  = l_gp_reg_mapping.gp_reg_help_1;
+      unsigned int temp_reg2 = l_gp_reg_mapping.gp_reg_help_2;
       /* Saving current SP and aligning the stack at 64-byte boundary */
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X29, 0, 0 );
-      unsigned int temp_reg = l_gp_reg_mapping.gp_reg_help_1;
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
-      unsigned int temp_reg2 = l_gp_reg_mapping.gp_reg_help_2;
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg2, 0, 0 );
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_AND_SR, temp_reg2, temp_reg, temp_reg2, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, temp_reg2, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
