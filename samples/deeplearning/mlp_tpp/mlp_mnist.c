@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   label_libxsmm = NULL;
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters MB bn bk bc [C1 C2 ... CN-1]\n", argv[0]);
+    printf("Usage: %s iters MB bn bk bc prec_bf16 [C1 C2 ... CN-1]\n", argv[0]);
     return 0;
   }
   libxsmm_rng_set_seed(1);
