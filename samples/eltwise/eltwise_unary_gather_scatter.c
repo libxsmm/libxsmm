@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+
 #define COLS 0
 #define ROWS 1
 #define OFFS 2
@@ -282,7 +283,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   libxsmm_meltwfunction_unary l_kernel = NULL;
   libxsmm_meltw_unary_param l_unary_param;
   libxsmm_meltw_unary_shape unary_shape;
-  libxsmm_dnn_datatype dtype = (use_16bit_dtype == DTYPE_32BIT) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16;
+  libxsmm_datatype dtype = (use_16bit_dtype == DTYPE_32BIT) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16;
   libxsmm_blasint m_kernel = 0, n_kernel = 0;
 
   if (use_gather_or_scatter == GATHER) {
