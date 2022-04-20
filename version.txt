@@ -1,1 +1,1 @@
-dev/kvoronin/a_transpose_aarch64-1.17-2261
+a_transpose-1.17-2261

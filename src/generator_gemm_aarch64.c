@@ -784,7 +784,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
     /* creating a descriptor for the meltwise transform (transpose) */
     l_mateltwise_desc = libxsmm_meltw_descriptor_init(&l_meltw_blob,
-      i_xgemm_desc->datatype, i_xgemm_desc->datatype,
+      (libxsmm_datatype)i_xgemm_desc->datatype, (libxsmm_datatype)i_xgemm_desc->datatype,
       i_xgemm_desc->k /*m*/, i_xgemm_desc->m /*n*/,
       i_xgemm_desc->lda, i_xgemm_desc->m,
       i_xgemm_desc->flags, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
