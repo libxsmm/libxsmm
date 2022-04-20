@@ -1769,7 +1769,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
       /* 2nd stage */
       /* zmm0/zmm8; 4444 4444 0000 0000 / cccc cccc 8888 8888  -> zmm0: cccc 8888 4444 0000 */
-      if(io_generated_code->arch >LIBXSMM_X86_AVX512){
+      if(io_generated_code->arch >= LIBXSMM_X86_AVX512){
         if ( compute_plain_vals_reduce > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
                                                   LIBXSMM_X86_INSTR_VSHUFF64X2,
@@ -2736,7 +2736,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
       /* 2nd stage */
       /* zmm0/zmm8; 4444 4444 0000 0000 / cccc cccc 8888 8888  -> zmm0: cccc 8888 4444 0000 */
-      if(io_generated_code->arch > LIBXSMM_X86_AVX512) {
+      if(io_generated_code->arch >= LIBXSMM_X86_AVX512) {
         if ( compute_plain_vals_reduce > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
                                                   LIBXSMM_X86_INSTR_VSHUFF64X2,
