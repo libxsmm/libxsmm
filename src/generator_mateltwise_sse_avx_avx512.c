@@ -148,6 +148,10 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
     }
   }
 
+  if ((io_generated_code->arch > LIBXSMM_X86_AVX2) && (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 128 );
+    libxsmm_generator_meltw_setval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+  }
   /* Exemplary usage of how to store args to stack if need be  */
   if (save_args_to_stack > 0) {
   }
@@ -196,6 +200,11 @@ void libxsmm_generator_meltw_destroy_stack_frame( libxsmm_generated_code*       
   if (i_micro_kernel_config->use_stack_vars > 0) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RSP);
     libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
+  }
+
+  if ((io_generated_code->arch > LIBXSMM_X86_AVX2) && (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) {
+    libxsmm_generator_meltw_getval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, LIBXSMM_X86_GP_REG_RSP, 128 );
   }
 }
 
