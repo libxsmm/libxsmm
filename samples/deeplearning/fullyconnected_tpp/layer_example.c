@@ -74,6 +74,47 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_upd);
   libxsmm_matdiff_clear(&diff);
 
+  naive_input = NULL;
+  naive_output = NULL;
+  naive_filter = NULL;
+  naive_delinput = NULL;
+  naive_deloutput = NULL;
+  naive_delfilter = NULL;
+  naive_bias = NULL;
+  naive_delbias = NULL;
+  naive_input_bf16 = NULL;
+  naive_filter_bf16 = NULL;
+  naive_output_bf16 = NULL;
+  naive_delinput_bf16 = NULL;
+  naive_delfilter_bf16 = NULL;
+  naive_deloutput_bf16 = NULL;
+  naive_bias_bf16 = NULL;
+  naive_delbias_bf16 = NULL;
+  naive_libxsmm_output = NULL;
+  naive_libxsmm_delinput = NULL;
+  naive_libxsmm_delfilter = NULL;
+  naive_libxsmm_output_bf16 = NULL;
+  naive_libxsmm_delinput_bf16 = NULL;
+  naive_libxsmm_delfilter_bf16 = NULL;
+  naive_libxsmm_delbias_bf16 = NULL;
+  input_libxsmm = NULL;
+  output_libxsmm = NULL;
+  filter_libxsmm = NULL;
+  delinput_libxsmm = NULL;
+  deloutput_libxsmm = NULL;
+  delfilter_libxsmm = NULL;
+  bias_libxsmm = NULL;
+  delbias_libxsmm = NULL;
+  input_libxsmm_bf16 = NULL;
+  output_libxsmm_bf16 = NULL;
+  filter_libxsmm_bf16 = NULL;
+  delinput_libxsmm_bf16 = NULL;
+  deloutput_libxsmm_bf16 = NULL;
+  delfilter_libxsmm_bf16 = NULL;
+  bias_libxsmm_bf16 = NULL;
+  delbias_libxsmm_bf16 = NULL;
+  relumask_libxsmm = NULL;
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters nImg nIFm nOFm fuse_type type bn bk bc\n", argv[0]);
     return 0;
@@ -144,15 +185,6 @@ int main(int argc, char* argv[])
     naive_delfilter_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
     naive_bias_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
     naive_delbias_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
-  } else {
-    naive_input_bf16         = NULL;
-    naive_delinput_bf16      = NULL;
-    naive_output_bf16        = NULL;
-    naive_deloutput_bf16     = NULL;
-    naive_filter_bf16        = NULL;
-    naive_delfilter_bf16     = NULL;
-    naive_bias_bf16          = NULL;
-    naive_delbias_bf16       = NULL;
   }
   naive_libxsmm_delinput     = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
   naive_libxsmm_output       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
@@ -162,31 +194,9 @@ int main(int argc, char* argv[])
     naive_libxsmm_output_bf16    = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
     naive_libxsmm_delfilter_bf16 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
     naive_libxsmm_delbias_bf16   = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm*     sizeof(libxsmm_bfloat16), 2097152);
-  } else {
-    naive_libxsmm_delinput_bf16  = NULL;
-    naive_libxsmm_output_bf16    = NULL;
-    naive_libxsmm_delfilter_bf16 = NULL;
-    naive_libxsmm_delbias_bf16   = NULL;
   }
- 
-  if ( prec_bf16 > 0 ) {
-    input_libxsmm_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
-    delinput_libxsmm_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
-    output_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
-    deloutput_libxsmm_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
-    filter_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
-    delfilter_libxsmm_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
-    bias_libxsmm_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
-    delbias_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
-    input_libxsmm              = NULL;
-    delinput_libxsmm           = NULL;
-    output_libxsmm             = NULL;
-    deloutput_libxsmm          = NULL;
-    filter_libxsmm             = NULL;
-    delfilter_libxsmm          = NULL;
-    bias_libxsmm               = NULL;
-    delbias_libxsmm            = (float*)libxsmm_aligned_malloc( nOFm     *sizeof(float), 2097152);
-  } else {
+
+  if ( prec_bf16 == 0 ) {
     input_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
     delinput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
     output_libxsmm             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
@@ -195,14 +205,16 @@ int main(int argc, char* argv[])
     delfilter_libxsmm          = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
     bias_libxsmm               = (float*)libxsmm_aligned_malloc( nOFm     *sizeof(float), 2097152);
     delbias_libxsmm            = (float*)libxsmm_aligned_malloc( nOFm     *sizeof(float), 2097152);
-    input_libxsmm_bf16         = NULL;
-    delinput_libxsmm_bf16      = NULL;
-    output_libxsmm_bf16        = NULL;
-    deloutput_libxsmm_bf16     = NULL;
-    filter_libxsmm_bf16        = NULL;
-    delfilter_libxsmm_bf16     = NULL;
-    bias_libxsmm_bf16          = NULL;
-    delbias_libxsmm_bf16       = NULL;
+  } else {
+    input_libxsmm_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+    delinput_libxsmm_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+    output_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+    deloutput_libxsmm_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+    filter_libxsmm_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+    delfilter_libxsmm_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+    bias_libxsmm_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
+    delbias_libxsmm_bf16       = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOFm     *sizeof(libxsmm_bfloat16), 2097152);
+    delbias_libxsmm            = (float*)libxsmm_aligned_malloc( nOFm     *sizeof(float), 2097152);
   }
   relumask_libxsmm           = (unsigned char*)libxsmm_aligned_malloc(((nImg*nOFm)/8)*sizeof(unsigned char), 2097152);
 
@@ -386,7 +398,7 @@ int main(int argc, char* argv[])
       if ( prec_bf16 > 0 ) {
         my_fc_bwd_exec_bf16( my_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
                              input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
-      } else { 
+      } else {
         my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
             input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
       }
@@ -494,7 +506,7 @@ int main(int argc, char* argv[])
         if ( prec_bf16 > 0 ) {
           my_fc_bwd_exec_bf16( my_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
                                input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
-        } else { 
+        } else {
           my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
               input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
         }
@@ -536,7 +548,15 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_libxsmm_output);
   libxsmm_free(naive_libxsmm_delinput);
   libxsmm_free(naive_libxsmm_delfilter);
-  if ( prec_bf16 > 0 ) {
+  if ( prec_bf16 == 0 ) {
+    libxsmm_free(input_libxsmm);
+    libxsmm_free(output_libxsmm);
+    libxsmm_free(delinput_libxsmm);
+    libxsmm_free(deloutput_libxsmm);
+    libxsmm_free(filter_libxsmm);
+    libxsmm_free(delfilter_libxsmm);
+    libxsmm_free(bias_libxsmm);
+  } else {
     libxsmm_free(input_libxsmm_bf16);
     libxsmm_free(output_libxsmm_bf16);
     libxsmm_free(delinput_libxsmm_bf16);
@@ -548,14 +568,6 @@ int main(int argc, char* argv[])
     libxsmm_free(naive_libxsmm_delinput_bf16);
     libxsmm_free(naive_libxsmm_delfilter_bf16);
     libxsmm_free(naive_libxsmm_delbias_bf16);
-  } else {
-    libxsmm_free(input_libxsmm);
-    libxsmm_free(output_libxsmm);
-    libxsmm_free(delinput_libxsmm);
-    libxsmm_free(deloutput_libxsmm);
-    libxsmm_free(filter_libxsmm);
-    libxsmm_free(delfilter_libxsmm);
-    libxsmm_free(bias_libxsmm);
   }
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");

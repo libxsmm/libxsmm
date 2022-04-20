@@ -644,6 +644,21 @@ int main(int argc, char* argv[])
 
   memset(&norms_fwd, 0, sizeof(norms_fwd));
 
+  naive_input = NULL;
+  naive_output = NULL;
+  naive_filter = NULL;
+  naive_input_bf16 = NULL;
+  naive_output_bf16 = NULL;
+  naive_filter_bf16 = NULL;
+  gemm_input = NULL;
+  gemm_output = NULL;
+  gemm_filter = NULL;
+  gemm_input_bf16 = NULL;
+  gemm_output_bf16 = NULL;
+  gemm_filter_bf16 = NULL;
+  check_output = NULL;
+  check_output_bf16 = NULL;
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("\n\n\nUsage: %s iters H W N C K R S pad stride type(F,B,U,A)\n\n\n", argv[0]);
     return -1;
@@ -818,13 +833,6 @@ int main(int argc, char* argv[])
     gemm_input            = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*Mh*RK*sizeof(float), 2097152);
     gemm_output           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(float), 2097152);
     gemm_filter           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*Mw*RK*    sizeof(float), 2097152);
-    naive_input_bf16      = NULL;
-    naive_output_bf16     = NULL;
-    naive_filter_bf16     = NULL;
-    gemm_input_bf16       = NULL;
-    gemm_output_bf16      = NULL;
-    gemm_filter_bf16      = NULL;
-    check_output_bf16     = NULL;
   } else {
     naive_input_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*Mh*RK*sizeof(libxsmm_bfloat16), 2097152);
     naive_output_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(libxsmm_bfloat16), 2097152);
@@ -833,9 +841,6 @@ int main(int argc, char* argv[])
     gemm_output_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(libxsmm_bfloat16), 2097152);
     gemm_filter_bf16      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*Mw*RK*    sizeof(libxsmm_bfloat16), 2097152);
     check_output_bf16     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(libxsmm_bfloat16), 2097152);
-    gemm_input            = NULL;
-    gemm_output           = NULL;
-    gemm_filter           = NULL;
   }
   check_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*Mh*Mw*sizeof(float), 2097152);
   aoff                  = (unsigned long long*)libxsmm_aligned_malloc( brcount*sizeof(unsigned long long), 2097152);
