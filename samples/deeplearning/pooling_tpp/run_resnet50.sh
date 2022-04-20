@@ -91,10 +91,16 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
+if [ "f32" == "${BIN}" ]; then
+  PREC_BF16=0
+else
+  PREC_BF16=1
+fi
+
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh padw_in padh_in padw_out padw_in stride type pass
 
 #max pooling
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  112  112  ${MB}  64 3 3 1 1 0 0 0 0 2 ${TYPE} ${PASS}
+${NUMACTL} ./layer_example ${ITERS}  112  112  ${MB}  64 3 3 1 1 0 0 0 0 2 ${TYPE} ${PASS} ${PREC_BF16}
 
 #avg pooling
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  7  7  ${MB}  2048 7 7 0 0 0 0 0 0 1 ${TYPE} ${PASS}
+${NUMACTL} ./layer_example ${ITERS}  7  7  ${MB}  2048 7 7 0 0 0 0 0 0 1 ${TYPE} ${PASS} ${PREC_BF16}

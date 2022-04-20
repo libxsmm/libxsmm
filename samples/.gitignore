@@ -4,7 +4,7 @@ deeplearning/sparse_weight_mult/parallel_sparse_weight_C_redmult
 deeplearning/sparse_weight_mult/sparse_weight_A_mult
 deeplearning/sparse_weight_mult/sparse_weight_B_mult
 deeplearning/sparse_weight_mult/sparse_weight_C_redmult
-deeplearning/pooling_tpp/layer_example_*
+deeplearning/pooling_tpp/layer_example*
 deeplearning/convcaps/layer_example*
 deeplearning/mlp_tpp/mlp_example*
 deeplearning/mlp_tpp/mlp_mnist*

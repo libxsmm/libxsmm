@@ -452,7 +452,6 @@ void my_pooling_bwd_exec_f32( const my_pooling_bwd_config cfg, float* din_act_pt
   libxsmm_blasint wo = 0;
   libxsmm_blasint hi = 0;
   libxsmm_blasint wi = 0;
-  libxsmm_blasint v = 0;
   libxsmm_blasint kh = 0;
   libxsmm_blasint kw = 0;
   float recp_pool_size = 1.0f/((float)cfg.R*(float)cfg.S);
@@ -540,7 +539,6 @@ void my_pooling_bwd_exec_bf16( const my_pooling_bwd_config cfg, libxsmm_bfloat16
   libxsmm_blasint wo = 0;
   libxsmm_blasint hi = 0;
   libxsmm_blasint wi = 0;
-  libxsmm_blasint v = 0;
   libxsmm_blasint kh = 0;
   libxsmm_blasint kw = 0;
   float recp_pool_size_f32 = 1.0f/((float)cfg.R*(float)cfg.S);
