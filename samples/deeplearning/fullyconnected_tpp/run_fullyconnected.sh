@@ -97,8 +97,14 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 128 256 ${FUSE} ${TYPE} ${BN} ${BK} ${BC}
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 512 1024 ${FUSE} ${TYPE} ${BN} ${BK} ${BC}
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} ${BN} ${BK} ${BC}
-${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 2048 512 ${FUSE} ${TYPE} ${BN} ${BK} ${BC}
+if [ "f32" == "${BIN}" ]; then
+  PREC_BF16=0
+else
+  PREC_BF16=1
+fi
+
+${NUMACTL} ./layer_example ${ITERS} ${MB} 128 256 ${FUSE} ${TYPE} ${BN} ${BK} ${BC} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS} ${MB} 512 1024 ${FUSE} ${TYPE} ${BN} ${BK} ${BC} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS} ${MB} 1024 1024 ${FUSE} ${TYPE} ${BN} ${BK} ${BC} ${PREC_BF16}
+${NUMACTL} ./layer_example ${ITERS} ${MB} 2048 512 ${FUSE} ${TYPE} ${BN} ${BK} ${BC} ${PREC_BF16}
 

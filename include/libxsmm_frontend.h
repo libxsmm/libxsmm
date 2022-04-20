@@ -135,7 +135,8 @@
 # define LIBXSMM_BLAS_CONST const
 #elif defined(OPENBLAS_CONST)
 # define LIBXSMM_BLAS_CONST OPENBLAS_CONST
-#elif defined(LIBXSMM_BLAS_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)
+#elif (defined(LIBXSMM_BLAS_NONCONST) || defined(__OPENBLAS) || defined(__OPENBLAS77)) \
+   && !defined(LIBXSMM_BUILD)
 # define LIBXSMM_BLAS_CONST
 #else
 # define LIBXSMM_BLAS_CONST const

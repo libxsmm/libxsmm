@@ -13,9 +13,6 @@ BLAS = 0
 OMP = 1
 SYM = 1
 
-# example code requires (currently) specific target flags
-BF16 = 1
-
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
@@ -49,9 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/mlp_example_f32 $(OUTDIR)/mlp_mnist_f32 $(OUTDIR)/mlp_example_f32_numa $(OUTDIR)/mlp_example_bf16_amx $(OUTDIR)/mlp_example_bf16_amx_numa  $(OUTDIR)/mlp_mnist_bf16_avx512_numa $(OUTDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa  $(OUTDIR)/mlp_example_bf16_avx512_numa $(OUTDIR)/mlp_example_bf16_amx_numa $(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd $(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa $(OUTDIR)/mlp_example_bf16_amx_fused_trans_numa $(OUTDIR)/mlp_example_bf16_avx512_fused_trans_numa $(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa_bypass_trans
-
-ifneq (0,$(BF16))
+XFILES := $(OUTDIR)/mlp_example $(OUTDIR)/mlp_mnist
 
 .PHONY: all
 all: $(XFILES)
@@ -62,56 +57,17 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(BLDDIR)/perf_counter_markers.o: $(SRCDIR)/../../external_aux/perf_counter_markers.c $(SRCDIR)/../../external_aux/perf_counter_markers.h
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $(SRCDIR)/../../external_aux/perf_counter_markers.c -o $(BLDDIR)/perf_counter_markers.o
 
-$(OUTDIR)/mlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_example_f32-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/mlp_example: $(OUTDIR)/.make $(BLDDIR)/mlp_example-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/mlp_example-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/mlp_mnist_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist_f32-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_mnist_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_f32_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_f32_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_f32_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_avx512_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_avx512_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_avx512_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_mnist_bf16_avx512_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist_bf16_avx512_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_mnist_bf16_avx512_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx_fused_trans_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_avx512_fused_trans_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_avx512_fused_trans_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_avx512_fused_trans_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(BLDDIR)/perf_counter_markers.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa-c.o $(BLDDIR)/perf_counter_markers.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_mnist_bf16_amx_fused_trans_fused_sgd_numa-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
-
-$(OUTDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa_bypass_trans: $(OUTDIR)/.make $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa_bypass_trans-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/mlp_example_bf16_amx_fused_trans_fused_sgd_numa_bypass_trans-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/mlp_mnist: $(OUTDIR)/.make $(BLDDIR)/mlp_mnist-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/mlp_mnist-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
-
-else
-$(info Example "$(OUTNAME)" requires Bf16 compiler support!)
-.PHONY: all
-.PHONY: compile
-endif
 
 .PHONY: clean
 clean:

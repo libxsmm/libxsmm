@@ -102,12 +102,23 @@ typedef unsigned int libxsmm_bitfield;
 
 /* Support for Bfloat16 */
 typedef unsigned short libxsmm_bfloat16;
+typedef unsigned char  libxsmm_bfloat8;
 typedef unsigned short libxsmm_float16;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
+  float f;
+  unsigned int u;
+} libxsmm_float_uint;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
   libxsmm_bfloat16 i[2];
   float f;
 } libxsmm_bfloat16_hp;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_qp {
+  libxsmm_bfloat8 i[2];
+  libxsmm_float16 hf;
+} libxsmm_bfloat8_qp;
 
 #if defined(__cplusplus)
 namespace Eigen { struct bfloat16; }
@@ -248,23 +259,28 @@ typedef enum libxsmm_meltw_opreduce_vecs_flags {
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_SUM              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL_REDOP_SUM               = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_MUL  | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM,
   LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MAX              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
-  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY_REDOP_MIN              = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS            = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX,
+  LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDUCE_MAX_IDX_COLS_ARGOP      = LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0 | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_COPY | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX
 } libxsmm_meltw_opreduce_vecs_flags;
 
 typedef enum libxsmm_meltw_unary_flags {
-  LIBXSMM_MELTW_FLAG_UNARY_NONE              = 0,
-  LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT = 1,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW         = 2,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL         = 4,
-  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR      = 8,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS       = 16,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS       = 32,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC    = 64,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES   = 128,
-  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES   = 256,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS           = 512,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS           = 1024,
-  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS           = 2048
+  LIBXSMM_MELTW_FLAG_UNARY_NONE               = 0,
+  LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT  = 1,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW          = 2,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL          = 4,
+  LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR       = 8,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS        = 16,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS        = 32,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC     = 64,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES    = 128,
+  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES    = 256,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS            = 512,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_COLS            = 1024,
+  LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 2048,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC = 4096,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP= 8192,
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 16384
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -312,7 +328,7 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD2         = 41,
   LIBXSMM_MELTW_TYPE_UNARY_QUANT                        = 42,
   LIBXSMM_MELTW_TYPE_UNARY_DEQUANT                      = 43,
-  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX              = 44,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD       = 44,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1   = 45,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_2   = 46,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_4   = 47,
@@ -320,7 +336,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_16  = 49,
   LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_32  = 50,
   LIBXSMM_MELTW_TYPE_UNARY_GATHER                       = 51,
-  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52
+  LIBXSMM_MELTW_TYPE_UNARY_SCATTER                      = 52,
+  LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX       = 53
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
@@ -577,145 +594,6 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_UNREGISTERED = 4
 } libxsmm_kernel_kind;
 
-typedef enum libxsmm_dnn_tensor_format {
-  /* use LIBXSMM internal format, we need to copy data into that */
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM  = 1,
-  /* use NHWC format internally, this allows no-copy operations */
-  LIBXSMM_DNN_TENSOR_FORMAT_NHWC     = 2,
-  /* use NCHW format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_NCHW     = 4,
-  /* use RSCK format internally, this allows no-copy operations */
-  LIBXSMM_DNN_TENSOR_FORMAT_RSCK     = 8,
-  /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_KCRS     = 16,
-  LIBXSMM_DNN_TENSOR_FORMAT_CK       = 32,
-  LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED = 64,
-  LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED = 128,
-  LIBXSMM_DNN_TENSOR_FORMAT_NC       = 256
-} libxsmm_dnn_tensor_format;
-
-/** Denotes the element/pixel type of an image/channel. */
-typedef enum libxsmm_dnn_datatype {
-  LIBXSMM_DNN_DATATYPE_F64  = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_DNN_DATATYPE_F32  = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_DNN_DATATYPE_BF16 = LIBXSMM_DATATYPE_BF16,
-  LIBXSMM_DNN_DATATYPE_F16  = LIBXSMM_DATATYPE_F16,
-  LIBXSMM_DNN_DATATYPE_I32  = LIBXSMM_DATATYPE_I32,
-  LIBXSMM_DNN_DATATYPE_I16  = LIBXSMM_DATATYPE_I16,
-  LIBXSMM_DNN_DATATYPE_I8   = LIBXSMM_DATATYPE_I8
-} libxsmm_dnn_datatype;
-
-typedef enum libxsmm_dnn_conv_option {
-  /* we get default settings */
-  LIBXSMM_DNN_CONV_OPTION_NONE = 0,
-  /* overwrite results buffer (set it to zero before running the operations) */
-  LIBXSMM_DNN_CONV_OPTION_OVERWRITE = 1,
-  /* external filter transpose to bwd convolutions */
-  LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE = 2,
-  /* compound types */
-  LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE
-} libxsmm_dnn_conv_option;
-
-typedef enum libxsmm_dnn_fusedbatchnorm_fuse_order {
-  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
-  LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU = 0
-} libxsmm_dnn_fusedbatchnorm_fuse_order;
-
-typedef enum libxsmm_dnn_fusedbatchnorm_fuse_op {
-  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
-  LIBXSMM_DNN_FUSEDBN_OPS_BN = 1,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE = 2,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS = 4,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED = 8,
-  LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE = 16,
-  LIBXSMM_DNN_FUSEDBN_OPS_RELU = 32,
-  LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK = 64,
-  LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
-  LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU_WITH_MASK
-} libxsmm_dnn_fusedbatchnorm_fuse_op;
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_desc {
-  int partN;                                 /* number of images in mini-batch, used for all elementwise computations */
-  int fullN;                                 /* number of images in mini-batch, used for statistics computations */
-  int C;                                     /* number of input feature maps */
-  int H;                                     /* height of input image */
-  int W;                                     /* width of input image */
-  int u;                                     /* vertical stride */
-  int v;                                     /* horizontal stride */
-  int pad_h_in;                              /* height of physical zero-padding in input buffer */
-  int pad_w_in;                              /* width of physical zero-padding in input buffer */
-  int pad_h_out;                             /* height of physical zero-padding in output buffer */
-  int pad_w_out;                             /* width of physical zero-padding in output buffer */
-  int threads;                               /* number of threads used */
-  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
-  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
-  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */
-  libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
-  libxsmm_dnn_fusedbatchnorm_fuse_order fuse_order; /* additional options */
-  libxsmm_dnn_fusedbatchnorm_fuse_op fuse_ops;      /* used ops into convolutions */
-} libxsmm_dnn_fusedbatchnorm_desc;
-
-typedef enum libxsmm_dnn_fusedgroupnorm_fuse_order {
-  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
-  LIBXSMM_DNN_FUSEDGN_ORDER_GN_ELTWISE_RELU = 0
-} libxsmm_dnn_fusedgroupnorm_fuse_order;
-
-typedef enum libxsmm_dnn_fusedgroupnorm_fuse_op {
-  /* the fuse order is: 1. GN, 2. element-wise 3. RELU */
-  LIBXSMM_DNN_FUSEDGN_OPS_GN = 1,
-  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE = 2,
-  LIBXSMM_DNN_FUSEDGN_OPS_RELU = 4,
-  LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK = 8,
-  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU = LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE,
-  LIBXSMM_DNN_FUSEDGN_OPS_GN_RELU = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDGN_OPS_GN_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK,
-  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE_RELU = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU,
-  LIBXSMM_DNN_FUSEDGN_OPS_GN_ELTWISE_RELU_WITH_MASK = LIBXSMM_DNN_FUSEDGN_OPS_GN | LIBXSMM_DNN_FUSEDGN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDGN_OPS_RELU_WITH_MASK
-} libxsmm_dnn_fusedgroupnorm_fuse_op;
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedgroupnorm_desc {
-  int N;                                     /* number of images in mini-batch */
-  int G;                                     /* groups of channels to norm */
-  int C;                                     /* number of input feature maps */
-  int H;                                     /* height of input image */
-  int W;                                     /* width of input image */
-  int u;                                     /* vertical stride */
-  int v;                                     /* horizontal stride */
-  int pad_h_in;                              /* height of physical zero-padding in input buffer */
-  int pad_w_in;                              /* width of physical zero-padding in input buffer */
-  int pad_h_out;                             /* height of physical zero-padding in output buffer */
-  int pad_w_out;                             /* width of physical zero-padding in output buffer */
-  int threads;                               /* number of threads used */
-  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
-  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
-  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */
-  libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
-  libxsmm_dnn_fusedgroupnorm_fuse_order fuse_order; /* additional options */
-  libxsmm_dnn_fusedgroupnorm_fuse_op fuse_ops;      /* used ops into convolutions */
-} libxsmm_dnn_fusedgroupnorm_desc;
-
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matrix_arg {
   void* primary;
   void* secondary;
@@ -749,7 +627,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_unary_shape {
   libxsmm_blasint n;                    /* number of cols */
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_unary_shape;
@@ -760,7 +638,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_binary_shape 
   libxsmm_blasint ldi;                  /* leading dimension of first input */
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_binary_shape;
@@ -772,7 +651,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_ternary_shape
   libxsmm_blasint ldi2;                 /* leading dimension of second input */
   libxsmm_blasint ldi3;                 /* leading dimension of third input */
   libxsmm_blasint ldo;                  /* leading dimension of output */
-  libxsmm_datatype in_type;             /* datatype of input */
+  libxsmm_datatype in0_type;            /* datatype of input 0 */
+  libxsmm_datatype in1_type;            /* datatype of input 1 */
+  libxsmm_datatype in2_type;            /* datatype of input 2 */
   libxsmm_datatype out_type;            /* datatype of output */
   libxsmm_datatype comp_type;           /* datatype of compute */
 } libxsmm_meltw_ternary_shape;
@@ -935,25 +816,25 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_reduce_c
 } libxsmm_gemm_batch_reduce_config;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_unary_argops {
-  libxsmm_blasint* ldap;                      /* leading dimensions of Ap */
-  libxsmm_meltw_unary_flags ap_unary_flags;   /* flags for Ap = unary( A ) */
+  libxsmm_blasint ldap;                       /* leading dimensions of Ap */
   libxsmm_meltw_unary_type ap_unary_type;     /* op type for Ap = unary( A ) */
+  libxsmm_bitfield ap_unary_flags;            /* flags for Ap = unary( A ) */
   libxsmm_blasint store_ap;                   /* nonzero for storing Ap */
-  libxsmm_blasint* ldbp;                      /* leading dimensions of Bp */
-  libxsmm_meltw_unary_flags bp_unary_flags;   /* flags for Bp = unary( B ) */
+  libxsmm_blasint ldbp;                       /* leading dimensions of Bp */
   libxsmm_meltw_unary_type bp_unary_type;     /* op type for Bp = unary( B ) */
+  libxsmm_bitfield bp_unary_flags;            /* flags for Bp = unary( B ) */
   libxsmm_blasint store_bp;                   /* nonzero for storing Bp */
-  libxsmm_blasint* ldcp;                      /* leading dimensions of Cp */
-  libxsmm_meltw_unary_flags cp_unary_flags;   /* flags for Cp = unary( C ) */
+  libxsmm_blasint ldcp;                       /* leading dimensions of Cp */
   libxsmm_meltw_unary_type cp_unary_type;     /* op type for Cp = unary( C ) */
+  libxsmm_bitfield cp_unary_flags;           /* flags for Cp = unary( C ) */
   libxsmm_blasint store_cp;                   /* nonzero for storing Cp */
 } libxsmm_gemm_ext_unary_argops;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_ext_binary_postops {
-  libxsmm_blasint* ldd;                       /* leading dimensions of D */
+  libxsmm_blasint ldd;                        /* leading dimensions of D */
   libxsmm_datatype d_in_type;                 /* datatype of D */
-  libxsmm_meltw_binary_flags d_binary_flags;  /* flags for C = binary( C, D ) */
   libxsmm_meltw_binary_type d_binary_type;    /* op type for C = binaryry( C, D ) */
+  libxsmm_bitfield d_binary_flags;            /* flags for C = binary( C, D ) */
 } libxsmm_gemm_ext_binary_postops;
 
 /* generalized and extended functions for everything that is not a basic GEMM as defined above */

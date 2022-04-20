@@ -58,21 +58,21 @@ int main(void)
 #     pragma omp parallel for private(j) schedule(dynamic,1)
 # endif
       for (j = 0; j < npool; ++j) {
-        void* const p = libxsmm_pmalloc(pool, &num);
+        void *const p = libxsmm_pmalloc(pool, &num);
         libxsmm_pfree(p, pool, &num);
       }
-      if (npool != num) break;
+      if (npool != (int)num) break;
     }
-    if (npool == num) {
+    if (npool == (int)num) {
       for (i = 0, num = 0; i < npool; ++i) {
-        const void* const p = backup[i];
+        const void *const p = backup[i];
         for (j = 0; j < npool; ++j) {
           if (p == pool[j]) {
             ++num; break;
           }
         }
       }
-      nerrors += (int)LIBXSMM_DELTA(npool, num);
+      nerrors += LIBXSMM_DELTA(npool, (int)num);
     }
     else ++nerrors;
   }

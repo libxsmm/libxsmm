@@ -36,7 +36,6 @@ nav:
 - Machine Learning (ML):
   - PlaidML tensor compiler: https://github.com/plaidml/plaidml
   - Intel Extension for PyTorch: https://github.com/intel/intel-extension-for-pytorch
-  - GxM Deeplearning: gxm.md
   - TensorFlow: tensorflow.md
 - Scientific (HPC):
   - CP2K: cp2k.md

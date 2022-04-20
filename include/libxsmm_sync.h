@@ -466,9 +466,13 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
 #     define LIBXSMM_SYNC_YIELD pthread_yield_np()
-#   elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
-      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
-      LIBXSMM_EXTERN int sched_yield(void); /* sched.h */
+#   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
+      && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_THROW;
+#     else
+      LIBXSMM_EXTERN int sched_yield(void);
+#     endif
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
@@ -727,6 +731,7 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 # endif
 #else /* no synchronization */
+# define LIBXSMM_LOCK_DEFAULT int
 # define LIBXSMM_SYNC_YIELD LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_LOCK_SPINLOCK spinlock_dummy
 # define LIBXSMM_LOCK_MUTEX mutex_dummy
@@ -737,7 +742,7 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_LOCK_ATTR_TYPE(KIND) int
 # define LIBXSMM_LOCK_ATTR_INIT(KIND, ATTR) LIBXSMM_UNUSED(ATTR)
 # define LIBXSMM_LOCK_ATTR_DESTROY(KIND, ATTR) LIBXSMM_UNUSED(ATTR)
-# define LIBXSMM_LOCK_TYPE(KIND) int
+# define LIBXSMM_LOCK_TYPE(KIND) LIBXSMM_LOCK_DEFAULT
 # define LIBXSMM_LOCK_INIT(KIND, LOCK, ATTR) { LIBXSMM_UNUSED(LOCK); LIBXSMM_UNUSED(ATTR); }
 # define LIBXSMM_LOCK_DESTROY(KIND, LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_LOCK_TRYLOCK(KIND, LOCK) LIBXSMM_LOCK_ACQUIRED(KIND)
