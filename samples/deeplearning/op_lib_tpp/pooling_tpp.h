@@ -101,6 +101,13 @@ my_pooling_fwd_config setup_my_pooling_fwd( const libxsmm_blasint N, const libxs
   libxsmm_meltw_unary_shape  unary_shape;
   libxsmm_meltw_binary_shape binary_shape;
 
+  /* check supported precision */
+  if ( !((datatype_in == LIBXSMM_DATATYPE_F32) && (datatype_out == LIBXSMM_DATATYPE_F32) && (datatype_comp == LIBXSMM_DATATYPE_F32)) &&
+       !((datatype_in == LIBXSMM_DATATYPE_BF16) && (datatype_out == LIBXSMM_DATATYPE_BF16) && (datatype_comp == LIBXSMM_DATATYPE_F32)) ) {
+    fprintf( stderr, "Unsupported precision for bwdupd pass Bailing...!\n");
+    exit(-1);
+  }
+
   /* setting args */
   res.N = N;
   res.C = C;
@@ -171,6 +178,13 @@ my_pooling_bwd_config setup_my_pooling_bwd( const libxsmm_blasint N, const libxs
   libxsmm_bitfield                binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   libxsmm_meltw_unary_shape       unary_shape;
   libxsmm_meltw_binary_shape      binary_shape;
+
+  /* check supported precision */
+  if ( !((datatype_in == LIBXSMM_DATATYPE_F32) && (datatype_out == LIBXSMM_DATATYPE_F32) && (datatype_comp == LIBXSMM_DATATYPE_F32)) &&
+       !((datatype_in == LIBXSMM_DATATYPE_BF16) && (datatype_out == LIBXSMM_DATATYPE_BF16) && (datatype_comp == LIBXSMM_DATATYPE_F32)) ) {
+    fprintf( stderr, "Unsupported precision for bwdupd pass Bailing...!\n");
+    exit(-1);
+  }
 
   /* setting args */
   res.N = N;
@@ -600,28 +614,6 @@ void my_pooling_bwd_exec_bf16( const my_pooling_bwd_config cfg, libxsmm_bfloat16
   }
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
-}
-
-void my_pooling_fwd_exec( const my_pooling_fwd_config cfg, const void* in_act_ptr, void* out_act_ptr, int* mask_ptr,
-                          const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
-  if ( (cfg.datatype_in == LIBXSMM_DATATYPE_F32) && (cfg.datatype_out == LIBXSMM_DATATYPE_F32) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
-    my_pooling_fwd_exec_f32( cfg, (const float*)in_act_ptr, (float*)out_act_ptr, mask_ptr, start_tid, my_tid, scratch );
-  } else if ( (cfg.datatype_in == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_out == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
-    my_pooling_fwd_exec_bf16( cfg, (const libxsmm_bfloat16*)in_act_ptr, (libxsmm_bfloat16*)out_act_ptr, mask_ptr, start_tid, my_tid, scratch );
-  } else {
-    /* shouldn't happen */
-  }
-}
-
-void my_pooling_bwd_exec( const my_pooling_bwd_config cfg, void* din_act_ptr, const void* dout_act_ptr, const int* mask_ptr,
-                          const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
-  if ( (cfg.datatype_in == LIBXSMM_DATATYPE_F32) && (cfg.datatype_out == LIBXSMM_DATATYPE_F32) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
-    my_pooling_bwd_exec_f32( cfg, (float*)din_act_ptr, (const float*)dout_act_ptr, mask_ptr, start_tid, my_tid, scratch );
-  } else if ( (cfg.datatype_in == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_out == LIBXSMM_DATATYPE_BF16) && (cfg.datatype_comp == LIBXSMM_DATATYPE_F32) ) {
-    my_pooling_bwd_exec_bf16( cfg, (libxsmm_bfloat16*)din_act_ptr, (const libxsmm_bfloat16*)dout_act_ptr, mask_ptr, start_tid, my_tid, scratch );
-  } else {
-    /* shouldn't happen */
-  }
 }
 
 void destroy_my_pooling_fwd(my_pooling_fwd_config* cfg) {

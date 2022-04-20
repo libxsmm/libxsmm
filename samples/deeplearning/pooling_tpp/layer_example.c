@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
   deloutput_libxsmm_bf16 = NULL;
   naive_libxsmm_output_bf16 = NULL;
   naive_libxsmm_delinput_bf16 = NULL;
- 
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nFm pad_w_in pad_h_in pad_w_out pad_h_out stride type prec_bf16 skip_mask\n", argv[0]);
     return 0;
@@ -362,11 +362,11 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         if ( prec_bf16 == 0 ) {
-          my_pooling_fwd_exec( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
-                               0, tid, scratch );
+          my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                                   0, tid, scratch );
         } else {
-          my_pooling_fwd_exec( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
-                               0, tid, scratch );
+          my_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
+                                    0, tid, scratch );
         }
       }
       /* copy out data */
@@ -406,11 +406,11 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         if ( prec_bf16 == 0 ) {
-          my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
-                               0, tid, scratch );
+          my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                                   0, tid, scratch );
         } else {
-          my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
-                               0, tid, scratch );
+          my_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
+                                    0, tid, scratch );
         }
       }
 
@@ -452,11 +452,11 @@ int main(int argc, char* argv[])
 #endif
         for (i = 0; i < iters; ++i) {
           if ( prec_bf16 == 0 ) {
-            my_pooling_fwd_exec( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
-                                 0, tid, scratch );
+            my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+                                     0, tid, scratch );
           } else {
-            my_pooling_fwd_exec( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
-                                 0, tid, scratch );
+            my_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
+                                      0, tid, scratch );
           }
         }
       }
@@ -495,11 +495,11 @@ int main(int argc, char* argv[])
 #endif
         for (i = 0; i < iters; ++i) {
           if ( prec_bf16 == 0 ) {
-            my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
-                                 0, tid, scratch );
+            my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+                                     0, tid, scratch );
           } else {
-            my_pooling_bwd_exec( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
-                                 0, tid, scratch );
+            my_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
+                                      0, tid, scratch );
           }
         }
       }

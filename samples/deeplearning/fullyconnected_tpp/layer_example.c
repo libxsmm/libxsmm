@@ -34,6 +34,8 @@ int main(int argc, char* argv[])
   libxsmm_bfloat16 *input_libxsmm_bf16, *output_libxsmm_bf16, *filter_libxsmm_bf16, *delinput_libxsmm_bf16, *deloutput_libxsmm_bf16, *delfilter_libxsmm_bf16, *bias_libxsmm_bf16, *delbias_libxsmm_bf16;
   unsigned char *relumask_libxsmm;
 
+  libxsmm_datatype in_dt, out_dt, comp_dt;
+
   my_fc_eltw_fuse my_fuse = MY_FC_ELTW_FUSE_NONE;
   my_fc_fwd_config my_fc_fwd;
   my_fc_bwd_config my_fc_bwd;
@@ -155,17 +157,27 @@ int main(int argc, char* argv[])
   _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST);
 #endif
 
+  if ( prec_bf16 == 0 ) {
+    in_dt = LIBXSMM_DATATYPE_F32;
+    out_dt = LIBXSMM_DATATYPE_F32;
+    comp_dt = LIBXSMM_DATATYPE_F32;
+  } else {
+    in_dt = LIBXSMM_DATATYPE_BF16;
+    out_dt = LIBXSMM_DATATYPE_BF16;
+    comp_dt = LIBXSMM_DATATYPE_F32;
+  }
+
   /* print some summary */
   printf("##########################################\n");
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
   printf("PARAMS: N:%d  C:%d  K:%d\n", nImg, nIFm, nOFm);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
-  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIFm*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nOFm*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIFm*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOFm*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Filter     : %10.2f MiB\n", (double)(nIFm*nOFm*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIFm*LIBXSMM_TYPESIZE(in_dt))/(1024.0*1024.0) );
+  printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nOFm*LIBXSMM_TYPESIZE(in_dt))/(1024.0*1024.0) );
+  printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIFm*   LIBXSMM_TYPESIZE(in_dt))/(1024.0*1024.0) );
+  printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOFm*   LIBXSMM_TYPESIZE(in_dt))/(1024.0*1024.0) );
+  printf("SIZE Filter     : %10.2f MiB\n", (double)(nIFm*nOFm*LIBXSMM_TYPESIZE(in_dt))/(1024.0*1024.0) );
 
   /* allocate data */
   naive_input                = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
@@ -292,20 +304,12 @@ int main(int argc, char* argv[])
   size_t alloc_size = 0;
 
   if (type == 'A' || type == 'F') {
-    if ( prec_bf16 > 0 ) {
-      my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
-    } else {
-      my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-    }
+    my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
 
     alloc_size = my_fc_fwd.scratch_size;
   }
   if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
-    if ( prec_bf16 > 0 ) {
-      my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16);
-    } else {
-      my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-    }
+    my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
 
     alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
   }

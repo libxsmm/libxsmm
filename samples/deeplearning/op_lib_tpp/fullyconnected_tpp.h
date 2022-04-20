@@ -477,7 +477,7 @@ my_fc_fwd_config setup_my_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.scratch_size = 0;
   } else if ( (datatype_in == LIBXSMM_DATATYPE_BF16) &&
               (datatype_out == LIBXSMM_DATATYPE_BF16) &&
-              (datatype_comp == LIBXSMM_DATATYPE_BF16) ) {
+              (datatype_comp == LIBXSMM_DATATYPE_F32) ) {
     l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_shape = libxsmm_create_gemm_shape( res.bk, res.bn, res.bc,
@@ -1105,7 +1105,7 @@ my_fc_bwd_config setup_my_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
     res.scratch_size =  sizeof(float) * ( (((size_t)res.C + (size_t)res.K) * (size_t)res.N) + ((size_t)res.C * (size_t)res.K) );
   } else if ( (datatype_in == LIBXSMM_DATATYPE_BF16) &&
               (datatype_out == LIBXSMM_DATATYPE_BF16) &&
-              (datatype_comp == LIBXSMM_DATATYPE_BF16) ) {
+              (datatype_comp == LIBXSMM_DATATYPE_F32) ) {
     if (res.bwd_2d_blocking != 1) {
       printf("Requested private wt transposes, but for the current # of threads the bwd decomposition is not 2D. Will perform upfront/shared wt transposes...\n");
     }
@@ -1521,8 +1521,8 @@ void my_fc_fwd_exec_f32( my_fc_fwd_config cfg, const float* wt_ptr, const float*
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_fc_fwd_exec_bf16( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
-                          const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
+void my_fc_fwd_exec_bf16_vnni_format( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+                                      const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
 {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
@@ -1731,6 +1731,12 @@ void my_fc_fwd_exec_bf16( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, 
 
   cfg.fwd_tilerelease_kernel( NULL );
   libxsmm_barrier_wait(cfg.barrier, ltid);
+}
+
+void my_fc_fwd_exec_bf16( my_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+                          const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
+{
+  my_fc_fwd_exec_bf16_vnni_format( cfg, wt_ptr, in_act_ptr, out_act_ptr, bias_ptr, relu_ptr, start_tid, my_tid, scratch );
 }
 
 void my_fc_bwd_exec_f32( my_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
@@ -2049,9 +2055,9 @@ void my_fc_bwd_exec_f32( my_fc_bwd_config cfg, const float* wt_ptr, float* din_a
   }
 }
 
-void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
-                          const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
-                          libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch )
+void my_fc_bwd_exec_bf16_vnni_format( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                                      const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                                      libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch )
 {
   /* size variables, all const */
   /* here we assume that input and output blocking is similar */
@@ -2511,7 +2517,13 @@ void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr,
   }
 }
 
-
+void my_fc_bwd_exec_bf16( my_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+                          const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
+                          libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, my_fc_pass pass, int start_tid, int my_tid, void* scratch )
+{
+  my_fc_bwd_exec_bf16_vnni_format( cfg, wt_ptr, din_act_ptr, dout_act_ptr, dwt_ptr, in_act_ptr,
+                                   dbias_ptr, relu_ptr, pass, start_tid, my_tid, scratch );
+}
 
 void destroy_my_fc_fwd(my_fc_fwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
