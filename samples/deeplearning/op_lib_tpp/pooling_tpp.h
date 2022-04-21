@@ -12,14 +12,14 @@
 #include <libxsmm_sync.h>
 
 typedef enum libxsmm_dnn_pooling_pass {
-  MY_POOLING_PASS_FWD = 1,
-  MY_POOLING_PASS_BWD = 2
+  LIBXSMM_DNN_POOLING_PASS_FWD = 1,
+  LIBXSMM_DNN_POOLING_PASS_BWD = 2
 } libxsmm_dnn_pooling_pass;
 
 typedef enum libxsmm_dnn_pooling_type {
-  MY_POOLING_TYPE_AVG = 1,
-  MY_POOLING_TYPE_MAX = 2,
-  MY_POOLING_TYPE_MAX_NOMASK = 3
+  LIBXSMM_DNN_POOLING_TYPE_AVG = 1,
+  LIBXSMM_DNN_POOLING_TYPE_MAX = 2,
+  LIBXSMM_DNN_POOLING_TYPE_MAX_NOMASK = 3
 } libxsmm_dnn_pooling_type;
 
 typedef struct libxsmm_dnn_pooling_fwd_config {
@@ -118,7 +118,7 @@ libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blas
   res.bc = bc;
   res.Bc = C / bc;
   res.pool_type = pool_type;
-  res.pass_type = MY_POOLING_PASS_FWD;
+  res.pass_type = LIBXSMM_DNN_POOLING_PASS_FWD;
   res.u = stride_h;
   res.v = stride_w;
   res.pad_h = pad_h;
@@ -143,10 +143,10 @@ libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blas
   /* Setup fwd kernels */
   unary_shape = libxsmm_create_meltw_unary_shape( res.bc, 0, res.bc, res.bc, datatype_in, datatype_out, LIBXSMM_DATATYPE_F32 );
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH;
-  if ( res.pool_type == MY_POOLING_TYPE_MAX ) {
+  if ( res.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX ) {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP;
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
-  } else if ( res.pool_type == MY_POOLING_TYPE_MAX_NOMASK )  {
+  } else if ( res.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX_NOMASK )  {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
   } else {
@@ -196,7 +196,7 @@ libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blas
   res.bc = bc;
   res.Bc = C / bc;
   res.pool_type = pool_type;
-  res.pass_type = MY_POOLING_PASS_FWD;
+  res.pass_type = LIBXSMM_DNN_POOLING_PASS_FWD;
   res.u = stride_h;
   res.v = stride_w;
   res.pad_h = pad_h;
@@ -220,7 +220,7 @@ libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blas
   res.scratch_size = 0;
 
   /* Setup bwd kernels */
-  if ( res.pool_type == MY_POOLING_TYPE_MAX ) {
+  if ( res.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX ) {
     eqn_idx = libxsmm_matrix_eqn_create();
     arg_metadata[0] = libxsmm_create_matrix_eqn_arg_metadata(eqn_idx, 0);
     arg_metadata[1] = libxsmm_create_matrix_eqn_arg_metadata(eqn_idx, 1);
@@ -325,17 +325,17 @@ void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg,
     }
     unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
     unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
     }
     cfg.fwd_pool_reduce_kernel( & unary_param );
 
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       for ( v = 0; v < cfg.bc; v++ ) {
         LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
         LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
       }
-    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+    } else if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_AVG) {
       binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
       binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
       cfg.fwd_scale_kernel( &binary_param );
@@ -421,17 +421,17 @@ void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg
     }
     unary_param.in.primary  = (void*)&LIBXSMM_VLA_ACCESS(5, input, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
     unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       unary_param.out.secondary = (void*)&LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, 0, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc);
     }
     cfg.fwd_pool_reduce_kernel( & unary_param );
 
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       for ( v = 0; v < cfg.bc; v++ ) {
         LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) =
         LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-cfg.pad_h_out, wo-cfg.pad_w_out, v, cfg.Bc, cfg.ofh, cfg.ofw, cfg.bc) * cfg.bc + v;
       }
-    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+    } else if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_AVG) {
       binary_param.in0.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
       binary_param.out.primary = (void*) &LIBXSMM_VLA_ACCESS(5, output, img, fm, ho, wo, 0, cfg.Bc, ofhp, ofwp, cfg.bc);
       cfg.fwd_scale_kernel( &binary_param );
@@ -492,7 +492,7 @@ void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg,
       unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, dinput, img, fm, hi, cfg.pad_w_in, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
       cfg.bwd_zero_kernel( &unary_param );
     }
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
         for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {
           arg_array[0].primary    = (void*) &LIBXSMM_VLA_ACCESS(5, dinput, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
@@ -502,7 +502,7 @@ void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg,
           cfg.func_bwd_max_pool(&eqn_param);
         }
       }
-    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+    } else if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_AVG) {
       for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
         hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
         for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {
@@ -581,7 +581,7 @@ void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg
       unary_param.out.primary = (void*)&LIBXSMM_VLA_ACCESS(5, dinput, img, fm, hi, cfg.pad_w_in, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
       cfg.bwd_zero_kernel( &unary_param );
     }
-    if (cfg.pool_type == MY_POOLING_TYPE_MAX) {
+    if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX) {
       for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
         for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {
           arg_array[0].primary    = (void*) &LIBXSMM_VLA_ACCESS(5, dinput, img, fm, 0, 0, 0, cfg.Bc, ifhp, ifwp, cfg.bc);
@@ -591,7 +591,7 @@ void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg
           cfg.func_bwd_max_pool(&eqn_param);
         }
       }
-    } else if (cfg.pool_type == MY_POOLING_TYPE_AVG) {
+    } else if (cfg.pool_type == LIBXSMM_DNN_POOLING_TYPE_AVG) {
       for ( ho = cfg.pad_h_out; ho < (cfg.ofh+cfg.pad_h_out); ho++ ) {
         hi = ((ho-cfg.pad_h_out) * cfg.u) - cfg.pad_h;
         for ( wo = cfg.pad_w_out; wo < (cfg.ofw+cfg.pad_w_out); wo++ ) {

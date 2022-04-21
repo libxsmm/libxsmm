@@ -306,12 +306,12 @@ int main(int argc, char* argv[])
 
     if ( pool_type == 0 ) {
       if (skip_mask_comp == 0) {
-        pool_type_cfg = MY_POOLING_TYPE_MAX;
+        pool_type_cfg = LIBXSMM_DNN_POOLING_TYPE_MAX;
       } else {
-        pool_type_cfg = MY_POOLING_TYPE_MAX_NOMASK;
+        pool_type_cfg = LIBXSMM_DNN_POOLING_TYPE_MAX_NOMASK;
       }
     } else if ( pool_type == 1 ) {
-      pool_type_cfg = MY_POOLING_TYPE_AVG;
+      pool_type_cfg = LIBXSMM_DNN_POOLING_TYPE_AVG;
     } else {
       return 0;
     }
