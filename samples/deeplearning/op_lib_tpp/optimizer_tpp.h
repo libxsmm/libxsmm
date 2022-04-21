@@ -11,7 +11,7 @@
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 
-typedef struct my_opt_config {
+typedef struct libxsmm_dnn_opt_config {
   libxsmm_blasint C;
   libxsmm_blasint K;
   libxsmm_blasint bc;
@@ -20,12 +20,12 @@ typedef struct my_opt_config {
   float           lr;
   size_t          scratch_size;
   libxsmm_barrier* barrier;
-} my_opt_config;
+} libxsmm_dnn_opt_config;
 
-my_opt_config setup_my_opt(libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bc, libxsmm_blasint bk,
+libxsmm_dnn_opt_config setup_libxsmm_dnn_opt(libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bc, libxsmm_blasint bk,
                            libxsmm_blasint threads, float lr, libxsmm_datatype datatype_in,
                            libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp) {
-  my_opt_config res;
+  libxsmm_dnn_opt_config res;
 
   /* setting up some handle values */
   res.C = C;
@@ -55,7 +55,7 @@ my_opt_config setup_my_opt(libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint
   return res;
 }
 
-void my_opt_exec_f32( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int start_tid, int my_tid, void* scratch ) {
+void libxsmm_dnn_opt_exec_f32( libxsmm_dnn_opt_config cfg, float* wt_ptr, const float* delwt_ptr, int start_tid, int my_tid, void* scratch ) {
   /* loop counters */
   libxsmm_blasint i;
 
@@ -80,7 +80,7 @@ void my_opt_exec_f32( my_opt_config cfg, float* wt_ptr, const float* delwt_ptr, 
   libxsmm_barrier_wait( cfg.barrier, ltid );
 }
 
-void my_opt_exec_bf16( my_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_ptr, const libxsmm_bfloat16* delwt_ptr, int start_tid, int my_tid, void* scratch ) {
+void libxsmm_dnn_opt_exec_bf16( libxsmm_dnn_opt_config cfg, libxsmm_bfloat16* wt_ptr, float* master_wt_ptr, const libxsmm_bfloat16* delwt_ptr, int start_tid, int my_tid, void* scratch ) {
   /* loop counters */
   libxsmm_blasint i;
 

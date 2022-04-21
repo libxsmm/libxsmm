@@ -46,7 +46,7 @@ typedef enum my_pass {
   MY_PASS_BWD   = 6
 } my_pass;
 
-typedef struct cnn_tpp_config {
+typedef struct libxsmm_dnn_conv_config {
   /* Convolution params  */
   libxsmm_blasint N;
   libxsmm_blasint H;
@@ -287,13 +287,13 @@ typedef struct cnn_tpp_config {
 
   size_t scratch_size;
 
-} cnn_tpp_config;
+} libxsmm_dnn_conv_config;
 
 /***********************************************************/
 /* Helper functions for convolutions' general param setup */
 /**********************************************************/
 
-void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk ) {
+void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk ) {
   int ifmblock = 0;
   int ofmblock = 0;
   int lp_block = 0;
@@ -364,34 +364,34 @@ void  cnn_tpp_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, 
   *fm_lp_block = lp_block;
 }
 
-int cnn_tpp_setup_ifmblock( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ofm, lp;
 
-  cnn_tpp_get_feature_map_blocks( cfg->C, cfg->K, &result, &ofm, &lp, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk );
+  libxsmm_dnn_conv_get_feature_map_blocks( cfg->C, cfg->K, &result, &ofm, &lp, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk );
 
   return result;
 }
 
-int cnn_tpp_setup_ofmblock( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ifm, lp;
 
-  cnn_tpp_get_feature_map_blocks( cfg->C, cfg->K, &ifm, &result, &lp, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk );
+  libxsmm_dnn_conv_get_feature_map_blocks( cfg->C, cfg->K, &ifm, &result, &lp, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk );
 
   return result;
 }
 
-int cnn_tpp_setup_fm_lp_block( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ifm, ofm;
 
-  cnn_tpp_get_feature_map_blocks( cfg->C, cfg->K, &ifm, &ofm, &result, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk);
+  libxsmm_dnn_conv_get_feature_map_blocks( cfg->C, cfg->K, &ifm, &ofm, &result, cfg->datatype_in, cfg->datatype_out, cfg->bc, cfg->bk);
 
   return result;
 }
 
-int cnn_tpp_setup_fallback_loops_fwd( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* FIXME: For now fallback only if MB is not divisible by number of threads */
   if (cfg->N % cfg->threads != 0) {
@@ -400,12 +400,12 @@ int cnn_tpp_setup_fallback_loops_fwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_blocksifm( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_blocksifm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->C / cfg->ifmblock;
   return result;
 }
 
-int cnn_tpp_setup_blocksofm( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->K / cfg->ofmblock;
   return result;
 }
@@ -413,7 +413,7 @@ int cnn_tpp_setup_blocksofm( cnn_tpp_config* cfg ) {
 /**********************************************************/
 /* Helper functions for FWD convolutions' parameter setup */
 /**********************************************************/
-int cnn_tpp_setup_fwd_ofw_rb( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   result = cfg->ofw;
   if (cfg->ofw == 56) {
@@ -427,7 +427,7 @@ int cnn_tpp_setup_fwd_ofw_rb( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_pack_input_fwd( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Pack only for small images and when having large K to amortize, and we can only pack for 1x1 convolutions */
   if ((cfg->ofw <= 14) && (cfg->K > 512) && (cfg->R == 1) && (cfg->S == 1) && (cfg->u == 2) && (cfg->v == 2)) {
@@ -454,7 +454,7 @@ int cnn_tpp_setup_pack_input_fwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* Multiple rows for "small" images and 1x1 convolutions */
   if ((cfg->ofh <= 14) && (cfg->R == 1) && (cfg->S == 1) && (cfg->pad_w_out == 0) && (cfg->pad_h_out == 0)) {
@@ -485,7 +485,7 @@ int cnn_tpp_setup_fwd_ofh_rb( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_fwd_pixels_gemm( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->fwd_ofw_rb * cfg->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
 #if 0
@@ -500,7 +500,7 @@ int cnn_tpp_setup_fwd_pixels_gemm( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_fwd_block_H( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg ) {
   int result = 14;
 
 #if 0
@@ -534,7 +534,7 @@ int cnn_tpp_setup_fwd_block_H( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_blocksifm_blocking( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* For 1x1 Convolutions bring in kernel all IFMs unless filters are huge*/
   if ((cfg->R == 1) && (cfg->S == 1) ) {
@@ -576,7 +576,7 @@ int cnn_tpp_setup_blocksifm_blocking( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_loop_order_fwd( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Switch to loop order 1 only if 1x1 convolution with "large" input image and "small" K */
   if ((cfg->H >= 28) && (cfg->R == 1) && (cfg->S == 1) && (cfg->C >=512) && (cfg->K <=512)) {
@@ -591,7 +591,7 @@ int cnn_tpp_setup_loop_order_fwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_block_fwd_IFM( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 8;
   if (cfg->ofw == 7 && cfg->C == 2048 && cfg->K == 512) {
     result = 4;
@@ -604,7 +604,7 @@ int cnn_tpp_setup_block_fwd_IFM( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_block_fwd_OFM( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 8;
   if (cfg->ofw == 14 && cfg->K == 1024) {
     result = 16;
@@ -616,7 +616,7 @@ int cnn_tpp_setup_block_fwd_OFM( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_use_ofm_parallelization( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 #if 0
   /* Use "hybrid" minibatch/ofm parallelization if we have huge filters */
@@ -637,7 +637,7 @@ int cnn_tpp_setup_use_ofm_parallelization( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_avoid_rim_fmas_fwd( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Avoid rim FMA if the convolution is 3x3 (non-strided) and the image is "small" */
   if ((cfg->R == 3) && (cfg->S == 3) &&
@@ -664,7 +664,7 @@ int cnn_tpp_setup_avoid_rim_fmas_fwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_shuffle_filter_accesses( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Shuffle filter accesses only if "pure minibatch" parallelization and large filters are involved */
   if ((cfg->use_ofm_parallelization == 0) && (cfg->C > 512) && (cfg->K > 512)) {
@@ -687,7 +687,7 @@ int cnn_tpp_setup_shuffle_filter_accesses( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_avoid_acc_load( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ((cfg->overwrite_output) > 0) {
     if ((cfg->R == 1) && (cfg->S == 1)) {
@@ -703,7 +703,7 @@ int cnn_tpp_setup_avoid_acc_load( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_init_fwd_gemm_flags( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 
 #if defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS)
@@ -733,7 +733,7 @@ int cnn_tpp_setup_init_fwd_gemm_flags( cnn_tpp_config* cfg ) {
   return result;
 }
 
-int cnn_tpp_setup_fwd_padding_copy( cnn_tpp_config* cfg ) {
+int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ( (cfg->pad_h != cfg->pad_h_in) || (cfg->pad_w != cfg->pad_w_in) ) {
     result = 1;
@@ -741,7 +741,7 @@ int cnn_tpp_setup_fwd_padding_copy( cnn_tpp_config* cfg ) {
   return result;
 }
 
-void cnn_tpp_setup_fwd_scratch( cnn_tpp_config* cfg ) {
+void libxsmm_dnn_conv_setup_fwd_scratch( libxsmm_dnn_conv_config* cfg ) {
   cfg->fwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( cfg->pack_input != 0 ) {
@@ -791,7 +791,7 @@ void cnn_tpp_setup_fwd_scratch( cnn_tpp_config* cfg ) {
 /**********************************************************/
 /* Helper functions for BWD convolutions' parameter setup */
 /**********************************************************/
-LIBXSMM_API_INLINE int cnn_tpp_setup_fallback_loops_bwd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fallback_loops_bwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* FIXME: Fallback if MB is not divisible by number of threads */
   if (cfg->N % cfg->threads != 0) {
@@ -813,17 +813,17 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_fallback_loops_bwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_ofw_rb( cnn_tpp_config* cfg ) {
-  int result = cnn_tpp_setup_fwd_ofw_rb(cfg);
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_bwd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
+  int result = libxsmm_dnn_conv_setup_fwd_ofw_rb(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_ofh_rb( cnn_tpp_config* cfg ) {
-  int result = cnn_tpp_setup_fwd_ofh_rb(cfg);
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_bwd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
+  int result = libxsmm_dnn_conv_setup_fwd_ofh_rb(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_pixels_gemm( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_bwd_pixels_gemm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->bwd_ofw_rb * cfg->bwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
 #if 0
@@ -838,25 +838,25 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_pixels_gemm( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_bwd_block_H( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_bwd_block_H( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
-  result = cnn_tpp_setup_fwd_block_H(cfg);
+  result = libxsmm_dnn_conv_setup_fwd_block_H(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_loop_order_bwd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_loop_order_bwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
-  result = cnn_tpp_setup_loop_order_fwd(cfg);
+  result = libxsmm_dnn_conv_setup_loop_order_fwd(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_block_bwd_IFM( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_bwd_IFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   result = LIBXSMM_MIN(cfg->blocksifm, 16);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_block_bwd_OFM( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_bwd_OFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 8;
   while (result % cfg->blocksofm_blocking != 0) {
     result++;
@@ -864,7 +864,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_block_bwd_OFM( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_pack_input_bwd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_pack_input_bwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ((cfg->u != 1) && (cfg->bwd_ofh_rb != 1)) {
     result = 1;
@@ -872,7 +872,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_pack_input_bwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_use_ifm_parallelization( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_use_ifm_parallelization( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if (cfg->ofw <= 7) {
     result = 1;
@@ -880,12 +880,12 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_use_ifm_parallelization( cnn_tpp_config* cf
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_avoid_rim_fmas_bwd( cnn_tpp_config* cfg ) {
-  int result = cnn_tpp_setup_avoid_rim_fmas_fwd(cfg);
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_rim_fmas_bwd( libxsmm_dnn_conv_config* cfg ) {
+  int result = libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_blocksofm_blocking( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksofm_blocking( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if (cfg->R == 1 && cfg->S == 1) {
     result = cfg->blocksofm;
@@ -912,7 +912,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_blocksofm_blocking( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_init_bwd_gemm_flags( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_init_bwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 #if 0
   if ((cfg->target_archid == LIBXSMM_X86_AVX512_SPR) && (cfg->target_archid <= LIBXSMM_X86_ALLFEAT) && ((cfg->datatype_in == LIBXSMM_DATATYPE_BF16) || (cfg->datatype_in == LIBXSMM_DATATYPE_I8)) ) {
@@ -922,7 +922,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_init_bwd_gemm_flags( cnn_tpp_config* cfg ) 
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_spread_input_bwd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_spread_input_bwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if (((cfg->u != 1) || (cfg->v != 1)) && (cfg->bwd_ofh_rb == 1)) {
     result = 1;
@@ -930,7 +930,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_spread_input_bwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_avoid_acc_load_bwd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_acc_load_bwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if (cfg->overwrite_output > 0) {
     if ((cfg->R == 1) && (cfg->S == 1)) {
@@ -946,7 +946,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_avoid_acc_load_bwd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE void cnn_tpp_setup_bwd_scratch( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_bwd_scratch( libxsmm_dnn_conv_config* cfg ) {
   /* transpose of weights */
   cfg->bwd_filter_trans_scratch_size = (size_t)cfg->C * cfg->K *
     cfg->R * cfg->S *
@@ -1002,7 +1002,7 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bwd_scratch( cnn_tpp_config* cfg ) {
 /**********************************************************/
 /* Helper functions for UPD convolutions' parameter setup */
 /**********************************************************/
-LIBXSMM_API_INLINE int cnn_tpp_setup_weight_copies_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_weight_copies_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->threads;
   if (cfg->ofw <= 14) {
     result = 9;
@@ -1033,8 +1033,8 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_weight_copies_upd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout_cfg ) {
-  cnn_tpp_config res = *inout_cfg;
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_bf16_upd_algorithms( libxsmm_dnn_conv_config* inout_cfg ) {
+  libxsmm_dnn_conv_config res = *inout_cfg;
   int remainder_pixels, max_init_offset, max_compute_offset_input, input_compute_pad, accum_length_pixels, compute_pixels;
   const int multiple_target = 2;
   int IFHP = (res.upd_padding_copy == 1) ? res.ifhp + 2 * res.pad_h : res.ifhp;
@@ -1092,7 +1092,7 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout
 
     if (res.ofw <= 14) {
       res.use_hybrid_imgofm_parallelization = 1;
-      res.weight_copies = cnn_tpp_setup_weight_copies_upd(&res);
+      res.weight_copies = libxsmm_dnn_conv_setup_weight_copies_upd(&res);
       if (res.ofw == 14 && res.K >= 1024) {
         res.use_hybrid_imgofm_parallelization = 0;
         res.weight_copies = res.threads;
@@ -1128,7 +1128,7 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_bf16_upd_algorithms( cnn_tpp_config* inout
   *inout_cfg = res;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_loop_order_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_loop_order_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   if (cfg->ofh == 28 && cfg->R == 1 && cfg->u == 1 && cfg->C == 128 && cfg->K == 512) {
     result = 0;
@@ -1148,7 +1148,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_loop_order_upd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_pack_input_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_pack_input_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Pack input only for very small images, 1x1 convs, with large K to amortize the relevant overhead */
   if ((cfg->ofh <= 7) && (cfg->R == 1) && (cfg->S == 1) && (cfg->u != 1) && (cfg->v != 1) && (cfg->K >= 2048)) {
@@ -1157,7 +1157,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_pack_input_upd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_avoid_rim_fmas_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_rim_fmas_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Avoid rim FMAs only for small images  */
   if ( (cfg->ofh <= 7) && (cfg->R == 3) && (cfg->S == 3) && (cfg->pad_w == 1) && (cfg->pad_h == 1)) {
@@ -1169,13 +1169,13 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_avoid_rim_fmas_upd( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_upd_ofw_rb( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_upd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   result = cfg->ofw;
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_upd_ofh_rb( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_upd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* Restrict the reduction chain which is ofw_rb*ofh_rb*/
   if (cfg->ofh <= 28 ) {
@@ -1209,7 +1209,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_upd_ofh_rb( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_block_upd_IFM( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_upd_IFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   if (cfg->ofh == 56 && cfg->R == 1 && cfg->S == 1 && cfg->u == 1 && cfg->v == 1) {
     result = 4;
@@ -1217,19 +1217,19 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_block_upd_IFM( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_block_upd_OFM( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_upd_OFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   LIBXSMM_UNUSED(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_img_batchreduce_block( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_img_batchreduce_block( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   LIBXSMM_UNUSED(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_use_batchreduce_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_use_batchreduce_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* If W is large, no need for batchreduce kernel */
   if (cfg->ofw >= 56) {
@@ -1249,7 +1249,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_use_batchreduce_upd( cnn_tpp_config* cfg ) 
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_linearized_tasklist_upd( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_linearized_tasklist_upd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Use linearized task-list (i.e. no reduction) only if small images and large filters */
   if (cfg->ofh <= 10 && cfg->ofw <= 10) {
@@ -1272,13 +1272,13 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_linearized_tasklist_upd( cnn_tpp_config* cf
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_init_upd_gemm_flags( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_init_upd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   LIBXSMM_UNUSED(cfg);
   return result;
 }
 
-LIBXSMM_API_INLINE int cnn_tpp_setup_upd_padding_copy( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_upd_padding_copy( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ( (cfg->pad_h != cfg->pad_h_in) || (cfg->pad_w != cfg->pad_w_in) ) {
     result = 1;
@@ -1286,7 +1286,7 @@ LIBXSMM_API_INLINE int cnn_tpp_setup_upd_padding_copy( cnn_tpp_config* cfg ) {
   return result;
 }
 
-LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_upd_scratch( libxsmm_dnn_conv_config* cfg ) {
   cfg->upd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( cfg->upd_pack_input != 0 ) {
@@ -1391,8 +1391,8 @@ LIBXSMM_API_INLINE void cnn_tpp_setup_upd_scratch( cnn_tpp_config* cfg ) {
     cfg->upd_lp_filter_full_scratch_size;
 }
 
-void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
-  cnn_tpp_config res = *inout_cfg;
+void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+  libxsmm_dnn_conv_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint ldx;
     libxsmm_blasint ldA;
@@ -1937,8 +1937,8 @@ void cnn_tpp_generate_fwd_kernels( cnn_tpp_config* inout_cfg) {
   *inout_cfg = res;
 }
 
-void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
-  cnn_tpp_config res = *inout_cfg;
+void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+  libxsmm_dnn_conv_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint ldA;
     libxsmm_blasint ldB;
@@ -2344,8 +2344,8 @@ void cnn_tpp_generate_bwd_kernels( cnn_tpp_config* inout_cfg) {
   *inout_cfg = res;
 }
 
-void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
-  cnn_tpp_config res = *inout_cfg;
+void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+  libxsmm_dnn_conv_config res = *inout_cfg;
   res.A_offsets_upd = NULL;
   res.B_offsets_upd = NULL;
   res.A_offsets2_upd = NULL;
@@ -2996,15 +2996,15 @@ void cnn_tpp_generate_upd_kernels( cnn_tpp_config* inout_cfg) {
   *inout_cfg = res;
 }
 
-cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cnn_dtype_out, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
+libxsmm_dnn_conv_config setup_libxsmm_dnn_conv( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cnn_dtype_out, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
     libxsmm_blasint stride_h, libxsmm_blasint stride_w,
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
     libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
     libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans, libxsmm_blasint zero_fwd_output_rim) {
-  cnn_tpp_config res;
+  libxsmm_dnn_conv_config res;
 
-  memset(&res, 0, sizeof(cnn_tpp_config));
+  memset(&res, 0, sizeof(libxsmm_dnn_conv_config));
 
   /* init libxsmm */
   LIBXSMM_INIT
@@ -3056,74 +3056,74 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cn
   res.bk = bk;
 
   /* Use helper functions to setup convolutions */
-  res.ifmblock      = cnn_tpp_setup_ifmblock(&res);
-  res.ofmblock      = cnn_tpp_setup_ofmblock(&res);
-  res.fm_lp_block   = cnn_tpp_setup_fm_lp_block(&res);
-  res.blocksifm     = cnn_tpp_setup_blocksifm(&res);
-  res.blocksofm     = cnn_tpp_setup_blocksofm(&res);
+  res.ifmblock      = libxsmm_dnn_conv_setup_ifmblock(&res);
+  res.ofmblock      = libxsmm_dnn_conv_setup_ofmblock(&res);
+  res.fm_lp_block   = libxsmm_dnn_conv_setup_fm_lp_block(&res);
+  res.blocksifm     = libxsmm_dnn_conv_setup_blocksifm(&res);
+  res.blocksofm     = libxsmm_dnn_conv_setup_blocksofm(&res);
 
   /* FWD parameter setup  */
-  res.fwd_ofw_rb              = cnn_tpp_setup_fwd_ofw_rb(&res);
-  res.pack_input              = cnn_tpp_setup_pack_input_fwd(&res);
-  res.fwd_ofh_rb              = cnn_tpp_setup_fwd_ofh_rb(&res);
-  res.fwd_gemm_pixels         = cnn_tpp_setup_fwd_pixels_gemm(&res);
-  res.block_fwd_oj            = cnn_tpp_setup_fwd_block_H(&res);
-  res.loop_order              = cnn_tpp_setup_loop_order_fwd(&res);
-  res.blocksifm_blocking      = cnn_tpp_setup_blocksifm_blocking(&res);
-  res.block_fwd_ofm           = cnn_tpp_setup_block_fwd_OFM(&res);
-  res.block_fwd_ifm           = cnn_tpp_setup_block_fwd_IFM(&res);
-  res.avoid_fmas_in_rim       = cnn_tpp_setup_avoid_rim_fmas_fwd(&res);
-  res.use_ofm_parallelization = cnn_tpp_setup_use_ofm_parallelization(&res);
-  res.shuffle_filter_accesses = cnn_tpp_setup_shuffle_filter_accesses(&res);
-  res.avoid_acc_load          = cnn_tpp_setup_avoid_acc_load(&res);
-  res.fwd_flags               = cnn_tpp_setup_init_fwd_gemm_flags(&res);
-  res.use_fallback_fwd_loops  = cnn_tpp_setup_fallback_loops_fwd(&res);
-  res.fwd_padding_copy        = cnn_tpp_setup_fwd_padding_copy(&res);
+  res.fwd_ofw_rb              = libxsmm_dnn_conv_setup_fwd_ofw_rb(&res);
+  res.pack_input              = libxsmm_dnn_conv_setup_pack_input_fwd(&res);
+  res.fwd_ofh_rb              = libxsmm_dnn_conv_setup_fwd_ofh_rb(&res);
+  res.fwd_gemm_pixels         = libxsmm_dnn_conv_setup_fwd_pixels_gemm(&res);
+  res.block_fwd_oj            = libxsmm_dnn_conv_setup_fwd_block_H(&res);
+  res.loop_order              = libxsmm_dnn_conv_setup_loop_order_fwd(&res);
+  res.blocksifm_blocking      = libxsmm_dnn_conv_setup_blocksifm_blocking(&res);
+  res.block_fwd_ofm           = libxsmm_dnn_conv_setup_block_fwd_OFM(&res);
+  res.block_fwd_ifm           = libxsmm_dnn_conv_setup_block_fwd_IFM(&res);
+  res.avoid_fmas_in_rim       = libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd(&res);
+  res.use_ofm_parallelization = libxsmm_dnn_conv_setup_use_ofm_parallelization(&res);
+  res.shuffle_filter_accesses = libxsmm_dnn_conv_setup_shuffle_filter_accesses(&res);
+  res.avoid_acc_load          = libxsmm_dnn_conv_setup_avoid_acc_load(&res);
+  res.fwd_flags               = libxsmm_dnn_conv_setup_init_fwd_gemm_flags(&res);
+  res.use_fallback_fwd_loops  = libxsmm_dnn_conv_setup_fallback_loops_fwd(&res);
+  res.fwd_padding_copy        = libxsmm_dnn_conv_setup_fwd_padding_copy(&res);
   /* Generate FWD kernels  */
-  cnn_tpp_generate_fwd_kernels(&res);
+  libxsmm_dnn_conv_generate_fwd_kernels(&res);
 
   /* BWD parameter setup  */
-  res.bwd_ofw_rb = cnn_tpp_setup_bwd_ofw_rb(&res);
-  res.bwd_ofh_rb = cnn_tpp_setup_bwd_ofh_rb(&res);
-  res.bwd_gemm_pixels = cnn_tpp_setup_bwd_pixels_gemm(&res);
-  res.pack_input_bwd = cnn_tpp_setup_pack_input_bwd(&res);
-  res.spread_input_bwd = cnn_tpp_setup_spread_input_bwd(&res);
-  res.blocksofm_blocking = cnn_tpp_setup_blocksofm_blocking(&res);
-  res.avoid_acc_load_bwd = cnn_tpp_setup_avoid_acc_load_bwd(&res);
-  res.use_ifm_parallelization = cnn_tpp_setup_use_ifm_parallelization(&res);
-  res.block_bwd_ofm = cnn_tpp_setup_block_bwd_OFM(&res);
-  res.block_bwd_ifm = cnn_tpp_setup_block_bwd_IFM(&res);
-  res.block_bwd_oj = cnn_tpp_setup_bwd_block_H(&res);
-  res.use_fallback_bwd_loops = cnn_tpp_setup_fallback_loops_bwd(&res);
-  res.bwd_flags = cnn_tpp_setup_init_bwd_gemm_flags(&res);
+  res.bwd_ofw_rb = libxsmm_dnn_conv_setup_bwd_ofw_rb(&res);
+  res.bwd_ofh_rb = libxsmm_dnn_conv_setup_bwd_ofh_rb(&res);
+  res.bwd_gemm_pixels = libxsmm_dnn_conv_setup_bwd_pixels_gemm(&res);
+  res.pack_input_bwd = libxsmm_dnn_conv_setup_pack_input_bwd(&res);
+  res.spread_input_bwd = libxsmm_dnn_conv_setup_spread_input_bwd(&res);
+  res.blocksofm_blocking = libxsmm_dnn_conv_setup_blocksofm_blocking(&res);
+  res.avoid_acc_load_bwd = libxsmm_dnn_conv_setup_avoid_acc_load_bwd(&res);
+  res.use_ifm_parallelization = libxsmm_dnn_conv_setup_use_ifm_parallelization(&res);
+  res.block_bwd_ofm = libxsmm_dnn_conv_setup_block_bwd_OFM(&res);
+  res.block_bwd_ifm = libxsmm_dnn_conv_setup_block_bwd_IFM(&res);
+  res.block_bwd_oj = libxsmm_dnn_conv_setup_bwd_block_H(&res);
+  res.use_fallback_bwd_loops = libxsmm_dnn_conv_setup_fallback_loops_bwd(&res);
+  res.bwd_flags = libxsmm_dnn_conv_setup_init_bwd_gemm_flags(&res);
   /* Generate BWD kernels  */
-  cnn_tpp_generate_bwd_kernels(&res);
+  libxsmm_dnn_conv_generate_bwd_kernels(&res);
 
   /* UPD parameter setup */
-  res.upd_linearized_tasklist = cnn_tpp_setup_linearized_tasklist_upd(&res);
-  res.upd_avoid_rim_fmas = cnn_tpp_setup_avoid_rim_fmas_upd(&res);
-  res.upd_pack_input = cnn_tpp_setup_pack_input_upd(&res);
-  res.upd_use_batchreduce = cnn_tpp_setup_use_batchreduce_upd(&res);
-  res.upd_ofw_rb = cnn_tpp_setup_upd_ofw_rb(&res);
-  res.upd_ofh_rb = cnn_tpp_setup_upd_ofh_rb(&res);
-  res.upd_loop_order = cnn_tpp_setup_loop_order_upd(&res);
-  res.weight_copies = cnn_tpp_setup_weight_copies_upd(&res);
-  res.block_upd_ofm = cnn_tpp_setup_block_upd_OFM(&res);
-  res.block_upd_ifm = cnn_tpp_setup_block_upd_IFM(&res);
-  res.upd_loop_order = cnn_tpp_setup_loop_order_upd(&res);
-  res.upd_padding_copy = cnn_tpp_setup_upd_padding_copy(&res);
+  res.upd_linearized_tasklist = libxsmm_dnn_conv_setup_linearized_tasklist_upd(&res);
+  res.upd_avoid_rim_fmas = libxsmm_dnn_conv_setup_avoid_rim_fmas_upd(&res);
+  res.upd_pack_input = libxsmm_dnn_conv_setup_pack_input_upd(&res);
+  res.upd_use_batchreduce = libxsmm_dnn_conv_setup_use_batchreduce_upd(&res);
+  res.upd_ofw_rb = libxsmm_dnn_conv_setup_upd_ofw_rb(&res);
+  res.upd_ofh_rb = libxsmm_dnn_conv_setup_upd_ofh_rb(&res);
+  res.upd_loop_order = libxsmm_dnn_conv_setup_loop_order_upd(&res);
+  res.weight_copies = libxsmm_dnn_conv_setup_weight_copies_upd(&res);
+  res.block_upd_ofm = libxsmm_dnn_conv_setup_block_upd_OFM(&res);
+  res.block_upd_ifm = libxsmm_dnn_conv_setup_block_upd_IFM(&res);
+  res.upd_loop_order = libxsmm_dnn_conv_setup_loop_order_upd(&res);
+  res.upd_padding_copy = libxsmm_dnn_conv_setup_upd_padding_copy(&res);
 
   if (cnn_dtype_in == LIBXSMM_DATATYPE_BF16) {
-    cnn_tpp_setup_bf16_upd_algorithms(&res);
+    libxsmm_dnn_conv_setup_bf16_upd_algorithms(&res);
   }
 
   /* Generate UPD kernels  */
-  cnn_tpp_generate_upd_kernels(&res);
+  libxsmm_dnn_conv_generate_upd_kernels(&res);
 
   /* let's configure  scratch */
-  cnn_tpp_setup_fwd_scratch( &res );
-  cnn_tpp_setup_bwd_scratch( &res );
-  cnn_tpp_setup_upd_scratch( &res );
+  libxsmm_dnn_conv_setup_fwd_scratch( &res );
+  libxsmm_dnn_conv_setup_bwd_scratch( &res );
+  libxsmm_dnn_conv_setup_upd_scratch( &res );
   res.scratch_size = res.fwd_scratch_size + res.bwd_scratch_size + res.upd_scratch_size;
 
   /* setting up the barrier */
@@ -3132,7 +3132,7 @@ cnn_tpp_config setup_cnn_tpp( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cn
   return res;
 }
 
-void cnn_tpp_free_offset_brgemm_aux_arrays( cnn_tpp_config* cfg) {
+void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cfg) {
   if (cfg->A_offsets != NULL) {
     libxsmm_free(cfg->A_offsets);
   }
@@ -3165,9 +3165,9 @@ void cnn_tpp_free_offset_brgemm_aux_arrays( cnn_tpp_config* cfg) {
   }
 }
 
-void destroy_cnn_tpp(cnn_tpp_config* cfg) {
+void destroy_libxsmm_dnn_conv(libxsmm_dnn_conv_config* cfg) {
 
-  cnn_tpp_free_offset_brgemm_aux_arrays(cfg);
+  libxsmm_dnn_conv_free_offset_brgemm_aux_arrays(cfg);
 
   libxsmm_barrier_destroy(cfg->barrier);
 

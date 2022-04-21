@@ -21,16 +21,16 @@
 
 #define BITS_PER_CHAR (8)
 
-typedef enum my_gn_fuse {
+typedef enum libxsmm_dnn_gn_fuse {
   MY_GN_FUSE_NONE = 0,
   MY_GN_FUSE_RELU = 1,
   MY_GN_FUSE_ELTWISE = 2,
   MY_GN_FUSE_ELTWISE_RELU = 3,
   MY_GN_FUSE_RELU_WITH_MASK = 4,
   MY_GN_FUSE_ELTWISE_RELU_WITH_MASK = 5
-} my_gn_fuse;
+} libxsmm_dnn_gn_fuse;
 
-typedef struct my_gn_fwd_config {
+typedef struct libxsmm_dnn_gn_fwd_config {
   libxsmm_blasint  N;
   libxsmm_blasint  C;
   libxsmm_blasint  G;
@@ -55,10 +55,10 @@ typedef struct my_gn_fwd_config {
   libxsmm_meltwfunction_unary  all_zero_G_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_binary add_kernel;
-  my_gn_fuse                   fuse_type;
-} my_gn_fwd_config;
+  libxsmm_dnn_gn_fuse                   fuse_type;
+} libxsmm_dnn_gn_fwd_config;
 
-typedef struct my_gn_bwd_config {
+typedef struct libxsmm_dnn_gn_bwd_config {
   libxsmm_blasint  N;
   libxsmm_blasint  C;
   libxsmm_blasint  G;
@@ -84,14 +84,14 @@ typedef struct my_gn_bwd_config {
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_unary  inv_relu_kernel;
   libxsmm_meltwfunction_unary  ewise_copy_kernel;
-  my_gn_fuse                   fuse_type;
-} my_gn_bwd_config;
+  libxsmm_dnn_gn_fuse                   fuse_type;
+} libxsmm_dnn_gn_bwd_config;
 
-my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_gn_fuse fuse_type,
+libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+                                 libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
-  my_gn_fwd_config res;
+  libxsmm_dnn_gn_fwd_config res;
 
   libxsmm_blasint ldo = bc;
   libxsmm_blasint ld  = bc;
@@ -303,11 +303,11 @@ my_gn_fwd_config setup_my_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
-                                 libxsmm_blasint threads, my_gn_fuse fuse_type,
+libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+                                 libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
-  my_gn_bwd_config res;
+  libxsmm_dnn_gn_bwd_config res;
 
   size_t dbeta_N_offset;
 
@@ -726,18 +726,18 @@ my_gn_bwd_config setup_my_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_b
   return res;
 }
 
-void destroy_my_gn_fwd(my_gn_fwd_config* cfg) {
+void destroy_libxsmm_dnn_gn_fwd(libxsmm_dnn_gn_fwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
   /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
 }
 
-void destroy_my_gn_bwd(my_gn_bwd_config* cfg) {
+void destroy_libxsmm_dnn_gn_bwd(libxsmm_dnn_gn_bwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
 }
 
-void my_gn_fwd_exec_f32( my_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
+void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
                          float eps, int start_tid, int my_tid, void *scratch ) {
 
   const libxsmm_blasint N  = cfg.N;
@@ -1003,7 +1003,7 @@ void my_gn_fwd_exec_f32( my_gn_fwd_config cfg, const float *pinp, const float *p
 
 }
 
-void my_gn_fwd_exec_bf16( my_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, const libxsmm_bfloat16 *pinp_add,
+void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, const libxsmm_bfloat16 *pinp_add,
                           const float *pgamma, const float *pbeta, float *mean, float *var,
                           libxsmm_bfloat16 *pout, unsigned char *prelumask,
                           float eps, int start_tid, int my_tid, void *scratch ) {
@@ -1272,7 +1272,7 @@ void my_gn_fwd_exec_bf16( my_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, co
 }
 
 
-void my_gn_bwd_exec_f32( my_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
+void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
                          float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
                          int start_tid, int my_tid, void *scratch) {
 
@@ -1607,7 +1607,7 @@ void my_gn_bwd_exec_f32( my_gn_bwd_config cfg, float *pdout, const float *pinp, 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void my_gn_bwd_exec_bf16( my_gn_bwd_config cfg, libxsmm_bfloat16 *pdout, const libxsmm_bfloat16 *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
+void libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd_config cfg, libxsmm_bfloat16 *pdout, const libxsmm_bfloat16 *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
                           libxsmm_bfloat16 *pdin, libxsmm_bfloat16 *pdin_add, float *pdgamma, float *pdbeta, float eps,
                           int start_tid, int my_tid, void *scratch) {
 

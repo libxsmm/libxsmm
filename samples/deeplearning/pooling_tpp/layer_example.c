@@ -30,9 +30,9 @@ int main(int argc, char* argv[])
   libxsmm_bfloat16 *naive_input_pad_bf16, *naive_output_pad_bf16, *naive_delinput_pad_bf16, *naive_deloutput_pad_bf16;
   libxsmm_bfloat16 *naive_libxsmm_output_bf16, *naive_libxsmm_delinput_bf16;
   libxsmm_bfloat16 *input_libxsmm_bf16, *output_libxsmm_bf16, *delinput_libxsmm_bf16, *deloutput_libxsmm_bf16;
-  my_pooling_fwd_config fwd_cfg;
-  my_pooling_bwd_config bwd_cfg;
-  my_pooling_type pool_type_cfg;
+  libxsmm_dnn_pooling_fwd_config fwd_cfg;
+  libxsmm_dnn_pooling_bwd_config bwd_cfg;
+  libxsmm_dnn_pooling_type pool_type_cfg;
 
   libxsmm_blasint ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   libxsmm_blasint stride_h, stride_w;
@@ -317,13 +317,13 @@ int main(int argc, char* argv[])
     }
 
     /* setup LIBXSMM handle */
-    fwd_cfg = setup_my_pooling_fwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
+    fwd_cfg = setup_libxsmm_dnn_pooling_fwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
                                     pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
                                     bc, nThreads, pool_type_cfg,
                                     in_dt, out_dt, comp_dt );
 
     /* setup LIBXSMM handle */
-    bwd_cfg = setup_my_pooling_bwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
+    bwd_cfg = setup_libxsmm_dnn_pooling_bwd( nImg, nFm, ifh, ifw, kh, kw, stride_h, stride_w,
                                     pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out,
                                     bc, nThreads, pool_type_cfg,
                                     in_dt, out_dt, comp_dt );
@@ -362,10 +362,10 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         if ( prec_bf16 == 0 ) {
-          my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+          libxsmm_dnn_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
                                    0, tid, scratch );
         } else {
-          my_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
+          libxsmm_dnn_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
                                     0, tid, scratch );
         }
       }
@@ -406,10 +406,10 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         if ( prec_bf16 == 0 ) {
-          my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+          libxsmm_dnn_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
                                    0, tid, scratch );
         } else {
-          my_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
+          libxsmm_dnn_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
                                     0, tid, scratch );
         }
       }
@@ -452,10 +452,10 @@ int main(int argc, char* argv[])
 #endif
         for (i = 0; i < iters; ++i) {
           if ( prec_bf16 == 0 ) {
-            my_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
+            libxsmm_dnn_pooling_fwd_exec_f32( fwd_cfg, input_libxsmm, output_libxsmm, mask_libxsmm,
                                      0, tid, scratch );
           } else {
-            my_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
+            libxsmm_dnn_pooling_fwd_exec_bf16( fwd_cfg, input_libxsmm_bf16, output_libxsmm_bf16, mask_libxsmm,
                                       0, tid, scratch );
           }
         }
@@ -495,10 +495,10 @@ int main(int argc, char* argv[])
 #endif
         for (i = 0; i < iters; ++i) {
           if ( prec_bf16 == 0 ) {
-            my_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
+            libxsmm_dnn_pooling_bwd_exec_f32( bwd_cfg, delinput_libxsmm, deloutput_libxsmm, mask_libxsmm,
                                      0, tid, scratch );
           } else {
-            my_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
+            libxsmm_dnn_pooling_bwd_exec_bf16( bwd_cfg, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, mask_libxsmm,
                                       0, tid, scratch );
           }
         }

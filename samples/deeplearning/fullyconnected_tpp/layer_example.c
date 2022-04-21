@@ -36,9 +36,9 @@ int main(int argc, char* argv[])
 
   libxsmm_datatype in_dt, out_dt, comp_dt;
 
-  my_fc_eltw_fuse my_fuse = MY_FC_ELTW_FUSE_NONE;
-  my_fc_fwd_config my_fc_fwd;
-  my_fc_bwd_config my_fc_bwd;
+  libxsmm_dnn_fc_eltw_fuse my_fuse = MY_FC_ELTW_FUSE_NONE;
+  libxsmm_dnn_fc_fwd_config libxsmm_dnn_fc_fwd;
+  libxsmm_dnn_fc_bwd_config libxsmm_dnn_fc_bwd;
 
   naive_fullyconnected_t naive_param;
   void* scratch = 0;;
@@ -304,14 +304,14 @@ int main(int argc, char* argv[])
   size_t alloc_size = 0;
 
   if (type == 'A' || type == 'F') {
-    my_fc_fwd = setup_my_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
+    libxsmm_dnn_fc_fwd = setup_libxsmm_dnn_fc_fwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
 
-    alloc_size = my_fc_fwd.scratch_size;
+    alloc_size = libxsmm_dnn_fc_fwd.scratch_size;
   }
   if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
-    my_fc_bwd = setup_my_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
+    libxsmm_dnn_fc_bwd = setup_libxsmm_dnn_fc_bwd(nImg, nIFm, nOFm, bn, bc, bk, nThreads, my_fuse, in_dt, out_dt, comp_dt);
 
-    alloc_size = LIBXSMM_MAX( my_fc_fwd.scratch_size, my_fc_bwd.scratch_size);
+    alloc_size = LIBXSMM_MAX( libxsmm_dnn_fc_fwd.scratch_size, libxsmm_dnn_fc_bwd.scratch_size);
   }
 
   /* we can also use the layout functions and set the data on our
@@ -357,10 +357,10 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       if ( prec_bf16 > 0 ) {
-        my_fc_fwd_exec_bf16( my_fc_fwd, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
+        libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
                              bias_libxsmm_bf16, relumask_libxsmm, 0, tid, scratch );
       } else {
-        my_fc_fwd_exec_f32( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+        libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
             bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
       }
     }
@@ -400,10 +400,10 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       if ( prec_bf16 > 0 ) {
-        my_fc_bwd_exec_bf16( my_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
+        libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
                              input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
       } else {
-        my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+        libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
             input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
       }
     }
@@ -470,10 +470,10 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         if ( prec_bf16 > 0 ) {
-          my_fc_fwd_exec_bf16( my_fc_fwd, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
+          libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd, filter_libxsmm_bf16, input_libxsmm_bf16, output_libxsmm_bf16,
                                bias_libxsmm_bf16, relumask_libxsmm, 0, tid, scratch );
         } else {
-          my_fc_fwd_exec_f32( my_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
+          libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd, filter_libxsmm, input_libxsmm, output_libxsmm,
               bias_libxsmm, relumask_libxsmm, 0, tid, scratch );
         }
       }
@@ -508,10 +508,10 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < iters; ++i) {
         if ( prec_bf16 > 0 ) {
-          my_fc_bwd_exec_bf16( my_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
+          libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
                                input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
         } else {
-          my_fc_bwd_exec_f32( my_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
+          libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
               input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
         }
       }
@@ -532,10 +532,10 @@ int main(int argc, char* argv[])
 
   /* deallocate data */
   if (type == 'A' || type == 'F') {
-    destroy_my_fc_fwd(&my_fc_fwd);
+    destroy_libxsmm_dnn_fc_fwd(&libxsmm_dnn_fc_fwd);
   }
   if (type == 'A' || type == 'B' || type == 'U' || type == 'M') {
-    destroy_my_fc_bwd(&my_fc_bwd);
+    destroy_libxsmm_dnn_fc_bwd(&libxsmm_dnn_fc_bwd);
   }
 
   if ( scratch != NULL ) {

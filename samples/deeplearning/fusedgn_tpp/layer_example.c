@@ -22,8 +22,8 @@
 
 int main( int argc, char* argv[] ) {
 
-  my_gn_fwd_config my_gn_fwd;
-  my_gn_bwd_config my_gn_bwd;
+  libxsmm_dnn_gn_fwd_config libxsmm_dnn_gn_fwd;
+  libxsmm_dnn_gn_bwd_config libxsmm_dnn_gn_bwd;
 
   naive_fusedgroupnorm_t naive_param;
   void *scratch = NULL;
@@ -294,12 +294,12 @@ int main( int argc, char* argv[] ) {
   printf("##########################################\n");
 
   /* setup TPPs (standalone or through the configs) */
-  my_gn_fwd = setup_my_gn_fwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type, gn_dtype, gn_dtype, LIBXSMM_DATATYPE_F32);
-  my_gn_bwd = setup_my_gn_bwd(N, C, H, W, G, bc, nThreads, (my_gn_fuse)fuse_type, gn_dtype, gn_dtype, LIBXSMM_DATATYPE_F32);
+  libxsmm_dnn_gn_fwd = setup_libxsmm_dnn_gn_fwd(N, C, H, W, G, bc, nThreads, (libxsmm_dnn_gn_fuse)fuse_type, gn_dtype, gn_dtype, LIBXSMM_DATATYPE_F32);
+  libxsmm_dnn_gn_bwd = setup_libxsmm_dnn_gn_bwd(N, C, H, W, G, bc, nThreads, (libxsmm_dnn_gn_fuse)fuse_type, gn_dtype, gn_dtype, LIBXSMM_DATATYPE_F32);
 
   /* allocate and bind scratch */
-  if ( my_gn_fwd.scratch_size > 0 || my_gn_bwd.scratch_size > 0 ) {
-    size_t alloc_size = LIBXSMM_MAX( my_gn_fwd.scratch_size, my_gn_bwd.scratch_size);
+  if ( libxsmm_dnn_gn_fwd.scratch_size > 0 || libxsmm_dnn_gn_bwd.scratch_size > 0 ) {
+    size_t alloc_size = LIBXSMM_MAX( libxsmm_dnn_gn_fwd.scratch_size, libxsmm_dnn_gn_bwd.scratch_size);
     scratch = libxsmm_aligned_malloc( alloc_size, 2097152 );
     init_buf( (float*)(scratch), (alloc_size)/4, 0, 0 );
   }
@@ -325,9 +325,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_fwd_exec_bf16( my_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
       else
-        my_gn_fwd_exec_f32 ( my_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_f32 ( libxsmm_dnn_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -414,9 +414,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_fwd_exec_bf16( my_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
       else
-        my_gn_fwd_exec_f32 ( my_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_f32 ( libxsmm_dnn_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -430,9 +430,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_fwd_exec_bf16( my_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd, eqn_inp_bf16, eqn_inp_add_bf16, gamma, beta, eqn_mean, eqn_var, eqn_out_bf16, eqn_relumask, eps, 0, tid, scratch );
       else
-        my_gn_fwd_exec_f32 ( my_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_fwd_exec_f32 ( libxsmm_dnn_gn_fwd, eqn_inp, eqn_inp_add, gamma, beta, eqn_mean, eqn_var, eqn_out, eqn_relumask, eps, 0, tid, scratch );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -460,9 +460,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_bwd_exec_bf16( my_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
       else
-        my_gn_bwd_exec_f32 ( my_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_f32 ( libxsmm_dnn_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
 
     /* copy out data */
@@ -566,9 +566,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_bwd_exec_bf16( my_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
       else
-        my_gn_bwd_exec_f32 ( my_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_f32 ( libxsmm_dnn_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   l_start = libxsmm_timer_tick();
 
@@ -583,9 +583,9 @@ int main( int argc, char* argv[] ) {
       const int tid = 0;
 #endif
       if (prec_bf16 > 0)
-        my_gn_bwd_exec_bf16( my_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd, eqn_dout_bf16, eqn_inp_bf16, naive_mean, naive_var, gamma, relumask, eqn_dinp_bf16, eqn_dinp_add_bf16, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
       else
-        my_gn_bwd_exec_f32 ( my_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
+        libxsmm_dnn_gn_bwd_exec_f32 ( libxsmm_dnn_gn_bwd, eqn_dout, eqn_inp, naive_mean, naive_var, gamma, relumask, eqn_dinp, eqn_dinp_add, eqn_dgamma, eqn_dbeta, eps, 0, tid, scratch );
     }
   }
 
@@ -603,8 +603,8 @@ int main( int argc, char* argv[] ) {
 
   /* deallocate data */
 
-  destroy_my_gn_fwd(&my_gn_fwd);
-  destroy_my_gn_bwd(&my_gn_bwd);
+  destroy_libxsmm_dnn_gn_fwd(&libxsmm_dnn_gn_fwd);
+  destroy_libxsmm_dnn_gn_bwd(&libxsmm_dnn_gn_bwd);
 
   if ( scratch != NULL ) {
     libxsmm_free(scratch);

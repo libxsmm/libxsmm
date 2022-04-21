@@ -57,12 +57,12 @@ int main(int argc, char* argv[])
   unsigned char **relumask_libxsmm;
   int *label_libxsmm;
   libxsmm_datatype in_dt, out_dt, comp_dt;
-  my_fc_eltw_fuse my_fuse;
-  my_fc_fwd_config* my_fc_fwd;
-  my_fc_bwd_config* my_fc_bwd;
-  my_opt_config* my_opt;
-  my_smax_fwd_config my_smax_fwd;
-  my_smax_bwd_config my_smax_bwd;
+  libxsmm_dnn_fc_eltw_fuse my_fuse;
+  libxsmm_dnn_fc_fwd_config* libxsmm_dnn_fc_fwd;
+  libxsmm_dnn_fc_bwd_config* libxsmm_dnn_fc_bwd;
+  libxsmm_dnn_opt_config* libxsmm_dnn_opt;
+  libxsmm_dnn_smax_fwd_config libxsmm_dnn_smax_fwd;
+  libxsmm_dnn_smax_bwd_config libxsmm_dnn_smax_bwd;
   void* scratch = NULL;
   size_t scratch_size = 0;
 
@@ -321,9 +321,9 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
 
   /* allocating handles */
-  my_fc_fwd = (my_fc_fwd_config*) malloc( num_layers*sizeof(my_fc_fwd_config) );
-  my_fc_bwd = (my_fc_bwd_config*) malloc( num_layers*sizeof(my_fc_bwd_config) );
-  my_opt    = (my_opt_config*)    malloc( num_layers*sizeof(my_opt_config)    );
+  libxsmm_dnn_fc_fwd = (libxsmm_dnn_fc_fwd_config*) malloc( num_layers*sizeof(libxsmm_dnn_fc_fwd_config) );
+  libxsmm_dnn_fc_bwd = (libxsmm_dnn_fc_bwd_config*) malloc( num_layers*sizeof(libxsmm_dnn_fc_bwd_config) );
+  libxsmm_dnn_opt    = (libxsmm_dnn_opt_config*)    malloc( num_layers*sizeof(libxsmm_dnn_opt_config)    );
 
   /* setting up handles + scratch */
   for ( i = 0; i < num_layers; ++i ) {
@@ -333,23 +333,23 @@ int main(int argc, char* argv[])
     } else {
       my_fuse = MY_FC_ELTW_FUSE_NONE;
     }
-    my_fc_fwd[i] = setup_my_fc_fwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
+    libxsmm_dnn_fc_fwd[i] = setup_libxsmm_dnn_fc_fwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
                                              (C[i  ] % bc == 0) ? bc : C[i  ],
                                              (C[i+1] % bk == 0) ? bk : C[i+1],
                                              nThreads, my_fuse, in_dt, out_dt, comp_dt );
 
-    my_fc_bwd[i] = setup_my_fc_bwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
+    libxsmm_dnn_fc_bwd[i] = setup_libxsmm_dnn_fc_bwd(MB, C[i], C[i+1], (MB % bn == 0) ? bn : MB,
                                              (C[i  ] % bc == 0) ? bc : C[i  ],
                                              (C[i+1] % bk == 0) ? bk : C[i+1],
                                              nThreads, my_fuse, in_dt, out_dt, comp_dt );
 
-    my_opt[i] = setup_my_opt( C[i], C[i+1], (C[i  ] % bc == 0) ? bc : C[i  ],
+    libxsmm_dnn_opt[i] = setup_libxsmm_dnn_opt( C[i], C[i+1], (C[i  ] % bc == 0) ? bc : C[i  ],
                                             (C[i+1] % bk == 0) ? bk : C[i+1],
                                             nThreads, lr, in_dt, out_dt, comp_dt );
 
     /* let's allocate and bind scratch */
-    if ( my_fc_fwd[i].scratch_size > 0 || my_fc_bwd[i].scratch_size > 0 || my_opt[i].scratch_size > 0 ) {
-      size_t alloc_size = LIBXSMM_MAX( LIBXSMM_MAX( my_fc_fwd[i].scratch_size, my_fc_bwd[i].scratch_size), my_opt[i].scratch_size );
+    if ( libxsmm_dnn_fc_fwd[i].scratch_size > 0 || libxsmm_dnn_fc_bwd[i].scratch_size > 0 || libxsmm_dnn_opt[i].scratch_size > 0 ) {
+      size_t alloc_size = LIBXSMM_MAX( LIBXSMM_MAX( libxsmm_dnn_fc_fwd[i].scratch_size, libxsmm_dnn_fc_bwd[i].scratch_size), libxsmm_dnn_opt[i].scratch_size );
       if ( alloc_size > scratch_size ) {
         if ( scratch != NULL ) libxsmm_free( scratch );
         scratch_size = alloc_size;
@@ -360,16 +360,16 @@ int main(int argc, char* argv[])
   }
 
   /* softmax+loss is treated as N+1 layer */
-  my_smax_fwd = setup_my_smax_fwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
+  libxsmm_dnn_smax_fwd = setup_libxsmm_dnn_smax_fwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
                                        (C[num_layers+1] % bk == 0) ? bk : C[num_layers+1],
                                        nThreads, in_dt, out_dt, comp_dt );
 
-  my_smax_bwd = setup_my_smax_bwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
+  libxsmm_dnn_smax_bwd = setup_libxsmm_dnn_smax_bwd( MB, C[num_layers+1], (MB % bn == 0) ? bn : MB,
                                        (C[num_layers+1] % bk == 0) ? bk : C[num_layers+1],
                                        nThreads, loss_weight, in_dt, out_dt, comp_dt );
 
-  if ( my_smax_fwd.scratch_size > 0 || my_smax_bwd.scratch_size > 0 ) {
-    size_t alloc_size = LIBXSMM_MAX( my_smax_fwd.scratch_size, my_smax_bwd.scratch_size );
+  if ( libxsmm_dnn_smax_fwd.scratch_size > 0 || libxsmm_dnn_smax_bwd.scratch_size > 0 ) {
+    size_t alloc_size = LIBXSMM_MAX( libxsmm_dnn_smax_fwd.scratch_size, libxsmm_dnn_smax_bwd.scratch_size );
     if ( alloc_size > scratch_size ) {
       if ( scratch != NULL ) libxsmm_free( scratch );
       scratch_size = alloc_size;
@@ -434,49 +434,49 @@ int main(int argc, char* argv[])
         if ( prec_bf16 == 0 ) {
           for ( i = 0; i < num_layers; ++i) {
             float *input_act_ptr = (i == 0) ? input_acts + batch_id * MB * C[0] : act_libxsmm[i];
-            my_fc_fwd_exec_f32( my_fc_fwd[i], fil_libxsmm[i], input_act_ptr, act_libxsmm[i+1],
+            libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd[i], fil_libxsmm[i], input_act_ptr, act_libxsmm[i+1],
                                 bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
           }
-          my_smax_fwd_exec_f32( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], train_label + batch_id * MB, &loss,
+          libxsmm_dnn_smax_fwd_exec_f32( libxsmm_dnn_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], train_label + batch_id * MB, &loss,
                                 0, tid, scratch );
 
           if ((tid == 0) && (batch_id == 0) && (epoch_id % 10 == 0 || epoch_id == n_epochs - 1 )) {
             printf("Loss for epoch %d batch_id %d is %f\n", epoch_id, batch_id, loss);
           }
 
-          my_smax_bwd_exec_f32( my_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], train_label + batch_id * MB,
+          libxsmm_dnn_smax_bwd_exec_f32( libxsmm_dnn_smax_bwd, delact_libxsmm[num_layers], act_libxsmm[num_layers+1], train_label + batch_id * MB,
                                 0, tid, scratch );
           for ( i = num_layers-1; i > 0; --i) {
-            my_fc_bwd_exec_f32( my_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
+            libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd[i], fil_libxsmm[i], delact_libxsmm[i], delact_libxsmm[i+1], delfil_libxsmm[i],
                                 act_libxsmm[i], delbias_libxsmm[i], relumask_libxsmm[i], MY_FC_PASS_BWD, 0, tid, scratch );
-            my_opt_exec_f32( my_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
+            libxsmm_dnn_opt_exec_f32( libxsmm_dnn_opt[i], fil_libxsmm[i], delfil_libxsmm[i], 0, tid, scratch );
           }
-          my_fc_bwd_exec_f32( my_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
+          libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd[0], fil_libxsmm[0], delact_libxsmm[0], delact_libxsmm[0+1], delfil_libxsmm[0],
                           input_acts + batch_id * MB * C[0], delbias_libxsmm[0], relumask_libxsmm[0], MY_FC_PASS_BWD_W, 0, tid, scratch );
-          my_opt_exec_f32( my_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
+          libxsmm_dnn_opt_exec_f32( libxsmm_dnn_opt[0], fil_libxsmm[0], delfil_libxsmm[0], 0, tid, scratch );
         } else {
           for ( i = 0; i < num_layers; ++i) {
             libxsmm_bfloat16 *input_act_ptr = (i == 0) ? input_acts_bf16 + batch_id * MB * C[0] : act_libxsmm_bf16[i];
-            my_fc_fwd_exec_bf16( my_fc_fwd[i], fil_libxsmm_bf16[i], input_act_ptr, act_libxsmm_bf16[i+1],
+            libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd[i], fil_libxsmm_bf16[i], input_act_ptr, act_libxsmm_bf16[i+1],
                                  bias_libxsmm_bf16[i], relumask_libxsmm[i], 0, tid, scratch );
           }
-          my_smax_fwd_exec_bf16( my_smax_fwd, act_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], train_label + batch_id * MB, &loss,
+          libxsmm_dnn_smax_fwd_exec_bf16( libxsmm_dnn_smax_fwd, act_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], train_label + batch_id * MB, &loss,
                                  0, tid, scratch );
 
           if ((tid == 0) && (batch_id == 0) && (epoch_id % 10 == 0 || epoch_id == n_epochs - 1 )) {
             printf("Loss for epoch %d batch_id %d is %f\n", epoch_id, batch_id, loss);
           }
 
-          my_smax_bwd_exec_bf16( my_smax_bwd, delact_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], train_label + batch_id * MB,
+          libxsmm_dnn_smax_bwd_exec_bf16( libxsmm_dnn_smax_bwd, delact_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], train_label + batch_id * MB,
                                  0, tid, scratch );
           for ( i = num_layers-1; i > 0; --i) {
-            my_fc_bwd_exec_bf16( my_fc_bwd[i], fil_libxsmm_bf16[i], delact_libxsmm_bf16[i], delact_libxsmm_bf16[i+1], delfil_libxsmm_bf16[i],
+            libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd[i], fil_libxsmm_bf16[i], delact_libxsmm_bf16[i], delact_libxsmm_bf16[i+1], delfil_libxsmm_bf16[i],
                                  act_libxsmm_bf16[i], delbias_libxsmm_bf16[i], relumask_libxsmm[i], MY_FC_PASS_BWD, 0, tid, scratch );
-            my_opt_exec_bf16( my_opt[i], fil_libxsmm_bf16[i], fil_libxsmm[i], delfil_libxsmm_bf16[i], 0, tid, scratch );
+            libxsmm_dnn_opt_exec_bf16( libxsmm_dnn_opt[i], fil_libxsmm_bf16[i], fil_libxsmm[i], delfil_libxsmm_bf16[i], 0, tid, scratch );
           }
-          my_fc_bwd_exec_bf16( my_fc_bwd[0], fil_libxsmm_bf16[0], delact_libxsmm_bf16[0], delact_libxsmm_bf16[0+1], delfil_libxsmm_bf16[0],
+          libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd[0], fil_libxsmm_bf16[0], delact_libxsmm_bf16[0], delact_libxsmm_bf16[0+1], delfil_libxsmm_bf16[0],
                                input_acts_bf16 + batch_id * MB * C[0], delbias_libxsmm_bf16[0], relumask_libxsmm[0], MY_FC_PASS_BWD_W, 0, tid, scratch );
-          my_opt_exec_bf16( my_opt[0], fil_libxsmm_bf16[0], fil_libxsmm[0], delfil_libxsmm_bf16[0], 0, tid, scratch );
+          libxsmm_dnn_opt_exec_bf16( libxsmm_dnn_opt[0], fil_libxsmm_bf16[0], fil_libxsmm[0], delfil_libxsmm_bf16[0], 0, tid, scratch );
         }
       }
     }
@@ -537,10 +537,10 @@ int main(int argc, char* argv[])
       if ( prec_bf16 == 0 ) {
         for ( i = 0; i < num_layers; ++i) {
           float *input_act_ptr = (i == 0) ? input_acts + batch_id * MB * C[0] : act_libxsmm[i];
-          my_fc_fwd_exec_f32( my_fc_fwd[i], fil_libxsmm[i], input_act_ptr, act_libxsmm[i+1],
+          libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd[i], fil_libxsmm[i], input_act_ptr, act_libxsmm[i+1],
                               bias_libxsmm[i], relumask_libxsmm[i], 0, tid, scratch );
         }
-        my_smax_fwd_exec_f32( my_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], test_label + batch_id * MB, &loss,
+        libxsmm_dnn_smax_fwd_exec_f32( libxsmm_dnn_smax_fwd, act_libxsmm[num_layers], act_libxsmm[num_layers+1], test_label + batch_id * MB, &loss,
                               0, tid, scratch );
 
         if (tid == 0) {
@@ -570,10 +570,10 @@ int main(int argc, char* argv[])
       } else {
         for ( i = 0; i < num_layers; ++i) {
           libxsmm_bfloat16 *input_act_ptr = (i == 0) ? input_acts_bf16 + batch_id * MB * C[0] : act_libxsmm_bf16[i];
-          my_fc_fwd_exec_bf16( my_fc_fwd[i], fil_libxsmm_bf16[i], input_act_ptr, act_libxsmm_bf16[i+1],
+          libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd[i], fil_libxsmm_bf16[i], input_act_ptr, act_libxsmm_bf16[i+1],
                                bias_libxsmm_bf16[i], relumask_libxsmm[i], 0, tid, scratch );
         }
-        my_smax_fwd_exec_bf16( my_smax_fwd, act_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], test_label + batch_id * MB, &loss,
+        libxsmm_dnn_smax_fwd_exec_bf16( libxsmm_dnn_smax_fwd, act_libxsmm_bf16[num_layers], act_libxsmm_bf16[num_layers+1], test_label + batch_id * MB, &loss,
                                0, tid, scratch );
 
         if (tid == 0) {
@@ -667,9 +667,9 @@ int main(int argc, char* argv[])
     free( relumask_libxsmm );
   }
 
-  free( my_opt );
-  free( my_fc_fwd );
-  free( my_fc_bwd );
+  free( libxsmm_dnn_opt );
+  free( libxsmm_dnn_fc_fwd );
+  free( libxsmm_dnn_fc_bwd );
 
   free( C );
 

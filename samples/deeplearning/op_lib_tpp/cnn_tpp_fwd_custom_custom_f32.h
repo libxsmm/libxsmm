@@ -9,7 +9,7 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
-void cnn_tpp_fwd_exec( cnn_tpp_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
+void libxsmm_dnn_conv_fwd_exec( libxsmm_dnn_conv_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
     const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
 
   int img, ofm1, ifm1, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ofm11, ki1, kj1, ii, ij, spread_out = 1;
