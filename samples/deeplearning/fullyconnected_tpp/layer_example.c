@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
   libxsmm_datatype in_dt, out_dt, comp_dt;
 
-  libxsmm_dnn_fc_eltw_fuse my_fuse = MY_FC_ELTW_FUSE_NONE;
+  libxsmm_dnn_fc_eltw_fuse my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_NONE;
   libxsmm_dnn_fc_fwd_config libxsmm_dnn_fc_fwd;
   libxsmm_dnn_fc_bwd_config libxsmm_dnn_fc_bwd;
 
@@ -285,17 +285,17 @@ int main(int argc, char* argv[])
   }
 
   if ( fuse_type == 0 ) {
-    my_fuse = MY_FC_ELTW_FUSE_NONE;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_NONE;
   } else if ( fuse_type == 1 ) {
-    my_fuse = MY_FC_ELTW_FUSE_BIAS;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
-    my_fuse = MY_FC_ELTW_FUSE_RELU_WITH_MASK;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_RELU_WITH_MASK;
   } else if ( fuse_type == 3 ) {
-    my_fuse = MY_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK;
   } else if ( fuse_type == 4 ) {
-    my_fuse = MY_FC_ELTW_FUSE_RELU;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_RELU;
   } else if ( fuse_type == 5 ) {
-    my_fuse = MY_FC_ELTW_FUSE_BIAS_RELU;
+    my_fuse = LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU;
   } else {
     /* cannot happen */
   }
@@ -401,10 +401,10 @@ int main(int argc, char* argv[])
 #endif
       if ( prec_bf16 > 0 ) {
         libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
-                             input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
+                             input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, LIBXSMM_DNN_FC_PASS_BWD, 0, tid, scratch );
       } else {
         libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-            input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
+            input_libxsmm, delbias_libxsmm, relumask_libxsmm, LIBXSMM_DNN_FC_PASS_BWD, 0, tid, scratch );
       }
     }
 
@@ -509,10 +509,10 @@ int main(int argc, char* argv[])
       for (i = 0; i < iters; ++i) {
         if ( prec_bf16 > 0 ) {
           libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd, filter_libxsmm_bf16, delinput_libxsmm_bf16, deloutput_libxsmm_bf16, delfilter_libxsmm_bf16,
-                               input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
+                               input_libxsmm_bf16, delbias_libxsmm_bf16, relumask_libxsmm, LIBXSMM_DNN_FC_PASS_BWD, 0, tid, scratch );
         } else {
           libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd, filter_libxsmm, delinput_libxsmm, deloutput_libxsmm, delfilter_libxsmm,
-              input_libxsmm, delbias_libxsmm, relumask_libxsmm, MY_FC_PASS_BWD, 0, tid, scratch );
+              input_libxsmm, delbias_libxsmm, relumask_libxsmm, LIBXSMM_DNN_FC_PASS_BWD, 0, tid, scratch );
         }
       }
     }
