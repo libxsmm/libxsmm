@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   libxsmm_bfloat16 *bias_libxsmm_bf16;
 
   unsigned char *relumask_libxsmm = NULL;
-  my_eltwise_fuse my_fuse = MY_ELTWISE_FUSE_NONE;
+  libxsmm_dnn_conv_eltwise_fuse my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_NONE;
   libxsmm_dnn_conv_config libxsmm_dnn_conv_cfg;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
@@ -164,13 +164,13 @@ int main(int argc, char* argv[])
   LIBXSMM_UNUSED(format);
 
   if ( fuse_type == 0 ) {
-    my_fuse = MY_ELTWISE_FUSE_NONE;
+    my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_NONE;
   } else if ( fuse_type == 1 ) {
-    my_fuse = MY_ELTWISE_FUSE_BIAS;
+    my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS;
   } else if ( fuse_type == 2 ) {
-    my_fuse = MY_ELTWISE_FUSE_RELU;
+    my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU;
   } else if ( fuse_type == 3 ) {
-    my_fuse = MY_ELTWISE_FUSE_BIAS_RELU;
+    my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS_RELU;
   } else {
     /* cannot happen */
   }
@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
     printf("External transpose of weights\n");
   }
   if ( fuse_type == 0 ) {
-    my_fuse = MY_ELTWISE_FUSE_NONE;
+    my_fuse = LIBXSMM_DNN_CONV_ELTWISE_FUSE_NONE;
   } else if ( fuse_type == 1 ) {
     printf("Fusion of bias\n");
   } else if ( fuse_type == 2 ) {

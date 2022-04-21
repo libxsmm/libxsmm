@@ -22,8 +22,8 @@ void libxsmm_dnn_conv_fwd_exec( libxsmm_dnn_conv_config cfg, const float* wt_ptr
   int my_img_end = LIBXSMM_MIN((ltid+1) * imgpt, cfg.N);
   int my_ofm_start = 0;
   int my_ofm_end = cfg.blocksofm;
-  int fuse_colbias  = ((cfg.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) ? 1 : 0;
-  int fuse_relu     = ((cfg.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) ? 1 : 0;
+  int fuse_colbias  = ((cfg.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS) > 0) ? 1 : 0;
+  int fuse_relu     = ((cfg.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU) > 0) ? 1 : 0;
 
   /* Batch reduce related variables */
   unsigned long long n_blocks;

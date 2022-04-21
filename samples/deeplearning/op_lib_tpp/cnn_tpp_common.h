@@ -23,7 +23,7 @@
 #define HWKC 2
 #define CHWK 3
 #define HWCK 4
-#define  LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS
+#define  LIBXSMM_DNN_CONV_SETUP_USE_NTS
 
 #define LIBXSMM_BLOCK64
 #if defined LIBXSMM_BLOCK64
@@ -32,19 +32,19 @@
 # define LIBXSMM_BLOCK_SIZE 32
 #endif
 
-typedef enum my_eltwise_fuse {
-  MY_ELTWISE_FUSE_NONE = 0,
-  MY_ELTWISE_FUSE_BIAS = 1,
-  MY_ELTWISE_FUSE_RELU = 2,
-  MY_ELTWISE_FUSE_BIAS_RELU = MY_ELTWISE_FUSE_BIAS | MY_ELTWISE_FUSE_RELU
-} my_eltwise_fuse;
+typedef enum libxsmm_dnn_conv_eltwise_fuse {
+  LIBXSMM_DNN_CONV_ELTWISE_FUSE_NONE = 0,
+  LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS = 1,
+  LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU = 2,
+  LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS_RELU = LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS | LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU
+} libxsmm_dnn_conv_eltwise_fuse;
 
-typedef enum my_pass {
-  MY_PASS_FWD   = 1,
-  MY_PASS_BWD_D = 2,
-  MY_PASS_BWD_W = 4,
-  MY_PASS_BWD   = 6
-} my_pass;
+typedef enum libxsmm_dnn_conv_pass {
+  LIBXSMM_DNN_CONV_PASS_FWD   = 1,
+  LIBXSMM_DNN_CONV_PASS_BWD_D = 2,
+  LIBXSMM_DNN_CONV_PASS_BWD_W = 4,
+  LIBXSMM_DNN_CONV_PASS_BWD   = 6
+} libxsmm_dnn_conv_pass;
 
 typedef struct libxsmm_dnn_conv_config {
   /* Convolution params  */
@@ -67,7 +67,7 @@ typedef struct libxsmm_dnn_conv_config {
   libxsmm_blasint  overwrite_output;
   libxsmm_blasint  avoid_bwd_wt_trans;
   libxsmm_blasint  zero_fwd_output_rim;
-  my_eltwise_fuse  fuse_type;
+  libxsmm_dnn_conv_eltwise_fuse  fuse_type;
   libxsmm_datatype datatype_in;
   libxsmm_datatype datatype_out;
   int target_archid;
@@ -706,7 +706,7 @@ int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg ) {
 int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 
-#if defined(LIBXSMM_DNN_CONVOLUTION_SETUP_USE_NTS)
+#if defined(LIBXSMM_DNN_CONV_SETUP_USE_NTS)
   /* If large image and NOT already loaded in accumulators, tnen use streaming stores */
   if ((cfg->ofw >= 56) && (cfg->K >= 256) && (cfg->avoid_acc_load == 1) && (cfg->R == 1) && (cfg->S == 1)) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
@@ -1457,13 +1457,13 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
     memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
     memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS) > 0) {
       l_postops.d_in_type      = LIBXSMM_DATATYPE_F32;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
       l_postops.ldd            = ldC;
     }
-    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU) > 0) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.ldcp           = ldC;
     }
@@ -1600,7 +1600,7 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
     }
 
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU) > 0) {
       stride_in             = res.ofmblock;
       stride_out            = res.ofmblock;
       unary_shape.m         = res.ofmblock;
@@ -1614,7 +1614,7 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
       }
     }
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS) > 0) {
       stride_in              = res.ofmblock;
       stride_out             = res.ofmblock;
       binary_shape.m         = res.ofmblock;
@@ -1698,13 +1698,13 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
     memset( &l_argops, 0, sizeof(libxsmm_gemm_ext_unary_argops) );
     memset( &l_postops, 0, sizeof(libxsmm_gemm_ext_binary_postops) );
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS) > 0) {
       l_postops.d_in_type      = LIBXSMM_DATATYPE_BF16;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
       l_postops.ldd            = ldC;
     }
-    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU) > 0) {
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.ldcp           = ldC;
     }
@@ -1900,7 +1900,7 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_RELU) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_RELU) > 0) {
       stride_in             = res.ofmblock;
       stride_out            = res.ofmblock;
       unary_shape.m         = res.ofmblock;
@@ -1914,7 +1914,7 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
       }
     }
 
-    if ((res.fuse_type & MY_ELTWISE_FUSE_BIAS) > 0) {
+    if ((res.fuse_type & LIBXSMM_DNN_CONV_ELTWISE_FUSE_BIAS) > 0) {
       stride_in              = res.ofmblock;
       stride_out             = res.ofmblock;
       binary_shape.m         = res.ofmblock;
@@ -3001,7 +3001,7 @@ libxsmm_dnn_conv_config setup_libxsmm_dnn_conv( libxsmm_datatype cnn_dtype_in, l
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
     libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
-    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, my_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans, libxsmm_blasint zero_fwd_output_rim) {
+    libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, libxsmm_dnn_conv_eltwise_fuse fuse_type, libxsmm_blasint overwrite_output, libxsmm_blasint avoid_bwd_wt_trans, libxsmm_blasint zero_fwd_output_rim) {
   libxsmm_dnn_conv_config res;
 
   memset(&res, 0, sizeof(libxsmm_dnn_conv_config));
