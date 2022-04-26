@@ -985,7 +985,6 @@ endif
 
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
 DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
-	$(if $(filter-out x86_64,$(MNAME)),| grep -v /deeplearning/libxsmm_dnn/) \
 	| grep -v /deeplearning/embbag_distri/ \
 	| grep -v /deeplearning/sparse_training/fairseq/docs/ \
 	| grep -v /deeplearning/sparse_adagrad_fused/ \
