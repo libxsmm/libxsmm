@@ -29,15 +29,27 @@ TR=$(command -v tr)
 RM=$(command -v rm)
 CP=$(command -v cp)
 
+# GNU sed is desired (macOS)
+if [ ! "${SED}" ]; then
+  SED=$(command -v sed)
+fi
+
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+MKTEMP=${HERE}/../.mktmp.sh
+RUN_CMD="--session-command"
+#RUN_CMD="-c"
+
+# TODO: map to CI-provider (abstract environment)
+source "${HERE}/../.env/buildkite.env" ""
+#source "${HERE}/../.env/travis.env" ""
+
 if [ "${LAUNCH_CMD}" ]; then
   HOME_REMOTE=$(${LAUNCH_CMD} "pwd -P")
   if [ -d "${HOME_REMOTE}" ]; then
-    if [ "${BUILDKITE_AGENT_NAME}" ] && \
-       [ "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
-       [ "${BUILDKITE_PIPELINE_SLUG}" ];
+    if [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && \
+       [ "${BUILDKITE_AGENT_NAME}" ];
     then
-      HOME_TEST=${HOME_REMOTE}/builds/${BUILDKITE_AGENT_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}
+      HOME_TEST=${HOME_REMOTE}/builds/${BUILDKITE_AGENT_NAME}/${ORGANIZATION}/${PIPELINE}
     fi
     if [ ! -d "${HOME_TEST}" ]; then
       HOME_TEST=${HOME_REMOTE}
@@ -45,27 +57,6 @@ if [ "${LAUNCH_CMD}" ]; then
   fi
 else
   HOME_TEST=${HERE}/..
-fi
-
-MKTEMP=${HERE}/../.mktmp.sh
-RUN_CMD="--session-command"
-#RUN_CMD="-c"
-
-# GNU sed is desired (macOS)
-if [ "" = "${SED}" ]; then
-  SED=$(command -v sed)
-fi
-
-if [ "${WGET}" ] && [ "${SED}" ] && [ "${PIPELINE}" ] && \
-   [ "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
-   [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
-then
-  REVSTART=$(${WGET} -qO- \
-  "https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
-  | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
-fi
-if [ "" = "${REVSTART}" ]; then
-  REVSTART="HEAD^"
 fi
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${CHMOD}" ] && \
@@ -76,11 +67,20 @@ then
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
-  fi
-  if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
-     [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
-  then
-    LIMIT=0
+  else
+    if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
+      REVSTART=$(${WGET} -qO- \
+      "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
+      | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
+    fi
+    if [ ! "${REVSTART}" ]; then
+      REVSTART="HEAD^"
+    fi
+    if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
+       [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
+    then
+      LIMIT=0
+    fi
   fi
 
   # set the case number
@@ -100,23 +100,19 @@ then
     fi
   fi
 
-  # should be source'd after the above variables are set
-  source "${HERE}/../.env/buildkite.env" ""
-  #source "${HERE}/../.env/travis.env" ""
-
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+  if [ ! "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${REPOROOT}
   fi
-  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "${UNAME}" ]; then
+  if [ ! "${TRAVIS_OS_NAME}" ] && [ "${UNAME}" ]; then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
-  if [ "" = "${HOSTNAME}" ]; then
+  if [ ! "${HOSTNAME}" ]; then
     HOSTNAME=$(hostname -s 2>/dev/null)
   fi
 
   # setup PARTITIONS for multi-tests
-  if [ "" = "${PARTITIONS}" ]; then
+  if [ ! "${PARTITIONS}" ]; then
     if [ "${PARTITION}" ]; then
       PARTITIONS=${PARTITION}
     else
@@ -135,7 +131,7 @@ then
   export PARTITIONS
 
   # setup CONFIGS (multiple configurations)
-  if [ "" = "${CONFIGS}" ]; then
+  if [ ! "${CONFIGS}" ]; then
     if [ "${CONFIG}" ]; then
       CONFIGS=${CONFIG}
     else
@@ -146,7 +142,7 @@ then
     CONFIGS=${CONFIG}
   fi
   # setup ENVS (multiple environments)
-  if [ "" = "${ENVS}" ]; then
+  if [ ! "${ENVS}" ]; then
     if [ "${ENV}" ]; then
       ENVS=${ENV}
     else
@@ -155,10 +151,10 @@ then
   fi
 
   # select test-set ("travis" by default)
-  if [ "" = "${TESTSET}" ]; then
+  if [ ! "${TESTSET}" ]; then
     TESTSET=travis
   fi
-  if [ "" = "${TESTSETFILE}" ] || [ ! -e "${TESTSETFILE}" ]; then
+  if [ ! "${TESTSETFILE}" ] || [ ! -e "${TESTSETFILE}" ]; then
     if [ -e ".${TESTSET}.yml" ]; then
       TESTSETFILE=.${TESTSET}.yml
     elif [ -e "${TESTSET}.yml" ]; then
@@ -182,7 +178,7 @@ then
   # eventually cleanup run-script of terminated/previous sessions
   ${RM} -f "${HERE}"/../.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
-  if [ "" = "${LAUNCH_CMD}" ] && [ "" = "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
+  if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
       LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [[:punct:][:space:]] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
@@ -205,7 +201,7 @@ then
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
-    if [ "" = "${MAKEJ}" ]; then
+    if [ ! "${MAKEJ}" ]; then
       export MAKEJ="-j $(eval "${HERE}/tool_cpuinfo.sh" -nc)"
     fi
     SHOW_PARTITION=0
@@ -252,7 +248,7 @@ then
     then
       NOW=$(date +%s)
       LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
-      if [ "" = "${LIMITFILE}" ]; then
+      if [ ! "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
       fi
       if [ "${LIMITFILE}" ]; then
@@ -270,8 +266,8 @@ then
         LIMIT=0
       fi
     fi
-    if [ "" = "${NOW}" ]; then NOW=0; fi
-    if [ "" = "${OLD}" ]; then OLD=0; fi
+    if [ ! "${NOW}" ]; then NOW=0; fi
+    if [ ! "${OLD}" ]; then OLD=0; fi
     if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
       echo "================================================================================"
       echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
@@ -328,7 +324,7 @@ then
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> "${TESTSCRIPT}"; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
         # make execution environment available
-        if [ "" = "${INTEL_LICENSE_FILE}" ]; then
+        if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p "${REPOROOT}/licenses"
           ${CP} -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
@@ -368,7 +364,7 @@ then
             "${SLURMFILE}" > "${SLURMFILE}.run" && ${CHMOD} +rx "${SLURMFILE}.run"
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           if [ "${TOOL_COMMAND}" ]; then
-            if [ "0" = "${TOOL_INJECT}" ] || [ "" = "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
+            if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
               echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> "${TESTSCRIPT}"
             else # inject TOOL_COMMAND
               TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "s/\//\\\\\//g") "
