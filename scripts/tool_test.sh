@@ -12,7 +12,6 @@
 # shellcheck disable=SC1090,SC2129,SC2155,SC2164,SC2178,SC2206,SC2207
 set -o pipefail
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
@@ -29,6 +28,24 @@ LS=$(command -v ls)
 TR=$(command -v tr)
 RM=$(command -v rm)
 CP=$(command -v cp)
+
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+if [ "${LAUNCH_CMD}" ]; then
+  HOME_REMOTE=$(${LAUNCH_CMD} "pwd -P")
+  if [ -d "${HOME_REMOTE}" ]; then
+    if [ "${BUILDKITE_AGENT_NAME}" ] && \
+       [ "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
+       [ "${BUILDKITE_PIPELINE_SLUG}" ];
+    then
+      HOME_TEST=${HOME_REMOTE}/builds/${BUILDKITE_AGENT_NAME}/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}
+    fi
+    if [ ! -d "${HOME_TEST}" ]; then
+      HOME_TEST=${HOME_REMOTE}
+    fi
+  fi
+else
+  HOME_TEST=${HERE}/..
+fi
 
 MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
@@ -178,13 +195,13 @@ then
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     umask 007
-    TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
+    TESTSCRIPT=$(${MKTEMP} "${HOME_TEST}/.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
-    TESTSCRIPT=$(${MKTEMP} "${HERE}/../.tool_XXXXXX.sh")
+    TESTSCRIPT=$(${MKTEMP} "${HOME_TEST}/.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
@@ -200,7 +217,7 @@ then
 
   # backup current environment (snapshot)
   ${RM} -f "${HERE}"/../.env_??????
-  ENVFILE=$(${MKTEMP} "${HERE}/../.env_XXXXXX")
+  ENVFILE=$(${MKTEMP} "${HOME_TEST}/.env_XXXXXX")
   ${CHMOD} +r "${ENVFILE}"
   declare -px > "${ENVFILE}"
 
@@ -322,8 +339,8 @@ then
         # setup environment on a per-test basis
         echo "if [ -e \"${ENVFILE}\" ]; then" >> "${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HERE}/../.env.sh\"" >> "${TESTSCRIPT}"
-          echo "  source \"${HERE}/../.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HOME_TEST}/.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  source \"${HOME_TEST}/.env.sh\"" >> "${TESTSCRIPT}"
         else
           echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> "${TESTSCRIPT}"
         fi

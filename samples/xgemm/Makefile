@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/kernel $(OUTDIR)/kernel_fused_ops $(OUTDIR)/bf16sgemm $(OUTDIR)/kernel_parallel
+XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/kernel $(OUTDIR)/kernel_fused_ops $(OUTDIR)/kernel_parallel
 
 .PHONY: all
 all: $(XFILES)
@@ -65,9 +65,6 @@ $(OUTDIR)/kernel_fused_ops: $(OUTDIR)/.make $(BLDDIR)/kernel_fused_ops-c.o $(LIB
 
 $(OUTDIR)/kernel_parallel: $(OUTDIR)/.make $(BLDDIR)/kernel_parallel-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/kernel_parallel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/bf16sgemm: $(OUTDIR)/.make $(BLDDIR)/bf16sgemm-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/bf16sgemm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
