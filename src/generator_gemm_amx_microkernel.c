@@ -919,10 +919,12 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
   unsigned int gp_reg_a;
-  unsigned int prefetch_C_scratch   = atoi(getenv("C_SCR_PF"));
-  unsigned int prefetch_C_scratch_dist = atoi(getenv("C_SCR_PF_DIST"));
-  unsigned int prefetch_C_matrix   = atoi(getenv("C_MAT_PF"));
-  unsigned int prefetch_C_matrix_dist = atoi(getenv("C_MAT_PF_DIST"));
+  const char *const l_env_pf_c_scratch_dist = getenv("C_SCR_PF_DIST");
+  const char *const l_env_pf_c_matrix_dist  = getenv("C_MAT_PF_DIST");
+  unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;
+  unsigned int prefetch_C_scratch_dist  = (l_env_pf_c_scratch_dist == 0) ? 4 : atoi(l_env_pf_c_scratch_dist);
+  unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;
+  unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
