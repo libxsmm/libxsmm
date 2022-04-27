@@ -1050,6 +1050,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD) ||
                                    (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X2_OP_ADD)) ? 1 : 0;
   unsigned int flag_reduce_op_max = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX) ? 1 : 0;
+  int bf16_accum = LIBXSMM_X86_GP_REG_RCX;
 
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
     vlen = 8;
@@ -1117,7 +1118,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   i_gp_reg_mapping->gp_reg_reduced_elts_squared = LIBXSMM_X86_GP_REG_R10;
   i_gp_reg_mapping->gp_reg_m_loop               = LIBXSMM_X86_GP_REG_R11;
   i_gp_reg_mapping->gp_reg_n_loop               = LIBXSMM_X86_GP_REG_RAX;
-  int bf16_accum = LIBXSMM_X86_GP_REG_RCX;
+  bf16_accum = LIBXSMM_X86_GP_REG_RCX;
   libxsmm_generator_meltw_getval_stack_var( io_generated_code, LIBXSMM_MELTW_STACK_VAR_SCRATCH_PTR, bf16_accum );
 
   /* load the input pointer and output pointer */
@@ -1156,11 +1157,11 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
     unsigned int reg_sum = 15, reg_sum_squared = 14;
     unsigned int cur_vreg;
-    vlen = 8;
     unsigned int mask_out = 13;
     unsigned int available_vregs = 13;
     unsigned int mask_reg = 0;
 
+    vlen = 8;
     m                 = i_mateltwise_desc->m;
     n                 = i_mateltwise_desc->n;
     use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;
