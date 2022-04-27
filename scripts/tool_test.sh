@@ -35,29 +35,13 @@ if [ ! "${SED}" ]; then
 fi
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
-MKTEMP=${HERE}/../.mktmp.sh
-RUN_CMD="--session-command"
-#RUN_CMD="-c"
-
 # TODO: map to CI-provider (abstract environment)
 source "${HERE}/../.env/buildkite.env" ""
 #source "${HERE}/../.env/travis.env" ""
 
-if [ "${LAUNCH_CMD}" ]; then
-  HOME_REMOTE=$(${LAUNCH_CMD} "pwd -P")
-  if [ -d "${HOME_REMOTE}" ]; then
-    if [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && \
-       [ "${BUILDKITE_AGENT_NAME}" ];
-    then
-      HOME_TEST=${HOME_REMOTE}/builds/${BUILDKITE_AGENT_NAME}/${ORGANIZATION}/${PIPELINE}
-    fi
-    if [ ! -d "${HOME_TEST}" ]; then
-      HOME_TEST=${HOME_REMOTE}
-    fi
-  fi
-else
-  HOME_TEST=${HERE}/..
-fi
+MKTEMP=${REPOROOT}/.mktmp.sh
+RUN_CMD="--session-command"
+#RUN_CMD="-c"
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${CHMOD}" ] && \
    [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && \
@@ -176,7 +160,7 @@ then
   fi
 
   # eventually cleanup run-script of terminated/previous sessions
-  ${RM} -f "${HERE}"/../.tool_??????.sh
+  ${RM} -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
@@ -191,18 +175,18 @@ then
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     umask 007
-    TESTSCRIPT=$(${MKTEMP} "${HOME_TEST}/.tool_XXXXXX.sh")
+    TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
-    TESTSCRIPT=$(${MKTEMP} "${HOME_TEST}/.tool_XXXXXX.sh")
+    TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     ${CHMOD} +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ ! "${MAKEJ}" ]; then
-      export MAKEJ="-j $(eval "${HERE}/tool_cpuinfo.sh" -nc)"
+      export MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
     fi
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
@@ -212,8 +196,8 @@ then
   fi
 
   # backup current environment (snapshot)
-  ${RM} -f "${HERE}"/../.env_??????
-  ENVFILE=$(${MKTEMP} "${HOME_TEST}/.env_XXXXXX")
+  ${RM} -f "${REPOROOT}"/.env_??????
+  ENVFILE=$(${MKTEMP} "${REPOROOT}/.env_XXXXXX")
   ${CHMOD} +r "${ENVFILE}"
   declare -px > "${ENVFILE}"
 
@@ -221,7 +205,7 @@ then
   # control log
   echo && echo "^^^ +++"
   while [ "${TEST}" ] || TEST=$(eval " \
-    ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
+    ${SED} -n -e '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/  *$//'") && [ "${TEST}" ];
@@ -322,7 +306,7 @@ then
         echo "cd ${REPOROOT}" >> "${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >> "${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> "${TESTSCRIPT}"; fi
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOROOT}/scripts/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
@@ -335,10 +319,10 @@ then
         # setup environment on a per-test basis
         echo "if [ -e \"${ENVFILE}\" ]; then" >> "${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\" \"${HOME_TEST}/.env.sh\"" >> "${TESTSCRIPT}"
-          echo "  source \"${HOME_TEST}/.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  eval ${REPOROOT}/scripts/tool_envrestore.sh \"${ENVFILE}\" \"${REPOROOT}/.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  source \"${REPOROOT}/.env.sh\"" >> "${TESTSCRIPT}"
         else
-          echo "  eval ${HERE}/tool_envrestore.sh \"${ENVFILE}\"" >> "${TESTSCRIPT}"
+          echo "  eval ${REPOROOT}/scripts/tool_envrestore.sh \"${ENVFILE}\"" >> "${TESTSCRIPT}"
         fi
         echo "fi" >> "${TESTSCRIPT}"
         if [ -e "${CONFIGFILE}" ]; then
@@ -396,7 +380,7 @@ then
         # setup environment on a per-test basis
         if [ "${CONFIGFILE}" ]; then
           if [ -e "${ENVFILE}" ]; then
-            eval "${HERE}/tool_envrestore.sh" "${ENVFILE}"
+            eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
           fi
           source "${CONFIGFILE}" ""
         fi
