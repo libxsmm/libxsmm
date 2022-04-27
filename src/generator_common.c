@@ -1204,6 +1204,18 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "reduce-kernel needs flags to know whether to reduce rows or columns (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_TRANS_A:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GEMM kernel with trans A requested, but target/datatype not supported (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDA_TRANS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "lda needs to be greater than or equal to k (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_BRGEMM_TRANS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "BRGEMM is not supported for the specified configuration with A transpose (error #%u)!", i_error_code );
+      break;
     case LIBXSMM_ERR_ILLEGAL_REGNUM:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "encoding for out-of-bound regnumber was requested (error #%u)!", i_error_code );

@@ -150,8 +150,6 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch_v2( const libxsmm_blasint m,
                                                      const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
                                                      const int* basicflags );
 
-/* @TODO: deprecate all these GEMM dispatchers
-   <---- START HERE ----> */
 /** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
@@ -160,252 +158,6 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_b
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate) */
-LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs) */
-LIBXSMM_API libxsmm_bmmfunction libxsmm_bmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision, int-accumulate) */
-LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/char-precision, int-accumulate) */
-LIBXSMM_API libxsmm_ssbimmfunction libxsmm_ssbimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-LIBXSMM_API libxsmm_usbimmfunction libxsmm_usbimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-LIBXSMM_API libxsmm_subimmfunction libxsmm_subimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-LIBXSMM_API libxsmm_uubimmfunction libxsmm_uubimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/char-precision, int-accumulate, int8 outputs) */
-LIBXSMM_API libxsmm_sububmmfunction libxsmm_sububmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_addr libxsmm_dmmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_addr libxsmm_smmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_addr libxsmm_bsmmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_addr libxsmm_bmmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_addr libxsmm_wimmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_addr libxsmm_ssbimmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_addr libxsmm_usbimmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_addr libxsmm_subimmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_addr libxsmm_uubimmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_addr libxsmm_sububmmdispatch_reducebatch_addr(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_addr libxsmm_dmmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_addr libxsmm_smmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/* Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_addr libxsmm_bsmmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_addr libxsmm_bmmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_addr libxsmm_wimmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_addr libxsmm_ssbimmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_addr libxsmm_usbimmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_addr libxsmm_subimmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_addr libxsmm_uubimmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_addr libxsmm_sububmmdispatch_reducebatch_addr_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_offs libxsmm_dmmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_offs libxsmm_smmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_offs libxsmm_bsmmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs libxsmm_bmmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_offs libxsmm_wimmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_offs libxsmm_ssbimmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_offs libxsmm_usbimmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_offs libxsmm_subimmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_offs libxsmm_uubimmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_offs libxsmm_sububmmdispatch_reducebatch_offs(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_offs libxsmm_dmmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_offs libxsmm_smmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_offs libxsmm_bsmmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs libxsmm_bmmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_offs libxsmm_wimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_offs libxsmm_ssbimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_offs libxsmm_usbimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_offs libxsmm_subimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_offs libxsmm_uubimmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_offs libxsmm_sububmmdispatch_reducebatch_offs_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_strd libxsmm_dmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_strd libxsmm_smmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_strd libxsmm_wimmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_strd libxsmm_ssbimmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_strd libxsmm_usbimmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_strd libxsmm_subimmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_strd libxsmm_uubimmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
-LIBXSMM_API libxsmm_dmmfunction_reducebatch_strd libxsmm_dmmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
-LIBXSMM_API libxsmm_smmfunction_reducebatch_strd libxsmm_smmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int16 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_wimmfunction_reducebatch_strd libxsmm_wimmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_ssbimmfunction_reducebatch_strd libxsmm_ssbimmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_usbimmfunction_reducebatch_strd libxsmm_usbimmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_subimmfunction_reducebatch_strd libxsmm_subimmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate). */
-LIBXSMM_API libxsmm_uubimmfunction_reducebatch_strd libxsmm_uubimmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (int8 inputs, int32-accumulate, int8 outputs). */
-LIBXSMM_API libxsmm_sububmmfunction_reducebatch_strd libxsmm_sububmmdispatch_reducebatch_strd_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const int* alpha, const int* beta, const int* flags, const int* prefetch);
-
-/* GEMM + Eltwise fused kernels */
-/**
- * Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs).
- *
- * This kernel provides the following operation: C = \sum_i A_i * B_i + C_old + colbroadcast(bias) followed by  C_out = Act( C ), the dump of "C" is possible.
- * Also we support elementwise operations on A/B (e.g. decompression of A).
- * */
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd_meltwfused libxsmm_bmmdispatch_reducebatch_strd_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd_meltwfused libxsmm_bsmmdispatch_reducebatch_strd_meltwfused(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd_meltwfused libxsmm_bsmmdispatch_reducebatch_strd_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs_meltwfused libxsmm_bmmdispatch_reducebatch_offs_meltwfused(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-
-LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs_meltwfused libxsmm_bmmdispatch_reducebatch_offs_meltwfused_unroll(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint unroll_hint,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch,
-  libxsmm_meltw_operation meltw_op, libxsmm_datatype meltw_dt, libxsmm_meltw_flags meltw_flags, unsigned char meltw_param, unsigned int meltw_ldx, unsigned int meltw_ldy, unsigned int meltw_ldz);
-/* @TODO deprecation
-   <---- END HERE ----> */
 
 /**
  * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
@@ -509,18 +261,6 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_d
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx( const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
                                                                                               const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype idx_type,
                                                                                               const libxsmm_meltw_opreduce_vecs_flags flags, const unsigned short bcast_param );
-LIBXSMM_API libxsmm_meltwfunction_unary libxsmm_dispatch_meltw_unary( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                      const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
-                                                                      const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type,
-                                                                      const libxsmm_meltw_unary_flags flags, const libxsmm_meltw_unary_type type );
-LIBXSMM_API libxsmm_meltwfunction_binary libxsmm_dispatch_meltw_binary( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                        const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldo,
-                                                                        const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type,
-                                                                        const libxsmm_meltw_binary_flags flags, const libxsmm_meltw_binary_type type );
-LIBXSMM_API libxsmm_meltwfunction_ternary libxsmm_dispatch_meltw_ternary( const libxsmm_blasint m, const libxsmm_blasint n,
-                                                                          const libxsmm_blasint* ldi, const libxsmm_blasint* ldi2, const libxsmm_blasint* ldi3, const libxsmm_blasint* ldo,
-                                                                          const libxsmm_datatype in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type,
-                                                                          const libxsmm_meltw_ternary_flags flags, const libxsmm_meltw_ternary_type type );
 LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const libxsmm_blasint m, const libxsmm_blasint n,
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                                                                         const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type );
@@ -554,7 +294,6 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2( const libxsmm_matrix
 LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx );
 LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const libxsmm_meqn_descriptor* descriptor );
-LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint* ldo, const libxsmm_datatype out_type, const unsigned int eqn_idx );
 LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2( const libxsmm_blasint idx, const libxsmm_meqn_arg_shape out_shape );
 
 /**
@@ -563,8 +302,6 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_v2( const li
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csr(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
@@ -575,8 +312,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_spxgemm_csc(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width,
-  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
@@ -587,7 +322,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
  * here is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_ac_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width);
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width );
 
@@ -597,7 +331,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
  * here is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_packed_xgemm_bc_rm(const libxsmm_gemm_descriptor* descriptor, unsigned int packed_width);
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width );
 
@@ -606,17 +339,6 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
  * The sparse matrix "a" is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
-
-/**
- * Code generation routine for the CSR format which multiplies a dense matrix "b" into a dense matrix "c".
- * The sparse matrix "a" is kept in registers.
- * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
- */
-LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
-
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags,
   const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values );
