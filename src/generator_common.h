@@ -1181,6 +1181,9 @@
 #define LIBXSMM_ERR_ILLEGAL_ABI           90046
 #define LIBXSMM_ERR_UNKNOWN_OPERATION     90047
 #define LIBXSMM_ERR_MISSING_REDUCE_FLAGS  90048
+#define LIBXSMM_ERR_TRANS_A               90049
+#define LIBXSMM_ERR_LDA_TRANS             90050
+#define LIBXSMM_ERR_BRGEMM_TRANS          90051
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1803,7 +1806,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_B    = 17,
   LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C    = 18,
   LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR    = 19,
-  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20
+  LIBXSMM_GEMM_STACK_VAR_BRCOUNT                 = 20,
+  LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR           = 21
 } libxsmm_gemm_stack_var;
 
 #if 0
