@@ -51,20 +51,20 @@ then
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
-  else
-    if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
-      REVSTART=$(${WGET} -qO- \
-      "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
-      | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
-    fi
-    if [ ! "${REVSTART}" ]; then
-      REVSTART="HEAD^"
-    fi
-    if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
-       [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
-    then
-      LIMIT=0
-    fi
+  #else
+    #if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
+    #  REVSTART=$(${WGET} -qO- \
+    #  "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
+    #  | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
+    #fi
+    #if [ ! "${REVSTART}" ]; then
+    #  REVSTART="HEAD^"
+    #fi
+    #if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
+    #   [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
+    #then
+    #  LIMIT=0
+    #fi
   fi
 
   # set the case number
