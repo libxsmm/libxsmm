@@ -1446,7 +1446,7 @@ void libxsmm_dnn_fc_fwd_exec_bf16_vnni_format( libxsmm_dnn_fc_fwd_config cfg, co
   LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, filter,       wt_ptr, nBlocksIFm, bc_lp, cfg.bk, lpb);
   LIBXSMM_VLA_DECL(4, float, output_f32, (float*)scratch, nBlocksOFm, bn, bk);
   LIBXSMM_VLA_DECL(2, const libxsmm_bfloat16, bias, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_BIAS) == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS) ? (libxsmm_bfloat16*) bias_ptr : NULL, cfg.bk);
-  LIBXSMM_VLA_DECL(4, __mmask32,  relubitmask, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU) ? (__mmask32*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
+  LIBXSMM_VLA_DECL(4, unsigned int,  relubitmask, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU) ? (unsigned int*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
 
   libxsmm_meltw_unary_param unary_st_param;
   libxsmm_meltw_unary_param unary_ld_param;
@@ -1988,7 +1988,7 @@ void libxsmm_dnn_fc_bwd_exec_bf16_vnni_format( libxsmm_dnn_fc_bwd_config cfg,  c
   const libxsmm_blasint dbias_thr_end = ((ltid + 1) * dbias_chunksize < dbias_work) ? ((ltid + 1) * dbias_chunksize) : dbias_work;
 
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dbias, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_BIAS) == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS) ? (libxsmm_bfloat16*) dbias_ptr : NULL, cfg.bk);
-  LIBXSMM_VLA_DECL(4,     __mmask32, relubitmask, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU) ? (__mmask32*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
+  LIBXSMM_VLA_DECL(4, unsigned int, relubitmask, ((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU) ? (unsigned int*)relu_ptr : NULL, nBlocksOFm, cfg.bn, cfg.bk/32);
 
   libxsmm_bfloat16 *grad_output_ptr = (((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU)) ? (libxsmm_bfloat16*)((char*)scratch + cfg.doutput_scratch_mark) : (libxsmm_bfloat16*)dout_act_ptr;
   libxsmm_bfloat16 *tr_doutput_ptr = (((cfg.fuse_type & LIBXSMM_DNN_FC_ELTW_FUSE_RELU) == LIBXSMM_DNN_FC_ELTW_FUSE_RELU)) ? (libxsmm_bfloat16*)grad_output_ptr + cfg.N * cfg.K : (libxsmm_bfloat16*)scratch;

@@ -478,7 +478,9 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C         = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C,
   /** Current B into L1. */
   LIBXSMM_GEMM_PREFETCH_BL1                = 16,
-  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32
+  LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB         = 32,
+  LIBXSMM_GEMM_PREFETCH_C_SCRATCH          = 64,
+  LIBXSMM_GEMM_PREFETCH_C                  = 128
 } libxsmm_gemm_prefetch_type;
 
 /** Enumeration of the batchreduce type. */
