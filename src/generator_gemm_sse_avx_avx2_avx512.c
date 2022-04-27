@@ -353,7 +353,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
     /* main transform (transpose) kernel generator call dispatched over supported microkernel ISA */
     if ( LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype) ) {
-      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) {
           libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
                                                                               l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                               l_gp_reg_mask, l_gp_reg_mask_2, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
@@ -369,7 +369,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
                                                                           &l_mateltwise_kernel_config, l_mateltwise_desc );
       }
     } else if ( LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype) ) {
-      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) {
+      if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) {
           libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
                                                                               l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                               l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
