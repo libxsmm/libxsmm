@@ -15,6 +15,7 @@
 #include "generator_common_x86.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_transform_avx512.h"
+#include "generator_mateltwise_transform_avx.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*            io_generated_code,
@@ -35,10 +36,16 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, l_gp_reg_in );
   libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_1, 32*64 );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, l_gp_reg_in);
-  libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
-      l_gp_reg_in, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_mloop, i_gp_reg_mapping->gp_reg_nloop,
-      i_gp_reg_mapping->gp_reg_help_1, 1, 2,
-      &l_trans_config, trans_desc, 0 );
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512){
+    libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+        l_gp_reg_in, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_mloop, i_gp_reg_mapping->gp_reg_nloop,
+        i_gp_reg_mapping->gp_reg_help_1, 1, 2,
+        &l_trans_config, trans_desc, 0 );
+  } else {
+    libxsmm_generator_transform_norm_to_vnni_16bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+        l_gp_reg_in, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_mloop, i_gp_reg_mapping->gp_reg_nloop,
+        &l_trans_config, trans_desc, 0 );
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -120,21 +127,22 @@ void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generate
       out_vreg, 0, 1, 0 );
 
   /* Apply sigmoid  */
-  if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
+    const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
     libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
         i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
         i_micro_kernel_config_mod->mask_hi, i_micro_kernel_config_mod->mask_lo,
         i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
         i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
         i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-        i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves );
+        i_micro_kernel_config_mod->vec_neg_ones, i_micro_kernel_config_mod->vec_halves, i_vname  );
   } else {
     libxsmm_generator_sigmoid_ps_rational_78_avx( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
         i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
         i_micro_kernel_config_mod->vec_c0, i_micro_kernel_config_mod->vec_c1, i_micro_kernel_config_mod->vec_c2, i_micro_kernel_config_mod->vec_c3,
         i_micro_kernel_config_mod->vec_c1_d, i_micro_kernel_config_mod->vec_c2_d, i_micro_kernel_config_mod->vec_c3_d,
         i_micro_kernel_config_mod->vec_hi_bound, i_micro_kernel_config_mod->vec_lo_bound, i_micro_kernel_config_mod->vec_ones,
-        i_micro_kernel_config_mod->vec_neg_ones);
+        i_micro_kernel_config_mod->vec_neg_ones );
   }
 }
 
