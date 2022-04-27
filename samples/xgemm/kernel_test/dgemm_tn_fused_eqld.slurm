@@ -35,17 +35,17 @@ END
 
 ./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP nobr 1 0 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP addrbr 5 0 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP addrbr 5 0 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP offsbr 5 0 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP offsbr 5 0 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP strdbr 5 0 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 DP strdbr 5 0 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP addrbr 5 1 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP addrbr 5 1 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP offsbr 5 1 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP offsbr 5 1 1 1 0 0 0
 
-./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP strdbr 5 1 1 1 0 0 0
+#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 DP strdbr 5 1 1 1 0 0 0
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

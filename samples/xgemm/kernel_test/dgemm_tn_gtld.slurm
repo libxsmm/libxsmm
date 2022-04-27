@@ -34,17 +34,17 @@ END
 
 ./kernel ${TESTFILE2} 1 1 0 0 1 0 DP nobr 1 0 1 0
 
-./kernel ${TESTFILE1} 1 1 0 0 1 0 DP addrbr 5 0 1 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 DP addrbr 5 0 1 0
 
-./kernel ${TESTFILE1} 1 1 0 0 1 0 DP offsbr 5 0 1 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 DP offsbr 5 0 1 0
 
-./kernel ${TESTFILE1} 1 1 0 0 1 0 DP strdbr 5 0 1 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 DP strdbr 5 0 1 0
 
-./kernel ${TESTFILE2} 1 1 0 0 1 0 DP addrbr 5 1 1 0
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 DP addrbr 5 1 1 0
 
-./kernel ${TESTFILE2} 1 1 0 0 1 0 DP offsbr 5 1 1 0
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 DP offsbr 5 1 1 0
 
-./kernel ${TESTFILE2} 1 1 0 0 1 0 DP strdbr 5 1 1 0
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 DP strdbr 5 1 1 0
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}
