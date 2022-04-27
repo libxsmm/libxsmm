@@ -3018,7 +3018,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                                             vname_out,
                                             0, 2, 0, 1 );
 
-        } else if((im == m_trips-1)){
+        } else if( im == (m_trips-1) ){
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -3028,7 +3028,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                 0,
                 i_micro_kernel_config->vector_name,
                 1, 2, 1, 0 );
-          }else{
+          } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 vmove_instruction_out,
@@ -3070,7 +3070,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
               0,
               i_micro_kernel_config->vector_name,
               1, 2, 1, 0 );
-          }else{
+          } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 vmove_instruction_out,
@@ -3149,7 +3149,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                                             vname_out,
                                             24, 2, 0, 1 );
 
-        } else if((im == m_trips-1)){
+        } else if( im == (m_trips-1) ){
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
@@ -3159,7 +3159,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                 64,
                 i_micro_kernel_config->vector_name,
                 25, 2, 1, 0 );
-          }else{
+          } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
                 vmove_instruction_out,
