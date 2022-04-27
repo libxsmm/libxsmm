@@ -9,30 +9,30 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-set -o pipefail
+#set -o pipefail
 
-BASENAME=$(command -v basename)
 XARGS=$(command -v xargs)
-SED=$(command -v gsed)
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-CPU=${HERE}/tool_cpuinfo.sh
-
-# GNU sed is desired (macOS)
-if [ "" = "${SED}" ]; then
-  SED=$(command -v sed)
-fi
-
-if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${SED}" ] && [ -e "${CPU}" ]; then
+if [ "${XARGS}" ] && [ "$(command -v basename)" ]; then
   NC=$1
   if [ ! "${NC}" ] || [ "0" = "${NC}" ]; then
     HERE=$(cd "$(dirname "$0")" && pwd -P)
-    NC=$(${CPU} -nt)
+    CPU=${HERE}/tool_cpuinfo.sh
+    if [ -e "${CPU}" ]; then
+      NC=$(${CPU} -nt)
+    fi
+  fi
+  if [ "${NC}" ]; then
+    PNC="-P ${NC}"
   fi
   OMP_NUM_THREADS=1 \
-  ${XARGS} -I{} -P "${NC}" bash -c "{} || ( \
-    1>&2 echo 'ERROR: {}' && exit 255)" < /dev/stdin 2> >( \
-    ${SED} "/xargs/d" >&2)
+  ${XARGS} </dev/stdin "${PNC}" -I% bash -c \
+    "_trap_err() { 1>&2 echo \" -> ERROR: \$(basename %)\"; exit 1; }; trap '_trap_err' ERR; source %"
+  RESULT=$?
+  if [ "0" != "${RESULT}" ]; then
+    1>&2 echo "--------------------------------------------------------------------------------"
+    exit ${RESULT}
+  fi
 else
   >&2 echo "Error: missing prerequisites!"
   exit 1
