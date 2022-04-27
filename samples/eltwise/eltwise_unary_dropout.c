@@ -16,7 +16,7 @@
 
 #include "eltwise_common.h"
 
-#if 0
+#if 10
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 

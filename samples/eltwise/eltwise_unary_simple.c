@@ -43,6 +43,9 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
+#if 10
+#define USE_ZERO_RNG_STATE_UNITTEST
+#endif
 
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
@@ -390,6 +393,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     } else{
       error_bound = 0.0007;
     }
+  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    /* machine epsilon for BF8 = 0.125, error_bound = 2*epsilon */
+    error_bound = 0.25;
   } else {
     error_bound = 0.007;
   }
