@@ -2995,7 +2995,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
             if ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX)) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
-                                                537138704,
+                                                LIBXSMM_X86_INSTR_VMOVUPS,
                                                 bf16_accum,
                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                 0,
@@ -3022,7 +3022,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                537138704,
+                LIBXSMM_X86_INSTR_VMOVUPS,
                 bf16_accum,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 0,
@@ -3064,7 +3064,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
-              537138704,
+              LIBXSMM_X86_INSTR_VMOVUPS,
               bf16_accum,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               0,
@@ -3088,7 +3088,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
-                                            537138704,
+                                            LIBXSMM_X86_INSTR_VMOVUPS,
                                             bf16_accum,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             0,
@@ -3126,7 +3126,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
             if ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX)) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
-                                                537138704,
+                                                LIBXSMM_X86_INSTR_VMOVUPS,
                                                 bf16_accum,
                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                 64,
@@ -3153,7 +3153,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_micro_kernel_config->instruction_set,
-                537138704,
+                LIBXSMM_X86_INSTR_VMOVUPS,
                 bf16_accum,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 64,
@@ -3195,7 +3195,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
               i_micro_kernel_config->instruction_set,
-              537138704,
+              LIBXSMM_X86_INSTR_VMOVUPS,
               bf16_accum,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               64,
@@ -3219,7 +3219,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
-                                            537138704,
+                                            LIBXSMM_X86_INSTR_VMOVUPS,
                                             bf16_accum,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             64,

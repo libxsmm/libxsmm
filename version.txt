@@ -1,1 +1,1 @@
-libxsmm-master-1.16.1-2319
+avx512-eltwise-v1-1.16.1-2355
