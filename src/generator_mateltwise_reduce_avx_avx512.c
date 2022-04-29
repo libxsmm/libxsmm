@@ -2252,7 +2252,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
                                                      LIBXSMM_X86_INSTR_VBLENDMPS,
                                                      i_micro_kernel_config->vector_name,
-                                                     aux_vreg, cur_vreg, cur_vreg, use_m_masking, 0 );
+                                                     cur_vreg, aux_vreg, cur_vreg, use_m_masking, 0 );
       }
 
       if ( compute_plain_vals_reduce > 0 ) {
