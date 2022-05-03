@@ -121,31 +121,31 @@ typedef struct libxsmm_dnn_fc_bwd_config {
   libxsmm_meltwfunction_unary norm_to_vnni_kernel_wt;
 } libxsmm_dnn_fc_bwd_config;
 
-libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, libxsmm_dnn_fc_eltw_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp );
 
-libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
     libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, libxsmm_dnn_fc_eltw_fuse fuse_type,
     libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp );
 
-void libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
     const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch );
 
-void libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
                           const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch );
 
-void libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
     float* dbias_ptr, const unsigned char* relu_ptr, libxsmm_dnn_fc_pass pass, int start_tid, int my_tid, void* scratch );
 
-void libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                           const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                           libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, libxsmm_dnn_fc_pass pass, int start_tid, int my_tid, void* scratch );
 
-void destroy_libxsmm_dnn_fc_fwd(libxsmm_dnn_fc_fwd_config* cfg);
+LIBXSMM_API void destroy_libxsmm_dnn_fc_fwd(libxsmm_dnn_fc_fwd_config* cfg);
 
-void destroy_libxsmm_dnn_fc_bwd(libxsmm_dnn_fc_bwd_config* cfg);
+LIBXSMM_API void destroy_libxsmm_dnn_fc_bwd(libxsmm_dnn_fc_bwd_config* cfg);
 
 #endif
 

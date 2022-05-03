@@ -30,7 +30,7 @@
 /* Helper functions for convolutions' general param setup */
 /**********************************************************/
 
-void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk ) {
+LIBXSMM_API_INLINE void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk ) {
   int ifmblock = 0;
   int ofmblock = 0;
   int lp_block = 0;
@@ -101,7 +101,7 @@ void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* 
   *fm_lp_block = lp_block;
 }
 
-int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ofm, lp;
 
@@ -110,7 +110,7 @@ int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ifm, lp;
 
@@ -119,7 +119,7 @@ int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   int ifm, ofm;
 
@@ -128,7 +128,7 @@ int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* FIXME: For now fallback only if MB is not divisible by number of threads */
   if (cfg->N % cfg->threads != 0) {
@@ -137,12 +137,12 @@ int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_blocksifm( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksifm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->C / cfg->ifmblock;
   return result;
 }
 
-int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->K / cfg->ofmblock;
   return result;
 }
@@ -150,7 +150,7 @@ int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg ) {
 /**********************************************************/
 /* Helper functions for FWD convolutions' parameter setup */
 /**********************************************************/
-int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   result = cfg->ofw;
   if (cfg->ofw == 56) {
@@ -164,7 +164,7 @@ int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Pack only for small images and when having large K to amortize, and we can only pack for 1x1 convolutions */
   if ((cfg->ofw <= 14) && (cfg->K > 512) && (cfg->R == 1) && (cfg->S == 1) && (cfg->u == 2) && (cfg->v == 2)) {
@@ -191,7 +191,7 @@ int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* Multiple rows for "small" images and 1x1 convolutions */
   if ((cfg->ofh <= 14) && (cfg->R == 1) && (cfg->S == 1) && (cfg->pad_w_out == 0) && (cfg->pad_h_out == 0)) {
@@ -222,7 +222,7 @@ int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg ) {
   int result = cfg->fwd_ofw_rb * cfg->fwd_ofh_rb;
   /* In the case below we calculate redundantly pixels in order to efficiently use AMX */
 #if 0
@@ -237,7 +237,7 @@ int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg ) {
   int result = 14;
 
 #if 0
@@ -271,7 +271,7 @@ int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg ) {
   int result = 1;
   /* For 1x1 Convolutions bring in kernel all IFMs unless filters are huge*/
   if ((cfg->R == 1) && (cfg->S == 1) ) {
@@ -313,7 +313,7 @@ int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Switch to loop order 1 only if 1x1 convolution with "large" input image and "small" K */
   if ((cfg->H >= 28) && (cfg->R == 1) && (cfg->S == 1) && (cfg->C >=512) && (cfg->K <=512)) {
@@ -328,7 +328,7 @@ int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 8;
   if (cfg->ofw == 7 && cfg->C == 2048 && cfg->K == 512) {
     result = 4;
@@ -341,7 +341,7 @@ int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg ) {
   int result = 8;
   if (cfg->ofw == 14 && cfg->K == 1024) {
     result = 16;
@@ -353,7 +353,7 @@ int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 #if 0
   /* Use "hybrid" minibatch/ofm parallelization if we have huge filters */
@@ -374,7 +374,7 @@ int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg
   return result;
 }
 
-int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Avoid rim FMA if the convolution is 3x3 (non-strided) and the image is "small" */
   if ((cfg->R == 3) && (cfg->S == 3) &&
@@ -401,7 +401,7 @@ int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   /* Shuffle filter accesses only if "pure minibatch" parallelization and large filters are involved */
   if ((cfg->use_ofm_parallelization == 0) && (cfg->C > 512) && (cfg->K > 512)) {
@@ -424,7 +424,7 @@ int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg
   return result;
 }
 
-int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ((cfg->overwrite_output) > 0) {
     if ((cfg->R == 1) && (cfg->S == 1)) {
@@ -440,7 +440,7 @@ int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
 
 #if defined(LIBXSMM_DNN_CONV_SETUP_USE_NTS)
@@ -470,7 +470,7 @@ int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg ) {
   int result = 0;
   if ( (cfg->pad_h != cfg->pad_h_in) || (cfg->pad_w != cfg->pad_w_in) ) {
     result = 1;
@@ -478,7 +478,7 @@ int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg ) {
   return result;
 }
 
-void libxsmm_dnn_conv_setup_fwd_scratch( libxsmm_dnn_conv_config* cfg ) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_fwd_scratch( libxsmm_dnn_conv_config* cfg ) {
   cfg->fwd_packing_padding_scratch_size = 0;
   /* packing of input */
   if ( cfg->pack_input != 0 ) {
@@ -1128,7 +1128,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_upd_scratch( libxsmm_dnn_conv_con
     cfg->upd_lp_filter_full_scratch_size;
 }
 
-void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
   libxsmm_dnn_conv_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint ldx;
@@ -1674,7 +1674,7 @@ void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
   *inout_cfg = res;
 }
 
-void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
   libxsmm_dnn_conv_config res = *inout_cfg;
   if ( res.datatype_in == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_blasint ldA;
@@ -2081,7 +2081,7 @@ void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
   *inout_cfg = res;
 }
 
-void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg) {
   libxsmm_dnn_conv_config res = *inout_cfg;
   res.A_offsets_upd = NULL;
   res.B_offsets_upd = NULL;
@@ -2733,7 +2733,7 @@ void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg) 
   *inout_cfg = res;
 }
 
-libxsmm_dnn_conv_config setup_libxsmm_dnn_conv( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cnn_dtype_out, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
+LIBXSMM_API libxsmm_dnn_conv_config setup_libxsmm_dnn_conv( libxsmm_datatype cnn_dtype_in, libxsmm_datatype cnn_dtype_out, libxsmm_blasint N, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint R, libxsmm_blasint S,
     libxsmm_blasint stride_h, libxsmm_blasint stride_w,
     libxsmm_blasint pad_h, libxsmm_blasint pad_w,
     libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in,
@@ -2869,7 +2869,7 @@ libxsmm_dnn_conv_config setup_libxsmm_dnn_conv( libxsmm_datatype cnn_dtype_in, l
   return res;
 }
 
-void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cfg) {
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cfg) {
   if (cfg->A_offsets != NULL) {
     libxsmm_free(cfg->A_offsets);
   }
@@ -2902,7 +2902,7 @@ void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cf
   }
 }
 
-void destroy_libxsmm_dnn_conv(libxsmm_dnn_conv_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_conv(libxsmm_dnn_conv_config* cfg) {
 
   libxsmm_dnn_conv_free_offset_brgemm_aux_arrays(cfg);
 

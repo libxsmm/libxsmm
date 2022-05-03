@@ -14,54 +14,54 @@
 
 #include <libxsmm_dnn_conv.h>
 
-void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk );
+LIBXSMM_API_INLINE void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_blasint bc, libxsmm_blasint bk );
 
-int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_ifmblock( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_ofmblock( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fm_lp_block( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fallback_loops_fwd( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_blocksifm( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksifm( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksofm( libxsmm_dnn_conv_config* cfg );
 
 /**********************************************************/
 /* Helper functions for FWD convolutions' parameter setup */
 /**********************************************************/
-int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_ofw_rb( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_pixels_gemm( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_block_H( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_blocksifm_blocking( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_loop_order_fwd( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_fwd_IFM( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_block_fwd_OFM( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_use_ofm_parallelization( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_rim_fmas_fwd( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_shuffle_filter_accesses( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_avoid_acc_load( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_init_fwd_gemm_flags( libxsmm_dnn_conv_config* cfg );
 
-int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_padding_copy( libxsmm_dnn_conv_config* cfg );
 
-void libxsmm_dnn_conv_setup_fwd_scratch( libxsmm_dnn_conv_config* cfg );
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_fwd_scratch( libxsmm_dnn_conv_config* cfg );
 
 /**********************************************************/
 /* Helper functions for BWD convolutions' parameter setup */
@@ -131,13 +131,13 @@ LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_upd_padding_copy( libxsmm_dnn_conv
 
 LIBXSMM_API_INLINE void libxsmm_dnn_conv_setup_upd_scratch( libxsmm_dnn_conv_config* cfg );
 
-void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg);
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_fwd_kernels( libxsmm_dnn_conv_config* inout_cfg);
 
-void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg);
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_config* inout_cfg);
 
-void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg);
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_config* inout_cfg);
 
-void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cfg);
+LIBXSMM_API_INLINE void libxsmm_dnn_conv_free_offset_brgemm_aux_arrays( libxsmm_dnn_conv_config* cfg);
 
 #endif
 

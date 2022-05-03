@@ -11,7 +11,7 @@
 
 #include <libxsmm_dnn_conv.h>
 
-void libxsmm_dnn_conv_upd_exec( libxsmm_dnn_conv_config cfg, const float* in_act_ptr, const float* dout_act_ptr, float* dfilter_ptr,
+LIBXSMM_API void libxsmm_dnn_conv_upd_exec( libxsmm_dnn_conv_config cfg, const float* in_act_ptr, const float* dout_act_ptr, float* dfilter_ptr,
     unsigned char* bias_ptr, int start_tid, int my_tid, void* scratch ) {
   int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1,  oj, oi, ii, ij, kj, ki, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm;
   /* computing first logical thread */

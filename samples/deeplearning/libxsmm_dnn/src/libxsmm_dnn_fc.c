@@ -11,7 +11,7 @@
 
 #include <libxsmm_dnn_fc.h>
 
-libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
                                  libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, libxsmm_dnn_fc_eltw_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   libxsmm_dnn_fc_fwd_config res;
@@ -481,7 +481,7 @@ libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N, libxsmm_bl
   return res;
 }
 
-libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
+LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint K, libxsmm_blasint bn,
     libxsmm_blasint bc, libxsmm_blasint bk, libxsmm_blasint threads, libxsmm_dnn_fc_eltw_fuse fuse_type,
     libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   libxsmm_dnn_fc_bwd_config res;
@@ -1203,7 +1203,7 @@ libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N, libxsmm_bl
   return res;
 }
 
-void libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd_config cfg, const float* wt_ptr, const float* in_act_ptr, float* out_act_ptr,
     const float* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch ) {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
   const libxsmm_blasint nBlocksOFm = cfg.K / cfg.bk;
@@ -1422,7 +1422,7 @@ void libxsmm_dnn_fc_fwd_exec_f32( libxsmm_dnn_fc_fwd_config cfg, const float* wt
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_fc_fwd_exec_bf16_vnni_format( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_fwd_exec_bf16_vnni_format( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
                                       const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
 {
   const libxsmm_blasint nBlocksIFm = cfg.C / cfg.bc;
@@ -1634,13 +1634,13 @@ void libxsmm_dnn_fc_fwd_exec_bf16_vnni_format( libxsmm_dnn_fc_fwd_config cfg, co
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_fwd_exec_bf16( libxsmm_dnn_fc_fwd_config cfg, const libxsmm_bfloat16* wt_ptr, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr,
                           const libxsmm_bfloat16* bias_ptr, unsigned char* relu_ptr, int start_tid, int my_tid, void* scratch )
 {
   libxsmm_dnn_fc_fwd_exec_bf16_vnni_format( cfg, wt_ptr, in_act_ptr, out_act_ptr, bias_ptr, relu_ptr, start_tid, my_tid, scratch );
 }
 
-void libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd_config cfg, const float* wt_ptr, float* din_act_ptr,
     const float* dout_act_ptr, float* dwt_ptr, const float* in_act_ptr,
     float* dbias_ptr, const unsigned char* relu_ptr, libxsmm_dnn_fc_pass pass, int start_tid, int my_tid, void* scratch ) {
   /* here we assume that input and output blocking is similar */
@@ -1956,7 +1956,7 @@ void libxsmm_dnn_fc_bwd_exec_f32( libxsmm_dnn_fc_bwd_config cfg, const float* wt
   }
 }
 
-void libxsmm_dnn_fc_bwd_exec_bf16_vnni_format( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_bf16_vnni_format( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                                       const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                                       libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, libxsmm_dnn_fc_pass pass, int start_tid, int my_tid, void* scratch )
 {
@@ -2418,7 +2418,7 @@ void libxsmm_dnn_fc_bwd_exec_bf16_vnni_format( libxsmm_dnn_fc_bwd_config cfg,  c
   }
 }
 
-void libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
+LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm_bfloat16* wt_ptr, libxsmm_bfloat16* din_act_ptr,
                           const libxsmm_bfloat16* dout_act_ptr, libxsmm_bfloat16* dwt_ptr, const libxsmm_bfloat16* in_act_ptr,
                           libxsmm_bfloat16* dbias_ptr, const unsigned char* relu_ptr, libxsmm_dnn_fc_pass pass, int start_tid, int my_tid, void* scratch )
 {
@@ -2426,10 +2426,10 @@ void libxsmm_dnn_fc_bwd_exec_bf16( libxsmm_dnn_fc_bwd_config cfg,  const libxsmm
                                    dbias_ptr, relu_ptr, pass, start_tid, my_tid, scratch );
 }
 
-void destroy_libxsmm_dnn_fc_fwd(libxsmm_dnn_fc_fwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_fc_fwd(libxsmm_dnn_fc_fwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 }
 
-void destroy_libxsmm_dnn_fc_bwd(libxsmm_dnn_fc_bwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_fc_bwd(libxsmm_dnn_fc_bwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 }

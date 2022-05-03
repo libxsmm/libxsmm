@@ -98,7 +98,7 @@ typedef struct libxsmm_dnn_pooling_bwd_config {
   libxsmm_meltwfunction_binary  func_bwd_avg_pool;
 } libxsmm_dnn_pooling_bwd_config;
 
-libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+LIBXSMM_API libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
                                             const libxsmm_blasint R, const libxsmm_blasint S,
                                             const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
                                             const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
@@ -107,7 +107,7 @@ libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blas
                                             const libxsmm_blasint bc, const libxsmm_blasint threads, const libxsmm_dnn_pooling_type pool_type,
                                             const libxsmm_datatype datatype_in, const libxsmm_datatype datatype_out, const libxsmm_datatype datatype_comp );
 
-libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+LIBXSMM_API libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
                                             const libxsmm_blasint R, const libxsmm_blasint S,
                                             const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
                                             const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
@@ -116,21 +116,21 @@ libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blas
                                             const libxsmm_blasint bc, const libxsmm_blasint threads, const libxsmm_dnn_pooling_type pool_type,
                                             const libxsmm_datatype datatype_in, const libxsmm_datatype datatype_out, const libxsmm_datatype datatype_comp );
 
-void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch );
 
-void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
                                const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch );
 
-void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch );
 
-void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
                                const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch );
 
-void destroy_libxsmm_dnn_pooling_fwd(libxsmm_dnn_pooling_fwd_config* cfg);
+LIBXSMM_API void destroy_libxsmm_dnn_pooling_fwd(libxsmm_dnn_pooling_fwd_config* cfg);
 
-void destroy_libxsmm_dnn_pooling_bwd(libxsmm_dnn_pooling_bwd_config* cfg);
+LIBXSMM_API void destroy_libxsmm_dnn_pooling_bwd(libxsmm_dnn_pooling_bwd_config* cfg);
 
 #endif
 

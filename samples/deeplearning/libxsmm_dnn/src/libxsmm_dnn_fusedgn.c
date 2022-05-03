@@ -13,7 +13,7 @@
 
 #define BITS_PER_CHAR (8)
 
-libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
                                  libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
@@ -229,7 +229,7 @@ libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N, libxsmm_bl
   return res;
 }
 
-libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+LIBXSMM_API libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
                                  libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
@@ -651,18 +651,18 @@ libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N, libxsmm_bl
   return res;
 }
 
-void destroy_libxsmm_dnn_gn_fwd(libxsmm_dnn_gn_fwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_gn_fwd(libxsmm_dnn_gn_fwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
   /* when/if libxsmm_matrix_eqn_destroy gets added, destructors for equations should go here */
 }
 
-void destroy_libxsmm_dnn_gn_bwd(libxsmm_dnn_gn_bwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_gn_bwd(libxsmm_dnn_gn_bwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
 }
 
-void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
+LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, const float *pinp, const float *pinp_add, const float *pgamma, const float *pbeta, float *mean, float *var, float *pout, unsigned char *prelumask,
                          float eps, int start_tid, int my_tid, void *scratch ) {
 
   const libxsmm_blasint N  = cfg.N;
@@ -927,7 +927,7 @@ void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, const float *pi
 
 }
 
-void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, const libxsmm_bfloat16 *pinp_add,
+LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, const libxsmm_bfloat16 *pinp, const libxsmm_bfloat16 *pinp_add,
                           const float *pgamma, const float *pbeta, float *mean, float *var,
                           libxsmm_bfloat16 *pout, unsigned char *prelumask,
                           float eps, int start_tid, int my_tid, void *scratch ) {
@@ -1195,7 +1195,7 @@ void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, const libxsmm_
 }
 
 
-void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
+LIBXSMM_API void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, float *pdout, const float *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
                          float *pdin, float *pdin_add, float *pdgamma, float *pdbeta, float eps,
                          int start_tid, int my_tid, void *scratch) {
 
@@ -1530,7 +1530,7 @@ void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, float *pdout, c
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd_config cfg, libxsmm_bfloat16 *pdout, const libxsmm_bfloat16 *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
+LIBXSMM_API void libxsmm_dnn_gn_bwd_exec_bf16( libxsmm_dnn_gn_bwd_config cfg, libxsmm_bfloat16 *pdout, const libxsmm_bfloat16 *pinp, const float *mean, const float *var, const float *pgamma, const unsigned char *prelumask,
                           libxsmm_bfloat16 *pdin, libxsmm_bfloat16 *pdin_add, float *pdgamma, float *pdbeta, float eps,
                           int start_tid, int my_tid, void *scratch) {
 
