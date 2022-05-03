@@ -37,6 +37,7 @@
 #define LIBXSMM_TYPENAME_float f32
 #define LIBXSMM_TYPENAME_libxsmm_bfloat16 bf16
 #define LIBXSMM_TYPENAME_libxsmm_float16 f16
+#define LIBXSMM_TYTPNAME_libxsmm_bfloat8 bf8
 #define LIBXSMM_TYPENAME_int i32
 #define LIBXSMM_TYPENAME_short i16
 #define LIBXSMM_TYPENAME_char i8
@@ -47,6 +48,7 @@
 #define LIBXSMM_TYPEINFO_FP_float 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_float16 1
+#define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat8 1
 #define LIBXSMM_TYPEINFO_FP_int 0
 #define LIBXSMM_TYPEINFO_FP_short 0
 #define LIBXSMM_TYPEINFO_FP_char 0
@@ -57,6 +59,7 @@
 #define LIBXSMM_TYPESYMBOL_float F32
 #define LIBXSMM_TYPESYMBOL_libxsmm_bfloat16 BF16
 #define LIBXSMM_TYPESYMBOL_libxsmm_float16 F16
+#define LIBXSMM_TYPESYMBOL_libxsmm_bfloat8 BF8
 #define LIBXSMM_TYPESYMBOL_int I32
 #define LIBXSMM_TYPESYMBOL_short I16
 #define LIBXSMM_TYPESYMBOL_char I8
@@ -66,11 +69,12 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_BF8  ? 1 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
-  0/*invalid*/)))))))))
+  0/*invalid*/))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -149,6 +153,7 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
   LIBXSMM_DATATYPE_F16,
+  LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_I64,
   LIBXSMM_DATATYPE_I32,
   LIBXSMM_DATATYPE_I16,
