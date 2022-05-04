@@ -14,6 +14,7 @@
 #define BITS_PER_CHAR (8)
 
 LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_bn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   libxsmm_dnn_bn_fwd_config res;
@@ -52,6 +53,10 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   res.bc = bc;
   res.CP = res.C / res.bc;
   res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
+  res.pad_h_in      = pad_h_in;
+  res.pad_w_in      = pad_w_in;
+  res.pad_h_out     = pad_h_out;
+  res.pad_w_out     = pad_w_out;
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
@@ -209,6 +214,7 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
 }
 
 LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_bn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
   libxsmm_dnn_bn_bwd_config res;
@@ -247,6 +253,10 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   res.bc            = bc;
   res.CP            = res.C / res.bc;
   res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
+  res.pad_h_in      = pad_h_in;
+  res.pad_w_in      = pad_w_in;
+  res.pad_h_out     = pad_h_out;
+  res.pad_w_out     = pad_w_out;
   res.threads       = threads;
   res.fuse_type     = fuse_type;
 
