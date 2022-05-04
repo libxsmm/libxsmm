@@ -53,13 +53,13 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_FREXPF(max_value, &maxexp);
-  maxexp -= 23;
+  maxexp -= 6;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      char_data_gold[(i*ldi)+j] = (char)LIBXSMM_ROUNDF( in[(i*ldi)+j] * scf_quant );
+      char_data_gold[(i*ldi)+j] = (char)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
     }
   }
 
@@ -184,13 +184,13 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_FREXPF(max_value, &maxexp);
-  maxexp -= 15;
+  maxexp -= 14;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      short_data_gold[(i*ldi)+j] = (short)LIBXSMM_ROUNDF( in[(i*ldi)+j] * scf_quant );
+      short_data_gold[(i*ldi)+j] = (short)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
     }
   }
 
@@ -315,13 +315,13 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
   LIBXSMM_FREXPF(max_value, &maxexp);
-  maxexp -= 15;
+  maxexp -= 30;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
   /* run quantization */
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      int_data_gold[(i*ldi)+j] = (int)LIBXSMM_ROUNDF( in[(i*ldi)+j] * scf_quant );
+      int_data_gold[(i*ldi)+j] = (int)LIBXSMM_NEARBYINTF( in[(i*ldi)+j] * scf_quant );
     }
   }
 
