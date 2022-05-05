@@ -497,7 +497,6 @@ int main( int argc, char* argv[] ) {
       printf("Check-norm    : %.24f\n\n", norms_fwd_mask.normf_rel);
     }
 
-    exit(0);
   } /* checking correctness for FWD */
 
   for (i = 0; i < 1024 * 1024; i++ ) {

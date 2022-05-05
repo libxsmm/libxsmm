@@ -76,6 +76,7 @@ typedef struct libxsmm_dnn_bn_bwd_config {
   libxsmm_blasint  bc;
   libxsmm_blasint  CP;
   libxsmm_blasint  num_HW_blocks;
+  libxsmm_blasint  num_W_blocks;
   libxsmm_blasint  pad_h_in;
   libxsmm_blasint  pad_w_in;
   libxsmm_blasint  pad_h_out;
