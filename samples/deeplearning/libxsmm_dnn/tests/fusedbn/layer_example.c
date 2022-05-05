@@ -270,26 +270,35 @@ int main( int argc, char* argv[] ) {
 
   /* initialize data */
   // while debugging
+
   if (pad_h_in != 0 || pad_w_in != 0) {
-    int i, j;
-    float * tmp_inp = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ifhp*ifwp, 2097152);
+    int n, c, i, j;
+    float * tmp_inp = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ifh*ifw, 2097152);
     init_buf(tmp_inp,      N*CP*ifh*ifw*bc, 1, 0);
     const int hi_start = pad_h_in;
     const int wi_start = pad_w_in;
-    const int hi_end = pad_h_in + H;
-    const int wi_end = pad_w_in + W;
+    const int hi_end = hi_start + H;
+    const int wi_end = wi_start + W;
 
+#if 0
     zero_buf(naive_inp, N*CP*ifhp*ifwp*bc);
-    for (i = 0; i < ifh; i++) {
-      for (j = 0; j < ifw; j++) {
-          naive_inp[(i + hi_start) * ifwp + (j + wi_start)] = tmp_inp[i * ifw + j];
+#else
+    init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
+#endif
+    for (n = 0; n < N; n++) {
+      for (c = 0; c < C; c++) {
+        for (i = 0; i < ifh; i++) {
+          for (j = 0; j < ifw; j++) {
+            naive_inp[n*C*ifwp*ifhp + c*ifwp*ifhp + (i + hi_start) * ifwp + (j + wi_start)] = tmp_inp[n*C*ifw*ifh + c*ifw*ifh + i * ifw + j];
+          }
+        }
       }
     }
-
     libxsmm_free(tmp_inp);
   } else {
   init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
   }
+
   // final should be
   //init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
 
@@ -297,8 +306,8 @@ int main( int argc, char* argv[] ) {
   init_buf(naive_dinp,     N*CP*ifhp*ifwp*bc, 1, 0);
   // while debugging
   if (pad_h_out != 0 || pad_w_out != 0) {
-    int i, j;
-    float * tmp_dout = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ofhp*ofwp, 2097152);
+    int n, c, i, j;
+    float * tmp_dout = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ofh*ofw, 2097152);
     init_buf(tmp_dout,      N*CP*ofh*ofw*bc, 1, 0);
     const int ho_start = pad_h_out;
     const int wo_start = pad_w_out;
@@ -306,12 +315,15 @@ int main( int argc, char* argv[] ) {
     const int wo_end = pad_w_out + W;
 
     zero_buf(naive_dout, N*CP*ofhp*ofwp*bc);
-    for (i = 0; i < ofh; i++) {
-      for (j = 0; j < ofw; j++) {
-          naive_dout[(i + ho_start) * ofwp + (j + wo_start)] = tmp_dout[i * ofw + j];
+    for (n = 0; n < N; n++) {
+      for (c = 0; c < C; c++) {
+        for (i = 0; i < ofh; i++) {
+          for (j = 0; j < ofw; j++) {
+              naive_dout[n*C*ifwp*ifhp + c*ifwp*ifhp + (i + ho_start) * ofwp + (j + wo_start)] = tmp_dout[n*C*ifw*ifh + c*ifw*ifh + i * ofw + j];
+          }
+        }
       }
     }
-
     libxsmm_free(tmp_dout);
   } else {
   init_buf(naive_dout,      N*CP*ofhp*ofwp*bc, 1, 0);
@@ -484,6 +496,8 @@ int main( int argc, char* argv[] ) {
       printf("Linf rel.error: %.24f\n", norms_fwd_mask.linf_rel);
       printf("Check-norm    : %.24f\n\n", norms_fwd_mask.normf_rel);
     }
+
+    exit(0);
   } /* checking correctness for FWD */
 
   for (i = 0; i < 1024 * 1024; i++ ) {

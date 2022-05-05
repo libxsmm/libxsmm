@@ -44,6 +44,7 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_blasint  bc;
   libxsmm_blasint  CP;
   libxsmm_blasint  num_HW_blocks;
+  libxsmm_blasint  num_W_blocks;
   libxsmm_blasint  pad_h_in;
   libxsmm_blasint  pad_w_in;
   libxsmm_blasint  pad_h_out;
@@ -59,7 +60,10 @@ typedef struct libxsmm_dnn_bn_fwd_config {
 
   libxsmm_matrix_eqn_function  func10;
   libxsmm_meltwfunction_unary  reduce_HW_kernel;
+  libxsmm_meltwfunction_unary  reduce_W_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
+  libxsmm_meltwfunction_unary  all_zero_hp_kernel;
+  libxsmm_meltwfunction_unary  all_zero_wp_kernel;
   libxsmm_meltwfunction_binary helper_add_kernel;
   libxsmm_dnn_bn_fuse        fuse_type;
 } libxsmm_dnn_bn_fwd_config;
