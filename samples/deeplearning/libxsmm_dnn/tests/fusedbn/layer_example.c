@@ -269,67 +269,44 @@ int main( int argc, char* argv[] ) {
   naive_dinp_add_bf16 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*C*ifhp*ifwp, 2097152);
 
   /* initialize data */
-  // while debugging
-
+  init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
+  /*
+  //Should not affect the outcome as the rims must not be read
   if (pad_h_in != 0 || pad_w_in != 0) {
     int n, c, i, j;
-    float * tmp_inp = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ifh*ifw, 2097152);
-    init_buf(tmp_inp,      N*CP*ifh*ifw*bc, 1, 0);
-    const int hi_start = pad_h_in;
-    const int wi_start = pad_w_in;
-    const int hi_end = hi_start + H;
-    const int wi_end = wi_start + W;
-
-#if 0
-    zero_buf(naive_inp, N*CP*ifhp*ifwp*bc);
-#else
-    init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
-#endif
     for (n = 0; n < N; n++) {
       for (c = 0; c < C; c++) {
-        for (i = 0; i < ifh; i++) {
-          for (j = 0; j < ifw; j++) {
-            naive_inp[n*C*ifwp*ifhp + c*ifwp*ifhp + (i + hi_start) * ifwp + (j + wi_start)] = tmp_inp[n*C*ifw*ifh + c*ifw*ifh + i * ifw + j];
+        for (i = 0; i < ifhp; i++) {
+          for (j = 0; j < ifwp; j++) {
+            if (i < pad_h_in || i >= pad_h_in + ifh || j < pad_w_in || j >= pad_w_in + ifw)
+              naive_inp[n*C*ifwp*ifhp + c*ifwp*ifhp + i * ifwp + j] = 0;
           }
         }
       }
     }
-    libxsmm_free(tmp_inp);
-  } else {
-  init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
   }
-
-  // final should be
-  //init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
+  */
 
   init_buf(naive_inp_add,  N*CP*ifhp*ifwp*bc, 1, 0);
   init_buf(naive_dinp,     N*CP*ifhp*ifwp*bc, 1, 0);
-  // while debugging
+  init_buf(naive_dout,     N*CP*ofhp*ofwp*bc, 1, 0);
+  /*
+  Should not affect the outcome as the rims must not be read
   if (pad_h_out != 0 || pad_w_out != 0) {
     int n, c, i, j;
-    float * tmp_dout = (float*) libxsmm_aligned_malloc( sizeof(float)*N*C*ofh*ofw, 2097152);
-    init_buf(tmp_dout,      N*CP*ofh*ofw*bc, 1, 0);
-    const int ho_start = pad_h_out;
-    const int wo_start = pad_w_out;
-    const int ho_end = pad_h_out + H;
-    const int wo_end = pad_w_out + W;
-
-    zero_buf(naive_dout, N*CP*ofhp*ofwp*bc);
     for (n = 0; n < N; n++) {
       for (c = 0; c < C; c++) {
-        for (i = 0; i < ofh; i++) {
-          for (j = 0; j < ofw; j++) {
-              naive_dout[n*C*ifwp*ifhp + c*ifwp*ifhp + (i + ho_start) * ofwp + (j + wo_start)] = tmp_dout[n*C*ifw*ifh + c*ifw*ifh + i * ofw + j];
+        for (i = 0; i < ofhp; i++) {
+          for (j = 0; j < ofwp; j++) {
+            if (i < pad_h_out || i >= pad_h_out + ofh || j < pad_w_out || j >= pad_w_out + ofw)
+              naive_dout[n*C*ofwp*ofhp + c*ofwp*ofhp + i * ofwp + j] = 0;
           }
         }
       }
     }
-    libxsmm_free(tmp_dout);
-  } else {
-  init_buf(naive_dout,      N*CP*ofhp*ofwp*bc, 1, 0);
   }
-  // final should be this
-  //init_buf(naive_dout,     N*CP*ofhp*ofwp*bc, 1, 0);
+  */
+
   init_buf(gamma,          CP*bc,      1, 0);
   init_buf(beta,           CP*bc,      1, 0);
   init_buf(naive_dgamma,   CP*bc,      1, 0);
@@ -599,6 +576,22 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_bwd_din.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_bwd_din.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_bwd_din.normf_rel);
+
+    /* Current batchnorm bwd implementation does not change the rim for dout (while naive implementation zeroes it out)
+       so the rim is zeroed out here for TPP dout (naive_eqn_dout) */
+    if (pad_h_out != 0 || pad_w_out != 0) {
+      int n, c, i, j;
+      for (n = 0; n < N; n++) {
+        for (c = 0; c < C; c++) {
+          for (i = 0; i < ofhp; i++) {
+            for (j = 0; j < ofwp; j++) {
+              if (i < pad_h_out || i >= pad_h_out + ofh || j < pad_w_out || j >= pad_w_out + ofw)
+                naive_eqn_dout[n*C*ofwp*ofhp + c*ofwp*ofhp + i * ofwp + j] = 0;
+            }
+          }
+        }
+      }
+    }
 
     printf("############################################\n");
     printf("# Correctness BWD Batchnorm - Dout         #\n");
