@@ -1170,7 +1170,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
   LIBXSMM_VLA_DECL(5,       float,          din,      pdin,     CP, ifhp, ifwp, bc);    /* [N, CP, ifhp, ifwp, bc] */
   LIBXSMM_VLA_DECL(5,       float,          din_add,  pdin_add, CP, ifhp, ifwp, bc);    /* [N, CP, ifhp, ifwp, bc] */
   LIBXSMM_VLA_DECL(5, const float,          inp,      pinp,     CP, ifhp, ifwp, bc);    /* [N, CP, ifhp, ifwp, bc] */
-  LIBXSMM_VLA_DECL(5,       float,          dout,     pdout   + (ho_start * ofwp + wo_start) * bc, CP, ofhp, ofwp, bc);                    /* [N, CP, ofhp, ofwp, bc] */
+  LIBXSMM_VLA_DECL(5,       float,          dout,     pdout     + (ho_start * ofwp + wo_start) * bc, CP, ofhp, ofwp, bc);                  /* [N, CP, ofhp, ofwp, bc] */
   LIBXSMM_VLA_DECL(5, const unsigned char, relumask , prelumask + (ho_start * ofwp + wo_start) * bc, CP, ofhp, ofwp, bc/BITS_PER_CHAR);    /* [N, CP, ofhp, ofwp, bc/BITS_PER_CHAR] */
 
   LIBXSMM_VLA_DECL(2, const float, gamma,   pgamma,  bc);                /* [CP, bc] */
@@ -1254,19 +1254,17 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
       arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
 
       if (cfg.pad_h_in != 0 || cfg.pad_w_in != 0 || cfg.pad_h_out != 0 || cfg.pad_w_out != 0) {
-        /* zeroing out strips [0, hi_start) x ifwp x bc and [hi_end, ifhp) x ifwp x bc */
+        /* Reminder: dout and relumask are already shifted by the offset (= point to the non-padded part already),
+           while the other arrays are non-shifted (and hence accesses require offsets */
+        /* zeroing out strip [0, hi_start) */
         if (cfg.pad_h_in != 0) {
           all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, 0, 0, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_hp_kernel(&all_zero_param);
-          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi_end, 0, 0, CP, ifhp, ifwp, bc);
-          cfg.all_zero_hp_kernel(&all_zero_param);
         }
         for (ho = 0, hi = hi_start; ho < H; ho++, hi++) {
-          /* zeroing out starting [0, wi_start) x bc and [wi_end, ifwp] x bc blocks for fixed hi */
+          /* zeroing out starting [0, wi_start) x bc block for fixed hi */
           if (cfg.pad_w_in != 0) {
             all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, 0, 0, CP, ifhp, ifwp, bc);
-            cfg.all_zero_wp_kernel(&all_zero_param);
-            all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
             cfg.all_zero_wp_kernel(&all_zero_param);
           }
           for (wb = 0; wb < num_W_blocks; wb++) {
@@ -1297,7 +1295,20 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
             eqn_param.output.primary = lcl_dbeta_ptr;
             cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
           }
+
+          /* zeroing out ending [wi_end, ifwp] x bc block for fixed hi */
+          if (cfg.pad_w_in != 0) {
+            all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
+            cfg.all_zero_wp_kernel(&all_zero_param);
+          }
+
         }
+        /* zeroing out strip [hi_end, ifhp) x ifwp x bc */
+        if (cfg.pad_h_in != 0) {
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi_end, 0, 0, CP, ifhp, ifwp, bc);
+          cfg.all_zero_hp_kernel(&all_zero_param);
+        }
+
       } else { /* no padding */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           ho = (hwb*(HW/num_HW_blocks))/W;
@@ -1329,8 +1340,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
 
           eqn_param.output.primary = lcl_dbeta_ptr;
           cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-        }
-
+        } /* loop over hw blocks */
       } /* if-else for the presence of input padding */
 
       copy_param.in.primary = lcl_dgamma_ptr;
@@ -1411,15 +1421,17 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
     arg_array[7].primary = c;
 
     if (cfg.pad_h_in != 0 || cfg.pad_w_in != 0 || cfg.pad_h_out != 0 || cfg.pad_w_out != 0) {
+      /* Reminder: dout and relumask are already shifted by the offset (= point to the non-padded part already),
+         while the other arrays are non-shifted (and hence accesses require offsets */
       /* zeroing out strip [0, hi_start) x ifwp x bc */
       if (cfg.pad_h_in != 0) {
         all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, 0, 0, 0, CP, ifhp, ifwp, bc);
         cfg.all_zero_hp_kernel(&all_zero_param);
       }
       for (ho = 0, hi = hi_start; ho < H; ho++, hi++) {
-        /* zeroing out starting [0, wi_start) x bc block for fixed ho */
+        /* zeroing out starting [0, wi_start) x bc block for fixed hi */
         if (cfg.pad_w_in != 0) {
-          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi,      0, 0, CP, ifhp, ifwp, bc);
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, 0, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_wp_kernel(&all_zero_param);
         }
         for (wb = 0; wb < num_W_blocks; wb++) {
@@ -1430,7 +1442,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
           eqn_param.output.primary =    &LIBXSMM_VLA_ACCESS(5, din , n, cp, hi, wi_start + wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
           cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
         }
-        /* zeroing out ending [wi_end, ifwp] x bc block for fixed ho */
+        /* zeroing out ending [wi_end, ifwp] x bc block for fixed hi */
         if (cfg.pad_w_in != 0) {
           all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_wp_kernel(&all_zero_param);
@@ -1452,7 +1464,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
         eqn_param.inputs = arg_array;
         eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, w, 0, CP, H, W, bc);
         cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
-      }
+      } /* loop over hw blocks */
     } /* if-else for the presence of input padding */
   }
 
@@ -1605,19 +1617,17 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
       arg_array[6].primary = (void*)&LIBXSMM_VLA_ACCESS(2, gamma, cp, 0, bc);
 
       if (cfg.pad_h_in != 0 || cfg.pad_w_in != 0 || cfg.pad_h_out != 0 || cfg.pad_w_out != 0) {
-        /* zeroing out strips [0, hi_start) x ifwp x bc and [hi_end, ifhp) x ifwp x bc */
+        /* Reminder: dout and relumask are already shifted by the offset (= point to the non-padded part already),
+           while the other arrays are non-shifted (and hence accesses require offsets */
+        /* zeroing out strip [0, hi_start) */
         if (cfg.pad_h_in != 0) {
           all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, 0, 0, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_hp_kernel(&all_zero_param);
-          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi_end, 0, 0, CP, ifhp, ifwp, bc);
-          cfg.all_zero_hp_kernel(&all_zero_param);
         }
         for (ho = 0, hi = hi_start; ho < H; ho++, hi++) {
-          /* zeroing out starting [0, wi_start) x bc and [wi_end, ifwp] x bc blocks for fixed hi */
+          /* zeroing out starting [0, wi_start) x bc block for fixed hi */
           if (cfg.pad_w_in != 0) {
             all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, 0, 0, CP, ifhp, ifwp, bc);
-            cfg.all_zero_wp_kernel(&all_zero_param);
-            all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
             cfg.all_zero_wp_kernel(&all_zero_param);
           }
           for (wb = 0; wb < num_W_blocks; wb++) {
@@ -1648,7 +1658,19 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
             eqn_param.output.primary = lcl_dbeta_ptr;
             cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
           }
+          /* zeroing out ending [wi_end, ifwp] x bc block for fixed hi */
+          if (cfg.pad_w_in != 0) {
+            all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
+            cfg.all_zero_wp_kernel(&all_zero_param);
+          }
+
         }
+        /* zeroing out strip [hi_end, ifhp) x ifwp x bc */
+        if (cfg.pad_h_in != 0) {
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi_end, 0, 0, CP, ifhp, ifwp, bc);
+          cfg.all_zero_hp_kernel(&all_zero_param);
+        }
+
       } else { /* no padding */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           ho = (hwb*(HW/num_HW_blocks))/W;
@@ -1680,43 +1702,8 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
 
           eqn_param.output.primary = lcl_dbeta_ptr;
           cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-        }
-
+        } /* loop over hw blocks */
       } /* if-else for the presence of input padding */
-#if 0
-      for(hwb=0; hwb < num_HW_blocks; hwb++){
-        hi = (hwb*(HW/num_HW_blocks))/W;
-        ho = hi;
-        w  = (hwb*(HW/num_HW_blocks))%W;
-        if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE ||
-          cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            all_relu_param.op.primary   = (void*)(&alpha);
-            all_relu_param.in.primary   = &LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);      /* [HW,bc] */
-            all_relu_param.in.secondary = ((cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                             (void*)&LIBXSMM_VLA_ACCESS(5, relumask, n, cp, ho, w, 0, CP, H, W, bc/8)
-                                             : NULL /*&LIBXSMM_VLA_ACCESS(4, dout, n, cp, hwb*(HW/num_HW_blocks), 0, CP, HW, bc) */ ); /* dout_fwd ? nonsense? */
-            all_relu_param.out.primary  = &LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);      /* [HW,bc] */
-            cfg.inv_relu_kernel(&all_relu_param);
-          } /* ReLU/mask */
-          if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-            ewise_copy_param.in.primary  = &LIBXSMM_VLA_ACCESS(5, dout,    n, cp, ho, w, 0, CP, H, W, bc);
-            ewise_copy_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din_add, n, cp, hi, w, 0, CP, H, W, bc);
-            cfg.ewise_copy_kernel(&ewise_copy_param);
-          } /* Eltwise */
-        }
-
-        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp,  n, cp, hi, w, 0, CP, H, W, bc);
-        arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);
-
-        eqn_param.inputs = arg_array;
-        eqn_param.output.primary = lcl_dgamma_ptr;
-        cfg.dgamma_func(&eqn_param);                                                             /* dgamma += (a * inp + b) * dout */
-
-        eqn_param.output.primary = lcl_dbeta_ptr;
-        cfg.dbeta_func(&eqn_param);                                                              /* dbeta += dout */
-      }
-#endif
 
       copy_param.in.primary = lcl_dgamma_ptr;
       copy_param.out.primary = dgamma_ncp_ptr;
@@ -1796,15 +1783,17 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
     arg_array[7].primary = c;
 
     if (cfg.pad_h_in != 0 || cfg.pad_w_in != 0 || cfg.pad_h_out != 0 || cfg.pad_w_out != 0) {
+      /* Reminder: dout and relumask are already shifted by the offset (= point to the non-padded part already),
+         while the other arrays are non-shifted (and hence accesses require offsets */
       /* zeroing out strip [0, hi_start) x ifwp x bc */
       if (cfg.pad_h_in != 0) {
         all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, 0, 0, 0, CP, ifhp, ifwp, bc);
         cfg.all_zero_hp_kernel(&all_zero_param);
       }
       for (ho = 0, hi = hi_start; ho < H; ho++, hi++) {
-        /* zeroing out starting [0, wi_start) x bc block for fixed ho */
+        /* zeroing out starting [0, wi_start) x bc block for fixed hi */
         if (cfg.pad_w_in != 0) {
-          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi,      0, 0, CP, ifhp, ifwp, bc);
+          all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, 0, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_wp_kernel(&all_zero_param);
         }
         for (wb = 0; wb < num_W_blocks; wb++) {
@@ -1815,7 +1804,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
           eqn_param.output.primary =    &LIBXSMM_VLA_ACCESS(5, din , n, cp, hi, wi_start + wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
           cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
         }
-        /* zeroing out ending [wi_end, ifwp] x bc block for fixed ho */
+        /* zeroing out ending [wi_end, ifwp] x bc block for fixed hi */
         if (cfg.pad_w_in != 0) {
           all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, wi_end, 0, CP, ifhp, ifwp, bc);
           cfg.all_zero_wp_kernel(&all_zero_param);
@@ -1839,19 +1828,6 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
         cfg.din_func(&eqn_param);                                                                     /* din = dout * a + b * inp + c */
       }
     } /* if-else for the presence of input padding */
-#if 0
-    for(hwb=0; hwb < num_HW_blocks; hwb++){
-      hi = (hwb*(HW/num_HW_blocks))/W;
-      ho = hi;
-      w  = (hwb*(HW/num_HW_blocks))%W;
-      arg_array[0].primary     = (void*)&LIBXSMM_VLA_ACCESS(5, inp,  n, cp, hi, w, 0, CP, H, W, bc);
-      arg_array[3].primary     = (void*)&LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);
-      eqn_param.output.primary = (void*)&LIBXSMM_VLA_ACCESS(5, din, n, cp, hi, w, 0, CP, H, W, bc);;
-
-      eqn_param.inputs = arg_array;
-      cfg.din_func(&eqn_param);                                                     /* din = dout * a + b * inp + c */
-    }
-#endif
   }
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
