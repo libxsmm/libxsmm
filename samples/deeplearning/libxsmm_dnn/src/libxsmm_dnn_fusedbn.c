@@ -353,7 +353,7 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   binary_flags          = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   res.helper_add_kernel = libxsmm_dispatch_meltw_binary_v2(LIBXSMM_MELTW_TYPE_BINARY_ADD, binary_shape, binary_flags);
   if ( res.helper_add_kernel == NULL) {
-    fprintf( stderr, "JIT for TPP fwd helper_add_kernel failed. Bailing...!\n");
+    fprintf( stderr, "JIT for TPP bwd helper_add_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -658,7 +658,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
 
   LIBXSMM_VLA_DECL(5, const float,         inp ,     pinp     + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
   LIBXSMM_VLA_DECL(5, const float,         inp_add,  pinp_add + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
-  LIBXSMM_VLA_DECL(5,       float,         out,      pout, CP, ofhp, ofwp, bc);                                              /* [N, CP, ofhp, ofwp, bc] */
+  LIBXSMM_VLA_DECL(5,       float,         out,      pout,      CP, ofhp, ofwp, bc);                                         /* [N, CP, ofhp, ofwp, bc] */
   LIBXSMM_VLA_DECL(5,       unsigned char, relumask, prelumask, CP, ofhp, ofwp, bc/BITS_PER_CHAR);                           /* [N, CP, ofhp, ofwp, bc/BITS_PER_CHAR] */
 
   LIBXSMM_VLA_DECL(2, const float,         gamma,    pgamma, bc);                  /* [CP, bc] */
@@ -706,7 +706,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
       n  = cpxnt%N;
       cp = cpxnt/N;
 
-      int hi, wb, hwb;
+      int hi, w, wb, hwb;
 
       float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
       float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
@@ -748,8 +748,8 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
         reduce_HW_param.out.primary = lcl_sum_X_X2;                                                         /* [2*bc]  */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           hi = (hwb*(HW/num_HW_blocks))/W;
-          wb = (hwb*(HW/num_HW_blocks))%W;
-          reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb, 0, CP, H, W, bc);
+          w  = (hwb*(HW/num_HW_blocks))%W;
+          reduce_HW_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
           cfg.reduce_HW_kernel(&reduce_HW_param);                                                       /* [HW, bc] -----> [2 * bc] */
 
           add_param.in0.primary = sum_ncp_ptr;
@@ -820,7 +820,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
     n  = cpxnt%N;
     cp = cpxnt/N;
 
-    int hi, ho, wb, hwb, cb;
+    int hi, ho, w, wb, hwb, cb;
 
     for(cb = 0; cb < bc; cb++){
       float lvar   = LIBXSMM_VLA_ACCESS(2, var,   cp, cb, bc);
@@ -874,18 +874,18 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         hi = (hwb*(HW/num_HW_blocks))/W;
         ho = hi;
-        wb = (hwb*(HW/num_HW_blocks))%W;
-        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb, 0, CP, H, W, bc);          /* [HW, bc] */
+        w  = (hwb*(HW/num_HW_blocks))%W;
+        arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);          /* [HW, bc] */
         eqn_param.inputs = arg_array;
-        eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, wb, 0, CP, H, W, bc);           /* [HW,bc] */
+        eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, w, 0, CP, H, W, bc);           /* [HW,bc] */
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, wb, 0, CP, H, W, bc);    /* [HW, bc] */
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, w, 0, CP, H, W, bc);    /* [HW, bc] */
         }
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
           eqn_param.output.secondary = ((cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) ?
-                                          (void*)&LIBXSMM_VLA_ACCESS(5, relumask, n, cp, ho, wb, 0, CP, H, W, (bc/BITS_PER_CHAR)) : NULL );
+                                          (void*)&LIBXSMM_VLA_ACCESS(5, relumask, n, cp, ho, w, 0, CP, H, W, (bc/BITS_PER_CHAR)) : NULL );
         }
         cfg.func10(&eqn_param);                                                   /* Normalization equation + relu + eltwise -> y = relu( ((s*x + b)*gamma + beta) + inp_add) */
       }
@@ -933,8 +933,8 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
   /* lazy barrier init */
   libxsmm_barrier_init(cfg.barrier, ltid);
 
-  LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16,         inp,      pinp, CP, H, W, bc);            /* [N, CP, H, W, bc] */
-  LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16,         out,      pout, CP, H, W, bc);            /* [N, CP, H, W, bc] */
+  LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16,         inp,      pinp, CP, H, W, bc);          /* [N, CP, H, W, bc] */
+  LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16,         out,      pout, CP, H, W, bc);          /* [N, CP, H, W, bc] */
   LIBXSMM_VLA_DECL(2, const float,                    gamma,    pgamma, bc);                  /* [CP, bc] */
   LIBXSMM_VLA_DECL(2, const float,                    beta,     pbeta, bc);                   /* [CP, bc] */
   LIBXSMM_VLA_DECL(2,       float,                    mean,     mean,  bc);                   /* [CP, bc] */
