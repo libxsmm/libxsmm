@@ -49,6 +49,7 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_blasint  pad_w_in;
   libxsmm_blasint  pad_h_out;
   libxsmm_blasint  pad_w_out;
+  libxsmm_blasint  use_hw_blocking;
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
@@ -59,8 +60,7 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_barrier* barrier;
 
   libxsmm_matrix_eqn_function  func10;
-  libxsmm_meltwfunction_unary  reduce_HW_kernel;
-  libxsmm_meltwfunction_unary  reduce_W_kernel;
+  libxsmm_meltwfunction_unary  reduce_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_unary  all_zero_hp_kernel;
   libxsmm_meltwfunction_unary  all_zero_wp_kernel;
@@ -81,6 +81,7 @@ typedef struct libxsmm_dnn_bn_bwd_config {
   libxsmm_blasint  pad_w_in;
   libxsmm_blasint  pad_h_out;
   libxsmm_blasint  pad_w_out;
+  libxsmm_blasint  use_hw_blocking;
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
