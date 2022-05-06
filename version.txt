@@ -1,1 +1,1 @@
-dev/kvoronin/batchnorm_padding-1.17-2304
+dev/kvoronin/batchnorm_padding-1.17-2305

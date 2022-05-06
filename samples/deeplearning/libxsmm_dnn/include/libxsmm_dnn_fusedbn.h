@@ -94,6 +94,8 @@ typedef struct libxsmm_dnn_bn_bwd_config {
   libxsmm_matrix_eqn_function  dbeta_func;
   libxsmm_matrix_eqn_function  din_func;
   libxsmm_meltwfunction_unary  all_zero_kernel;
+  libxsmm_meltwfunction_unary  all_zero_hp_kernel;
+  libxsmm_meltwfunction_unary  all_zero_wp_kernel;
   libxsmm_meltwfunction_binary helper_add_kernel;
   libxsmm_meltwfunction_unary  helper_copy_kernel;
   libxsmm_meltwfunction_unary  inv_relu_kernel;
