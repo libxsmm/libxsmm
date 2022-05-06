@@ -3010,13 +3010,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         /* Handling the padding at the end */
         for (ho = ho_end; ho < ofhp; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
-        for (ho = ho_end; ho < ofhp; ho++) {
-          for (wo = 0; wo < ofwp; wo++) {
-            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+        for (wo = wo_end; wo < ofwp; wo++) {
+          for (ho = 0; ho < ofhp; ho++) {
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
@@ -3026,8 +3026,8 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
             *del_input_add_ptr = 0;
           }
         }
-        for (hi = hi_end; hi < ifhp; hi++) {
-          for (wi = 0; wi < ifwp; wi++) {
+        for (wi = wi_end; wi < ifwp; wi++) {
+          for (hi = 0; hi < ifhp; hi++) {
             float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
             *del_input_add_ptr = 0;
           }
@@ -3074,8 +3074,8 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
           *del_input_ptr = 0;
         }
       }
-      for (hi = hi_end; hi < ifhp; hi++) {
-        for (wi = 0; wi < ifwp; wi++) {
+      for (wi = wi_end; wi < ifwp; wi++) {
+        for (hi = 0; hi < ifhp; hi++) {
           float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
           *del_input_ptr = 0;
         }
