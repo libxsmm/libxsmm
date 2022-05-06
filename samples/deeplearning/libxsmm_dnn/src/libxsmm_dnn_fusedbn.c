@@ -193,7 +193,10 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   arg_metadata[0].eqn_idx     = my_eqn10;
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* x = [HW, bc] */
-  arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+  if (res.pad_w_out != 0 || res.pad_h_out != 0)
+    arg_shape[0].n    = res.W /res.num_W_blocks;
+  else
+    arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
@@ -218,14 +221,20 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
     arg_metadata[5].eqn_idx     = my_eqn10;
     arg_metadata[5].in_arg_pos  = 5;
     arg_shape[5].m    = res.bc;                                      /* inp_add = [HW, bc] */
-    arg_shape[5].n    = res.H*res.W / res.num_HW_blocks;
+    if (res.pad_w_out != 0 || res.pad_h_out != 0)
+      arg_shape[5].n    = res.W /res.num_W_blocks;
+    else
+      arg_shape[5].n    = res.H*res.W / res.num_HW_blocks;
     arg_shape[5].ld   = ld;
     arg_shape[5].type = res.datatype_in;
     libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[5], arg_shape[5], arg_singular_attr);
   }
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
-  eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
+  if (res.pad_w_out != 0 || res.pad_h_out != 0)
+    eqn_out_arg_shape.n    = res.W /res.num_W_blocks;
+  else
+    eqn_out_arg_shape.n    = res.H*res.W / res.num_HW_blocks;
   eqn_out_arg_shape.ld   = ld;
   eqn_out_arg_shape.type = res.datatype_out;
 
@@ -408,7 +417,10 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[0].eqn_idx     = my_eqn11;
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* inp [HW, bc] */
-  arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+  if (res.pad_w_in != 0 || res.pad_h_in != 0)
+    arg_shape[0].n    = res.W /res.num_W_blocks;
+  else
+    arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
@@ -432,7 +444,10 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[3].eqn_idx     = my_eqn11;
   arg_metadata[3].in_arg_pos  = 3;
   arg_shape[3].m    = res.bc;                                      /* dout [HW, bc] */
-  arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
+  if (res.pad_w_in != 0 || res.pad_h_in != 0)
+    arg_shape[3].n    = res.W /res.num_W_blocks;
+  else
+    arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
   arg_shape[3].ld   = ld;
   arg_shape[3].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
@@ -474,7 +489,10 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[0].eqn_idx     = my_eqn12;
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
-  arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+  if (res.pad_w_in != 0 || res.pad_h_in != 0)
+    arg_shape[0].n    = res.W /res.num_W_blocks;
+  else
+    arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
