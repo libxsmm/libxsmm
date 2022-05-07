@@ -44,6 +44,12 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_blasint  bc;
   libxsmm_blasint  CP;
   libxsmm_blasint  num_HW_blocks;
+  libxsmm_blasint  num_W_blocks;
+  libxsmm_blasint  pad_h_in;
+  libxsmm_blasint  pad_w_in;
+  libxsmm_blasint  pad_h_out;
+  libxsmm_blasint  pad_w_out;
+  libxsmm_blasint  use_hw_blocking;
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
@@ -54,8 +60,10 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_barrier* barrier;
 
   libxsmm_matrix_eqn_function  func10;
-  libxsmm_meltwfunction_unary  reduce_HW_kernel;
+  libxsmm_meltwfunction_unary  reduce_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
+  libxsmm_meltwfunction_unary  all_zero_hp_kernel;
+  libxsmm_meltwfunction_unary  all_zero_wp_kernel;
   libxsmm_meltwfunction_binary helper_add_kernel;
   libxsmm_dnn_bn_fuse        fuse_type;
 } libxsmm_dnn_bn_fwd_config;
@@ -68,6 +76,12 @@ typedef struct libxsmm_dnn_bn_bwd_config {
   libxsmm_blasint  bc;
   libxsmm_blasint  CP;
   libxsmm_blasint  num_HW_blocks;
+  libxsmm_blasint  num_W_blocks;
+  libxsmm_blasint  pad_h_in;
+  libxsmm_blasint  pad_w_in;
+  libxsmm_blasint  pad_h_out;
+  libxsmm_blasint  pad_w_out;
+  libxsmm_blasint  use_hw_blocking;
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
@@ -81,6 +95,8 @@ typedef struct libxsmm_dnn_bn_bwd_config {
   libxsmm_matrix_eqn_function  dbeta_func;
   libxsmm_matrix_eqn_function  din_func;
   libxsmm_meltwfunction_unary  all_zero_kernel;
+  libxsmm_meltwfunction_unary  all_zero_hp_kernel;
+  libxsmm_meltwfunction_unary  all_zero_wp_kernel;
   libxsmm_meltwfunction_binary helper_add_kernel;
   libxsmm_meltwfunction_unary  helper_copy_kernel;
   libxsmm_meltwfunction_unary  inv_relu_kernel;
@@ -89,10 +105,12 @@ typedef struct libxsmm_dnn_bn_bwd_config {
 } libxsmm_dnn_bn_bwd_config;
 
 LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_bn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp );
 
 LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_bn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp );
 

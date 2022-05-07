@@ -45,6 +45,10 @@ typedef struct {
   int C;
   int H;
   int W;
+  int pad_h_in;
+  int pad_w_in;
+  int pad_h_out;
+  int pad_w_out;
   int stride_h;
   int stride_w;
   int norm_type;  /* 0: full batchnorm, 1: batch scaling only */
@@ -2672,20 +2676,34 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   const int nFm = param->C;
   const int ifh = param->H;
   const int ifw = param->W;
+  const int ifhp = param->H + 2 * param->pad_h_in;
+  const int ifwp = param->W + 2 * param->pad_w_in;
+  const int hi_start = param->pad_h_in;
+  const int wi_start = param->pad_w_in;
+  const int hi_end = param->pad_h_in + param->H;
+  const int wi_end = param->pad_w_in + param->W;
   const int sh = param->stride_h;
   const int sw = param->stride_w;
+  /*
   const int ofh = ifh/sh;
   const int ofw = ifw/sw;
+  */
+  const int ofhp = param->H + 2 * param->pad_h_out;
+  const int ofwp = param->W + 2 * param->pad_w_out;
+  const int ho_start = param->pad_h_out;
+  const int wo_start = param->pad_w_out;
+  const int ho_end = param->pad_h_out + param->H;
+  const int wo_end = param->pad_w_out + param->W;
   const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
 
   int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float,   input,     input_ptr,     nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4, const float,   input_add, input_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float,   output,    output_ptr,    nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4, const float,   input,     input_ptr,     nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4, const float,   input_add, input_add_ptr, nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float,   output,    output_ptr,    nFm, ofhp, ofwp);
 
-  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofh, ofw); /* no compression, 1 char per entry (only 1 bit used) */
+  LIBXSMM_VLA_DECL(4, unsigned char, relumask,  relumask_ptr,  nFm, ofhp, ofwp); /* no compression, 1 char per entry (only 1 bit used) */
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
@@ -2702,9 +2720,9 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       float tvariance = 0.0f;
 
       for ( img = 0; img < nImg; img++ ) {
-        for ( hi = 0; hi < ifh; hi++ ) {
-          for ( wi = 0; wi < ifw; wi++ ) {
-            const float input_val = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi, wi, nFm, ifh, ifw);
+        for ( hi = hi_start; hi < hi_start + ifh; hi++ ) {
+          for ( wi = wi_start; wi < wi_start + ifw; wi++ ) {
+            const float input_val = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi, wi, nFm, ifhp, ifwp);
             ch_sum   += input_val;
             ch_sumsq += (input_val * input_val);
           }
@@ -2728,17 +2746,36 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {
-      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
-          const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifh, ifw);
+      /* Handling the padding at the start */
+      for (ho = 0; ho < ho_start; ho++) {
+        for (wo = 0; wo < ofwp; wo++) {
+          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
+          *output_ptr2 = 0;
+          unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          *relumask_ptr2 = 0;
+        }
+      }
+      for (wo = 0; wo < wo_start; wo++) {
+        for (ho = 0; ho < ofhp; ho++) {
+          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
+          *output_ptr2 = 0;
+          unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          *relumask_ptr2 = 0;
+        }
+      }
+
+      /* Computing the actual batchnorm for the middle (internal) part */
+      for ( hi = hi_start, ho = ho_start; hi < hi_end; hi += sh, ho++ ) {
+        for ( wi = wi_start, wo = wo_start; wi < wi_end; wi += sw, wo++ ) {
+          const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifhp, ifwp);
           /*const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);*/
-                float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofh, ofw);
+                float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
 
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*rcpstddev_ptr[fm] + beta_ptr[fm];
           /* Eltwise */
           if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
-            const float input_add_val = LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
+            const float input_add_val = LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifhp, ifwp);
             o += input_add_val;
           }
           /* ReLU */
@@ -2750,11 +2787,30 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
           if ( (param->fuse_type == 4) || (param->fuse_type == 5) ) {
 
             /* without compression */
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofh, ofw);
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
             *relumask_ptr2 = (unsigned char)(( o <= 0.0f ) ? 0x0 : 1/*(1 << (i%8))*/ );
           }
         }
       }
+
+      /* Handling the padding at the end */
+      for (ho = ho_end; ho < ofhp; ho++) {
+        for (wo = 0; wo < ofwp; wo++) {
+          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
+          *output_ptr2 = 0;
+          unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          *relumask_ptr2 = 0;
+        }
+      }
+      for (wo = wo_end; wo < ofwp; wo++) {
+        for (ho = 0; ho < ofhp; ho++) {
+          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
+          *output_ptr2 = 0;
+          unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          *relumask_ptr2 = 0;
+        }
+      }
+
     }
   }
 }
@@ -2862,20 +2918,34 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
   const int nFm = param->C;
   const int ifh = param->H;
   const int ifw = param->W;
+  const int ifhp = param->H + 2 * param->pad_h_in;
+  const int ifwp = param->W + 2 * param->pad_w_in;
+  const int hi_start = param->pad_h_in;
+  const int wi_start = param->pad_w_in;
+  const int hi_end = param->pad_h_in + param->H;
+  const int wi_end = param->pad_w_in + param->W;
   const int sh = param->stride_h;
   const int sw = param->stride_w;
+  /*
   const int ofh = ifh/sh;
   const int ofw = ifw/sw;
+  */
+  const int ofhp = param->H + 2 * param->pad_h_out;
+  const int ofwp = param->W + 2 * param->pad_w_out;
+  const int ho_start = param->pad_h_out;
+  const int wo_start = param->pad_w_out;
+  const int ho_end = param->pad_h_out + param->H;
+  const int wo_end = param->pad_w_out + param->W;
   const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
 
   int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float,         input,      input_ptr,      nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float,         dinput,     dinput_ptr,     nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float,         dinput_add, dinput_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4, const float,         output,     output_ptr,     nFm, ofh, ofw);
-  LIBXSMM_VLA_DECL(4,       float,         doutput,    doutput_ptr,    nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4, const float,         input,      input_ptr,      nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float,         dinput,     dinput_ptr,     nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float,         dinput_add, dinput_add_ptr, nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4, const float,         output,     output_ptr,     nFm, ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4,       float,         doutput,    doutput_ptr,    nFm, ofhp, ofwp);
   LIBXSMM_UNUSED(beta_ptr);
 
   if ( param->norm_type == 0 ) {
@@ -2888,12 +2958,40 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
       del_beta_ptr[fm] = 0.0f;
 
       for ( img = 0; img < nImg; img++ ) {
-        for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-          for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
-                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifh, ifw);
-            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, fm, ofh, ofw);
-            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
-                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
+
+        /* Handling the padding at the start */
+        for (ho = 0; ho < ho_start; ho++) {
+          for (wo = 0; wo < ofwp; wo++) {
+            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+            *del_output_ptr = 0;
+          }
+        }
+        for (wo = 0; wo < wo_start; wo++) {
+          for (ho = 0; ho < ofhp; ho++) {
+            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+            *del_output_ptr = 0;
+          }
+        }
+        for (hi = 0; hi < hi_start; hi++) {
+          for (wi = 0; wi < ifwp; wi++) {
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            *del_input_add_ptr = 0;
+          }
+        }
+        for (wi = 0; wi < wi_start; wi++) {
+          for (hi = 0; hi < ifhp; hi++) {
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            *del_input_add_ptr = 0;
+          }
+        }
+
+        /* main (middle ~ internal) part */
+        for ( hi = hi_start, ho = ho_start; hi < hi_end; hi += sh, ho++ ) {
+          for ( wi = wi_start, wo = wo_start; wi < wi_end; wi += sw, wo++ ) {
+                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, fm, ofhp, ofwp);
+            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifhp, ifwp);
+                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
 
             /* (inv) ReLU/mask */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
@@ -2908,6 +3006,32 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
             del_beta_ptr[fm]  += *del_output_ptr;
           }
         }
+
+        /* Handling the padding at the end */
+        for (ho = ho_end; ho < ofhp; ho++) {
+          for (wo = 0; wo < ofwp; wo++) {
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+            *del_output_ptr = 0;
+          }
+        }
+        for (wo = wo_end; wo < ofwp; wo++) {
+          for (ho = 0; ho < ofhp; ho++) {
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+            *del_output_ptr = 0;
+          }
+        }
+        for (hi = hi_end; hi < ifhp; hi++) {
+          for (wi = 0; wi < ifwp; wi++) {
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            *del_input_add_ptr = 0;
+          }
+        }
+        for (wi = wi_end; wi < ifwp; wi++) {
+          for (hi = 0; hi < ifhp; hi++) {
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            *del_input_add_ptr = 0;
+          }
+        }
       }
     }
   }
@@ -2917,16 +3041,46 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {
-      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++) {
-                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifh, ifw);
-          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
-          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
+      /* Handling the padding at the start */
+      for (hi = 0; hi < hi_start; hi++) {
+        for (wi = 0; wi < ifwp; wi++) {
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          *del_input_ptr = 0;
+        }
+      }
+      for (wi = 0; wi < wi_start; wi++) {
+        for (hi = 0; hi < ifhp; hi++) {
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          *del_input_ptr = 0;
+        }
+      }
+
+      /* main (middle ~ internal) part */
+      for ( hi = hi_start, ho = ho_start; hi < hi_end; hi += sh, ho++ ) {
+        for ( wi = wi_start, wo = wo_start; wi < wi_end; wi += sw, wo++) {
+                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifhp, ifwp);
+          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
 
           *del_input_ptr = gamma_ptr[fm] * rcpstddev_ptr[fm] * recp_nhw * (nhw * del_output_val -
                     (del_beta_ptr[fm] + (input_val - expectval_ptr[fm]) * del_gamma_ptr[fm] * rcpstddev_ptr[fm]));
         }
       }
+
+      /* Handling the padding at the end */
+      for (hi = hi_end; hi < ifhp; hi++) {
+        for (wi = 0; wi < ifwp; wi++) {
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          *del_input_ptr = 0;
+        }
+      }
+      for (wi = wi_end; wi < ifwp; wi++) {
+        for (hi = 0; hi < ifhp; hi++) {
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          *del_input_ptr = 0;
+        }
+      }
+
     }
   }
 }
