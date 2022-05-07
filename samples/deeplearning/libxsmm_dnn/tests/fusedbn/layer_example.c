@@ -20,7 +20,6 @@
 #endif
 
 int main( int argc, char* argv[] ) {
-
   libxsmm_dnn_bn_fwd_config libxsmm_dnn_bn_fwd;
   libxsmm_dnn_bn_bwd_config libxsmm_dnn_bn_bwd;
 
@@ -179,11 +178,6 @@ int main( int argc, char* argv[] ) {
   naive_param.C = CP*bc;
   naive_param.H = H;
   naive_param.W = W;
-
-  //naive_param.ifhp = ifhp;
-  //naive_param.ifwp = ifwp;
-  //naive_param.ofhp = ofhp;
-  //naive_param.ofwp = ofwp;
   naive_param.pad_h_in = pad_h_in;
   naive_param.pad_w_in = pad_w_in;
   naive_param.pad_h_out = pad_h_out;
@@ -270,8 +264,7 @@ int main( int argc, char* argv[] ) {
 
   /* initialize data */
   init_buf(naive_inp,      N*CP*ifhp*ifwp*bc, 1, 0);
-  /*
-  //Should not affect the outcome as the rims must not be read
+  /* Should not affect the outcome as the rims must not be read
   if (pad_h_in != 0 || pad_w_in != 0) {
     int n, c, i, j;
     for (n = 0; n < N; n++) {
@@ -290,8 +283,7 @@ int main( int argc, char* argv[] ) {
   init_buf(naive_inp_add,  N*CP*ifhp*ifwp*bc, 1, 0);
   init_buf(naive_dinp,     N*CP*ifhp*ifwp*bc, 1, 0);
   init_buf(naive_dout,     N*CP*ofhp*ofwp*bc, 1, 0);
-  /*
-  Should not affect the outcome as the rims must not be read
+  /* Should not affect the outcome as the rims must not be read
   if (pad_h_out != 0 || pad_w_out != 0) {
     int n, c, i, j;
     for (n = 0; n < N; n++) {
