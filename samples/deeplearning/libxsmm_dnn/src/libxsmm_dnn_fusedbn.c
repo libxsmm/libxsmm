@@ -644,7 +644,6 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
   const libxsmm_blasint num_W_blocks  = cfg.num_W_blocks;
 
   const libxsmm_blasint hi_start      = cfg.pad_h_in;
-  const libxsmm_blasint hi_end        = hi_start + cfg.H;
   const libxsmm_blasint wi_start      = cfg.pad_w_in;
   const libxsmm_blasint ifhp = cfg.H + 2 * cfg.pad_h_in;
   const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
@@ -936,7 +935,6 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
   const libxsmm_blasint num_W_blocks  = cfg.num_W_blocks;
 
   const libxsmm_blasint hi_start      = cfg.pad_h_in;
-  const libxsmm_blasint hi_end        = hi_start + cfg.H;
   const libxsmm_blasint wi_start      = cfg.pad_w_in;
   const libxsmm_blasint ifhp = cfg.H + 2 * cfg.pad_h_in;
   const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
@@ -1236,7 +1234,6 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
   const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
 
   const libxsmm_blasint ho_start      = cfg.pad_h_out;
-  const libxsmm_blasint ho_end        = ho_start + cfg.H;
   const libxsmm_blasint wo_start      = cfg.pad_w_out;
   /* const libxsmm_blasint wo_end        = wo_start + cfg.W; */
   const libxsmm_blasint ofhp = cfg.H + 2 * cfg.pad_h_out;
@@ -1296,6 +1293,11 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
   libxsmm_meltw_unary_param  all_relu_param;
   libxsmm_meltw_unary_param  ewise_copy_param;
 
+  LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
+  LIBXSMM_ALIGNED(float b[bc], 64);
+  LIBXSMM_ALIGNED(float c[bc], 64);
+  int cpxnt;
+
   memset( &all_zero_param,   0, sizeof(all_zero_param));
   memset( &add_param,        0, sizeof(add_param));
   memset( &copy_param,       0, sizeof(copy_param));
@@ -1307,21 +1309,11 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
 
   memset( &eqn_param,        0, sizeof(eqn_param));
 
-  LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
-  LIBXSMM_ALIGNED(float b[bc], 64);
-  LIBXSMM_ALIGNED(float c[bc], 64);
-  int n, cp;
-
-  int cpxnt;
-
   if (norm_type == LIBXSMM_DNN_BN_FULL_NORM) {
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-
-      n  = cpxnt%N;
-      cp = cpxnt/N;
-
-      int hi, ho, w, wb, hwb, cb;
-
+      int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0, cb = 0;
+      int n  = cpxnt%N;
+      int cp = cpxnt/N;
       LIBXSMM_ALIGNED(float lcl_dgamma_ptr[bc], 64);
       LIBXSMM_ALIGNED(float lcl_dbeta_ptr[bc], 64);
 
@@ -1464,48 +1456,51 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
-    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-      cfg.all_zero_kernel(&all_zero_param);
-
-      /* #pragma omp simd */
-      /* for (int cb = 0; cb < bc; cb++) { */
-      /*   pdgamma[cp*bc + cb] = 0.0f; */
-      /*   pdbeta[cp*bc + cb] = 0.0f; */
-      /* } */
-
-      int ni;
-      for(ni = 0; ni < N; ni++){
-
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, bc);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-        cfg.helper_add_kernel(&add_param);
-
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, bc);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-        cfg.helper_add_kernel(&add_param);
+    {
+      int cp = 0;
+      int ni = 0;
+      for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+        all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+        cfg.all_zero_kernel(&all_zero_param);
+        all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+        cfg.all_zero_kernel(&all_zero_param);
 
         /* #pragma omp simd */
         /* for (int cb = 0; cb < bc; cb++) { */
-        /*   pdgamma[cp*bc + cb] += dgamma_N[cp*N*bc + n*bc + cb];  */
-        /*   pdbeta[cp*bc + cb] += dbeta_N[cp*N*bc + n*bc + cb];  */
+        /*   pdgamma[cp*bc + cb] = 0.0f; */
+        /*   pdbeta[cp*bc + cb] = 0.0f; */
         /* } */
-      }
-    } /* loop over cp and nt for computing dbeta and dgamma */
+
+        for(ni = 0; ni < N; ni++){
+
+          add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, bc);
+          add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+          cfg.helper_add_kernel(&add_param);
+
+          add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, bc);
+          add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+          cfg.helper_add_kernel(&add_param);
+
+          /* #pragma omp simd */
+          /* for (int cb = 0; cb < bc; cb++) { */
+          /*   pdgamma[cp*bc + cb] += dgamma_N[cp*N*bc + n*bc + cb];  */
+          /*   pdbeta[cp*bc + cb] += dbeta_N[cp*N*bc + n*bc + cb];  */
+          /* } */
+        }
+      } /* loop over cp and nt for computing dbeta and dgamma */
+    }
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
   } /* this is only computed in case of full backward (norm_type ~ 0) */
 
   for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-    n  = cpxnt%N;
-    cp = cpxnt/N;
+    int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0, cb = 0;
+    int n  = cpxnt%N;
+    int cp = cpxnt/N;
 
-    int hi, ho, w, wb, hwb, cb;
 
     for(cb = 0; cb < bc; cb++){
       float lgamma  = LIBXSMM_VLA_ACCESS(2, gamma,  cp, cb, bc);
@@ -1599,9 +1594,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
   const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
 
   const libxsmm_blasint ho_start      = cfg.pad_h_out;
-  const libxsmm_blasint ho_end        = ho_start + cfg.H;
   const libxsmm_blasint wo_start      = cfg.pad_w_out;
-  const libxsmm_blasint wo_end        = wo_start + cfg.W;
   const libxsmm_blasint ofhp = cfg.H + 2 * cfg.pad_h_out;
   const libxsmm_blasint ofwp = cfg.W + 2 * cfg.pad_w_out;
 
@@ -1646,21 +1639,18 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
   LIBXSMM_VLA_DECL(2,       float,            dbeta,  pdbeta,  bc);                /* [CP, bc] */
 
   float alpha = 0.0f;
+  int cpxnt = 0;
 
   libxsmm_meltw_unary_param  all_zero_param;
-  memset( &all_zero_param,   0, sizeof(all_zero_param));
+  LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
+  LIBXSMM_ALIGNED(float b[bc], 64);
+  LIBXSMM_ALIGNED(float c[bc], 64);
 
   libxsmm_matrix_arg arg_array[8];
   libxsmm_matrix_eqn_param eqn_param;
 
+  memset( &all_zero_param,   0, sizeof(all_zero_param));
   memset( &eqn_param,        0, sizeof(eqn_param));
-
-  LIBXSMM_ALIGNED(float a[bc], 64); /* could also get moved into the scratch but left on the private stack as these are small, same below */
-  LIBXSMM_ALIGNED(float b[bc], 64);
-  LIBXSMM_ALIGNED(float c[bc], 64);
-  int n, cp;
-
-  int cpxnt;
 
   if (norm_type == LIBXSMM_DNN_BN_FULL_NORM) {
 
@@ -1681,11 +1671,10 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
     memset( &ewise_copy_param, 0, sizeof(ewise_copy_param));
 
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
+      int n  = cpxnt%N;
+      int cp = cpxnt/N;
 
-      n  = cpxnt%N;
-      cp = cpxnt/N;
-
-      int hi, ho, w, wb, hwb, cb;
+      int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0, cb = 0;
 
       LIBXSMM_ALIGNED(float lcl_dgamma_ptr[bc], 64);
       LIBXSMM_ALIGNED(float lcl_dbeta_ptr[bc], 64);
@@ -1828,48 +1817,49 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
 
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
-    for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-      cfg.all_zero_kernel(&all_zero_param);
-
-      /* #pragma omp simd */
-      /* for (int cb = 0; cb < bc; cb++) { */
-      /*   pdgamma[cp*bc + cb] = 0.0f; */
-      /*   pdbeta[cp*bc + cb] = 0.0f; */
-      /* } */
-
-      int ni;
-      for(ni = 0; ni < N; ni++){
-
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, bc);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
-        cfg.helper_add_kernel(&add_param);
-
-        add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, bc);
-        add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
-        cfg.helper_add_kernel(&add_param);
+    {
+      int cp = 0;
+      int ni = 0;
+      for ( cp = thr_begin_C; cp < thr_end_C; ++cp ) {
+        all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+        cfg.all_zero_kernel(&all_zero_param);
+        all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+        cfg.all_zero_kernel(&all_zero_param);
 
         /* #pragma omp simd */
         /* for (int cb = 0; cb < bc; cb++) { */
-        /*   pdgamma[cp*bc + cb] += dgamma_N[cp*N*bc + n*bc + cb];  */
-        /*   pdbeta[cp*bc + cb] += dbeta_N[cp*N*bc + n*bc + cb];  */
+        /*   pdgamma[cp*bc + cb] = 0.0f; */
+        /*   pdbeta[cp*bc + cb] = 0.0f; */
         /* } */
-      }
-    } /* loops over cp and nt for computing dbeta and dgamma */
 
+        for(ni = 0; ni < N; ni++){
+          add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dgamma_N, cp, ni, 0, N, bc);
+          add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dgamma, cp, 0, bc);
+          cfg.helper_add_kernel(&add_param);
+
+          add_param.in0.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, dbeta_N, cp, ni, 0, N, bc);
+          add_param.out.primary = &LIBXSMM_VLA_ACCESS(2, dbeta, cp, 0, bc);
+          cfg.helper_add_kernel(&add_param);
+
+          /* #pragma omp simd */
+          /* for (int cb = 0; cb < bc; cb++) { */
+          /*   pdgamma[cp*bc + cb] += dgamma_N[cp*N*bc + n*bc + cb];  */
+          /*   pdbeta[cp*bc + cb] += dbeta_N[cp*N*bc + n*bc + cb];  */
+          /* } */
+        }
+      } /* loops over cp and nt for computing dbeta and dgamma */
+    }
     libxsmm_barrier_wait(cfg.barrier, ltid);
 
   } /* this is only computed in case of full backward (norm_type ~ 0) */
 
   for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-    n  = cpxnt%N;
-    cp = cpxnt/N;
+    int n  = cpxnt%N;
+    int cp = cpxnt/N;
 
-    int hi, ho, w, wb, hwb, cb;
+    int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0, cb = 0;
 
     for(cb = 0; cb < bc; cb++){
       float lgamma  = LIBXSMM_VLA_ACCESS(2, gamma,  cp, cb, bc);
