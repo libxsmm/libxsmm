@@ -198,7 +198,6 @@ int main( int argc, char* argv[] ) {
   printf("##########################################\n");
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
-  //printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d (PADDING: must be 0s)\n", N, CP*bc, CP, bc, H, W, stride);
   printf("PARAMS: N:%d  C:%d  CP:%d bc:%d H:%d W:%d STRIDE:%d PADDING:%d %d %d %d\n", N, CP*bc, CP, bc, H, W, stride, pad_h_in, pad_w_in, pad_h_out, pad_w_out);
   printf("PARAMS: NORM TYPE:%d\n", norm_type);
   printf("PARAMS: FUSE TYPE:%d\n", fuse_type);
