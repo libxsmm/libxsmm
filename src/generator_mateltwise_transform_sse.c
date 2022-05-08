@@ -679,7 +679,7 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_sse_microkernel( li
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
-                                     i_gp_reg_in, i_micro_kernel_config->datatype_size_in * 8 );
+                                     i_gp_reg_in, i_micro_kernel_config->datatype_size_in * 16 );
 
     /* advance output pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
@@ -695,7 +695,7 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_sse_microkernel( li
 
     /* advance input pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
-                                     i_gp_reg_out, ( i_micro_kernel_config->datatype_size_out * l_ldo * i_mateltwise_desc->m/4 ) - (i_micro_kernel_config->datatype_size_out * 8)  );
+                                     i_gp_reg_out, ( i_micro_kernel_config->datatype_size_out * l_ldo * i_mateltwise_desc->m/4 ) - (i_micro_kernel_config->datatype_size_out * 16)  );
 
     /* close n loop */
     libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,

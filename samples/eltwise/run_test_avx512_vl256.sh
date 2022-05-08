@@ -107,6 +107,8 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_vnni_08b_gtld.sh
 ./kernel_test/unary_vnnitrans_16b_eqld.sh
 ./kernel_test/unary_vnnitrans_16b_gtld.sh
+./kernel_test/unary_vnnitrans_08b_eqld.sh
+./kernel_test/unary_vnnitrans_08b_gtld.sh
 ./kernel_test/unary_x2_32b_eqld.sh
 ./kernel_test/unary_x2_32b_gtld.sh
 ./kernel_test/unary_x2_mixed_eqld.sh
