@@ -1408,7 +1408,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
       } else { /* hw-blocking (implies no padding) */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           ho = (hwb*(HW/num_HW_blocks))/W;
-          hi = hi;
+          hi = ho;
           w  = (hwb*(HW/num_HW_blocks))%W;
           if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE ||
             cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1556,7 +1556,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
     } else { /* h2-blocking (implies no padding) */
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         ho = (hwb*(HW/num_HW_blocks))/W;
-        hi = hi;
+        hi = ho;
         w  = (hwb*(HW/num_HW_blocks))%W;
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp , n, cp, hi, w, 0, CP, H, W, bc);
         arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);
