@@ -807,7 +807,7 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  libxsmm_blasint Nn = ((N%4) == 0) ? N : N+(4-N%4);
+  libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
@@ -897,7 +897,7 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  libxsmm_blasint Mn = ((M%4) == 0) ? M : M+(4-M%4);
+  libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
@@ -987,8 +987,8 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  libxsmm_blasint Nn = ((N%4) == 0) ? N : N+(4+N%4);
-  libxsmm_blasint Mn = ((M%4) == 0) ? M : M+(4+M%4);
+  libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
+  libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
@@ -1129,10 +1129,10 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'X' && dtype == 1 ) {
     printf("Testing 08bit NORM PADN Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padn_mod4_08bit( M, N, ldi, ldo );
-  } else if ( op == 'Y' && dtype == 2 ) {
+  } else if ( op == 'Y' && dtype == 1 ) {
     printf("Testing 08bit NORM PADM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padm_mod4_08bit( M, N, ldi, ldo );
-  } else if ( op == 'Z' && dtype == 2 ) {
+  } else if ( op == 'Z' && dtype == 1 ) {
     printf("Testing 08bit NORM PADNM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod4_08bit( M, N, ldi, ldo );
    } else {

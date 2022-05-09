@@ -59,6 +59,12 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_trans_padnm_mod2_16b_gtld.sh
 ./kernel_test/unary_trans_padn_mod2_16b_eqld.sh
 ./kernel_test/unary_trans_padn_mod2_16b_gtld.sh
+./kernel_test/unary_trans_padm_mod4_08b_eqld.sh
+./kernel_test/unary_trans_padm_mod4_08b_gtld.sh
+./kernel_test/unary_trans_padnm_mod4_08b_eqld.sh
+./kernel_test/unary_trans_padnm_mod4_08b_gtld.sh
+./kernel_test/unary_trans_padn_mod4_08b_eqld.sh
+./kernel_test/unary_trans_padn_mod4_08b_gtld.sh
 ./kernel_test/unary_vnni_16b_eqld.sh
 ./kernel_test/unary_vnni_16b_gtld.sh
 ./kernel_test/unary_vnni_08b_eqld.sh
