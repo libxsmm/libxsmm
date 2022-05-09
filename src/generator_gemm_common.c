@@ -27,7 +27,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
   const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
     LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, i_xgemm_desc->m, i_xgemm_desc->n,
     i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0,
-    (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, LIBXSMM_MELTW_OPERATION_UNARY);
+    (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, LIBXSMM_MELTW_OPERATION_UNARY);
   libxsmm_mateltwise_kernel_config l_trans_config;
   unsigned int l_gp_reg_in = i_gp_reg_mapping->gp_reg_help_2;
 
@@ -37,12 +37,12 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
   libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_1, 32*64 );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, l_gp_reg_in);
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512){
-    libxsmm_generator_transform_norm_to_vnni_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+    libxsmm_generator_transform_norm_to_vnni2_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
         l_gp_reg_in, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_mloop, i_gp_reg_mapping->gp_reg_nloop,
         i_gp_reg_mapping->gp_reg_help_1, 1, 2,
         &l_trans_config, trans_desc, 0 );
   } else {
-    libxsmm_generator_transform_norm_to_vnni_16bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
+    libxsmm_generator_transform_norm_to_vnni2_16bit_avx_microkernel( io_generated_code, io_loop_label_tracker,
         l_gp_reg_in, i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_mloop, i_gp_reg_mapping->gp_reg_nloop,
         &l_trans_config, trans_desc, 0 );
   }
@@ -742,7 +742,7 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
         i_micro_kernel_config->fused_sigmoid = 1;
       }
 
-      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI) {
+      if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2) {
         i_micro_kernel_config->vnni_format_C = 1;
         if (i_micro_kernel_config->overwrite_C == 0) {
           i_micro_kernel_config->vnni_cvt_output_ext_buf = 1;

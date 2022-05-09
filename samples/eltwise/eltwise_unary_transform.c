@@ -112,7 +112,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   return ret;
 }
 
-int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
   libxsmm_blasint i, j, j2;
@@ -187,9 +187,9 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for VNNI_TO_VNNIT TPP. Bailing...!\n");
+    fprintf( stderr, "JIT for VNNI2_TO_VNNI2T TPP. Bailing...!\n");
     exit(-1);
   }
   unary_kernel( &unary_param );
@@ -205,9 +205,9 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS unary VNNI transpose 16bit\n");
+    printf("SUCCESS unary VNNI2 transpose 16bit\n");
   } else {
-    printf("FAILURE unary VNNI transpose 16bit\n");
+    printf("FAILURE unary VNNI2 transpose 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -328,7 +328,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   return ret;
 }
 
-int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
   libxsmm_blasint i, j, j2;
@@ -341,11 +341,11 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
-    fprintf( stderr, "test_norm_to_vnni_16bit: ldi needs to be equal to or bigger than M\n");
+    fprintf( stderr, "test_norm_to_vnni2_16bit: ldi needs to be equal to or bigger than M\n");
     exit(-1);
   }
   if ( M > ldo ) {
-    fprintf( stderr, "test_norm_to_vnni_16bit: ldo needs to be equal to or bigger than M\n");
+    fprintf( stderr, "test_norm_to_vnni2_16bit: ldo needs to be equal to or bigger than M\n");
     exit(-1);
   }
 
@@ -394,13 +394,13 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   if ( N % 2 == 1 ) {
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD;
   } else {
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2;
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_VNNI TPP. Bailing...!\n");
+    fprintf( stderr, "JIT for NORM_TO_VNNI2 TPP. Bailing...!\n");
     exit(-1);
   }
   unary_kernel( &unary_param );
@@ -416,9 +416,9 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS unary VNNI transform 16bit\n");
+    printf("SUCCESS unary VNNI2 transform 16bit\n");
   } else {
-    printf("FAILURE unary VNNI transform 16bit\n");
+    printf("FAILURE unary VNNI2 transform 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -1106,7 +1106,7 @@ int main( int argc, char* argv[] ) {
     printf("Testing 08bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_I8 );
   } else if ( op == 'R' && dtype == 2 ) {
-    printf("Testing 16bit VNNI to VNNI2 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    printf("Testing 16bit VNNI2 to VNNI2 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni2_to_vnni2T_16bit( M, N, ldi, ldo );
   } else if ( op == 'R' && dtype == 1 ) {
     printf("Testing 08bit VNNI to VNNI4 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);

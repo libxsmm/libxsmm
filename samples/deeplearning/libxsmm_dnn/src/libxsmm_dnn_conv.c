@@ -2000,7 +2000,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_bwd_kernels( libxsmm_dnn_conv_
     unary_shape.ldi       = stride_in;
     unary_shape.ldo       = stride_out;
 
-    res.tr_kernel= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    res.tr_kernel= libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.tr_kernel  == NULL ) {
       fprintf( stderr, "JIT for TPP tr_kernel failed. Bailing...!\n");
       exit(-1);
@@ -2424,7 +2424,7 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_
     unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
-    res.upd_weight_vnni_format_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+    res.upd_weight_vnni_format_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     if (  res.upd_weight_vnni_format_bf16  == NULL ) {
       fprintf( stderr, "JIT for TPP upd_weight_vnni_format_bf16 failed. Bailing...!\n");
       exit(-1);
@@ -2568,9 +2568,9 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
     if (res.ofwp % 2 == 1) {
-      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     } else {
-      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_w_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     }
     if (  res.vnni_output_w_pixels_bf16  == NULL ) {
       fprintf( stderr, "JIT for TPP vnni_output_w_pixels_bf16 failed. Bailing...!\n");
@@ -2588,9 +2588,9 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
     if ((res.ofwp-1) % 2 == 1) {
-      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     } else {
-      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_w2_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     }
     if (  res.vnni_output_w2_pixels_bf16  == NULL ) {
       fprintf( stderr, "JIT for TPP vnni_output_w2_pixels_bf16 failed. Bailing...!\n");
@@ -2608,9 +2608,9 @@ LIBXSMM_API_INLINE void libxsmm_dnn_conv_generate_upd_kernels( libxsmm_dnn_conv_
     unary_shape.out_type  = LIBXSMM_DATATYPE_BF16;
 
     if (res.compute_pixels % 2 == 1) {
-      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     } else {
-      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
+      res.vnni_output_compute_pixels_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE ) ;
     }
     if (  res.vnni_output_compute_pixels_bf16  == NULL ) {
       fprintf( stderr, "JIT for TPP vnni_output_compute_pixels_bf16 failed. Bailing...!\n");
