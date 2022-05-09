@@ -764,7 +764,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
             cfg.helper_add_kernel(&add_param);
           }
         }
-      } else { /* h2-blocking (implies no padding) */
+      } else { /* hw-blocking (implies no padding) */
         reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           hi = (hwb*(HW/num_HW_blocks))/W;
@@ -1553,7 +1553,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_f32( libxsmm_dnn_bn_bwd_config cfg, flo
         all_zero_param.out.primary = &LIBXSMM_VLA_ACCESS(5, din, n, cp, hi_end, 0, 0, CP, ifhp, ifwp, bc);
         cfg.all_zero_hp_kernel(&all_zero_param);
       }
-    } else { /* h2-blocking (implies no padding) */
+    } else { /* hw-blocking (implies no padding) */
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         ho = (hwb*(HW/num_HW_blocks))/W;
         hi = ho;
