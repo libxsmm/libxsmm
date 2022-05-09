@@ -71,7 +71,7 @@ void eqn2_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
-      float Arg0, Arg1, Arg2, Arg3, res;
+      float Arg0, Arg1, Arg2, res;
       Arg0 = arg0[(i*ld)+j];
       Arg1 = arg1[(i*ld)+j];
       Arg2 = arg2[(i*ld)+j];
@@ -211,6 +211,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+
   int test_relu_eq = 0;
 
   if ( argc > 1 ) M = atoi(argv[1]);
@@ -356,7 +357,8 @@ int main( int argc, char* argv[] ) {
 #endif
   libxsmm_matrix_eqn_tree_print( my_eqn0 );
   libxsmm_matrix_eqn_rpn_print( my_eqn0 );
-  func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, out_dt, my_eqn0 );
+  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt );
+  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;
