@@ -2654,6 +2654,27 @@ void libxsmm_generator_transform_norm_padnm_mod2_16bit_avx512_microkernel( libxs
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_padnm_mod4_08bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                           libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                           const unsigned int                      i_gp_reg_in,
+                                                                           const unsigned int                      i_gp_reg_out,
+                                                                           const unsigned int                      i_gp_reg_m_loop,
+                                                                           const unsigned int                      i_gp_reg_n_loop,
+                                                                           const unsigned int                      i_gp_reg_mask,
+                                                                           const unsigned int                      i_mask_reg_0,
+                                                                           const unsigned int                      i_mask_reg_1,
+                                                                           const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                           const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  LIBXSMM_UNUSED( i_gp_reg_mask );
+  LIBXSMM_UNUSED( i_mask_reg_0 );
+  LIBXSMM_UNUSED( i_mask_reg_1 );
+
+  libxsmm_generator_transform_norm_padnm_mod4_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                           i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
+                                                                           i_micro_kernel_config, i_mateltwise_desc );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,
                                                      libxsmm_loop_label_tracker*                    io_loop_label_tracker,
                                                      libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
@@ -2804,6 +2825,13 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                           l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1,
                                                                           i_micro_kernel_config, i_mateltwise_desc, 1 );
+    } else if ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4)  ||
+                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4)  ||
+                (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4)    ) {
+      libxsmm_generator_transform_norm_padnm_mod4_08bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                            l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                            l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1,
+                                                                            i_micro_kernel_config, i_mateltwise_desc );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
