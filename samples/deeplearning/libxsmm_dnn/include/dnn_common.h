@@ -2972,13 +2972,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
           for (ho = 0; ho < ho_start; ho++) {
             for (wo = 0; wo < ofwp; wo++) {
-              float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+              float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
               *del_output_ptr = 0;
             }
           }
           for (wo = 0; wo < wo_start; wo++) {
             for (ho = 0; ho < ofhp; ho++) {
-              float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+              float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
               *del_output_ptr = 0;
             }
           }
@@ -2986,13 +2986,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
           for (hi = 0; hi < hi_start; hi++) {
             for (wi = 0; wi < ifwp; wi++) {
-              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
               *del_input_add_ptr = 0;
             }
           }
           for (wi = 0; wi < wi_start; wi++) {
             for (hi = 0; hi < ifhp; hi++) {
-              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
               *del_input_add_ptr = 0;
             }
           }
@@ -3001,10 +3001,10 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         /* main (middle ~ internal) part */
         for ( hi = hi_start, ho = ho_start; hi < hi_end; hi += sh, ho++ ) {
           for ( wi = wi_start, wo = wo_start; wi < wi_end; wi += sw, wo++ ) {
-                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
-            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, fm, ofhp, ofwp);
-            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifhp, ifwp);
-                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
+            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, nFm, ofhp, ofwp);
+            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, nFm, ifhp, ifwp);
+                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
 
             /* (inv) ReLU/mask */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
@@ -3024,13 +3024,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
           for (ho = ho_end; ho < ofhp; ho++) {
             for (wo = 0; wo < ofwp; wo++) {
-              float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+              float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
               *del_output_ptr = 0;
             }
           }
           for (wo = wo_end; wo < ofwp; wo++) {
             for (ho = 0; ho < ofhp; ho++) {
-              float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+              float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
               *del_output_ptr = 0;
             }
           }
@@ -3038,13 +3038,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
         if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
           for (hi = hi_end; hi < ifhp; hi++) {
             for (wi = 0; wi < ifwp; wi++) {
-              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
               *del_input_add_ptr = 0;
             }
           }
           for (wi = wi_end; wi < ifwp; wi++) {
             for (hi = 0; hi < ifhp; hi++) {
-              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+              float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
               *del_input_add_ptr = 0;
             }
           }
@@ -3061,13 +3061,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
       /* Handling the padding at the start */
       for (hi = 0; hi < hi_start; hi++) {
         for (wi = 0; wi < ifwp; wi++) {
-          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, nFm, ifhp, ifwp);
           *del_input_ptr = 0;
         }
       }
       for (wi = 0; wi < wi_start; wi++) {
         for (hi = 0; hi < ifhp; hi++) {
-          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, nFm, ifhp, ifwp);
           *del_input_ptr = 0;
         }
       }
@@ -3075,9 +3075,9 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
       /* main (middle ~ internal) part */
       for ( hi = hi_start, ho = ho_start; hi < hi_end; hi += sh, ho++ ) {
         for ( wi = wi_start, wo = wo_start; wi < wi_end; wi += sw, wo++) {
-                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
-          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifhp, ifwp);
-          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
+                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, nFm, ifhp, ifwp);
+          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, nFm, ifhp, ifwp);
+          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, nFm, ofhp, ofwp);
 
           *del_input_ptr = gamma_ptr[fm] * rcpstddev_ptr[fm] * recp_nhw * (nhw * del_output_val -
                     (del_beta_ptr[fm] + (input_val - expectval_ptr[fm]) * del_gamma_ptr[fm] * rcpstddev_ptr[fm]));
@@ -3087,13 +3087,13 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
       /* Handling the padding at the end */
       for (hi = hi_end; hi < ifhp; hi++) {
         for (wi = 0; wi < ifwp; wi++) {
-          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, nFm, ifhp, ifwp);
           *del_input_ptr = 0;
         }
       }
       for (wi = wi_end; wi < ifwp; wi++) {
         for (hi = 0; hi < ifhp; hi++) {
-          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifhp, ifwp);
+          float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, nFm, ifhp, ifwp);
           *del_input_ptr = 0;
         }
       }
@@ -3267,17 +3267,17 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the start */
         for (ho = 0; ho < ho_start; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *output_ptr2 = 0;
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
           }
         }
         for (wo = 0; wo < wo_start; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *output_ptr2 = 0;
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
           }
         }
@@ -3314,17 +3314,17 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the end */
         for (ho = ho_end; ho < ofhp; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *output_ptr2 = 0;
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
           }
         }
         for (wo = wo_end; wo < ofwp; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *output_ptr2 = 0;
-            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nFm, ofhp, ofwp);
+            unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
           }
         }
@@ -3407,9 +3407,9 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp_fp64(naive_fusedgroupnorm_t* param, 
       for ( fmg = 0; fmg < nFMG; fmg++ ) {
         for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
           for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
-            const double  input_val      =  LIBXSMM_VLA_ACCESS(5, input,     img, g,  fmg, hi, wi, nG,  nFMG, ifh, ifw);
-            const double  input_add_val  =  LIBXSMM_VLA_ACCESS(5, input_add, img, g,  fmg, hi, wi, nG,  nFMG, ifh, ifw);
-            double* output_ptr2          = &LIBXSMM_VLA_ACCESS(5, output,    img, g,  fmg, ho, wo, nG,  nFMG, ofh, ofw);
+            const double  input_val      =  LIBXSMM_VLA_ACCESS(5, input,     img, g,  fmg, hi, wi, nG, nFMG, ifh, ifw);
+            const double  input_add_val  =  LIBXSMM_VLA_ACCESS(5, input_add, img, g,  fmg, hi, wi, nG, nFMG, ifh, ifw);
+            double* output_ptr2          = &LIBXSMM_VLA_ACCESS(5, output,    img, g,  fmg, ho, wo, nG, nFMG, ofh, ofw);
 
             /* BN + scale (gamma, beta) */
             double o = gamma_ptr[g*nFMG+fmg]*(input_val - expectval_ptr[img*nG+g])*rcpstddev_ptr[img*nG+g] + beta_ptr[g*nFMG+fmg];
@@ -3475,9 +3475,9 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
   /*LIBXSMM_VLA_DECL(5, const float, output,     output_ptr,     nG,  nFMG, ofhp, ofwp);*/
   LIBXSMM_VLA_DECL(5,       float, doutput,    doutput_ptr,    nG,  nFMG, ofhp, ofwp);
 
-  LIBXSMM_VLA_DECL(4, const float, input_gb,      input_ptr,      nFm,  ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4, const float, output_gb,     output_ptr,     nFm,  ofhp, ofwp);
-  LIBXSMM_VLA_DECL(4,       float, doutput_gb,    doutput_ptr,    nFm,  ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4, const float, input_gb,      input_ptr,      nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4, const float, output_gb,     output_ptr,     nFm, ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4,       float, doutput_gb,    doutput_ptr,    nFm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float, dinput_add,    dinput_add_ptr, nFm, ifhp, ifwp);
 
   LIBXSMM_UNUSED(beta_ptr);
@@ -3496,13 +3496,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
       if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
         for (ho = 0; ho < ho_start; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput_gb, img, fm, ho, wo, fm, ofhp, ofwp);
+            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput_gb, img, fm, ho, wo, nFm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
         for (wo = 0; wo < wo_start; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput_gb, img, fm, ho, wo, fm, ofhp, ofwp);
+            float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput_gb, img, fm, ho, wo, nFm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
@@ -3510,13 +3510,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
       if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
         for (hi = 0; hi < hi_start; hi++) {
           for (wi = 0; wi < ifwp; wi++) {
-            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
             *del_input_add_ptr = 0;
           }
         }
         for (wi = 0; wi < wi_start; wi++) {
           for (hi = 0; hi < ifhp; hi++) {
-            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
             *del_input_add_ptr = 0;
           }
         }
@@ -3548,13 +3548,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
       if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
         for (ho = ho_end; ho < ofhp; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput_gb, img, fm, ho, wo, fm, ofhp, ofwp);
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput_gb, img, fm, ho, wo, nFm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
         for (wo = wo_end; wo < ofwp; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput_gb, img, fm, ho, wo, fm, ofhp, ofwp);
+            float* del_output_ptr = &LIBXSMM_VLA_ACCESS(4, doutput_gb, img, fm, ho, wo, nFm, ofhp, ofwp);
             *del_output_ptr = 0;
           }
         }
@@ -3562,13 +3562,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
       if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
         for (hi = hi_end; hi < ifhp; hi++) {
           for (wi = 0; wi < ifwp; wi++) {
-            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
             *del_input_add_ptr = 0;
           }
         }
         for (wi = wi_end; wi < ifwp; wi++) {
           for (hi = 0; hi < ifhp; hi++) {
-            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+            float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, nFm, ifhp, ifwp);
             *del_input_add_ptr = 0;
           }
         }
@@ -3602,13 +3602,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the start */
         for (hi = 0; hi < hi_start; hi++) {
           for (wi = 0; wi < ifwp; wi++) {
-            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, fm, ifhp, ifwp);
+            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, nG, nFMG, ifhp, ifwp);
             *del_input_ptr = 0;
           }
         }
         for (wi = 0; wi < wi_start; wi++) {
           for (hi = 0; hi < ifhp; hi++) {
-            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, fm, ifhp, ifwp);
+            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, nG, nFMG, ifhp, ifwp);
             *del_input_ptr = 0;
           }
         }
@@ -3628,13 +3628,13 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_bp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the end */
         for (hi = hi_end; hi < ifhp; hi++) {
           for (wi = 0; wi < ifwp; wi++) {
-            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, fm, ifhp, ifwp);
+            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, nG, nFMG, ifhp, ifwp);
             *del_input_ptr = 0;
           }
         }
         for (wi = wi_end; wi < ifwp; wi++) {
           for (hi = 0; hi < ifhp; hi++) {
-            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, fm, ifhp, ifwp);
+            float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(5,     dinput, img, g, fmg, hi, wi, nG, nFMG, ifhp, ifwp);
             *del_input_ptr = 0;
           }
         }
