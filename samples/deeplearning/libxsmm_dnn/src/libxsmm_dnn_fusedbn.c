@@ -645,15 +645,15 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
 
   const libxsmm_blasint hi_start      = cfg.pad_h_in;
   const libxsmm_blasint wi_start      = cfg.pad_w_in;
-  const libxsmm_blasint ifhp = cfg.H + 2 * cfg.pad_h_in;
-  const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
+  const libxsmm_blasint ifhp          = cfg.H + 2 * cfg.pad_h_in;
+  const libxsmm_blasint ifwp          = cfg.W + 2 * cfg.pad_w_in;
 
   const libxsmm_blasint ho_start      = cfg.pad_h_out;
   const libxsmm_blasint ho_end        = ho_start + cfg.H;
   const libxsmm_blasint wo_start      = cfg.pad_w_out;
   const libxsmm_blasint wo_end        = wo_start + cfg.W;
-  const libxsmm_blasint ofhp = cfg.H + 2 * cfg.pad_h_out;
-  const libxsmm_blasint ofwp = cfg.W + 2 * cfg.pad_w_out;
+  const libxsmm_blasint ofhp          = cfg.H + 2 * cfg.pad_h_out;
+  const libxsmm_blasint ofwp          = cfg.W + 2 * cfg.pad_w_out;
 
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
@@ -906,7 +906,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
         eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, w, 0, CP, H, W, bc);           /* [HW,bc] */
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, w, 0, CP, H, W, bc);    /* [HW, bc] */
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, hi, w, 0, CP, H, W, bc);    /* [HW, bc] */
         }
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -916,7 +916,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
         cfg.func10(&eqn_param);                                                   /* Normalization equation + relu + eltwise -> y = relu( ((s*x + b)*gamma + beta) + inp_add) */
       }
     } /* if-else for the presence of padding */
-  } /* loop over cpxnt for computing din */
+  } /* loop over cpxnt for computing out */
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
@@ -1196,7 +1196,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
         eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, w, 0, CP, H, W, bc);           /* [HW,bc] */
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, w, 0, CP, H, W, bc);    /* [HW, bc] */
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, hi, w, 0, CP, H, W, bc);    /* [HW, bc] */
         }
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1206,7 +1206,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
         cfg.func10(&eqn_param);                                                   /* Normalization equation + relu + eltwise -> y = relu( ((s*x + b)*gamma + beta) + inp_add) */
       }
     } /* if-else for the presence of padding */
-  } /* loop over cpxnt for computing din */
+  } /* loop over cpxnt for computing out */
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
