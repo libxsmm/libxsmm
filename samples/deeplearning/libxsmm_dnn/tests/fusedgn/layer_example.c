@@ -117,6 +117,11 @@ int main( int argc, char* argv[] ) {
 
   CP = C / bc;
 
+  if ( C % G != 0 || G == 0 ) {
+    printf("Bad input channel grouping: C = %d G = %d \n", C, G);
+    return -1;
+  }
+
   if ( C % bc != 0 || CP == 0 ) {
     printf("Bad input channel blocking: C = %d bc = %d \n", C, bc);
     return -1;
@@ -128,11 +133,6 @@ int main( int argc, char* argv[] ) {
   else { /* else, set formally H and W from the value of HW hardcoded above */
     H = HW;
     W = 1;
-  }
-
-  if (pad_w_in || pad_h_in || pad_w_out || pad_h_out) {
-    printf("Padding is not supported (must be all 0)\n");
-    return -1;
   }
 
   if ( stride != 1 ) {
