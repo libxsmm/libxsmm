@@ -373,10 +373,6 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  for (i = 0; i < N*ldo ; i++) {
-    if (out_gold[i] != out[i]) printf("index : %d, gold : %d, out : %d\n", i, out_gold[i], out[i]);
-  }
-
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
