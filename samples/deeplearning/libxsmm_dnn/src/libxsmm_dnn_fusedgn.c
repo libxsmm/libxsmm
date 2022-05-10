@@ -14,6 +14,7 @@
 #define BITS_PER_CHAR (8)
 
 LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
@@ -52,8 +53,18 @@ LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N
   res.bc            = bc;
   res.CP            = res.C / res.bc;
   res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
+  res.num_W_blocks  = (res.W % 64 == 0 ? res.W / 64 : 1); /* FIXME: Random heuristic */
+  res.pad_h_in      = pad_h_in;
+  res.pad_w_in      = pad_w_in;
+  res.pad_h_out     = pad_h_out;
+  res.pad_w_out     = pad_w_out;
   res.threads       = threads;
   res.fuse_type     = fuse_type;
+
+  if (res.pad_h_in != 0 || res.pad_w_in != 0 || res.pad_h_out != 0 || res.pad_w_out != 0 )
+    res.use_hw_blocking = 0; /* alternative is w blocking ([w, bc] blocks) */
+  else
+    res.use_hw_blocking = 1; /* using [hw, bc] blocks */
 
   res.datatype_in   = datatype_in;
   res.datatype_out  = datatype_out;
@@ -79,6 +90,27 @@ LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N
   if ( res.all_zero_G_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
+  }
+
+  if (res.pad_h_out != 0) {
+    libxsmm_blasint ofwp   = res.W + 2 * res.pad_w_out;
+    unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_out * ofwp), res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    res.all_zero_hp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+    if ( res.all_zero_hp_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP fwd all_zero_hp_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
+  }
+
+  if (res.pad_w_out != 0) {
+    unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_out, res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    res.all_zero_wp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+    if ( res.all_zero_wp_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP fwd all_zero_wp_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   /* TPPs for reducing X and X2 in HW*/
@@ -230,6 +262,7 @@ LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N
 }
 
 LIBXSMM_API libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N, libxsmm_blasint C, libxsmm_blasint H, libxsmm_blasint W, libxsmm_blasint G, libxsmm_blasint bc,
+                                 libxsmm_blasint pad_h_in, libxsmm_blasint pad_w_in, libxsmm_blasint pad_h_out, libxsmm_blasint pad_w_out,
                                  libxsmm_blasint threads, libxsmm_dnn_gn_fuse fuse_type,
                                  libxsmm_datatype datatype_in, libxsmm_datatype datatype_out, libxsmm_datatype datatype_comp ) {
 
@@ -269,8 +302,18 @@ LIBXSMM_API libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N
   res.bc            = bc;
   res.CP            = res.C / res.bc;
   res.num_HW_blocks = (res.H > res.W ? res.H : res.W );
+  res.num_W_blocks  = (res.W % 64 == 0 ? res.W / 64 : 1); /* FIXME: Random heuristic */
+  res.pad_h_in      = pad_h_in;
+  res.pad_w_in      = pad_w_in;
+  res.pad_h_out     = pad_h_out;
+  res.pad_w_out     = pad_w_out;
   res.threads       = threads;
   res.fuse_type     = fuse_type;
+
+  if (res.pad_h_in != 0 || res.pad_w_in != 0 || res.pad_h_out != 0 || res.pad_w_out != 0 )
+    res.use_hw_blocking = 0; /* alternative is w blocking ([w, bc] blocks) */
+  else
+    res.use_hw_blocking = 1; /* using [hw, bc] blocks */
 
   res.datatype_in   = datatype_in;
   res.datatype_out  = datatype_out;
@@ -292,6 +335,27 @@ LIBXSMM_API libxsmm_dnn_gn_bwd_config setup_libxsmm_dnn_gn_bwd(libxsmm_blasint N
   if ( res.all_zero_kernel == NULL) {
     fprintf( stderr, "JIT for initialization by unary all zero copy kernel failed for fwd. Bailing...!\n");
     exit(-1);
+  }
+
+  if (res.pad_h_in != 0) {
+    libxsmm_blasint ifwp   = res.W + 2 * res.pad_w_in;
+    unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_in * ifwp), res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    res.all_zero_hp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+    if ( res.all_zero_hp_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP bwd all_zero_hp_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
+  }
+
+  if (res.pad_w_in != 0) {
+    unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_in, res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    res.all_zero_wp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
+    if ( res.all_zero_wp_kernel == NULL) {
+      fprintf( stderr, "JIT for TPP bwd all_zero_wp_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
   }
 
   if (res.fuse_type == 1 || res.fuse_type == 3 || res.fuse_type == 4 || res.fuse_type == 5) {
