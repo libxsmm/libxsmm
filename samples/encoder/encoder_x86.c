@@ -988,6 +988,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VPMOVSWB", &mycode, LIBXSMM_X86_INSTR_VPMOVSWB, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPMOVWB", &mycode, LIBXSMM_X86_INSTR_VPMOVWB, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSLLD_I", &mycode, LIBXSMM_X86_INSTR_VPSLLD_I, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPSLLW_I", &mycode, LIBXSMM_X86_INSTR_VPSLLW_I, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRAD_I", &mycode, LIBXSMM_X86_INSTR_VPSRAD_I, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRAW_I", &mycode, LIBXSMM_X86_INSTR_VPSRAW_I, 1, 0x01, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPSRLD_I", &mycode, LIBXSMM_X86_INSTR_VPSRLD_I, 1, 0x01, 32 );
@@ -1258,6 +1259,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VPMOVSWB", &mycode, LIBXSMM_X86_INSTR_VPMOVSWB, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPMOVWB", &mycode, LIBXSMM_X86_INSTR_VPMOVWB, 1, LIBXSMM_X86_IMM_UNDEF, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSLLD_I", &mycode, LIBXSMM_X86_INSTR_VPSLLD_I, 1, 0x01, 32, 0 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPSLLW_I", &mycode, LIBXSMM_X86_INSTR_VPSLLW_I, 1, 0x01, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSRAD_I", &mycode, LIBXSMM_X86_INSTR_VPSRAD_I, 1, 0x01, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSRAW_I", &mycode, LIBXSMM_X86_INSTR_VPSRAW_I, 1, 0x01, 32, 0 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPSRLD_I", &mycode, LIBXSMM_X86_INSTR_VPSRLD_I, 1, 0x01, 32, 0 );

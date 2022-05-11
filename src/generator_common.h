@@ -407,6 +407,7 @@
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
+#define LIBXSMM_X86_INSTR_VPSLLW_I         0x246d1671
 #define LIBXSMM_X86_INSTR_VPSRAD_I         0x244d1672
 #define LIBXSMM_X86_INSTR_VPSRAW_I         0x244d1671
 #define LIBXSMM_X86_INSTR_VPSRLD_I         0x242d1672

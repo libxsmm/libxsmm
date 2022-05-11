@@ -380,6 +380,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VCVTPS2DQ:
     case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
     case LIBXSMM_X86_INSTR_VPSLLD_I:
+    case LIBXSMM_X86_INSTR_VPSLLW_I:
     case LIBXSMM_X86_INSTR_VPSRAD_I:
     case LIBXSMM_X86_INSTR_VPSRAW_I:
     case LIBXSMM_X86_INSTR_VPSRLD_I:
