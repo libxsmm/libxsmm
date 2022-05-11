@@ -192,9 +192,9 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* x = [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[0].n  = res.W /res.num_W_blocks;
+    arg_shape[0].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[0].n  = res.H*res.W /res.num_HW_blocks;
+    arg_shape[0].n  = res.H*res.W / res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
@@ -220,7 +220,7 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
     arg_metadata[5].in_arg_pos  = 5;
     arg_shape[5].m    = res.bc;                                      /* inp_add = [HW, bc] */
     if (res.use_hw_blocking == 0)
-      arg_shape[5].n  = res.W /res.num_W_blocks;
+      arg_shape[5].n  = res.W / res.num_W_blocks;
     else
       arg_shape[5].n  = res.H*res.W / res.num_HW_blocks;
     arg_shape[5].ld   = ld;
@@ -230,7 +230,7 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
 
   eqn_out_arg_shape.m    = res.bc;                                 /* y = [HW, bc] */
   if (res.use_hw_blocking == 0)
-    eqn_out_arg_shape.n  = res.W /res.num_W_blocks;
+    eqn_out_arg_shape.n  = res.W / res.num_W_blocks;
   else
     eqn_out_arg_shape.n  = res.H*res.W / res.num_HW_blocks;
   eqn_out_arg_shape.ld   = ld;
@@ -427,9 +427,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[0].in_arg_pos  = 0;
   arg_shape[0].m    = res.bc;                                      /* inp [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[0].n    = res.W /res.num_W_blocks;
+    arg_shape[0].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+    arg_shape[0].n  = res.H*res.W / res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
@@ -454,9 +454,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[3].in_arg_pos  = 3;
   arg_shape[3].m    = res.bc;                                      /* dout [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[3].n    = res.W /res.num_W_blocks;
+    arg_shape[3].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[3].n    = res.H*res.W/res.num_HW_blocks;
+    arg_shape[3].n  = res.H*res.W/ res.num_HW_blocks;
   arg_shape[3].ld   = ld;
   arg_shape[3].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[3], arg_shape[3], arg_singular_attr);
@@ -499,9 +499,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[0].in_arg_pos  = 3;
   arg_shape[0].m    = res.bc;                                      /* dout [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[0].n    = res.W /res.num_W_blocks;
+    arg_shape[0].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[0].n    = res.H*res.W /res.num_HW_blocks;
+    arg_shape[0].n  = res.H*res.W / res.num_HW_blocks;
   arg_shape[0].ld   = ld;
   arg_shape[0].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
@@ -556,9 +556,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[1].in_arg_pos  = 3;
   arg_shape[1].m    = res.bc;                                      /* dout [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[1].n    = res.W /res.num_W_blocks;
+    arg_shape[1].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[1].n    = res.H*res.W /res.num_HW_blocks;
+    arg_shape[1].n  = res.H*res.W / res.num_HW_blocks;
   arg_shape[1].ld   = ld;
   arg_shape[1].type = res.datatype_out;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
@@ -572,9 +572,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   arg_metadata[2].in_arg_pos  = 0;
   arg_shape[2].m    = res.bc;                                      /* inp [HW, bc] */
   if (res.use_hw_blocking == 0)
-    arg_shape[2].n    = res.W /res.num_W_blocks;
+    arg_shape[2].n  = res.W / res.num_W_blocks;
   else
-    arg_shape[2].n    = res.H*res.W /res.num_HW_blocks;
+    arg_shape[2].n  = res.H*res.W / res.num_HW_blocks;
   arg_shape[2].ld   = ld;
   arg_shape[2].type = res.datatype_in;
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[2], arg_shape[2], arg_singular_attr);
@@ -597,9 +597,9 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
 
   eqn_out_arg_shape.m    = res.bc;                                 /* din [HW, bc] */
   if (res.use_hw_blocking == 0)
-    eqn_out_arg_shape.n    = res.W /res.num_W_blocks;
+    eqn_out_arg_shape.n  = res.W / res.num_W_blocks;
   else
-    eqn_out_arg_shape.n    = res.H*res.W/res.num_HW_blocks;
+    eqn_out_arg_shape.n  = res.H*res.W/ res.num_HW_blocks;
   eqn_out_arg_shape.ld   = ld;
   eqn_out_arg_shape.type = res.datatype_out;
 
@@ -645,15 +645,15 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
 
   const libxsmm_blasint hi_start      = cfg.pad_h_in;
   const libxsmm_blasint wi_start      = cfg.pad_w_in;
-  const libxsmm_blasint ifhp = cfg.H + 2 * cfg.pad_h_in;
-  const libxsmm_blasint ifwp = cfg.W + 2 * cfg.pad_w_in;
+  const libxsmm_blasint ifhp          = cfg.H + 2 * cfg.pad_h_in;
+  const libxsmm_blasint ifwp          = cfg.W + 2 * cfg.pad_w_in;
 
   const libxsmm_blasint ho_start      = cfg.pad_h_out;
   const libxsmm_blasint ho_end        = ho_start + cfg.H;
   const libxsmm_blasint wo_start      = cfg.pad_w_out;
   const libxsmm_blasint wo_end        = wo_start + cfg.W;
-  const libxsmm_blasint ofhp = cfg.H + 2 * cfg.pad_h_out;
-  const libxsmm_blasint ofwp = cfg.W + 2 * cfg.pad_w_out;
+  const libxsmm_blasint ofhp          = cfg.H + 2 * cfg.pad_h_out;
+  const libxsmm_blasint ofwp          = cfg.W + 2 * cfg.pad_w_out;
 
   /* computing first logical thread */
   const libxsmm_blasint ltid = my_tid - start_tid;
@@ -906,7 +906,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
         eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, w, 0, CP, H, W, bc);           /* [HW,bc] */
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, w, 0, CP, H, W, bc);    /* [HW, bc] */
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, hi, w, 0, CP, H, W, bc);    /* [HW, bc] */
         }
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -916,7 +916,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
         cfg.func10(&eqn_param);                                                   /* Normalization equation + relu + eltwise -> y = relu( ((s*x + b)*gamma + beta) + inp_add) */
       }
     } /* if-else for the presence of padding */
-  } /* loop over cpxnt for computing din */
+  } /* loop over cpxnt for computing out */
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
@@ -1196,7 +1196,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
         eqn_param.output.primary   = &LIBXSMM_VLA_ACCESS(5, out, n, cp, hi, w, 0, CP, H, W, bc);           /* [HW,bc] */
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU ||  cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
-          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, ho, w, 0, CP, H, W, bc);    /* [HW, bc] */
+          arg_array[5].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp_add, n, cp, hi, w, 0, CP, H, W, bc);    /* [HW, bc] */
         }
 
         if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1206,7 +1206,7 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
         cfg.func10(&eqn_param);                                                   /* Normalization equation + relu + eltwise -> y = relu( ((s*x + b)*gamma + beta) + inp_add) */
       }
     } /* if-else for the presence of padding */
-  } /* loop over cpxnt for computing din */
+  } /* loop over cpxnt for computing out */
 
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
