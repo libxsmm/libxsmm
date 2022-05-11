@@ -16,6 +16,9 @@
 #include <math.h>
 
 #include "eltwise_common.h"
+#if 0
+#define USE_ZERO_RNG_STATE_UNITTEST
+#endif
 
 void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint ldo_mask, const void *in, void *out, const float alpha, unsigned char *out_mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   libxsmm_blasint i, j;
@@ -374,6 +377,11 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
     }
+  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    /* machine epsilon = 0.125, error threshold = 2*epsilon */
+    if ( norms_out.normf_rel > 0.25 ) {
+      ret = EXIT_FAILURE;
+    }
   } else {
     if ( norms_out.normf_rel > 0.007 ) {
       ret = EXIT_FAILURE;
@@ -486,15 +494,6 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unary_param.in.secondary  = ( type == 2 ) ? (void*)out_fwd : (void*)mask_bit;
   unary_param.out.primary   = (void*)out;
 
-  if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
-    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
-    rng_state = libxsmm_rng_create_extstate( 555 );
-#ifdef USE_ZERO_RNG_STATE_UNITTEST
-    memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
-#endif
-    unary_param.op.secondary = (void*)rng_state;
-  }
-
   if ( type == 0 ) {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RELU_INV;
@@ -534,15 +533,17 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
     }
+  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    /* error threshold  2*epsilon (bf8 epsilon = 0.125 */
+    if ( norms_out.normf_rel > 0.25 ) {
+      ret = EXIT_FAILURE;
+    }
   } else {
     if ( norms_out.normf_rel > 0.007 ) {
       ret = EXIT_FAILURE;
     }
   }
 
-  if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
-    libxsmm_rng_destroy_extstate( rng_state );
-  }
   libxsmm_free( out_fwd );
   libxsmm_free( out_gold );
   libxsmm_free( out );

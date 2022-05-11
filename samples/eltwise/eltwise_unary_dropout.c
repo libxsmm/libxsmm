@@ -16,7 +16,7 @@
 
 #include "eltwise_common.h"
 
-#if 0
+#if 10
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
@@ -195,7 +195,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
       for ( i = 0; i < M; ++i ) {
         libxsmm_convert_bf8_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
         out_value = ( ( mask[(j*mask_ld) + (i/8)] & (1 << (i%8)) ) != 0 ) ? in_value * pi : 0.0f;
-        libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
+        libxsmm_rne_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
       }
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
@@ -215,7 +215,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         out_value = ( ( mask[(j*mask_ld) + (i/8)] & (1 << (i%8)) ) != 0 ) ? f_in[(j*ldi) + i] * pi : 0.0f;
-        libxsmm_stochastic_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
+        libxsmm_rne_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
       }
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
@@ -421,15 +421,6 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unary_param.in.secondary = (void*)mask;
   unary_param.out.primary = (void*)out;
 
-  if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
-    unary_flags = LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND;
-    rng_state = libxsmm_rng_create_extstate( 555 );
-#ifdef USE_ZERO_RNG_STATE_UNITTEST
-    memset( (void*)rng_state, 0, libxsmm_rng_get_extstate_size() );
-#endif
-    unary_param.op.secondary = (void*)rng_state;
-  }
-
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
@@ -455,14 +446,15 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
     }
+  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    /* machine epsilon for BF8 = 0.125, error_bound = 2*epsilon */
+    if ( norms_out.normf_rel > 0.25 ) {
+      ret = EXIT_FAILURE;
+    }
   } else {
     if ( norms_out.normf_rel > 0.007 ) {
       ret = EXIT_FAILURE;
     }
-  }
-
-  if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
-    libxsmm_rng_destroy_extstate( rng_state );
   }
 
   libxsmm_free( out_gold );
