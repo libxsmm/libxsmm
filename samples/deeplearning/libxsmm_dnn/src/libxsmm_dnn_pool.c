@@ -11,7 +11,7 @@
 
 #include <libxsmm_dnn_pool.h>
 
-libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+LIBXSMM_API libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
                                             const libxsmm_blasint R, const libxsmm_blasint S,
                                             const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
                                             const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
@@ -84,7 +84,7 @@ libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const libxsmm_blas
   return res;
 }
 
-libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
+LIBXSMM_API libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blasint N, const libxsmm_blasint C, const libxsmm_blasint H, const libxsmm_blasint W,
                                             const libxsmm_blasint R, const libxsmm_blasint S,
                                             const libxsmm_blasint stride_h, const libxsmm_blasint stride_w,
                                             const libxsmm_blasint pad_h, const libxsmm_blasint pad_w,
@@ -173,7 +173,7 @@ libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const libxsmm_blas
   return res;
 }
 
-void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg, const float* in_act_ptr, float* out_act_ptr, int* mask_ptr,
                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
@@ -269,7 +269,7 @@ void libxsmm_dnn_pooling_fwd_exec_f32( const libxsmm_dnn_pooling_fwd_config cfg,
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg, const libxsmm_bfloat16* in_act_ptr, libxsmm_bfloat16* out_act_ptr, int* mask_ptr,
                                const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
@@ -364,7 +364,7 @@ void libxsmm_dnn_pooling_fwd_exec_bf16( const libxsmm_dnn_pooling_fwd_config cfg
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg, float* din_act_ptr, const float* dout_act_ptr, const int* mask_ptr,
                               const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
@@ -451,7 +451,7 @@ void libxsmm_dnn_pooling_bwd_exec_f32( const libxsmm_dnn_pooling_bwd_config cfg,
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
+LIBXSMM_API void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg, libxsmm_bfloat16* din_act_ptr, const libxsmm_bfloat16* dout_act_ptr, const int* mask_ptr,
                                const libxsmm_blasint start_tid, const libxsmm_blasint my_tid, void* scratch ) {
   /* size variables, all const */
   const libxsmm_blasint ofhp = cfg.ofh + 2*cfg.pad_h_out;
@@ -540,12 +540,12 @@ void libxsmm_dnn_pooling_bwd_exec_bf16( const libxsmm_dnn_pooling_bwd_config cfg
   libxsmm_barrier_wait(cfg.barrier, ltid);
 }
 
-void destroy_libxsmm_dnn_pooling_fwd(libxsmm_dnn_pooling_fwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_pooling_fwd(libxsmm_dnn_pooling_fwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
 }
 
-void destroy_libxsmm_dnn_pooling_bwd(libxsmm_dnn_pooling_bwd_config* cfg) {
+LIBXSMM_API void destroy_libxsmm_dnn_pooling_bwd(libxsmm_dnn_pooling_bwd_config* cfg) {
   libxsmm_barrier_destroy(cfg->barrier);
 
 }

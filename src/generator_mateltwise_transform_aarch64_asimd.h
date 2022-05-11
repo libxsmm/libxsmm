@@ -69,19 +69,7 @@ void libxsmm_generator_transform_norm_to_normt_mbit_scalar_aarch64_asimd_microke
                                                                                       const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_norm_to_vnni_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                                     libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                                     const unsigned int                      i_gp_reg_in,
-                                                                                     const unsigned int                      i_gp_reg_out,
-                                                                                     const unsigned int                      i_gp_reg_m_loop,
-                                                                                     const unsigned int                      i_gp_reg_n_loop,
-                                                                                     const unsigned int                      i_gp_reg_scratch,
-                                                                                     const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                                     const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                                                     const unsigned int                      i_pad_vnni );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_transform_vnni_to_vnnit_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_transform_norm_to_vnni2_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                                       libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                                       const unsigned int                      i_gp_reg_in,
                                                                                       const unsigned int                      i_gp_reg_out,
@@ -89,7 +77,19 @@ void libxsmm_generator_transform_vnni_to_vnnit_mbit_scalar_aarch64_asimd_microke
                                                                                       const unsigned int                      i_gp_reg_n_loop,
                                                                                       const unsigned int                      i_gp_reg_scratch,
                                                                                       const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                                      const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                                      const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                                                      const unsigned int                      i_pad_vnni );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni2_to_vnni2t_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                        libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                        const unsigned int                      i_gp_reg_in,
+                                                                                        const unsigned int                      i_gp_reg_out,
+                                                                                        const unsigned int                      i_gp_reg_m_loop,
+                                                                                        const unsigned int                      i_gp_reg_n_loop,
+                                                                                        const unsigned int                      i_gp_reg_scratch,
+                                                                                        const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                        const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
@@ -148,19 +148,7 @@ void libxsmm_generator_transform_norm_to_normt_08bit_aarch64_asimd_microkernel( 
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_norm_to_vnni_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
-                                                                               libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                                               const unsigned int                      i_gp_reg_in,
-                                                                               const unsigned int                      i_gp_reg_out,
-                                                                               const unsigned int                      i_gp_reg_m_loop,
-                                                                               const unsigned int                      i_gp_reg_n_loop,
-                                                                               const unsigned int                      i_gp_reg_scratch,
-                                                                               const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                               const libxsmm_meltw_descriptor*         i_mateltwise_desc,
-                                                                               const unsigned int                      i_pad_vnni );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_transform_vnni_to_vnnit_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                                 const unsigned int                      i_gp_reg_in,
                                                                                 const unsigned int                      i_gp_reg_out,
@@ -168,7 +156,19 @@ void libxsmm_generator_transform_vnni_to_vnnit_16bit_aarch64_asimd_microkernel( 
                                                                                 const unsigned int                      i_gp_reg_n_loop,
                                                                                 const unsigned int                      i_gp_reg_scratch,
                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
-                                                                                const libxsmm_meltw_descriptor*         i_mateltwise_desc );
+                                                                                const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                                                const unsigned int                      i_pad_vnni );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                 const unsigned int                      i_gp_reg_in,
+                                                                                 const unsigned int                      i_gp_reg_out,
+                                                                                 const unsigned int                      i_gp_reg_m_loop,
+                                                                                 const unsigned int                      i_gp_reg_n_loop,
+                                                                                 const unsigned int                      i_gp_reg_scratch,
+                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_padnm_mod2_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,

@@ -29,6 +29,7 @@ REGVECIN=1
 IMPLICITIDX=1
 OPARG=0
 USE_BF16=0
+CHECK_SCALE_SIZE=1.0
 
 N_IDX=42
 
@@ -48,6 +49,7 @@ do
         N_ADJ=$((${N} + ${N_IDX}))
         let LDI_ADJ=(1-${EQLD})*100+${LDI}*${EQLD}
         echo ${M} ${N_ADJ} ${N} ${LDI_ADJ}
+        export CHECK_SCALE=${CHECK_SCALE_SIZE}
         ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
       done
     done

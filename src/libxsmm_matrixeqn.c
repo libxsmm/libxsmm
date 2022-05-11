@@ -677,11 +677,11 @@ int libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel (unsigned int opcode) {
 LIBXSMM_API_INTERN
 int libxsmm_matrix_eqn_is_unary_opcode_transform_kernel (unsigned int opcode) {
   int result = 0;
-  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNIT) ||
-      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD)) {
+  if ((opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2)   ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)   ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T) ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2T)  ||
+      (opcode == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD)) {
     result = 1;
   }
   return result;
