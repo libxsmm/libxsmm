@@ -114,15 +114,15 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
   unsigned int u;
 } libxsmm_float_uint;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_f32 {
   libxsmm_bfloat16 i[2];
   float f;
-} libxsmm_bfloat16_hp;
+} libxsmm_bfloat16_f32;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_qp {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_f16 {
   libxsmm_bfloat8 i[2];
   libxsmm_float16 hf;
-} libxsmm_bfloat8_qp;
+} libxsmm_bfloat8_f16;
 
 #if defined(__cplusplus)
 namespace Eigen { struct bfloat16; }

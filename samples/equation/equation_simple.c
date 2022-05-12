@@ -42,14 +42,14 @@ int unequal_fp32_vals(float a, float b) {
 }
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
+  union libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
 }
 
 int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
-  union libxsmm_bfloat16_hp bf16_hp, bf16_hp2;
+  union libxsmm_bfloat16_f32 bf16_hp, bf16_hp2;
   bf16_hp.i[1] = a;
   bf16_hp.i[0] = 0;
   bf16_hp2.i[1] = b;
@@ -122,7 +122,7 @@ void eqn0_bf16bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, lib
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       float Arg0, Arg1, Arg2, Arg3, res;
-      union libxsmm_bfloat16_hp bf16_hp;
+      union libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.i[0] = 0;
       bf16_hp.i[1] = bf16_arg0[(i*ld)+j];
       Arg0 = bf16_hp.f;
@@ -148,7 +148,7 @@ void eqn0_bf16f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       float Arg0, Arg1, Arg2, Arg3;
-      union libxsmm_bfloat16_hp bf16_hp;
+      union libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.i[0] = 0;
       bf16_hp.i[1] = bf16_arg0[(i*ld)+j];
       Arg0 = bf16_hp.f;

@@ -67,7 +67,7 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-          union libxsmm_bfloat16_hp tmp;
+          union libxsmm_bfloat16_f32 tmp;
           tmp.f = (float)libxsmm_rng_f64();
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
@@ -266,8 +266,8 @@ void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
           }
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              union libxsmm_bfloat16_hp tmp_a_f;
-              union libxsmm_bfloat16_hp tmp_b_f;
+              union libxsmm_bfloat16_f32 tmp_a_f;
+              union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
               tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_f.i[0] = 0;
@@ -295,15 +295,15 @@ void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
           if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
             acc = 0.0f;
           } else {
-            union libxsmm_bfloat16_hp tmp;
+            union libxsmm_bfloat16_f32 tmp;
             tmp.i[0] = 0;
             tmp.i[1] = h_c[(l_j * ldc) + l_i];
             acc = tmp.f;
           }
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              union libxsmm_bfloat16_hp tmp_a_f;
-              union libxsmm_bfloat16_hp tmp_b_f;
+              union libxsmm_bfloat16_f32 tmp_a_f;
+              union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
               tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_f.i[0] = 0;
@@ -338,8 +338,8 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
     libxsmm_bfloat16* h_data_gold = (libxsmm_bfloat16*)data_gold;
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
-        union libxsmm_bfloat16_hp tmp_c;
-        union libxsmm_bfloat16_hp tmp_gold;
+        union libxsmm_bfloat16_f32 tmp_c;
+        union libxsmm_bfloat16_f32 tmp_gold;
         double l_fabs;
 
         tmp_c.i[1] = h_data[(l_j * ld) + l_i];
