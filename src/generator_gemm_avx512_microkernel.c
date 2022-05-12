@@ -2252,7 +2252,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
       } else if ( l_pass == 3 ) {
         /* we put "2" elements of A matrix into zmm 1+l_m */
         libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU8_LD,
-                                                        i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 4, 1);
+                                                        i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 5, 1);
 
         libxsmm_x86_instruction_vec_compute_2reg_imm8(io_generated_code, LIBXSMM_X86_INSTR_VPSRLD_I,
                                                       i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 16);
