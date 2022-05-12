@@ -1,1 +1,1 @@
-master-1.17-2312
+dev/kvoronin/batchnorm_fix2-1.17-2311
