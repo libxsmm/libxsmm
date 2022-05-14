@@ -23,7 +23,7 @@
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
+  union libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
@@ -379,7 +379,6 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   libxsmm_blasint i;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
-  unsigned int *rng_state;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );

@@ -1572,6 +1572,13 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
     libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
     const libxsmm_mateltwise_kernel_config*        i_micro_kernel_config,
     const libxsmm_meltw_descriptor*                i_mateltwise_desc ) {
+  unsigned int l_save_arch = 0;
+  /* @TODO: For AVX256 VL we might want to use the AVx512 code pass in future */
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+    l_save_arch = io_generated_code->arch;
+    io_generated_code->arch = LIBXSMM_X86_AVX2;
+    libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
+  }
   if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_COLS ) > 0 ) {
     libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_GS_ROWS ) > 0 ) {
@@ -1590,5 +1597,9 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
     }
   } else {
     /* SHOULD NOT HAPPEN  */
+  }
+  if ( l_save_arch != 0 ) {
+    io_generated_code->arch = l_save_arch;
+    libxsmm_generator_mateltwise_update_micro_kernel_config_dtype_aluinstr( io_generated_code, (libxsmm_mateltwise_kernel_config*)i_micro_kernel_config, (libxsmm_meltw_descriptor*)i_mateltwise_desc);
   }
 }

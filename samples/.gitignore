@@ -4,16 +4,6 @@ deeplearning/sparse_weight_mult/parallel_sparse_weight_C_redmult
 deeplearning/sparse_weight_mult/sparse_weight_A_mult
 deeplearning/sparse_weight_mult/sparse_weight_B_mult
 deeplearning/sparse_weight_mult/sparse_weight_C_redmult
-deeplearning/pooling_tpp/layer_example_*
-deeplearning/convcaps/layer_example_*
-deeplearning/mlp_tpp_old/mlp_example_*
-deeplearning/mlp_tpp_old/mlp_mnist_*
-deeplearning/mlp_tpp/mlp_example_*
-deeplearning/mlp_tpp/mlp_mnist_*
-deeplearning/cnn_tpp/layer_example*
-deeplearning/fusedbn_tpp/layer_example*
-deeplearning/fusedgn_tpp/layer_example*
-deeplearning/fullyconnected_tpp/layer_example_*
 eltwise/eltwise_*
 equation/equation_*
 edge/asparse_packed_csr_*

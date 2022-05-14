@@ -24,7 +24,7 @@ void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, 
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
+      union libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.f = in[j * ld + i];
       out_lo[j * ld + i] = bf16_hp.i[0];
       out_hi[j * ld + i] = bf16_hp.i[1];
@@ -36,7 +36,7 @@ void reference_pack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, fl
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
+      union libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.i[0] = in_lo[j * ld + i];
       bf16_hp.i[1] = in_hi[j * ld + i];
       out[j * ld + i] = bf16_hp.f;
@@ -48,8 +48,8 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
-      union libxsmm_bfloat16_hp bf16_wt;
+      union libxsmm_bfloat16_f32 bf16_hp;
+      union libxsmm_bfloat16_f32 bf16_wt;
       bf16_wt.i[0] = 0;
       bf16_wt.i[1] = dwt[j * ld + i];
       bf16_hp.i[0] = out_lo[j * ld + i];
@@ -132,6 +132,8 @@ int main( int argc, char* argv[] ) {
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
+  libxsmm_meqn_arg_shape arg_shape_out;
+
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
@@ -175,7 +177,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 0, 0, LIBXSMM_DATATYPE_I16 );  /* This is the tensor with lo bits  */
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_I16 );  /* This is the tensor with hi bits  */
-  func0 = libxsmm_dispatch_matrix_eqn( M, N, &ld, LIBXSMM_DATATYPE_I16, my_eqn0 );
+  arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_I16 );
+  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
   arg_array[0].primary = (void*)eqn_wt_lo;
   arg_array[1].primary = (void*)eqn_wt_hi;

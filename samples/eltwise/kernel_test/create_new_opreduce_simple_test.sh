@@ -74,8 +74,10 @@ do
 
               if [ "$usebf16" == '0' ] ; then
                 NAME=$NAME"32b.sh"
+                SCALE_SIZE=1.0
               else
                 NAME=$NAME"16b.sh"
+                SCALE_SIZE=0.001
               fi
 
               echo $NAME
@@ -88,6 +90,8 @@ do
               sed "s/IMPLICITIDX=1/IMPLICITIDX=${implicitidx}/g" -i $NAME
               sed "s/OPARG=0/OPARG=${argopmode}/g" -i $NAME
               sed "s/USE_BF16=0/USE_BF16=${usebf16}/g" -i $NAME
+              sed "s/CHECK_SCALE_SIZE=1\.0/CHECK_SCALE_SIZE=${SCALE_SIZE}/g" -i $NAME
+
 
 
               # these loops inside each script

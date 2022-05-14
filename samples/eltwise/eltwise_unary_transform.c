@@ -112,7 +112,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   return ret;
 }
 
-int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in, *in_vnni;
   unsigned short *out, *out_gold, *out_vnni;
   libxsmm_blasint i, j, j2;
@@ -187,9 +187,9 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI_TO_VNNIT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for VNNI_TO_VNNIT TPP. Bailing...!\n");
+    fprintf( stderr, "JIT for VNNI2_TO_VNNI2T TPP. Bailing...!\n");
     exit(-1);
   }
   unary_kernel( &unary_param );
@@ -205,9 +205,9 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS unary VNNI transpose 16bit\n");
+    printf("SUCCESS unary VNNI2 transpose 16bit\n");
   } else {
-    printf("FAILURE unary VNNI transpose 16bit\n");
+    printf("FAILURE unary VNNI2 transpose 16bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -220,7 +220,115 @@ int test_vnni_to_vnniT_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   return ret;
 }
 
-int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned char *in, *in_vnni;
+  unsigned char *out, *out_gold, *out_vnni;
+  libxsmm_blasint i, j, j2;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_shape unary_shape;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_vnni_to_vnniT_08bit: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if ( N > ldo ) {
+    fprintf( stderr, "test_vnni_to_vnniT_08bit: ldo needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+
+  in       = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*N, 64);
+  in_vnni  = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*N, 64);
+  out      = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*M*ldo, 64);
+  out_gold = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*M*ldo, 64);
+  out_vnni = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*M*ldo, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < ldi; ++j ) {
+      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%112);
+    }
+  }
+  /* to vnni */
+  for ( j = 0; j < N/4; ++j ) {
+    for ( i = 0; i < ldi ; ++i ) {
+      for( j2 = 0; j2 < 4; ++j2 ) {
+        in_vnni[(j*ldi*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
+      }
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < M*ldo; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < M*ldo; ++i ) {
+    out_gold[i] = 0;
+    out_vnni[i] = 0;
+  }
+
+  /* compute out_gold */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      out_gold[(j*ldo)+i] = in[(i*ldi)+j];
+    }
+  }
+
+  /* to vnni */
+  for ( j = 0; j < M/4; ++j ) {
+    for ( i = 0; i < N ; ++i ) {
+      for( j2 = 0; j2 < 4; ++j2 ) {
+        out_vnni[(j*ldo*4)+(i*4)+j2] = out_gold[(((j*4)+j2)*ldo)+i];
+      }
+    }
+  }
+
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in_vnni;
+  unary_param.out.primary = (void*)out;
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for VNNI4_TO_VNNI4T TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < M; ++i ) {
+    for ( j = 0; j < N; ++j ) {
+      if ( out_vnni[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i\n", i, j);
+        s = 1;
+      }
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS unary VNNI4 transpose 08bit\n");
+  } else {
+    printf("FAILURE unary VNNI4 transpose 08bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( out_vnni );
+  libxsmm_free( in );
+  libxsmm_free( in_vnni );
+
+  return ret;
+}
+
+int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
   libxsmm_blasint i, j, j2;
@@ -233,11 +341,11 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   libxsmm_meltw_unary_shape unary_shape;
 
   if ( M > ldi ) {
-    fprintf( stderr, "test_norm_to_vnni_16bit: ldi needs to be equal to or bigger than M\n");
+    fprintf( stderr, "test_norm_to_vnni2_16bit: ldi needs to be equal to or bigger than M\n");
     exit(-1);
   }
   if ( M > ldo ) {
-    fprintf( stderr, "test_norm_to_vnni_16bit: ldo needs to be equal to or bigger than M\n");
+    fprintf( stderr, "test_norm_to_vnni2_16bit: ldo needs to be equal to or bigger than M\n");
     exit(-1);
   }
 
@@ -286,13 +394,13 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   if ( N % 2 == 1 ) {
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI_PAD;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD;
   } else {
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2;
   }
   libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
-    fprintf( stderr, "JIT for NORM_TO_VNNI TPP. Bailing...!\n");
+    fprintf( stderr, "JIT for NORM_TO_VNNI2 TPP. Bailing...!\n");
     exit(-1);
   }
   unary_kernel( &unary_param );
@@ -308,9 +416,110 @@ int test_norm_to_vnni_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS unary VNNI transform 16bit\n");
+    printf("SUCCESS unary VNNI2 transform 16bit\n");
   } else {
-    printf("FAILURE unary VNNI transform 16bit\n");
+    printf("FAILURE unary VNNI2 transform 16bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
+}
+
+int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned char *in;
+  unsigned char *out, *out_gold;
+  libxsmm_blasint i, j, j2;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_blasint Nn = N + (N%4);
+
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_norm_to_vnni_16bit: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if ( M > ldo ) {
+    fprintf( stderr, "test_norm_to_vnni_16bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*Nn, 64);
+  out      = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
+  out_gold = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%112);
+    }
+  }
+  for ( i = N; i < Nn; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = 0;
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < ldo*Nn; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < ldo*Nn; ++i ) {
+    out_gold[i] = 0;
+  }
+
+  /* to vnni */
+  for ( j = 0; j < Nn/4; ++j ) {
+    for ( i = 0; i < M ; ++i ) {
+      for( j2 = 0; j2 < 4; ++j2 ) {
+        out_gold[(j*ldo*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
+      }
+    }
+  }
+
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  if ( N % 4 != 0 ) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD;
+  } else {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4;
+  }
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < Nn; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        s = 1;
+      }
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS unary VNNI4 transform 08bit\n");
+  } else {
+    printf("FAILURE unary VNNI4 transform 08bit\n");
     ret = EXIT_FAILURE;
   }
 
@@ -592,84 +801,276 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   return ret;
 }
 
-#if 0
-void test_vnni_to_vnniT_08bit() {
-  unsigned char *in, *in_vnni;
-  unsigned char *out, *out_gold, *out_vnni;
-  unsigned int i, j, j2;
+int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned char *in;
+  unsigned char *out, *out_gold;
+  libxsmm_blasint i, j;
   unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
-  in       = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  in_vnni  = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  out      = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  out_gold = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
-  out_vnni = (unsigned char*)_mm_malloc( sizeof(unsigned char)*64*64, 64);
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_norm_padn_mod4_08bit: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if ( M > ldo ) {
+    fprintf( stderr, "test_norm_padn_mod4_08bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*N,  64);
+  out      = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
+  out_gold = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
 
   /* init in */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      in[(i*64)+j] = (unsigned char)(((i*64)+j)%112);
-    }
-  }
-  /* to vnni */
-  for ( j = 0; j < 64/4; ++j ) {
-    for ( i = 0; i < 64 ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
-        in_vnni[(j*64*4)+(i*4)+j2] = in[(((j*4)+j2)*64)+i];
-      }
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%112);
     }
   }
 
   /* init out */
-  for ( i = 0; i < 64*64; ++i ) {
+  for ( i = 0; i < ldo*Nn; ++i ) {
     out[i] = 0;
   }
-  for ( i = 0; i < 64*64; ++i ) {
+  for ( i = 0; i < ldo*Nn; ++i ) {
     out_gold[i] = 0;
   }
 
-  /* compute out_gold */
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      out_gold[(j*64)+i] = in[(i*64)+j];
-    }
-  }
-
   /* to vnni */
-  for ( j = 0; j < 64/4; ++j ) {
-    for ( i = 0; i < 64 ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
-        out_vnni[(j*64*4)+(i*4)+j2] = out_gold[(((j*4)+j2)*64)+i];
-      }
+  for ( j = 0; j < N; ++j ) {
+    for ( i = 0; i < M ; ++i ) {
+      out_gold[(j*ldo)+i] = in[(j*ldi)+i];
     }
   }
 
-  /* use our tranpose */
-  vnni_transpose_08bit_64by64( in_vnni, out );
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4;
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < 64; ++i ) {
-    for ( j = 0; j < 64; ++j ) {
-      if ( out_vnni[(i*64)+j] != out[(i*64)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+  for ( i = 0; i < Nn; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
   }
   if ( s == 0 ) {
-    printf("SUCCESS  8bit\n");
+    printf("SUCCESS unary mod4 padn 08bit\n");
   } else {
-    printf("FAILURE  8bit\n");
+    printf("FAILURE unary mod4 padn 08bit\n");
+    ret = EXIT_FAILURE;
   }
 
-  _mm_free( out_gold );
-  _mm_free( out );
-  _mm_free( out_vnni );
-  _mm_free( in );
-  _mm_free( in_vnni );
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
 }
-#endif
+
+int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned char *in;
+  unsigned char *out, *out_gold;
+  libxsmm_blasint i, j;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
+
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_norm_padm_mod4_08bit: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if ( Mn > ldo ) {
+    fprintf( stderr, "test_norm_padm_mod4_08bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*N, 64);
+  out      = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*N, 64);
+  out_gold = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*N, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%112);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < ldo*N; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < ldo*N; ++i ) {
+    out_gold[i] = 0;
+  }
+
+  /* to vnni */
+  for ( j = 0; j < N; ++j ) {
+    for ( i = 0; i < M ; ++i ) {
+      out_gold[(j*ldo)+i] = in[(j*ldi)+i];
+    }
+  }
+
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADM_MOD4;
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for PADM_MOD4 TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < Mn; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        s = 1;
+      }
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS unary mod4 padm 08bit\n");
+  } else {
+    printf("FAILURE unary mod4 padm 08bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
+}
+
+int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned char *in;
+  unsigned char *out, *out_gold;
+  libxsmm_blasint i, j;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
+  libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
+
+  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltw_unary_shape unary_shape;
+
+  if ( M > ldi ) {
+    fprintf( stderr, "test_norm_padm_mod4_08bit: ldi needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+  if ( Mn > ldo ) {
+    fprintf( stderr, "test_norm_padm_mod4_08bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldi*N,  64);
+  out      = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
+  out_gold = (unsigned char*)libxsmm_aligned_malloc( sizeof(unsigned char)*ldo*Nn, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(i*ldi)+j] = (unsigned char)(((i*ldi)+j)%112);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < ldo*Nn; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < ldo*Nn; ++i ) {
+    out_gold[i] = 0;
+  }
+
+  /* to vnni */
+  for ( j = 0; j < N; ++j ) {
+    for ( i = 0; i < M ; ++i ) {
+      out_gold[(j*ldo)+i] = in[(j*ldi)+i];
+    }
+  }
+
+  unary_shape.m = M;
+  unary_shape.n = N;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I8;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I8;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4;
+  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for PADNM_MOD4 TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < Nn; ++i ) {
+    for ( j = 0; j < Mn; ++j ) {
+      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
+        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        s = 1;
+      }
+    }
+  }
+  if ( s == 0 ) {
+    printf("SUCCESS unary mod4 padnm 08bit\n");
+  } else {
+    printf("FAILURE unary mod4 padnm 08bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
+}
 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint dtype;
@@ -705,11 +1106,17 @@ int main( int argc, char* argv[] ) {
     printf("Testing 08bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_I8 );
   } else if ( op == 'R' && dtype == 2 ) {
-    printf("Testing 16bit VNNI to VNNI Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_vnni_to_vnniT_16bit( M, N, ldi, ldo );
+    printf("Testing 16bit VNNI2 to VNNI2 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_vnni2_to_vnni2T_16bit( M, N, ldi, ldo );
+  } else if ( op == 'R' && dtype == 1 ) {
+    printf("Testing 08bit VNNI to VNNI4 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_vnni4_to_vnni4T_08bit( M, N, ldi, ldo );
   } else if ( op == 'V' && dtype == 2 ) {
-    printf("Testing 16bit NORM to VNNI Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_norm_to_vnni_16bit( M, N, ldi, ldo );
+    printf("Testing 16bit NORM to VNNI2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_norm_to_vnni2_16bit( M, N, ldi, ldo );
+  } else if ( op == 'V' && dtype == 1 ) {
+    printf("Testing 08bit NORM to VNNI4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_norm_to_vnni4_08bit( M, N, ldi, ldo );
   } else if ( op == 'X' && dtype == 2 ) {
     printf("Testing 16bit NORM PADN Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padn_mod2_16bit( M, N, ldi, ldo );
@@ -719,7 +1126,16 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'Z' && dtype == 2 ) {
     printf("Testing 16bit NORM PADNM Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod2_16bit( M, N, ldi, ldo );
-  } else {
+  } else if ( op == 'X' && dtype == 1 ) {
+    printf("Testing 08bit NORM PADN Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_norm_padn_mod4_08bit( M, N, ldi, ldo );
+  } else if ( op == 'Y' && dtype == 1 ) {
+    printf("Testing 08bit NORM PADM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_norm_padm_mod4_08bit( M, N, ldi, ldo );
+  } else if ( op == 'Z' && dtype == 1 ) {
+    printf("Testing 08bit NORM PADNM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_norm_padnm_mod4_08bit( M, N, ldi, ldo );
+   } else {
     printf(" Not implemented case! Usage: %s [T/V/R/X/Y/Z] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }

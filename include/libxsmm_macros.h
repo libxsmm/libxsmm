@@ -547,6 +547,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+#define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 
 /** Makes some functions available independent of C99 support. */
@@ -559,6 +560,8 @@
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
+# define LIBXSMM_NEARBYINTF(A) nearbyintf(A)
+# define LIBXSMM_NEARBYINT(A) nearbyint(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
 # define LIBXSMM_SQRTF(A) sqrtf(A)
 # define LIBXSMM_EXP2F(A) exp2f(A)
@@ -573,6 +576,8 @@
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
+# define LIBXSMM_NEARBYINTF(A) LIBXSMM_NEARBYINTX(float, A)
+# define LIBXSMM_NEARBYINT(A) LIBXSMM_NEARBYINTX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((float)(A)))
 # define LIBXSMM_SQRTF(A) ((float)sqrt((float)(A)))
 # define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)

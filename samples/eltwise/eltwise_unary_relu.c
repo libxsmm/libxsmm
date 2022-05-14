@@ -440,7 +440,6 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   float alpha = 0.1f;
   int ret = EXIT_SUCCESS;
   size_t i,j;
-  unsigned int *rng_state;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;

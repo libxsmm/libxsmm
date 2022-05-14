@@ -73,6 +73,23 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_prefetch_output( libxsmm_generated_code*            io_generated_code,
+    unsigned int                       gpr_base,
+    unsigned int                       ldc,
+    unsigned int                       dtype_size,
+    unsigned int                       offset,
+    int                                n_cols ) {
+  unsigned int col = 0;
+  for (col = 0; col < (unsigned int)n_cols; col++) {
+    libxsmm_x86_instruction_prefetch(io_generated_code,
+        LIBXSMM_X86_INSTR_PREFETCHT0,
+        gpr_base,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        (int)((col * ldc * dtype_size + offset)) );
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -238,7 +255,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
             i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
             i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
             i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
+            i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
       }
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -256,7 +273,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
           i_micro_kernel_config->vec_c0, i_micro_kernel_config->vec_c1, i_micro_kernel_config->vec_c2, i_micro_kernel_config->vec_c3,
           i_micro_kernel_config->vec_c1_d, i_micro_kernel_config->vec_c2_d, i_micro_kernel_config->vec_c3_d,
           i_micro_kernel_config->vec_hi_bound, i_micro_kernel_config->vec_lo_bound, i_micro_kernel_config->vec_ones,
-          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves );
+          i_micro_kernel_config->vec_neg_ones, i_micro_kernel_config->vec_halves, 'z' );
 
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
                                                 i_micro_kernel_config->vector_name, reg_1, reg_0, reg_0 );
@@ -902,6 +919,12 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   int n_CL_to_pf;
   unsigned int tile_compute_instr = 0;
   unsigned int gp_reg_a;
+  const char *const l_env_pf_c_scratch_dist = getenv("C_SCR_PF_DIST");
+  const char *const l_env_pf_c_matrix_dist  = getenv("C_MAT_PF_DIST");
+  unsigned int prefetch_C_scratch       = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C_SCRATCH) > 0) ? 1 : 0;
+  unsigned int prefetch_C_scratch_dist  = (l_env_pf_c_scratch_dist == 0) ? 4 : atoi(l_env_pf_c_scratch_dist);
+  unsigned int prefetch_C_matrix        = ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_C) > 0) ? 1 : 0;
+  unsigned int prefetch_C_matrix_dist   = (l_env_pf_c_matrix_dist == 0) ? 3 : atoi(l_env_pf_c_matrix_dist);
 
   /* Tiles in the kernel are organized as indicated below when we use 2x2 2D blocking
    *
@@ -1205,7 +1228,38 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
         _B_tile_id[i],
         _C_tile_id[i]);
 
+    if ((prefetch_C_scratch > 0) && (is_last_k == 1) &&
+        (i_brgemm_loop + prefetch_C_scratch_dist == i_xgemm_desc->c3) &&
+        (((i < 2) && (use_paired_tilestores == 1)) || ((i < 1) && (use_paired_tilestores == 0)))) {
+      unsigned int offset = 0;
+      unsigned int gp_reg_gemm_scratch = i_gp_reg_mapping->gp_reg_help_0;
+      if ((use_paired_tilestores == 1) && (i == 1)) {
+        offset = n_blocking_info->sizes[_in[0]] * i_xgemm_desc->ldc * 4;
+      }
+      libxsmm_x86_instruction_push_reg( io_generated_code, gp_reg_gemm_scratch );
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
+      libxsmm_generator_gemm_amx_prefetch_output( io_generated_code, gp_reg_gemm_scratch, i_xgemm_desc->ldc, 4, offset, n_blocking_info->sizes[in] );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, gp_reg_gemm_scratch);
+    }
+
     _C_tile_done[_C_tile_id[i]] = 1;
+
+    if ((prefetch_C_matrix > 0) && (is_last_k == 1) &&
+        (i_brgemm_loop + prefetch_C_matrix_dist == i_xgemm_desc->c3)) {
+      unsigned int offset = 0;
+      if (use_paired_tilestores == 1) {
+        if (_C_tile_done[_C_tile_mate_id[_C_tile_id[i]]] == 1) {
+          int min_mate_C_id = (_C_tile_id[i] < _C_tile_mate_id[_C_tile_id[i]]) ? _C_tile_id[i] : _C_tile_mate_id[_C_tile_id[i]];
+          int im_store = min_mate_C_id / n_tiles;
+          int in_store = min_mate_C_id % n_tiles;
+          offset = (_in_offset_prefix_sums[in_store] * i_xgemm_desc->ldc + _im_offset_prefix_sums[im_store]) * 2;
+          libxsmm_generator_gemm_amx_prefetch_output( io_generated_code, i_gp_reg_mapping->gp_reg_c, i_xgemm_desc->ldc, 2, offset, n_blocking_info->sizes[in_store] );
+        }
+      } else {
+        offset = (_in_offset_prefix_sums[in] * i_xgemm_desc->ldc + _im_offset_prefix_sums[im]) * 2;
+        libxsmm_generator_gemm_amx_prefetch_output( io_generated_code, i_gp_reg_mapping->gp_reg_c, i_xgemm_desc->ldc, 2, offset, n_blocking_info->sizes[in] );
+      }
+    }
 
     if (emit_tilestores == 1) {
       if (use_paired_tilestores == 1) {

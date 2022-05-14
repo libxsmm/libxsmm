@@ -380,6 +380,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VCVTPS2DQ:
     case LIBXSMM_X86_INSTR_VCVTPS2UDQ:
     case LIBXSMM_X86_INSTR_VPSLLD_I:
+    case LIBXSMM_X86_INSTR_VPSLLW_I:
     case LIBXSMM_X86_INSTR_VPSRAD_I:
     case LIBXSMM_X86_INSTR_VPSRAW_I:
     case LIBXSMM_X86_INSTR_VPSRLD_I:
@@ -1269,6 +1270,12 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
+#if !defined(NDEBUG)
+  if ( (i_vec_reg_number_dst > 31) || (i_vec_reg_number_src > 31) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
+    return;
+  }
+#endif
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
@@ -1448,6 +1455,13 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
   unsigned char tbl_vl[3]         = {0x00, 0x20, 0x40};
   /* index for VL look-ups */
   unsigned int l_vl_idx = (unsigned int)i_vector_name;
+
+#if !defined(NDEBUG)
+  if ( (i_vec_reg_number_0 > 31) || (i_vec_reg_number_1 > 31) || (i_vec_reg_number_2 > 31) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
+    return;
+  }
+#endif
 
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
@@ -2404,7 +2418,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                         i_vector_name, i_vec_reg_number_0, 0, (i_is_store != 0) ? 0 : 1, i_is_store );
     }
-  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
     if ( i_use_masking != 0 ) {
       libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_vmove_instr,
                                              i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -3995,18 +4009,20 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const char i_vector_name,
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
-  /*int l_regsize_adjustment = 0;*/
+  unsigned char vlen_encoding = 0;
 
   switch ( i_vector_name ) {
     case 'x':
       number_of_bytes_to_load = 16;
-      /*l_regsize_adjustment = -4;*/
+      vlen_encoding = 0x08;
       break;
     case 'y':
       number_of_bytes_to_load = 32;
+      vlen_encoding = 0x28;
       break;
     case 'z':
       number_of_bytes_to_load = 64;
+      vlen_encoding = 0x48;
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: strange input for i_vector_name: %c\n",i_vector_name);
@@ -4065,7 +4081,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       i++;
     }
     l_last_load_location = i;
-    if ( i_vector_name == 'z' ) {
+    if (io_generated_code->arch > LIBXSMM_X86_AVX2) {
       buf[ i ] = 0x62;
       if ( i_vec_reg_number <= 7 ) {
         buf[i+1] = 0xf1;
@@ -4080,8 +4096,9 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
         buf[i+1] = 0x61;
         vecval = i_vec_reg_number - 24;
       }
+      /* AVx512VL bits chnage this Avx512VL 0x28  f ox is 08*/
       buf[i+2] = 0x7c;
-      buf[i+3] = 0x48;
+      buf[i+3] = vlen_encoding;
       i += 4;
     } else {
       buf[i] = 0xc5;
@@ -4697,4 +4714,3 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
-
