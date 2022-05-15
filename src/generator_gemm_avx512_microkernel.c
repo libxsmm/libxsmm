@@ -2216,10 +2216,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
           (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
           i_micro_kernel_config->vector_name,
           1+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
-
-        /* we put "1" elements of B matrix into zmm 1+l_m */
-        libxsmm_x86_instruction_vec_compute_2reg_mask(io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16_LD,
-                                                        i_micro_kernel_config->vector_name, 1+l_m, 1+l_m, 3, 1);
       } else {
         /* we put "1" elements of B matrix into zmm 1+l_m */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -2229,7 +2225,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (i_micro_kernel_config->datatype_size_in) * (i_micro_kernel_config->vector_length) * l_m,
           i_micro_kernel_config->vector_name,
-          1+l_m, 3, 1, 0 );
+          1+l_m, 0, 1, 0 );
       }
 
       /* move the right VNNI position into focus */
