@@ -376,6 +376,48 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
       }
     }
+  } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_BF8) &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_BF8) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_F32)    ) {
+    libxsmm_bfloat8* h_a = (libxsmm_bfloat8*)a;
+    libxsmm_bfloat8* h_b = (libxsmm_bfloat8*)b;
+    libxsmm_bfloat8* h_c = (libxsmm_bfloat8*)c;
+    int l_k_block = 4;
+    float acc = 0.0f;
+    libxsmm_bfloat8 bf8_acc;
+
+    for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        for (l_i = 0; l_i < m; l_i++) {
+          if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
+            acc = 0.0f;
+          } else {
+            union libxsmm_bfloat8_f16 tmp_c_hf;
+            tmp_c_hf.i[0] = 0;
+            tmp_c_hf.i[1] = h_c[(l_j * ldc) + l_i];
+            acc = libxsmm_convert_f16_to_f32( tmp_c_hf.hf );
+          }
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+              union libxsmm_bfloat8_f16 tmp_a_hf;
+              union libxsmm_bfloat8_f16 tmp_b_hf;
+              float tmp_a_f;
+              float tmp_b_f;
+              tmp_a_hf.i[0] = 0;
+              tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+              tmp_b_hf.i[0] = 0;
+              tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
+              tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
+
+              acc += tmp_a_f * tmp_b_f;
+            }
+          }
+          libxsmm_rne_convert_fp32_bf8( &acc, &bf8_acc, 1 );
+          h_c[(l_j * ldc) + l_i] = bf8_acc;
+        }
+      }
+    }
   }
 }
 
@@ -748,7 +790,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -763,7 +805,7 @@ void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -1037,6 +1079,13 @@ int main(int argc, char* argv []) {
   } else if (strcmp(l_precision, "BF8F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_BF8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.vnni_a = 1;
+    l_gemm_def.trans_a = 0;
+    l_gemm_def.trans_b = 0;
+  } else if (strcmp(l_precision, "BF8") == 0) {
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_BF8;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_BF8;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
