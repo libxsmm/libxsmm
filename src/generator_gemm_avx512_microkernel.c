@@ -84,7 +84,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
     return;
   }
 
-
   /* Special case that arises in GEMMS from Resnet50 layers  */
   if (i_n_blocking == 7 && l_m_blocking == 4) {
     if ( i_offset != (-1) ) {
@@ -2421,6 +2420,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     return;
   }
 #endif
+
+  /* for BF8 let's call the 2D kernel */
+  if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
+    for ( l_k = 0; l_k < i_k_blocking; l_k++) {
+      libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                                                                   i_xgemm_desc, 1, i_n_blocking, (i_k_blocking == i_xgemm_desc->k) ? l_k : -1 );
+    }
+    return;
+  }
 
   /* compute number of n accumulators to hide FMA latencies */
   if (i_n_blocking >= 12) {

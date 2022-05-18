@@ -796,6 +796,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     l_k_threshold = 23;
   }
 
+  /* for BF8 we need to limit the unrolling */
+  if (  LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
+    l_k_blocking = 2;
+    l_k_threshold = 7;
+  }
+
   /* set up architecture dependent compute micro kernel generator */
   if ( io_generated_code->arch < LIBXSMM_TARGET_ARCH_GENERIC ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
