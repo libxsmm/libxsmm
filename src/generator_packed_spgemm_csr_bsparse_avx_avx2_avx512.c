@@ -281,7 +281,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
   if ( i_packed_remainder != 0 ) {
     /* on AVX512 we can use mask registers */
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
     } else {
       char l_id = (char)l_n_blocking;
       unsigned char l_data[32];

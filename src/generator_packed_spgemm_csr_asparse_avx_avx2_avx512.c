@@ -178,7 +178,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_avx_avx2_avx512( libxsmm_genera
   if ( l_simd_packed_remainder > 0 ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       /* load k1 with mask */
-      libxsmm_generator_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_micro_kernel_config.vector_length-l_simd_packed_remainder, LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
+      libxsmm_generator_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_micro_kernel_config.vector_length-l_simd_packed_remainder, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
     } else {
       /* load register 15 with the mask */
       char l_id = (char)13;
