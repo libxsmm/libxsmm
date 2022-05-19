@@ -31,11 +31,6 @@ void libxsmm_x86_instruction_unified_vec_move_ext( libxsmm_generated_code* io_ge
                                                 const unsigned int      i_is_store );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_mateltwise_initialize_avx_64bit_mask( libxsmm_generated_code*            io_generated_code,
-    const unsigned int                       i_mask_reg,
-    const unsigned int                       i_mask_count);
-
-LIBXSMM_API_INTERN
 void libxsmm_generator_gather_scatter_rows_avx_avx512_mn_loop_unrolled( libxsmm_generated_code*                        io_generated_code,
     unsigned int                                   m_unroll_factor,
     unsigned int                                   n_unroll_factor,

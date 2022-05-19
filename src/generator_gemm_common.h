@@ -240,12 +240,6 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                       const unsigned int                 i_n_blocking );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_initialize_avx512_mask( libxsmm_generated_code*            io_generated_code,
-                                                    const unsigned int                 i_gp_reg_tmp,
-                                                    const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                    const unsigned int                 i_mask_count );
-
-LIBXSMM_API_INTERN
 int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack_var );
 
 LIBXSMM_API_INTERN
