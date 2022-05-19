@@ -1020,8 +1020,8 @@ void libxsmm_generator_gemm_amx_setup_masking_infra( libxsmm_generated_code* io_
     reserved_mask_regs  += 2;
     i_micro_kernel_config->mask_m_fp32  = reserved_mask_regs - 1;
     i_micro_kernel_config->mask_m_bf16  = reserved_mask_regs - 2;
-    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_fp32, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_F32);
-    libxsmm_generator_mateltwise_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_bf16, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_BF16);
+    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_fp32, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_F32);
+    libxsmm_generator_initialize_avx512_mask( io_generated_code, temp_reg, i_micro_kernel_config->mask_m_bf16, 16 - i_micro_kernel_config->m_remainder, LIBXSMM_DATATYPE_BF16);
   }
   i_micro_kernel_config->reserved_mask_regs = reserved_mask_regs;
 }

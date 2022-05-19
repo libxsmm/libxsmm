@@ -66,11 +66,11 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           union libxsmm_bfloat16_f32 tmp;
-          tmp.f = (float)libxsmm_rng_f64();
+          tmp.f = (float)(libxsmm_rng_f64()/100.0);
           bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
           union libxsmm_bfloat8_f16 tmp;
-          tmp.hf = libxsmm_convert_f32_to_f16( (float)libxsmm_rng_f64() );
+          tmp.hf = libxsmm_convert_f32_to_f16( (float)(libxsmm_rng_f64()/100.0) );
           bf8_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
