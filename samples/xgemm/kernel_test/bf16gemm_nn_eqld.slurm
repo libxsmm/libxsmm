@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
+  exit 0;
+fi
 if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
   exit 0;
 fi
