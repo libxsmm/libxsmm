@@ -517,9 +517,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
           unsigned int l_corrected_vlen = l_micro_kernel_config.vector_length;
           unsigned int l_mask_count = l_corrected_vlen - ( l_m_blocking % l_corrected_vlen );
 
-          libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_mask_count, LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+          libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_mask_count, LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype) );
           if ( ( ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ||
                ( ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
+            libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, l_mask_count, LIBXSMM_DATATYPE_I32 );
             libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, 2, l_mask_count, LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
           }
         }

@@ -2289,20 +2289,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
                                                const libxsmm_datatype  i_datatype) {
   unsigned long long l_mask = 0;
 
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256  ) {
-    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
-      l_mask = 0xf;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
-      l_mask = 0xff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
-      l_mask = 0xffff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
-      l_mask = 0xffffffff;
-    } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-      return;
-    }
-  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) && (io_generated_code->arch >= LIBXSMM_X86_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
       l_mask = 0xff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
@@ -2311,6 +2298,19 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       l_mask = 0xffffffff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
       l_mask = 0xffffffffffffffff;
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+      l_mask = 0xf;
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+      l_mask = 0xff;
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
+      l_mask = 0xffff;
+    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+      l_mask = 0xffffffff;
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
