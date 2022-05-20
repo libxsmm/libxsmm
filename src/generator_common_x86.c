@@ -2696,7 +2696,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       l_mask = 0xffff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
       l_mask = 0xffffffff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 || i_datatype == LIBXSMM_DATATYPE_BF8 ) {
       l_mask = 0xffffffffffffffff;
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -2709,7 +2709,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       l_mask = 0xff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
       l_mask = 0xffff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_I8 || i_datatype == LIBXSMM_DATATYPE_BF8 ) {
       l_mask = 0xffffffff;
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -2746,7 +2746,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
         LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
         i_gp_reg_tmp,
         i_mask_reg );
-  } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I8 || i_datatype == LIBXSMM_DATATYPE_BF8 ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
         LIBXSMM_X86_INSTR_KMOVQ_GPR_LD,
         i_gp_reg_tmp,
