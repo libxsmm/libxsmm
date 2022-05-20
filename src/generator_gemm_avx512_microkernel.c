@@ -2190,7 +2190,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
   /* A reg offset */
   unsigned int l_a_reg_offset = 2;
   /* B reg offset */
-  unsigned int l_b_reg_offset = 1;
+  unsigned int l_b_reg_offset = 0;
 
 #if !defined(NDEBUG)
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) ) {

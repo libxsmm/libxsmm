@@ -2247,7 +2247,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
     } else if ( ( ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT)) ||
                   ((i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) )
                 ) &&
-                ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
+                ( ( (LIBXSMM_DATATYPE_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_I8  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ||
+                  ( (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) )    ) ) {
       /* we need to up convert int8 to int32 */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
@@ -2274,16 +2275,31 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
           }
 
           /* convert 8 bit values into 32 bit (integer convert) */
-          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_C_UNSIGNED) != 0 ) {
+          if ( LIBXSMM_DATATYPE_I8  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+            if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_C_UNSIGNED) != 0 ) {
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                  LIBXSMM_X86_INSTR_VPMOVZXBD,
+                  i_micro_kernel_config->vector_name,
+                  0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+            } else {
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                  LIBXSMM_X86_INSTR_VPMOVSXBD,
+                  i_micro_kernel_config->vector_name,
+                  0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+            }
+          } else if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+            /* int8 to int16 convert */
             libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-                LIBXSMM_X86_INSTR_VPMOVZXBD,
-                i_micro_kernel_config->vector_name,
+                LIBXSMM_X86_INSTR_VPMOVZXBW,
+                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
                 0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+            /* F16 to F32 conversion */
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                LIBXSMM_X86_INSTR_VCVTPH2PS,
+                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else {
-            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-                LIBXSMM_X86_INSTR_VPMOVSXBD,
-                i_micro_kernel_config->vector_name,
-                0, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+            /* shouldn't happen */
           }
         }
       }
