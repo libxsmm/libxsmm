@@ -2301,31 +2301,19 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       /* overwriting C, so let's xout accumulator */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-          /* @TODO: cannot migrate to new encoder as this is also SSE */
-          if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )){
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                i_micro_kernel_config->instruction_set,
-                i_micro_kernel_config->c_vmove_instruction,
-                i_gp_reg_mapping->gp_reg_c,
-                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
+          if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
+            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                i_micro_kernel_config->vxor_instruction,
                 i_micro_kernel_config->vector_name,
-                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 0, 1, 0 );
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           } else {
-            if ( io_generated_code->arch >= LIBXSMM_X86_AVX ) {
-              libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                  i_micro_kernel_config->vxor_instruction,
-                  i_micro_kernel_config->vector_name,
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            } else {
-              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
-                  i_micro_kernel_config->vxor_instruction,
-                  i_micro_kernel_config->vector_name,
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
-            }
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code,
+                i_micro_kernel_config->vxor_instruction,
+                i_micro_kernel_config->vector_name,
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
           }
         }
 #if 0
