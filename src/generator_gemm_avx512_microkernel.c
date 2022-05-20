@@ -2191,6 +2191,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
   unsigned int l_a_reg_offset = 2;
   /* B reg offset */
   unsigned int l_b_reg_offset = 0;
+  /* permute registers */
+  unsigned int l_permute_reg = 1;
 
 #if !defined(NDEBUG)
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) ) {
@@ -2258,7 +2260,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
       }
       /* permute into ymm */
       libxsmm_x86_instruction_vec_compute_3reg(io_generated_code, LIBXSMM_X86_INSTR_VPERMW,
-                                               i_micro_kernel_config->vector_name, l_a_reg_offset + l_m, 0, l_a_reg_offset + l_m);
+                                               i_micro_kernel_config->vector_name, l_a_reg_offset + l_m, l_permute_reg, l_a_reg_offset + l_m);
 
       /* convert FP16 into FP32 */
       libxsmm_x86_instruction_vec_compute_2reg(io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS,

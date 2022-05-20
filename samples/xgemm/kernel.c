@@ -66,11 +66,11 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           union libxsmm_bfloat16_f32 tmp;
-          tmp.f = (float)(libxsmm_rng_f64()/100.0);
+          tmp.f = (float)(libxsmm_rng_f64()/1.0);
           bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
           union libxsmm_bfloat8_f16 tmp;
-          tmp.hf = libxsmm_convert_f32_to_f16( (float)(libxsmm_rng_f64()/100.0) );
+          tmp.hf = libxsmm_convert_f32_to_f16( (float)(libxsmm_rng_f64()/1.0) );
           bf8_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
@@ -291,7 +291,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
             f_c[(l_j * ldc) + l_i] = 0.0f;
           }
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
-            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+            for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               union libxsmm_bfloat16_f32 tmp_a_f;
               union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
@@ -315,19 +315,19 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float acc = 0.0f;
     libxsmm_bfloat16 h_acc;
 
-    for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        for (l_i = 0; l_i < m; l_i++) {
-          if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
-            acc = 0.0f;
-          } else {
-            union libxsmm_bfloat16_f32 tmp;
-            tmp.i[0] = 0;
-            tmp.i[1] = h_c[(l_j * ldc) + l_i];
-            acc = tmp.f;
-          }
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        if ( i_gemm_def->beta == 0 ) {
+          acc = 0.0f;
+        } else {
+          union libxsmm_bfloat16_f32 tmp;
+          tmp.i[0] = 0;
+          tmp.i[1] = h_c[(l_j * ldc) + l_i];
+          acc = tmp.f;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
-            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+            for (l_k2 = l_k_block-1; l_k2 >= 0; l_k2--) {
               union libxsmm_bfloat16_f32 tmp_a_f;
               union libxsmm_bfloat16_f32 tmp_b_f;
               tmp_a_f.i[0] = 0;
@@ -338,9 +338,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               acc += tmp_a_f.f * tmp_b_f.f;
             }
           }
-          libxsmm_rne_convert_fp32_bf16( &acc, &h_acc, 1 );
-          h_c[(l_j * ldc) + l_i] = h_acc;
         }
+        libxsmm_rne_convert_fp32_bf16( &acc, &h_acc, 1 );
+        h_c[(l_j * ldc) + l_i] = h_acc;
       }
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_BF8) &&
@@ -431,6 +431,16 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+#if 0
+    libxsmm_blasint l_i, l_j;
+    float* f_data =      (float*)data;
+    float* f_data_gold = (float*)data_gold;
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %f, computed: %f\n", f_data_gold[(l_j * ld) + l_i], f_data[(l_j * ld) + l_i] );
+      }
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
@@ -447,6 +457,9 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
         tmp_c.i[0] = 0;
         tmp_gold.i[1] = h_data_gold[(l_j * ld) + l_i];
         tmp_gold.i[0] = 0;
+#if 0
+        printf("gold: %f, computed: %f\n", tmp_gold.f, tmp_c.f );
+#endif
         l_fabs = fabs((double)tmp_gold.f - (double)tmp_c.f);
         if (max_error < l_fabs) max_error = l_fabs;
       }
@@ -469,6 +482,9 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
         tmp_gold.i[0] = 0;
         tmp_c_f = libxsmm_convert_f16_to_f32( tmp_c.hf );
         tmp_gold_f = libxsmm_convert_f16_to_f32( tmp_gold.hf );
+#if 0
+        printf("gold: %f, computed: %f\n", tmp_gold_f, tmp_c_f );
+#endif
         l_fabs = fabs((double)tmp_gold_f - (double)tmp_c_f);
         if (max_error < l_fabs) max_error = l_fabs;
       }
