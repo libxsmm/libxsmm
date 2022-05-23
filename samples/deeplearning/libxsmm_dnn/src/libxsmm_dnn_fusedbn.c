@@ -97,7 +97,7 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   if (res.pad_h_out != 0) {
     libxsmm_blasint ofwp   = res.W + 2 * res.pad_w_out;
     unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_out * ofwp), res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_out * ofwp), res.bc, ldo, res.datatype_out, res.datatype_out, res.datatype_comp);
     res.all_zero_hp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
     if ( res.all_zero_hp_kernel == NULL) {
       fprintf( stderr, "JIT for TPP fwd all_zero_hp_kernel failed. Bailing...!\n");
@@ -107,7 +107,7 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
 
   if (res.pad_w_out != 0) {
     unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_out, res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_out, res.bc, ldo, res.datatype_out, res.datatype_out, res.datatype_comp);
     res.all_zero_wp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
     if ( res.all_zero_wp_kernel == NULL) {
       fprintf( stderr, "JIT for TPP fwd all_zero_wp_kernel failed. Bailing...!\n");
@@ -335,7 +335,7 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
   if (res.pad_h_in != 0) {
     libxsmm_blasint ifwp   = res.W + 2 * res.pad_w_in;
     unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_in * ifwp), res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, (res.pad_h_in * ifwp), res.bc, ldo, res.datatype_in, res.datatype_in, res.datatype_comp);
     res.all_zero_hp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
     if ( res.all_zero_hp_kernel == NULL) {
       fprintf( stderr, "JIT for TPP bwd all_zero_hp_kernel failed. Bailing...!\n");
@@ -345,7 +345,7 @@ LIBXSMM_API libxsmm_dnn_bn_bwd_config setup_libxsmm_dnn_bn_bwd(libxsmm_blasint N
 
   if (res.pad_w_in != 0) {
     unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
-    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_in, res.bc, ldo, res.datatype_comp, res.datatype_comp, res.datatype_comp);
+    unary_shape            = libxsmm_create_meltw_unary_shape(res.bc, res.pad_w_in, res.bc, ldo, res.datatype_in, res.datatype_in, res.datatype_comp);
     res.all_zero_wp_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags);
     if ( res.all_zero_wp_kernel == NULL) {
       fprintf( stderr, "JIT for TPP bwd all_zero_wp_kernel failed. Bailing...!\n");
@@ -1785,7 +1785,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
       } else { /* hw-blocking (implies no padding) */
         for(hwb=0; hwb < num_HW_blocks; hwb++){
           ho = (hwb*(HW/num_HW_blocks))/W;
-          hi = hi;
+          hi = ho;
           w  = (hwb*(HW/num_HW_blocks))%W;
           if (cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE ||
             cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_RELU_WITH_MASK || cfg.fuse_type == LIBXSMM_DNN_BN_FUSE_ELTWISE_RELU_WITH_MASK) {
@@ -1931,7 +1931,7 @@ LIBXSMM_API void libxsmm_dnn_bn_bwd_exec_bf16( libxsmm_dnn_bn_bwd_config cfg, li
     } else { /* hw-blocking (implies no padding) */
       for(hwb=0; hwb < num_HW_blocks; hwb++){
         ho = (hwb*(HW/num_HW_blocks))/W;
-        hi = hi;
+        hi = ho;
         w  = (hwb*(HW/num_HW_blocks))%W;
         arg_array[0].primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp , n, cp, hi, w, 0, CP, H, W, bc);
         arg_array[3].primary = (void*)&LIBXSMM_VLA_ACCESS(5, dout, n, cp, ho, w, 0, CP, H, W, bc);

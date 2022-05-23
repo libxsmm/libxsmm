@@ -661,5 +661,22 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
                                                 const unsigned int      i_mask_reg_number,
                                                 const unsigned int      i_is_store );
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_tmp,
+                                               const unsigned int      i_mask_reg,
+                                               const unsigned int      i_mask_count,
+                                               const libxsmm_datatype  i_datatype);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated_code,
+                                            const unsigned int      i_mask_reg,
+                                            const unsigned int      i_mask_count );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_initialize_avx_64bit_mask( libxsmm_generated_code* io_generated_code,
+                                                  const unsigned int      i_mask_reg,
+                                                  const unsigned int      i_mask_count);
+
 #endif /* GENERATOR_COMMON_X86_H */
 
