@@ -757,6 +757,9 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VMOVNTPD", &mycode, LIBXSMM_X86_INSTR_VMOVNTPD, 2 );
   test_evex_load_store( "evex_mov_VMOVNTPS", &mycode, LIBXSMM_X86_INSTR_VMOVNTPS, 2 );
   test_evex_load_store( "evex_mov_VMOVNTDQ", &mycode, LIBXSMM_X86_INSTR_VMOVNTDQ, 2 );
+  test_evex_load_store( "evex_mov_VMOVSH_LD_MEM", &mycode, LIBXSMM_X86_INSTR_VMOVSH_LD_MEM, 1 );
+  test_evex_load_store( "evex_mov_VMOVSH_ST_MEM", &mycode, LIBXSMM_X86_INSTR_VMOVSH_ST_MEM, 2 );
+
   /* @TODO check these for stores */
   test_evex_load_store( "evex_mov_VPMOVDW", &mycode, LIBXSMM_X86_INSTR_VPMOVDW, 1 );
   test_evex_load_store( "evex_mov_VPMOVDB", &mycode, LIBXSMM_X86_INSTR_VPMOVDB, 1 );
@@ -774,6 +777,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VBROADCASTI64X2", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X2, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI32X8", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI32X8, 1 );
   test_evex_load_store( "evex_mov_VBROADCASTI64X4", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI64X4, 1 );
+
   test_evex_gathscat( "evex_gathscat_VGATHERDPS", &mycode, LIBXSMM_X86_INSTR_VGATHERDPS, 1 );
   test_evex_gathscat( "evex_gathscat_VGATHERDPD", &mycode, LIBXSMM_X86_INSTR_VGATHERDPD, 1 );
   test_evex_gathscat( "evex_gathscat_VGATHERQPS", &mycode, LIBXSMM_X86_INSTR_VGATHERQPS, 1 );
@@ -1069,6 +1073,86 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VPBROADCASTQ", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_vex_compute_3reg_general( "vex_reg_VPBROADCASTQ_VEX", &mycode, LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX, 1, LIBXSMM_X86_IMM_UNDEF, 0 );
   test_evex_compute_3reg_general( "evex_reg_VBROADCASTI32X2", &mycode, LIBXSMM_X86_INSTR_VBROADCASTI32X2, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+
+  /* AVX512 FP16 */
+  test_evex_compute_3reg_general( "evex_reg_VADDPH", &mycode, LIBXSMM_X86_INSTR_VADDPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VADDSH", &mycode, LIBXSMM_X86_INSTR_VADDSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VCMPPH", &mycode, LIBXSMM_X86_INSTR_VCMPPH, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_VCMPSH", &mycode, LIBXSMM_X86_INSTR_VCMPSH, 0, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_VDIVPH", &mycode, LIBXSMM_X86_INSTR_VDIVPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VDIVSH", &mycode, LIBXSMM_X86_INSTR_VDIVSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFCMADDCPH", &mycode, LIBXSMM_X86_INSTR_VFCMADDCPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADDCPH", &mycode, LIBXSMM_X86_INSTR_VFMADDCPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFCMADDCSH", &mycode, LIBXSMM_X86_INSTR_VFCMADDCSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADDCSH", &mycode, LIBXSMM_X86_INSTR_VFMADDCSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFCMULCPH", &mycode, LIBXSMM_X86_INSTR_VFCMULCPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMULCPH", &mycode, LIBXSMM_X86_INSTR_VFMULCPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFCMULCSH", &mycode, LIBXSMM_X86_INSTR_VFCMULCSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMULCSH", &mycode, LIBXSMM_X86_INSTR_VFMULCSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADDSUB132PH", &mycode, LIBXSMM_X86_INSTR_VFMADDSUB132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADDSUB213PH", &mycode, LIBXSMM_X86_INSTR_VFMADDSUB213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADDSUB231PH", &mycode, LIBXSMM_X86_INSTR_VFMADDSUB231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUBADD132PH", &mycode, LIBXSMM_X86_INSTR_VFMSUBADD132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUBADD213PH", &mycode, LIBXSMM_X86_INSTR_VFMSUBADD213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUBADD231PH", &mycode, LIBXSMM_X86_INSTR_VFMSUBADD231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD132PH", &mycode, LIBXSMM_X86_INSTR_VFMADD132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD213PH", &mycode, LIBXSMM_X86_INSTR_VFMADD213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD231PH", &mycode, LIBXSMM_X86_INSTR_VFMADD231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD132PH", &mycode, LIBXSMM_X86_INSTR_VFNMADD132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD213PH", &mycode, LIBXSMM_X86_INSTR_VFNMADD213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD231PH", &mycode, LIBXSMM_X86_INSTR_VFNMADD231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD132SH", &mycode, LIBXSMM_X86_INSTR_VFMADD132SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD213SH", &mycode, LIBXSMM_X86_INSTR_VFMADD213SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMADD231SH", &mycode, LIBXSMM_X86_INSTR_VFMADD231SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD132SH", &mycode, LIBXSMM_X86_INSTR_VFNMADD132SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD213SH", &mycode, LIBXSMM_X86_INSTR_VFNMADD213SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMADD231SH", &mycode, LIBXSMM_X86_INSTR_VFNMADD231SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB132PH", &mycode, LIBXSMM_X86_INSTR_VFMSUB132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB213PH", &mycode, LIBXSMM_X86_INSTR_VFMSUB213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB231PH", &mycode, LIBXSMM_X86_INSTR_VFMSUB231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB132PH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB132PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB213PH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB213PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB231PH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB231PH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB132SH", &mycode, LIBXSMM_X86_INSTR_VFMSUB132SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB213SH", &mycode, LIBXSMM_X86_INSTR_VFMSUB213SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFMSUB231SH", &mycode, LIBXSMM_X86_INSTR_VFMSUB231SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB132SH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB132SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB213SH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB213SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VFNMSUB231SH", &mycode, LIBXSMM_X86_INSTR_VFNMSUB231SH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPCLASSPH", &mycode, LIBXSMM_X86_INSTR_VPCLASSPH, 1, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_VPCLASSSH", &mycode, LIBXSMM_X86_INSTR_VPCLASSSH, 1, 0x01, 8 );
+  test_evex_compute_3reg_general( "evex_reg_VGETEXPPH", &mycode, LIBXSMM_X86_INSTR_VGETEXPPH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VGETEXPSH", &mycode, LIBXSMM_X86_INSTR_VGETEXPSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VGETMANTPH", &mycode, LIBXSMM_X86_INSTR_VGETMANTPH, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VGETMANTSH", &mycode, LIBXSMM_X86_INSTR_VGETMANTSH, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMAXPH", &mycode, LIBXSMM_X86_INSTR_VMAXPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMAXSH", &mycode, LIBXSMM_X86_INSTR_VMAXSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMINPH", &mycode, LIBXSMM_X86_INSTR_VMINPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMINSH", &mycode, LIBXSMM_X86_INSTR_VMINSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMOVSH_LD_3REG", &mycode, LIBXSMM_X86_INSTR_VMOVSH_LD_3REG, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMOVSH_ST_3REG", &mycode, LIBXSMM_X86_INSTR_VMOVSH_ST_3REG, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+#if 0
+  test_evex_compute_3reg_general( "evex_reg_VMOVW_LD", &mycode, LIBXSMM_X86_INSTR_VMOVW_LD, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMOVW_ST", &mycode, LIBXSMM_X86_INSTR_VMOVW_ST, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+#endif
+  test_evex_compute_3reg_general( "evex_reg_VMULPH", &mycode, LIBXSMM_X86_INSTR_VMULPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VMULSH", &mycode, LIBXSMM_X86_INSTR_VMULSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRCPPH", &mycode, LIBXSMM_X86_INSTR_VRCPPH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRCPSH", &mycode, LIBXSMM_X86_INSTR_VRCPSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VREDUCEPH", &mycode, LIBXSMM_X86_INSTR_VREDUCEPH, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VREDUCESH", &mycode, LIBXSMM_X86_INSTR_VREDUCESH, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRNDSCALEPH", &mycode, LIBXSMM_X86_INSTR_VRNDSCALEPH, 1, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRNDSCALESH", &mycode, LIBXSMM_X86_INSTR_VRNDSCALESH, 0, 0x01, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRSQRTPH", &mycode, LIBXSMM_X86_INSTR_VRSQRTPH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VRSQRTSH", &mycode, LIBXSMM_X86_INSTR_VRSQRTSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSCALEFPH", &mycode, LIBXSMM_X86_INSTR_VSCALEFPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSCALEFSH", &mycode, LIBXSMM_X86_INSTR_VSCALEFSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSQRTPH", &mycode, LIBXSMM_X86_INSTR_VSQRTPH, 1, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSQRTSH", &mycode, LIBXSMM_X86_INSTR_VSQRTSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSUBPH", &mycode, LIBXSMM_X86_INSTR_VSUBPH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VSUBSH", &mycode, LIBXSMM_X86_INSTR_VSUBSH, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+
+  /* VEX only */
   mycode.arch = LIBXSMM_X86_AVX2;
   test_vex_compute_3reg_general( "vex_reg_VMOVD_LD", &mycode, LIBXSMM_X86_INSTR_VMOVD_LD, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
   test_vex_compute_3reg_general( "vex_reg_VMOVD_ST", &mycode, LIBXSMM_X86_INSTR_VMOVD_ST, 1, LIBXSMM_X86_IMM_UNDEF, 1 );
