@@ -1322,7 +1322,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   unsigned char tbl_scale[9]        = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
   unsigned char tbl_vl[3]           = {0x00, 0x20, 0x40};
   unsigned char tbl_disp8div[8]     = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-  unsigned char tbl_disp8divbcst[2] = {0x04, 0x08};
+  unsigned char tbl_disp8divbcst[4] = {0x04, 0x08, 0x02, 0x00};
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
   /* index for VL look-ups */
@@ -1358,7 +1358,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
      encoding process */
   /* 1 A) handling EVEX compressed displacement */
   if ( i_use_broadcast ) {
-    l_wbit     = (unsigned char)((i_vec_instr >> 23) & 1);
+    l_wbit     = (unsigned char)((i_vec_instr >> 23) & 0x3);
     l_disp8div = tbl_disp8divbcst[ l_wbit ];
   } else {
     /* read initial VL=512 calibrated disp8div look up */
