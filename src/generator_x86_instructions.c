@@ -716,6 +716,78 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX:
     case LIBXSMM_X86_INSTR_VPBROADCASTB:
     case LIBXSMM_X86_INSTR_VPBROADCASTW:
+    case LIBXSMM_X86_INSTR_VADDPH:
+    case LIBXSMM_X86_INSTR_VADDSH:
+    case LIBXSMM_X86_INSTR_VCMPPH:
+    case LIBXSMM_X86_INSTR_VCMPSH:
+    case LIBXSMM_X86_INSTR_VDIVPH:
+    case LIBXSMM_X86_INSTR_VDIVSH:
+    case LIBXSMM_X86_INSTR_VFCMADDCPH:
+    case LIBXSMM_X86_INSTR_VFMADDCPH:
+    case LIBXSMM_X86_INSTR_VFCMADDCSH:
+    case LIBXSMM_X86_INSTR_VFMADDCSH:
+    case LIBXSMM_X86_INSTR_VFCMULCPH:
+    case LIBXSMM_X86_INSTR_VFMULCPH:
+    case LIBXSMM_X86_INSTR_VFCMULCSH:
+    case LIBXSMM_X86_INSTR_VFMULCSH:
+    case LIBXSMM_X86_INSTR_VFMADDSUB132PH:
+    case LIBXSMM_X86_INSTR_VFMADDSUB213PH:
+    case LIBXSMM_X86_INSTR_VFMADDSUB231PH:
+    case LIBXSMM_X86_INSTR_VFMSUBADD132PH:
+    case LIBXSMM_X86_INSTR_VFMSUBADD213PH:
+    case LIBXSMM_X86_INSTR_VFMSUBADD231PH:
+    case LIBXSMM_X86_INSTR_VFMADD132PH:
+    case LIBXSMM_X86_INSTR_VFMADD213PH:
+    case LIBXSMM_X86_INSTR_VFMADD231PH:
+    case LIBXSMM_X86_INSTR_VFNMADD132PH:
+    case LIBXSMM_X86_INSTR_VFNMADD213PH:
+    case LIBXSMM_X86_INSTR_VFNMADD231PH:
+    case LIBXSMM_X86_INSTR_VFMADD132SH:
+    case LIBXSMM_X86_INSTR_VFMADD213SH:
+    case LIBXSMM_X86_INSTR_VFMADD231SH:
+    case LIBXSMM_X86_INSTR_VFNMADD132SH:
+    case LIBXSMM_X86_INSTR_VFNMADD213SH:
+    case LIBXSMM_X86_INSTR_VFNMADD231SH:
+    case LIBXSMM_X86_INSTR_VFMSUB132PH:
+    case LIBXSMM_X86_INSTR_VFMSUB213PH:
+    case LIBXSMM_X86_INSTR_VFMSUB231PH:
+    case LIBXSMM_X86_INSTR_VFNMSUB132PH:
+    case LIBXSMM_X86_INSTR_VFNMSUB213PH:
+    case LIBXSMM_X86_INSTR_VFNMSUB231PH:
+    case LIBXSMM_X86_INSTR_VFMSUB132SH:
+    case LIBXSMM_X86_INSTR_VFMSUB213SH:
+    case LIBXSMM_X86_INSTR_VFMSUB231SH:
+    case LIBXSMM_X86_INSTR_VFNMSUB132SH:
+    case LIBXSMM_X86_INSTR_VFNMSUB213SH:
+    case LIBXSMM_X86_INSTR_VFNMSUB231SH:
+    case LIBXSMM_X86_INSTR_VPCLASSPH:
+    case LIBXSMM_X86_INSTR_VPCLASSSH:
+    case LIBXSMM_X86_INSTR_VGETEXPPH:
+    case LIBXSMM_X86_INSTR_VGETEXPSH:
+    case LIBXSMM_X86_INSTR_VGETMANTPH:
+    case LIBXSMM_X86_INSTR_VGETMANTSH:
+    case LIBXSMM_X86_INSTR_VMAXPH:
+    case LIBXSMM_X86_INSTR_VMAXSH:
+    case LIBXSMM_X86_INSTR_VMINPH:
+    case LIBXSMM_X86_INSTR_VMINSH:
+    case LIBXSMM_X86_INSTR_VMOVW_LD:
+    case LIBXSMM_X86_INSTR_VMOVW_ST:
+    case LIBXSMM_X86_INSTR_VMULPH:
+    case LIBXSMM_X86_INSTR_VMULSH:
+    case LIBXSMM_X86_INSTR_VRCPPH:
+    case LIBXSMM_X86_INSTR_VRCPSH:
+    case LIBXSMM_X86_INSTR_VREDUCEPH:
+    case LIBXSMM_X86_INSTR_VREDUCESH:
+    case LIBXSMM_X86_INSTR_VRNDSCALEPH:
+    case LIBXSMM_X86_INSTR_VRNDSCALESH:
+    case LIBXSMM_X86_INSTR_VRSQRTPH:
+    case LIBXSMM_X86_INSTR_VRSQRTSH:
+    case LIBXSMM_X86_INSTR_VSCALEFPH:
+    case LIBXSMM_X86_INSTR_VSCALEFSH:
+    case LIBXSMM_X86_INSTR_VSQRTPH:
+    case LIBXSMM_X86_INSTR_VSQRTSH:
+    case LIBXSMM_X86_INSTR_VSUBPH:
+    case LIBXSMM_X86_INSTR_VSUBSH:
       break;
     default:
       l_return = 0;
@@ -768,6 +840,8 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_MOVNTDQ:
     case LIBXSMM_X86_INSTR_MOVNTDQA:
     case LIBXSMM_X86_INSTR_LDDQU:
+    case LIBXSMM_X86_INSTR_VMOVSH_LD_MEM:
+    case LIBXSMM_X86_INSTR_VMOVSH_ST_MEM:
       break;
     default:
       l_return = 0;
@@ -801,6 +875,8 @@ unsigned int libxsmm_x86_instruction_vec_is_regonly( const unsigned int i_instr 
     case LIBXSMM_X86_INSTR_PSRLW_I:
     case LIBXSMM_X86_INSTR_PSRLD_I:
     case LIBXSMM_X86_INSTR_PSRLQ_I:
+    case LIBXSMM_X86_INSTR_VMOVSH_LD_3REG:
+    case LIBXSMM_X86_INSTR_VMOVSH_ST_3REG:
       break;
     default:
       l_return = 0;
@@ -1246,7 +1322,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   unsigned char tbl_scale[9]        = {0x00, 0x00, 0x40, 0x40, 0x80, 0x80, 0x80, 0x80, 0xc0 };
   unsigned char tbl_vl[3]           = {0x00, 0x20, 0x40};
   unsigned char tbl_disp8div[8]     = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-  unsigned char tbl_disp8divbcst[2] = {0x04, 0x08};
+  unsigned char tbl_disp8divbcst[4] = {0x04, 0x08, 0x02, 0x00};
   /* control variable if we need to encode in SIB mode */
   unsigned char l_have_sib = 0;
   /* index for VL look-ups */
@@ -1282,7 +1358,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
      encoding process */
   /* 1 A) handling EVEX compressed displacement */
   if ( i_use_broadcast ) {
-    l_wbit     = (unsigned char)((i_vec_instr >> 23) & 1);
+    l_wbit     = (unsigned char)((i_vec_instr >> 23) & 0x3);
     l_disp8div = tbl_disp8divbcst[ l_wbit ];
   } else {
     /* read initial VL=512 calibrated disp8div look up */

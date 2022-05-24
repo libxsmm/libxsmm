@@ -59,7 +59,7 @@
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
  * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
  * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
- * 24 only used for pure/base REX/IA32 encodings to signal that the insturctions skips the modrm byte and the opcode byte holds the register
+ * 24 used for pure/base REX/IA32 encodings to signal that the insturctions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
  * 3rd byte:
  * ---------
  * 23 W bit (single inputs=0 or double inputs=1)
@@ -483,6 +483,84 @@
 #define LIBXSMM_X86_INSTR_VDPBF16PS        0xf0062652
 #define LIBXSMM_X86_INSTR_VCVTNEPS2BF16    0xe0062672
 #define LIBXSMM_X86_INSTR_VCVTNE2PS2BF16   0xf0072672
+
+/* AVX512 FP16 */
+#define LIBXSMM_X86_INSTR_VADDPH           0xf1045658
+#define LIBXSMM_X86_INSTR_VADDSH           0xf0065958
+#define LIBXSMM_X86_INSTR_VCMPPH           0xf10c36c2
+#define LIBXSMM_X86_INSTR_VCMPSH           0xf00e39c2
+#define LIBXSMM_X86_INSTR_VDIVPH           0xf104565e
+#define LIBXSMM_X86_INSTR_VDIVSH           0xf006595e
+#define LIBXSMM_X86_INSTR_VFCMADDCPH       0xf0076656
+#define LIBXSMM_X86_INSTR_VFMADDCPH        0xf0066656
+#define LIBXSMM_X86_INSTR_VFCMADDCSH       0xf0076a57
+#define LIBXSMM_X86_INSTR_VFMADDCSH        0xf0066a57
+#define LIBXSMM_X86_INSTR_VFCMULCPH        0xf00766d6
+#define LIBXSMM_X86_INSTR_VFMULCPH         0xf00666d6
+#define LIBXSMM_X86_INSTR_VFCMULCSH        0xf0076ad7
+#define LIBXSMM_X86_INSTR_VFMULCSH         0xf0066ad7
+#define LIBXSMM_X86_INSTR_VFMADDSUB132PH   0xf1056696
+#define LIBXSMM_X86_INSTR_VFMADDSUB213PH   0xf10566a6
+#define LIBXSMM_X86_INSTR_VFMADDSUB231PH   0xf10566b6
+#define LIBXSMM_X86_INSTR_VFMSUBADD132PH   0xf1056697
+#define LIBXSMM_X86_INSTR_VFMSUBADD213PH   0xf10566a7
+#define LIBXSMM_X86_INSTR_VFMSUBADD231PH   0xf10566b7
+#define LIBXSMM_X86_INSTR_VFMADD132PH      0xf1056698
+#define LIBXSMM_X86_INSTR_VFMADD213PH      0xf10566a8
+#define LIBXSMM_X86_INSTR_VFMADD231PH      0xf10566b8
+#define LIBXSMM_X86_INSTR_VFNMADD132PH     0xf105669c
+#define LIBXSMM_X86_INSTR_VFNMADD213PH     0xf10566ac
+#define LIBXSMM_X86_INSTR_VFNMADD231PH     0xf10566bc
+#define LIBXSMM_X86_INSTR_VFMADD132SH      0xf0056999
+#define LIBXSMM_X86_INSTR_VFMADD213SH      0xf00569a9
+#define LIBXSMM_X86_INSTR_VFMADD231SH      0xf00569b9
+#define LIBXSMM_X86_INSTR_VFNMADD132SH     0xf005699d
+#define LIBXSMM_X86_INSTR_VFNMADD213SH     0xf00569ad
+#define LIBXSMM_X86_INSTR_VFNMADD231SH     0xf00569bd
+#define LIBXSMM_X86_INSTR_VFMSUB132PH      0xf105669a
+#define LIBXSMM_X86_INSTR_VFMSUB213PH      0xf10566aa
+#define LIBXSMM_X86_INSTR_VFMSUB231PH      0xf10566ba
+#define LIBXSMM_X86_INSTR_VFNMSUB132PH     0xf105669e
+#define LIBXSMM_X86_INSTR_VFNMSUB213PH     0xf10566ae
+#define LIBXSMM_X86_INSTR_VFNMSUB231PH     0xf10566be
+#define LIBXSMM_X86_INSTR_VFMSUB132SH      0xf005699b
+#define LIBXSMM_X86_INSTR_VFMSUB213SH      0xf00569ab
+#define LIBXSMM_X86_INSTR_VFMSUB231SH      0xf00569bb
+#define LIBXSMM_X86_INSTR_VFNMSUB132SH     0xf005699f
+#define LIBXSMM_X86_INSTR_VFNMSUB213SH     0xf00569af
+#define LIBXSMM_X86_INSTR_VFNMSUB231SH     0xf00569bf
+#define LIBXSMM_X86_INSTR_VPCLASSPH        0xe10c3666
+#define LIBXSMM_X86_INSTR_VPCLASSSH        0xe00c3967
+#define LIBXSMM_X86_INSTR_VGETEXPPH        0xe1056642
+#define LIBXSMM_X86_INSTR_VGETEXPSH        0xf0056943
+#define LIBXSMM_X86_INSTR_VGETMANTPH       0xe10c3626
+#define LIBXSMM_X86_INSTR_VGETMANTSH       0xf00c3927
+#define LIBXSMM_X86_INSTR_VMAXPH           0xf104565f
+#define LIBXSMM_X86_INSTR_VMAXSH           0xf006595f
+#define LIBXSMM_X86_INSTR_VMINPH           0xf104565d
+#define LIBXSMM_X86_INSTR_VMINSH           0xf006595d
+#define LIBXSMM_X86_INSTR_VMOVSH_LD_MEM    0xe0065910
+#define LIBXSMM_X86_INSTR_VMOVSH_ST_MEM    0xe0065911
+#define LIBXSMM_X86_INSTR_VMOVSH_LD_3REG   0xf0065910
+#define LIBXSMM_X86_INSTR_VMOVSH_ST_3REG   0xf0065911
+#define LIBXSMM_X86_INSTR_VMOVW_LD         0xe005596e
+#define LIBXSMM_X86_INSTR_VMOVW_ST         0xe005597e
+#define LIBXSMM_X86_INSTR_VMULPH           0xf1045659
+#define LIBXSMM_X86_INSTR_VMULSH           0xf0065959
+#define LIBXSMM_X86_INSTR_VRCPPH           0xe105664c
+#define LIBXSMM_X86_INSTR_VRCPSH           0xf005694d
+#define LIBXSMM_X86_INSTR_VREDUCEPH        0xe10c3656
+#define LIBXSMM_X86_INSTR_VREDUCESH        0xf00c3957
+#define LIBXSMM_X86_INSTR_VRNDSCALEPH      0xe10c3608
+#define LIBXSMM_X86_INSTR_VRNDSCALESH      0xf00c390a
+#define LIBXSMM_X86_INSTR_VRSQRTPH         0xe105664e
+#define LIBXSMM_X86_INSTR_VRSQRTSH         0xf005694f
+#define LIBXSMM_X86_INSTR_VSCALEFPH        0xf105662c
+#define LIBXSMM_X86_INSTR_VSCALEFSH        0xf005692d
+#define LIBXSMM_X86_INSTR_VSQRTPH          0xe1045651
+#define LIBXSMM_X86_INSTR_VSQRTSH          0xf0065951
+#define LIBXSMM_X86_INSTR_VSUBPH           0xf104565c
+#define LIBXSMM_X86_INSTR_VSUBSH           0xf006595c
 
 /* AVX512 Mask compute instructions  */
 #define LIBXSMM_X86_INSTR_KADDB            0xb005134a
