@@ -44,6 +44,19 @@ do
       done
     done
   done
+  for PREC_IN in 1 4
+  do
+    for PREC_COMP in 4
+    do
+      for PREC_OUT in 1 4
+      do
+        for BCAST_IN in 0 1 2 3
+        do
+          ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+        done
+      done
+    done
+  done
 done
 
 rm ${TESTFILE1}
