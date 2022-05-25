@@ -343,59 +343,70 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
 
 double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
-  double max_error = 0.0;
+  double error = 0.0;
 
   libxsmm_matdiff_clear(&l_diff);
 
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
-    max_error = l_diff.linf_abs;
+    error = l_diff.normf_rel;
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
-    max_error = l_diff.linf_abs;
+    error = l_diff.normf_rel;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-    libxsmm_blasint l_i, l_j;
-    libxsmm_bfloat16* h_data =      (libxsmm_bfloat16*)data;
-    libxsmm_bfloat16* h_data_gold = (libxsmm_bfloat16*)data_gold;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        union libxsmm_bfloat16_hp tmp_c;
-        union libxsmm_bfloat16_hp tmp_gold;
-        double l_fabs;
+    float* data_gold_f = malloc( ld * n * sizeof(float) );
+    float* data_f      = malloc( ld * n * sizeof(float) );
 
-        tmp_c.i[1] = h_data[(l_j * ld) + l_i];
-        tmp_c.i[0] = 0;
-        tmp_gold.i[1] = h_data_gold[(l_j * ld) + l_i];
-        tmp_gold.i[0] = 0;
-        l_fabs = fabs((double)tmp_gold.f - (double)tmp_c.f);
-        if (max_error < l_fabs) max_error = l_fabs;
-      }
-    }
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data,      data_f,      ld*n );
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
+    error = l_diff.normf_rel;
+
+    free( data_f );
+    free( data_gold_f ) ;
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
     libxsmm_blasint l_i, l_j;
+    double* data_gold_f = malloc( ld * n * sizeof(double) );
+    double* data_f      = malloc( ld * n * sizeof(double) );
     int* l_data = (int*)data;
     int* l_data_gold = (int*)data_gold;
+
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
-        const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
-        if (max_error < l_fabs) max_error = l_fabs;
+        data_gold_f[(l_j * ld) + l_i] = (double)l_data_gold[(l_j * ld) + l_i];
+        data_f[(l_j * ld) + l_i]      = (double)l_data[(l_j * ld) + l_i];
       }
     }
+
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
+    error = l_diff.normf_rel;
+
+    free( data_f );
+    free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_blasint l_i, l_j;
+    double* data_gold_f = malloc( ld * n * sizeof(double) );
+    double* data_f      = malloc( ld * n * sizeof(double) );
     unsigned char* l_data      = (unsigned char*)data;
     unsigned char* l_data_gold = (unsigned char*)data_gold;
+
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
-        const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
-        if (max_error < l_fabs) max_error = l_fabs;
+        data_gold_f[(l_j * ld) + l_i] = (double)l_data_gold[(l_j * ld) + l_i];
+        data_f[(l_j * ld) + l_i]      = (double)l_data[(l_j * ld) + l_i];
       }
     }
+
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
+    error = l_diff.normf_rel;
+
+    free( data_f );
+    free( data_gold_f );
   } else {
-    max_error = 100.0;
+    error = 100.0;
   }
 
-  return max_error;
+  return error;
 }
 
 double jit_matmul( const gemm_def*    i_gemm_def,
@@ -1094,12 +1105,18 @@ int main(int argc, char* argv []) {
   /* Print total max error */
   printf("\n\n Total Max Error %f\n\n", l_total_max_error );
 
-  if ( l_total_max_error >= 0.00005 && l_br_type == 0) {
-    return EXIT_FAILURE;
-  } else if ( l_total_max_error >= 0.0005 && l_br_type > 0) {
-    return EXIT_FAILURE;
+  if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
+    if ( l_total_max_error >= 0.001 ) {
+      return EXIT_FAILURE;
+    } else {
+      return EXIT_SUCCESS;
+    }
   } else {
-    return EXIT_SUCCESS;
+    if ( l_total_max_error >= 0.00001 ) {
+      return EXIT_FAILURE;
+    } else {
+      return EXIT_SUCCESS;
+    }
   }
 }
 
