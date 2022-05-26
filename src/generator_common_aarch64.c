@@ -213,7 +213,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
                                                             const unsigned int      i_masked_elems,
                                                             const unsigned int      i_adv_gpr ) {
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch >= LIBXSMM_AARCH64_ALLFEAT);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
   if( l_is_sve ) {
     int l_pred_reg = 0;/* todo find suitable predicate register */
