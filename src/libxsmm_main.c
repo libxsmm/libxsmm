@@ -1472,8 +1472,11 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_AARCH64_V81:
     case LIBXSMM_AARCH64_V82:
-    case LIBXSMM_AARCH64_A64FX:
-    case LIBXSMM_AARCH64_APPL_M1: {
+    case LIBXSMM_AARCH64_APPL_M1:
+    case LIBXSMM_AARCH64_SVE256:
+    case LIBXSMM_AARCH64_C7G:
+    case LIBXSMM_AARCH64_SVE512:
+    case LIBXSMM_AARCH64_A64FX: {
       target_archid = id;
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC:
@@ -1598,11 +1601,20 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (arch == libxsmm_stristr(arch, "arm_v82")) {
       target_archid = LIBXSMM_AARCH64_V82;
     }
-    else if (arch == libxsmm_stristr(arch, "a64fx")) {
-      target_archid = LIBXSMM_AARCH64_A64FX;
-    }
     else if (arch == libxsmm_stristr(arch, "appl_m1")) {
       target_archid = LIBXSMM_AARCH64_APPL_M1;
+    }
+    else if (arch == libxsmm_stristr(arch, "sve256")) {
+      target_archid = LIBXSMM_AARCH64_SVE256;
+    }
+    else if (arch == libxsmm_stristr(arch, "c7g")) {
+      target_archid = LIBXSMM_AARCH64_C7G;
+    }
+    else if (arch == libxsmm_stristr(arch, "sve512")) {
+      target_archid = LIBXSMM_AARCH64_SVE512;
+    }
+    else if (arch == libxsmm_stristr(arch, "a64fx")) {
+      target_archid = LIBXSMM_AARCH64_A64FX;
     }
 #endif
     else if (arch == libxsmm_stristr(arch, "generic")) {
