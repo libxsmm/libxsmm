@@ -429,7 +429,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     internal_gemm_nstretch = 1.0f;
     internal_gemm_kstretch = 1.0f;
   }
-  else if (LIBXSMM_X86_AVX2 <= archid) {
+  else if (LIBXSMM_X86_AVX2_ADL <= archid) {
     internal_gemm_vwidth = 32;
     internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 3.0f;

@@ -276,7 +276,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
                 i_gp_reg_mapping->gp_reg_help_2,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 (l_m * (i_micro_kernel_config->vector_length)) * 2,
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
                 l_vec_reg_acc_start + l_m, 2, 1, 0 );
           } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -285,7 +285,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
                 i_gp_reg_mapping->gp_reg_help_2,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 (l_m * (i_micro_kernel_config->vector_length)) * 2,
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
                 l_vec_reg_acc_start + l_m, 0, 1, 0 );
           }
           /* convert 16 bit values into 32 bit (integer convert) */
@@ -303,7 +303,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
               16);
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
-              ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+              ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
               l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       } else if (colbias_precision == LIBXSMM_DATATYPE_F32) {
@@ -353,7 +353,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
             i_gp_reg_mapping->gp_reg_help_2,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (l_m * (i_micro_kernel_config->vector_length)) * 2,
-            ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+            ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
             0, 2, 1, 0 );
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -362,7 +362,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
             i_gp_reg_mapping->gp_reg_help_2,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (l_m * (i_micro_kernel_config->vector_length)) * 2,
-            ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
+            ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
             0, 0, 1, 0 );
       }
       /* convert 16 bit values into 32 bit (integer convert) */
@@ -1004,7 +1004,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDPS;
     }
-  } else if ( i_arch <= LIBXSMM_X86_AVX2 ) {
+  } else if ( i_arch <= LIBXSMM_X86_AVX2_ADL ) {
     io_micro_kernel_config->instruction_set = i_arch;
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -1488,7 +1488,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, redirecting to scalar, please fix the generation code!!!\n");
 #endif
     libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_arch, i_xgemm_desc, i_use_masking_a_c );
-  } else if ( i_arch <= LIBXSMM_X86_AVX2 ) {
+  } else if ( i_arch <= LIBXSMM_X86_AVX2_ADL ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -2134,7 +2134,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3    ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE42   ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX     ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ||
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2_ADL   ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
@@ -2168,7 +2169,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
     /* pure BF16 kernel */
     if ( ( ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT)) ||
-           ((i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ))
+           ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ))
           ) && ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we add when scaling during conversion to FP32 */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -2181,7 +2182,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 i_gp_reg_mapping->gp_reg_c,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
                 0, 2, 1, 0 );
           } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -2190,7 +2191,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 i_gp_reg_mapping->gp_reg_c,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y',
                 0, 0, 1, 0 );
           }
           /* convert 16 bit values into 32 bit (integer convert) */
@@ -2215,7 +2216,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       }
     /* pure int8 kernel */
     } else if ( ( ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT)) ||
-                  ((i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) )
+                  ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) )
                 ) &&
                 ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we need to up convert int8 to int32 */
@@ -2230,7 +2231,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                 i_gp_reg_mapping->gp_reg_c,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size_out),
-                ( ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
                 0, 2, 1, 0 );
           } else {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -2361,7 +2362,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3    ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE42   ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX     ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ||
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2_ADL  ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;

@@ -1466,6 +1466,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512_VL256:
     case LIBXSMM_X86_AVX512_VL256_CLX:
     case LIBXSMM_X86_AVX512_VL256_CPX:
+    case LIBXSMM_X86_AVX2_ADL:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE42:
@@ -1567,6 +1568,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (arch == libxsmm_stristr(arch, "knl") || arch == libxsmm_stristr(arch, "mic")) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (arch == libxsmm_stristr(arch, "adl")) {
+      target_archid = LIBXSMM_X86_AVX2_ADL;
     }
     else if (arch == libxsmm_stristr(arch, "hsw") || arch == libxsmm_stristr(arch, "avx2")) {
       target_archid = LIBXSMM_X86_AVX2;
