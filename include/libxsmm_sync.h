@@ -772,8 +772,8 @@ typedef enum libxsmm_atomic_kind {
 #endif
 
 /** Synchronize console output */
-#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
-#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
+#define LIBXSMM_STDIO_ACQUIRE() libxsmm_stdio_acquire()
+#define LIBXSMM_STDIO_RELEASE() libxsmm_stdio_release()
 
 
 /** Opaque type which represents a barrier. */
@@ -825,5 +825,10 @@ LIBXSMM_API unsigned int libxsmm_get_pid(void);
  * represent the main thread. TIDs are zero-based and consecutive numbers.
  */
 LIBXSMM_API unsigned int libxsmm_get_tid(void);
+
+/** Synchronize console output (lock). */
+LIBXSMM_API void libxsmm_stdio_acquire(void);
+/** Synchronize console output (unlock). */
+LIBXSMM_API void libxsmm_stdio_release(void);
 
 #endif /*LIBXSMM_SYNC_H*/
