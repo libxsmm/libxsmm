@@ -658,4 +658,3 @@ LIBXSMM_API unsigned int libxsmm_get_tid(void)
   return 0;
 #endif
 }
-
