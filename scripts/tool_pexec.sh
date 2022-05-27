@@ -44,7 +44,7 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   fi
   ${XARGS} </dev/stdin "${PNTASKS}" -I% bash -c \
     "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
-     if [ $(${FILE} -bL --mime % | ${GREP} '^text/x-shellscript') ]; then source %; else %; fi"
+     if [ \$(${FILE} -bL --mime % | ${GREP} '^text/x-shellscript') ]; then source %; else %; fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
