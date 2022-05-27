@@ -11,23 +11,40 @@
 ###############################################################################
 #set -o pipefail
 
+BASENAME=$(command -v basename)
 XARGS=$(command -v xargs)
+FILE=$(command -v file)
+GREP=$(command -v grep)
 
-if [ "${XARGS}" ] && [ "$(command -v basename)" ]; then
-  NC=$1
-  if [ ! "${NC}" ] || [ "0" = "${NC}" ]; then
-    HERE=$(cd "$(dirname "$0")" && pwd -P)
-    CPU=${HERE}/tool_cpuinfo.sh
-    if [ -e "${CPU}" ]; then
-      NC=$(${CPU} -nt)
-    fi
+if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
+  INFO=${HERE}/tool_cpuinfo.sh
+  NTASKS=$1
+  if [ -e "${INFO}" ]; then
+    NC=$(${INFO} -nc)
+    NT=$(${INFO} -nt)
   fi
   if [ "${NC}" ]; then
-    PNC="-P ${NC}"
+    if [ "${NTASKS}" ]; then
+      NTASKS=$((NTASKS<=NC?NTASKS:NC))
+    else
+      NTASKS=${NC}
+    fi
   fi
-  OMP_NUM_THREADS=1 \
-  ${XARGS} </dev/stdin "${PNC}" -I% bash -c \
-    "_trap_err() { 1>&2 echo \" -> ERROR: \$(basename %)\"; exit 1; }; trap '_trap_err' ERR; source %"
+  if [ "${NTASKS}" ]; then
+    PNTASKS="-P ${NTASKS}"
+    if [ "${NT}" ] && [ "0" != "$((NTASKS<=NT))" ]; then
+      export OMP_NUM_THREADS=$((NT/NTASKS))
+      export OMP_PROC_BIND=close
+      export OMP_PLACES=cores
+    else
+      export OMP_NUM_THREADS=1
+      export OMP_PROC_BIND=TRUE
+    fi
+  fi
+  ${XARGS} </dev/stdin "${PNTASKS}" -I% bash -c \
+    "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
+     if [ \"\$(${FILE} -bL --mime % \| ${GREP} '^text/x-shellscript')\" ]; then source %; else %; fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"

@@ -356,6 +356,8 @@ libxsmm_spmdm_get_num_compute_blocks
 libxsmm_spmdm_get_num_createSparseSlice_blocks
 libxsmm_spmdm_init
 libxsmm_ssqrt
+libxsmm_stdio_acquire
+libxsmm_stdio_release
 libxsmm_stochastic_convert_fp32_bf8
 libxsmm_strerror
 libxsmm_stristr
