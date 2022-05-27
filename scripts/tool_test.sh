@@ -52,11 +52,11 @@ then
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
   elif [ ! "${LAUNCH_CMD}" ]; then
-    if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
-      REVSTART=$(${WGET} -qO- \
-      "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
-      | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
-    fi
+    #if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
+    #  REVSTART=$(${WGET} -qO- \
+    #  "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
+    #  | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
+    #fi
     if [ ! "${REVSTART}" ]; then
       REVSTART="HEAD^"
     fi
