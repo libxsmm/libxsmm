@@ -45,20 +45,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 I16I32 nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 I16I32 nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 I16I32 addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 I16I32 offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 I16I32 strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 I16I32 addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 I16I32 offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 I16I32 strdbr 5 1 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}
