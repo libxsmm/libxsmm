@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-cat <<EOM | ../../scripts/tool_pexec.sh
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
+
+cd ${HERE} && cat <<EOM | ${EXEC}
 ./kernel_test/unary_trans_08b_eqld.sh
 ./kernel_test/unary_trans_08b_gtld.sh
 ./kernel_test/unary_trans_16b_eqld.sh
