@@ -29,26 +29,20 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     NC=$(${INFO} -nc)
     NT=$(${INFO} -nt)
   fi
-  if [ "${NC}" ]; then
-    if [ "${NP}" ] && [ "0" != "$((0<NP))" ]; then
-      NP=$((NP<=NC?NP:NC))
-    else
-      NP=${NC}
-    fi
+  if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
+    NP=${NC}
+  fi
+  if [ "${NP}" ]; then
     if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
     fi
-  fi
-  if [ "${NP}" ]; then
     NPARG="-P ${NP}"
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
       export OMP_NUM_THREADS=$((NT/NP))
-      export OMP_PROC_BIND=close
-      export OMP_PLACES=cores
     else
       export OMP_NUM_THREADS=1
-      export OMP_PROC_BIND=TRUE
     fi
+    export OMP_PROC_BIND=TRUE
   fi
   ${XARGS} </dev/stdin "${NPARG}" -I% bash -c \
     "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
