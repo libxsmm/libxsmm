@@ -32,6 +32,8 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_vnnitrans_08b_eqld.sh
 ./kernel_test/unary_vnnitrans_08b_gtld.sh
 EOM
+RESULT=$?
 
 rm -f tmp.??????????
 unset LIBXSMM_TARGET
+exit ${RESULT}

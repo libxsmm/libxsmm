@@ -64,6 +64,7 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_sigmoid_inv_32b_eqld.sh
 ./kernel_test/unary_sigmoid_inv_32b_gtld.sh
 EOM
+RESULT=$?
 
 rm -f tmp.??????????
-
+exit ${RESULT}

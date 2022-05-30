@@ -27,7 +27,7 @@ import random as rnd
 import time as time
 rnd.seed(time.time())
 randnum = rnd.sample(range(1,101), 18)
-randnumk = rnd.sample(range(4,101,2), 18)
+randnumk = rnd.sample(range(4,101,4), 18)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
@@ -45,20 +45,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32 strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32 strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 strdbr 5 1 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

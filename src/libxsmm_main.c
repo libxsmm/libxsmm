@@ -258,6 +258,7 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_cpuid_info internal_cpuid_info);
 LIBXSMM_APIVAR_DEFINE(char internal_singleton_fname[64]);
 #endif
 LIBXSMM_APIVAR_DEFINE(INTERNAL_SINGLETON_HANDLE internal_singleton_handle);
+LIBXSMM_APIVAR_DEFINE(char internal_stdio_fname[64]);
 
 /* definition of corresponding variables */
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_malloc_function libxsmm_default_malloc_fn);
@@ -786,6 +787,13 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
   }
   LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
+#if !defined(_WIN32)
+  if (0 < libxsmm_stdio_handle) {
+    LIBXSMM_ASSERT('\0' != *internal_stdio_fname);
+    unlink(internal_stdio_fname);
+    close(libxsmm_stdio_handle - 1);
+  }
+#endif
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -1197,18 +1205,23 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
 #else
-        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
-          /*rely on user id to avoid permission issues in case of left-over files*/(unsigned int)getuid());
+        const unsigned int userid = (unsigned int)getuid();
+        const int result_sgltn = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
+          /*rely on user id to avoid permission issues in case of left-over files*/userid);
+        const int result_stdio = LIBXSMM_SNPRINTF(internal_stdio_fname, sizeof(internal_stdio_fname), "/tmp/.libxsmm.stdio.%u",
+          /*rely on user id to avoid permission issues in case of left-over files*/userid);
         struct flock singleton_flock;
-        int singleton_handle;
+        int file_handle;
         singleton_flock.l_start = 0;
         singleton_flock.l_len = 0; /* entire file */
         singleton_flock.l_type = F_WRLCK; /* exclusive across PIDs */
         singleton_flock.l_whence = SEEK_SET;
-        singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? open(
-          internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
-        internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
-        if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
+        file_handle = ((0 < result_sgltn && (int)sizeof(internal_singleton_fname) > result_sgltn)
+          ? open(internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
+        internal_singleton_handle = fcntl(file_handle, F_SETLK, &singleton_flock);
+        if (0 <= file_handle && 0 > internal_singleton_handle) close(file_handle);
+        libxsmm_stdio_handle = ((0 < result_stdio && (int)sizeof(internal_stdio_fname) > result_stdio)
+          ? (open(internal_stdio_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) + 1) : 0);
 #endif  /* coverity[leaked_handle] */
       }
       { /* calibrate timer */

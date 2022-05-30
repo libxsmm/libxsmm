@@ -9,6 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
+#include <sys/file.h>
 
 #if !defined(LIBXSMM_PRODUCT_LIMIT)
 # define LIBXSMM_PRODUCT_LIMIT 1024
@@ -21,6 +22,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
 /* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_stdio_handle);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_target_archid);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_verbosity);
@@ -558,3 +560,26 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
   return result;
 }
 
+
+LIBXSMM_API void libxsmm_stdio_acquire(void)
+{
+  if (0 < libxsmm_stdio_handle) {
+    flock(libxsmm_stdio_handle - 1, LOCK_EX);
+  }
+  else {
+    LIBXSMM_FLOCK(stdout);
+    LIBXSMM_FLOCK(stderr);
+  }
+}
+
+
+LIBXSMM_API void libxsmm_stdio_release(void)
+{
+  if (0 < libxsmm_stdio_handle) {
+    flock(libxsmm_stdio_handle - 1, LOCK_UN);
+  }
+  else {
+    LIBXSMM_FUNLOCK(stderr);
+    LIBXSMM_FUNLOCK(stdout);
+  }
+}

@@ -402,5 +402,7 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/opreduce_op_sub_redop_none_oporder_1_regvecin_1_implicitidx_1_argopmode_0_16b.sh
 ./kernel_test/opreduce_op_sub_redop_none_oporder_1_regvecin_1_implicitidx_1_argopmode_0_32b.sh
 EOM
+RESULT=$?
 
 rm -f tmp.??????????
+exit ${RESULT}
