@@ -4,7 +4,7 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 export LIBXSMM_TARGET=hsw
-cd ${HERE} && cat <<EOM | ${EXEC}
+cd ${HERE} && cat <<EOM | ${EXEC} 0 2
 ./kernel_test/binary_add_32b_eqld.sh
 ./kernel_test/binary_add_32b_gtld.sh
 ./kernel_test/binary_div_32b_eqld.sh
