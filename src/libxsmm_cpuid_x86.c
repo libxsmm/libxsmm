@@ -160,9 +160,9 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
               else {
                 feature_cpu = LIBXSMM_X86_AVX2;
                 /* check if we are on ADL or newer */
-                unsigned int ecx2;
+                unsigned int ecx3;
                 unsigned int edx2;
-                LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx2);
+                LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx3, edx2);
                 if (LIBXSMM_CPUID_CHECK(eax, 0x00000010)) { /* AVX_VNNI */
                   feature_cpu = LIBXSMM_X86_AVX2_ADL;
                 }
