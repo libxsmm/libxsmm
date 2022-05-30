@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-export LIBXSMM_TARGET=A64FX
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
 
+export LIBXSMM_TARGET=A64FX
 # all kernels, which haven't been implemented for SVE, are commented out
-cat <<EOM | ../../scripts/tool_pexec.sh
+cd ${HERE} && cat <<EOM | ${EXEC} 0 2
 ./kernel_test/unary_trans_08b_eqld.sh
 ./kernel_test/unary_trans_08b_gtld.sh
 ./kernel_test/unary_trans_16b_eqld.sh

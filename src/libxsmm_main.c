@@ -680,11 +680,11 @@ LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
   libxsmm_finalize();
-  LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
+    LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
     fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
       0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
@@ -786,7 +786,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     close(internal_singleton_handle);
 #endif
   }
-  LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
+  if (0 != libxsmm_verbosity) LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
 #if !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     LIBXSMM_ASSERT('\0' != *internal_stdio_fname);
