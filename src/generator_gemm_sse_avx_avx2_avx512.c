@@ -278,7 +278,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_c);
   }
 
-  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
+  if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc->m != 0) && (i_xgemm_desc->k != 0) ) {
     /* initializing required register variables for meltwise transform (transpose) */
     unsigned int l_gp_reg_in  = LIBXSMM_X86_GP_REG_R8;
     unsigned int l_gp_reg_out = LIBXSMM_X86_GP_REG_R9;
