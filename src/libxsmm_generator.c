@@ -563,10 +563,13 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 
 LIBXSMM_API void libxsmm_stdio_acquire(void)
 {
+#if !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     flock(libxsmm_stdio_handle - 1, LOCK_EX);
   }
-  else {
+  else
+#endif
+  {
     LIBXSMM_FLOCK(stdout);
     LIBXSMM_FLOCK(stderr);
   }
@@ -575,10 +578,13 @@ LIBXSMM_API void libxsmm_stdio_acquire(void)
 
 LIBXSMM_API void libxsmm_stdio_release(void)
 {
+#if !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     flock(libxsmm_stdio_handle - 1, LOCK_UN);
   }
-  else {
+  else
+#endif
+  {
     LIBXSMM_FUNLOCK(stderr);
     LIBXSMM_FUNLOCK(stdout);
   }

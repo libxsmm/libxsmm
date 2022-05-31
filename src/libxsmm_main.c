@@ -774,27 +774,28 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   if (EXIT_SUCCESS != atexit(internal_release_scratch) && 0 != libxsmm_verbosity) {
     fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
   }
+#if (0 != LIBXSMM_SYNC)
   /* determine whether this instance is unique or not */
   if (INTERNAL_SINGLETON(internal_singleton_handle)) {
     internal_dump(stdout, 0/*urgent*/);
     /* cleanup singleton */
-#if defined(_WIN32)
+# if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
     CloseHandle(internal_singleton_handle);
-#else
+# else
     unlink(internal_singleton_fname);
     close(internal_singleton_handle);
-#endif
+# endif
   }
+#endif
   if (0 != libxsmm_verbosity) LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
-#if !defined(_WIN32)
+#if (0 != LIBXSMM_SYNC) && !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     LIBXSMM_ASSERT('\0' != *internal_stdio_fname);
     unlink(internal_stdio_fname);
     close(libxsmm_stdio_handle - 1);
   }
 #endif
-#if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
     int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_REGLOCK, &internal_reglock[i].state);
@@ -1202,9 +1203,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
 #endif
       { /* determine whether this instance is unique or not */
-#if defined(_WIN32)
+#if (0 != LIBXSMM_SYNC)
+# if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
-#else
+# else
         const unsigned int userid = (unsigned int)getuid();
         const int result_sgltn = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
           /*rely on user id to avoid permission issues in case of left-over files*/userid);
@@ -1222,7 +1224,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (0 <= file_handle && 0 > internal_singleton_handle) close(file_handle);
         libxsmm_stdio_handle = ((0 < result_stdio && (int)sizeof(internal_stdio_fname) > result_stdio)
           ? (open(internal_stdio_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) + 1) : 0);
-#endif  /* coverity[leaked_handle] */
+# endif  /* coverity[leaked_handle] */
+#endif
       }
       { /* calibrate timer */
         int register_termination_proc;
