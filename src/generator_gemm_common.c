@@ -2822,3 +2822,29 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned int i_range, unsigned int i_max_block, unsigned int i_nomask_block, unsigned int *io_block, unsigned int *o_use_mask ) {
+  /* @TODO check if there is a better blocking strategy */
+  if ( *io_block == i_max_block ) {
+    *io_block = i_range % i_max_block;
+    if ( *io_block % i_nomask_block != 0 ) {
+      *o_use_mask = 1;
+    }
+  } else if ( *io_block == 0 ) {
+    if ( i_range >= i_max_block ) {
+      *io_block = i_max_block;
+    } else {
+      *io_block = i_range;
+      /* in case we don't have a full vector length, we use masking */
+      if ( (*io_block) % i_nomask_block != 0 ) {
+        *o_use_mask = 1;
+      }
+    }
+  } else {
+#if 0
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return 0;
+#endif
+  }
+}
+
+
