@@ -306,9 +306,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   libxsmm_rng_set_seed(1);
 
-  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*LIBXSMM_MAX(M,ldi), 64 );
-  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                64 );
-  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                64 );
+  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*LIBXSMM_MAX(M,ldi), 4096 );
+  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                4096 );
+  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                4096 );
   _in       = in;
 
   /* init in */
