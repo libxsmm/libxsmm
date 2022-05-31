@@ -21,6 +21,7 @@ GREP=$(command -v grep)
 # The script reads stdin and spawns one task per line.
 # Example: seq 100 | xargs -I{} echo "echo \"{}\"" \
 #                  | tool_pexec.sh
+# Avoid to apply thread affinity (OMP_PROC_BIND or similar).
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
@@ -36,15 +37,16 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
     fi
-    NPARG="-P ${NP}"
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
       export OMP_NUM_THREADS=$((NT/NP))
     else
       export OMP_NUM_THREADS=1
     fi
-    export OMP_PROC_BIND=TRUE
+  else
+    export OMP_NUM_THREADS=1
+    NP=0
   fi
-  ${XARGS} </dev/stdin "${NPARG}" -I% bash -c \
+  ${XARGS} </dev/stdin -L1 -P${NP} -I% bash -c \
     "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
      if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
   RESULT=$?
