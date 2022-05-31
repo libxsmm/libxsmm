@@ -789,13 +789,14 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
 #endif
   if (0 != libxsmm_verbosity) LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
-#if (0 != LIBXSMM_SYNC) && !defined(_WIN32)
+#if (0 != LIBXSMM_SYNC)
+# if !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     LIBXSMM_ASSERT('\0' != *internal_stdio_fname);
     unlink(internal_stdio_fname);
     close(libxsmm_stdio_handle - 1);
   }
-#endif
+# endif
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
     int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_REGLOCK, &internal_reglock[i].state);
