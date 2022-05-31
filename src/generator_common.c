@@ -440,6 +440,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_CMPQ:
       libxsmm_strncpy(o_instr_name, "cmpq", i_instr_name_max_length, 4 );
       break;
+    case LIBXSMM_X86_INSTR_ANDQ:
+      libxsmm_strncpy(o_instr_name, "andq", i_instr_name_max_length, 4 );
+      break;
     case LIBXSMM_X86_INSTR_JL:
       libxsmm_strncpy(o_instr_name, "jl", i_instr_name_max_length, 2 );
       break;
