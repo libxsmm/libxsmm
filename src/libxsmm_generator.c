@@ -9,7 +9,9 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
-#include <sys/file.h>
+#if !defined(_WIN32)
+# include <sys/file.h>
+#endif
 
 #if !defined(LIBXSMM_PRODUCT_LIMIT)
 # define LIBXSMM_PRODUCT_LIMIT 1024
