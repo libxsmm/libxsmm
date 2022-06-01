@@ -1019,8 +1019,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned int             i_vec_reg_dst,
                                               const unsigned int             i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
-  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
-  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
+  unsigned char l_vec_reg_src_0 = LIBXSMM_CAST_UCHAR(i_vec_reg_src_0);
+  unsigned char l_vec_reg_src_1 = LIBXSMM_CAST_UCHAR(i_vec_reg_src_1);
 
   unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
   unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
