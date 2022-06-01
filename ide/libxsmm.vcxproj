@@ -75,7 +75,6 @@
     <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_avx_avx512.h" />
-    <ClInclude Include="..\src\generator_packed_gemmnn.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h" />
