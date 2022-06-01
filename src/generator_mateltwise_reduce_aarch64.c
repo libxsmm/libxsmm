@@ -148,7 +148,7 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
     }
 
     for (im = 0; im < m_inner_trips; im++) {
-      unsigned char _mask_count2 = ((use_m_masking == 1) && (iM == m_outer_trips-1) && (im == m_inner_trips-1)) ? mask_count : 0;
+      unsigned char _mask_count2 = LIBXSMM_CAST_UCHAR(((use_m_masking == 1) && (iM == m_outer_trips-1) && (im == m_inner_trips-1)) ? mask_count : 0);
       cur_acc0 = m_unroll_factor + im;
       libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, cur_acc0, i_micro_kernel_config->datatype_size_out,
           _mask_count2, 1, 1, _mask_count2 ? pred_reg_mask : pred_reg_all );
@@ -804,13 +804,13 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
     if(!is_sve){/* vreg masks are not used in sve */
       if (mask_count == 1) {
         unsigned int mask_array[4] = { 0x0, 0xff800000, 0xff800000, 0xff800000};
-        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(aux_vreg), i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
       } else if (mask_count == 2) {
         unsigned int mask_array[4] = { 0x0, 0x0, 0xff800000, 0xff800000};
-        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(aux_vreg), i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
       } else if (mask_count == 3) {
         unsigned int mask_array[4] = { 0x0, 0x0, 0x0, 0xff800000};
-        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, aux_vreg,  i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
+        libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(aux_vreg), i_gp_reg_mapping->gp_reg_scratch_0, LIBXSMM_AARCH64_GP_REG_X12, mask_array, 0 );
       }
     }
   }
