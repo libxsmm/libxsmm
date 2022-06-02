@@ -25,13 +25,13 @@ GREP=$(command -v grep)
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
-  NP=$1; SP=$2
+  NP=$1; SP=$2; SP_DEFAULT=2
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc)
     NT=$(${INFO} -nt)
   fi
   if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
-    NP=${NC}
+    NP=$(((NC*SP_DEFAULT)<=NT?(NC*SP_DEFAULT):NC))
   fi
   if [ "${NP}" ]; then
     if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
