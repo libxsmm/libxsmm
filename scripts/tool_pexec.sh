@@ -46,6 +46,7 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     export OMP_NUM_THREADS=1
     NP=0
   fi
+  unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
   ${XARGS} </dev/stdin -P${NP} -I% bash -c \
     "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
      if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
