@@ -323,6 +323,10 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
     }
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_BF8) && (dtype_out == LIBXSMM_DATATYPE_BF8) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    if ( norms_out.normf_rel > 0.125 ) {
+      ret = EXIT_FAILURE;
+    }
   } else {
     if ( norms_out.normf_rel > 0.00001 ) {
       ret = EXIT_FAILURE;
