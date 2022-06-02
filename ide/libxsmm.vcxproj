@@ -32,6 +32,7 @@
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />

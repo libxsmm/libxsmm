@@ -294,6 +294,9 @@
     <ClInclude Include="..\src\generator_mateltwise_aarch64_sve.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
