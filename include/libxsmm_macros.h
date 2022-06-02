@@ -97,15 +97,25 @@
 #define LIBXSMM_ELIDE(...)
 
 /**
- * LIBXSMM_CAST_*:  Perform type-cast with following two advantages:
- *                  (1) Make it easy to locate/find the type-cast.
- *                  (2) Range-check to ensure fitting into type.
- * LIBXSMM_CHECK_*: Check given value against type-range (assertion).
+ * LIBXSMM_CAST:  Perform type-cast with following two advantages:
+ *                (1) Make it easy to locate/find the type-cast.
+ *                (2) Range-check to ensure fitting into type.
+ * LIBXSMM_CHECK: Check given value against type-range (assertion).
  *
  * Checks and casts are not suitable for intendedly clamping an
  * out-of-range value, and hence cannot replace all casts.
  */
 #if !defined(NDEBUG)
+# define LIBXSMM_CHECK_ULLONG(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= ULLONG_MAX)
+# define LIBXSMM_CHECK_LLONG(VALUE) assert(ULLONG_MIN <= (VALUE) && (VALUE) <= LLONG_MAX)
+# define LIBXSMM_CHECK_ULONG(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= ULONG_MAX)
+# define LIBXSMM_CHECK_LONG(VALUE) assert(LONG_MIN <= (VALUE) && (VALUE) <= LONG_MAX)
+# define LIBXSMM_CHECK_USHORT(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= USHRT_MAX)
+# define LIBXSMM_CHECK_SHORT(VALUE) assert(SHRT_MIN <= (VALUE) && (VALUE) <= SHRT_MAX)
+# define LIBXSMM_CHECK_UCHAR(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= UCHAR_MAX)
+# define LIBXSMM_CHECK_ICHAR(VALUE) assert(SCHAR_MIN <= (VALUE) && (VALUE) <= SCHAR_MAX)
+# define LIBXSMM_CHECK_UINT(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= UINT_MAX)
+# define LIBXSMM_CHECK_INT(VALUE) assert(INT_MIN <= (VALUE) && (VALUE) <= INT_MAX)
 # define LIBXSMM_CAST_ULLONG(VALUE) (LIBXSMM_CHECK_ULLONG(VALUE), (unsigned long long)(VALUE))
 # define LIBXSMM_CAST_LLONG(VALUE) (LIBXSMM_CHECK_LLONG(VALUE), (/*signed*/long long)(VALUE))
 # define LIBXSMM_CAST_ULONG(VALUE) (LIBXSMM_CHECK_ULONG(VALUE), (unsigned long)(VALUE))
@@ -116,16 +126,6 @@
 # define LIBXSMM_CAST_ICHAR(VALUE) (LIBXSMM_CHECK_ICHAR(VALUE), (signed char)(VALUE))
 # define LIBXSMM_CAST_UINT(VALUE) (LIBXSMM_CHECK_UINT(VALUE), (unsigned int)(VALUE))
 # define LIBXSMM_CAST_INT(VALUE) (LIBXSMM_CHECK_INT(VALUE), (/*signed*/int)(VALUE))
-# define LIBXSMM_CHECK_ULLONG(VALUE) assert(0 <= (VALUE) && (VALUE) <= ULLONG_MAX)
-# define LIBXSMM_CHECK_LLONG(VALUE) assert(ULLONG_MIN <= (VALUE) && (VALUE) <= LLONG_MAX)
-# define LIBXSMM_CHECK_ULONG(VALUE) assert(0 <= (VALUE) && (VALUE) <= ULONG_MAX)
-# define LIBXSMM_CHECK_LONG(VALUE) assert(LONG_MIN <= (VALUE) && (VALUE) <= LONG_MAX)
-# define LIBXSMM_CHECK_USHORT(VALUE) assert(0 <= (VALUE) && (VALUE) <= USHRT_MAX)
-# define LIBXSMM_CHECK_SHORT(VALUE) assert(SHRT_MIN <= (VALUE) && (VALUE) <= SHRT_MAX)
-# define LIBXSMM_CHECK_UCHAR(VALUE) assert(0 <= (VALUE) && (VALUE) <= UCHAR_MAX)
-# define LIBXSMM_CHECK_ICHAR(VALUE) assert(SCHAR_MIN <= (VALUE) && (VALUE) <= SCHAR_MAX)
-# define LIBXSMM_CHECK_UINT(VALUE) assert(0 <= (VALUE) && (VALUE) <= UINT_MAX)
-# define LIBXSMM_CHECK_INT(VALUE) assert(INT_MIN <= (VALUE) && (VALUE) <= INT_MAX)
 #else
 # define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(VALUE))
 # define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(VALUE))
@@ -1015,4 +1015,3 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
-
