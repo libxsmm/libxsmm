@@ -9,11 +9,11 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 

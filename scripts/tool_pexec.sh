@@ -16,35 +16,39 @@ XARGS=$(command -v xargs)
 FILE=$(command -v file)
 GREP=$(command -v grep)
 
+# Usage: tool_pexec.sh [<num-tasks>] [<oversubscription-factor>]
+# Use all cores and Hyperthreads like tool_pexec.sh 0 2.
+# The script reads stdin and spawns one task per line.
+# Example: seq 100 | xargs -I{} echo "echo \"{}\"" \
+#                  | tool_pexec.sh
+# Avoid to apply thread affinity (OMP_PROC_BIND or similar).
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
-  NTASKS=$1
+  NP=$1; SP=$2
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc)
     NT=$(${INFO} -nt)
   fi
-  if [ "${NC}" ]; then
-    if [ "${NTASKS}" ]; then
-      NTASKS=$((NTASKS<=NC?NTASKS:NC))
-    else
-      NTASKS=${NC}
-    fi
+  if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
+    NP=${NC}
   fi
-  if [ "${NTASKS}" ]; then
-    PNTASKS="-P ${NTASKS}"
-    if [ "${NT}" ] && [ "0" != "$((NTASKS<=NT))" ]; then
-      export OMP_NUM_THREADS=$((NT/NTASKS))
-      export OMP_PROC_BIND=close
-      export OMP_PLACES=cores
+  if [ "${NP}" ]; then
+    if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
+      NP=$((NP*SP))
+    fi
+    if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
+      export OMP_NUM_THREADS=$((NT/NP))
     else
       export OMP_NUM_THREADS=1
-      export OMP_PROC_BIND=TRUE
     fi
+  else
+    export OMP_NUM_THREADS=1
+    NP=0
   fi
-  ${XARGS} </dev/stdin "${PNTASKS}" -I% bash -c \
+  ${XARGS} </dev/stdin -L1 -P${NP} -I% bash -c \
     "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
-     if [ \"\$(${FILE} -bL --mime % \| ${GREP} '^text/x-shellscript')\" ]; then source %; else %; fi"
+     if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
