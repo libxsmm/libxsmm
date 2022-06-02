@@ -105,7 +105,7 @@
  * Checks and casts are not suitable for intendedly clamping an
  * out-of-range value, and hence cannot replace all casts.
  */
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && 0
 # define LIBXSMM_CHECK_ULLONG(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= ULLONG_MAX)
 # define LIBXSMM_CHECK_LLONG(VALUE) assert(ULLONG_MIN <= (VALUE) && (VALUE) <= LLONG_MAX)
 # define LIBXSMM_CHECK_ULONG(VALUE) assert((0 == (LIBXSMM_UNLIMITED & (VALUE)) || 0 < (VALUE)) && (VALUE) <= ULONG_MAX)
