@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-export LIBXSMM_TARGET=avx512_vl256_clx
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
 
-cat <<EOM | ../../scripts/tool_pexec.sh
+export LIBXSMM_TARGET=avx512_vl256_clx
+cd ${HERE} && cat <<EOM | ${EXEC}
 ./kernel_test/binary_add_32b_eqld.sh
 ./kernel_test/binary_add_32b_gtld.sh
 ./kernel_test/binary_add_mixed_eqld.sh
