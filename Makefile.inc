@@ -133,7 +133,7 @@ ifeq (0,$(DBG))
   ifneq (0,$(INSTRUMENT))
     SYM := $(INSTRUMENT)
   endif
-  ifeq (0,$(SYM))
+  ifneq (,$(filter 0 1,$(SYM)))
     DFLAGS += -DNDEBUG
   endif
 else # debugging enabled
