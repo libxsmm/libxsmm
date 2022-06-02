@@ -1142,13 +1142,13 @@ int main(int argc, char* argv []) {
   printf("\n\n Total Max Error %f\n\n", l_total_max_error );
 
   if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-    if ( l_total_max_error >= 0.001 ) {
+    if ( l_total_max_error >= 0.005 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
     }
   } else {
-    if ( l_total_max_error >= 0.00001 ) {
+    if ( l_total_max_error >= 0.00005 ) {
       return EXIT_FAILURE;
     } else {
       return EXIT_SUCCESS;
