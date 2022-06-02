@@ -774,27 +774,29 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   if (EXIT_SUCCESS != atexit(internal_release_scratch) && 0 != libxsmm_verbosity) {
     fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
   }
+#if (0 != LIBXSMM_SYNC)
   /* determine whether this instance is unique or not */
   if (INTERNAL_SINGLETON(internal_singleton_handle)) {
     internal_dump(stdout, 0/*urgent*/);
     /* cleanup singleton */
-#if defined(_WIN32)
+# if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
     CloseHandle(internal_singleton_handle);
-#else
+# else
     unlink(internal_singleton_fname);
     close(internal_singleton_handle);
-#endif
+# endif
   }
+#endif
   if (0 != libxsmm_verbosity) LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
-#if !defined(_WIN32)
+#if (0 != LIBXSMM_SYNC)
+# if !defined(_WIN32)
   if (0 < libxsmm_stdio_handle) {
     LIBXSMM_ASSERT('\0' != *internal_stdio_fname);
     unlink(internal_stdio_fname);
     close(libxsmm_stdio_handle - 1);
   }
-#endif
-#if (0 != LIBXSMM_SYNC)
+# endif
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
     int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_REGLOCK, &internal_reglock[i].state);
@@ -1202,9 +1204,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
 #endif
       { /* determine whether this instance is unique or not */
-#if defined(_WIN32)
+#if (0 != LIBXSMM_SYNC)
+# if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
-#else
+# else
         const unsigned int userid = (unsigned int)getuid();
         const int result_sgltn = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
           /*rely on user id to avoid permission issues in case of left-over files*/userid);
@@ -1222,7 +1225,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         if (0 <= file_handle && 0 > internal_singleton_handle) close(file_handle);
         libxsmm_stdio_handle = ((0 < result_stdio && (int)sizeof(internal_stdio_fname) > result_stdio)
           ? (open(internal_stdio_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) + 1) : 0);
-#endif  /* coverity[leaked_handle] */
+# endif  /* coverity[leaked_handle] */
+#endif
       }
       { /* calibrate timer */
         int register_termination_proc;
@@ -2165,8 +2169,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           internal_get_typesize_string(tsizename1, sizeof(tsizename1), request->descriptor.meltw->datatype1);
           internal_get_typesize_string(tsizename2, sizeof(tsizename2), request->descriptor.meltw->datatype2);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s_%ux%u_%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2,
-            request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s%s%s_%ux%u_%ux%ux%ux%u_opcode%u_flags%u_params%u.meltw", target_arch, tsizename, tsizename1, tsizename2,
+            request->descriptor.meltw->m, request->descriptor.meltw->n, request->descriptor.meltw->ldi, request->descriptor.meltw->ldo, request->descriptor.meltw->ldi2, request->descriptor.meltw->ldi3,
             (unsigned int)request->descriptor.meltw->operation, (unsigned int)request->descriptor.meltw->flags, (unsigned int)request->descriptor.meltw->param);
         }
       }
