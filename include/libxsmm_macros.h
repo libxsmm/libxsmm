@@ -97,21 +97,47 @@
 #define LIBXSMM_ELIDE(...)
 
 /**
- * Check given value against type-range (assertion).
- * Note: allows "-1" for unsigned types.
+ * LIBXSMM_CAST:  Perform type-cast with following two advantages:
+ *                (1) Make it easy to locate/find the type-cast.
+ *                (2) Range-check to ensure fitting into type.
+ * LIBXSMM_CHECK: Check given value against type-range (assertion).
+ *
+ * Checks and casts are not suitable for intendedly clamping an
+ * out-of-range value, and hence cannot replace all casts.
  */
-#if !defined(NDEBUG)
-# define LIBXSMM_CHECK_ULLONG(VALUE) assert(-1 <= (VALUE) && (VALUE) <= ULLONG_MAX)
-# define LIBXSMM_CHECK_LLONG(VALUE) assert(ULLONG_MIN <= (VALUE) && (VALUE) <= LLONG_MAX)
-# define LIBXSMM_CHECK_ULONG(VALUE) assert(-1 <= (VALUE) && (VALUE) <= ULONG_MAX)
-# define LIBXSMM_CHECK_LONG(VALUE) assert(LONG_MIN <= (VALUE) && (VALUE) <= LONG_MAX)
-# define LIBXSMM_CHECK_USHORT(VALUE) assert(-1 <= (VALUE) && (VALUE) <= USHRT_MAX)
-# define LIBXSMM_CHECK_SHORT(VALUE) assert(SHRT_MIN <= (VALUE) && (VALUE) <= SHRT_MAX)
-# define LIBXSMM_CHECK_UCHAR(VALUE) assert(-1 <= (VALUE) && (VALUE) <= UCHAR_MAX)
-# define LIBXSMM_CHECK_ICHAR(VALUE) assert(SCHAR_MIN <= (VALUE) && (VALUE) <= SCHAR_MAX)
-# define LIBXSMM_CHECK_UINT(VALUE) assert(-1 <= (VALUE) && (VALUE) <= UINT_MAX)
-# define LIBXSMM_CHECK_INT(VALUE) assert(INT_MIN <= (VALUE) && (VALUE) <= INT_MAX)
+#if !defined(NDEBUG) && 0
+# define LIBXSMM_CHECK_VALUE(VALUE, LO, HI) ((LO) <= LIBXSMM_CHECK_VALUE(VALUE) && LIBXSMM_CHECK_VALUE(VALUE) <= (HI))
+# define LIBXSMM_CHECK_ULLONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, ULLONG_MAX), "Value cannot be represented as ULLONG")
+# define LIBXSMM_CHECK_LLONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, LLONG_MIN, LLONG_MAX), "Value cannot be represented as LLONG")
+# define LIBXSMM_CHECK_ULONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, ULONG_MAX), "Value cannot be represented as ULONG")
+# define LIBXSMM_CHECK_LONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, LONG_MIN, LONG_MAX), "Value cannot be represented as LONG")
+# define LIBXSMM_CHECK_USHORT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, USHRT_MAX), "Value cannot be represented as USHORT")
+# define LIBXSMM_CHECK_SHORT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, SHRT_MIN, SHRT_MAX), "Value cannot be represented as SHORT")
+# define LIBXSMM_CHECK_UCHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, UCHAR_MAX), "Value cannot be represented as UCHAR")
+# define LIBXSMM_CHECK_ICHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, SCHAR_MIN, SCHAR_MAX), "Value cannot be represented as ICHAR")
+# define LIBXSMM_CHECK_UINT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, UINT_MAX), "Value cannot be represented as UINT")
+# define LIBXSMM_CHECK_INT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, INT_MIN, INT_MAX), "Value cannot be represented as INT")
+# define LIBXSMM_CAST_ULLONG(VALUE) (LIBXSMM_CHECK_ULLONG(VALUE), (unsigned long long)(VALUE))
+# define LIBXSMM_CAST_LLONG(VALUE) (LIBXSMM_CHECK_LLONG(VALUE), (/*signed*/long long)(VALUE))
+# define LIBXSMM_CAST_ULONG(VALUE) (LIBXSMM_CHECK_ULONG(VALUE), (unsigned long)(VALUE))
+# define LIBXSMM_CAST_LONG(VALUE) (LIBXSMM_CHECK_LONG(VALUE), (/*signed*/long)(VALUE))
+# define LIBXSMM_CAST_USHORT(VALUE) (LIBXSMM_CHECK_USHORT(VALUE), (unsigned short)(VALUE))
+# define LIBXSMM_CAST_SHORT(VALUE) (LIBXSMM_CHECK_SHORT(VALUE), (/*signed*/short)(VALUE))
+# define LIBXSMM_CAST_UCHAR(VALUE) (LIBXSMM_CHECK_UCHAR(VALUE), (unsigned char)(VALUE))
+# define LIBXSMM_CAST_ICHAR(VALUE) (LIBXSMM_CHECK_ICHAR(VALUE), (signed char)(VALUE))
+# define LIBXSMM_CAST_UINT(VALUE) (LIBXSMM_CHECK_UINT(VALUE), (unsigned int)(VALUE))
+# define LIBXSMM_CAST_INT(VALUE) (LIBXSMM_CHECK_INT(VALUE), (/*signed*/int)(VALUE))
 #else
+# define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(VALUE))
+# define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(VALUE))
+# define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(VALUE))
+# define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(VALUE))
+# define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(VALUE))
+# define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(VALUE))
+# define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(VALUE))
+# define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(VALUE))
+# define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(VALUE))
+# define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(VALUE))
 # define LIBXSMM_CHECK_ULLONG(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_LLONG(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_ULONG(VALUE) 0/*dummy*/
@@ -123,22 +149,6 @@
 # define LIBXSMM_CHECK_UINT(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_INT(VALUE) 0/*dummy*/
 #endif
-
-/**
- * Perform verbose type-cast with following two advantages:
- * (1) Make it easy to locate/find the type-cast.
- * (2) Range-check to ensure fitting into type.
- */
-#define LIBXSMM_CAST_ULLONG(VALUE) (LIBXSMM_CHECK_ULLONG(VALUE), (unsigned long long)(VALUE))
-#define LIBXSMM_CAST_LLONG(VALUE) (LIBXSMM_CHECK_LLONG(VALUE), (/*signed*/long long)(VALUE))
-#define LIBXSMM_CAST_ULONG(VALUE) (LIBXSMM_CHECK_ULONG(VALUE), (unsigned long)(VALUE))
-#define LIBXSMM_CAST_LONG(VALUE) (LIBXSMM_CHECK_LONG(VALUE), (/*signed*/long)(VALUE))
-#define LIBXSMM_CAST_USHORT(VALUE) (LIBXSMM_CHECK_USHORT(VALUE), (unsigned short)(VALUE))
-#define LIBXSMM_CAST_SHORT(VALUE) (LIBXSMM_CHECK_SHORT(VALUE), (/*signed*/short)(VALUE))
-#define LIBXSMM_CAST_UCHAR(VALUE) (LIBXSMM_CHECK_UCHAR(VALUE), (unsigned char)(VALUE))
-#define LIBXSMM_CAST_ICHAR(VALUE) (LIBXSMM_CHECK_ICHAR(VALUE), (signed char)(VALUE))
-#define LIBXSMM_CAST_UINT(VALUE) (LIBXSMM_CHECK_UINT(VALUE), (unsigned int)(VALUE))
-#define LIBXSMM_CAST_INT(VALUE) (LIBXSMM_CHECK_INT(VALUE), (/*signed*/int)(VALUE))
 
 /** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
@@ -1006,4 +1016,3 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
-

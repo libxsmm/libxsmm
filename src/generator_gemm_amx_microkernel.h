@@ -41,6 +41,14 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
     long long    offset);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_amx_prefetch_output( libxsmm_generated_code*            io_generated_code,
+    unsigned int                       gpr_base,
+    unsigned int                       ldc,
+    unsigned int                       dtype_size,
+    unsigned int                       offset,
+    int                                n_cols );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*            io_generated_code,
     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
     const libxsmm_micro_kernel_config* i_micro_kernel_config,

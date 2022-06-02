@@ -26,25 +26,35 @@
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(cur_op->info.u_op.type) > 0) {
-    *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->info.u_op.dtype, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+    *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+      cur_op->info.u_op.dtype, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0,
+      LIBXSMM_CAST_USHORT(cur_op->info.u_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.u_op.type), LIBXSMM_MELTW_OPERATION_UNARY);
   } else if ((libxsmm_matrix_eqn_is_unary_opcode_reduce_kernel(cur_op->info.u_op.type) > 0) || (libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(cur_op->info.u_op.type) > 0)) {
-    *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->info.u_op.dtype, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+    *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+      cur_op->info.u_op.dtype, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0,
+      LIBXSMM_CAST_USHORT(cur_op->info.u_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.u_op.type), LIBXSMM_MELTW_OPERATION_UNARY);
   } else {
     if ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY) && (in_precision != out_precision)) {
-      *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_F32, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+      *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+        LIBXSMM_DATATYPE_F32, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0,
+        LIBXSMM_CAST_USHORT(cur_op->info.u_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.u_op.type), LIBXSMM_MELTW_OPERATION_UNARY);
     } else {
-      *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->info.u_op.dtype, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0, (unsigned short)cur_op->info.u_op.flags, cur_op->info.u_op.type, LIBXSMM_MELTW_OPERATION_UNARY);
+      *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+         cur_op->info.u_op.dtype, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0,
+         LIBXSMM_CAST_USHORT(cur_op->info.u_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.u_op.type), LIBXSMM_MELTW_OPERATION_UNARY);
     }
   }
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
-  *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->ri->tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED, cur_op->info.b_op.dtype, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, cur_op->ri->tmp.ld, 0, (unsigned short)cur_op->info.b_op.flags, cur_op->info.b_op.type, LIBXSMM_MELTW_OPERATION_BINARY);
+  *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->ri->tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED,
+    cur_op->info.b_op.dtype, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, cur_op->ri->tmp.ld, 0,
+    LIBXSMM_CAST_USHORT(cur_op->info.b_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.b_op.type), LIBXSMM_MELTW_OPERATION_BINARY);
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*   io_generated_code, libxsmm_matrix_eqn_elem *cur_op,  libxsmm_gemm_descriptor **out_desc ) {
+void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*   io_generated_code, libxsmm_matrix_eqn_elem *cur_op, libxsmm_gemm_descriptor **out_desc ) {
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   int  gemm_flags = LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
@@ -79,7 +89,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
       ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (cur_op->info.t_op.is_brgemm == 1))) {
     if ((cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) &&
         (cur_op->le->info.arg.arg_attr.type == LIBXSMM_MATRIX_ARG_TYPE_SET)) {
-      br_config.br_unroll_hint = (unsigned char)(( cur_op->le->info.arg.arg_attr.set_cardinality_hint <= 255 ) ? cur_op->le->info.arg.arg_attr.set_cardinality_hint : 0);
+      br_config.br_unroll_hint = LIBXSMM_CAST_UCHAR(( cur_op->le->info.arg.arg_attr.set_cardinality_hint <= 255 ) ? cur_op->le->info.arg.arg_attr.set_cardinality_hint : 0);
       if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_ABS_ADDRESS) {
         br_config.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
       } else if (cur_op->le->info.arg.arg_attr.set_type == LIBXSMM_MATRIX_ARG_SET_TYPE_OFFSET_BASE) {
@@ -175,7 +185,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
 
   /* add more BRGEMM related fields */
   if ( (br_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (br_config.br_unroll_hint != 0) ) {
-    desc->c3 = (unsigned char)(((br_config.br_unroll_hint < 255) && (br_config.br_unroll_hint > 0)) ? br_config.br_unroll_hint : 0);
+    desc->c3 = LIBXSMM_CAST_UCHAR(((br_config.br_unroll_hint < 255) && (br_config.br_unroll_hint > 0)) ? br_config.br_unroll_hint : 0);
   }
   if ( br_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
     desc->c1 = br_config.br_stride_a_hint;
@@ -186,7 +196,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
     desc->meltw_operation     = LIBXSMM_MELTW_OPERATION_BINARY;
     desc->meltw_param         = LIBXSMM_MELTW_TYPE_BINARY_ADD;
     desc->meltw_flags         = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1;
-    desc->meltw_datatype_aux  = cur_op->fusion_info.xgemm.colbias_dtype;
+    desc->meltw_datatype_aux  = LIBXSMM_CAST_UCHAR(cur_op->fusion_info.xgemm.colbias_dtype);
   }
   if (cur_op->fusion_info.xgemm.fused_relu_op == 1) {
     desc->eltw_cp_op    = LIBXSMM_MELTW_OPERATION_UNARY;
@@ -668,7 +678,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         }
 
         /* Prepare descriptor  */
-        libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision);
+        libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
         libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le,
             temp_reg, 0);
@@ -676,7 +686,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
             temp_reg, 1);
         libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op,
             temp_reg, (timestamp == last_timestamp) );
-        libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision);
+        libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else {
         /* This should not happen  */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
