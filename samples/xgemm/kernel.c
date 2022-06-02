@@ -47,32 +47,37 @@ typedef struct gemm_def {
   float scf;
 } gemm_def;
 
-void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
+void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
   libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
   int* i_data = (int*) data;
   short* s_data = (short*) data;
-  char* c_data = (char*) data;
+  char* sc_data = (char*) data;
+  unsigned char* uc_data = (unsigned char*) data;
   libxsmm_blasint l_r, l_i, l_j;
 
   for (l_r = 0; l_r < br; l_r++) {
     for (l_i = 0; l_i < ld; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         if ( dtype == LIBXSMM_DATATYPE_F64 ) {
-          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = libxsmm_rng_f64();
+          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = (libxsmm_rng_f64()-0.5);
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)libxsmm_rng_f64();
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)(libxsmm_rng_f64()-0.5);
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           union libxsmm_bfloat16_hp tmp;
           tmp.f = (float)libxsmm_rng_f64();
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-          i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
+          i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  ((libxsmm_rng_f64()-0.5) * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
-          s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(libxsmm_rng_f64() * 20.0);
+          s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)((libxsmm_rng_f64()-0.5) * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-          c_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) (libxsmm_rng_f64() * 20.0);
+          if ( pos_val_only != 0 ) {
+            uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (unsigned char) (libxsmm_rng_f64() * 20.0);
+          } else {
+            sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) ((libxsmm_rng_f64()-0.5) * 40.0);
+          }
         } else {
         }
       }
@@ -1064,14 +1069,14 @@ int main(int argc, char* argv []) {
       l_c_gold = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
 
       if (l_gemm_def.trans_a == 0) {
-        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k );
+        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k, l_gemm_def.unsigned_a );
       } else {
-        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_m );
+        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_m, l_gemm_def.unsigned_a );
       }
       if (l_gemm_def.trans_b == 0) {
-        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n );
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n, l_gemm_def.unsigned_b );
       } else {
-        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k );
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k, l_gemm_def.unsigned_b );
       }
       if ( l_beta == 0 ) {
         init_garbage_matrix( l_gemm_def.out_type, l_c,      1, l_ldc, l_n );
