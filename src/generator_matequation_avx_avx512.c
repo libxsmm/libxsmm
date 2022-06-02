@@ -1046,7 +1046,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
             temp_reg,
             0 );
       }
-      copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
+      copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,
