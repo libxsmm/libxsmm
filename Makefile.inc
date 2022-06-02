@@ -1401,13 +1401,13 @@ else # GCC assumed
         CXXFLAGS += -g3 -fno-omit-frame-pointer
         CFLAGS += -g3 -fno-omit-frame-pointer
       else
-        CXXFLAGS += -g -fno-omit-frame-pointer
-        CFLAGS += -g -fno-omit-frame-pointer
+        CXXFLAGS += -g
+        CFLAGS += -g
       endif
       ifeq (3,$(XSMM_GCC))
         FCFLAGS += -g3 -fno-omit-frame-pointer
       else
-        FCFLAGS += -g -fno-omit-frame-pointer
+        FCFLAGS += -g
       endif
       ifneq (2,$(SYM))
         CXXFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
