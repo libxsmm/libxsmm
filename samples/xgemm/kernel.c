@@ -244,6 +244,31 @@ void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsm
   memset( l_data, 0xdeadbeef, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
+void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
+  libxsmm_blasint l_i, l_j, l_i2;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
+
+  if (i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16) {
+    libxsmm_bfloat16* h_c = (libxsmm_bfloat16*)l_c_gold;
+    libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
+    /* Copy to tmp_c */
+    memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat16));
+    /* convert to vnni  */
+    for (l_i = 0; l_i < n/2; l_i++) {
+      for (l_j = 0; l_j < m; l_j++) {
+        for (l_i2 = 0; l_i2 < 2; l_i2++) {
+          h_c[(l_i*ldc*2)+(l_j*2)+l_i2] = tmp_c[(((l_i*2)+l_i2)*ldc)+l_j];
+        }
+      }
+    }
+    libxsmm_free(tmp_c);
+  } else {
+    /* Should not come here  */
+  }
+}
+
 void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void* c ) {
   libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
   libxsmm_blasint lda = i_gemm_def->lda;
@@ -654,6 +679,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= (0 != i_gemm_def->aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != i_gemm_def->aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
   l_flags |= ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0;
+  l_flags |= (0 != i_gemm_def->vnni_c ? LIBXSMM_GEMM_FLAG_VNNI_C : 0);
 
   /* setting update GEMM struct */
   l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
@@ -920,6 +946,7 @@ void print_help(void) {
   printf("    tile configuration: 1 - external, 0 - internal\n");
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
+  printf("    convert_C_to_vnni: 0/1 \n");
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
@@ -938,6 +965,7 @@ void print_help(void) {
   printf("    tile configuration: 1 - external, 0 - internal\n");
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
+  printf("    convert_C_to_vnni: 0/1 \n");
   printf("\n\n");
 }
 
@@ -963,8 +991,9 @@ int main(int argc, char* argv []) {
   double l_total_max_error_bitmask = 0.0;
   int l_tc_config = 0;
   int l_reps;
-  int l_binary_postop = 0;
-  int l_unary_postop = 0;
+  int l_binary_postop = OP_NONE;
+  int l_unary_postop = OP_NONE;
+  int cvt_C_to_vnni = 0;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   gemm_def l_gemm_def;
   int l_n_threads = 1;
@@ -978,7 +1007,7 @@ int main(int argc, char* argv []) {
 # endif
 
   /* check argument count for a valid range */
-  if ( argc == 20 || argc == 19 || argc == 21 || argc == 22 ) {
+  if ( argc == 20 || argc == 19 || argc == 21 || argc == 22 || argc == 23 ) {
     /* xgemm sizes */
     l_m = atoi(argv[1]);
     l_n = atoi(argv[2]);
@@ -1007,10 +1036,12 @@ int main(int argc, char* argv []) {
     }
     if ( argc >= 21 ) {
       l_binary_postop = atoi(argv[20]);
+    }
+    if ( argc >= 22 ) {
       l_unary_postop = atoi(argv[21]);
-    } else {
-      l_binary_postop = OP_NONE;
-      l_unary_postop = OP_NONE;
+    }
+    if ( argc >= 23 ) {
+      cvt_C_to_vnni= atoi(argv[22]);
     }
 
     /* set value of prefetch flag */
@@ -1059,7 +1090,7 @@ int main(int argc, char* argv []) {
 
     l_file_input = 0;
     l_run_check = 1;
-  } else if ( argc == 15 || argc == 14 || argc == 16 || argc == 17 ) {
+  } else if ( argc == 15 || argc == 14 || argc == 16 || argc == 17 || argc == 18 ) {
     l_file_input = 1;
     l_file_name = argv[1];
     l_alpha = atof(argv[2]);
@@ -1078,10 +1109,12 @@ int main(int argc, char* argv []) {
     }
     if ( argc >= 16 ) {
       l_binary_postop = atoi(argv[15]);
+    }
+    if ( argc >= 17 ) {
       l_unary_postop = atoi(argv[16]);
-    } else {
-      l_binary_postop = OP_NONE;
-      l_unary_postop = OP_NONE;
+    }
+    if ( argc >= 18 ) {
+      cvt_C_to_vnni= atoi(argv[17]);
     }
 
     if (strcmp("nobr", argv[9]) == 0) {
@@ -1150,7 +1183,7 @@ int main(int argc, char* argv []) {
   l_gemm_def.trans_b = l_trans_b;
   l_gemm_def.vnni_a = 0;
   l_gemm_def.vnni_b = 0;
-  l_gemm_def.vnni_c = 0;
+  l_gemm_def.vnni_c = cvt_C_to_vnni;
   l_gemm_def.unsigned_a = 0;
   l_gemm_def.unsigned_b = 0;
   l_gemm_def.unsigned_c = 0;
@@ -1358,6 +1391,9 @@ int main(int argc, char* argv []) {
           ref_fused_matmul( &l_gemm_def, l_a, l_b, l_c_gold, &ref_fusion_arguments );
         } else {
           ref_matmul( &l_gemm_def, l_a, l_b, l_c_gold );
+        }
+        if (cvt_C_to_vnni > 0) {
+          convert_output_to_vnni2(&l_gemm_def, l_c_gold);
         }
       }
 
