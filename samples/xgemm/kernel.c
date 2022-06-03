@@ -1267,6 +1267,13 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
+  if (l_gemm_def.out_type != LIBXSMM_DATATYPE_BF16) {
+    if (cvt_C_to_vnni > 0) {
+      fprintf(stderr, "ERROR: requested C to be converted to vnni but output prec is not BF16!\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
   if ( l_file_input != 0 ) {
     l_file_handle = fopen( l_file_name, "r" );
   } else {
