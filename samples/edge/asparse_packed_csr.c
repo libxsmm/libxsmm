@@ -39,8 +39,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * M * N * N_CRUNS, 64);
   REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * M * N * N_CRUNS, 64);
   REALTYPE l_max_error = 0.0;
-  unsigned int l_k, l_n;
-  libxsmm_blasint l_i, l_j, l_jj;
+  libxsmm_blasint l_k, l_n, l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_b, l_b, N, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N, N_CRUNS);
@@ -86,12 +85,12 @@ int main(int argc, char* argv[]) {
   printf("CSR matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
-  for ( l_n = 0; l_n < (((unsigned int)M) * K); l_n++) {
+  for ( l_n = 0; l_n < (M * K); l_n++) {
     l_a_de[l_n] = 0.0;
   }
 
-  for ( l_n = 0; l_n < (unsigned int)M; l_n++) {
-    const unsigned int l_rowelems = l_rowptr[l_n+1] - l_rowptr[l_n];
+  for ( l_n = 0; l_n < M; l_n++) {
+    const libxsmm_blasint l_rowelems = l_rowptr[l_n+1] - l_rowptr[l_n];
     assert(l_rowptr[l_n+1] >= l_rowptr[l_n]);
 
     for ( l_k = 0; l_k < l_rowelems; l_k++) {

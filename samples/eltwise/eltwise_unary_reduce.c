@@ -100,7 +100,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[i] = -FLT_MAX;
           for (jj = 0; jj < n_cols_idx; jj++) {
-            j = cols_ind_array[jj];
+            j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
             if (record_idx > 0) {
               if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
                 ref_result_reduce_elts[i] = sinp[j*ld_in + i];
@@ -129,12 +129,12 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unsigned int record_idx, unsigned long long *argop_off, unsigned int *argop_off_i32 ) {
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
   libxsmm_blasint ld_in = _ld_in;
   libxsmm_meltwfunction_unary kernel = NULL;
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param = { 0 };
   libxsmm_meltwfunction_unary kernel2 = NULL;
-  libxsmm_meltw_unary_param params2;
+  libxsmm_meltw_unary_param params2 = { 0 };
   if (reduce_rows == 1) {
     unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   } else {
@@ -291,13 +291,13 @@ int main(int argc, char* argv[])
   result_size_check = (reduce_rows == 1) ? n : m;
 
   /* Allocate arrays  */
-  sinp  = (float*) malloc( ld_in*n*sizeof(float) );
-  result_reduce_elts = (float*) malloc(2 * result_size*sizeof(float) );
+  sinp  = (float*) malloc( sizeof(float)*ld_in*n );
+  result_reduce_elts = (float*) malloc( sizeof(float)*result_size*2 );
 
   if (use_bf16 == 1) {
-    sinp_bf16  = (libxsmm_bfloat16*) malloc( ld_in*n*sizeof(libxsmm_bfloat16) );
-    result_reduce_elts_bf16 = (libxsmm_bfloat16*) malloc(2 * result_size*sizeof(libxsmm_bfloat16) );
-    memset(result_reduce_elts_bf16, 0, 2 * result_size * sizeof(libxsmm_bfloat16) );
+    sinp_bf16  = (libxsmm_bfloat16*) malloc( sizeof(libxsmm_bfloat16)*ld_in*n );
+    result_reduce_elts_bf16 = (libxsmm_bfloat16*) malloc( sizeof(libxsmm_bfloat16)*result_size*2 );
+    memset(result_reduce_elts_bf16, 0, sizeof(libxsmm_bfloat16)*result_size*2 );
     result_reduce_elts_squared_bf16 = NULL;
   }
 
@@ -451,11 +451,11 @@ int main(int argc, char* argv[])
 
   if (record_idx > 0) {
     for (k = 0; k < m; k++) {
-      ref_argop_off_i32[k] = ref_argop_off[k];
+      ref_argop_off_i32[k] = LIBXSMM_CAST_UINT(ref_argop_off[k]);
     }
     if (idx_type == 0) {
       for (k = 0; k < m; k++) {
-        argop_off_i32[k] = argop_off[k];
+        argop_off_i32[k] = LIBXSMM_CAST_UINT(argop_off[k]);
       }
     }
     printf("##########################################\n");

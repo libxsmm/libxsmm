@@ -241,6 +241,7 @@ int main(int argc, char **argv) {
             b_colptr[blk_idx], b_rowidx[blk_idx], (const void *)b_values[blk_idx]);
     }
 #ifdef _OPENMP
+    LIBXSMM_OMP_VAR(n);
 #   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(k,n,c,gemm_param)
 #endif
     for (k = 0; k < K / KB; ++k) {
