@@ -36,10 +36,12 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   cm_dense_data = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) );
 
   /* set all values in copy to 1 or 0 */
+  assert(NULL != cm_dense && NULL != cm_dense_data);
   for ( j = 0; j < n; ++j ) {
     for ( i = 0; i < m; ++i ) {
-      cm_dense[(j*m)+i]      = (REALTYPE)(LIBXSMM_FEQ(rm_dense_data[(i*n)+j], 0) ? 0 : 1);
-      cm_dense_data[(j*m)+i] = rm_dense_data[(i*n)+j];
+      const REALTYPE data = rm_dense_data[(i*n)+j];
+      cm_dense[(j*m)+i]      = (REALTYPE)(LIBXSMM_FEQ(data, 0) ? 0 : 1);
+      cm_dense_data[(j*m)+i] = data;
     }
   }
 
@@ -48,7 +50,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   l_max_cols = 0;
   for ( j = 0; j < n; ++j ) {
     for ( i = 0; i < m; ++i ) {
-      if (cm_dense[(j*m) + i] > 0.0) {
+      if (cm_dense[(j*m)+i] > 0.0) {
         l_max_cols = j+1;
       }
     }
@@ -201,8 +203,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(M * N * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(M * N * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE l_max_error = 0.0;
-  unsigned int l_k, l_n;
-  int l_i, l_j, l_jj;
+  libxsmm_blasint l_k, l_n, l_i, l_j, l_jj;
 
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_a, l_a, K, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N, N_CRUNS);
@@ -263,12 +264,12 @@ int main(int argc, char* argv[]) {
   printf("csc matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
-  for ( l_n = 0; l_n < (((unsigned int)K) * N); l_n++) {
+  for ( l_n = 0; l_n < (K * N); l_n++) {
     l_b_de[l_n] = 0.0;
   }
 
-  for ( l_n = 0; l_n < (unsigned int)N; l_n++) {
-    const unsigned int l_colelems = l_colptr[l_n+1] - l_colptr[l_n];
+  for ( l_n = 0; l_n < N; l_n++) {
+    const libxsmm_blasint l_colelems = l_colptr[l_n+1] - l_colptr[l_n];
     assert(l_colptr[l_n+1] >= l_colptr[l_n]);
 
     for ( l_k = 0; l_k < l_colelems; l_k++) {

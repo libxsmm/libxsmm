@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
   /* dense routine */
   l_start = libxsmm_timer_tick();
 #if 1
-  for ( l_n = 0; l_n < REPS; l_n++) {
+  for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
     for ( l_i = 0; l_i < NB; l_i++) {
       for ( l_j = 0; l_j < K; l_j++) {
         for ( l_jj = 0; l_jj < C; l_jj++) {
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
   gemm_param.b.primary = l_b;
   gemm_param.c.primary = l_c_sp_csc;
   l_start = libxsmm_timer_tick();
-  for ( l_n = 0; l_n < REPS; l_n++) {
+  for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
     mykernel_csc( &gemm_param );
   }
   l_end = libxsmm_timer_tick();
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
   /* check for errors */
   l_max_error = 0.f;
   for ( l_i = 0; l_i < K; l_i++) {
-    for ( l_j = 0; l_j < l_colptr[l_i+1]-l_colptr[l_i]; l_j++ ) {
+    for ( l_j = 0; l_j < (libxsmm_blasint)(l_colptr[l_i+1]-l_colptr[l_i]); l_j++ ) {
 #if 0
        printf("(%i, %i): %f %f\n", l_i, l_rowidx[l_colptr[l_i]+l_j], LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C), l_c_sp_csc[l_colptr[l_i]+l_j] );
 #endif
