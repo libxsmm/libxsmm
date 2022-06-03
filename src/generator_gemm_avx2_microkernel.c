@@ -192,6 +192,10 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
     return;
   }
 
+  if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
+  }
+
   if (l_m_blocking == 1) {
     if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
