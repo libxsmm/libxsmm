@@ -2390,7 +2390,6 @@ LIBXSMM_INLINE void naive_fullyconnected_fused_fp(naive_fullyconnected_t* param,
       for (ifm = 0; ifm < nIFm; ++ifm) {
         accum += LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
       }
-      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)
       if ( param->fuse_type == 1 ) {
         accum += bias_ptr[ofm];
       } else if ( param->fuse_type == 2 ) {
