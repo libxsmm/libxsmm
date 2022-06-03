@@ -96,6 +96,38 @@
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 #define LIBXSMM_ELIDE(...)
 
+/** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
+#define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
+#define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
+  (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
+#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
+#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
+#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
+#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
+
+#if !defined(LIBXSMM_VERSION_NUMBER)
+# define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
+    LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
+#endif
+
+#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
+  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
+
+/**
+ * Macro to check minimum version requiremnts in code, for example:
+ * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
+ * // code requiring version 1.17 or later
+ * #else
+ * // fallback code
+ * #endif
+*/
+#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
+  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
+
+/** Evaluate if value falls into interval [LO, HI]. */
+#define LIBXSMM_CHECK_VALUE(VALUE, LO, HI) ((LO) <= (LIBXSMM_UNLIMITED & (VALUE)) && (LIBXSMM_UNLIMITED & (VALUE)) <= (HI))
+
 /**
  * LIBXSMM_CAST:  Perform type-cast with following two advantages:
  *                (1) Make it easy to locate/find the type-cast.
@@ -105,8 +137,7 @@
  * Checks and casts are not suitable for intendedly clamping an
  * out-of-range value, and hence cannot replace all casts.
  */
-#if !defined(NDEBUG) && 0
-# define LIBXSMM_CHECK_VALUE(VALUE, LO, HI) ((LO) <= (LIBXSMM_UNLIMITED & (VALUE)) && (LIBXSMM_UNLIMITED & (VALUE)) <= (HI))
+#if !defined(NDEBUG) && 1
 # define LIBXSMM_CHECK_ULLONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, ULLONG_MAX), "Value cannot be represented as ULLONG")
 # define LIBXSMM_CHECK_LLONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, LLONG_MIN, LLONG_MAX), "Value cannot be represented as LLONG")
 # define LIBXSMM_CHECK_ULONG(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_VALUE(VALUE, 0, ULONG_MAX), "Value cannot be represented as ULONG")
@@ -149,35 +180,6 @@
 # define LIBXSMM_CHECK_UINT(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_INT(VALUE) 0/*dummy*/
 #endif
-
-/** Use LIBXSMM_VERSION2 instead of LIBXSMM_VERSION3, e.g., if __GNUC_PATCHLEVEL__ or __clang_patchlevel__ is zero (0). */
-#define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
-#define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
-  (((0x7F & (MAJOR)) << 24) | ((0x1F & (MINOR)) << 19) | ((0x1F & (UPDATE)) << 14) | (0x3FFF & (PATCH)))
-#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
-#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
-#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
-#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
-
-#if !defined(LIBXSMM_VERSION_NUMBER)
-# define LIBXSMM_VERSION_NUMBER LIBXSMM_VERSION4(LIBXSMM_VERSION_MAJOR, \
-    LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH)
-#endif
-
-#define LIBXSMM_VERSION_CHECK(COMP, MAJOR, MINOR, UPDATE, PATCH) \
-  (LIBXSMM_VERSION_NUMBER COMP LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH))
-
-/**
- * Macro to check minimum version requiremnts in code, for example:
- * #if LIBXSMM_VERSION_GE(1, 17, 0, 0)
- * // code requiring version 1.17 or later
- * #else
- * // fallback code
- * #endif
-*/
-#define LIBXSMM_VERSION_GE(MAJOR, MINOR, UPDATE, PATCH) \
-  LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
