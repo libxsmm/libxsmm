@@ -17,8 +17,6 @@
 #include <pthread.h>
 # endif
 
-#define USE_GEMM_EXT_FRONTEND
-
 #define COLBIAS_ADD     1
 #define RELU_NOBITMASK  1
 #define RELU_BITMASK    2

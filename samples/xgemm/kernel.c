@@ -811,7 +811,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     gemm_param.a.primary = (void*)i_a;
     gemm_param.b.primary = (void*)i_b;
 #if defined(USE_GEMM_EXT_FRONTEND)
-    test_jit.gemm_ext( &gemm_param );
+    l_test_jit.gemm_ext( &gemm_param );
 #else
     l_test_jit.gemm( &gemm_param );
 #endif
@@ -1308,6 +1308,7 @@ int main(int argc, char* argv []) {
 
       if (l_gemm_def.binary_postop == COLBIAS_ADD) {
         l_colbias = (char*)libxsmm_aligned_malloc((size_t)l_ldc * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
+        init_random_matrix( l_gemm_def.out_type, l_colbias, 1, l_ldc, 1, 0 );
         fusion_arguments.colbias = l_colbias;
         ref_fusion_arguments.colbias = l_colbias;
       }
@@ -1315,6 +1316,8 @@ int main(int argc, char* argv []) {
       if (l_gemm_def.unary_postop == RELU_BITMASK) {
         l_relu_bitmask      = (char*)libxsmm_aligned_malloc(((size_t)l_ldc/8) * (size_t)l_n, 64);
         l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)l_ldc/8) * (size_t)l_n, 64);
+        init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, l_ldc/8, l_n, 0 );
+        memcpy(l_relu_bitmask_gold, l_relu_bitmask, (l_ldc/8) * l_n * sizeof(char));
         fusion_arguments.relu_bitmask = l_relu_bitmask;
         ref_fusion_arguments.relu_bitmask = l_relu_bitmask_gold;
       }
