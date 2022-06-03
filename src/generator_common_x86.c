@@ -2146,11 +2146,11 @@ void libxsmm_generator_vcvtneps2bf8_avx512_prep_stack ( libxsmm_generated_code* 
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push 0x7C00 on the stack, naninf masking */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x7c00);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x7c007c00);
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push 0x0100 on the stack, fixup masking */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x0100);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x01000100);
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push 0x007f on the stack, rneadd */
