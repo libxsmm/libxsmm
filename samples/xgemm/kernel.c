@@ -19,9 +19,9 @@
 
 #define OP_NONE         0
 #define COLBIAS_ADD     1
-#define RELU_NOBITMASK  2
-#define RELU_BITMASK    3
-#define SIGMOID         4
+#define RELU_NOBITMASK  1
+#define RELU_BITMASK    2
+#define SIGMOID         3
 
 typedef struct gemm_def {
   libxsmm_datatype in_type;
@@ -1107,6 +1107,13 @@ int main(int argc, char* argv []) {
     print_help();
     return EXIT_FAILURE;
   }
+
+#ifndef  USE_GEMM_EXT_FRONTEND
+  if (l_binary_postop != 0 || l_unary_postop != 0) {
+    printf("ERROR: Requested GEMM fusion but the EXT_FRONTEND is NOT used,,. Exiting...\n");
+    return EXIT_FAILURE;
+  }
+#endif
 
   const char *env_arch = getenv("LIBXSMM_TARGET");
   const int is_env_SPR = (
