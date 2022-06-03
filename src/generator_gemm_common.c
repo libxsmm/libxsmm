@@ -571,6 +571,8 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   unsigned int transpose_scratch_size = 0;
   unsigned int transpose_pad_size     = 0;
   unsigned int avx2_mask_size         = 64;
+  unsigned int avx2_ones_size         = 64;
+  short sixteen_ones[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };
   int l_emu_amx = 0;
   const char *const l_env_emu_amx = getenv("EMULATE_AMX");
   if ( 0 == l_env_emu_amx ) {
@@ -613,6 +615,13 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, avx2_mask_size );
   libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, LIBXSMM_X86_GP_REG_RSP );
 
+  if ( (io_generated_code->arch == LIBXSMM_X86_AVX2) && (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, avx2_ones_size );
+    libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_ONES_PTR, LIBXSMM_X86_GP_REG_RSP );
+    libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)sixteen_ones, "sixteen_short_ones", 'y', 0);
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 0, 0, 0, 1 );
+  }
+
   if (gemm_scratch_size > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, gemm_scratch_size );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
@@ -634,7 +643,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 104 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 112 );
 
   /* The stack now looks like this:
    *      10th param (if applicable)                <-- RBP+80
@@ -656,7 +665,8 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Eltwise buf2_ptr                          <-- RBP-80
    *      Batch-reduce count                        <-- RBP-88,
    *      Transpose A ptr                           <-- RBP-96,
-   *      AVX2 Mask                                 <-- RBP-104, RSP
+   *      AVX2 Mask                                 <-- RBP-104,
+   *      AVX2 sixteen short ones                   <-- RBP-112, RSP
    */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
     libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( io_generated_code, i_xgemm_desc, i_micro_kernel_config, i_gp_reg_mapping );
@@ -690,9 +700,11 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      Eltwise buf2_ptr                      <-- RBP-80
    *      Batch-reduce count                    <-- RBP-88
    *      Transpose A ptr                       <-- RBP-96
-   *      AVX2 Mask                             <-- RBP-104, RSP
+   *      AVX2 Mask                             <-- RBP-104
+   *      AVX2 sixteen short ones               <-- RBP-112, RSP
    *      [ Potentianl  pad for 64b align ]
    *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
+   *      AV2 sixteen short ones, 64b aligned   <-- (RBP-112) contains this address
    *      GEMM scratch, 64b aligned             <-- (RBP-48) contains this address
    */
 }
@@ -855,6 +867,7 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      Batch-reduce count                        <-- RBP-88
    *      Transpose A ptr                           <-- RBP-96
    *      AVX2 Mask PTR                             <-- RBP-104
+   *      AVX2 sixteen short ones PTR               <-- RBP-112
    * */
 
   switch ( stack_var ) {
@@ -904,6 +917,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -96;
     case LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR:
       return -104;
+    case LIBXSMM_GEMM_STACK_VAR_AVX2_ONES_PTR:
+      return -112;
     default:
       return 0;
   }
