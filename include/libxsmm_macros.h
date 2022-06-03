@@ -126,7 +126,9 @@
   LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
 
 /** Evaluate if value falls into interval [LO, HI]. */
-#define LIBXSMM_CHECK_INTEGER(VALUE, LO, HI) ((LO) <= (LIBXSMM_UNLIMITED & (VALUE)) && (LIBXSMM_UNLIMITED & (VALUE)) <= (HI))
+#define LIBXSMM_CHECK_INTEGER(VALUE, LO, HI) ( \
+  ((LO) == (LIBXSMM_UNLIMITED & (VALUE)) || (LO) < (LIBXSMM_UNLIMITED & (VALUE))) && \
+  ((HI) == (LIBXSMM_UNLIMITED & (VALUE)) || (HI) > (LIBXSMM_UNLIMITED & (VALUE))))
 
 /**
  * LIBXSMM_CAST:  Perform type-cast with following two advantages:
@@ -148,16 +150,16 @@
 # define LIBXSMM_CHECK_ICHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, SCHAR_MIN, SCHAR_MAX), "Value cannot be represented as ICHAR")
 # define LIBXSMM_CHECK_UINT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, 0, UINT_MAX), "Value cannot be represented as UINT")
 # define LIBXSMM_CHECK_INT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, INT_MIN, INT_MAX), "Value cannot be represented as INT")
-# define LIBXSMM_CAST_ULLONG(VALUE) (LIBXSMM_CHECK_ULLONG(VALUE), (unsigned long long)(VALUE))
-# define LIBXSMM_CAST_LLONG(VALUE) (LIBXSMM_CHECK_LLONG(VALUE), (/*signed*/long long)(VALUE))
-# define LIBXSMM_CAST_ULONG(VALUE) (LIBXSMM_CHECK_ULONG(VALUE), (unsigned long)(VALUE))
-# define LIBXSMM_CAST_LONG(VALUE) (LIBXSMM_CHECK_LONG(VALUE), (/*signed*/long)(VALUE))
-# define LIBXSMM_CAST_USHORT(VALUE) (LIBXSMM_CHECK_USHORT(VALUE), (unsigned short)(VALUE))
-# define LIBXSMM_CAST_SHORT(VALUE) (LIBXSMM_CHECK_SHORT(VALUE), (/*signed*/short)(VALUE))
-# define LIBXSMM_CAST_UCHAR(VALUE) (LIBXSMM_CHECK_UCHAR(VALUE), (unsigned char)(VALUE))
-# define LIBXSMM_CAST_ICHAR(VALUE) (LIBXSMM_CHECK_ICHAR(VALUE), (signed char)(VALUE))
-# define LIBXSMM_CAST_UINT(VALUE) (LIBXSMM_CHECK_UINT(VALUE), (unsigned int)(VALUE))
-# define LIBXSMM_CAST_INT(VALUE) (LIBXSMM_CHECK_INT(VALUE), (/*signed*/int)(VALUE))
+# define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(LIBXSMM_CHECK_ULLONG(VALUE), VALUE))
+# define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(LIBXSMM_CHECK_LLONG(VALUE), VALUE))
+# define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(LIBXSMM_CHECK_ULONG(VALUE), VALUE))
+# define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(LIBXSMM_CHECK_LONG(VALUE), VALUE))
+# define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(LIBXSMM_CHECK_USHORT(VALUE), VALUE))
+# define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_CHECK_SHORT(VALUE), VALUE))
+# define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_CHECK_UCHAR(VALUE), VALUE))
+# define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_CHECK_ICHAR(VALUE), VALUE))
+# define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_CHECK_UINT(VALUE), VALUE))
+# define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_CHECK_INT(VALUE), VALUE))
 #else
 # define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(VALUE))
 # define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(VALUE))
@@ -871,11 +873,19 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # if defined(NDEBUG)
 #   define LIBXSMM_ASSERT(EXPR) LIBXSMM_ASSUME(EXPR)
 # else
-#   define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+#   if defined(_MSC_VER)
+#     define LIBXSMM_ASSERT(EXPR) (assert(EXPR), EXPR)
+#   else
+#     define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+#   endif
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT_MSG)
-# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && *MSG)
+# if defined(_MSC_VER)
+#   define LIBXSMM_ASSERT_MSG(EXPR, MSG) (assert((EXPR) && *MSG), EXPR)
+# else
+#   define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && *MSG)
+# endif
 #endif
 #if !defined(LIBXSMM_EXPECT_ELIDE)
 # define LIBXSMM_EXPECT_ELIDE(EXPR) do { \
