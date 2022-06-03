@@ -402,10 +402,10 @@ LIBXSMM_INLINE void quantize_buffer_uchar(float *in_buffer, unsigned char *out_b
 LIBXSMM_INLINE void init_buf_range(float* buf, size_t size, float low, float high)
 {
   int i;
-  float range = high - low;
+  const float scale = (high - low) / ((float)RAND_MAX);
   zero_buf(buf, size);
   for (i = 0; i < (int)size; ++i) {
-    buf[i] = (((float)rand())/RAND_MAX)*range+low;
+    buf[i] = scale * (float)rand() + low;
   }
 }
 
