@@ -142,6 +142,17 @@
 # define LIBXSMM_CHECK_ICHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, SCHAR_MIN, SCHAR_MAX), "Value cannot be represented as ICHAR")
 # define LIBXSMM_CHECK_UINT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, 0, UINT_MAX), "Value cannot be represented as UINT")
 # define LIBXSMM_CHECK_INT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, INT_MIN, INT_MAX), "Value cannot be represented as INT")
+#elif !defined(_MSC_VER)
+# define LIBXSMM_CHECK_ULLONG(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_LLONG(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_ULONG(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_LONG(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_USHORT(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_SHORT(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_UCHAR(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_ICHAR(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_UINT(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_INT(VALUE) ((void)0/*dummy*/)
 #else
 # define LIBXSMM_CHECK_ULLONG(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_LLONG(VALUE) 0/*dummy*/
