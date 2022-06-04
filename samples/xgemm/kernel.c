@@ -33,6 +33,8 @@ typedef struct gemm_def {
   libxsmm_blasint lda;
   libxsmm_blasint ldb;
   libxsmm_blasint ldc;
+  libxsmm_blasint uop_ld;
+  libxsmm_blasint bop_ld;
   double alpha;
   double beta;
   int trans_a;
@@ -162,10 +164,10 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
   unsigned int n = i_gemm_def->n;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
-    relu_f32_f32_gold(m, n, ldc, ldc, ldc/8, f_c_gold, f_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
+    relu_f32_f32_gold(m, n, ldc, ldc, i_gemm_def->uop_ld, f_c_gold, f_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
   } else if (i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16) {
     libxsmm_bfloat16* h_c_gold  = (libxsmm_bfloat16*)l_c_gold;
-    relu_bf16_bf16_gold(m, n, ldc, ldc, ldc/8, h_c_gold, h_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
+    relu_bf16_bf16_gold(m, n, ldc, ldc, i_gemm_def->uop_ld, h_c_gold, h_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
   }
 }
 
@@ -722,7 +724,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
       l_postops.d_in_type      = i_gemm_def->out_type;
       l_postops.d_binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0;
       l_postops.d_binary_type  = LIBXSMM_MELTW_TYPE_BINARY_ADD;
-      l_postops.ldd            = i_gemm_def->ldc;
+      l_postops.ldd            = i_gemm_def->bop_ld;
     }
   }
 
@@ -738,7 +740,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
 
     if (i_gemm_def->unary_postop == RELU_BITMASK) {
-      l_argops.ldcp = i_gemm_def->ldc;
+      l_argops.ldcp = i_gemm_def->uop_ld;
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     }
@@ -1354,17 +1356,20 @@ int main(int argc, char* argv []) {
       l_c_gold = (char*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
 
       if (l_gemm_def.binary_postop == COLBIAS_ADD) {
-        l_colbias = (char*)libxsmm_aligned_malloc((size_t)l_ldc * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
-        init_random_matrix( l_gemm_def.out_type, l_colbias, 1, l_ldc, 1, 0 );
+        l_gemm_def.bop_ld = l_ldc;
+        l_colbias = (char*)libxsmm_aligned_malloc((size_t)l_gemm_def.bop_ld * LIBXSMM_TYPESIZE(l_gemm_def.out_type), 64);
+        init_random_matrix( l_gemm_def.out_type, l_colbias, 1, l_gemm_def.bop_ld, 1, 0 );
         fusion_arguments.colbias = l_colbias;
         ref_fusion_arguments.colbias = l_colbias;
       }
 
       if (l_gemm_def.unary_postop == RELU_BITMASK) {
-        l_relu_bitmask      = (char*)libxsmm_aligned_malloc(((size_t)l_ldc/8) * (size_t)l_n, 64);
-        l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)l_ldc/8) * (size_t)l_n, 64);
-        init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, l_ldc/8, l_n, 0 );
-        memcpy(l_relu_bitmask_gold, l_relu_bitmask, (l_ldc/8) * l_n * sizeof(char));
+        libxsmm_blasint mask_ld = ((l_ldc+15)-((l_ldc+15)%16))/8;
+        l_gemm_def.uop_ld   = mask_ld;
+        l_relu_bitmask      = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
+        l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
+        init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, mask_ld, l_n, 0 );
+        memcpy(l_relu_bitmask_gold, l_relu_bitmask, mask_ld * l_n * sizeof(char));
         fusion_arguments.relu_bitmask = l_relu_bitmask;
         ref_fusion_arguments.relu_bitmask = l_relu_bitmask_gold;
       }
@@ -1414,7 +1419,7 @@ int main(int argc, char* argv []) {
       {
         error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n );
         if (l_unary_postop == RELU_BITMASK) {
-          error_bitmask = check_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask_gold, l_relu_bitmask, l_ldc/8, l_m/8, l_n );
+          error_bitmask = check_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask_gold, l_relu_bitmask, l_gemm_def.uop_ld, l_m/8, l_n );
         }
       }
 
@@ -1433,6 +1438,30 @@ int main(int argc, char* argv []) {
 
     } /* close parallel region */
     l_runtime_libxsmm /= (double)l_n_threads;
+
+    if (l_unary_postop != OP_NONE) {
+      if (l_unary_postop == COLBIAS_ADD) {
+        printf("Fusing colbias add in GEMM\n");
+      } else {
+
+      }
+    }
+
+    if (l_binary_postop != OP_NONE) {
+      if (l_binary_postop == RELU_NOBITMASK) {
+        printf("Fusing RELU NOBITMASK in GEMM\n");
+      } else if (l_binary_postop == RELU_BITMASK) {
+        printf("Fusing RELU BITMASK in GEMM\n");
+      } else if (l_binary_postop == SIGMOID) {
+        printf("Fusing SIGMOID in GEMM\n");
+      } else {
+
+      }
+    }
+
+    if (cvt_C_to_vnni > 0) {
+      printf("Converting C to vnni format in GEMM\n");
+    }
 
     if ( l_file_input == 0 ) {
       printf("%fs for libxsmm\n", l_runtime_libxsmm);
