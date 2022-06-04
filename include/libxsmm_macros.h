@@ -127,8 +127,8 @@
 
 /** Evaluate if value falls into interval [LO, HI]. */
 #define LIBXSMM_CHECK_INTEGER(VALUE, LO, HI) ( \
-  ((LO) == (LIBXSMM_UNLIMITED & (VALUE)) || (LO) < (LIBXSMM_UNLIMITED & (VALUE))) && \
-  ((HI) == (LIBXSMM_UNLIMITED & (VALUE)) || (HI) > (LIBXSMM_UNLIMITED & (VALUE))))
+  (0 == ((VALUE) - (LO)) || 0 < ((VALUE) - (LO))) && \
+  (0 == ((HI) - (VALUE)) || 0 < ((HI) - (VALUE))))
 
 /** LIBXSMM_CHECK: Check given value against type-range (assertion). */
 #if !defined(NDEBUG) && 1
