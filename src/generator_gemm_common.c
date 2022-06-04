@@ -1779,7 +1779,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
   if ((i_micro_kernel_config->fused_relu == 1) && (i_micro_kernel_config->overwrite_C == 1) ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (i_n_blocking*i_xgemm_desc->ldc)/8 - ((i_xgemm_desc->m/8) ) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (i_n_blocking*i_xgemm_desc->ldcp)/8 - ((i_xgemm_desc->m/8) ) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -1791,7 +1791,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
   if (i_micro_kernel_config->fused_relu_bwd == 1) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (i_n_blocking*i_xgemm_desc->ldc)/8 - ((i_xgemm_desc->m/8) ) );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_0, (i_n_blocking*i_xgemm_desc->ldcp)/8 - ((i_xgemm_desc->m/8) ) );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_RELU_BITMASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
   }
 
@@ -2398,7 +2398,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {
-          unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldc) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldc) + (l_m * 16))/8;
+          unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldcp) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldcp) + (l_m * 16))/8;
           libxsmm_generator_gemm_apply_relu_to_vreg( io_generated_code, i_micro_kernel_config,
               zero_vreg, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->fused_relu, relu_bitmask_gpr, bitmask_offset, 1, aux_gpr, aux_vreg);
         } else if (i_micro_kernel_config->fused_sigmoid == 1) {
@@ -2492,7 +2492,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         for ( l_m = 0 ; l_m < l_m_blocking; l_m++ ) {
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
           if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {
-            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldc) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldc) + (l_m * 16))/8;
+            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldcp) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldcp) + (l_m * 16))/8;
             libxsmm_generator_gemm_apply_relu_to_vreg( io_generated_code, i_micro_kernel_config,
               zero_vreg, reg_X, i_micro_kernel_config->fused_relu, relu_bitmask_gpr, bitmask_offset, 1, aux_gpr, aux_vreg);
           } else if  (i_micro_kernel_config->fused_sigmoid == 1) {
@@ -2549,7 +2549,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
               reg_X, reg_X2, 0 );
 
           if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {
-            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldc) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldc) + (l_m * 16))/8;
+            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldcp) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldcp) + (l_m * 16))/8;
             libxsmm_generator_gemm_apply_relu_to_vreg( io_generated_code, i_micro_kernel_config,
               zero_vreg, 0, i_micro_kernel_config->fused_relu, relu_bitmask_gpr, bitmask_offset, 0, aux_gpr, aux_vreg);
           }
@@ -2567,7 +2567,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
           unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
           if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {
-            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldc) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldc) + (l_m * 16))/8;
+            unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldcp) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldcp) + (l_m * 16))/8;
             libxsmm_generator_gemm_apply_relu_to_vreg( io_generated_code, i_micro_kernel_config,
               zero_vreg, reg_X, i_micro_kernel_config->fused_relu, relu_bitmask_gpr, bitmask_offset, 1, aux_gpr, aux_vreg);
           } else if (i_micro_kernel_config->fused_sigmoid == 1) {
@@ -2701,7 +2701,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         unsigned int reg_X = l_vec_reg_acc_start + l_m + (l_m_blocking * l_n);
 
         if ((i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu == 1)) {
-          unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldc) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldc) + (l_m * 16))/8;
+          unsigned int bitmask_offset = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? ((l_n * i_xgemm_desc->ldcp) + (l_m * 8))/8 : ((l_n * i_xgemm_desc->ldcp) + (l_m * 16))/8;
           libxsmm_generator_gemm_apply_relu_to_vreg( io_generated_code, i_micro_kernel_config,
               zero_vreg, reg_X, i_micro_kernel_config->fused_relu, relu_bitmask_gpr, bitmask_offset, 1, aux_gpr, aux_vreg);
         } else if (i_micro_kernel_config->fused_sigmoid == 1) {

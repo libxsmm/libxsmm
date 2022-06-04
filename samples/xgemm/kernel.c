@@ -740,7 +740,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
 
     if (i_gemm_def->unary_postop == RELU_BITMASK) {
-      l_argops.ldcp = i_gemm_def->uop_ld;
+      l_argops.ldcp = i_gemm_def->uop_ld*8;
       l_argops.cp_unary_type  = LIBXSMM_MELTW_TYPE_UNARY_RELU;
       l_argops.cp_unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     }
