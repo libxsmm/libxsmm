@@ -280,7 +280,7 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu( libxsmm_generated_co
 
     /* load column vectors of A and multiply with all broadcasted row entries of B */
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
-      if ( i_micro_kernel_config->use_masking_a_c == 0 ) {
+      if ( (i_micro_kernel_config->use_masking_a_c == 0) || ((i_micro_kernel_config->use_masking_a_c == 1) && (l_m < (l_m_blocking-1))) ) {
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
                                      i_micro_kernel_config->a_vmove_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
@@ -318,10 +318,8 @@ void libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu( libxsmm_generated_co
         }
       } else {
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-          if ( ( l_m == (l_m_blocking - 1) ) && (i_micro_kernel_config->use_masking_a_c != 0) ) {
-            libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
-                                              i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', i_n_blocking, 0, 0, 0 );
-          }
+          libxsmm_x86_instruction_vec_move( io_generated_code, i_micro_kernel_config->instruction_set, LIBXSMM_X86_INSTR_VMOVUPS,
+                                            i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', i_n_blocking, 0, 0, 0 );
 
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
                                        i_micro_kernel_config->a_vmove_instruction,
