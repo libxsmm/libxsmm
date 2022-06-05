@@ -935,10 +935,10 @@ LIBXSMM_API_INTERN void internal_init(void)
     }
 #endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
-    if (NULL != env_verbose && '\0' != *env_verbose) {
-      libxsmm_verbosity = atoi(env_verbose);
+    if (NULL != env_verbose) {
+      libxsmm_verbosity = ('\0' != *env_verbose ? atoi(env_verbose) : 1);
     }
-#if !defined(NDEBUG)
+#if defined(_DEBUG)
     else {
       libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
     }
