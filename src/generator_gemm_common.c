@@ -2467,7 +2467,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
         libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code,
                        ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512) ) ? 'y' : 'z',
-                       reg_X, 0, 1, 2, 6, 7 );
+                       reg_X, 0, 1, 2, 6, 7, 0 );
 
         /* store 16 bit values into xmm portion of the register */
         if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
