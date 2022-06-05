@@ -87,8 +87,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
           const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
           const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
-          size_t shape[2], size[2];
-          char filename[256];
+          size_t shape[2] = { 0 }, size[2] = { 0 };
+          char filename[256] = "";
           if (0 == reshape) {
             shape[0] = (size_t)mm; shape[1] = (size_t)nn;
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
@@ -238,7 +238,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
   if (NULL != info) {
-    union { int raw; float value; } inf;
+    union { int raw; float value; } inf = { 0 };
 #if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
     inf.value = (float)(INFINITY);
 #else
@@ -466,10 +466,10 @@ LIBXSMM_API float libxsmm_sexp2(float x)
 
 LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
 {
-  union { int i; float s; } result;
+  union { int i; float s; } result = { 0 };
   if (128 > x) {
     if (31 < x) {
-      const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
+      static const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
       const int n = x >> 5;
       int i;
       result.s = r32;
@@ -493,11 +493,11 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
 
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 {
-  union { int i; float s; } result;
+  union { int i; float s; } result = { 0 };
   if (-128 != x) {
     const signed char ux = (signed char)LIBXSMM_ABS(x);
     if (31 < ux) {
-      const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
+      static const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
       const int n = ux >> 5;
       int i;
       result.s = r32;
