@@ -483,10 +483,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
           unsigned int l_mask_count = l_m_blocking % l_corrected_vlen;
 
           if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ||
-               (LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))    ) {
-            libxsmm_generator_initialize_avx_mask( io_generated_code, 0, l_mask_count );
-          } else if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )  ) {
-            libxsmm_generator_initialize_avx_64bit_mask( io_generated_code, 0, l_mask_count );
+               (LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ||
+               (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))    ) {
+            libxsmm_generator_initialize_avx_mask( io_generated_code, 0, l_mask_count, LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) );
           } else {
             /* shouldn't happen */
           }

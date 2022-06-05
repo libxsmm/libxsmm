@@ -1687,7 +1687,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       reserved_mask_regs++;
     } else {
       mask_reg_in = i_micro_kernel_config->inout_vreg_mask;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_in, i_m % i_vlen_in);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_in, i_m % i_vlen_in, LIBXSMM_DATATYPE_F32);
     }
   }
 
@@ -1711,7 +1711,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       } else {
         mask_reg_out = i_micro_kernel_config->reserved_zmms;
         i_micro_kernel_config->reserved_zmms =  i_micro_kernel_config->reserved_zmms + 1;
-        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_out, i_m % i_vlen_out);
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_out, i_m % i_vlen_out, LIBXSMM_DATATYPE_F32);
       }
     }
   }

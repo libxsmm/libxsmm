@@ -623,12 +623,8 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
 LIBXSMM_API_INTERN
 void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_mask_reg,
-                                            const unsigned int      i_mask_count );
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_initialize_avx_64bit_mask( libxsmm_generated_code* io_generated_code,
-                                                  const unsigned int      i_mask_reg,
-                                                  const unsigned int      i_mask_count);
+                                            const unsigned int      i_mask_count,
+                                            const libxsmm_datatype  i_datatype );
 
 #endif /* GENERATOR_COMMON_X86_H */
 

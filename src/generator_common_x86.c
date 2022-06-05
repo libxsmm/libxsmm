@@ -2370,24 +2370,25 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
 LIBXSMM_API_INTERN
 void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_mask_reg,
-                                            const unsigned int      i_mask_count) {
-  unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  unsigned int i;
-  for (i = 0; i < i_mask_count; i++) {
-    mask_array[i] = 0xFFFFFFFF;
+                                            const unsigned int      i_mask_count,
+                                            const libxsmm_datatype  i_datatype) {
+  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+    unsigned long long mask_array[4] = {0, 0, 0, 0};
+    unsigned int i;
+    for (i = 0; i < i_mask_count; i++) {
+      mask_array[i] = 0xFFFFFFFFFFFFFFFF;
+    }
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
+  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+    unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned int i;
+    for (i = 0; i < i_mask_count; i++) {
+      mask_array[i] = 0xFFFFFFFF;
+    }
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
   }
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_generator_initialize_avx_64bit_mask( libxsmm_generated_code* io_generated_code,
-                                                  const unsigned int      i_mask_reg,
-                                                  const unsigned int      i_mask_count) {
-  unsigned long long mask_array[4] = {0, 0, 0, 0};
-  unsigned int i;
-  for (i = 0; i < i_mask_count; i++) {
-    mask_array[i] = 0xFFFFFFFFFFFFFFFF;
-  }
-  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
 }
 

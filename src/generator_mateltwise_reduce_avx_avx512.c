@@ -85,7 +85,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
 
 
     if (use_m_masking > 0) {
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, bc % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, bc % vlen, LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
     }
 
     /* Register allocation: Registers zmm8-zmm15 are accumulators, zmm0-zmm7 are used for loading input */
@@ -558,7 +558,7 @@ void libxsmm_generator_reduce_cols_avx512_microkernel( libxsmm_generated_code*  
     } else {
       mask_reg = 15;
       tmp_vreg = 14;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       max_m_unrolling--;
     }
   }
@@ -1174,11 +1174,11 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
       libxsmm_generator_load_vreg_minus_infinity(io_generated_code, 'y', LIBXSMM_X86_GP_REG_RAX, aux_vreg);
     }
 
-    libxsmm_generator_initialize_avx_mask(io_generated_code, mask_out, 1);
+    libxsmm_generator_initialize_avx_mask(io_generated_code, mask_out, 1, LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
     /* Calculate input mask in case we see m_masking */
     if (use_m_masking == 1) {
       mask_reg = available_vregs-1;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
       available_vregs--;
     }
 
@@ -3721,7 +3721,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       mask_out_count = vlen - (m % vlen);
       libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_inout, mask_out_count, LIBXSMM_DATATYPE_F32);
     } else {
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen, LIBXSMM_DATATYPE_F32);
     }
   }
 
@@ -5718,7 +5718,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
       if (max_m_unrolling > 7) {
         max_m_unrolling = 7;
       }
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
     }
   }
 
