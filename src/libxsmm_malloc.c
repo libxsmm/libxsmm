@@ -485,7 +485,7 @@ internal_malloc_info_type* internal_malloc_info(const void* memory, int check)
       const int flags_px = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_PRIVATE;
       const int flags_mx = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_MMAP;
       const char *const pointer = (const char*)result->pointer;
-      union { libxsmm_free_fun fun; const void* ptr; } convert;
+      union { libxsmm_free_fun fun; const void* ptr; } convert = { 0 };
       convert.fun = result->free.function;
       if (((flags_mx != (flags_mx & result->flags)) && NULL != result->reloc)
         || (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) ? 0 : (0 != (flags_rs & result->flags)))
@@ -817,7 +817,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM ERROR: scratch memory fallback failed!\n");
-        LIBXSMM_ASSERT(NULL == *memory);
+        assert(NULL == *memory); /* !LIBXSMM_ASSERT */
       }
       if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != caller) {
         LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -1045,7 +1045,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   static int error_once = 0;
 #endif
   int result = EXIT_SUCCESS;
-  internal_malloc_info_type local;
+  internal_malloc_info_type local = { 0 };
   LIBXSMM_ASSIGN127(&local, info);
 #if !defined(LIBXSMM_BUILD) /* sanity check */
   if (NULL != local.pointer || 0 == local.size)
@@ -1386,8 +1386,8 @@ LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
     libxsmm_default_free_fn = free_fn;
   }
   else {
-    libxsmm_malloc_function internal_malloc_fn;
-    libxsmm_free_function internal_free_fn;
+    libxsmm_malloc_function internal_malloc_fn = { NULL };
+    libxsmm_free_function internal_free_fn = { NULL };
     const void* internal_allocator = NULL;
     internal_malloc_fn.function = __real_malloc;
     internal_free_fn.function = __real_free;
@@ -1809,7 +1809,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
             : libxsmm_lcm(alignment, alloc_alignmax));
           alloc_size = LIBXSMM_UP2(size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1, alloc_alignmax);
           if (TRUE == OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &process_token)) {
-            TOKEN_PRIVILEGES tp;
+            TOKEN_PRIVILEGES tp = { 0 };
             if (TRUE == LookupPrivilegeValue(NULL, TEXT("SeLockMemoryPrivilege"), &tp.Privileges[0].Luid)) {
               tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED; tp.PrivilegeCount = 1; /* enable privilege */
               if (TRUE == AdjustTokenPrivileges(process_token, FALSE, &tp, 0, (PTOKEN_PRIVILEGES)NULL, 0)
@@ -2145,7 +2145,7 @@ LIBXSMM_API void libxsmm_xfree(const void* memory, int check)
   }
   else if (NULL != memory) {
 #if 1
-    union { const void* const_ptr; void* ptr; } cast;
+    union { const void* const_ptr; void* ptr; } cast = { 0 };
     cast.const_ptr = memory; /* C-cast still warns */
     __real_free(cast.ptr);
 #endif
@@ -2669,7 +2669,7 @@ LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
   void* pointer;
   LIBXSMM_ASSERT(NULL != pool && NULL != i);
   LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
-  LIBXSMM_ASSERT(0 < *i && ((size_t)-1) != *i);
+  assert(0 < *i && ((size_t)-1) != *i); /* !LIBXSMM_ASSERT */
   pointer = pool[--(*i)];
 #if !defined(NDEBUG)
   pool[*i] = NULL;
