@@ -459,7 +459,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
               cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 0 );
 
           if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
-            libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+            libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
           }
         }
       }
@@ -476,7 +476,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           vname,
           cur_vreg, 0, 0, 0 );
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
-        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+        libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
       }
       for (im = 1; im < i_m_blocking; im++) {
         char copy_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
@@ -497,7 +497,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 0 );
 
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
-        libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+        libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
       }
     }
     for (in = 1; in < i_n_blocking; in++) {
@@ -519,7 +519,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
         vname,
         cur_vreg, 0, 0, 0 );
     if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
-      libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
     }
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {

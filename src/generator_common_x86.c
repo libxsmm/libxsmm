@@ -2063,12 +2063,11 @@ void libxsmm_generator_xoshiro128p_f32_avx2_avx512( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_cvtbf16ps_avx512( libxsmm_generated_code* io_generated_code,
-                                         const char              i_vname,
-                                         const unsigned int      i_vec_reg,
-                                         const unsigned int      o_vec_reg ) {
+void libxsmm_generator_cvtbf16ps_avx2_avx512( libxsmm_generated_code* io_generated_code,
+                                              const char              i_vname,
+                                              const unsigned int      i_vec_reg,
+                                              const unsigned int      o_vec_reg ) {
   /* @TODO check for valid i_vnames */
-
   /* convert 16 bit values into 32 bit (integer convert) */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXWD, i_vname,
                                             i_vec_reg, o_vec_reg );
