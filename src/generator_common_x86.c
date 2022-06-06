@@ -2235,7 +2235,7 @@ void libxsmm_generator_vcvtneps2bf16_avx2_preppedstack( libxsmm_generated_code* 
                                             i_vec_reg, io_vec_tmp_1, io_vec_tmp_1 );
 
   if ( i_vec_reg != o_vec_reg ) {
-    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_vname,
+    libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS_LD, i_vname,
                                               i_vec_reg, o_vec_reg );
   }
 
