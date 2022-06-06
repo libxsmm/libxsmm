@@ -199,7 +199,7 @@ static void libxsmm_sparse_csc_reader( const char*    i_csc_file_in,
           }
 
           /* set everything to zero for init */
-          memset(*o_column_idx, 0, sizeof(unsigned int) * (*o_column_count + 1));
+          memset(*o_column_idx, 0, sizeof(unsigned int) * (*o_column_count) + sizeof(unsigned int));
           memset(*o_row_idx, 0, sizeof(unsigned int) * (*o_element_count));
           memset(*o_values, 0, sizeof(double) * (*o_element_count));
           memset(l_column_idx_id, 0, sizeof(unsigned int) * (*o_column_count));
@@ -281,7 +281,7 @@ static edge_mat_desc libxsmm_sparse_csr_reader_desc( const char*    i_csr_file_i
   unsigned int l_row_count = 0;
   unsigned int l_col_count = 0;
   unsigned int l_num_elements = 0;
-  edge_mat_desc desc;
+  edge_mat_desc desc = { 0 };
 
   desc.row_count = 0;
   desc.col_count = 0;
@@ -329,7 +329,7 @@ static edge_mat_desc libxsmm_sparse_csc_reader_desc( const char*    i_csc_file_i
   unsigned int l_row_count = 0;
   unsigned int l_col_count = 0;
   unsigned int l_num_elements = 0;
-  edge_mat_desc desc;
+  edge_mat_desc desc = { 0 };
 
   desc.row_count = 0;
   desc.col_count = 0;

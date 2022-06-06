@@ -321,7 +321,7 @@ void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                    i_arch ) {
   /* init generated code object */
-  libxsmm_generated_code l_generated_code = { 0 };
+  libxsmm_generated_code l_generated_code /*= { 0 }*/;
   LIBXSMM_MEMZERO127(&l_generated_code);
 
   /* set arch */
@@ -401,7 +401,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                     i_arch ) {
   /* init generated code object */
-  libxsmm_generated_code l_generated_code = { 0 };
+  libxsmm_generated_code l_generated_code /*= { 0 }*/;
   l_generated_code.generated_code = NULL;
   l_generated_code.buffer_size = 0;
   l_generated_code.code_size = 0;

@@ -1836,8 +1836,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   const char * /*const*/ target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   /* large enough temporary buffer for generated code */
   char jit_buffer[LIBXSMM_CODE_MAXSIZE] = "", jit_name[384] = "";
-  libxsmm_generated_code generated_code = { 0 };
-  libxsmm_kernel_xinfo extra = { 0 };
+  libxsmm_generated_code generated_code /*= { 0 }*/;
+  libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
   LIBXSMM_MEMZERO127(&generated_code);
   generated_code.generated_code = jit_buffer;
@@ -2321,7 +2321,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   const unsigned int tid = libxsmm_get_tid();
   internal_cache_type *const cache = internal_cache_buffer + tid;
 # else
-  static LIBXSMM_TLS internal_cache_type internal_cache_buffer = { 0 };
+  static LIBXSMM_TLS internal_cache_type internal_cache_buffer /*= { 0 }*/;
   internal_cache_type *const cache = &internal_cache_buffer;
 # endif
   unsigned char cache_index;
@@ -2416,7 +2416,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           LIBXSMM_ASSERT(0 != mode || NULL == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.ptr); /* lock the registry entry */
           if (NULL == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
-            libxsmm_build_request request = { 0 }; /* setup the code build request */
+            libxsmm_build_request request /*= { 0 }*/; /* setup the code build request */
             LIBXSMM_ASSERT(LIBXSMM_KERNEL_UNREGISTERED > LIBXSMM_DESCRIPTOR_KIND(desc->kind));
             request.kind = (libxsmm_build_kind)LIBXSMM_DESCRIPTOR_KIND(desc->kind);
             request.descriptor.ptr = &desc->gemm.desc;
@@ -2811,7 +2811,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
   void* result;
   LIBXSMM_INIT /* verbosity */
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
-    libxsmm_descriptor wrap = { 0 };
+    libxsmm_descriptor wrap /*= { 0 }*/;
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
@@ -2866,7 +2866,7 @@ LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
   if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size)
 #endif
   {
-    libxsmm_descriptor wrap = { 0 };
+    libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, key_size);
 #endif
@@ -2901,7 +2901,7 @@ LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint 
                                                           const libxsmm_blasint lda, const libxsmm_blasint ldb, const libxsmm_blasint ldc,
                                                           const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
-  libxsmm_gemm_shape res = { 0 };
+  libxsmm_gemm_shape res /*= { 0 }*/;
 
   res.m = m;
   res.n = n;
@@ -2937,7 +2937,7 @@ LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( 
                                                                                 const libxsmm_blasint ldbp, const libxsmm_meltw_unary_type bp_unary_type, const libxsmm_bitfield bp_unary_flags, const libxsmm_blasint store_bp,
                                                                                 const libxsmm_blasint ldcp, const libxsmm_meltw_unary_type cp_unary_type, const libxsmm_bitfield cp_unary_flags, const libxsmm_blasint store_cp )
 {
-  libxsmm_gemm_ext_unary_argops res = { 0 };
+  libxsmm_gemm_ext_unary_argops res /*= { 0 }*/;
 
   res.ldap = ldap;
   res.ap_unary_type = ap_unary_type;
@@ -2958,7 +2958,7 @@ LIBXSMM_API libxsmm_gemm_ext_unary_argops libxsmm_create_gemm_ext_unary_argops( 
 
 LIBXSMM_API libxsmm_gemm_ext_binary_postops libxsmm_create_gemm_ext_binary_postops( const libxsmm_blasint ldd, const libxsmm_datatype d_in_type, const libxsmm_meltw_binary_type d_binary_type, const libxsmm_bitfield d_binary_flags )
 {
-  libxsmm_gemm_ext_binary_postops res = { 0 };
+  libxsmm_gemm_ext_binary_postops res /*= { 0 }*/;
 
   res.ldd = ldd;
   res.d_in_type = d_in_type;
@@ -2983,7 +2983,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
       LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
       LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI |
       LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
-    libxsmm_descriptor wrap = { 0 };
+    libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3240,7 +3240,7 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
-    libxsmm_descriptor wrap = { 0 };
+    libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
 #endif
@@ -3278,7 +3278,7 @@ LIBXSMM_API libxsmm_meltw_unary_shape libxsmm_create_meltw_unary_shape( const li
                                                                         const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                                                                         const libxsmm_datatype in0_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
-  libxsmm_meltw_unary_shape res = { 0 };
+  libxsmm_meltw_unary_shape res /*= { 0 }*/;
 
   res.m = m;
   res.n = n;
@@ -3296,7 +3296,7 @@ LIBXSMM_API libxsmm_meltw_binary_shape libxsmm_create_meltw_binary_shape( const 
                                                                           const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
                                                                           const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
-  libxsmm_meltw_binary_shape res = { 0 };
+  libxsmm_meltw_binary_shape res /*= { 0 }*/;
 
   res.m = m;
   res.n = n;
@@ -3316,7 +3316,7 @@ LIBXSMM_API libxsmm_meltw_ternary_shape libxsmm_create_meltw_ternary_shape( cons
                                                                             const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldi3, const libxsmm_blasint ldo,
                                                                             const libxsmm_datatype in0_type, const libxsmm_datatype in1_type, const libxsmm_datatype in2_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
 {
-  libxsmm_meltw_ternary_shape res = { 0 };
+  libxsmm_meltw_ternary_shape res /*= { 0 }*/;
 
   res.m = m;
   res.n = n;
@@ -3383,7 +3383,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
   if (NULL != descriptor) {
-    libxsmm_descriptor wrap = { 0 };
+    libxsmm_descriptor wrap /*= { 0 }*/;
     /* check if equation is ready for JIT */
     if (0 == libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx)) {
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
@@ -3415,8 +3415,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
   int l_gemm_flags = (int)gemm_flags;
-  libxsmm_pspgemm_csr_descriptor pspgemm_csr = { 0 };
-  libxsmm_build_request request = { 0 };
+  libxsmm_pspgemm_csr_descriptor pspgemm_csr /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   libxsmm_code_pointer result = { 0 };
@@ -3458,8 +3458,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
 {
   int l_gemm_flags = (int)gemm_flags;
-  libxsmm_pspgemm_csc_descriptor pspgemm_csc = { 0 };
-  libxsmm_build_request request = { 0 };
+  libxsmm_pspgemm_csc_descriptor pspgemm_csc /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   libxsmm_code_pointer result = { 0 };
@@ -3500,8 +3500,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
 {
   int l_gemm_flags = (int)gemm_flags;
-  libxsmm_pgemm_ac_rm_descriptor pgemmacrm = { 0 };
-  libxsmm_build_request request = { 0 };
+  libxsmm_pgemm_ac_rm_descriptor pgemmacrm /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   libxsmm_code_pointer result = { 0 };
@@ -3536,8 +3536,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )
 {
   int l_gemm_flags = (int)gemm_flags;
-  libxsmm_pgemm_bc_rm_descriptor pgemmbcrm = { 0 };
-  libxsmm_build_request request = { 0 };
+  libxsmm_pgemm_bc_rm_descriptor pgemmbcrm /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   libxsmm_code_pointer result = { 0 };
@@ -3573,8 +3573,8 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsm
   const libxsmm_blasint max_N, const unsigned int* row_ptr, const unsigned int* column_idx, const double* values )
 {
   int l_gemm_flags = (int)gemm_flags;
-  libxsmm_csr_reg_descriptor sreg = { 0 };
-  libxsmm_build_request request = { 0 };
+  libxsmm_csr_reg_descriptor sreg /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
   libxsmm_descriptor_blob blob;
   libxsmm_gemm_descriptor *desc = NULL;
   libxsmm_code_pointer result = { 0 };

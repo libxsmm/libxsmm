@@ -309,7 +309,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           char buffer[LIBXSMM_TRACE_SYMBOLSIZE];
 #   endif
           int tid;
-        } info = { 0 };
+        } info /*= { 0 }*/;
         if (0 != info.tid) {
           abs_tid = LIBXSMM_ABS(info.tid);
         }

@@ -1045,7 +1045,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   static int error_once = 0;
 #endif
   int result = EXIT_SUCCESS;
-  internal_malloc_info_type local = { 0 };
+  internal_malloc_info_type local /*= { 0 }*/;
   LIBXSMM_ASSIGN127(&local, info);
 #if !defined(LIBXSMM_BUILD) /* sanity check */
   if (NULL != local.pointer || 0 == local.size)
