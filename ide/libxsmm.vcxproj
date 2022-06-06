@@ -32,6 +32,7 @@
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
@@ -75,7 +76,6 @@
     <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_avx_avx512.h" />
-    <ClInclude Include="..\src\generator_packed_gemmnn.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h" />
@@ -584,7 +584,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820;6011</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -622,7 +622,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820;6011</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>

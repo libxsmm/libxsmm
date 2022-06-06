@@ -56,7 +56,7 @@ LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length 
 
 
 LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
-  libxsmm_float_uint val_exp;
+  libxsmm_float_uint val_exp = { 0 };
   unsigned char max_exp = 0;
 
   /* bit-wise conversion to int */
@@ -69,7 +69,7 @@ LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer,
 
 
 LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
-  libxsmm_float_uint value;
+  libxsmm_float_uint value = { 0 };
   unsigned int qvalue = 0;
   unsigned int mant = 0;
   unsigned int sign = 0;
@@ -129,7 +129,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
       const float eps = LIBXSMM_RES_DFP16;
       /* coverity[dont_call] */
       const float r = (float)rand();
-      libxsmm_float_uint fvalue;
+      libxsmm_float_uint fvalue = { 0 };
       float p, q;
       /* masking all bits which will be shifted out */
       fvalue.u = value.u & ((LIBXSMM_MASK_FULL_F32) << rhs);
@@ -231,7 +231,7 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float_uint hybrid_in;
+    libxsmm_float_uint hybrid_in = { 0 };
     libxsmm_bfloat16 res;
 
     hybrid_in.f = in[i];
@@ -252,7 +252,7 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat1
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    libxsmm_float_uint hybrid_in;
+    libxsmm_float_uint hybrid_in = { 0 };
     libxsmm_bfloat16 res;
 
     hybrid_in.f = in[i];
@@ -273,7 +273,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    libxsmm_float_uint hybrid_in;
+    libxsmm_float_uint hybrid_in = { 0 };
     libxsmm_bfloat16 res;
     unsigned int fixup;
 
@@ -297,7 +297,7 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
 
   /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
-    libxsmm_float_uint hybrid_in;
+    libxsmm_float_uint hybrid_in = { 0 };
 
     hybrid_in.u = in[i];
     /* DAZ */
@@ -315,7 +315,7 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32( libxsmm_float16 in ) {
   unsigned int e = ( in & 0x7c00 ) >> 10;
   unsigned int m = ( in & 0x03ff );
   unsigned int e_norm = e + (f32_bias - f16_bias);
-  libxsmm_float_uint res;
+  libxsmm_float_uint res = { 0 };
 
   /* convert denormal fp16 number into a normal fp32 number */
   if ( (e == 0) && (m != 0) ) {
@@ -352,7 +352,7 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32( libxsmm_float16 in ) {
 LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
   unsigned int f32_bias = 127;
   unsigned int f16_bias = 15;
-  libxsmm_float_uint hybrid_in;
+  libxsmm_float_uint hybrid_in = { 0 };
   libxsmm_float16 res = 0;
   unsigned int s, e, m, e_f32, m_f32;
   unsigned int fixup;
