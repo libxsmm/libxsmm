@@ -2063,6 +2063,106 @@ void libxsmm_generator_xoshiro128p_f32_avx2_avx512( libxsmm_generated_code* io_g
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_maskedload_16bit_avx2( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const unsigned int      i_vec_reg_out,
+                                              const unsigned int      i_mask_count ) {
+  int l_displacement = 0;
+  unsigned int l_mask_count = i_mask_count;
+
+  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+
+  /* write 0 to this cache line */
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, 'y',
+                                            i_vec_reg_out, i_vec_reg_out, i_vec_reg_out );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'y', i_vec_reg_out, 0, 0, 1 );
+
+  /* let's move the data in place with as little moves as possible */
+  if ( l_mask_count >= 8 ) {
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, 'x', i_vec_reg_out, 0, 0, 0 );
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, 'x', i_vec_reg_out, 0, 0, 1 );
+    l_displacement += 16;
+    l_mask_count -= 8;
+  }
+  if ( l_mask_count >= 4 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 8;
+    l_mask_count -= 4;
+  }
+  if ( l_mask_count >= 2 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 4;
+    l_mask_count -= 2;
+  }
+  if ( l_mask_count == 1 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVW, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVW, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 2;
+    l_mask_count -= 1;
+  }
+
+  /* load the vector register */
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'y', i_vec_reg_out, 0, 0, 0 );
+
+  /* free stack */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_maskedstore_16bit_avx2( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_gp_reg_tmp,
+                                               const unsigned int      i_vec_reg_in,
+                                               const unsigned int      i_gp_reg_base,
+                                               const unsigned int      i_reg_idx,
+                                               const unsigned int      i_scale,
+                                               const int               i_displacement,
+                                               const unsigned int      i_mask_count ) {
+  int l_displacement = 0;
+  unsigned int l_mask_count = i_mask_count;
+
+  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+
+  /* write register into this cache line */
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0,  0, 'y', i_vec_reg_in, 0, 0, 1 );
+
+  /* let's move the data in place with as little moves as possible */
+  if ( l_mask_count >= 8 ) {
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, 'x', i_vec_reg_in, 0, 0, 1 );
+    l_displacement += 16;
+    l_mask_count -= 8;
+  }
+  if ( l_mask_count >= 4 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 8;
+    l_mask_count -= 4;
+  }
+  if ( l_mask_count >= 2 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVD, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 4;
+    l_mask_count -= 2;
+  }
+  if ( l_mask_count == 1 ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVW, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, l_displacement, i_gp_reg_tmp, 0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVW, i_gp_reg_base, i_reg_idx, i_scale, i_displacement+l_displacement, i_gp_reg_tmp, 1);
+    l_displacement += 2;
+    l_mask_count -= 1;
+  }
+
+  /* free stack */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 32 );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf16_avx2_prep_stack( libxsmm_generated_code* io_generated_code,
                                                       const unsigned int      io_vec_reg_tmp ) {
   /* init stack with helper variables for SW-based RNE rounding */
