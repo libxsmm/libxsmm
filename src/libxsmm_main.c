@@ -2573,7 +2573,7 @@ LIBXSMM_API int libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_info*
 {
   int result;
   const libxsmm_kernel_xinfo* xinfo;
-  libxsmm_kernel_info result_info = { 0 };
+  libxsmm_kernel_info result_info /*= { 0 }*/;
   const libxsmm_descriptor* desc;
   libxsmm_code_pointer code = { 0 };
   code.ptr_const = kernel;
@@ -2922,7 +2922,7 @@ LIBXSMM_API libxsmm_gemm_batch_reduce_config libxsmm_create_gemm_batch_reduce_co
                                                                                       const libxsmm_blasint br_stride_a_hint, const libxsmm_blasint br_stride_b_hint,
                                                                                       const unsigned char br_unroll_hint )
 {
-  libxsmm_gemm_batch_reduce_config res = { 0 };
+  libxsmm_gemm_batch_reduce_config res /*= { 0 }*/;
 
   res.br_type = br_type;
   res.br_stride_a_hint = br_stride_a_hint;
@@ -3626,7 +3626,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
         libxsmm_xfree(kernel, 0/*no check*/);
       }
       else { /* attempt to unregister kernel */
-        libxsmm_kernel_info info;
+        libxsmm_kernel_info info /*= { 0 }*/;
 #if !defined(LIBXSMM_ENABLE_DEREG)
         if (EXIT_SUCCESS == libxsmm_get_kernel_info(kernel, &info)
           && LIBXSMM_KERNEL_KIND_USER == info.kind)

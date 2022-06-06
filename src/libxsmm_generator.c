@@ -497,7 +497,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
     maxp /= result;
   }
   if (LIBXSMM_PRODUCT_LIMIT >= maxp) {
-    unsigned int k[2][LIBXSMM_PRODUCT_LIMIT] = { 0 }, * k0 = k[0], * k1 = k[1], * kt, p;
+    unsigned int k[2][LIBXSMM_PRODUCT_LIMIT] = { {0} }, *k0 = k[0], *k1 = k[1], *kt, p;
     n = libxsmm_primes_u32(product / result, fact);
     /* initialize table with trivial factor */
     for (p = 0; p <= maxp; ++p) k[0][p] = 1;

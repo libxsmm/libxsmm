@@ -1168,7 +1168,7 @@ LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_
 }
 
 LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_create_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint ) {
-  libxsmm_matrix_arg_attributes res = { 0 };
+  libxsmm_matrix_arg_attributes res /*= { {0} }*/;
 
   res.type = type;
   res.set_type = set_type;
@@ -1197,7 +1197,7 @@ LIBXSMM_API libxsmm_matrix_eqn_op_metadata libxsmm_create_matrix_eqn_op_metadata
 }
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_blasint in_pos, const libxsmm_blasint offs_in_pos, const libxsmm_datatype dtype ) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -1226,7 +1226,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, con
 }
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_matrix_eqn_arg_metadata arg_metadata, const libxsmm_meqn_arg_shape arg_shape, libxsmm_matrix_arg_attributes arg_attr ) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = arg_metadata.eqn_idx;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
@@ -1257,7 +1257,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_matrix_eqn_ar
 
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx, const libxsmm_meltw_unary_type type, const libxsmm_meltw_unary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -1284,7 +1284,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx
 
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2(const libxsmm_matrix_eqn_op_metadata op_metadata, const libxsmm_meltw_unary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
@@ -1312,7 +1312,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2(const libxsmm_matrix_eq
 }
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint idx, const libxsmm_meltw_binary_type type, const libxsmm_meltw_binary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -1340,7 +1340,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
 }
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2(const libxsmm_matrix_eqn_op_metadata op_metadata, const libxsmm_meltw_binary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM) ||
                             (type ==  LIBXSMM_MELTW_TYPE_BINARY_BRGEMM_B_TRANS) ||
@@ -1388,7 +1388,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2(const libxsmm_matrix_e
 
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint idx, const libxsmm_meltw_ternary_type type, const libxsmm_meltw_ternary_flags flags, const libxsmm_datatype dtype ) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist!\n" );
@@ -1417,7 +1417,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
 }
 
 LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2(const libxsmm_matrix_eqn_op_metadata op_metadata, const libxsmm_meltw_ternary_type type, const libxsmm_datatype dtype, const libxsmm_bitfield flags) {
-  union libxsmm_matrix_eqn_info info;
+  union libxsmm_matrix_eqn_info info /*= { 0 }*/;
   libxsmm_blasint idx = op_metadata.eqn_idx;
   unsigned int is_brgemm = ((type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM) ||
                             (type ==  LIBXSMM_MELTW_TYPE_TERNARY_BRGEMM_B_TRANS) ||
