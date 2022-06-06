@@ -1047,6 +1047,9 @@ int main(int argc, char* argv []) {
     l_gemm_def.ldb = l_ldb;
     l_gemm_def.ldc = l_ldc;
 
+    /* set rng seed */
+    libxsmm_rng_set_seed( 555 );
+
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
 #   pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
