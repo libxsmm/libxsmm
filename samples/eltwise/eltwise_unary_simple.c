@@ -43,7 +43,7 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
-#if 10
+#if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
@@ -522,7 +522,8 @@ int main( int argc, char* argv[] ) {
     printf("Testing unary BF8 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2/1] [prec_out: 4/2] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
+    printf("  %s, Op: %d, prec_in: %d, compute_prec: %d, prec_out: %d, rnd_mode : %d\n", argv[0], valid_op, dtype_in, dtype_comp, dtype_out, rnd_mode);
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
     exit(-1);
   }
 

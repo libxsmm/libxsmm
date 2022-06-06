@@ -35,13 +35,24 @@ do
   do
     for PREC_COMP in 4
     do
-      for PREC_OUT in 1 2 4
-      do
-        for BCAST_IN in 0 1 2 3
+      if [ ${PREC_IN} -ne 1 ];
+      then
+        for PREC_OUT in 2 4
         do
-          ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
+          for BCAST_IN in 0 1 2 3
+          do
+            ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
+          done
         done
-      done
+      else
+        for PREC_OUT in 1 4
+        do
+          for BCAST_IN in 0 1 2 3
+          do
+            ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
+          done
+        done
+      fi
     done
   done
 done
