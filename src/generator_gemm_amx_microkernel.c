@@ -333,7 +333,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
             gp_reg_relu,
             LIBXSMM_X86_GP_REG_UNDEF,
             0,
-            ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
+            ((in_offset+col) * i_xgemm_desc->ldcp + im_offset)/8,
             current_mask_reg );
       }
 
@@ -366,7 +366,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
           gp_reg_relu_bwd,
           LIBXSMM_X86_GP_REG_UNDEF,
           0,
-          ((in_offset+col) * i_xgemm_desc->ldc + im_offset)/8,
+          ((in_offset+col) * i_xgemm_desc->ldcp + im_offset)/8,
           current_mask_reg );
 
       /* Blend output result with zero reg based on relu mask */
