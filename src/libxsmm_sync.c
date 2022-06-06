@@ -508,7 +508,7 @@ LIBXSMM_API void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock)
 #if (0 != LIBXSMM_SYNC)
 LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
-  internal_sync_counter next;
+  internal_sync_counter next /*= { 0 }*/;
   assert(0 != rwlock && 0 != prev);
   do {
     prev->bits = rwlock->requests.bits;

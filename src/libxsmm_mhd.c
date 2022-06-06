@@ -58,7 +58,7 @@
   SRC_TYPE s = *((const SRC_TYPE*)PSRC); \
   double s0 = 0, s1 = 0; \
   if (NULL != (PSRC_MIN) && LIBXSMM_NOTNAN(s)) { \
-    LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX), "Invalid value range"); \
+    assert(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX)); \
     s0 = (double)*((const SRC_TYPE*)PSRC_MIN); s1 = (double)*((const SRC_TYPE*)PSRC_MAX); \
   } \
   if (LIBXSMM_MHD_ELEMTYPE_I64 <= (DST_ENUM) && s0 < s1) { /* scale */ \
@@ -88,7 +88,7 @@
   SRC_TYPE s = *((const SRC_TYPE*)PSRC); \
   double s0 = 0, s1 = 0; \
   if (NULL != (PSRC_MIN)) { \
-    LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX), "Invalid value range"); \
+    assert(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX)); \
     s0 = (double)*((const SRC_TYPE*)PSRC_MIN); s1 = (double)*((const SRC_TYPE*)PSRC_MAX); \
   } \
   if (LIBXSMM_MHD_ELEMTYPE_I64 <= (DST_ENUM) && s0 < s1) { /* scale */ \
@@ -897,7 +897,7 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
       const size_t *const shape = (NULL != pitch ? pitch : size);
       const char *const input = ((const char*)data) + libxsmm_offset(offset, shape, ndims, NULL/*size*/) * ncomponents * typesize_data;
       const long file_position = ftell(file); /* determine the header size */
-      char minmax[2*(LIBXSMM_MHD_MAX_ELEMSIZE)];
+      char minmax[2*(LIBXSMM_MHD_MAX_ELEMSIZE)] = "";
 
       result = (0 <= file_position ? EXIT_SUCCESS : EXIT_FAILURE);
       if (EXIT_SUCCESS == result && type_data != elemtype) { /* conversion needed */
