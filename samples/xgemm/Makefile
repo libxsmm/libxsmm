@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/kernel $(OUTDIR)/kernel_fused_ops $(OUTDIR)/kernel_parallel
+XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/kernel $(OUTDIR)/kernel_fused $(OUTDIR)/kernel_parallel
 
 .PHONY: all
 all: $(XFILES)
@@ -60,8 +60,8 @@ $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(LIBDEP) $(EXTDE
 $(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/kernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/kernel_fused_ops: $(OUTDIR)/.make $(BLDDIR)/kernel_fused_ops-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/kernel_fused_ops-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/kernel_fused: $(OUTDIR)/.make $(BLDDIR)/kernel_fused-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/kernel_fused-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/kernel_parallel: $(OUTDIR)/.make $(BLDDIR)/kernel_parallel-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/kernel_parallel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
