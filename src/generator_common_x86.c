@@ -2088,7 +2088,7 @@ void libxsmm_generator_vcvtneps2bf16_avx2_prep_stack( libxsmm_generated_code* io
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 96, 'y', io_vec_reg_tmp, 0, 0, 1 );
 
   /* push 0x00010000 on the stack, fixup masking */
-  libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_fixup_mask, "l_fixup", 'y', io_vec_reg_tmp);
+  libxsmm_x86_instruction_full_vec_load_of_constants( io_generated_code, (const unsigned char*)l_fixup_mask, "l_fixup_mask", 'y', io_vec_reg_tmp);
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 64, 'y', io_vec_reg_tmp, 0, 0, 1 );
 
   /* push 0x00007fff on the stack, rneadd */
