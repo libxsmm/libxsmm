@@ -1439,20 +1439,20 @@ int main(int argc, char* argv []) {
     } /* close parallel region */
     l_runtime_libxsmm /= (double)l_n_threads;
 
-    if (l_unary_postop != OP_NONE) {
-      if (l_unary_postop == COLBIAS_ADD) {
+    if (l_binary_postop != OP_NONE) {
+      if (l_binary_postop == COLBIAS_ADD) {
         printf("Fusing colbias add in GEMM\n");
       } else {
 
       }
     }
 
-    if (l_binary_postop != OP_NONE) {
-      if (l_binary_postop == RELU_NOBITMASK) {
+    if (l_unary_postop != OP_NONE) {
+      if (l_unary_postop == RELU_NOBITMASK) {
         printf("Fusing RELU NOBITMASK in GEMM\n");
-      } else if (l_binary_postop == RELU_BITMASK) {
+      } else if (l_unary_postop == RELU_BITMASK) {
         printf("Fusing RELU BITMASK in GEMM\n");
-      } else if (l_binary_postop == SIGMOID) {
+      } else if (l_unary_postop == SIGMOID) {
         printf("Fusing SIGMOID in GEMM\n");
       } else {
 
