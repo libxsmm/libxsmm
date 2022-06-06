@@ -551,6 +551,30 @@ void libxsmm_generator_cvtbf16ps_avx2_avx512( libxsmm_generated_code* io_generat
                                               const unsigned int      o_vec_reg );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2bf16_avx2_prep_stack( libxsmm_generated_code* io_generated_code,
+                                                      const unsigned int      io_vec_reg_tmp );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2bf16_avx2_clean_stack( libxsmm_generated_code* io_generated_code );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2bf16_avx2_preppedstack( libxsmm_generated_code* io_generated_code,
+                                                        const char              i_vname,
+                                                        const unsigned int      i_vec_reg,
+                                                        const unsigned int      o_vec_teg,
+                                                        const unsigned int      io_vec_tmp_0,
+                                                        const unsigned int      io_vec_tmp_1,
+                                                        const unsigned int      i_skip_downcvt );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvtneps2bf16_avx2( libxsmm_generated_code* io_generated_code,
+                                           const char              i_vname,
+                                           const unsigned int      i_vec_reg,
+                                           const unsigned int      o_vec_teg,
+                                           const unsigned int      io_vec_tmp_0,
+                                           const unsigned int      io_vec_tmp_1 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf16_avx512_prep_stack( libxsmm_generated_code* io_generated_code,
                                                         const unsigned int      io_gp_reg );
 
