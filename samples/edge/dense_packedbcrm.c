@@ -85,14 +85,14 @@ int main(int argc, char* argv[]) {
   libxsmm_gemm_param gemm_param;
 
   libxsmm_timer_tickint l_start, l_end;
+  unsigned long long l_libxsmmflops;
+  libxsmm_kernel_info l_kinfo;
   double l_total_ref, l_total_opt;
   double max_error = 0.0;
   double gflops_ref = 0.0;
   double gflops_opt = 0.0;
   double gflops_opt2 = 0.0;
-  unsigned int i = 0;
-  unsigned long long l_libxsmmflops;
-  libxsmm_kernel_info l_kinfo;
+  libxsmm_blasint i = 0;
 
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     c1[i] = (REALTYPE)libxsmm_rng_f64();
