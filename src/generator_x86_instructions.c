@@ -4273,14 +4273,6 @@ void libxsmm_x86_instruction_rdseed_load ( libxsmm_generated_code *io_generated_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_arg_number,
-                                              const unsigned int      i_gp_reg_number ) {
-  libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF,
-                                   0, io_generated_code->sf_size+8+(8*i_arg_number), i_gp_reg_number, 0 );
-}
-
-LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_generated_code,
                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                const unsigned int            skip_callee_save,
