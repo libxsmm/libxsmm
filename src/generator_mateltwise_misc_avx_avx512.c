@@ -135,7 +135,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
         0 );
 
       if (upconvert_input_bf16f32 > 0) {
-        libxsmm_generator_cvtbf16ps_avx512(io_generated_code, i_micro_kernel_config->vector_name, im, im);
+        libxsmm_generator_cvtbf16ps_avx2_avx512(io_generated_code, i_micro_kernel_config->vector_name, im, im);
       } else if (upconvert_input_bf8f32 > 0) {
         libxsmm_generator_cvtbf8ps_avx512(io_generated_code, i_micro_kernel_config->vector_name, im, im);
       }
@@ -145,7 +145,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
           libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
               im, im,
               i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-              i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+              i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1, 0);
         } else {
          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, i_micro_kernel_config->vector_name, im, im );
         }
@@ -326,7 +326,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_inout, mask_out_count, precision);
     } else {
       mask_inout = 15;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen, LIBXSMM_DATATYPE_F32);
       max_m_unrolling--;
     }
   }

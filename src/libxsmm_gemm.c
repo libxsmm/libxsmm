@@ -356,7 +356,7 @@ LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
   const char* env_w = getenv("LIBXSMM_GEMM_WRAP");
-  LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
+  LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr = { 0 };
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
 #if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
   { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
@@ -429,7 +429,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     internal_gemm_nstretch = 1.0f;
     internal_gemm_kstretch = 1.0f;
   }
-  else if (LIBXSMM_X86_AVX2 <= archid) {
+  else if (LIBXSMM_X86_AVX2_ADL <= archid) {
     internal_gemm_vwidth = 32;
     internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 3.0f;
@@ -602,7 +602,7 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
   const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
   libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
-  char string_a[128], string_b[128], typeprefix = 0;
+  char string_a[128] = "", string_b[128] = "", typeprefix = 0;
 
   switch (iprec | oprec) {
     case LIBXSMM_DATATYPE_F64: {
@@ -645,8 +645,8 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
       }
     }
     else { /* dump A, B, and C matrices into MHD files */
-      char extension_header[256];
-      size_t data_size[2], size[2];
+      char extension_header[256] = "";
+      size_t data_size[2] = { 0 }, size[2] = { 0 };
 
       if (NULL != a) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
@@ -710,7 +710,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
 {
   const libxsmm_descriptor* desc;
-  libxsmm_code_pointer code;
+  libxsmm_code_pointer code = { NULL };
   size_t code_size;
   code.xgemm = kernel;
   if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
@@ -827,7 +827,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   union {
     libxsmm_gemm_handle* ptr;
     libxsmm_gemm_blob* blob;
-  } result;
+  } result = { 0 };
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m && 0 < ntasks) {
     unsigned int ntm = 0, ntn = 0, ntk = 0, mt = 1, nt = 1, kt = 1;

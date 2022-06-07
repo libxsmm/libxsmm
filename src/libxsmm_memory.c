@@ -439,11 +439,11 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[])
   const size_t length = (NULL != string ? strlen(string) : 0);
   if (sizeof(result) < length) {
     const size_t length2 = length / 2;
-    unsigned int seed32 = 0; /* seed=0: match else-optimization */
+    unsigned int hash32, seed32 = 0; /* seed=0: match else-optimization */
     LIBXSMM_INIT
     seed32 = libxsmm_crc32(seed32, string, length2);
-    result = libxsmm_crc32(seed32, string + length2, length - length2);
-    result = (result << 32) | seed32;
+    hash32 = libxsmm_crc32(seed32, string + length2, length - length2);
+    result = hash32; result = (result << 32) | seed32;
   }
   else { /* reinterpret directly as hash value */
 #if 1
@@ -556,8 +556,8 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
   static int error_once = 0;
   if (NULL != dst && NULL != size && 0 <= *size && 128 > *size)
 #endif
-  {
-    LIBXSMM_MEMSET127(dst, 0, *size);
+  { const int s = *size;
+    LIBXSMM_MEMSET127(dst, 0, s);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
