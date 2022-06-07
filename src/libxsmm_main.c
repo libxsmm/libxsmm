@@ -1305,7 +1305,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   if (NULL != registry) {
     int i;
 #if (0 != LIBXSMM_SYNC)
-    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK, &libxsmm_lock_global)) {
 # if (1 < INTERNAL_REGLOCK_MAXN)
     { /* acquire locks and thereby shortcut lazy initialization later on */
       int ntry = 0, n;
@@ -1446,7 +1446,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 # elif !defined(LIBXSMM_UNIFY_LOCKS)
     LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
-    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global); }
 #endif
   }
 }
@@ -3941,4 +3941,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* key, const int* k
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
-

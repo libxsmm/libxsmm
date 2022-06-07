@@ -66,11 +66,11 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)(libxsmm_rng_f64()-0.5);
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-          union libxsmm_bfloat16_f32 tmp = { 0 };
+          libxsmm_bfloat16_f32 tmp/* = { 0 }*/;
           tmp.f = (float)(libxsmm_rng_f64()-0.5);
           bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
-          union libxsmm_bfloat8_f16 tmp = { 0 };
+          union libxsmm_bfloat8_f16 tmp/* = { 0 }*/;
           tmp.hf = libxsmm_convert_f32_to_f16( (float)(libxsmm_rng_f64()-0.5) );
           bf8_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
@@ -353,7 +353,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         if ( i_gemm_def->beta == 0 ) {
           acc = 0.0f;
         } else {
-          libxsmm_bfloat16_f32 tmp = { 0 };
+          libxsmm_bfloat16_f32 tmp/* = { 0 }*/;
           tmp.i[0] = 0;
           tmp.i[1] = h_c[(l_j * ldc) + l_i];
           acc = tmp.f;
