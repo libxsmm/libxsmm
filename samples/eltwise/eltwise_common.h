@@ -223,7 +223,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
   size_t l_benchmarkRuns, l_benchmarkIndex;
   double l_warmupDuration, l_duration;
   double l_performance[MAX_BENCHMARK_ARCHITECTURES] = { 0 };
-  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { {0} };
+  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   const char* l_arch = NULL;
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
@@ -278,7 +278,7 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
   size_t l_benchmarkRuns, l_benchmarkIndex;
   double l_warmupDuration, l_duration;
   double l_performance[MAX_BENCHMARK_ARCHITECTURES] = { 0 };
-  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { {0} };
+  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   const char* l_arch = NULL;
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
