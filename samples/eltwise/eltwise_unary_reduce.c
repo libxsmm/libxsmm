@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
   unsigned long long *cols_ind_array;
   unsigned int *cols_ind_array_32bit;
   libxsmm_meltwfunction_unary kernel = NULL;
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param = { 0 };
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;

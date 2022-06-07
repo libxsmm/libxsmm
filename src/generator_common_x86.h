@@ -545,6 +545,26 @@ void libxsmm_generator_xoshiro128pp_axv2_avx512( libxsmm_generated_code* io_gene
                                                  const unsigned int      o_vec_reg_rng );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_maskedload_8bit_avx2( libxsmm_generated_code* io_generated_code,
+                                             const unsigned int      i_gp_reg_tmp,
+                                             const unsigned int      i_gp_reg_base,
+                                             const unsigned int      i_reg_idx,
+                                             const unsigned int      i_scale,
+                                             const int               i_displacement,
+                                             const unsigned int      i_vec_reg_out,
+                                             const unsigned int      i_mask_count );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_maskedstore_8bit_avx2( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_gp_reg_tmp,
+                                              const unsigned int      i_vec_reg_in,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const unsigned int      i_mask_count );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_maskedload_16bit_avx2( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_gp_reg_tmp,
                                               const unsigned int      i_gp_reg_base,

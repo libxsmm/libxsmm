@@ -32,6 +32,9 @@
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="eltwise_common.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>eltwise_unary_transform</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>

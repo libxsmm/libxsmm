@@ -66,7 +66,7 @@ LIBXSMM_API_INLINE float internal_rng_scalar_float_next(int i)
 {
   const uint32_t rng_mantissa = (internal_rng_state0[i] + internal_rng_state3[i]) >> 9;
   const uint32_t t = internal_rng_state1[i] << 9;
-  union { uint32_t i; float f; } rng;
+  union { uint32_t i; float f; } rng = { 0 };
 
   internal_rng_state2[i] ^= internal_rng_state0[i];
   internal_rng_state3[i] ^= internal_rng_state1[i];
