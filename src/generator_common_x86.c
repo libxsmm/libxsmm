@@ -2532,7 +2532,7 @@ void libxsmm_generator_cvtbf8ps_avx512( libxsmm_generated_code* io_generated_cod
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_vname_2,
                                             i_vec_reg, o_vec_reg );
   /* shift 8bit to left to convert to FP16 */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, i_vname_2,
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_vname_2,
                                                  o_vec_reg, o_vec_reg, 8 );
 
   /* convert resulting FP16 register to FP32 format */
@@ -2552,7 +2552,7 @@ void libxsmm_generator_cvtbf8bf16_avx512( libxsmm_generated_code* io_generated_c
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBW, i_vname_2,
                                             i_vec_reg, o_vec_reg );
   /* shift 8bit to left to convert to FP16 */
-  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, i_vname_2,
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_vname_2,
                                                  o_vec_reg, o_vec_reg, 8 );
 
   /* convert resulting FP16 register to FP32 format */
