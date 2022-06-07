@@ -9,6 +9,9 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
+#if !defined(_WIN32)
+# include <sys/file.h>
+#endif
 
 #if !defined(LIBXSMM_PRODUCT_LIMIT)
 # define LIBXSMM_PRODUCT_LIMIT 1024
@@ -21,6 +24,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
 /* definition of corresponding variables */
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_stdio_handle);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_ninit);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_target_archid);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_verbosity);
@@ -34,7 +38,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descr
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -57,7 +61,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descr
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -80,7 +84,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_desc
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -103,7 +107,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -126,7 +130,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descr
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -149,7 +153,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bigemm_descriptor_init(libxsmm_desc
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -172,7 +176,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bbgemm_descriptor_init(libxsmm_desc
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -205,7 +209,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
   union {
     libxsmm_gemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
@@ -339,7 +343,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   union {
     libxsmm_meltw_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
@@ -366,7 +370,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   union {
     libxsmm_meltw_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in0_type, out_type);
@@ -392,7 +396,7 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
   union {
     libxsmm_meqn_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
-  } result;
+  } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( LIBXSMM_DATATYPE_UNSUPPORTED, out_type);
@@ -493,7 +497,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
     maxp /= result;
   }
   if (LIBXSMM_PRODUCT_LIMIT >= maxp) {
-    unsigned int k[2][LIBXSMM_PRODUCT_LIMIT], *k0 = k[0], *k1 = k[1], *kt, p;
+    unsigned int k[2][LIBXSMM_PRODUCT_LIMIT] = { {0} }, *k0 = k[0], *k1 = k[1], *kt, p;
     n = libxsmm_primes_u32(product / result, fact);
     /* initialize table with trivial factor */
     for (p = 0; p <= maxp; ++p) k[0][p] = 1;
@@ -558,3 +562,32 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
   return result;
 }
 
+
+LIBXSMM_API void libxsmm_stdio_acquire(void)
+{
+#if !defined(_WIN32)
+  if (0 < libxsmm_stdio_handle) {
+    flock(libxsmm_stdio_handle - 1, LOCK_EX);
+  }
+  else
+#endif
+  {
+    LIBXSMM_FLOCK(stdout);
+    LIBXSMM_FLOCK(stderr);
+  }
+}
+
+
+LIBXSMM_API void libxsmm_stdio_release(void)
+{
+#if !defined(_WIN32)
+  if (0 < libxsmm_stdio_handle) {
+    flock(libxsmm_stdio_handle - 1, LOCK_UN);
+  }
+  else
+#endif
+  {
+    LIBXSMM_FUNLOCK(stderr);
+    LIBXSMM_FUNLOCK(stdout);
+  }
+}

@@ -9,11 +9,11 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 #define USE_VECTORIZED_PATH 1
@@ -252,7 +252,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
   for (s2 = 0; s2 < S2; s2++) {
     float m = 0;
     float v = 0;
-    float c = 1.0 / (S1*S3);
+    float c = (float)(1.0 / (S1*S3));
     for (s1 = 0; s1 < S1; s1++) {
       for( s3 = 0; s3 < S3; s3++) {
         m += LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
@@ -266,7 +266,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
     mean[s2] = m;
     var[s2] = v;
     float s = v;
-    float b = -1.0 * v * m;
+    float b = -1.f * v * m;
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
         LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3) = (LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) * s + b) * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3) + LIBXSMM_VLA_ACCESS(2, beta, s1, s3, S3);
@@ -381,14 +381,15 @@ void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamm
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, reduce_cols_params;
-  LIBXSMM_ALIGNED(float tmp[2*S3], 64);
-  const float c = 1.0/((float)S1*S3);
+  LIBXSMM_ALIGNED(float tmp[2048], 64);
+  const float c = (float)(1.0/(S1*S3));
   float m, v, s, b;
   libxsmm_matrix_arg  arg_array[5];
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, beta, pbeta, S3);
+  assert((sizeof(*tmp) * S3 * 2) <= sizeof(tmp));
 
   eqn_param.inputs = arg_array;
   reduce_cols_params.out.primary   = tmp;
@@ -413,7 +414,7 @@ void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamm
     mean[s2] = m;
     var[s2] = v;
     s = v;
-    b = -1.0 * v * m;
+    b = -1.f * v * m;
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func0(&eqn_param);
@@ -424,14 +425,15 @@ void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, l
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_meltw_unary_param m_reduce_rows_params, v_reduce_rows_params, reduce_cols_params;
-  LIBXSMM_ALIGNED(float tmp[2*S3], 64);
-  const float c = 1.0/((float)S1*S3);
+  LIBXSMM_ALIGNED(float tmp[2048], 64);
+  const float c = (float)(1.0/(S1*S3));
   float m, v, s, b;
   libxsmm_matrix_arg  arg_array[5];
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, beta, pbeta, S3);
+  assert((sizeof(*tmp) * S3 * 2) <= sizeof(tmp));
 
   eqn_param.inputs = arg_array;
   reduce_cols_params.out.primary   = tmp;
@@ -456,7 +458,7 @@ void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, l
     mean[s2] = m;
     var[s2] = v;
     s = v;
-    b = -1.0 * v * m;
+    b = -1.f * v * m;
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func0(&eqn_param);

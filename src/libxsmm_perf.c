@@ -74,7 +74,7 @@ LIBXSMM_APIVAR_DEFINE(int internal_perf_codeidx);
 LIBXSMM_API_INTERN void libxsmm_perf_init(void)
 {
   const uint32_t pid = (uint32_t)libxsmm_get_pid();
-  char file_name[LIBXSMM_MAX_PATH];
+  char file_name[LIBXSMM_MAX_PATH] = "";
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   char file_path[LIBXSMM_MAX_PATH];
   int fd, page_size, res;

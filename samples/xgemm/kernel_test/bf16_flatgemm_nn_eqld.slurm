@@ -3,9 +3,6 @@
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
 fi
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-  exit 0;
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
   exit 0;
 fi
@@ -27,13 +24,12 @@ import random as rnd
 import time as time
 rnd.seed(time.time())
 randnum = rnd.sample(range(1,101), 18)
-randnumk = rnd.sample(range(4,101,2), 18)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
 for m in randnum:
     for n in randnum:
-        for k in randnumk:
+        for k in randnum:
             line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
                  + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
             if 0 == (i % 2):

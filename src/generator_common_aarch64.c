@@ -151,7 +151,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
 
     switch(i_masked_elems){
       case 1: {
-        unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size;
+        const unsigned char l_offset = LIBXSMM_CAST_UCHAR(i_adv_gpr == 0 ? 0 : i_datatype_size);
         if ( i_is_store == 0 ) {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         }
@@ -711,7 +711,7 @@ void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io
     unsigned char l_pred_reg = 0;
 
     /* load constant "1.0f" into register */
-    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, LIBXSMM_CAST_UCHAR(dropout_vreg_one), i_gp_reg_tmp,
                                                              LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, 0x3f800000 );
 
     /* load probability */
@@ -732,7 +732,7 @@ void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io
                                              l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
   } else {
     /* load constant register */
-    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, LIBXSMM_CAST_UCHAR(dropout_vreg_one), i_gp_reg_tmp,
                                                                LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, 0x3f800000 );
 
     /* load probability */
@@ -760,7 +760,7 @@ void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code
     unsigned char l_pred_reg = 0;
 
     /* load constant register */
-    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve( io_generated_code, LIBXSMM_CAST_UCHAR(dropout_vreg_one), i_gp_reg_tmp,
                                                              LIBXSMM_AARCH64_SVE_TYPE_S, l_pred_reg, 0x3f800000 );
 
     /* load probability */
@@ -781,7 +781,7 @@ void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code
                                              l_pred_reg, LIBXSMM_AARCH64_SVE_TYPE_S );
   } else {
     /* load constant register */
-    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, dropout_vreg_one, i_gp_reg_tmp,
+    libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd( io_generated_code, LIBXSMM_CAST_UCHAR(dropout_vreg_one), i_gp_reg_tmp,
                                                                LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S, 0x3f800000 );
 
     /* load probability */
@@ -912,8 +912,8 @@ void libxsmm_generator_xoshiro128p_f32_aarch64_asimd( libxsmm_generated_code* io
 
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ORR_V,
                                              i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, 0, i_vec_reg_rng_state_3, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_xoshiro128p_f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
@@ -966,7 +966,6 @@ void libxsmm_generator_xoshiro128p_f32_aarch64_sve( libxsmm_generated_code* io_g
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                            i_vec_reg_rng_tmp_0, i_vec_reg_rng_tmp_1, 0, i_vec_reg_rng_state_3, i_pred_reg, i_sve_type );
-
 }
 
 
@@ -995,38 +994,38 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_asimd( libxsmm_ge
                                                                       const unsigned int                    i_gp_reg_tmp1,
                                                                       const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
 
-  unsigned long long thres_array = 0x40879fff ;
-  unsigned long long absmask_array = 0x7fffffff ;
-  unsigned long long scale_array = 0x406a0ea1 ;
-  unsigned long long shifter_array = 0x4b400000 ;
-  unsigned long long half_array = 0x3f000000 ;
-  unsigned int c0_array[16] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
-  unsigned int c1_array[16] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
-  unsigned int c2_array[16] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
-  unsigned int idx_array[4] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c};
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_thres,   i_gp_reg_tmp, i_tupletype, thres_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_absmask, i_gp_reg_tmp, i_tupletype, absmask_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_scale,   i_gp_reg_tmp, i_tupletype, scale_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_shifter, i_gp_reg_tmp, i_tupletype, shifter_array  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_half,    i_gp_reg_tmp, i_tupletype, half_array );
+  unsigned long long thres_array = 0x40879fff;
+  unsigned long long absmask_array = 0x7fffffff;
+  unsigned long long scale_array = 0x406a0ea1;
+  unsigned long long shifter_array = 0x4b400000;
+  unsigned long long half_array = 0x3f000000;
+  unsigned int c0_array[/*16*/] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
+  unsigned int c1_array[/*16*/] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
+  unsigned int c2_array[/*16*/] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
+  unsigned int idx_array[/*4*/] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c};
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_thres),   i_gp_reg_tmp, i_tupletype, thres_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_absmask), i_gp_reg_tmp, i_tupletype, absmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_scale),   i_gp_reg_tmp, i_tupletype, scale_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_shifter), i_gp_reg_tmp, i_tupletype, shifter_array  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_half),    i_gp_reg_tmp, i_tupletype, half_array );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c0,  i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c01, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c02, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c03, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0),  i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c01), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c02), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c03), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c1,  i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c11, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c12, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c13, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1),  i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c11), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c12), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c13), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c2,  i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c21, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c22, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c23, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2),  i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c21), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c22), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c23), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_tmp,  i_gp_reg_tmp,  i_gp_reg_tmp1, idx_array,0);
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_tmp1, i_gp_reg_tmp, i_tupletype, 0x03020100 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_tmp),  i_gp_reg_tmp,  i_gp_reg_tmp1, idx_array,0);
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_tmp1), i_gp_reg_tmp, i_tupletype, 0x03020100 );
 }
 
 LIBXSMM_API_INTERN
@@ -1045,29 +1044,29 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_gene
                                                                     const libxsmm_aarch64_sve_type        i_sve_type,
                                                                     const unsigned char                   i_pred_reg ) {
 
-  unsigned long long thres_array = 0x40879fff ;
-  unsigned long long absmask_array = 0x7fffffff ;
-  unsigned long long scale_array = 0x406a0ea1 ;
-  unsigned long long shifter_array = 0x4b400000 ;
-  unsigned long long half_array = 0x3f000000 ;
+  unsigned long long thres_array = 0x40879fff;
+  unsigned long long absmask_array = 0x7fffffff;
+  unsigned long long scale_array = 0x406a0ea1;
+  unsigned long long shifter_array = 0x4b400000;
+  unsigned long long half_array = 0x3f000000;
   unsigned long long expmask_array = 0x000000ff;
-  unsigned int c0_array[16] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
-  unsigned int c1_array[16] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
-  unsigned int c2_array[16] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
+  unsigned int c0_array[/*16*/] = { 0x3ecc4231u, 0x3ecc541cu, 0x3ecd6c48u, 0x3ed174c3u, 0x3ed9bd5du, 0x3ee5acd5u, 0x3ef2aeddu, 0x3efd5384u, 0x3f016724u, 0x3f00f778u, 0x3efb389eu, 0x3ef0464du, 0x3ee3014fu, 0x3ed50a78u, 0x3ec779dbu, 0x3ebae363u };
+  unsigned int c1_array[/*16*/] = { 0xb7c7fb58u, 0xbacb9740u, 0xbc3e4b3au, 0xbd0d292au, 0xbd8bc5d0u, 0xbdd9978fu, 0xbe0f92d3u, 0xbe27b66du, 0xbe328ce7u, 0xbe3125bfu, 0xbe26dc9du, 0xbe17a056u, 0xbe06bdebu, 0xbdecc593u, 0xbdcf57aau, 0xbdb5ea3au };
+  unsigned int c2_array[/*16*/] = { 0xbd877b85u, 0xbd7d9780u, 0xbd4cb70eu, 0xbd08a1e9u, 0xbc808857u, 0xb9476fd2u, 0x3c36f765u, 0x3c924160u, 0x3ca7b1fcu, 0x3ca5732cu, 0x3c95af63u, 0x3c8079f7u, 0x3c55fa4fu, 0x3c2fa86bu, 0x3c0fbb00u, 0x3bec178cu };
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_thres,    i_gp_reg_tmp, i_sve_type, i_pred_reg, thres_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_absmask,  i_gp_reg_tmp, i_sve_type, i_pred_reg, absmask_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_scale,    i_gp_reg_tmp, i_sve_type, i_pred_reg, scale_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_shifter,  i_gp_reg_tmp, i_sve_type, i_pred_reg, shifter_array  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_half,     i_gp_reg_tmp, i_sve_type, i_pred_reg, half_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_exp_mask, i_gp_reg_tmp, i_sve_type, i_pred_reg, expmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_thres),    i_gp_reg_tmp, i_sve_type, i_pred_reg, thres_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_absmask),  i_gp_reg_tmp, i_sve_type, i_pred_reg, absmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_scale),    i_gp_reg_tmp, i_sve_type, i_pred_reg, scale_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_shifter),  i_gp_reg_tmp, i_sve_type, i_pred_reg, shifter_array  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_half),     i_gp_reg_tmp, i_sve_type, i_pred_reg, half_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_exp_mask), i_gp_reg_tmp, i_sve_type, i_pred_reg, expmask_array );
 
   /* assumes 512 bit vector length */
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c0_array, 0 );
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c1_array, 0 );
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c2_array, 0 );
-
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c0_array, 0 );
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c1_array, 0 );
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c2_array, 0 );
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
@@ -1094,40 +1093,40 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsm
                                                                           const unsigned int                    i_gp_reg_tmp1,
                                                                           const libxsmm_aarch64_asimd_tupletype i_tupletype ) {
 
-  unsigned long long thres_array = 0x408f5fff ;
-  unsigned long long absmask_array = 0x7fffffff ;
-  unsigned long long scale_array = 0x405d67c9 ;
-  unsigned long long shifter_array = 0x4b400000 ;
-  unsigned long long half_array = 0x3f000000 ;
+  unsigned long long thres_array = 0x408f5fff;
+  unsigned long long absmask_array = 0x7fffffff;
+  unsigned long long scale_array = 0x405d67c9;
+  unsigned long long shifter_array = 0x4b400000;
+  unsigned long long half_array = 0x3f000000;
 
-  unsigned int c0_array[16] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
-  unsigned int c1_array[16] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
-  unsigned int c2_array[16] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
-  unsigned int idx_array[4] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c };
+  unsigned int c0_array[/*16*/] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
+  unsigned int c1_array[/*16*/] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
+  unsigned int c2_array[/*16*/] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
+  unsigned int idx_array[/*4*/] = { 0x00000000, 0x04040404, 0x08080808, 0x0c0c0c0c };
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_thres,   i_gp_reg_tmp, i_tupletype, thres_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_absmask, i_gp_reg_tmp, i_tupletype, absmask_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_scale,   i_gp_reg_tmp, i_tupletype, scale_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_shifter, i_gp_reg_tmp, i_tupletype, shifter_array  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_half,    i_gp_reg_tmp, i_tupletype, half_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_thres),   i_gp_reg_tmp, i_tupletype, thres_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_absmask), i_gp_reg_tmp, i_tupletype, absmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_scale),   i_gp_reg_tmp, i_tupletype, scale_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_shifter), i_gp_reg_tmp, i_tupletype, shifter_array  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_half),    i_gp_reg_tmp, i_tupletype, half_array );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c0,  i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c01, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c02, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c03, i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0),  i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c01), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c02), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c03), i_gp_reg_tmp, i_gp_reg_tmp1, c0_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c1,  i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c11, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c12, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c13, i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1),  i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c11), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c12), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c13), i_gp_reg_tmp, i_gp_reg_tmp1, c1_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c2,  i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 0 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c21, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 2 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c22, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 4 );
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_c23, i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 6 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2),  i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 0 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c21), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 2 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c22), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 4 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c23), i_gp_reg_tmp, i_gp_reg_tmp1, c2_array, 6 );
 
-  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, i_vec_tmp,  i_gp_reg_tmp, i_gp_reg_tmp1, idx_array, 0);
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_tmp1, i_gp_reg_tmp, i_tupletype, 0x03020100 );
+  libxsmm_aarch64_instruction_load16bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_tmp),  i_gp_reg_tmp, i_gp_reg_tmp1, idx_array, 0);
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_tmp1), i_gp_reg_tmp, i_tupletype, 0x03020100 );
 }
 
 LIBXSMM_API_INTERN
@@ -1153,24 +1152,24 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
   unsigned long long half_array     = 0x3f000000;
   unsigned long long expmask_array  = 0x000000ff;
 
-  unsigned int c0_array[16] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
-  unsigned int c1_array[16] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
-  unsigned int c2_array[16] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
+  unsigned int c0_array[/*16*/] = { 0x3f4c4245u, 0x3f4c927bu, 0x3f5085f8u, 0x3f5d7bdau, 0x3f73ea12u, 0x3f86142fu, 0x3f8d3df4u, 0x3f8b4b0fu, 0x3f8022c8u, 0x3f5e5423u, 0x3f39ceb5u, 0x3f199bedu, 0x3f00bee0u, 0x3ede1737u, 0x3ec59b86u, 0x3eb4454cu };
+  unsigned int c1_array[/*16*/] = { 0xb930e738u, 0xbc4b28bau, 0xbda4212fu, 0xbe5feb0eu, 0xbec8b0e5u, 0xbf09e61bu, 0xbf1c403fu, 0xbf185954u, 0xbf03e1eeu, 0xbed08a61u, 0xbe9b4508u, 0xbe61788bu, 0xbe257770u, 0xbdfc542au, 0xbdca014eu, 0xbda8d7e9u };
+  unsigned int c2_array[/*16*/] = { 0xbe87047bu, 0xbe6eb875u, 0xbe2210c1u, 0xbd81727fu, 0x3cb9625cu, 0x3da2cbe8u, 0x3dd1d4d1u, 0x3dca0bd0u, 0x3da47dd0u, 0x3d6f1bd3u, 0x3d216381u, 0x3cd2618cu, 0x3c89f6e6u, 0x3c3ca672u, 0x3c08ed08u, 0x3bd26a14u };
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_thres,    i_gp_reg_tmp, i_sve_type, i_pred_reg, thres_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_absmask,  i_gp_reg_tmp, i_sve_type, i_pred_reg, absmask_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_scale,    i_gp_reg_tmp, i_sve_type, i_pred_reg, scale_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_shifter,  i_gp_reg_tmp, i_sve_type, i_pred_reg, shifter_array  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_half,     i_gp_reg_tmp, i_sve_type, i_pred_reg, half_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_exp_mask, i_gp_reg_tmp, i_sve_type, i_pred_reg, expmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_thres),    i_gp_reg_tmp, i_sve_type, i_pred_reg, thres_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_absmask),  i_gp_reg_tmp, i_sve_type, i_pred_reg, absmask_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_scale),    i_gp_reg_tmp, i_sve_type, i_pred_reg, scale_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_shifter),  i_gp_reg_tmp, i_sve_type, i_pred_reg, shifter_array  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_half),     i_gp_reg_tmp, i_sve_type, i_pred_reg, half_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_exp_mask), i_gp_reg_tmp, i_sve_type, i_pred_reg, expmask_array );
 
   /* assumes 512 bit vector length */
   /* if Graviton 3 has 256 bit vec len, just use 6 commands with 32 bytes each */
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c0_array, 0 );
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c1_array, 0 );
-  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c2_array, 0 );
-
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c0_array, 0);
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c1_array, 0 );
+  libxsmm_aarch64_instruction_sve_load64bytes_const_to_vec( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_gp_reg_tmp1, i_pred_reg, c2_array, 0 );
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
@@ -1303,6 +1302,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*  
                                              i_tupletype );
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*               io_generated_code,
                                                      const unsigned int                    i_vec_x,
@@ -1394,8 +1394,8 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                              i_vec_x, i_vec_C1, 0, i_vec_x,
                                              i_pred_reg, i_sve_type );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd(  libxsmm_generated_code*                        io_generated_code,
@@ -1523,7 +1523,6 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd(  libxsmm_generated_co
 }
 
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code*                        io_generated_code,
                                                           const unsigned int                             i_vec_x,
@@ -1605,8 +1604,8 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
                                            i_vec_C2, i_vec_half, 0, i_vec_x,
                                            i_pred_reg, i_sve_type );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_exp_ps_3dts_aarch64_asimd( libxsmm_generated_code*               io_generated_code,
@@ -1622,25 +1621,25 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_aarch64_asimd( libxsmm_generat
                                                                  const unsigned int                    i_gp_reg_tmp,
                                                                  const libxsmm_aarch64_asimd_tupletype i_tupletype  ) {
 
-  unsigned long long vec_c0 = 0x3f34e022 ;
-  unsigned long long vec_c1 = 0x3efd357f ;
-  unsigned long long vec_c2 = 0x3e20bcd5 ;
-  unsigned long long vec_c3 = 0x3d635847 ;
-  unsigned long long vec_halves = 0x3f000000 ;
-  unsigned long long vec_log2e = 0x3fb8aa3b ;
-  unsigned int vec_expmask = 0x7f ;
-  unsigned long long vec_hi_bound = 0x42b0c0a5 ;
-  unsigned long long vec_lo_bound = 0xc2b0c0a5 ;
+  unsigned long long vec_c0 = 0x3f34e022;
+  unsigned long long vec_c1 = 0x3efd357f;
+  unsigned long long vec_c2 = 0x3e20bcd5;
+  unsigned long long vec_c3 = 0x3d635847;
+  unsigned long long vec_halves = 0x3f000000;
+  unsigned long long vec_log2e = 0x3fb8aa3b;
+  unsigned int vec_expmask = 0x7f;
+  unsigned long long vec_hi_bound = 0x42b0c0a5;
+  unsigned long long vec_lo_bound = 0xc2b0c0a5;
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_tupletype, vec_halves );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_log2e, i_gp_reg_tmp, i_tupletype, vec_log2e );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_tupletype, vec_c0 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_tupletype, vec_c1  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_tupletype, vec_c2 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c3, i_gp_reg_tmp, i_tupletype, vec_c3 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_expmask, i_gp_reg_tmp, i_tupletype, vec_expmask );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_hi_bound, i_gp_reg_tmp, i_tupletype, vec_hi_bound );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_lo_bound, i_gp_reg_tmp, i_tupletype, vec_lo_bound );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_halves), i_gp_reg_tmp, i_tupletype, vec_halves );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_log2e), i_gp_reg_tmp, i_tupletype, vec_log2e );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_tupletype, vec_c0 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_tupletype, vec_c1  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_tupletype, vec_c2 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3), i_gp_reg_tmp, i_tupletype, vec_c3 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_expmask), i_gp_reg_tmp, i_tupletype, vec_expmask );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_hi_bound), i_gp_reg_tmp, i_tupletype, vec_hi_bound );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_lo_bound), i_gp_reg_tmp, i_tupletype, vec_lo_bound );
 }
 
 LIBXSMM_API_INTERN
@@ -1658,25 +1657,25 @@ void libxsmm_generator_prepare_coeffs_exp_ps_3dts_aarch64_sve( libxsmm_generated
                                                                const libxsmm_aarch64_sve_type        i_sve_type,
                                                                const unsigned char                   i_pred_reg ) {
 
-  unsigned long long vec_c0 = 0x3f34e022 ;
-  unsigned long long vec_c1 = 0x3efd357f ;
-  unsigned long long vec_c2 = 0x3e20bcd5 ;
-  unsigned long long vec_c3 = 0x3d635847 ;
-  unsigned long long vec_halves = 0x3f000000 ;
-  unsigned long long vec_log2e = 0x3fb8aa3b ;
-  unsigned int vec_expmask = 0x7f ;
-  unsigned long long vec_hi_bound = 0x42b0c0a5 ;
-  unsigned long long vec_lo_bound = 0xc2b0c0a5 ;
+  unsigned long long vec_c0 = 0x3f34e022;
+  unsigned long long vec_c1 = 0x3efd357f;
+  unsigned long long vec_c2 = 0x3e20bcd5;
+  unsigned long long vec_c3 = 0x3d635847;
+  unsigned long long vec_halves = 0x3f000000;
+  unsigned long long vec_log2e = 0x3fb8aa3b;
+  unsigned int vec_expmask = 0x7f;
+  unsigned long long vec_hi_bound = 0x42b0c0a5;
+  unsigned long long vec_lo_bound = 0xc2b0c0a5;
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_halves );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_log2e, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_log2e );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c0 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c1  );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c2 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c3, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c3 );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_expmask, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_expmask );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_hi_bound, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_hi_bound );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_lo_bound, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_lo_bound );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_halves), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_halves );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_log2e), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_log2e );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c0 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c1  );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c2 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_c3 );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_expmask), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_expmask );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_hi_bound), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_hi_bound );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_lo_bound), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_lo_bound );
 }
 
 LIBXSMM_API_INTERN
@@ -1860,8 +1859,8 @@ void libxsmm_generator_scalefps_aarch64_sve( libxsmm_generated_code*            
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                            i_vec_x, i_vec_y, 0, i_vec_z,
                                            i_pred_reg, i_sve_type );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_asimd(  libxsmm_generated_code*                        io_generated_code,
@@ -1878,29 +1877,29 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_asimd(  libxsm
                                                                     const unsigned int                             i_vec_neg_ones,
                                                                     const unsigned int                             i_gp_reg_tmp,
                                                                     const libxsmm_aarch64_asimd_tupletype          i_tupletype ) {
-  unsigned long long c0_array = 0x49f77088 ;
-  unsigned long long c1_array = 0x4883f7c0 ;
-  unsigned long long c2_array = 0x45d89000 ;
-  unsigned long long c3_array = 0x42100000 ;
-  unsigned long long c1_d_array = 0x4966f190 ;
-  unsigned long long c2_d_array = 0x474b0700 ;
-  unsigned long long c3_d_array = 0x441d8000 ;
-  unsigned long long hi_b_array = 0x409f0a3d ;
-  unsigned long long lo_b_array = 0xc09f0a3d ;
-  unsigned long long ones_array = 0x3f800000 ;
-  unsigned int neg_ones_array = 0xbf800000 ;
+  unsigned long long c0_array = 0x49f77088;
+  unsigned long long c1_array = 0x4883f7c0;
+  unsigned long long c2_array = 0x45d89000;
+  unsigned long long c3_array = 0x42100000;
+  unsigned long long c1_d_array = 0x4966f190;
+  unsigned long long c2_d_array = 0x474b0700;
+  unsigned long long c3_d_array = 0x441d8000;
+  unsigned long long hi_b_array = 0x409f0a3d;
+  unsigned long long lo_b_array = 0xc09f0a3d;
+  unsigned long long ones_array = 0x3f800000;
+  unsigned int neg_ones_array = 0xbf800000;
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_tupletype, c0_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_tupletype, c1_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_tupletype, c2_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c3, i_gp_reg_tmp, i_tupletype, c3_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c1_d, i_gp_reg_tmp, i_tupletype, c1_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c2_d, i_gp_reg_tmp, i_tupletype, c2_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_c3_d, i_gp_reg_tmp, i_tupletype, c3_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_hi_bound, i_gp_reg_tmp, i_tupletype, hi_b_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_lo_bound, i_gp_reg_tmp, i_tupletype, lo_b_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_ones, i_gp_reg_tmp, i_tupletype, ones_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_neg_ones, i_gp_reg_tmp, i_tupletype, neg_ones_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_tupletype, c0_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_tupletype, c1_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_tupletype, c2_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3), i_gp_reg_tmp, i_tupletype, c3_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1_d), i_gp_reg_tmp, i_tupletype, c1_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2_d), i_gp_reg_tmp, i_tupletype, c2_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3_d), i_gp_reg_tmp, i_tupletype, c3_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_hi_bound), i_gp_reg_tmp, i_tupletype, hi_b_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_lo_bound), i_gp_reg_tmp, i_tupletype, lo_b_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_ones), i_gp_reg_tmp, i_tupletype, ones_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_neg_ones), i_gp_reg_tmp, i_tupletype, neg_ones_array );
 }
 
 LIBXSMM_API_INTERN
@@ -1919,29 +1918,29 @@ void libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_sve(  libxsmm_
                                                                         const unsigned int                             i_gp_reg_tmp,
                                                                         const libxsmm_aarch64_sve_type                 i_sve_type,
                                                                         const unsigned char                            i_pred_reg ) {
-  unsigned long long c0_array = 0x49f77088 ;
-  unsigned long long c1_array = 0x4883f7c0 ;
-  unsigned long long c2_array = 0x45d89000 ;
-  unsigned long long c3_array = 0x42100000 ;
-  unsigned long long c1_d_array = 0x4966f190 ;
-  unsigned long long c2_d_array = 0x474b0700 ;
-  unsigned long long c3_d_array = 0x441d8000 ;
-  unsigned long long hi_b_array = 0x409f0a3d ;
-  unsigned long long lo_b_array = 0xc09f0a3d ;
-  unsigned long long ones_array = 0x3f800000 ;
-  unsigned int neg_ones_array = 0xbf800000 ;
+  unsigned long long c0_array = 0x49f77088;
+  unsigned long long c1_array = 0x4883f7c0;
+  unsigned long long c2_array = 0x45d89000;
+  unsigned long long c3_array = 0x42100000;
+  unsigned long long c1_d_array = 0x4966f190;
+  unsigned long long c2_d_array = 0x474b0700;
+  unsigned long long c3_d_array = 0x441d8000;
+  unsigned long long hi_b_array = 0x409f0a3d;
+  unsigned long long lo_b_array = 0xc09f0a3d;
+  unsigned long long ones_array = 0x3f800000;
+  unsigned int neg_ones_array = 0xbf800000;
 
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c0, i_gp_reg_tmp, i_sve_type, i_pred_reg, c0_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c1, i_gp_reg_tmp, i_sve_type, i_pred_reg, c1_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c2, i_gp_reg_tmp, i_sve_type, i_pred_reg, c2_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c3, i_gp_reg_tmp, i_sve_type, i_pred_reg, c3_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c1_d, i_gp_reg_tmp, i_sve_type, i_pred_reg, c1_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c2_d, i_gp_reg_tmp, i_sve_type, i_pred_reg, c2_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_c3_d, i_gp_reg_tmp, i_sve_type, i_pred_reg, c3_d_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_hi_bound, i_gp_reg_tmp, i_sve_type, i_pred_reg, hi_b_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_lo_bound, i_gp_reg_tmp, i_sve_type, i_pred_reg, lo_b_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_ones, i_gp_reg_tmp, i_sve_type, i_pred_reg, ones_array );
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_neg_ones, i_gp_reg_tmp, i_sve_type, i_pred_reg, neg_ones_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c0), i_gp_reg_tmp, i_sve_type, i_pred_reg, c0_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1), i_gp_reg_tmp, i_sve_type, i_pred_reg, c1_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2), i_gp_reg_tmp, i_sve_type, i_pred_reg, c2_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3), i_gp_reg_tmp, i_sve_type, i_pred_reg, c3_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c1_d), i_gp_reg_tmp, i_sve_type, i_pred_reg, c1_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c2_d), i_gp_reg_tmp, i_sve_type, i_pred_reg, c2_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_c3_d), i_gp_reg_tmp, i_sve_type, i_pred_reg, c3_d_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_hi_bound), i_gp_reg_tmp, i_sve_type, i_pred_reg, hi_b_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_lo_bound), i_gp_reg_tmp, i_sve_type, i_pred_reg, lo_b_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_ones), i_gp_reg_tmp, i_sve_type, i_pred_reg, ones_array );
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_neg_ones), i_gp_reg_tmp, i_sve_type, i_pred_reg, neg_ones_array );
 }
 
 LIBXSMM_API_INTERN
@@ -1960,8 +1959,8 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_asimd( libx
                                                                             const unsigned int                             i_vec_halves,
                                                                             const unsigned int                             i_gp_reg_tmp,
                                                                             const libxsmm_aarch64_asimd_tupletype          i_tupletype  ) {
-  unsigned long long vec_halves = 0x3f000000 ;
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_tupletype, vec_halves );
+  unsigned long long vec_halves = 0x3f000000;
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_asimd ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_halves), i_gp_reg_tmp, i_tupletype, vec_halves );
   libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_asimd(
         io_generated_code, i_vec_c0, i_vec_c1, i_vec_c2, i_vec_c3, i_vec_c1_d, i_vec_c2_d, i_vec_c3_d,
         i_vec_hi_bound, i_vec_lo_bound, i_vec_ones, i_vec_neg_ones, i_gp_reg_tmp, i_tupletype );
@@ -1984,8 +1983,8 @@ void libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_sve( libxsm
                                                                           const unsigned int                             i_gp_reg_tmp,
                                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
                                                                           const unsigned char                            i_pred_reg ) {
-  unsigned long long vec_halves = 0x3f000000 ;
-  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, i_vec_halves, i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_halves );
+  unsigned long long vec_halves = 0x3f000000;
+  libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( io_generated_code, LIBXSMM_CAST_UCHAR(i_vec_halves), i_gp_reg_tmp, i_sve_type, i_pred_reg, vec_halves );
   libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_aarch64_sve(
         io_generated_code, i_vec_c0, i_vec_c1, i_vec_c2, i_vec_c3, i_vec_c1_d, i_vec_c2_d, i_vec_c3_d,
         i_vec_hi_bound, i_vec_lo_bound, i_vec_ones, i_vec_neg_ones, i_gp_reg_tmp, i_sve_type, i_pred_reg );
@@ -2102,8 +2101,8 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64_asimd( libxsmm_generated_code
                                              i_vec_ones,     i_mask_hi, 0, i_vec_x, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V,
                                              i_vec_neg_ones, i_mask_lo, 0, i_vec_x, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_tanh_ps_rational_78_aarch64_sve( libxsmm_generated_code*                        io_generated_code,
@@ -2219,8 +2218,8 @@ void libxsmm_generator_tanh_ps_rational_78_aarch64_sve( libxsmm_generated_code* 
                                            i_vec_ones,     i_vec_x, 0, i_vec_x, i_mask_hi, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P,
                                            i_vec_neg_ones, i_vec_x, 0, i_vec_x, i_mask_lo, i_sve_type );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
@@ -2256,8 +2255,8 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64_asimd( libxsmm_generated_c
                                              i_vec_x, i_vec_ones, 0, i_vec_x, i_tupletype );
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V,
                                              i_vec_x, i_vec_halves, 0, i_vec_x, i_tupletype );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve( libxsmm_generated_code*                        io_generated_code,
@@ -2294,9 +2293,7 @@ void libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve( libxsmm_generated_cod
                                            i_vec_x, i_vec_ones,  0, i_vec_x, i_pred_reg, i_sve_type );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
                                            i_vec_x, i_vec_halves, 0, i_vec_x, i_pred_reg, i_sve_type );
-
 }
-
 
 
 LIBXSMM_API_INTERN
@@ -2317,8 +2314,8 @@ libxsmm_aarch64_instruction_asimd_struct_r_move( io_generated_code, LIBXSMM_AARC
                                                  i_tupletype );
 libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( libxsmm_generated_code*               io_generated_code,
@@ -2355,8 +2352,8 @@ void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_cod
                                           i_vec_reg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                   LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 16, 0 );
-
 }
+
 
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_code* io_generated_code,

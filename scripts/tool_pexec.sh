@@ -11,23 +11,45 @@
 ###############################################################################
 #set -o pipefail
 
+BASENAME=$(command -v basename)
 XARGS=$(command -v xargs)
+FILE=$(command -v file)
+GREP=$(command -v grep)
 
-if [ "${XARGS}" ] && [ "$(command -v basename)" ]; then
-  NC=$1
-  if [ ! "${NC}" ] || [ "0" = "${NC}" ]; then
-    HERE=$(cd "$(dirname "$0")" && pwd -P)
-    CPU=${HERE}/tool_cpuinfo.sh
-    if [ -e "${CPU}" ]; then
-      NC=$(${CPU} -nt)
+# Usage: tool_pexec.sh [<num-tasks>] [<oversubscription-factor>]
+# Use all cores and Hyperthreads like tool_pexec.sh 0 2.
+# The script reads stdin and spawns one task per line.
+# Example: seq 100 | xargs -I{} echo "echo \"{}\"" \
+#                  | tool_pexec.sh
+# Avoid to apply thread affinity (OMP_PROC_BIND or similar).
+if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
+  INFO=${HERE}/tool_cpuinfo.sh
+  NP=$1; SP=$2; SP_DEFAULT=2
+  if [ -e "${INFO}" ]; then
+    NC=$(${INFO} -nc)
+    NT=$(${INFO} -nt)
+  fi
+  if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
+    NP=$(((NC*SP_DEFAULT)<=NT?(NC*SP_DEFAULT):NC))
+  fi
+  if [ "${NP}" ]; then
+    if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
+      NP=$((NP*SP))
     fi
+    if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
+      export OMP_NUM_THREADS=$((NT/NP))
+    else
+      export OMP_NUM_THREADS=1
+    fi
+  else
+    export OMP_NUM_THREADS=1
+    NP=0
   fi
-  if [ "${NC}" ]; then
-    PNC="-P ${NC}"
-  fi
-  OMP_NUM_THREADS=1 \
-  ${XARGS} </dev/stdin "${PNC}" -I% bash -c \
-    "_trap_err() { 1>&2 echo \" -> ERROR: \$(basename %)\"; exit 1; }; trap '_trap_err' ERR; source %"
+  unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  ${XARGS} </dev/stdin -P${NP} -I% bash -c \
+    "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
+     if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
