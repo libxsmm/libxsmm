@@ -3012,7 +3012,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
   l_mask = l_mask >> i_mask_count;
 
   /* move mask to GP register */
-  libxsmm_x86_instruction_alu_imm( io_generated_code,
+  libxsmm_x86_instruction_alu_imm_i64( io_generated_code,
       LIBXSMM_X86_INSTR_MOVQ,
       i_gp_reg_tmp,
       l_mask );
