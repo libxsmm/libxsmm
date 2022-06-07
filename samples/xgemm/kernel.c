@@ -216,8 +216,8 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)(libxsmm_rng_f64()-0.5);
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-          libxsmm_bfloat16_hp tmp = { 0 };
-          tmp.f = (float)libxsmm_rng_f64();
+          libxsmm_bfloat16_hp tmp /*= { 0 }*/;
+          tmp.f = (float)(libxsmm_rng_f64()-0.5);
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  ((libxsmm_rng_f64()-0.5) * 40.0);
@@ -524,7 +524,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         if ( i_gemm_def->beta == 0 ) {
           acc = 0.0f;
         } else {
-          libxsmm_bfloat16_hp tmp = { 0 };
+          libxsmm_bfloat16_hp tmp /*= { 0 }*/;
           tmp.i[0] = 0;
           tmp.i[1] = h_c[(l_j * ldc) + l_i];
           acc = tmp.f;
