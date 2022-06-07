@@ -1131,6 +1131,15 @@ LIBXSMM_API_INTERN void internal_init(void)
 }
 
 
+LIBXSMM_API_INTERN void internal_atexit(void);
+LIBXSMM_API_INTERN void internal_atexit(void)
+{
+  static int internal_atexit_once = 0;
+  const int once = LIBXSMM_ATOMIC_ADD_FETCH(&internal_atexit_once, 1, LIBXSMM_ATOMIC_RELAXED);
+  if (1 == once) internal_finalize();
+}
+
+
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
@@ -1242,7 +1251,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        register_termination_proc = atexit(internal_finalize);
+        register_termination_proc = atexit(internal_atexit);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
@@ -3935,4 +3944,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* key, const int* k
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
-
