@@ -549,14 +549,22 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
   }
 }
 
-void ref_fused_matmul( gemm_def* i_gemm_def, void* l_a, void* l_b, void* l_c_gold, fusion_args *ref_fusion_arguments ) {
-  /* Run matmul */
-  ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
+void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_gold, fusion_args *ref_fusion_arguments ) {
+  gemm_def l_gemm_def = *i_gemm_def_in;
+  gemm_def *i_gemm_def = &l_gemm_def;
 
   /* Perform binary postop if requested */
   if (i_gemm_def->binary_postop == COLBIAS_ADD) {
+    if (i_gemm_def->beta == 0) {
+      init_zero_matrix( i_gemm_def->out_type, l_c_gold, 1, i_gemm_def->ldc, i_gemm_def->n );
+      i_gemm_def->beta = 1.0;
+    }
     apply_colbias_add(i_gemm_def, l_c_gold, ref_fusion_arguments->colbias);
   }
+
+  /* Run matmul */
+  ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
+
   /* Perform unary postop if requested */
   if (i_gemm_def->unary_postop == RELU_NOBITMASK) {
     apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, 0);
