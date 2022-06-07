@@ -424,7 +424,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512_kloop( libxsmm_
                                                             (i_row_idx[l_k] + l_n) * i_micro_kernel_config->datatype_size_in, 1,
                                                             l_max_reg_block,
                                                             ((i_column_idx[i_row_idx[l_k] + l_n] - i_n_processed)*i_packed_blocking) + l_p );
-            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+            } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
                                                 i_micro_kernel_config->b_vmove_instruction,

@@ -482,7 +482,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                     l_n * i_micro_kernel_config->datatype_size_in, 1,
                                                     i_n_blocking,
                                                     l_n );
-    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+    } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
                                         i_micro_kernel_config->b_vmove_instruction,
