@@ -568,7 +568,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_avx_avx2_avx512_kloop( libxsmm_
                                                               l_max_reg_block,
                                                               (l_n*i_packed_blocking) + l_p );
               }
-            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+            } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 i_micro_kernel_config->instruction_set,
                                                 i_micro_kernel_config->b_vmove_instruction,

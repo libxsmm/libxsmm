@@ -483,7 +483,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
                                                       i_n_blocking,
                                                       l_n );
       }
-    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+    } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) {
       if ( i_simd_packed_width > i_simd_packed_valid ) {
         libxsmm_x86_instruction_vec_mask_move( io_generated_code,
                                                l_avx_ac_move_instr,

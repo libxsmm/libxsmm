@@ -352,7 +352,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   }
 
   /* Init config */
-  if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+  if ( io_generated_code->arch == LIBXSMM_X86_AVX2 || io_generated_code->arch == LIBXSMM_X86_AVX2_ADL ) {
     l_num_reg = 16;
 
     l_preg_unique = 0;

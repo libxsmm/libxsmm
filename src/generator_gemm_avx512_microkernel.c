@@ -379,15 +379,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
-              0,
               1+l_n,
+              0,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         } else if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
               i_micro_kernel_config->vmul_instruction,
               i_micro_kernel_config->vector_name,
-              1+l_n,
               0,
+              1+l_n,
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         } else {
           /* should not happen */
