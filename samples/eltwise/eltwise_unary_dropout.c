@@ -23,7 +23,7 @@
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp = { 0 };
+  libxsmm_bfloat16_hp bf16_hp = { 0 };
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
