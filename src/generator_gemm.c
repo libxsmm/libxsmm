@@ -37,6 +37,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_xgemm_desc_mod.flags = l_xgemm_desc_mod.flags & (~LIBXSMM_GEMM_FLAG_VNNI_A);
   }
 
+  if ( (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_OUT( l_xgemm_desc_mod.datatype )) ||
+       (LIBXSMM_DATATYPE_I8  == LIBXSMM_GETENUM_OUT( l_xgemm_desc_mod.datatype )) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+  }
+
   /* determining vector length depending on architecture and precision */
   if ( io_generated_code->arch <= LIBXSMM_TARGET_ARCH_GENERIC ) {
     /* nothing todo */

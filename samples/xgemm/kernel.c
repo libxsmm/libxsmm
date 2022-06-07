@@ -246,23 +246,18 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
-              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I8)  &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
-              (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) && (i_gemm_def->unsigned_c == 1) ) {
-    char*          c_a = (char*)a;
-    unsigned char* c_b = (unsigned char*)b;
-    unsigned char* c_c = (unsigned char*)c;
+              (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
+    unsigned char* c_a = (unsigned char*)a;
+    char* c_b          = (char*)b;
+    float*         c_c = (float*)c;
     int l_k_block = 4;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
-        int tmp;
+        int tmp = 0;
         float ftmp;
-        if ( i_gemm_def->beta == 0 ) {
-          tmp = 0;
-        } else {
-          tmp = (int)c_c[(l_j * ldc) + l_i];
-        }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
@@ -273,7 +268,41 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
         ftmp = (float)tmp;
         ftmp *= i_gemm_def->scf;
-        c_c[(l_j * ldc) + l_i] = (unsigned char)ftmp;
+        if ( i_gemm_def->beta == 1 ) {
+          ftmp += c_c[(l_j * ldc) + l_i];
+        }
+
+        c_c[(l_j * ldc) + l_i] = ftmp;
+      }
+    }
+  } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
+    char*          c_a = (char*)a;
+    unsigned char* c_b = (unsigned char*)b;
+    float*         c_c = (float*)c;
+    int l_k_block = 4;
+
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        int tmp = 0;
+        float ftmp;
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+              tmp += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                     c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+            }
+          }
+        }
+        ftmp = (float)tmp;
+        ftmp *= i_gemm_def->scf;
+        if ( i_gemm_def->beta == 1 ) {
+          ftmp += c_c[(l_j * ldc) + l_i];
+        }
+
+        c_c[(l_j * ldc) + l_i] = ftmp;
       }
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_BF16) &&
@@ -557,7 +586,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
 
   gemm_param.op.tertiary = &l_br;
   gemm_param.c.primary = (void*)o_c;
-  gemm_param.c.tertiary = (void*)(( i_gemm_def->unsigned_c != 0 ) ? &(i_gemm_def->scf) : NULL);
+  gemm_param.c.tertiary = (void*)(( i_gemm_def->in_type == LIBXSMM_DATATYPE_I8 && i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) ? &(i_gemm_def->scf) : NULL);
   /* run correctness */
   if (i_gemm_def->br_type == 0) {
     gemm_param.a.primary = (void*)i_a;
@@ -704,7 +733,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -719,7 +748,7 @@ void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, SUI8UI8, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
+  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -961,15 +990,23 @@ int main(int argc, char* argv []) {
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
     l_gemm_def.unsigned_b = 1;
-  } else if (strcmp(l_precision, "SUI8UI8") == 0) {
+  } else if (strcmp(l_precision, "USI8F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
-    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.vnni_a = 1;
+    l_gemm_def.trans_a = 0;
+    l_gemm_def.trans_b = 0;
+    l_gemm_def.unsigned_a = 1;
+    l_gemm_def.scf = 1.0f;
+  } else if (strcmp(l_precision, "SUI8F32") == 0) {
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
     l_gemm_def.unsigned_b = 1;
-    l_gemm_def.unsigned_c = 1;
     l_gemm_def.scf = 1.0f;
   } else if (strcmp(l_precision, "BF16F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_BF16;
