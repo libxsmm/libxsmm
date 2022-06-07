@@ -1131,15 +1131,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 }
 
 
-LIBXSMM_API_INTERN void internal_atexit(void);
-LIBXSMM_API_INTERN void internal_atexit(void)
-{
-  static int internal_atexit_once = 0;
-  const int once = LIBXSMM_ATOMIC_ADD_FETCH(&internal_atexit_once, 1, LIBXSMM_ATOMIC_RELAXED);
-  if (1 == once) internal_finalize();
-}
-
-
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
@@ -1251,7 +1242,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           libxsmm_timer_scale = libxsmm_timer_duration_rtc(s0, s1) / (t1 - t0);
         }
 #endif
-        register_termination_proc = atexit(internal_atexit);
+        register_termination_proc = atexit(internal_finalize);
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick_tsc(); /* final timing */
         /* set timer-scale and determine start of the "uptime" (shown at termination) */
         if (t0 < t1 && 0.0 < libxsmm_timer_scale) {
@@ -1314,7 +1305,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   if (NULL != registry) {
     int i;
 #if (0 != LIBXSMM_SYNC)
-    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK, &libxsmm_lock_global)) {
 # if (1 < INTERNAL_REGLOCK_MAXN)
     { /* acquire locks and thereby shortcut lazy initialization later on */
       int ntry = 0, n;
@@ -1455,7 +1446,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 # elif !defined(LIBXSMM_UNIFY_LOCKS)
     LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
-    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global); }
 #endif
   }
 }
