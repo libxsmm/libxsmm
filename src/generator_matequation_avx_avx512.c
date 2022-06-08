@@ -896,6 +896,7 @@ void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, lib
       info.arg.ld = cur_node->tmp.ld;
       info.arg.in_pos = -(cur_node->tmp.id + 1);  /*(cur_node->tmp.id >= 0) ? -(cur_node->tmp.id + 1) : cur_node->tmp.id;*/
       info.arg.dtype = cur_node->tmp.dtype;
+      assert(NULL != new_arg_node);
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
       new_arg_node->r2 = NULL;
@@ -920,6 +921,7 @@ void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, lib
           cur_node->up->r2 = new_arg_node;
         }
       }
+      assert(NULL != new_eqn);
       new_eqn->eqn_root = cur_node;
       new_eqn->is_constructed = 1;
       libxsmm_generator_matequation_enqueue_equation(new_eqn, jiting_queue, queue_size);
