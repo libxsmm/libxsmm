@@ -1371,6 +1371,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int reserved_mask_regs;
   unsigned int vnni_perm_reg;
   unsigned int zero_reg;
+  unsigned int scf_vreg;
+  unsigned int aux_vreg;
   unsigned int vec_x2;
   unsigned int vec_nom;
   unsigned int vec_denom;

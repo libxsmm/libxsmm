@@ -563,7 +563,8 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
   unsigned int col = 0;
   unsigned int gp_reg_bias = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
 
-  if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
+  if ((0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) &&
+      !((LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) )) { /* Beta=1 */
     /* Check if we have to fuse colbias bcast */
     if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
       gp_reg_bias = i_gp_reg_mapping->gp_reg_lda;
@@ -764,7 +765,8 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
     }
   } else { /* Beta=0 */
     /* Check if we have to fuse colbias bcast */
-    if ((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) {
+    if (((i_micro_kernel_config->fused_bcolbias == 1) || (i_micro_kernel_config->fused_scolbias == 1)) &&
+        !((LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) )) {
 
       if (i_micro_kernel_config->fused_scolbias == 1) {
         if ( (gp_reg_bias == i_gp_reg_mapping->gp_reg_help_1) && (i_micro_kernel_config->n_loop_exists == 1)  ) {
@@ -1035,6 +1037,8 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
   unsigned int reserved_mask_regs = 1;
+  int has_scf                     = ((LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+                                     (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) ? 1 : 0;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_xgemm_desc);
 
@@ -1044,6 +1048,26 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra( libxsmm_generated_code*     
       fprintf(stderr, "For now we support C norm->vnni to external buffer only when C output is in normal format...\n");
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
+    }
+  }
+
+  if (has_scf > 0) {
+    libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_INT8_SCF, temp_reg );
+    i_micro_kernel_config->scf_vreg = reserved_zmms;
+    if ( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+        (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VBROADCASTSS,
+          temp_reg,
+          LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+          i_micro_kernel_config->vector_name,
+          i_micro_kernel_config->scf_vreg, 0, 1, 0 );
+    }
+    reserved_zmms++;
+    if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) {
+      i_micro_kernel_config->aux_vreg = reserved_zmms;
+      reserved_zmms++;
     }
   }
 
@@ -1476,6 +1500,13 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
+  if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc_const->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype )) ) {
+    l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RCX;
+    l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
+    l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
+  } else {
+    l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
+  }
   /* If we are generating the batchreduce kernel, then we rename the registers  */
   if (i_xgemm_desc_const->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RAX;
@@ -1484,8 +1515,15 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
     l_gp_reg_mapping.gp_reg_b_ptrs = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
-    l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
-    l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc_const->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype )) ) {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_R8;
+      l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R9;
+      l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+    } else {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
+      l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
+      l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
+    }
     l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
   } else if (i_xgemm_desc_const->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
     l_gp_reg_mapping.gp_reg_a_base = LIBXSMM_X86_GP_REG_RDI;
@@ -1493,6 +1531,11 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RAX;
     l_gp_reg_mapping.gp_reg_b_base = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_b_offset = LIBXSMM_X86_GP_REG_R9;
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc_const->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype )) ) {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_RAX;
+    } else {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
+    }
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RBX;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
@@ -1504,6 +1547,11 @@ void libxsmm_generator_gemm_amx_kernel_wrapper( libxsmm_generated_code* io_gener
     l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RBX;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
+    if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc_const->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype )) ) {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_R8;
+    } else {
+      l_gp_reg_mapping.gp_reg_scf = LIBXSMM_X86_GP_REG_UNDEF;
+    }
     l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
   }
 #endif
@@ -1598,6 +1646,10 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
           libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, i_gp_reg_mapping->gp_reg_b_offset, 0 );
         }
+      }
+      if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
+                                         i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, i_gp_reg_mapping->gp_reg_scf, 0 );
       }
     }
   }
