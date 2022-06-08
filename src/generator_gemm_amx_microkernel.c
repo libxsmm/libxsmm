@@ -1002,9 +1002,9 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUUD;
     } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
-      tile_compute_instr = LIBXSMM_X86_INSTR_TDPBSUD;
-    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBUSD;
+    } else if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) > 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) == 0) ) {
+      tile_compute_instr = LIBXSMM_X86_INSTR_TDPBSUD;
     } else {
       tile_compute_instr = LIBXSMM_X86_INSTR_TDPBSSD;
     }
