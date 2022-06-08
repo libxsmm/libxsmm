@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="hello.cpp" />
+    <ClCompile Include="hello.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>hello</ProjectName>
+    <ProjectName>hello_c</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{558B85BC-AA23-4049-B721-41E4F5C814B2}</ProjectGuid>
   </PropertyGroup>
