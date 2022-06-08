@@ -2440,6 +2440,7 @@ void libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( libxsmm_generated_code
                                                           const unsigned int      io_mask_0,
                                                           const unsigned int      io_mask_1,
                                                           const unsigned int      i_skip_downcvt ) {
+  LIBXSMM_UNUSED( io_mask_1 );
   /* @TODO check for valid i_vnames */
   /* and with naninf and compute mask  */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
