@@ -97,7 +97,7 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
   }
 #if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT)) && defined(LIBXSMM_PLATFORM_X86)
   /* check if JIT-code generation is permitted */
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid && LIBXSMM_X86_ALLFEAT >= libxsmm_target_archid) {
+  if (LIBXSMM_X86_AVX2_ADL <= libxsmm_target_archid && LIBXSMM_X86_ALLFEAT >= libxsmm_target_archid) {
     const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     libxsmm_xcopy_jit = ((NULL == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
   }
@@ -239,9 +239,8 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
     0 <= tid && tid < ntasks)
   {
     if (0 < m && 0 < n) {
+      libxsmm_xcopykernel kernel = { NULL };
       unsigned int tm, tn, ts;
-      libxsmm_xcopykernel kernel;
-      kernel.ptr = NULL;
       if (NULL != in) { /* mcopy */
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
@@ -369,8 +368,7 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
       if (out != in) {
         unsigned int tm = LIBXSMM_UPDIV(libxsmm_tcopy_mbytes, typesize);
         unsigned int tn = (unsigned int)(libxsmm_tcopy_nscale * tm);
-        libxsmm_xcopykernel kernel;
-        kernel.ptr = NULL;
+        libxsmm_xcopykernel kernel = { NULL };
         if (0 == tm) tm = m;
         if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
         if (0 != libxsmm_tcopy_mbytes && libxsmm_tcopy_mbytes < (tm * tn * typesize)) {
@@ -681,7 +679,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
     const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
     const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
     const libxsmm_blasint end = LIBXSMM_MIN(span, size);
-    char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE];
+    char buffer[LIBXSMM_ITRANS_BUFFER_MAXSIZE] = "";
     char *const mat0 = (char*)inout;
     void* scratch = NULL;
     libxsmm_xcopykernel kernel = { NULL };

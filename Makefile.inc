@@ -133,7 +133,7 @@ ifeq (0,$(DBG))
   ifneq (0,$(INSTRUMENT))
     SYM := $(INSTRUMENT)
   endif
-  ifeq (0,$(shell echo "$$((1<$(SYM) || 0>$(SYM)))"))
+  ifneq (,$(filter 0 1,$(SYM)))
     DFLAGS += -DNDEBUG
   endif
 else # debugging enabled
@@ -1392,27 +1392,28 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   ifneq (0,$(SYM))
-    ifeq (1,$(if $(SANITIZE),2,$(SYM)))
+    ifeq (1,$(SYM))
       CXXFLAGS += -g
-      CFLAGS += -g
       FCFLAGS += -g
-    else ifeq (2,$(if $(SANITIZE),2,$(SYM)))
-      CXXFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
-      CFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
-      FCFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) -fno-omit-frame-pointer
-      LDFLAGS += -g -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
+      CFLAGS += -g
     else
       ifneq (,$(filter 2 3,$(XSMM_GCC)))
-        CXXFLAGS += -g3
-        CFLAGS += -g3
+        CXXFLAGS += -g3 -fno-omit-frame-pointer
+        CFLAGS += -g3 -fno-omit-frame-pointer
       else
         CXXFLAGS += -g
         CFLAGS += -g
       endif
       ifeq (3,$(XSMM_GCC))
-        FCFLAGS += -g3
+        FCFLAGS += -g3 -fno-omit-frame-pointer
       else
         FCFLAGS += -g
+      endif
+      ifneq (2,$(SYM))
+        CXXFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
+        CFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
+        FCFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
+        LDFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
       endif
     endif
   endif

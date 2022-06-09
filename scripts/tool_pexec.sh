@@ -9,7 +9,8 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-#set -o pipefail
+#set -eo pipefail
+#set -e
 
 BASENAME=$(command -v basename)
 XARGS=$(command -v xargs)
@@ -18,20 +19,23 @@ GREP=$(command -v grep)
 
 # Usage: tool_pexec.sh [<num-tasks>] [<oversubscription-factor>]
 # Use all cores and Hyperthreads like tool_pexec.sh 0 2.
-# The script reads stdin and spawns one task per line.
+# Environment variables PEXEC_NP=<num-tasks>, and
+#                       PEXEC_SP=<oversubscription-factor>
+# precede command line arguments.
+# The script reads stdin and intents to spawn one task per line.
 # Example: seq 100 | xargs -I{} echo "echo \"{}\"" \
 #                  | tool_pexec.sh
-# Avoid to apply thread affinity (OMP_PROC_BIND or similar).
+# Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
-  NP=$1; SP=$2
+  NP=${PEXEC_NP:-$1}; SP=${PEXEC_SP:-$2}; SP_DEFAULT=2
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc)
     NT=$(${INFO} -nt)
   fi
   if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
-    NP=${NC}
+    NP=$(((NC*SP_DEFAULT)<=NT?(NC*SP_DEFAULT):NC))
   fi
   if [ "${NP}" ]; then
     if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
@@ -46,9 +50,16 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     export OMP_NUM_THREADS=1
     NP=0
   fi
-  ${XARGS} </dev/stdin -L1 -P${NP} -I% bash -c \
-    "_trap_err() { 1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; exit 1; }; trap '_trap_err' ERR; \
-     if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
+  unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  ${XARGS} </dev/stdin -P${NP} -I% bash -c "set -e; \
+    _trap_exit() { \
+      if [ \"0\" != \"\$?\" ]; then \
+        1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; \
+        exit 1; \
+      fi; \
+    }; \
+    trap '_trap_exit' EXIT; \
+    if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"

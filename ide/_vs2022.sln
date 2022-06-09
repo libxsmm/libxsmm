@@ -248,11 +248,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dense_packedbcrm", "..\samp
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{0A26FB8E-4C10-4098-AB4F-956394AA8D8D}"
-	ProjectSection(SolutionItems) = preProject
-		..\samples\deeplearning\common\dnn_common.h = ..\samples\deeplearning\common\dnn_common.h
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trans", "..\tests\trans.vcxproj", "{C9CA7758-C0C9-4A50-9757-115410B599B0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
@@ -418,6 +413,21 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pyfr_driver_asp_reg", "..\s
 	ProjectSection(ProjectDependencies) = postProject
 		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libxsmm_dnn", "libxsmm_dnn", "{5BBDF1BB-7ECA-41D2-9DF5-431997E66DFC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{FA18BA23-5A41-46FE-BDFE-40977F60FA2C}"
+	ProjectSection(SolutionItems) = preProject
+		..\samples\deeplearning\libxsmm_dnn\include\dnn_common.h = ..\samples\deeplearning\libxsmm_dnn\include\dnn_common.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_conv.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_conv.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fc.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fc.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fusedbn.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fusedbn.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fusedgn.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_fusedgn.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_opt.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_opt.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_pool.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_pool.h
+		..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_smax.h = ..\samples\deeplearning\libxsmm_dnn\include\libxsmm_dnn_smax.h
 	EndProjectSection
 EndProject
 Global
@@ -1310,7 +1320,6 @@ Global
 		{87E8DB3A-EDDF-441F-81A5-27052DE316BB} = {FD191424-DD79-4B60-B004-7B6224898031}
 		{FE7A7F77-2363-480D-A2C5-D9B72260A8AB} = {973D0A79-FB54-4673-84D8-39C531F4B3DB}
 		{7E33EB2B-7C25-4308-A86E-6D9A90F8613D} = {973D0A79-FB54-4673-84D8-39C531F4B3DB}
-		{0A26FB8E-4C10-4098-AB4F-956394AA8D8D} = {19D4CE59-98AA-421B-B824-34017E235623}
 		{C9CA7758-C0C9-4A50-9757-115410B599B0} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{2582DF4E-C0DE-4DA4-A9E6-EA4988E31620} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{28175CF1-E92D-4A85-B8C8-1EBD7FF47E13} = {19D4CE59-98AA-421B-B824-34017E235623}
@@ -1343,6 +1352,8 @@ Global
 		{2378F0B4-09E7-4826-A442-7BF26CD91873} = {C4C1477D-6DEA-4CB0-994C-B68418378D9D}
 		{5B9C8774-5DE0-4776-A3FD-39D25DF37B44} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 		{AC124956-1E2F-4C76-8C0C-96C81B9FB4CD} = {5B9C8774-5DE0-4776-A3FD-39D25DF37B44}
+		{5BBDF1BB-7ECA-41D2-9DF5-431997E66DFC} = {19D4CE59-98AA-421B-B824-34017E235623}
+		{FA18BA23-5A41-46FE-BDFE-40977F60FA2C} = {5BBDF1BB-7ECA-41D2-9DF5-431997E66DFC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}

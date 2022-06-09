@@ -30,7 +30,7 @@ for (i = 0; i < nn; ++i) {
     if (ri < info->min_ref) info->min_ref = ri;
     if (ri > info->max_ref) info->max_ref = ri;
 
-    if (LIBXSMM_NOTNAN(ti) && inf > ta) {
+    if (LIBXSMM_NOTNAN(ti) && (inf > ta || ti == ri)) {
       const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
 
       /* minimum/maximum of test set */

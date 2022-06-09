@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
   /* dense routine */
   l_start = libxsmm_timer_tick();
 #if 1
-  for ( l_n = 0; l_n < REPS; l_n++) {
+  for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
     for ( l_i = 0; l_i < NB; l_i++) {
       for ( l_j = 0; l_j < K; l_j++) {
         for ( l_jj = 0; l_jj < C; l_jj++) {
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
   gemm_param.b.primary = l_b;
   gemm_param.c.primary = l_c_asm_csr;
    l_start = libxsmm_timer_tick();
-  for ( l_n = 0; l_n < REPS; l_n++) {
+  for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
     mykernel_csr( &gemm_param );
   }
   l_end = libxsmm_timer_tick();

@@ -360,7 +360,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_simd_packed_width - i_simd_packed_valid, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
     } else {
-      char l_id = (char)i_n_blocking;
+      char l_id = LIBXSMM_CAST_CHAR(i_n_blocking);
       unsigned char l_data[32];
       unsigned int l_count;
 
@@ -482,7 +482,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                                     l_n * i_micro_kernel_config->datatype_size_in, 1,
                                                     i_n_blocking,
                                                     l_n );
-    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+    } else if ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
                                         i_micro_kernel_config->b_vmove_instruction,

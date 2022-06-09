@@ -3,9 +3,6 @@
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
 fi
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-  exit 0;
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
   exit 0;
 fi
@@ -34,8 +31,7 @@ i = 0
 for m in randnum:
     for n in randnum:
         for k in randnumk:
-            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
-                 + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
+            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' 100 100 100\n'
             if 0 == (i % 2):
                 f1.write(line)
             else:
@@ -45,20 +41,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 USI8F32 nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 USI8F32 nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 USI8F32 addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 USI8F32 offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 SUI8UI8 strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 USI8F32 strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 USI8F32 addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 USI8F32 offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 SUI8UI8 strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 USI8F32 strdbr 5 1 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

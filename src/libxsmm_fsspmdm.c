@@ -317,7 +317,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
       libxsmm_free( fp );
 #endif
@@ -329,7 +329,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
 #endif
@@ -341,7 +341,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
 #endif
@@ -637,7 +637,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse1 );
       libxsmm_free( fp );
 #endif
@@ -649,7 +649,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse2 );
       libxsmm_free( fp );
 #endif
@@ -661,7 +661,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
 #if !defined(__APPLE__) && !defined(__arm64__)
-      void* fp;
+      void* fp = NULL;
       LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
 #endif
@@ -742,7 +742,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
-    void* fp;
+    void* fp = NULL;
     LIBXSMM_ASSIGN127( &fp, &handle->kernel );
     libxsmm_free( fp );
 #endif
@@ -763,7 +763,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
-    void* fp;
+    void* fp = NULL;
     LIBXSMM_ASSIGN127( &fp, &handle->kernel );
     libxsmm_free( fp );
 #endif

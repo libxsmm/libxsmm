@@ -186,9 +186,6 @@
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemmnn.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -296,6 +293,9 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_mateltwise_aarch64_sve.h">
       <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

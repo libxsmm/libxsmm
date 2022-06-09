@@ -157,7 +157,15 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
                 }
                 else feature_cpu = LIBXSMM_X86_AVX512; /* AVX512-Common */
               }
-              else feature_cpu = LIBXSMM_X86_AVX2;
+              else {
+                unsigned int edx2;
+                feature_cpu = LIBXSMM_X86_AVX2;
+                /* check if we are on ADL or newer */
+                LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx2, edx2);
+                if (LIBXSMM_CPUID_CHECK(eax, 0x00000010)) { /* AVX_VNNI */
+                  feature_cpu = LIBXSMM_X86_AVX2_ADL;
+                }
+              }
             }
             else feature_cpu = LIBXSMM_X86_AVX;
           }
@@ -188,7 +196,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
         if (LIBXSMM_X86_AVX <= feature_cpu) {
           LIBXSMM_XGETBV(0, eax, edx);
           if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
-            feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX2, feature_cpu);
+            feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX2_ADL, feature_cpu);
             if (LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
               feature_os = LIBXSMM_MIN(LIBXSMM_X86_AVX512_CPX, feature_cpu);
               if (LIBXSMM_X86_AVX512_SPR <= feature_cpu && 7 <= maxleaf
@@ -221,7 +229,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n", compiler_support, name);
         }
 # endif
-# if !defined(NDEBUG) && defined(__OPTIMIZE__)
+# if defined(__OPTIMIZE__) && !defined(NDEBUG) && !defined(LIBXSMM_BUILD) /* warning limited to header-only */
         fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 # endif
 # if !defined(__APPLE__) || !defined(__MACH__) /* permitted features */
@@ -318,6 +326,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     } break;
     case LIBXSMM_X86_AVX512_VL256_CPX: {
       target_arch = "avx512_vl256_cpx";
+    } break;
+    case LIBXSMM_X86_AVX2_ADL: {
+      target_arch = "adl";
     } break;
     case LIBXSMM_X86_AVX2: {
       target_arch = "hsw";

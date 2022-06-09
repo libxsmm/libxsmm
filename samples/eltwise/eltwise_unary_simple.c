@@ -64,7 +64,7 @@ float gelu(float x) {
 }
 
 float gelu_inv(float x) {
-  return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*PI))* LIBXSMM_EXPF(-0.5f*x*x) );
+  return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*PI)) * LIBXSMM_EXPF(-0.5f*x*x) );
 }
 
 float fp32_unary_compute(float in, unsigned int op) {
@@ -285,7 +285,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type unary_type;
   libxsmm_meltwfunction_unary unary_kernel;

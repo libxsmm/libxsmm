@@ -657,14 +657,14 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         lda_transpose,
         i_xgemm_desc->ldb,
         i_xgemm_desc->ldc,
-        1. /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
+        1.f /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.f : 1.f) /*beta is already in the flags?*/,
         (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch);
     else if (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype))
       l_xgemm_desc_opa = libxsmm_dgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
         lda_transpose,
         i_xgemm_desc->ldb,
         i_xgemm_desc->ldc,
-        1. /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
+        1.0 /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.0 : 1.0) /*beta is already in the flags?*/,
         (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch);
     else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
@@ -787,7 +787,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       (libxsmm_datatype)i_xgemm_desc->datatype, (libxsmm_datatype)i_xgemm_desc->datatype,
       i_xgemm_desc->k /*m*/, i_xgemm_desc->m /*n*/,
       i_xgemm_desc->lda, i_xgemm_desc->m,
-      i_xgemm_desc->flags, LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
+      LIBXSMM_CAST_USHORT(i_xgemm_desc->flags), LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
 
     memset(&l_mateltwise_gp_reg_mapping, 0, sizeof(l_mateltwise_gp_reg_mapping));
 
@@ -986,7 +986,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         /* advance C pointer */
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
-                                                       l_m_blocking*l_micro_kernel_config.datatype_size_out );
+                                                       (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_out );
 
         /* advance A pointer */
         if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
@@ -1005,7 +1005,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                         l_m_blocking*l_micro_kernel_config.datatype_size_in );
+                                                         (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_in );
 
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_R, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_help_3, 0,
                                                 l_gp_reg_mapping.gp_reg_a );
@@ -1021,7 +1021,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         } else {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                         l_m_blocking*l_micro_kernel_config.datatype_size_in );
+                                                         (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_in );
         }
 
         /* close M loop */
@@ -1062,7 +1062,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     /* reser A pointer */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                   l_xgemm_desc_opa->m*l_micro_kernel_config.datatype_size_in );
+                                                   (unsigned long long)l_xgemm_desc_opa->m*l_micro_kernel_config.datatype_size_in );
 
     /* advance B pointer */
     if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {

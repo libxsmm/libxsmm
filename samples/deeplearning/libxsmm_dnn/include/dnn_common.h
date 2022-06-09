@@ -106,7 +106,7 @@ LIBXSMM_INLINE void truncate_mask_fp32_bf16(float* in, float* out, unsigned int 
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    union libxsmm_bfloat16_f32 t;
+    libxsmm_bfloat16_f32 t;
 
     t.f = in[i];
     t.i[0] = 0;
@@ -402,10 +402,10 @@ LIBXSMM_INLINE void quantize_buffer_uchar(float *in_buffer, unsigned char *out_b
 LIBXSMM_INLINE void init_buf_range(float* buf, size_t size, float low, float high)
 {
   int i;
-  float range = high - low;
+  const float scale = (high - low) / ((float)RAND_MAX);
   zero_buf(buf, size);
   for (i = 0; i < (int)size; ++i) {
-    buf[i] = (((float)rand())/RAND_MAX)*range+low;
+    buf[i] = scale * (float)rand() + low;
   }
 }
 
@@ -2386,29 +2386,29 @@ LIBXSMM_INLINE void naive_fullyconnected_fused_fp(naive_fullyconnected_t* param,
 #endif
   for (ofm = 0; ofm < nOFm; ++ofm) {
     for(img = 0; img < nImg; ++img) {
-      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = (float)0;
+      float accum = 0.f;
       for (ifm = 0; ifm < nIFm; ++ifm) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) +=
-          LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
+        accum += LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
       }
       if ( param->fuse_type == 1 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
+        accum += bias_ptr[ofm];
       } else if ( param->fuse_type == 2 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+        accum = ( accum > 0 ) ? accum : 0;
       } else if ( param->fuse_type == 4 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+        accum = ( accum > 0 ) ? accum : 0;
       } else if ( param->fuse_type == 8 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
+        accum = ((float)tanh((double)accum/2.0)+1.0f)/2.0f;
       } else if ( param->fuse_type == 3 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+        accum += bias_ptr[ofm];
+        accum = ( accum > 0 ) ? accum : 0;
       } else if ( param->fuse_type == 5 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ( LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) > 0 ) ? LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) : 0;
+        accum += bias_ptr[ofm];
+        accum = ( accum > 0 ) ? accum : 0;
       } else if ( param->fuse_type == 9 ) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) += bias_ptr[ofm];
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = ((float)tanh((double)LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm)/2.0)+1.0f)/2.0f;
+        accum += bias_ptr[ofm];
+        accum = ((float)tanh((double)accum/2.0)+1.0f)/2.0f;
       }
+      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = accum;
     }
   }
 }
