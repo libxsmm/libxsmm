@@ -31,17 +31,21 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   INFO=${HERE}/tool_cpuinfo.sh
   NP=${PEXEC_NP:-$1}; SP=${PEXEC_SP:-$2}; SP_DEFAULT=2
   if [ -e "${INFO}" ]; then
-    NC=$(${INFO} -nc)
-    NT=$(${INFO} -nt)
+    NC=$(${INFO} -nc); NT=$(${INFO} -nt)
   fi
-  if [ ! "${NP}" ] || [ "0" = "$((0<NP))" ]; then
-    NP=$(((NC*SP_DEFAULT)<=NT?(NC*SP_DEFAULT):NC))
+  if [ ! "${NP}" ] || [ "0" != "$((1>NP))" ]; then
+    NP=${NC}
   fi
   if [ "${NP}" ]; then
-    if [ "${SP}" ] && [ "0" != "$((1<SP))" ]; then
+    if [ ! "${SP}" ]; then
+      NP=$((NP*SP_DEFAULT))
+    elif [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
     fi
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
+      if [ "${OMP_NUM_THREADS}" ] && [ "0" != "$((OMP_NUM_THREADS<=NT))" ]; then
+        NP=$((NP/OMP_NUM_THREADS))
+      fi
       export OMP_NUM_THREADS=$((NT/NP))
     else
       export OMP_NUM_THREADS=1
