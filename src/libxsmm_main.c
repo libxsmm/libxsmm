@@ -679,7 +679,7 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
-  const char* const env_verbose_banner = getenv("LIBXSMM_VERBOSE_BANNER");
+  const char *const env_verbose_banner = getenv("LIBXSMM_VERBOSE_BANNER");
   const int verbose_banner = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity
     || NULL == env_verbose_banner || '\0' == *env_verbose_banner
     || 0 != atoi(env_verbose_banner)) ? 1 : 0);
