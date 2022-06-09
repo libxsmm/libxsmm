@@ -56,14 +56,25 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   fi
   unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
   ${XARGS} </dev/stdin -P${NP} -I% bash -c "set -e; \
-    _trap_exit() { \
+    _PEXEC_NARGS=\$(IFS=\" \"; set -- %; echo \"\$#\"); \
+    _PEXEC_TRAP_EXIT() { \
       if [ \"0\" != \"\$?\" ]; then \
-        1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; \
+        if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
+          1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; \
+        else \
+          1>&2 echo \" -> ERROR: %\"; \
+        fi; \
         exit 1; \
       fi; \
     }; \
-    trap '_trap_exit' EXIT; \
-    if [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; then source %; else %; fi"
+    trap '_PEXEC_TRAP_EXIT' EXIT; \
+    if [ \"1\" = \"\${_PEXEC_NARGS}\" ] && \
+       [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; \
+    then \
+      source %; \
+    else \
+      %; \
+    fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
