@@ -329,7 +329,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
   /* Check that the arch is supported */
   if ( io_generated_code->arch < LIBXSMM_X86_AVX2 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     goto cleanup;
   }
 
