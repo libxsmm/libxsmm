@@ -228,7 +228,6 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     libxsmm_gemm_param gemm_param;
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -250,8 +249,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark dense */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_dense && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         gemm_param.b.primary = (void*)aa_dense;
@@ -266,8 +265,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark sparse (regular) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -278,8 +277,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark sparse (wide) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -290,8 +289,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Benchmark sparse (widest) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -548,7 +547,6 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     libxsmm_gemm_param gemm_param;
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -570,8 +568,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark dense */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_dense && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       for ( i = 0; i < 250; ++i ) {
         gemm_param.b.primary = (void*)aa_dense;
@@ -586,8 +584,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark sparse (regular) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse1 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -598,8 +596,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark sparse (wide) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse2 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -610,8 +608,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Benchmark sparse (widest) */
-    memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
     if ( NULL != k_sparse4 && NULL != B && NULL != C ) {
+      memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
