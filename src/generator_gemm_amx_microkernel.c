@@ -764,7 +764,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
                 i_micro_kernel_config->vector_name,
                 reg_0, maskid, 1, 0 );
 
-            if (i_micro_kernel_config->m_remainder == 0) {
+            if (i_micro_kernel_config->m_remainder == 0 || tile_in_last_tilerow == 0) {
               libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
                                                             LIBXSMM_X86_INSTR_VCVTNE2PS2BF16,
                                                             i_micro_kernel_config->vector_name,
