@@ -1218,6 +1218,11 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
+  if ( LIBXSMM_NEQ(l_beta, 0.0) && (cvt_C_to_vnni > 0) ) {
+    fprintf(stderr, "Warning: beta needs to be 0.0 when C_vnni fusion is requested... seting beta to 0.0...\n");
+    l_beta = 0.0;
+  }
+
   /* setting static GEMM parameters */
   l_gemm_def.alpha = l_alpha;
   l_gemm_def.beta = l_beta;
