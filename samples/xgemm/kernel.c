@@ -1536,6 +1536,7 @@ int main(int argc, char* argv []) {
         } else {
           printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
         }
+        printf("CL reproducer is : srun ./kernel_fused %d %d %d %d %d %d %g %g %d %d %d %d %s %s %s %d %d %d %d %d %d %d\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, "nopf", argv[8], argv[9], l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop, cvt_C_to_vnni);
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
