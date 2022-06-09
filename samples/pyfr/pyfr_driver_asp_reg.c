@@ -32,12 +32,12 @@ LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 
 
 int my_csr_reader( const char*           i_csr_file_in,
-                    unsigned int**        o_row_idx,
-                    unsigned int**        o_column_idx,
-                    REALTYPE**            o_values,
-                    unsigned int*         o_row_count,
-                    unsigned int*         o_column_count,
-                    unsigned int*         o_element_count ) {
+                   unsigned int**        o_row_idx,
+                   unsigned int**        o_column_idx,
+                   REALTYPE**            o_values,
+                   unsigned int*         o_row_count,
+                   unsigned int*         o_column_count,
+                   unsigned int*         o_element_count ) {
   FILE *l_csr_file_handle;
   const unsigned int l_line_length = 512;
   char l_line[512/*l_line_length*/+1];
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* l_c_gold_betazero;
   REALTYPE* l_c_dense_betaone;
   REALTYPE* l_c_dense_betazero;
-  REALTYPE l_max_error = 0.0;
+  libxsmm_matdiff_info diff;
   int l_m;
   int l_n;
   int l_k;
@@ -284,13 +284,13 @@ int main(int argc, char* argv[]) {
 
   /* libxsmm generated code */
   printf("computing libxsmm (A sparse) solution...\n");
-#ifdef _OPENMP
+#if defined(_OPENMP)
   #pragma omp parallel for private(l_z)
 #endif
   for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
     LIBXSMM_CONCATENATE(FSSPMDM,_execute)( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
   }
-#ifdef _OPENMP
+#if defined(_OPENMP)
   #pragma omp parallel for private(l_z)
 #endif
   for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
@@ -307,41 +307,32 @@ int main(int argc, char* argv[]) {
   printf("...done!\n");
 
   /* check for errors */
-  l_max_error = 0;
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c_betazero[l_i]-l_c_gold_betazero[l_i]) > l_max_error ) {
-      l_max_error = (REALTYPE)fabs(l_c_betazero[l_i]-l_c_gold_betazero[l_i]);
-    }
-  }
-  ret |= l_max_error > 1e-4;
-  printf("max error beta=0 (libxmm vs. gold): %f\n", l_max_error);
-  l_max_error = 0;
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c_betaone[l_i]-l_c_gold_betaone[l_i]) > l_max_error ) {
-      l_max_error = (REALTYPE)fabs(l_c_betaone[l_i]-l_c_gold_betaone[l_i]);
-    }
-  }
-  ret |= l_max_error > 1e-4;
-  printf("max error beta=1 (libxmm vs. gold): %f\n", l_max_error);
-  l_max_error = 0;
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c_dense_betazero[l_i]-l_c_gold_betazero[l_i]) > l_max_error ) {
-      l_max_error = (REALTYPE)fabs(l_c_dense_betazero[l_i]-l_c_gold_betazero[l_i]);
-    }
-  }
-  printf("max error beta=0 (dense vs. gold): %f\n", l_max_error);
-  l_max_error = 0;
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c_dense_betaone[l_i]-l_c_gold_betaone[l_i]) > l_max_error ) {
-      l_max_error = (REALTYPE)fabs(l_c_dense_betaone[l_i]-l_c_gold_betaone[l_i]);
-    }
-  }
-  printf("max error beta=1 (dense vs. gold): %f\n", l_max_error);
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+    l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
+  ret |= diff.linf_abs > 1e-4;
+  printf("max error beta=0 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+    l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
+  ret |= diff.linf_abs > 1e-4;
+  printf("max error beta=1 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+    l_c_gold_betazero, l_c_dense_betazero, NULL/*ldref*/, NULL/*ldtst*/);
+  printf("max error beta=0 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+    l_c_gold_betaone, l_c_dense_betaone, NULL/*ldref*/, NULL/*ldtst*/);
+  printf("max error beta=1 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
 
   /* Let's measure performance */
   l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-#ifdef _OPENMP
+#if defined(_OPENMP)
     #pragma omp parallel for private(l_z)
 #endif
     for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
@@ -357,7 +348,7 @@ int main(int argc, char* argv[]) {
 
   l_start = libxsmm_timer_tick();
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-#ifdef _OPENMP
+#if defined(_OPENMP)
     #pragma omp parallel for private(l_z)
 #endif
     for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
