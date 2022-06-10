@@ -123,6 +123,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* Local variables used for A transpose case */
   libxsmm_descriptor_blob           l_blob_opa;
   const libxsmm_gemm_descriptor *   l_xgemm_desc_opa;
+  libxsmm_gemm_descriptor           l_new_xgemm_desc_opa;
   libxsmm_descriptor_blob           l_meltw_blob;
   libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
@@ -149,14 +150,21 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* in case when A needs to be transposed, we need to change temporarily the desciptor dimensions for gemm */
   lda_transpose = i_xgemm_desc->m;
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
-    if (LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype))
+    if (LIBXSMM_DATATYPE_F32 == (libxsmm_datatype)(i_xgemm_desc->datatype)) {
+#if 1
+      l_new_xgemm_desc_opa = *i_xgemm_desc;
+      l_new_xgemm_desc_opa.lda = lda_transpose;
+      l_new_xgemm_desc_opa.flags = (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A));
+      l_xgemm_desc_opa = (const libxsmm_gemm_descriptor *) &l_new_xgemm_desc_opa;
+#else
       l_xgemm_desc_opa = libxsmm_sgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
         lda_transpose,
         i_xgemm_desc->ldb,
         i_xgemm_desc->ldc,
         1.f /*alpha* is unused but used in the BYPASS check? */, (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0 ? 0.f : 1.f) /*beta is already in the flags?*/,
         (unsigned int)((unsigned int)(i_xgemm_desc->flags) & (~LIBXSMM_GEMM_FLAG_TRANS_A)), i_xgemm_desc->prefetch);
-    else if (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype))
+#endif
+    } else if (LIBXSMM_DATATYPE_F64 == (libxsmm_datatype)(i_xgemm_desc->datatype))
       l_xgemm_desc_opa = libxsmm_dgemm_descriptor_init(&l_blob_opa, i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k,
         lda_transpose,
         i_xgemm_desc->ldb,
