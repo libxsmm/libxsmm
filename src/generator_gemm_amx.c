@@ -1124,12 +1124,21 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     libxsmm_blocking_info_t*      n_blocking_info,
     libxsmm_tile_config*          tile_config ) {
   unsigned int im = 0, in = 0, m_blocking = 0, n_blocking = 0, k_blocking = 0, ii = 0, m_tiles = 0, n_tiles = 0;
+  unsigned int has_fused_relu_bitmask = ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ? 1 : 0;
 
   i_micro_kernel_config->m_remainder  = 0;
   m_blocking = 32;
   while (i_xgemm_desc->m % m_blocking != 0) {
     m_blocking--;
   }
+
+  if ((i_xgemm_desc->m > 32) && (has_fused_relu_bitmask > 0) && (m_blocking % 16 != 0)) {
+    m_blocking = 32;
+    while ((i_xgemm_desc->m % m_blocking != 0) || (m_blocking % 16 != 0)) {
+      m_blocking--;
+    }
+  }
+
   if (m_blocking <= 16) {
     m_blocking_info[0].blocking = m_blocking;
     m_blocking_info[0].block_size = i_xgemm_desc->m;
