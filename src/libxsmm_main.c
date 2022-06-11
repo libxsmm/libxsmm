@@ -680,9 +680,9 @@ LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
   const char *const env_verbose_banner = getenv("LIBXSMM_VERBOSE_BANNER");
-  const int verbose_banner = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity
+  const int verbose_banner = (0 > libxsmm_verbosity
     || NULL == env_verbose_banner || '\0' == *env_verbose_banner
-    || 0 != atoi(env_verbose_banner)) ? 1 : 0);
+    || 0 != atoi(env_verbose_banner) ? 1 : 0);
   libxsmm_finalize();
   if (0 != libxsmm_verbosity && 0 != verbose_banner) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
