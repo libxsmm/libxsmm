@@ -1543,7 +1543,11 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   const int cpuid = libxsmm_cpuid();
   int target_archid;
-  if (NULL != arch && '\0' != *arch) {
+  if (NULL != arch && '\0' != *arch
+    && arch != libxsmm_stristr(arch, "default")
+    && arch != libxsmm_stristr(arch, "cpuid")
+    && arch != libxsmm_stristr(arch, "auto"))
+  {
 #if defined(LIBXSMM_PLATFORM_X86)
     const int jit = atoi(arch);
 #endif
