@@ -63,7 +63,7 @@ void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*         
   if (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512) {
     if (is_32_bit_relu == 1) {
       if (store_bitmask == 1) {
-        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, zero_vreg, inout_vreg, aux_vreg, 6 );
+        libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, zero_vreg, inout_vreg, aux_vreg, 5 );
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVMSKPS, i_micro_kernel_config->vector_name, aux_vreg, LIBXSMM_X86_VEC_REG_UNDEF, aux_gpr, 0 );
         libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_MOVB, gpr_bitmask, LIBXSMM_X86_GP_REG_UNDEF, 0, store_bitmask_offset, aux_gpr, 1);
       }
