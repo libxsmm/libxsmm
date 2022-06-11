@@ -102,7 +102,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
                                    unsigned int i_max_ops,
                                    libxsmm_asparse_reg_op* o_ops,
                                    unsigned int* o_n_ops) {
-  unsigned int l_done = 0, l_op_idx = 0;
+  unsigned int l_done = 0, l_op_idx = 0, l_r;
   unsigned int l_row_offs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_acc_idxs[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
   unsigned int l_grp_rows[LIBXSMM_ASPARSE_REG_MAX_M_BLOCK][LIBXSMM_ASPARSE_REG_MAX_M_BLOCK];
@@ -116,8 +116,16 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
     goto cleanup;
   }
 
+  /* Mark all-zero rows as done */
+  for ( l_r = 0; l_r < i_m; l_r++) {
+    if ( i_row_idx[l_r + 1] == i_row_idx[l_r] ) {
+      l_done_rows[l_r] = 1;
+      l_done++;
+    }
+  }
+
   /* Process the rows */
-  for ( l_done = 0; l_done < i_m; ) {
+  while ( l_done < i_m ) {
     unsigned int l_msz, l_mtot;
 
     /* Reset the arrays */
@@ -127,7 +135,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
 
     /* Construct a bundle of row groups */
     for ( l_msz = 0, l_mtot = 0; l_done < i_m && l_mtot < i_m_blocking; l_msz++ ) {
-      unsigned int l_m, l_r, l_z, l_ngrp = 0;
+      unsigned int l_m, l_z, l_ngrp = 0;
 
       /* Pick a pending row */
       for ( l_m = 0, l_r = ~0U; l_m < i_m; l_m++ ) {
@@ -721,41 +729,41 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         }
       }
     }
+  }
 
-    /* In the case of beta = 0 handle all-zero rows */
-    if ( l_beta0 ) {
-      unsigned int l_zeroed = 0;
+  /* In the case of beta = 0 handle all-zero rows */
+  if ( l_beta0 ) {
+    unsigned int l_zeroed = 0;
 
-      for ( l_z = 0; l_z < i_xgemm_desc->m; l_z++ ) {
-        if ( i_row_idx[l_z + 1] == i_row_idx[l_z] ) {
-          unsigned int l_mov_insn;
-          unsigned int l_c_disp = l_z*i_xgemm_desc->ldc*l_fbytes;
+    for ( l_z = 0; l_z < i_xgemm_desc->m; l_z++ ) {
+      if ( i_row_idx[l_z + 1] == i_row_idx[l_z] ) {
+        unsigned int l_mov_insn;
+        unsigned int l_c_disp = l_z*i_xgemm_desc->ldc*l_fbytes;
 
-          /* Handle non-temporal stores */
-          if ( 0 != l_c_is_nt ) {
-            l_mov_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVNTPD : LIBXSMM_X86_INSTR_VMOVNTPS;
-          } else {
-            l_mov_insn = l_micro_kernel_config.c_vmove_instruction;
-          }
+        /* Handle non-temporal stores */
+        if ( 0 != l_c_is_nt ) {
+          l_mov_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVNTPD : LIBXSMM_X86_INSTR_VMOVNTPS;
+        } else {
+          l_mov_insn = l_micro_kernel_config.c_vmove_instruction;
+        }
 
-          if ( !l_zeroed ) {
-            libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
-                                                      l_micro_kernel_config.vxor_instruction,
-                                                      l_micro_kernel_config.vector_name,
-                                                      l_base_c_reg, l_base_c_reg, l_base_c_reg );
-            l_zeroed = 1;
-          }
+        if ( !l_zeroed ) {
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                                    l_micro_kernel_config.vxor_instruction,
+                                                    l_micro_kernel_config.vector_name,
+                                                    l_base_c_reg, l_base_c_reg, l_base_c_reg );
+          l_zeroed = 1;
+        }
 
-          for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              l_micro_kernel_config.instruction_set,
-                                              l_mov_insn,
-                                              l_gp_reg_mapping.gp_reg_c,
-                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              l_c_disp + l_n*l_vbytes,
-                                              l_micro_kernel_config.vector_name,
-                                              l_base_c_reg, 0, 0, 1 );
-          }
+        for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            l_micro_kernel_config.instruction_set,
+                                            l_mov_insn,
+                                            l_gp_reg_mapping.gp_reg_c,
+                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                            l_c_disp + l_n*l_vbytes,
+                                            l_micro_kernel_config.vector_name,
+                                            l_base_c_reg, 0, 0, 1 );
         }
       }
     }
