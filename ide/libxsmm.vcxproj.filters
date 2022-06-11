@@ -282,6 +282,9 @@
     <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_matdiff.h">
+      <Filter>src\template</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -328,9 +331,6 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_math.c">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
-      <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_common.c">
       <Filter>src\generator</Filter>
