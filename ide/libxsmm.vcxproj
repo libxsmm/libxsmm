@@ -40,7 +40,6 @@
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
-    <ClInclude Include="..\include\libxsmm_spmdm.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
@@ -110,10 +109,6 @@
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_matrixeqn.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_end.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_xcopy.h" />
     <ClInclude Include="..\src\perf_jitdump.h" />
@@ -205,44 +200,11 @@
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />
     <ClCompile Include="..\src\libxsmm_rng.c" />
-    <ClCompile Include="..\src\libxsmm_spmdm.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
     <ClCompile Include="..\src\libxsmm_xcopy.c" />
     <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_bfloat16_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_fp32_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>

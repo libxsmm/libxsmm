@@ -338,14 +338,13 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$
           $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_memory.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
-          $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.c libxsmm_xcopy.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c )
+          libxsmm_gemm.c libxsmm_xcopy.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c )
 SRCFILES_GEN_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(notdir $(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c)) \
           libxsmm_cpuid_arm.c libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c libxsmm_matrixeqn.c)
 

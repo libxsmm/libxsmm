@@ -66,9 +66,6 @@
     <ClInclude Include="..\include\libxsmm_cpuid.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_spmdm.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -116,18 +113,6 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_end.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_rng.h">
       <Filter>include</Filter>
@@ -329,9 +314,6 @@
     <ClCompile Include="..\src\libxsmm_perf.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_spmdm.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -348,18 +330,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_bfloat16_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_fp32_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_common.c">
