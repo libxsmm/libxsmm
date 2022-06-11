@@ -9,10 +9,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-#include <math.h>
 
 #define REALTYPE double
 #define REPS 100
