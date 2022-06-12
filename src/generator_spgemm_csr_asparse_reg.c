@@ -126,6 +126,7 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
 
   /* Process the rows */
   while ( l_done < i_m ) {
+    int l_r_nnz = 0, l_avg_nnz = 0;
     unsigned int l_msz, l_mtot;
 
     /* Reset the arrays */
@@ -137,11 +138,21 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
     for ( l_msz = 0, l_mtot = 0; l_done < i_m && l_mtot < i_m_blocking; l_msz++ ) {
       unsigned int l_m, l_z, l_ngrp = 0;
 
-      /* Pick a pending row */
+      /* Pick the best pending row */
       for ( l_m = 0, l_r = ~0U; l_m < i_m; l_m++ ) {
         if ( 0 == l_done_rows[l_m] ) {
-          l_r = l_m;
-          break;
+          int l_m_nnz = i_row_idx[l_m + 1] - i_row_idx[l_m];
+
+          /* No rows in the bundle, so go with this one */
+          if ( 0 == l_msz ) {
+            l_r = l_m;
+            l_r_nnz = l_m_nnz;
+            break;
+          /* Some rows in the bundle, so try and match the nnz count */
+          } else if ( ~0U == l_r || abs( l_avg_nnz - l_m_nnz ) < abs( l_avg_nnz - l_r_nnz ) ) {
+            l_r = l_m;
+            l_r_nnz = l_m_nnz;
+          }
         }
       }
 
@@ -150,6 +161,9 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
       l_done_rows[l_r] = 1;
       l_acc_idxs[l_msz] = l_mtot;
       l_ngrp++; l_mtot++; l_done++;
+
+      /* Update the average NNZ count of our bundle */
+      l_avg_nnz = ((l_mtot - 1)*l_avg_nnz + l_r_nnz) / l_mtot;
 
       /* Add in any rows which share this rows non-zero pattern */
       for ( l_m = 0; l_m < i_m && l_done < i_m && l_mtot < i_m_blocking; l_m++ ) {
@@ -173,6 +187,9 @@ void libxsmm_asparse_reg_sequence( unsigned int i_m,
             l_grp_rows[l_msz][l_ngrp] = l_m;
             l_done_rows[l_m] = 1;
             l_ngrp++; l_mtot++; l_done++;
+
+            /* Update the average NNZ count of our bundle */
+            l_avg_nnz = ((l_mtot - 1)*l_avg_nnz + l_r_nnz) / l_mtot;
           }
         }
       }
