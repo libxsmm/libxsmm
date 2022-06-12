@@ -282,14 +282,14 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                                                  const unsigned int      i_ways,
                                                                  const unsigned int      i_mask_reg[4],
                                                                  const unsigned int      i_n,
-                                                                 const unsigned int      is_16bit_ld ) {
+                                                                 const unsigned int      is_non32bit_ld ) {
   unsigned int l_i = 0;
   unsigned int l_q = 0;
   unsigned int l_stride_offset = i_ways * i_ld;
   unsigned int tmp_dst = ( i_vec_reg_dst_start + i_ways ) % 32;
 
   /* supports only up to 32 registers */
-  if ( i_ways > 32 - is_16bit_ld ) {
+  if ( i_ways > 32 - is_non32bit_ld ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -304,7 +304,7 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
     unsigned int l_dst = l_i + i_vec_reg_dst_start;
     unsigned int l_way_quarters = (i_n / i_ways) + (l_i < (i_n % i_ways));
 
-    if ( is_16bit_ld ) {
+    if ( is_non32bit_ld ) {
       /* 16-bit quarter loads: use loads + insert */
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_ld_instr,
                                         i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld,
@@ -1234,6 +1234,50 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_microkernel( libxsmm
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
+                                                                        const char              i_vector_name,
+                                                                        const unsigned int      i_vec_reg_srcdst_start,
+                                                                        const unsigned int      i_vec_reg_tmp_start )
+{
+  if ( (i_vec_reg_srcdst_start + 16 < i_vec_reg_tmp_start) || (i_vec_reg_srcdst_start + 16 < i_vec_reg_tmp_start) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* first shuffle stage */
+  {
+    unsigned char l_in_idx[16] = { 0x0, 0x0, 0x2, 0x2, 0x4, 0x4, 0x6, 0x6, 0x8, 0x8, 0xa, 0xa, 0xc, 0xc, 0xe, 0xe};
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
+                                                                l_in_idx, i_vec_reg_srcdst_start, i_vec_reg_tmp_start, 1,
+                                                                LIBXSMM_X86_INSTR_VPUNPCKLBW, LIBXSMM_X86_INSTR_VPUNPCKHBW, 16 );
+  }
+
+  /* second shuffle stage */
+  {
+    unsigned char l_in_idx[16] = { 0x0, 0x0, 0x1, 0x1, 0x4, 0x4, 0x5, 0x5, 0x8, 0x8, 0x9, 0x9, 0xc, 0xc, 0xd, 0xd};
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
+                                                                l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 2,
+                                                                LIBXSMM_X86_INSTR_VPUNPCKLWD, LIBXSMM_X86_INSTR_VPUNPCKHWD, 16 );
+  }
+
+  /* third shuffle stage */
+  {
+    unsigned char l_in_idx[16] = { 0x0, 0x0, 0x1, 0x1, 0x2, 0x2, 0x3, 0x3, 0x8, 0x8, 0x9, 0x9, 0xa, 0xa, 0xb, 0xb};
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
+                                                                l_in_idx, i_vec_reg_srcdst_start, i_vec_reg_tmp_start, 4,
+                                                                LIBXSMM_X86_INSTR_VPUNPCKLDQ, LIBXSMM_X86_INSTR_VPUNPCKHDQ, 16 );
+  }
+
+  /* fourth shuffle stage */
+  {
+    unsigned char l_in_idx[16] = { 0x0, 0x0, 0x1, 0x1, 0x2, 0x2, 0x3, 0x3, 0x4, 0x4, 0x5, 0x5, 0x6, 0x6, 0x7, 0x7};
+    libxsmm_generator_transform_Xway_unpack_network_avx_avx512( io_generated_code, i_vector_name,
+                                                                l_in_idx, i_vec_reg_tmp_start, i_vec_reg_srcdst_start, 8,
+                                                                LIBXSMM_X86_INSTR_VPUNPCKLQDQ, LIBXSMM_X86_INSTR_VPUNPCKHQDQ, 16 );
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
                                                               const char              i_vector_name,
                                                               const unsigned int      i_vec_reg_src_start,
@@ -1517,29 +1561,226 @@ void libxsmm_generator_transform_norm_to_normt_08bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_gp_reg_m_loop,
                                                                          const unsigned int                      i_gp_reg_n_loop,
                                                                          const unsigned int                      i_gp_reg_mask,
+                                                                         const unsigned int                      i_gp_reg_mask_2,
                                                                          const unsigned int                      i_mask_reg_0,
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const unsigned int                      i_mask_reg_2,
                                                                          const unsigned int                      i_mask_reg_3,
+                                                                         const unsigned int                      i_mask_reg_4,
+                                                                         const unsigned int                      i_mask_reg_5,
+                                                                         const unsigned int                      i_mask_reg_6,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  LIBXSMM_UNUSED( i_mask_reg_0 );
-  LIBXSMM_UNUSED( i_mask_reg_1 );
-  LIBXSMM_UNUSED( i_mask_reg_2 );
-  LIBXSMM_UNUSED( i_mask_reg_3 );
-  LIBXSMM_UNUSED( i_gp_reg_mask );
-
-#if 0
   /* optimized shuffle network for SIMD aligned sizes */
-  if ( (i_mateltwise_desc->m % 8 == 0) && (i_mateltwise_desc->n % 8 == 0) ) {
-  } else {
-#endif
-      libxsmm_generator_transform_norm_to_normt_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
-                                                                             i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
-                                                                             i_micro_kernel_config, i_mateltwise_desc );
-#if 0
+  /* Partial 64x16 blocks */
+  const unsigned int l_n_64rem = i_mateltwise_desc->n % 64;
+  const unsigned int l_m_16rem  = i_mateltwise_desc->m % 16;
+
+  const unsigned int l_n_64mul = i_mateltwise_desc->n - l_n_64rem;
+  const unsigned int l_m_16mul =  i_mateltwise_desc->m - l_m_16rem;
+
+  const unsigned int l_m_16rem_odd = (l_m_16rem % 4);
+  const unsigned int l_ld_instr = ( l_m_16rem_odd ) ? LIBXSMM_X86_INSTR_VMOVDQU8 : LIBXSMM_X86_INSTR_VBROADCASTI32X4;
+
+  unsigned int l_mask_regs[4] = { 0 };
+
+  /* set the masks for the load+blend stage */
+  unsigned long long l_mask = 0x00f0;
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
+                                   i_gp_reg_mask, l_mask );
+  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
+                                     i_gp_reg_mask, i_mask_reg_0 );
+
+  l_mask = 0x0f00;
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
+                                   i_gp_reg_mask, l_mask );
+  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
+                                     i_gp_reg_mask, i_mask_reg_1 );
+  l_mask = 0xf000;
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
+                                   i_gp_reg_mask, l_mask );
+  libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
+                                     i_gp_reg_mask, i_mask_reg_2 );
+
+  /* set the masks for the load+blend stage for partial 64x16 blocks */
+  if ( l_m_16rem > 0 ) {
+    const unsigned int l_m_16rem_masks = ( l_m_16rem_odd ) ? 1 : 4;
+    unsigned int l_i = 0;
+
+    l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
+    l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
+
+    /* set mask with l_m_16rem_mask = (( l_m_16rem_odd ) ? (1 << l_m_16rem) - 1 : (1 << (l_m_16rem >> 2)) - 1) */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (unsigned long long) 1 );
+    if ( l_m_16rem_odd ) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHLQ, i_gp_reg_mask, (unsigned long long) l_m_16rem );
+    }
+    else {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHLQ, i_gp_reg_mask, (unsigned long long) (l_m_16rem >> 2) );
+    }
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg_mask, (unsigned long long) 1 );
+
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[0] );
+    for (l_i = 1; l_i < l_m_16rem_masks; ++l_i) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHLQ, i_gp_reg_mask, (unsigned long long) 4 );
+      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
+    }
   }
-#endif
+
+  if ( l_n_64rem > 0 ) {
+    /* set mask with l_n_64rem_mask = (1 << l_n_64rem) - 1 */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask_2, (unsigned long long) 1 );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SHLQ, i_gp_reg_mask_2, (unsigned long long) l_n_64rem );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, i_gp_reg_mask_2, (unsigned long long) 1 );
+
+    if ( l_m_16rem_odd ) {
+      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
+    }
+  }
+
+  /* Transpose x16 blocks */
+  if ( l_m_16mul > 0 ) {
+    /* use full 128-bit loads */
+    l_mask_regs[0] = 0;            l_mask_regs[1] = i_mask_reg_0;
+    l_mask_regs[2] = i_mask_reg_1; l_mask_regs[3] = i_mask_reg_2;
+
+    /* open m loop */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_m_loop, 0);
+    libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_m_loop, 16 );
+
+    /* transpose 64x16 blocks */
+    if ( l_n_64mul > 0 ) {
+      /* open n loop */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0);
+      libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 64 );
+
+      /* load 16 registers with four quarter rows */
+      libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                  i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                                                  LIBXSMM_X86_INSTR_VBROADCASTI32X4, 16, l_mask_regs, 64, 0 );
+
+      /* advance input pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_in, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * 64 );
+
+      /* 4-stage shuffle */
+      libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 16 );
+
+      /* storing 16 registers */
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, 16 );
+
+      /* advance output pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_out, i_micro_kernel_config->datatype_size_in * 64 );
+
+      /* close n footer */
+      libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                  i_gp_reg_n_loop, l_n_64mul );
+    }
+
+    /* transpose n_64rem x 16 block */
+    if ( l_n_64rem > 0 ) {
+      /* set store mask */
+      if ( !l_m_16rem_odd ) {
+        libxsmm_x86_instruction_mask_move(io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6);
+      }
+
+      /* load 16 registers with four quarter rows */
+      libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code,
+                                                                  i_micro_kernel_config->vector_name,
+                                                                  i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                                                  LIBXSMM_X86_INSTR_VBROADCASTI32X4, 16, l_mask_regs, l_n_64rem, 0 );
+
+      /* 4-stage shuffle */
+      libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 16 );
+
+      /* storing 16 registers */
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, 16 );
+
+      /* restore quarter load masks */
+      if ( !l_m_16rem_odd ) {
+        libxsmm_x86_instruction_mask_move(io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_GPR_LD, i_gp_reg_mask, i_mask_reg_6);
+      }
+    }
+
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_out, (16 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - (i_micro_kernel_config->datatype_size_in * l_n_64mul) );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ,
+                                     i_gp_reg_in, (i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * l_n_64mul) - (16 * i_micro_kernel_config->datatype_size_in) );
+
+    /* close m loop */
+    libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                i_gp_reg_m_loop, l_m_16mul );
+  }
+
+  /* Transpose m_16rem blocks */
+  if ( l_m_16rem > 0 ) {
+    /* use partial 128-bit loads */
+    l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
+    l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
+
+    /* transpose 64 x m_16rem blocks */
+    if ( l_n_64mul > 0 ) {
+      /* open n loop */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_n_loop, 0 );
+      libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 64 );
+
+      /* load 16 registers with four quarter rows */
+      libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                  i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                                                  l_ld_instr, 16, l_mask_regs, 64, l_m_16rem_odd );
+
+      /* advance input pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_in, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in * 64 );
+
+      /* 4-stage shuffle */
+      libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 16 );
+
+      /* storing l_m_16rem registers */
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 0, 0, l_m_16rem );
+
+      /* advance output pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_out, i_micro_kernel_config->datatype_size_in * 64 );
+
+      /* close n footer */
+      libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                  i_gp_reg_n_loop, l_n_64mul );
+    }
+
+    /* transpose n_64rem x m_16rem block */
+    if ( l_n_64rem > 0 ) {
+      /* load 16 registers with four quarter rows */
+      libxsmm_generator_transform_Xway_quarter_load_blend_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                  i_gp_reg_in, 0, i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                                                  l_ld_instr, 16, l_mask_regs, l_n_64rem, l_m_16rem_odd );
+
+      /* 4-stage shuffle */
+      libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( io_generated_code, i_micro_kernel_config->vector_name, 0, 16 );
+
+      /* restore store mask */
+      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVQ_GPR_LD, i_gp_reg_mask_2, i_mask_reg_6 );
+
+      /* storing m_16rem registers */
+      libxsmm_generator_transform_Xway_full_store_avx_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                                              i_gp_reg_out, 0, i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                                              i_micro_kernel_config->vmove_instruction_out, 1, i_mask_reg_6, l_m_16rem );
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -3014,7 +3255,9 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
     if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT ) {
       libxsmm_generator_transform_norm_to_normt_08bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
                                                                           l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
-                                                                          l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
+                                                                          l_gp_reg_mask, l_gp_reg_mask_2,
+                                                                          l_mask_reg_0, l_mask_reg_1, l_mask_reg_2, l_mask_reg_3,
+                                                                          l_mask_reg_4, l_mask_reg_5, l_mask_reg_6,
                                                                           i_micro_kernel_config, i_mateltwise_desc );
     } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T ) {
       libxsmm_generator_transform_vnni4_to_vnni4t_08bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,

@@ -91,7 +91,7 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                                                  const unsigned int      i_ways,
                                                                  const unsigned int      i_mask_reg[4],
                                                                  const unsigned int      i_n,
-                                                                 const unsigned int      is_16bit_ld );
+                                                                 const unsigned int      is_non32bit_ld );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_32way_half_store_avx512( libxsmm_generated_code* io_generated_code,
@@ -216,6 +216,12 @@ void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_ge
                                                                       const unsigned int      i_vec_reg_dst_start );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( libxsmm_generated_code* io_generated_code,
+                                                                        const char              i_vector_name,
+                                                                        const unsigned int      i_vec_reg_srcdst_start,
+                                                                        const unsigned int      i_vec_reg_tmp_start );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                          libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                          const unsigned int                      i_gp_reg_in,
@@ -242,10 +248,14 @@ void libxsmm_generator_transform_norm_to_normt_08bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_gp_reg_m_loop,
                                                                          const unsigned int                      i_gp_reg_n_loop,
                                                                          const unsigned int                      i_gp_reg_mask,
+                                                                         const unsigned int                      i_gp_reg_mask_2,
                                                                          const unsigned int                      i_mask_reg_0,
                                                                          const unsigned int                      i_mask_reg_1,
                                                                          const unsigned int                      i_mask_reg_2,
                                                                          const unsigned int                      i_mask_reg_3,
+                                                                         const unsigned int                      i_mask_reg_4,
+                                                                         const unsigned int                      i_mask_reg_5,
+                                                                         const unsigned int                      i_mask_reg_6,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
