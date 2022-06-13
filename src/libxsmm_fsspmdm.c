@@ -221,13 +221,15 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 
   /* We have at least one kernel */
   if (0 < nkerns) {
-    libxsmm_timer_tickint t;
+    const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
+    const int fsspmdm_hint = (NULL == env_fsspmdm_hint? 0 : atoi(env_fsspmdm_hint));
     double *B = NULL, *C = NULL;
     double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     libxsmm_gemm_param gemm_param;
+    libxsmm_timer_tickint t;
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -301,7 +303,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
+    if ( 4 <= fsspmdm_hint || 0 > fsspmdm_hint || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -311,7 +313,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4 ) {
+    if ( 1 == fsspmdm_hint || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) ) {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
@@ -323,7 +325,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4 ) {
+    if ( 2 == fsspmdm_hint || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) ) {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
@@ -335,7 +337,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
+    if ( 3 == fsspmdm_hint || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) ) {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
@@ -540,13 +542,15 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 
   /* We have at least one kernel */
   if (0 < nkerns) {
-    libxsmm_timer_tickint t;
+    const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
+    const int fsspmdm_hint = (NULL == env_fsspmdm_hint ? 0 : atoi(env_fsspmdm_hint));
     float *B = NULL, *C = NULL;
     double dt_dense = ( NULL != k_dense ) ? 1e5 : 1e6;
     double dt_sparse1 = ( NULL != k_sparse1 ) ? 1e5 : 1e6;
     double dt_sparse2 = ( NULL != k_sparse2 ) ? 1e5 : 1e6;
     double dt_sparse4 = ( NULL != k_sparse4 ) ? 1e5 : 1e6;
     libxsmm_gemm_param gemm_param;
+    libxsmm_timer_tickint t;
 
     /* If we have two or more kernels then try to benchmark them */
     if (2 <= nkerns) {
@@ -620,7 +624,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4 ) {
+    if ( 4 <= fsspmdm_hint || 0 > fsspmdm_hint || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) ) {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -630,7 +634,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4 ) {
+    if ( 1 == fsspmdm_hint || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) ) {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
@@ -642,7 +646,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4 ) {
+    if ( 2 == fsspmdm_hint || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) ) {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
@@ -654,7 +658,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2 ) {
+    if ( 3 == fsspmdm_hint || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) ) {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
