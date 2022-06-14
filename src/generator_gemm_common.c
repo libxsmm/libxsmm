@@ -1612,9 +1612,9 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       }
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         assert(0 == (i_xgemm_desc->lda % io_micro_kernel_config->vector_length));
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU16;
       } else {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU16;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VPBROADCASTW;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
