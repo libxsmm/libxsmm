@@ -44,7 +44,7 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     fi
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
       if [ "${OMP_NUM_THREADS}" ] && [ "0" != "$((OMP_NUM_THREADS<=NT))" ]; then
-        NP=$((NP/OMP_NUM_THREADS))
+        NP=$(((NP+OMP_NUM_THREADS-1)/OMP_NUM_THREADS))
       fi
       export OMP_NUM_THREADS=$((NT/NP))
     else
