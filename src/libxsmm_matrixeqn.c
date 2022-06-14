@@ -775,6 +775,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   libxsmm_blasint global_timestamp = 0;
   libxsmm_blasint max_reg_score = 0;
   libxsmm_blasint *tmp_storage_pool = NULL;
+  assert(NULL != libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist, nothing to optimize!\n" );
   }

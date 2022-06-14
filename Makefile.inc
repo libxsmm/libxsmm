@@ -348,9 +348,9 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 # check if the Intel Development Tools are available
 # 1: classic, 2: next-gen (opt-in)
-INTEL ?= $(if $(filter 2,$(words $(filter icpc% icpx% icc% icx%, \
-  $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
-  $(shell $(CC)  $(CC_VERSION_FLAG)  2>/dev/null | head -n1 | cut -d' ' -f1)))),1,0)
+INTEL ?= $(if $(filter 2,$(words $(filter icpc% icpx% icc% icx% Intel%, \
+  $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | cut -d' ' -f1) \
+  $(shell $(CC)  $(CC_VERSION_FLAG)  | head -n1 | cut -d' ' -f1)) )),1,0)
 
 ifneq (0,$(INTEL))
   ifeq (,$(shell echo "$${FC}"))
@@ -363,7 +363,7 @@ ifneq (0,$(INTEL))
 else
   ifeq (,$(call which,$(CXX)))
     CXX := g++
-  else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null; echo "$$?"))
     CXX := g++
   else ifneq (gcc,$(call qndir,$(call which,$(CC))))
     ifeq (g++,$(call qndir,$(call which,$(CXX))))
@@ -372,7 +372,7 @@ else
   endif
   ifeq (,$(call which,$(CC)))
     CC := gcc
-  else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null; echo "$$?"))
     CC := gcc
   endif
   ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
@@ -480,7 +480,7 @@ endif
 ifneq (,$(strip $(FC)))
   ifeq (,$(call which,$(FC)))
     FIXFC ?= 1
-  else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null; echo "$$?"))
     FIXFC ?= 1
   else ifneq (gfortran,$(call qndir,$(call which,$(FC))))
     ifeq (g++,$(call qndir,$(call which,$(CXX))))
