@@ -317,7 +317,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   const unsigned int l_movu_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVUPD : LIBXSMM_X86_INSTR_VMOVUPS;
   const unsigned int l_broadcast_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VBROADCASTSD : LIBXSMM_X86_INSTR_VBROADCASTSS;
 
-  const unsigned int l_c_is_nt =  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags;
   const unsigned int l_beta0 = LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags;
 
   unsigned int l_num_reg, l_used_reg = 0, l_values_per_reg, l_packed_values_per_reg = 1;
@@ -325,7 +324,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   unsigned int l_base_c_reg = 0, l_ld_reg = 0, l_base_perm_reg = 0, l_vbytes;
 
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
-  unsigned int l_n_ops, l_op_idx;
+  unsigned int l_n_ops, l_op_idx, l_mov_insn;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -363,6 +362,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
   /* Define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+
+  /* Decide about NTS-hint (leading dimension is already considered in micro-kernel config) */
+  l_mov_insn = (0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags)
+    ? l_micro_kernel_config.c_vmove_nts_instruction : l_micro_kernel_config.c_vmove_instruction);
 
   /* Inner chunk size */
   if ( i_xgemm_desc->n == l_micro_kernel_config.vector_length ) {
@@ -594,7 +597,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
       for ( l_z = 0; l_z < op.n; l_z++ ) {
-        unsigned int l_fma_insn, l_mov_insn;
         unsigned int l_acc_idx = op.acc_idxs[l_z];
         unsigned int l_u = op.src_vals[l_z], l_v;
         unsigned int l_uneg = op.src_sgns[l_z] == -1;
@@ -603,7 +605,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
 
         /* Look up our FMA instruction */
-        l_fma_insn = l_fma_tbl[l_fp64][l_uneg][l_acc_neg_tbl[l_n][l_acc_idx]];
+        unsigned int l_fma_insn = l_fma_tbl[l_fp64][l_uneg][l_acc_neg_tbl[l_n][l_acc_idx]];
         l_acc_neg_tbl[l_n][l_acc_idx] = 0;
 
         /* See if we need to load/zero the accumulator */
@@ -628,7 +630,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
             }
 
             /* As we'll be writing to C later, consider pre-fetching into cache */
-            if ( 0 == l_c_is_nt ) {
+            if ( l_mov_insn == l_micro_kernel_config.c_vmove_instruction ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
                                                 LIBXSMM_X86_INSTR_PREFETCHW,
                                                 l_gp_reg_mapping.gp_reg_c,
@@ -728,16 +730,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
         /* See if we need to save the accumulator */
         if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_z] ) {
-          /* Handle non-temporal stores */
-          if ( 0 != l_c_is_nt ) {
-            l_mov_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVNTPD : LIBXSMM_X86_INSTR_VMOVNTPS;
-          } else {
-            l_mov_insn = l_micro_kernel_config.c_vmove_instruction;
-          }
-
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             l_micro_kernel_config.instruction_set,
-                                            l_mov_insn,
+                                            l_mov_insn, /* Handle non-temporal stores */
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             l_c_disp + l_n*l_vbytes,
@@ -754,15 +749,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
 
     for ( l_z = 0; l_z < i_xgemm_desc->m; l_z++ ) {
       if ( i_row_idx[l_z + 1] == i_row_idx[l_z] ) {
-        unsigned int l_mov_insn;
         unsigned int l_c_disp = l_z*i_xgemm_desc->ldc*l_fbytes;
-
-        /* Handle non-temporal stores */
-        if ( 0 != l_c_is_nt ) {
-          l_mov_insn = (l_fp64) ? LIBXSMM_X86_INSTR_VMOVNTPD : LIBXSMM_X86_INSTR_VMOVNTPS;
-        } else {
-          l_mov_insn = l_micro_kernel_config.c_vmove_instruction;
-        }
 
         if ( !l_zeroed ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -775,7 +762,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
         for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             l_micro_kernel_config.instruction_set,
-                                            l_mov_insn,
+                                            l_mov_insn, /* Handle non-temporal stores */
                                             l_gp_reg_mapping.gp_reg_c,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             l_c_disp + l_n*l_vbytes,
@@ -831,7 +818,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   const unsigned int l_values_per_reg = (l_fp64) ? 2 : 4;
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
 
-  const unsigned int l_c_is_nt =  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags;
+  /* Decide about NTS based on hint/flag and leading dimension */
+  const unsigned int l_c_is_nt = ((0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
+    0 == (i_xgemm_desc->ldc * i_xgemm_desc->n) % l_values_per_reg) ? 1/*true*/ : 0/*false*/);
+
   const unsigned int l_beta0 = LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags;
 
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
@@ -1297,14 +1287,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
   const unsigned int l_fp64 = LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype );
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
-  unsigned int l_vlen, l_vbytes;
+  unsigned int l_vlen, l_vbytes, l_c_is_nt;
   unsigned int l_npacked_reg, l_npacked_values_per_reg;
   unsigned int l_na_off_reg = 0, l_base_a_off_reg = 0;
-
-  const unsigned int l_c_is_nt = !!(LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags);
   const unsigned int l_beta0 = !!(LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags);
-
-  libxsmm_aarch64_sve_type l_svet;
 
   libxsmm_asparse_reg_op *l_ops = (libxsmm_asparse_reg_op*) malloc(sizeof(libxsmm_asparse_reg_op)*LIBXSMM_ASPARSE_REG_MAX_OPS);
   unsigned int l_n_ops, l_op_idx;
@@ -1313,6 +1299,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_const_data_tracker l_const_data_tracker;
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
+  libxsmm_aarch64_sve_type l_svet;
 
   /* Load instruction table [single, double] */
   const unsigned int l_ld_tbl[2] = {
@@ -1342,6 +1329,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   libxsmm_generator_gemm_init_micro_kernel_config_aarch64( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc );
   l_vlen = l_micro_kernel_config.vector_length;
   l_vbytes = l_fbytes*l_vlen;
+
+  /* Decide about NTS based on hint/flag and leading dimension */
+  l_c_is_nt = ((0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
+    0 == (i_xgemm_desc->ldc * i_xgemm_desc->n) % l_vlen) ? 1/*true*/ : 0/*false*/);
 
   /* Inner chunk size */
   if ( i_xgemm_desc->n == l_vlen ) {
