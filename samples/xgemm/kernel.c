@@ -496,7 +496,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
         for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
           for (l_s = 0; l_s < (k / l_k_block); l_s++) {
-            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+            for (l_k2 = l_k_block - 1; l_k2 >= 0; l_k2--) {
               libxsmm_bfloat16_hp tmp_a_f = { 0 }, tmp_b_f = { 0 };
               tmp_a_f.i[0] = 0;
               tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
