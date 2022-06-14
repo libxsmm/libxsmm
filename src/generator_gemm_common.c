@@ -2422,7 +2422,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
   /* select store instruction */
-  unsigned int l_vstore = (0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags))
+  unsigned int l_vstore = (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT == (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags))
     ? i_micro_kernel_config->c_vmove_nts_instruction : i_micro_kernel_config->c_vmove_instruction;
   /* register blocking counter in n- and m-direction */
   unsigned int l_n = 0, l_m = 0;
@@ -2430,9 +2430,6 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   libxsmm_micro_kernel_config l_micro_kernel_config_mod;
   libxsmm_micro_kernel_config *const i_micro_kernel_config_mod = (libxsmm_micro_kernel_config*)&l_micro_kernel_config_mod;
   memcpy(i_micro_kernel_config_mod, i_micro_kernel_config, sizeof(libxsmm_micro_kernel_config));
-  assert(i_micro_kernel_config->c_vmove_nts_instruction != l_vstore
-    || 0 == (i_xgemm_desc->ldc % i_micro_kernel_config->vector_length)
-    || i_xgemm_desc->n < i_micro_kernel_config->vector_length);
 
   /* @TODO fix this test */
 #if !defined(NDEBUG)

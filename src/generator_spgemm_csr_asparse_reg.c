@@ -364,7 +364,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* Decide about NTS-hint (leading dimension is already considered in micro-kernel config) */
-  l_mov_insn = (0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags)
+  l_mov_insn = (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT == (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags)
     ? l_micro_kernel_config.c_vmove_nts_instruction : l_micro_kernel_config.c_vmove_instruction);
   assert(l_micro_kernel_config.c_vmove_nts_instruction != l_mov_insn
     || 0 == (i_xgemm_desc->ldc % l_micro_kernel_config.vector_length)
@@ -822,7 +822,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
   const unsigned int l_fbytes = (l_fp64) ? 8 : 4;
 
   /* Decide about NTS based on hint/flag and leading dimension */
-  const unsigned int l_c_is_nt = ((0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
+  const unsigned int l_c_is_nt = ((LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT == (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
     0 == (i_xgemm_desc->ldc % l_values_per_reg)) ? 1/*true*/ : 0/*false*/);
 
   const unsigned int l_beta0 = LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags;
@@ -1334,7 +1334,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   l_vbytes = l_fbytes*l_vlen;
 
   /* Decide about NTS based on hint/flag and leading dimension */
-  l_c_is_nt = ((0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
+  l_c_is_nt = ((LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT == (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) &&
     0 == (i_xgemm_desc->ldc % l_vlen)) ? 1/*true*/ : 0/*false*/);
 
   /* Inner chunk size */
