@@ -39,14 +39,18 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   if [ "${NP}" ]; then
     if [ ! "${SP}" ]; then
       NP=$((NP*SP_DEFAULT))
+      if [ "${NT}" ] && [ "0" = "$((NP<=NT))" ]; then
+        NP=${NT}
+      fi
     elif [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
     fi
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
       if [ "${OMP_NUM_THREADS}" ] && [ "0" != "$((OMP_NUM_THREADS<=NT))" ]; then
         NP=$(((NP+OMP_NUM_THREADS-1)/OMP_NUM_THREADS))
+      else
+        export OMP_NUM_THREADS=$((NT/NP))
       fi
-      export OMP_NUM_THREADS=$((NT/NP))
     else
       export OMP_NUM_THREADS=1
     fi
@@ -54,7 +58,9 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     export OMP_NUM_THREADS=1
     NP=0
   fi
-  unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  if [ "0" != "$((1!=NP))" ]; then
+    unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  fi
   ${XARGS} </dev/stdin -P${NP} -I% bash -c "set -e; \
     _PEXEC_NARGS=\$(IFS=\" \"; set -- %; echo \"\$#\"); \
     _PEXEC_TRAP_EXIT() { \
