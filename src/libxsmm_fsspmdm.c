@@ -303,7 +303,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( 4 <= fsspmdm_hint || 0 > fsspmdm_hint || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) ) {
+    if ( ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense)
+      || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) )
+    {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -313,7 +315,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( 1 == fsspmdm_hint || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) ) {
+    if ( (1 == fsspmdm_hint && NULL != k_sparse1)
+      || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) )
+    {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
@@ -325,7 +329,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( 2 == fsspmdm_hint || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) ) {
+    if ( (2 == fsspmdm_hint && NULL != k_sparse2)
+      || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) )
+    {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
@@ -337,7 +343,9 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( 3 == fsspmdm_hint || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) ) {
+    if ( (3 == fsspmdm_hint && NULL != k_sparse4)
+      || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) )
+    {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
@@ -624,7 +632,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( 4 <= fsspmdm_hint || 0 > fsspmdm_hint || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) ) {
+    if ( ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense)
+      || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) )
+    {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
@@ -634,7 +644,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (regular) fastest */
-    if ( 1 == fsspmdm_hint || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) ) {
+    if ( (1 == fsspmdm_hint && NULL != k_sparse1)
+      || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) )
+    {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
     } else if ( NULL != k_sparse1 ) {
@@ -646,7 +658,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( 2 == fsspmdm_hint || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) ) {
+    if ( (2 == fsspmdm_hint && NULL != k_sparse2)
+      || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) )
+    {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
     } else if ( NULL != k_sparse2 ) {
@@ -658,7 +672,9 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( 3 == fsspmdm_hint || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) ) {
+    if ( (3 == fsspmdm_hint && NULL != k_sparse4)
+      || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) )
+    {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
     } else if ( NULL != k_sparse4 ) {
