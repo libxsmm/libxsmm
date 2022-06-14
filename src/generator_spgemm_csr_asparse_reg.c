@@ -367,7 +367,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
   l_mov_insn = (0 != (LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags)
     ? l_micro_kernel_config.c_vmove_nts_instruction : l_micro_kernel_config.c_vmove_instruction);
   assert(l_micro_kernel_config.c_vmove_nts_instruction != l_mov_insn
-    || 0 == (i_xgemm_desc->ldc % l_micro_kernel_config.vector_length));
+    || 0 == (i_xgemm_desc->ldc % l_micro_kernel_config.vector_length)
+    || i_xgemm_desc->n < l_micro_kernel_config.vector_length);
 
   /* Inner chunk size */
   if ( i_xgemm_desc->n == l_micro_kernel_config.vector_length ) {
