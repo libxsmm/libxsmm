@@ -271,7 +271,7 @@
 #if !defined(__INTEL_COMPILER) && (defined(__clang__) /*|| defined(__PGLLVM__)*/)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
 #elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
-  && !defined(__INTEL_COMPILER)
+  && !defined(__INTEL_COMPILER) && !defined(__PGLLVM__)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(LIBXSMM_CONCATENATE(no_sanitize_, KIND))
 #else
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND)
@@ -491,7 +491,7 @@
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNMENT);
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
-# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP)
+# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP) && !defined(__PGLLVM__)
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(omp simd nontemporal(__VA_ARGS__))
 # else
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...)
