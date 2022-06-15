@@ -2225,8 +2225,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   }
 
   if  (0 == generated_code.last_error
-# if !defined(NDEBUG)
     && 0 != generated_code.code_size /*check (tcopy issue?)*/
+# if !defined(NDEBUG)
     && generated_code.code_size <= generated_code.buffer_size
 # endif
     /* no error raised */)
