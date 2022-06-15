@@ -17,48 +17,51 @@ XARGS=$(command -v xargs)
 FILE=$(command -v file)
 GREP=$(command -v grep)
 
-# Usage: tool_pexec.sh [<num-tasks>] [<oversubscription-factor>]
-# Use all cores and Hyperthreads like tool_pexec.sh 0 2.
-# Environment variables PEXEC_NP=<num-tasks>, and
-#                       PEXEC_SP=<oversubscription-factor>
-# precede command line arguments.
-# The script reads stdin and intents to spawn one task per line.
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
+  NAME=$(${BASENAME} "$0" .sh)
   INFO=${HERE}/tool_cpuinfo.sh
-  SP_DEFAULT=2; CONSUMED=0
+  LG_DEFAULT="${HERE}/${NAME}.log"
+  QT_DEFAULT=0; SP_DEFAULT=2
+  CONSUMED=0
   while test $# -gt 0; do
     case "$1" in
     -h|--help)
-      echo "Usage: $0 [options]"
-      echo "       -h|--help: this help output"
-      echo "       -v|--verbose  (PEXEC_VB): informative/progress output (stderr)"
-      echo "       -j|--nprocs N (PEXEC_NP): number of processes (scaled by nscale)"
-      echo "       -s|--nscale N (PEXEC_SP): oversubscription; default=${SP_DEFAULT}"
+      if [ "0" != "${QT_DEFAULT}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
+      echo "Usage: ${NAME}.sh [options]"
+      echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
+      echo "       -o|--logfile  [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
+      echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
+      echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
+      echo "       Environment [variables] will precede command line arguments."
+      echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
       echo "Example: seq 100 | xargs -I{} echo \"echo \\\"{}\\\"\" \\"
       echo "                 | tool_pexec.sh"
       echo
       exit 0;;
-    -v|--verbose)
-      VERBOSE=${PEXEC_VB:-1}
+    -q|--quiet)
+      QUIET=1
       shift 1;;
+    -o|--logfile)
+      LOGFILE=$2
+      shift 2;;
     -j|--nprocs)
-      NP=${PEXEC_NP:-$2}
       CONSUMED=$((CONSUMED|1))
+      NP=$2
       shift 2;;
     -s|--nscale)
-      SP=${PEXEC_SP:-$2}
       CONSUMED=$((CONSUMED|2))
+      SP=$2
       shift 2;;
     *)
       if [ "0" = "$((CONSUMED&1))" ]; then
-        NP=${PEXEC_NP:-$1}
         CONSUMED=$((CONSUMED|1))
+        NP=$1
       elif [ "0" = "$((CONSUMED&2))" ]; then
-        SP=${PEXEC_SP:-$1}
         CONSUMED=$((CONSUMED|2))
+        SP=$1
       else
         1>&2 echo "ERROR: found spurious command line argument!"
         exit 1
@@ -66,6 +69,10 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
       shift 1;;
     esac
   done
+  LOGFILE=${PEXEC_LG:-${LOGFILE}}; if [ ! "${LOGFILE}" ]; then LOGFILE=${LG_DEFAULT}; fi
+  QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
+  NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
+  if [ ! "${LOGFILE}" ]; then LOGFILE="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
   fi
@@ -97,35 +104,38 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   if [ "0" != "$((1!=NP))" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
   fi
-  if [ "${VERBOSE}" ] && [ "0" != "${VERBOSE}" ]; then
+  if [ "0" = "${QUIET}" ]; then
     1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
     1>&2 echo
   fi
-  ${XARGS} </dev/stdin -P${NP} -I% bash -c "set -e; \
-    _PEXEC_NARGS=\$(IFS=\" \"; set -- %; echo \"\$#\"); \
+  ${XARGS} </dev/stdin >"${LOGFILE}" 3>&2 2>&1 -P${NP} -I%% bash -c "set -eo pipefail; \
+    _PEXEC_NARGS=\$(IFS=\" \"; set -- %%; echo \"\$#\"); \
     _PEXEC_TRAP_EXIT() { \
-      if [ \"0\" != \"\$?\" ]; then \
+      local _PEXEC_RESULT=\$?; \
+      if [ \"0\" != \"\${_PEXEC_RESULT}\" ]; then \
+        local ERROR=\"ERROR\"; \
+        if [ \"139\" = \"\${_PEXEC_RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
         if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
-          1>&2 echo \" -> ERROR: \$(${BASENAME} %)\"; \
+          1>&3 printf \" -> \${ERROR}[%03d]: \$(${BASENAME} %%)\n\" \${_PEXEC_RESULT}; \
         else \
-          1>&2 echo \" -> ERROR: %\"; \
+          1>&3 printf \" -> \${ERROR}[%03d]: %%\n\" \${_PEXEC_RESULT}; \
         fi; \
         exit 1; \
-      elif [ \"${VERBOSE}\" ] && [ \"0\" != \"${VERBOSE}\" ]; then \
+      elif [ \"0\" = \"${QUIET}\" ]; then \
         if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
-          1>&2 echo \" -> OK: \$(${BASENAME} %)\"; \
+          1>&3 echo \" -> VALID[000]: \$(${BASENAME} %%)\"; \
         else \
-          1>&2 echo \" -> OK: %\"; \
+          1>&3 echo \" -> VALID[000]: %%\"; \
         fi; \
       fi; \
     }; \
-    trap '_PEXEC_TRAP_EXIT' EXIT; \
+    trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"1\" = \"\${_PEXEC_NARGS}\" ] && \
-       [ \"\$(${FILE} -bL --mime % | ${GREP} '^text/')\" ]; \
+       [ \"\$(${FILE} -bL --mime %% | ${GREP} '^text/')\" ]; \
     then \
-      source %; \
+      source %%; \
     else \
-      %; \
+      %%; \
     fi"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
@@ -133,6 +143,6 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     exit ${RESULT}
   fi
 else
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi
