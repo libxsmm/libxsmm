@@ -145,10 +145,11 @@
      &    LIBXSMM_AARCH64_V81           = 2001,                         &
      &    LIBXSMM_AARCH64_V82           = 2002,                         &
      &    LIBXSMM_AARCH64_APPL_M1       = 2101,                         &
-     &    LIBXSMM_AARCH64_SVE256        = 2201,                         &
-     &    LIBXSMM_AARCH64_C7G           = 2202,                         &
-     &    LIBXSMM_AARCH64_SVX512        = 2301,                         &
-     &    LIBXSMM_AARCH64_A64FX         = 2302,                         &
+     &    LIBXSMM_AARCH64_SVE128        = 2201,                         &
+     &    LIBXSMM_AARCH64_SVE256        = 2301,                         &
+     &    LIBXSMM_AARCH64_NEOV1         = 2302,                         &
+     &    LIBXSMM_AARCH64_SVX512        = 2401,                         &
+     &    LIBXSMM_AARCH64_A64FX         = 2402,                         &
      &    LIBXSMM_AARCH64_ALLFEAT       = 2999
 
         !> Generic function type (double-precision).

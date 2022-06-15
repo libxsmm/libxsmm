@@ -840,8 +840,8 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg ) {
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE256 needs to be specified as target arch!\n");
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
     exit(-1);
   }
 
@@ -964,8 +964,8 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
                                                const libxsmm_aarch64_sve_prefetch i_prefetch ) {
   LIBXSMM_UNUSED( i_gp_reg_offset );
 
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: at least ARM SVE256 needs to be specified as target arch!\n");
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: at least ARM SVE128 needs to be specified as target arch!\n");
     exit(-1);
   }
 
@@ -1030,7 +1030,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
   unsigned int l_vec_instr = i_vec_instr;
 
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM SVE needs to be specified as target arch!\n");
     exit(-1);
   }
@@ -1202,8 +1202,8 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
                                                const unsigned int                i_gp_reg_src_1,
                                                const libxsmm_aarch64_sve_pattern i_pattern,
                                                const libxsmm_aarch64_sve_type    i_type ) {
-  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: at least ARM SVE256 needs to be specified as target arch!\n");
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: at least ARM SVE128 needs to be specified as target arch!\n");
     exit(-1);
   }
 

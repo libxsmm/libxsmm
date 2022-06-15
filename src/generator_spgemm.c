@@ -125,11 +125,11 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
                                                     i_row_idx, i_column_idx, i_values );
     /* aarch64 without SVE */
     } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
-                io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+                io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( io_generated_code, i_xgemm_desc,
                                                              i_row_idx, i_column_idx, i_values );
     /* aarch64 with SVE */
-    }  else if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE256 &&
+    }  else if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 &&
                  io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
                                                             i_row_idx, i_column_idx, i_values );

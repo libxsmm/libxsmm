@@ -33,7 +33,7 @@ void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
 
   /* Dense NEON benefits from larger sizes */
   if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
-       libxsmm_target_archid < LIBXSMM_AARCH64_SVE256 ) {
+       libxsmm_target_archid < LIBXSMM_AARCH64_SVE128 ) {
     if ( 0 == N % (2*vl) ) {
       *o_dense = 2*vl;
     }
