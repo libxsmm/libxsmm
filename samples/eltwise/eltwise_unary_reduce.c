@@ -132,9 +132,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   libxsmm_meltw_unary_shape unary_shape = { 0 };
   libxsmm_blasint ld_in = _ld_in;
   libxsmm_meltwfunction_unary kernel = NULL;
-  libxsmm_meltw_unary_param unary_param = { 0 };
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltwfunction_unary kernel2 = NULL;
-  libxsmm_meltw_unary_param params2 = { 0 };
+  libxsmm_meltw_unary_param params2 /*= { 0 }*/;
   if (reduce_rows == 1) {
     unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
   } else {
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
   unsigned long long *cols_ind_array;
   unsigned int *cols_ind_array_32bit;
   libxsmm_meltwfunction_unary kernel = NULL;
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2;
   libxsmm_matdiff_info norms_elts, norms_elts_squared, diff;

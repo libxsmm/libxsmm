@@ -19,12 +19,15 @@ WC=$(command -v wc)
 if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
   if [ "$(command -v lscpu)" ]; then
     NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
-    if [ "" = "${NS}" ]; then NS=1; fi
+    if [ ! "${NS}" ]; then NS=1; fi
     NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$(lscpu | ${GREP} -m1 "CPU(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+    if [ ! "${NT}" ]; then
+      NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+    fi
   elif [ -e /proc/cpuinfo ]; then
     NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-    if [ "" = "${NS}" ]; then NS=1; fi
+    if [ ! "${NS}" ]; then NS=1; fi
     NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
     NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   elif [ "Darwin" = "$(uname)" ]; then
@@ -34,6 +37,7 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
   fi
   if [ "${NC}" ] && [ "${NT}" ]; then
     HT=$((NT/NC))
+    NC=$((NT/HT))
   else
     NS=1 NC=1 NT=1 HT=1
   fi

@@ -1681,7 +1681,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
       if (l_micro_kernel_config.n_loop_exists > 0) {
         /* We should adjust n advancements in C/B etc. Also advance by M since all M adjustments have been revoked by the n loop footer */
-        libxsmm_generator_gemm_amx_adjust_n_advancement(io_generated_code, io_loop_label_tracker, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config, -1 * i_xgemm_desc->n );
+        libxsmm_generator_gemm_amx_adjust_n_advancement(io_generated_code, io_loop_label_tracker, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config, (libxsmm_blasint)i_xgemm_desc->n * -1 );
         libxsmm_generator_gemm_amx_adjust_m_advancement(io_generated_code, io_loop_label_tracker, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config, m0 );
       } else if (l_micro_kernel_config.m_loop_exists == 0) {
         /* We should advance by M since no advancements have been made  */

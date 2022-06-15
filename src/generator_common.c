@@ -1037,7 +1037,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_UNSUP_ARCH:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "unsupported arch for the selected module was specified (error #%u)!", i_error_code );
+        "unsupported architecture (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_LDA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

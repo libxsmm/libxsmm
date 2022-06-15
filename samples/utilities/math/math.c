@@ -111,6 +111,8 @@ int main(int argc, char* argv[])
       else printf("\n");
     }
 
+    printf("\n"); /* separate exp and sqrt output */
+
     /* collect gold data for sqrt function */
     { start = libxsmm_timer_tick();
       for (j = 0; j < nrpt; ++j) {

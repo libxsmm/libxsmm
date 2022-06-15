@@ -33,9 +33,9 @@
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>hello</ProjectName>
+    <ProjectName>hello_cpp</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectGuid>{558B85BC-AA23-4049-B721-41E4F5C814B2}</ProjectGuid>
+    <ProjectGuid>{8A01D2F0-9D5C-4EB1-8941-B3EB7FA3D6D0}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

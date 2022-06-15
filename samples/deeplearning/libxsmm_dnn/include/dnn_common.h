@@ -106,7 +106,7 @@ LIBXSMM_INLINE void truncate_mask_fp32_bf16(float* in, float* out, unsigned int 
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    union libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_hp t;
 
     t.f = in[i];
     t.i[0] = 0;

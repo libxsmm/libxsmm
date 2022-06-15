@@ -679,8 +679,12 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
+  const char *const env_verbose_banner = getenv("LIBXSMM_VERBOSE_BANNER");
+  const int verbose_banner = (0 > libxsmm_verbosity
+    || NULL == env_verbose_banner || '\0' == *env_verbose_banner
+    || 0 != atoi(env_verbose_banner) ? 1 : 0);
   libxsmm_finalize();
-  if (0 != libxsmm_verbosity) { /* print statistic on termination */
+  if (0 != libxsmm_verbosity && 0 != verbose_banner) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
@@ -1072,7 +1076,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
           /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
           ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
-            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C)
+            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C/*KNx*/)
           : INTERNAL_PREFETCH;
 #endif
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
@@ -1305,7 +1309,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   if (NULL != registry) {
     int i;
 #if (0 != LIBXSMM_SYNC)
-    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK, &libxsmm_lock_global)) {
 # if (1 < INTERNAL_REGLOCK_MAXN)
     { /* acquire locks and thereby shortcut lazy initialization later on */
       int ntry = 0, n;
@@ -1446,7 +1450,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 # elif !defined(LIBXSMM_UNIFY_LOCKS)
     LIBXSMM_LOCK_RELEASE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
-    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global); }
 #endif
   }
 }
@@ -1542,7 +1546,11 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   const int cpuid = libxsmm_cpuid();
   int target_archid;
-  if (NULL != arch && '\0' != *arch) {
+  if (NULL != arch && '\0' != *arch
+    && arch != libxsmm_stristr(arch, "default")
+    && arch != libxsmm_stristr(arch, "cpuid")
+    && arch != libxsmm_stristr(arch, "auto"))
+  {
 #if defined(LIBXSMM_PLATFORM_X86)
     const int jit = atoi(arch);
 #endif
@@ -3947,4 +3955,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xrelease)(const void* key, const int* k
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
-

@@ -140,6 +140,7 @@
 # define LIBXSMM_CHECK_SHORT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, SHRT_MIN, SHRT_MAX), "Value cannot be represented as SHORT")
 # define LIBXSMM_CHECK_UCHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, 0, UCHAR_MAX), "Value cannot be represented as UCHAR")
 # define LIBXSMM_CHECK_ICHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, SCHAR_MIN, SCHAR_MAX), "Value cannot be represented as ICHAR")
+# define LIBXSMM_CHECK_CHAR(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, CHAR_MIN, CHAR_MAX), "Value cannot be represented as CHAR")
 # define LIBXSMM_CHECK_UINT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, 0, UINT_MAX), "Value cannot be represented as UINT")
 # define LIBXSMM_CHECK_INT(VALUE) LIBXSMM_ASSERT_MSG(LIBXSMM_CHECK_INTEGER(VALUE, INT_MIN, INT_MAX), "Value cannot be represented as INT")
 #elif !defined(_MSC_VER)
@@ -151,6 +152,7 @@
 # define LIBXSMM_CHECK_SHORT(VALUE) ((void)0/*dummy*/)
 # define LIBXSMM_CHECK_UCHAR(VALUE) ((void)0/*dummy*/)
 # define LIBXSMM_CHECK_ICHAR(VALUE) ((void)0/*dummy*/)
+# define LIBXSMM_CHECK_CHAR(VALUE) ((void)0/*dummy*/)
 # define LIBXSMM_CHECK_UINT(VALUE) ((void)0/*dummy*/)
 # define LIBXSMM_CHECK_INT(VALUE) ((void)0/*dummy*/)
 #else
@@ -162,6 +164,7 @@
 # define LIBXSMM_CHECK_SHORT(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_UCHAR(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_ICHAR(VALUE) 0/*dummy*/
+# define LIBXSMM_CHECK_CHAR(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_UINT(VALUE) 0/*dummy*/
 # define LIBXSMM_CHECK_INT(VALUE) 0/*dummy*/
 #endif
@@ -179,6 +182,7 @@
 #define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_CHECK_SHORT(VALUE), VALUE))
 #define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_CHECK_UCHAR(VALUE), VALUE))
 #define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_CHECK_ICHAR(VALUE), VALUE))
+#define LIBXSMM_CAST_CHAR(VALUE) ((char)(LIBXSMM_CHECK_CHAR(VALUE), VALUE))
 #define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_CHECK_UINT(VALUE), VALUE))
 #define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_CHECK_INT(VALUE), VALUE))
 
@@ -264,10 +268,10 @@
 # define LIBXSMM_ATTRIBUTE_UNUSED
 # define LIBXSMM_ATTRIBUTE_USED
 #endif
-#if !defined(__INTEL_COMPILER) && (defined(__clang__) || defined(__PGLLVM__))
+#if !defined(__INTEL_COMPILER) && (defined(__clang__) /*|| defined(__PGLLVM__)*/)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(no_sanitize(LIBXSMM_STRINGIFY(KIND)))
 #elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 8) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) \
-  && !defined(__INTEL_COMPILER)
+  && !defined(__INTEL_COMPILER) && !defined(__PGLLVM__)
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND) LIBXSMM_ATTRIBUTE(LIBXSMM_CONCATENATE(no_sanitize_, KIND))
 #else
 # define LIBXSMM_ATTRIBUTE_NO_SANITIZE(KIND)
@@ -487,7 +491,7 @@
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNMENT);
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
-# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP)
+# if defined(LIBXSMM_OPENMP_SIMD) && (201811/*v5.0*/ <= _OPENMP) && !defined(__PGLLVM__)
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...) LIBXSMM_PRAGMA(omp simd nontemporal(__VA_ARGS__))
 # else
 #   define LIBXSMM_PRAGMA_NONTEMPORAL(...)
