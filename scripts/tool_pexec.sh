@@ -27,31 +27,43 @@ GREP=$(command -v grep)
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
-  SP_DEFAULT=2
+  SP_DEFAULT=2; CONSUMED=0
   while test $# -gt 0; do
     case "$1" in
     -h|--help)
       echo "Usage: $0 [options]"
       echo "       -h|--help: this help output"
-      echo "       -v|--verbose: more on stderr (PEXEC_VERBOSE)"
-      echo "       -j|--nprocs N: number of processes (PEXEC_NP)"
-      echo "       -s|--nscale N: oversubscription (PEXEC_SP)"
+      echo "       -v|--verbose  (PEXEC_VB): informative/progress output (stderr)"
+      echo "       -j|--nprocs N (PEXEC_NP): number of processes (scaled by nscale)"
+      echo "       -s|--nscale N (PEXEC_SP): oversubscription; default=${SP_DEFAULT}"
       echo
       echo "Example: seq 100 | xargs -I{} echo \"echo \\\"{}\\\"\" \\"
       echo "                 | tool_pexec.sh"
       echo
       exit 0;;
     -v|--verbose)
-      VERBOSE=${PEXEC_VERBOSE:-1}
+      VERBOSE=${PEXEC_VB:-1}
       shift 1;;
     -j|--nprocs)
       NP=${PEXEC_NP:-$2}
+      CONSUMED=$((CONSUMED|1))
       shift 2;;
     -s|--nscale)
       SP=${PEXEC_SP:-$2}
+      CONSUMED=$((CONSUMED|2))
       shift 2;;
     *)
-      break;;
+      if [ "0" = "$((CONSUMED&1))" ]; then
+        NP=${PEXEC_NP:-$1}
+        CONSUMED=$((CONSUMED|1))
+      elif [ "0" = "$((CONSUMED&2))" ]; then
+        SP=${PEXEC_SP:-$1}
+        CONSUMED=$((CONSUMED|2))
+      else
+        1>&2 echo "ERROR: found spurious command line argument!"
+        exit 1
+      fi
+      shift 1;;
     esac
   done
   if [ -e "${INFO}" ]; then
@@ -84,6 +96,10 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   fi
   if [ "0" != "$((1!=NP))" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  fi
+  if [ "${VERBOSE}" ] && [ "0" != "${VERBOSE}" ]; then
+    1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
+    1>&2 echo
   fi
   ${XARGS} </dev/stdin -P${NP} -I% bash -c "set -e; \
     _PEXEC_NARGS=\$(IFS=\" \"; set -- %; echo \"\$#\"); \
