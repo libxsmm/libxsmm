@@ -47,6 +47,66 @@ typedef struct gemm_def {
   float scf;
 } gemm_def;
 
+double get_random_posneg_p5_num() {
+  double tmp = libxsmm_rng_f64()-0.5;
+
+  if ( tmp < -0.4 ) {
+    tmp = -0.4;
+  } else if ( tmp < -0.3 ) {
+    tmp = -0.3;
+  } else if ( tmp < -0.2 ) {
+    tmp = -0.2;
+  } else if ( tmp < -0.1 ) {
+    tmp = -0.1;
+  } else if ( tmp < 0 ) {
+    tmp = 0;
+  } else if ( tmp < 0.1 ) {
+    tmp = 0.1;
+  } else if ( tmp < 0.2 ) {
+    tmp = 0.2;
+  } else if ( tmp < 0.3 ) {
+    tmp = 0.3;
+  } else if ( tmp < 0.4 ) {
+    tmp = 0.4;
+  } else if ( tmp < 0.5 ) {
+    tmp = 0.5;
+  } else {
+    tmp = 0.5;
+  }
+
+  return tmp;
+}
+
+double get_random_pos_p5_num() {
+  double tmp = libxsmm_rng_f64();
+
+  if ( tmp < 0.1 ) {
+    tmp = 0.1;
+  } else if ( tmp < 0.2 ) {
+    tmp = 0.2;
+  } else if ( tmp < 0.3 ) {
+    tmp = 0.3;
+  } else if ( tmp < 0.4 ) {
+    tmp = 0.4;
+  } else if ( tmp < 0.5 ) {
+    tmp = 0.5;
+  } else if ( tmp < 0.6 ) {
+    tmp = 0.6;
+  } else if ( tmp < 0.7 ) {
+    tmp = 0.7;
+  } else if ( tmp < 0.8 ) {
+    tmp = 0.8;
+  } else if ( tmp < 0.9 ) {
+    tmp = 0.9;
+  } else if ( tmp < 1.0 ) {
+    tmp = 1.0;
+  } else {
+    tmp = 1.0;
+  }
+
+  return tmp;
+}
+
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -62,26 +122,26 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
     for (l_i = 0; l_i < ld; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         if ( dtype == LIBXSMM_DATATYPE_F64 ) {
-          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = (libxsmm_rng_f64()-0.5);
+          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)(libxsmm_rng_f64()-0.5);
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-          libxsmm_bfloat16_f32 tmp/* = { 0 }*/;
-          tmp.f = (float)(libxsmm_rng_f64()-0.5);
+          libxsmm_bfloat16_f32 tmp /*= { 0 }*/;
+          tmp.f = (float)get_random_posneg_p5_num();
           bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
           union libxsmm_bfloat8_f16 tmp/* = { 0 }*/;
-          tmp.hf = libxsmm_convert_f32_to_f16( (float)(libxsmm_rng_f64()-0.5) );
+          tmp.hf = libxsmm_convert_f32_to_f16( (float)get_random_posneg_p5_num() );
           bf8_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-          i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  ((libxsmm_rng_f64()-0.5) * 40.0);
+          i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (get_random_posneg_p5_num() * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
-          s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)((libxsmm_rng_f64()-0.5) * 40.0);
+          s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(get_random_posneg_p5_num() * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
           if ( pos_val_only != 0 ) {
-            uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (unsigned char) (libxsmm_rng_f64() * 20.0);
+            uc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (unsigned char) (get_random_pos_p5_num() * 20.0);
           } else {
-            sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) ((libxsmm_rng_f64()-0.5) * 40.0);
+            sc_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) (get_random_posneg_p5_num() * 40.0);
           }
         } else {
         }
@@ -550,6 +610,16 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   } else {
     error = 100.0;
   }
+
+  printf("\nPrinting Norms:\n");
+  printf("L1 reference  : %.25g\n", l_diff.l1_ref);
+  printf("L1 test       : %.25g\n", l_diff.l1_tst);
+  printf("L2 abs.error  : %.24f\n", l_diff.l2_abs);
+  printf("L2 rel.error  : %.24f\n", l_diff.l2_rel);
+  printf("Linf abs.error: %.24f\n", l_diff.linf_abs);
+  printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
+  printf("Check-norm    : %.24f\n", l_diff.normf_rel);
+  printf("\n");
 
   return error;
 }
