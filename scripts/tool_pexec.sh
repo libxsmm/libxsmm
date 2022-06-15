@@ -23,13 +23,37 @@ GREP=$(command -v grep)
 #                       PEXEC_SP=<oversubscription-factor>
 # precede command line arguments.
 # The script reads stdin and intents to spawn one task per line.
-# Example: seq 100 | xargs -I{} echo "echo \"{}\"" \
-#                  | tool_pexec.sh
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
 if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   INFO=${HERE}/tool_cpuinfo.sh
-  NP=${PEXEC_NP:-$1}; SP=${PEXEC_SP:-$2}; SP_DEFAULT=2
+  SP_DEFAULT=2
+  while test $# -gt 0; do
+    case "$1" in
+    -h|--help)
+      echo "Usage: $0 [options]"
+      echo "       -h|--help: this help output"
+      echo "       -v|--verbose: more on stderr (PEXEC_VERBOSE)"
+      echo "       -j|--nprocs N: number of processes (PEXEC_NP)"
+      echo "       -s|--nscale N: oversubscription (PEXEC_SP)"
+      echo
+      echo "Example: seq 100 | xargs -I{} echo \"echo \\\"{}\\\"\" \\"
+      echo "                 | tool_pexec.sh"
+      echo
+      exit 0;;
+    -v|--verbose)
+      VERBOSE=${PEXEC_VERBOSE:-1}
+      shift 1;;
+    -j|--nprocs)
+      NP=${PEXEC_NP:-$2}
+      shift 2;;
+    -s|--nscale)
+      SP=${PEXEC_SP:-$2}
+      shift 2;;
+    *)
+      break;;
+    esac
+  done
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
   fi
@@ -71,6 +95,12 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
           1>&2 echo \" -> ERROR: %\"; \
         fi; \
         exit 1; \
+      elif [ \"${VERBOSE}\" ] && [ \"0\" != \"${VERBOSE}\" ]; then \
+        if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
+          1>&2 echo \" -> OK: \$(${BASENAME} %)\"; \
+        else \
+          1>&2 echo \" -> OK: %\"; \
+        fi; \
       fi; \
     }; \
     trap '_PEXEC_TRAP_EXIT' EXIT; \
