@@ -281,7 +281,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_avx_avx2_avx512_kloop( libxsmm_
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       libxsmm_generator_initialize_avx512_mask( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, LIBXSMM_X86_AVX512_MASK, i_micro_kernel_config->vector_length-i_packed_remainder, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) );
     } else {
-      char l_id = LIBXSMM_CAST_CHAR(l_n_blocking);
+      const char l_id = LIBXSMM_CAST_CHAR(128 > l_n_blocking ? ((int)l_n_blocking) : 127);
       unsigned char l_data[32];
       unsigned int l_count;
 
