@@ -15,10 +15,10 @@
 BASENAME=$(command -v basename)
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
-GREP=$(command -v grep)
+SED=$(command -v sed)
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
-if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
+if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(${BASENAME} "$0" .sh)
   INFO=${HERE}/tool_cpuinfo.sh
@@ -108,17 +108,33 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
     1>&2 echo
   fi
-  ${XARGS} </dev/stdin >"${LOGFILE}" 3>&2 2>&1 -P${NP} -I%% bash -c "set -eo pipefail; \
+  ${XARGS} </dev/stdin 3>&2 2>&1 -P${NP} -I%% bash -c "set -eo pipefail; \
     _PEXEC_NARGS=\$(IFS=\" \"; set -- %%; echo \"\$#\"); \
+    _PEXEC_BASENAME() { \
+      local _PEXEC_BASENAME_PRE=\"\" _PEXEC_BASENAME_CMD=\"\" _PEXEC_BASENAME_ARGS=\"\"; \
+      local _PEXEC_BASENAME_INPUT=\"\$*\" _PEXEC_BASENAME_WORDS=\"\";
+      for WORD in \${_PEXEC_BASENAME_INPUT}; do \
+        if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
+          _PEXEC_BASENAME_CMD=\$(${BASENAME} \"\${WORD}\"); \
+          _PEXEC_BASENAME_PRE=\${_PEXEC_BASENAME_WORDS}; \
+          _PEXEC_BASENAME_ARGS=\"\"; \
+          continue; \
+        fi; \
+        _PEXEC_BASENAME_WORDS=\"\${_PEXEC_BASENAME_WORDS} \${WORD}\"; \
+        _PEXEC_BASENAME_ARGS=\"\${_PEXEC_BASENAME_WORDS} \${WORD}\"; \
+      done; \
+      echo \"\${_PEXEC_BASENAME_CMD}\${_PEXEC_BASENAME_PRE}\${_PEXEC_BASENAME_ARGS}\" \
+      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g'; \
+    }; \
     _PEXEC_TRAP_EXIT() { \
-      local _PEXEC_RESULT=\$?; \
-      if [ \"0\" != \"\${_PEXEC_RESULT}\" ]; then \
+      local _PEXEC_TRAP_RESULT=\$?; \
+      if [ \"0\" != \"\${_PEXEC_TRAP_RESULT}\" ]; then \
         local ERROR=\"ERROR\"; \
-        if [ \"139\" = \"\${_PEXEC_RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
+        if [ \"139\" = \"\${_PEXEC_TRAP_RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
         if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
-          1>&3 printf \" -> \${ERROR}[%03d]: \$(${BASENAME} %%)\n\" \${_PEXEC_RESULT}; \
+          1>&3 printf \" -> \${ERROR}[%03d]: \$(${BASENAME} %%)\n\" \${_PEXEC_TRAP_RESULT}; \
         else \
-          1>&3 printf \" -> \${ERROR}[%03d]: %%\n\" \${_PEXEC_RESULT}; \
+          1>&3 printf \" -> \${ERROR}[%03d]: %%\n\" \${_PEXEC_TRAP_RESULT}; \
         fi; \
         exit 1; \
       elif [ \"0\" = \"${QUIET}\" ]; then \
@@ -131,12 +147,12 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
     }; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"1\" = \"\${_PEXEC_NARGS}\" ] && \
-       [ \"\$(${FILE} -bL --mime %% | ${GREP} '^text/')\" ]; \
+       [ \"\$(${FILE} -bL --mime %% | ${SED} -n '/^text\//p')\" ]; \
     then \
       source %%; \
     else \
       %%; \
-    fi"
+    fi >\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\$(_PEXEC_BASENAME %%)\2/p\")"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
