@@ -22,7 +22,7 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${GREP}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(${BASENAME} "$0" .sh)
   INFO=${HERE}/tool_cpuinfo.sh
-  LG_DEFAULT="${HERE}/${NAME}.log"
+  LG_DEFAULT="./${NAME}.log"
   QT_DEFAULT=0; SP_DEFAULT=2
   CONSUMED=0
   while test $# -gt 0; do
