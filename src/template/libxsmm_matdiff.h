@@ -31,7 +31,8 @@ for (i = 0; i < nn; ++i) {
     if (ri > info->max_ref) info->max_ref = ri;
 
     if (LIBXSMM_NOTNAN(ti) && (inf > ta || ti == ri)) {
-      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
+      const double dri = LIBXSMM_MATDIFF_DIV(di, ra, ta);
 
       /* minimum/maximum of test set */
       if (ti < info->min_tst) info->min_tst = ti;
@@ -47,17 +48,14 @@ for (i = 0; i < nn; ++i) {
       }
 
       /* maximum error relative to current value */
-      if (0 < ra) {
-        const double dri = di / ra;
-        if (info->linf_rel < dri) info->linf_rel = dri;
-        /* sum of relative differences */
-        v0 = dri * dri;
-        if (inf > v0) {
-          v0 -= compd;
-          v1 = info->l2_rel + v0;
-          compd = (v1 - info->l2_rel) - v0;
-          info->l2_rel = v1;
-        }
+      if (info->linf_rel < dri) info->linf_rel = dri;
+      /* sum of relative differences */
+      v0 = dri * dri;
+      if (inf > v0) {
+        v0 -= compd;
+        v1 = info->l2_rel + v0;
+        compd = (v1 - info->l2_rel) - v0;
+        info->l2_rel = v1;
       }
 
       /* row-wise sum of reference values with Kahan compensation */
@@ -139,7 +137,7 @@ if (0 == result_nan) {
 
     for (i = 0; i < nn; ++i) {
       const double ri = real_ref[i*ldr + j], ti = (NULL != real_tst ? real_tst[i*ldt + j] : 0);
-      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
       const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
