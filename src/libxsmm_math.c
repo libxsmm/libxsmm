@@ -21,14 +21,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if 1
-# define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
-    ((NOMINATOR) / (0 < (DENREF) ? (DENREF) : 1))
-#else
-# define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
-    (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : \
-    (0 < (DENTST) ? ((NOMINATOR) / (DENTST)) : 0))
-#endif
+#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
+  (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : LIBXSMM_MIN(NOMINATOR, DENTST))
 
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
