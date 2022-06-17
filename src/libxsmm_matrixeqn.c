@@ -816,7 +816,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation doesn't exist, nothing to optimize!\n" );
   }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
+  else if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
     fprintf( stderr, "the requested equation is not yet finalized, so can't optimize!\n" );
   }
 #if 0
