@@ -177,6 +177,43 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_ele
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_propagate_tmp_info( libxsmm_matrix_eqn_elem* cur_node ) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if ( (cur_node->le == NULL) && (cur_node->ri == NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.arg.dtype;
+    }
+    else {
+      printf("ERROR: Arg cannot have left or right child!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    if ( cur_node->le != NULL ) {
+      cur_node->tmp.dtype = cur_node->info.u_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+    } else if ( (cur_node->ri != NULL) ) {
+      printf("ERROR: Unary cannot have right childs!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.b_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->ri );
+    } else {
+      printf("ERROR: Binary needs left and right child!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.t_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->ri );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->r2 );
+    } else {
+      printf("ERROR: Ternary needs all three children!\n");
+    }
+  } else {
+    /* shouldn't happen */
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn_elem* cur_node ) {
   /* check if we are at an argument leaf, then we assign register score 0 */
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
@@ -786,6 +823,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   printf("\n");
   printf("Assigning register scores to find optimal traversal plan (i.e. that minimizes tmp storage)... \n");
 #endif
+  libxsmm_matrix_eqn_propagate_tmp_info( libxsmm_matrix_eqns[idx]->eqn_root );
   libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqns[idx]->eqn_root );
   max_reg_score = libxsmm_matrix_eqns[idx]->eqn_root->reg_score;
   tmp_storage_pool = (libxsmm_blasint*) calloc(max_reg_score, sizeof(libxsmm_blasint));
