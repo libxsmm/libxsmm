@@ -663,7 +663,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   unsigned int all_nodes_f32 = 1;
 
   if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 

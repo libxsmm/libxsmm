@@ -445,7 +445,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     } else if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) {
       l_imm5 = 0x8 | ((i_index & 0x1) << 4);
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected datatype for instruction: %u\n", i_vmove_instr);
       exit(-1);
     }

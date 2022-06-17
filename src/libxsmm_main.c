@@ -2224,8 +2224,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  if  (0 == generated_code.last_error /* no error raised */
-    && 0 != generated_code.code_size /*check (tcopy issue?)*/)
+  if  (0 == generated_code.last_error
+    && 0 != generated_code.code_size /*check (tcopy issue?)*/
+# if !defined(NDEBUG)
+    && generated_code.code_size <= generated_code.buffer_size
+# endif
+    /* no error raised */)
   {
     char* code_buffer = NULL;
 # if defined(__APPLE__) && defined(__arm64__)

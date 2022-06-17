@@ -1153,7 +1153,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
        0 );
   }
 
-  /* In this case we don't support the algorithm with "on the fly transpose" */
+  /* In this case we do not support the algorithm with "on the fly transpose" */
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
     unsigned int reg_sum = 15, reg_sum_squared = 14;
     unsigned int cur_vreg;

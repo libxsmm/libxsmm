@@ -21,9 +21,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
-  (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : \
-  (0 < (DENTST) ? ((NOMINATOR) / (DENTST)) : 0))
+/**
+ * LIBXSMM_MATDIFF_DIV devises the nominator by the reference-denominator
+ * unless the latter is zero in which case the fallback is returned.
+ */
+#define LIBXSMM_MATDIFF_DIV_DEN(A) (0 < (A) ? (A) : 1)   /* Clang: WA for div-by-zero */
+#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, FALLBACK) /* Clang: >= instead of < */ \
+  (0 >= (DENREF) ? (FALLBACK) : ((NOMINATOR) / LIBXSMM_MATDIFF_DIV_DEN(DENREF)))
 
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
@@ -124,7 +128,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         }
       }
       if (0 == result_nan) {
-        info->rsq = 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->var_tst);
+        info->rsq = LIBXSMM_MAX(0.0, 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->l2_abs));
         if (0 != ntotal) { /* final variance */
           info->var_ref /= ntotal;
           info->var_tst /= ntotal;

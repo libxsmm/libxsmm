@@ -118,7 +118,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
       l_m_blocking = 16;
     } else {
       l_m_blocking = i_xgemm_desc->m;
-      /* in case we don't have a full vector length, we use masking */
+      /* in case we do not have a full vector length, we use masking */
       if (l_m_blocking == 15) {  /* for 15 we would need 5 M registers :-( 4-4-4-2-1 */
         l_m_blocking = 12;
       }
