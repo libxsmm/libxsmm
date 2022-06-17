@@ -108,11 +108,16 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
     1>&2 echo
   fi
-  ${XARGS} </dev/stdin 3>&2 2>&1 -P${NP} -I%% bash -c "set -eo pipefail; \
+  if [[ ${LOGFILE} != /dev/* ]]; then
+    LOGFILE_OUTER=/dev/stdout
+  else
+    LOGFILE_OUTER=${LOGFILE}
+  fi
+  ${XARGS} </dev/stdin >"${LOGFILE_OUTER}" 3>&2 2>&1 -P${NP} -I%% bash -c "set -eo pipefail; \
     _PEXEC_NARGS=\$(IFS=\" \"; set -- %%; echo \"\$#\"); \
     _PEXEC_BASENAME() { \
       local _PEXEC_BASENAME_PRE=\"\" _PEXEC_BASENAME_CMD=\"\" _PEXEC_BASENAME_ARGS=\"\"; \
-      local _PEXEC_BASENAME_INPUT=\"\$*\" _PEXEC_BASENAME_WORDS=\"\";
+      local _PEXEC_BASENAME_INPUT=\"\$*\" _PEXEC_BASENAME_WORDS=\"\"; \
       for WORD in \${_PEXEC_BASENAME_INPUT}; do \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
           _PEXEC_BASENAME_CMD=\$(${BASENAME} \"\${WORD}\"); \
@@ -145,6 +150,11 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         fi; \
       fi; \
     }; \
+    if [[ ${LOGFILE} != /dev/* ]]; then \
+      _PEXEC_LOGFILE=\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\$(_PEXEC_BASENAME %%)\2/p\"); \
+    else \
+      _PEXEC_LOGFILE=/dev/stdout; \
+    fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"1\" = \"\${_PEXEC_NARGS}\" ] && \
        [ \"\$(${FILE} -bL --mime %% | ${SED} -n '/^text\//p')\" ]; \
@@ -152,7 +162,7 @@ if [ "${BASENAME}" ] && [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       source %%; \
     else \
       %%; \
-    fi >\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\$(_PEXEC_BASENAME %%)\2/p\")"
+    fi >\"\${_PEXEC_LOGFILE}\""
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
