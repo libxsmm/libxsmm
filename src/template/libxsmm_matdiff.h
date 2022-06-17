@@ -129,7 +129,8 @@ if (0 == result_nan) {
   /* Infinity-norm relative to reference */
   info->normi_rel = LIBXSMM_MATDIFF_DIV(info->normi_abs, normr, normt);
   /* Froebenius-norm relative to reference */
-  info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr, normft);
+  info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr,
+    LIBXSMM_MIN(normft * normft, info->l2_abs));
 
   for (j = 0; j < mm; ++j) {
     double compri = 0, compti = 0, comp1 = 0;
@@ -170,5 +171,5 @@ if (0 == result_nan) {
   }
 
   /* One-norm relative to reference */
-  info->norm1_rel = LIBXSMM_MATDIFF_DIV(info->norm1_abs, normrc, normtc);
+  info->norm1_rel = LIBXSMM_MATDIFF_DIV(info->norm1_abs, normrc, info->norm1_abs);
 }

@@ -18,7 +18,7 @@
 int main(void)
 {
   int result = EXIT_SUCCESS;
-  libxsmm_matdiff_info da, db, dc, dd, diff;
+  libxsmm_matdiff_info da = { 0 }, db = { 0 }, dc = { 0 }, dd = { 0 }, de = { 0 }, df = { 0 }, diff = { 0 };
   /* http://www.netlib.org/lapack/lug/node75.html */
   const ITYPE a[] = {
     (ITYPE)1.00, (ITYPE)2.00, (ITYPE)3.00,
@@ -151,7 +151,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(dd.normi_abs - 0.0200000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(dd.normi_rel - 0.0200000)) result = EXIT_FAILURE;
     /* Froebenius-norm (relative) */
-    if (0.0000001 < LIBXSMM_ABS(dd.normf_rel - 0.0244949)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(dd.normf_rel - 0.0006000)) result = EXIT_FAILURE;
     /** L2-norm */
     if (0.0000001 < LIBXSMM_ABS(dd.l2_abs - 0.0244949)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(dd.l2_rel - 0.0244949)) result = EXIT_FAILURE;
@@ -162,7 +162,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(dd.linf_abs - 0.0200000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(dd.linf_rel - 0.0200000)) result = EXIT_FAILURE;
     /* R-squared */
-    if (0.0000001 < LIBXSMM_ABS(dd.rsq - 0.9999333)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(dd.rsq - 0.9994000)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
     if (1 != dd.m || 0 != dd.n) result = EXIT_FAILURE;
     if (r[3*dd.n+dd.m] != dd.v_ref) result = EXIT_FAILURE;
@@ -170,11 +170,71 @@ int main(void)
   }
 
   if (EXIT_SUCCESS == result) {
+    result = libxsmm_matdiff(&de, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+      t/*ref*/, r/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
+  if (EXIT_SUCCESS == result) {
+    /* intentionally not considered: libxsmm_matdiff_reduce(&diff, &de) */
+    /* One-norm */
+    if (0.0000001 < LIBXSMM_ABS(de.norm1_abs - 0.0400000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(de.norm1_rel - 1.0000000)) result = EXIT_FAILURE;
+    /* Infinity-norm */
+    if (0.0000001 < LIBXSMM_ABS(de.normi_abs - 0.0200000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(de.normi_rel - 1.0000000)) result = EXIT_FAILURE;
+    /* Froebenius-norm (relative) */
+    if (0.0000001 < LIBXSMM_ABS(de.normf_rel - 1.0000000)) result = EXIT_FAILURE;
+    /** L2-norm */
+    if (0.0000001 < LIBXSMM_ABS(de.l2_abs - 0.0244949)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(de.l2_rel - 1.7320508)) result = EXIT_FAILURE;
+    /** L1-norm */
+    if (0.0000001 < LIBXSMM_ABS(de.l1_ref - 0.04)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(de.l1_tst - 0.00)) result = EXIT_FAILURE;
+    /* Linf-norm */
+    if (0.0000001 < LIBXSMM_ABS(de.linf_abs - 0.0200000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(de.linf_rel - 1.0000000)) result = EXIT_FAILURE;
+    /* R-squared */
+    if (0.0000001 < LIBXSMM_ABS(de.rsq + 0.0000000)) result = EXIT_FAILURE;
+    /* Location of maximum absolute error */
+    if (1 != de.m || 0 != de.n) result = EXIT_FAILURE;
+    if (t[3*de.n+de.m] != de.v_ref) result = EXIT_FAILURE;
+    if (r[3*de.n+de.m] != de.v_tst) result = EXIT_FAILURE;
+  }
+
+  if (EXIT_SUCCESS == result) {
+    result = libxsmm_matdiff(&df, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+      r/*ref*/, r/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
+  if (EXIT_SUCCESS == result) {
+    libxsmm_matdiff_reduce(&diff, &df);
+    /* One-norm */
+    if (0.0000001 < LIBXSMM_ABS(df.norm1_abs - 0.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(df.norm1_rel - 0.0000000)) result = EXIT_FAILURE;
+    /* Infinity-norm */
+    if (0.0000001 < LIBXSMM_ABS(df.normi_abs - 0.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(df.normi_rel - 0.0000000)) result = EXIT_FAILURE;
+    /* Froebenius-norm (relative) */
+    if (0.0000001 < LIBXSMM_ABS(df.normf_rel - 0.0000000)) result = EXIT_FAILURE;
+    /** L2-norm */
+    if (0.0000001 < LIBXSMM_ABS(df.l2_abs - 0.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(df.l2_rel - 0.0000000)) result = EXIT_FAILURE;
+    /** L1-norm */
+    if (0.0000001 < LIBXSMM_ABS(df.l1_ref - 0.00)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(df.l1_tst - 0.00)) result = EXIT_FAILURE;
+    /* Linf-norm */
+    if (0.0000001 < LIBXSMM_ABS(df.linf_abs - 0.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(df.linf_rel - 0.0000000)) result = EXIT_FAILURE;
+    /* R-squared */
+    if (0.0000001 < LIBXSMM_ABS(df.rsq - 1.0000000)) result = EXIT_FAILURE;
+    /* Location of maximum absolute error */
+    if (-1 != df.m || -1 != df.n) result = EXIT_FAILURE;
+  }
+
+  if (EXIT_SUCCESS == result) {
     /* One-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.norm1_abs - 3.1000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.norm1_rel - 0.0281818)) result = EXIT_FAILURE;
     /* Infinity-norm */
-    if (0.0000001 < LIBXSMM_ABS(diff.normi_abs - 2.4400000)) result = EXIT_FAILURE;
+    if (0.0000002 < LIBXSMM_ABS(diff.normi_abs - 2.4400000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0976000)) result = EXIT_FAILURE;
     /* Froebenius-norm (relative) */
     if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.1074954)) result = EXIT_FAILURE;
@@ -183,7 +243,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.2438908)) result = EXIT_FAILURE;
     /** L1-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l1_ref - 266.00)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.l1_tst - 267.90)) result = EXIT_FAILURE;
+    if (0.0000007 < LIBXSMM_ABS(diff.l1_tst - 267.90)) result = EXIT_FAILURE;
     /* Linf-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
