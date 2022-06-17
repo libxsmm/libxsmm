@@ -156,6 +156,12 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* insert ret instruction */
     code[code_head] = 0xd65f03c0;
 
@@ -329,6 +335,12 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rt */
@@ -422,6 +434,13 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_imm5 = 0x0;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rd */
@@ -486,6 +505,12 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rt */
@@ -541,6 +566,12 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_q = 0, l_s = 0, l_sz = 0;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
@@ -626,6 +657,12 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
     unsigned char l_opc = 0x0;
     signed char l_imm = 0x0;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     switch ( i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
@@ -772,6 +809,12 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_vec_instr);
     /* setting Rd */
@@ -878,6 +921,12 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rt */
@@ -981,6 +1030,12 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_prefetch_instr);
@@ -1130,8 +1185,14 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size >> 2;
+    unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *) io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits, 0x10 must not be used as flags */
     code[code_head] = (unsigned int)(0xffffff10 & l_vec_instr);
@@ -1221,6 +1282,12 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_pred_instr);
     /* setting Rd */
@@ -1279,6 +1346,12 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_move_instr);
@@ -1365,6 +1438,12 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     unsigned char l_opc = 0x0;
     signed char l_imm = 0x0;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     if ( (0x20 & i_gp_reg_0) == 0x20 ) {
       l_opc = 0x1;
       l_imm = (char)(i_offset/8);
@@ -1429,6 +1508,12 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* computing hw */
     unsigned char l_hw = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1 & i_shift) : (0x3 & i_shift);
@@ -1532,6 +1617,12 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffc00000 & i_alu_instr);
     /* setting Rd */
@@ -1628,6 +1719,12 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* computing hw */
     unsigned char l_imm = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1f & i_imm6) : (0x3f & i_imm6);
@@ -1777,6 +1874,12 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* computing jump immediate */
     int l_jmp_imm = (int)l_jmp_dst - (int)code_head;
      /* fix bits */
@@ -1879,6 +1982,12 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* computing jump immediate */
     int l_jmp_imm = (l_jmp_dst == 0) ? 0 : (int)l_jmp_dst - (int)code_head;
      /* fix bits */
@@ -1898,4 +2007,3 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
     exit(-1);
   }
 }
-
