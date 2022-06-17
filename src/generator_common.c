@@ -557,7 +557,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_TDPBF16PS:
       libxsmm_strncpy(o_instr_name, "tdpbf16ps", i_instr_name_max_length, 9 );
       break;
-    /* default, we didn't had a match */
+    /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
       exit(-1);
@@ -742,7 +742,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
       l_return = 1;
       break;
-    /* default, we didn't had a match */
+    /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
       exit(-1);

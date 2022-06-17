@@ -110,7 +110,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
 
   if ( i_dest_location < 0 )
   {
-     /* Must be a forward jump and we don't yet know it's dest location */
+     /* Must be a forward jump and we do not yet know it's dest location */
      if ( i_jmp_instr == LIBXSMM_X86_INSTR_JMP ) {
         buf[i_src_location] = 0xe9;
         /* FIll-in zeros for now, this routine has to be called again: */
@@ -131,7 +131,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
      }
   }
 
-  /* Make sure we aren't trying to jump to the same location as the original jump instruction */
+  /* Make sure we are not trying to jump to the same location as the original jump instruction */
   if ( i_src_location==i_dest_location || (i_src_location==i_dest_location+1) )
   {
      fprintf(stderr,"i_src_location=%i is physically too close to i_dest_location=%i\n",i_src_location,i_dest_location);
@@ -1365,7 +1365,7 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
     l_disp8div_idx = (unsigned char)((i_vec_instr >> 8) & 0x07);
     /* check we need to adjsut because of VL */
     if ( (unsigned char)((i_vec_instr >> 8) & 0x08) == 8 ) {
-      /* Bit 11 is set:  Don't adjust depending on VL */
+      /* Bit 11 is set: do not adjust depending on VL */
       l_disp8div = tbl_disp8div[l_disp8div_idx];
     } else {
       /* Bit 11 not set: now we need Spaghetti code */
@@ -1929,7 +1929,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     }
 
     /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
-     * will error out in the encoder if instruction doesn't have VEX encoding
+     * will error out in the encoder if instruction does not have VEX encoding
      * Core will always take AVX512VL route */
     if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
          ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
@@ -2205,7 +2205,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     }
 
     /* on Knights platfrom, attempt to fallback to VEX for ymm and xmm VL,
-     * will error out in the encoder if instruction doesn't have VEX encoding
+     * will error out in the encoder if instruction does not have VEX encoding
      * Core will always take AVX512VL route */
     if ( ( (io_generated_code->arch == LIBXSMM_X86_AVX512_MIC) || (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) ) &&
          ( (i_vector_name == 'x') || (i_vector_name == 'y') ) && (l_encoder == 2) ) {
@@ -3992,7 +3992,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
       unsigned int l_position =   l_source.instr_addr[l_ref];
       /* This routine just does everything related to jumping. In this case, we know the destination/target */
       internal_x86_jumping ( io_generated_code, l_position, io_generated_code->code_size, l_jmp_instr );
-      /* We don't need to forward the bytes here */
+      /* We do not need to forward the bytes here */
     }
   } else {
     char l_new_code[512];
@@ -4042,7 +4042,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
     int l_tmp;
 
     if ( io_jump_label_tracker->label_address[i_label_no] == 0 ) {
-      l_dest_addr = -1; /* It's a forward jump to a location we haven't set yet. We'll assume 5-6 bytes */
+      l_dest_addr = -1; /* It's a forward jump to a location we have not set yet. We will assume 5-6 bytes */
     } else {
       /* Destination/target address is known here. */
       l_dest_addr = io_jump_label_tracker->label_address[i_label_no];
@@ -4421,7 +4421,7 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
     }
 
     /* retq */
-    /* @TODO: I don't know if this is the correct placement in the generation process */
+    /* @TODO: I do not know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
     /* update code length */
@@ -4448,7 +4448,7 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
       io_generated_code->sf_size -= 40;
     }
 
-    /* @TODO: I don't know if this is the correct placement in the generation process */
+    /* @TODO: I do not know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
@@ -4735,7 +4735,7 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     }
 
     /* retq */
-    /* @TODO: I don't know if this is the correct placement in the generation process */
+    /* @TODO: I do not know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
     /* update code length */
@@ -4762,7 +4762,7 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
       io_generated_code->sf_size -= 40;
     }
 
-    /* @TODO: I don't know if this is the correct placement in the generation process */
+    /* @TODO: I do not know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {

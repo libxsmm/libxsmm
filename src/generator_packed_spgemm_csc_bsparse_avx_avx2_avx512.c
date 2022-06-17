@@ -610,7 +610,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_avx_avx2_avx512_kloop( libxsmm_
         }
       }
     } else {
-      /* shouldn't happen */
+      /* should not happen */
     }
   }
 

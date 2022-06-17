@@ -167,7 +167,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 

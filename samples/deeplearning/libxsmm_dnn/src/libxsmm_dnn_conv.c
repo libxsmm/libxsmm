@@ -180,11 +180,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_pack_input_fwd( libxsmm_dnn_conv_c
   }
 #endif
 
-  /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
+  /* Make sure we do not pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (cfg->N != cfg->threads) {
     result = 0;
   }
-  /* we don't pack for int8 */
+  /* we do not pack for int8 */
   if (cfg->datatype_in == LIBXSMM_DATATYPE_I8) {
     result = 0;
   }
@@ -214,7 +214,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_conv_setup_fwd_ofh_rb( libxsmm_dnn_conv_confi
   }
 #endif
 
-  /*  Make sure we don't use multiple rows when we don't pack input and convolutions are strided*/
+  /*  Make sure we do not use multiple rows when we do not pack input and convolutions are strided*/
   if ((cfg->pack_input == 0) && ((cfg->u !=1 ) || (cfg->v != 1))) {
     result = 1;
   }

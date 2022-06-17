@@ -266,7 +266,7 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
   unsigned int m_range, m_block_size, foo1, foo2;
 
   /* in order to work with bitmasks we need at least 8 entries, on ASIMD, that means 2 registers */
-  /* TODO: for SVE, we maybe could use the predicate registers, so we don't need to half the count; however, we only have 15 predicate registers, so this still may be correct*/
+  /* TODO: for SVE, we maybe could use the predicate registers, so we do not need to half the count; however, we only have 15 predicate registers, so this still may be correct*/
   if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (vlen == 4) ) {
     vlen *= 2;
     if ( available_vregs < 3 ) {
@@ -355,7 +355,7 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
 
   LIBXSMM_UNUSED(i_mask_reg);
 
-  /* In this case we don't have to load any data  */
+  /* In this case we do not have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
 
 #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
@@ -685,7 +685,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
                                                      cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-          } else {/* if we don't really care about precision, we can skip the extra iteration */
+          } else {/* if we do not really care about precision, we can skip the extra iteration */
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRECPE_V,
                                                      cur_vreg, cur_vreg, 0, cur_vreg, l_pred_reg, l_sve_type );
           }
@@ -1135,7 +1135,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
                                                    cur_vreg, i_micro_kernel_config->tmp_vreg2, 0, cur_vreg,
                                                    l_blend_reg, l_sve_type );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
       if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU) ) {
@@ -1225,7 +1225,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
                                                      i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
       if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU) ) {
@@ -1285,7 +1285,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
                                                    i_micro_kernel_config->tmp_vreg, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, l_blend_reg, /* dst was i_micro_kernel_config->tmp_vreg2 */
                                                    i_mask_reg, l_sve_type );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV ) {
@@ -1316,7 +1316,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
                                                    cur_vreg, i_micro_kernel_config->tmp_vreg, 0, cur_vreg,
                                                    l_blend_reg, l_sve_type );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
       if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && ( i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ) ) {
@@ -1354,7 +1354,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
                                                      i_micro_kernel_config->tmp_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, i_micro_kernel_config->tmp_vreg2,
                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV ) {
@@ -1385,7 +1385,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
                                                      i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg2, 0, cur_vreg,
                                                      LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
       if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && ( i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ) ) {
@@ -1649,7 +1649,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
   unsigned char im_mod = im & 3;
 #ifdef SVE_MASKS_HAVE_PADDING
   /* ideal: store predicate into register, store register into memory (only 2 bytes) */
-  /* Antonio can't find an instruction for that -> ensure the buffer has padding, and write over the end :/ */
+  /* Antonio cannot find an instruction for that -> ensure the buffer has padding, and write over the end :/ */
   /* a hacky but less illegal way to do that would be to write to the stack, load from it, and store to the correct location */
   libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF,
                                         i_gp_reg_mask, 0, 0, i_tmp_pred_reg0, 0 );
@@ -2534,7 +2534,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     i_micro_kernel_config->reserved_zmms = l_zero_reg + 1;
     i_micro_kernel_config->zero_vreg = l_zero_reg;
     if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      /* the sve data type doesn't matter, maybe we should add a new enum value for that */
+      /* the sve data type does not matter, maybe we should add a new enum value for that */
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, l_zero_reg, l_zero_reg, 0, l_zero_reg, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
     } else {
       libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_zero_reg, l_zero_reg, 0, l_zero_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
@@ -2908,7 +2908,7 @@ void libxsmm_configure_aarch64_kernel_vregs_masks( libxsmm_generated_code*      
   i_micro_kernel_config->reserved_mask_regs = 2;
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
 
-  /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
+  /* if we need FP32->BF16 downconverts and we do not have native instruction, then prepare stack */
 #if 0
   if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
        LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {

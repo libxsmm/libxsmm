@@ -629,7 +629,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_x86( libxsmm_generated_code*      
                                                         l_rvc + l_n, l_rvc + l_n, l_rvc + l_n );
             }
 
-            /* As we'll be writing to C later, consider pre-fetching into cache */
+            /* As we will be writing to C later, consider pre-fetching into cache */
             if ( l_mov_insn == l_micro_kernel_config.c_vmove_instruction ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
                                                 LIBXSMM_X86_INSTR_PREFETCHW,

@@ -126,7 +126,7 @@ LIBXSMM_INLINE void rnaz_mask_fp32_bf16(float* in, float* out, unsigned int len)
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -155,7 +155,7 @@ LIBXSMM_INLINE void rne_mask_fp32_bf16(float* in, float* out, unsigned int len) 
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -185,7 +185,7 @@ LIBXSMM_INLINE void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len)
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -2547,7 +2547,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
           lcl_buffer_ptr[i] = 0.0;
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       for( ho = 0; ho < ofh; ho++ ) {
@@ -2567,7 +2567,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
               } else if ( param->type == 1 ) {
                 LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) += LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
               } else {
-                /* shouldn't happen */
+                /* should not happen */
               }
             }
           }
@@ -2587,7 +2587,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
           }
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
     }
   }
@@ -2658,7 +2658,7 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           }
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       for( hi = 0; hi < ifh; hi++ ) {
