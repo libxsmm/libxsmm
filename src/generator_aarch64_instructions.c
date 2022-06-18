@@ -284,7 +284,7 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
     l_npad = LIBXSMM_UP( l_dsize, i_alignment) - l_dsize;
 
     /* Ensure we have enough space */
-    if ( l_dsize + l_npad + i_ndata_bytes > sizeof(io_const_data->const_data) ) {
+    if ( ((size_t)l_dsize + l_npad + i_ndata_bytes) > sizeof(io_const_data->const_data) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
       return ~0U;
     }
