@@ -1506,6 +1506,8 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
   }
 
   if ( io_generated_code->code_type > 1 ) {
+    unsigned char l_hw = (unsigned char)(i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0)
+      ? (0x1 & i_shift) : (0x3 & i_shift); /* computing hw */
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
@@ -1515,8 +1517,6 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
       return;
     }
 
-    /* computing hw */
-    unsigned char l_hw = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1 & i_shift) : (0x3 & i_shift);
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffe00000 & i_alu_instr);
     /* setting Rd */
@@ -1717,8 +1717,10 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned char l_imm = (unsigned char)(i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0)
+      ? (0x1f & i_imm6) : (0x3f & i_imm6); /* computing hw */
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int code_head = io_generated_code->code_size / 4;
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -1726,8 +1728,6 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
       return;
     }
 
-    /* computing hw */
-    unsigned char l_imm = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1f & i_imm6) : (0x3f & i_imm6);
      /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_alu_instr);
     /* setting Rd */
@@ -1869,10 +1869,11 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
   }
 
   if ( io_generated_code->code_type > 1 ) {
+    unsigned int* code = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_lab = --io_loop_label_tracker->label_count;
-    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab])/4;
-    unsigned int code_head = io_generated_code->code_size/4;
-    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
+    unsigned int code_head = io_generated_code->code_size / 4;
+    int l_jmp_imm = (int)l_jmp_dst - (int)code_head; /* computing jump immediate */
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -1880,8 +1881,6 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
       return;
     }
 
-    /* computing jump immediate */
-    int l_jmp_imm = (int)l_jmp_dst - (int)code_head;
      /* fix bits */
     code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
     /* setting Rd */
@@ -1978,9 +1977,11 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
   io_jump_label_tracker->label_source[i_label_no].ref_count++;
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no])/4;
-    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no]) / 4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int code_head = io_generated_code->code_size / 4;
+    int l_jmp_imm = (l_jmp_dst == 0) /* computing jump immediate */
+      ? 0 : (int)l_jmp_dst - (int)code_head;
 
     /* Ensure we have enough space */
     if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
@@ -1988,9 +1989,7 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
       return;
     }
 
-    /* computing jump immediate */
-    int l_jmp_imm = (l_jmp_dst == 0) ? 0 : (int)l_jmp_dst - (int)code_head;
-     /* fix bits */
+    /* fix bits */
     code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
     /* setting Rd */
     code[code_head] |= (unsigned int)(0x1f & i_gp_reg_cmp);
