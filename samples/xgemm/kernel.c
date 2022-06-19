@@ -441,10 +441,10 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
 
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
-    error = LIBXSMM_MIN(l_diff.normf_rel, l_diff.linf_abs);
+    error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
-    error = LIBXSMM_MIN(l_diff.normf_rel, l_diff.linf_abs);
+    error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
     float* data_gold_f = (float*)malloc( sizeof(float) * ld * n );
     float* data_f      = (float*)malloc( sizeof(float) * ld * n );
@@ -452,7 +452,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data_gold, data_gold_f, ld*n );
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)data,      data_f,      ld*n );
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
-    error = LIBXSMM_MIN(l_diff.normf_rel, l_diff.linf_abs);
+    error = libxsmm_matdiff_epsilon(&l_diff);
 
     free( data_f );
     free( data_gold_f ) ;
@@ -472,7 +472,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     }
 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
-    error = LIBXSMM_MIN(l_diff.normf_rel, l_diff.linf_abs);
+    error = libxsmm_matdiff_epsilon(&l_diff);
 
     free( data_f );
     free( data_gold_f );
@@ -491,7 +491,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     }
 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
-    error = LIBXSMM_MIN(l_diff.normf_rel, l_diff.linf_abs);
+    error = libxsmm_matdiff_epsilon(&l_diff);
 
     free( data_f );
     free( data_gold_f );
