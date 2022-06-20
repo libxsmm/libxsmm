@@ -438,7 +438,6 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   double error = 0.0;
 
   libxsmm_matdiff_clear(&l_diff);
-
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
@@ -506,7 +505,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   printf("L2 rel.error  : %.24f\n", l_diff.l2_rel);
   printf("Linf abs.error: %.24f\n", l_diff.linf_abs);
   printf("Linf rel.error: %.24f\n", l_diff.linf_rel);
-  printf("Check-norm    : %.24f\n", l_diff.normf_rel);
+  printf("Check-norm    : %.24f\n", error);
   printf("\n");
 
   return error;

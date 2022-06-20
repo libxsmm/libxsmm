@@ -68,7 +68,7 @@ float fsigmoid(float x) {
 void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
-    memset(out_mask, 0, ldo_mask*N);
+    memset(out_mask, 0, (size_t)ldo_mask*N);
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -82,7 +82,7 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
       } else if ( type == 2 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.f) : in[(j*ldi) + i];
       }
     }
   }
@@ -91,7 +91,7 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
 void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
-    memset(out_mask, 0, ldo_mask*N);
+    memset(out_mask, 0, (size_t)ldo_mask*N);
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
@@ -116,7 +116,7 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp.i[0] = 0;
         in_f = bf16_hp.f;
-        in_f = alpha * (expf(in_f)-1.0);
+        in_f = alpha * (expf(in_f)-1.f);
         libxsmm_rne_convert_fp32_bf16( &in_f, &res, 1 );
         out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? res : in[(j*ldi) + i];
       }
@@ -125,9 +125,9 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
 }
 
 void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbias) {
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint i, j;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
@@ -158,9 +158,9 @@ void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbi
 }
 
 void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask_gold, libxsmm_blasint use_bitmask) {
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
     relu_fwd_f32_f32_gold(m, n, ldc, ldc, ldc/8, f_c_gold, f_c_gold, 0, (unsigned char *)l_relu_bitmask_gold, 0, use_bitmask);
@@ -171,9 +171,9 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
 }
 
 void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint i, j;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
@@ -204,7 +204,7 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
   int* i_data = (int*) data;
   short* s_data = (short*) data;
   char* c_data = (char*) data;
-  unsigned int l_r, l_i, l_j;
+  libxsmm_blasint l_r, l_i, l_j;
 
   for (l_r = 0; l_r < br; l_r++) {
     for (l_i = 0; l_i < ld; l_i++) {
@@ -232,22 +232,22 @@ void init_random_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br,
 
 void init_zero_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
   char* l_data = (char*) data;
-  memset( l_data, 0x0, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
+  memset( l_data, 0x0, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
 void init_garbage_matrix( libxsmm_datatype dtype, void* data, libxsmm_blasint br, libxsmm_blasint ld, libxsmm_blasint n ) {
   char* l_data = (char*) data;
-  memset( l_data, 0xdeadbeef, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
+  memset( l_data, 0xdeadbeef, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
 void ref_matmul( gemm_def* i_gemm_def, void* a, void* b, void* c ) {
-  unsigned int l_r, l_j, l_i, l_s, l_k2;
-  unsigned int lda = i_gemm_def->lda;
-  unsigned int ldb = i_gemm_def->ldb;
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
-  unsigned int k = i_gemm_def->k;
+  libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
+  libxsmm_blasint lda = i_gemm_def->lda;
+  libxsmm_blasint ldb = i_gemm_def->ldb;
+  libxsmm_blasint ldc = i_gemm_def->ldc;
+  libxsmm_blasint m = i_gemm_def->m;
+  libxsmm_blasint n = i_gemm_def->n;
+  libxsmm_blasint k = i_gemm_def->k;
 
   if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_F64) &&
        (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F64) &&
@@ -514,8 +514,6 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
   libxsmm_matdiff_info l_diff;
   double max_error = 0.0;
 
-  libxsmm_matdiff_clear(&l_diff);
-
   if ( dtype == LIBXSMM_DATATYPE_F64 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     max_error = l_diff.linf_abs;
@@ -523,9 +521,9 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     max_error = l_diff.linf_abs;
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-    unsigned int l_i, l_j;
     libxsmm_bfloat16* h_data =      (libxsmm_bfloat16*)data;
     libxsmm_bfloat16* h_data_gold = (libxsmm_bfloat16*)data_gold;
+    libxsmm_blasint l_i, l_j;
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         libxsmm_bfloat16_hp tmp_c;
@@ -548,9 +546,9 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
       }
     }
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    unsigned int l_i, l_j;
     int* l_data = (int*)data;
     int* l_data_gold = (int*)data_gold;
+    libxsmm_blasint l_i, l_j;
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
@@ -558,9 +556,9 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
       }
     }
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-    unsigned int l_i, l_j;
     unsigned char* l_data      = (unsigned char*)data;
     unsigned char* l_data_gold = (unsigned char*)data_gold;
+    libxsmm_blasint l_i, l_j;
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         const double l_fabs = fabs((double)l_data_gold[(l_j * ld) + l_i] - (double)l_data[(l_j * ld) + l_i]);
@@ -574,16 +572,16 @@ double check_matrix( libxsmm_datatype dtype, void* data_gold, void* data, libxsm
   return max_error;
 }
 
-void check_matrix_norms( libxsmm_datatype dtype, void* data_gold, void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n  ) {
-  libxsmm_matdiff_info norms, diff;
-  libxsmm_matdiff_clear(&norms);
-  libxsmm_matdiff_clear(&diff);
-  float *gold_c = (float*) libxsmm_aligned_malloc( ld * n * sizeof(float), 64);
-  float *comp_c = (float*) libxsmm_aligned_malloc( ld * n * sizeof(float), 64);
+void check_matrix_norms( libxsmm_datatype dtype, const void* data_gold, const void* data, libxsmm_blasint ld, libxsmm_blasint m, libxsmm_blasint n  ) {
+  float *gold_c = (float*) libxsmm_aligned_malloc(sizeof(float) * ld * n, 64);
+  float *comp_c = (float*) libxsmm_aligned_malloc(sizeof(float) * ld * n, 64);
+  libxsmm_matdiff_info norms;
+  double epsilon;
+  LIBXSMM_UNUSED(m);
 
   if (dtype == LIBXSMM_DATATYPE_F32) {
-    memcpy(gold_c, data_gold, ld * n * sizeof(float));
-    memcpy(comp_c, data     , ld * n * sizeof(float));
+    memcpy(gold_c, data_gold, sizeof(float) * ld * n);
+    memcpy(comp_c, data     , sizeof(float) * ld * n);
   }
   if (dtype == LIBXSMM_DATATYPE_BF16) {
     libxsmm_convert_bf16_f32( data_gold, gold_c, ld*n );
@@ -592,6 +590,7 @@ void check_matrix_norms( libxsmm_datatype dtype, void* data_gold, void* data, li
 
   /* compare */
   libxsmm_matdiff(&norms, LIBXSMM_DATATYPE_F32, ld*n, 1, gold_c, comp_c, 0, 0);
+  epsilon = libxsmm_matdiff_epsilon(&norms);
   printf("\n##########################################\n");
   printf("#       Correctness norm-checking        #\n");
   printf("##########################################\n");
@@ -601,8 +600,7 @@ void check_matrix_norms( libxsmm_datatype dtype, void* data_gold, void* data, li
   printf("L2 rel.error  : %.24f\n", norms.l2_rel);
   printf("Linf abs.error: %.24f\n", norms.linf_abs);
   printf("Linf rel.error: %.24f\n", norms.linf_rel);
-  printf("Check-norm    : %.24f\n", norms.normf_rel);
-  libxsmm_matdiff_reduce(&diff, &norms);
+  printf("Check-norm    : %.24f\n", epsilon);
 
   libxsmm_free(gold_c);
   libxsmm_free(comp_c);
@@ -644,6 +642,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   int l_cfg_flags = 0;
   int l_rls_flags = 0;
 
+  assert(NULL != l_a_addr && NULL != l_b_addr && NULL != l_a_offs && NULL != l_b_offs);
   if (0 == i_gemm_def) {
     fprintf(stderr, "JIT: unsupported descriptor arguments or data type!\n");
     return EXIT_FAILURE;
@@ -692,17 +691,17 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_ADDRESS;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = LIBXSMM_CAST_UCHAR(i_gemm_def->br_unroll == 0 ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 2) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_OFFSET;
     l_brconfig.br_stride_a_hint = 0;
     l_brconfig.br_stride_b_hint = 0;
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = LIBXSMM_CAST_UCHAR(i_gemm_def->br_unroll == 0 ? 0 : i_gemm_def->br_count);
   } else if (i_gemm_def->br_type == 3) {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_STRIDE;
     l_brconfig.br_stride_a_hint = i_gemm_def->lda*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
     l_brconfig.br_stride_b_hint = (i_gemm_def->trans_b == 0) ? i_gemm_def->ldb*i_gemm_def->n*LIBXSMM_TYPESIZE(i_gemm_def->in_type) : i_gemm_def->ldb*i_gemm_def->k*LIBXSMM_TYPESIZE(i_gemm_def->in_type);
-    l_brconfig.br_unroll_hint = ( i_gemm_def->br_unroll == 0 ) ? 0 : i_gemm_def->br_count;
+    l_brconfig.br_unroll_hint = LIBXSMM_CAST_UCHAR(i_gemm_def->br_unroll == 0 ? 0 : i_gemm_def->br_count);
   } else {
     l_brconfig.br_type = LIBXSMM_GEMM_BATCH_REDUCE_NONE;
     l_brconfig.br_stride_a_hint = 0;
@@ -1319,7 +1318,7 @@ int main(int argc, char* argv []) {
 
     init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, l_ldc/8, l_n );
     init_random_matrix( l_gemm_def.out_type, l_colbias, 1, l_ldc, 1 );
-    memcpy(l_relu_bitmask_gold, l_relu_bitmask, (l_ldc/8) * l_n * sizeof(char));
+    memcpy(l_relu_bitmask_gold, l_relu_bitmask, sizeof(char) * (l_ldc/8) * l_n);
 
     /* run gold solution */
     fused_matmul( &l_gemm_def, l_a, l_b, l_c_gold, &ref_fusion_arguments );
