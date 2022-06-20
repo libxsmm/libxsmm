@@ -1392,7 +1392,7 @@ int main(int argc, char* argv []) {
   /* Print total max error */
   printf("\nTotal Max Error %f\n", l_total_max_error );
 
-  if ( l_total_max_error >= 0.0000005 && l_br_type == 0) {
+  if ( l_total_max_error >= 0.000005 && l_br_type == 0) {
     printf("FAILURE\n\n");
     return EXIT_FAILURE;
   } else if ( l_total_max_error >= 0.0005 && l_br_type > 0) {

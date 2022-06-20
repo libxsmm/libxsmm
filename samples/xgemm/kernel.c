@@ -1264,11 +1264,11 @@ int main(int argc, char* argv []) {
   /* Print total max error */
   printf("\nTotal Max Error %f\n", l_total_max_error);
 
-  if (0.0005 <= l_total_max_error && l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16) {
+  if (0.005 <= l_total_max_error && l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16) {
     printf("FAILURE\n");
     return EXIT_FAILURE;
   }
-  else if (0.0000005 <= l_total_max_error) {
+  else if (0.000005 <= l_total_max_error) {
     printf("FAILURE\n");
     return EXIT_FAILURE;
   }
