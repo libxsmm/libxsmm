@@ -82,7 +82,7 @@ void relu_fwd_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint
       } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
       } else if ( type == 2 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.f) : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (LIBXSMM_EXPF(in[(j*ldi) + i])-1.f) : in[(j*ldi) + i];
       }
     }
   }
@@ -116,7 +116,7 @@ void relu_fwd_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasi
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp.i[0] = 0;
         in_f = bf16_hp.f;
-        in_f = alpha * (expf(in_f)-1.f);
+        in_f = alpha * (LIBXSMM_EXPF(in_f)-1.f);
         libxsmm_rne_convert_fp32_bf16( &in_f, &res, 1 );
         out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? res : in[(j*ldi) + i];
       }
@@ -632,7 +632,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_gemm_param gemm_param;
 #endif
   double l_jittime, l_runtime;
-  size_t l_t, l_r;
+  libxsmm_blasint l_t, l_r;
   char** l_a_addr = (char**)malloc(i_gemm_def->br_count*sizeof(char*));
   char** l_b_addr = (char**)malloc(i_gemm_def->br_count*sizeof(char*));
   unsigned long long* l_a_offs = (unsigned long long*)malloc(i_gemm_def->br_count*sizeof(unsigned long long));
@@ -982,7 +982,9 @@ int main(int argc, char* argv []) {
   int l_binary_postop;
   int l_unary_postop;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  unsigned int l_keep_going = 0;
   gemm_def l_gemm_def;
+  int l_n_threads = 1;
 
 # if defined(__APPLE__) && defined(__arm64__)
 #  if 1
@@ -1105,16 +1107,17 @@ int main(int argc, char* argv []) {
     return EXIT_FAILURE;
   }
 
-  const char *env_arch = getenv("LIBXSMM_TARGET");
-  const int is_env_SPR = (
-      env_arch == libxsmm_stristr(env_arch, "spr") ||
-      env_arch == libxsmm_stristr(env_arch, "amx"));
-  int arch_cpuid = libxsmm_cpuid();
+  { const char *env_arch = getenv("LIBXSMM_TARGET");
+    const int is_env_SPR = (
+        env_arch == libxsmm_stristr(env_arch, "spr") ||
+        env_arch == libxsmm_stristr(env_arch, "amx"));
+    int arch_cpuid = libxsmm_cpuid();
 
-  if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
-       && (l_tc_config)) {
-    printf("Warning: external tile configuration will be ingnored\n");
-    l_tc_config = 0;
+    if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
+         && (l_tc_config)) {
+      printf("Warning: external tile configuration will be ingnored\n");
+      l_tc_config = 0;
+    }
   }
 
   l_br = (l_br < 1) ? 1 : l_br;
@@ -1248,7 +1251,6 @@ int main(int argc, char* argv []) {
     }
   }
 
-  unsigned int l_keep_going = 0;
   do {
     double error = 0.0;
     double error_bitmask = 0.0;
@@ -1332,21 +1334,38 @@ int main(int argc, char* argv []) {
       error_bitmask = check_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask_gold, l_relu_bitmask, l_ldc/8, l_m/8, l_n );
     }
 
-    if ( l_file_input == 0 ) {
-      printf("%fs for libxsmm\n", l_runtime_libxsmm);
-      printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+    if (l_file_input == 0) {
+      check_matrix_norms(l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n);
+    }
+
+    { const char *prefetch = NULL, *br_type = NULL;
+      switch (l_prefetch) {
+        case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
+        case LIBXSMM_GEMM_PREFETCH_SIGONLY: prefetch = "pfsigonly"; break;
+        case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C: prefetch = "AL2_BL2viaC"; break;
+        default: prefetch = "unknown";
+      }
+      switch (l_br_type) {
+        case 0: br_type = "nobr"; break;
+        case 1: br_type = "addrbr"; break;
+        case 2: br_type = "offsbr"; break;
+        case 3: br_type = "strdbr"; break;
+        default: br_type = "unknown";
+      }
+      assert(NULL != prefetch && NULL != br_type);
+      l_runtime_libxsmm /= (double)l_n_threads;
+      printf("Command line:\n%s %i %i %i %i %i %i %f %f %i %i %i %i %s %s %s %i %i %i %i %i %i\n\n", argv[0],
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b,
+        prefetch, l_precision, br_type, l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop);
+      printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
+      printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
       printf("max. error: %f\n", error);
       if (l_unary_postop == RELU_BITMASK) {
         printf("max. error relu bitmask: %f\n", error_bitmask);
-      }
-
-      check_matrix_norms( l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n );
-
-    } else {
-      if ( l_run_check == 1 ) {
-        printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
-        } else {
-        printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
     }
 
@@ -1371,13 +1390,16 @@ int main(int argc, char* argv []) {
   }
 
   /* Print total max error */
-  printf("\n\n Total Max Error %f\n\n", l_total_max_error );
+  printf("\nTotal Max Error %f\n", l_total_max_error );
 
   if ( l_total_max_error >= 0.00005 && l_br_type == 0) {
+    printf("FAILURE\n\n");
     return EXIT_FAILURE;
   } else if ( l_total_max_error >= 0.0005 && l_br_type > 0) {
+    printf("FAILURE\n\n");
     return EXIT_FAILURE;
   } else {
+    printf("SUCCESS\n\n");
     return EXIT_SUCCESS;
   }
 }

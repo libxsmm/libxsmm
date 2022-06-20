@@ -1221,18 +1221,33 @@ int main(int argc, char* argv []) {
       libxsmm_free(l_c_perf);
       libxsmm_free(l_c_gold);
     } /* close parallel region */
-    l_runtime_libxsmm /= (double)l_n_threads;
 
-    if ( l_file_input == 0 ) {
-      printf("%fs for libxsmm\n", l_runtime_libxsmm);
-      printf("%f GFLOPS for libxsmm\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br) * (double)l_n_threads * 2.0) / (l_runtime_libxsmm * 1.0e9));
-      printf("max. error: %f\n", error);
-    } else {
-      if ( l_run_check == 1 ) {
-        printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
-        } else {
-        printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
+    { const char *prefetch = NULL, *br_type = NULL;
+      switch (l_prefetch) {
+        case LIBXSMM_GEMM_PREFETCH_NONE: prefetch = "nopf"; break;
+        case LIBXSMM_GEMM_PREFETCH_SIGONLY: prefetch = "pfsigonly"; break;
+        case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C: prefetch = "BL2viaC"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD: prefetch = "curAL2"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD: prefetch = "curAL2_BL2viaC"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2: prefetch = "AL2"; break;
+        case LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C: prefetch = "AL2_BL2viaC"; break;
+        default: prefetch = "unknown";
       }
+      switch (l_br_type) {
+        case 0: br_type = "nobr"; break;
+        case 1: br_type = "addrbr"; break;
+        case 2: br_type = "offsbr"; break;
+        case 3: br_type = "strdbr"; break;
+        default: br_type = "unknown";
+      }
+      assert(NULL != prefetch && NULL != br_type);
+      l_runtime_libxsmm /= (double)l_n_threads;
+      printf("Command line:\n%s %i %i %i %i %i %i %f %f %i %i %i %i %s %s %s %i %i %i %i\n\n", argv[0],
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b,
+        prefetch, l_precision, br_type, l_br, l_br_unroll, l_reps, l_tc_config);
+      printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
+      printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
+      printf("max. error: %f\n", error);
     }
 
     if ( (l_total_max_error < error) && (l_run_check == 1) ) {
@@ -1247,19 +1262,18 @@ int main(int argc, char* argv []) {
   }
 
   /* Print total max error */
-  printf("\n\n Total Max Error %f\n\n", l_total_max_error );
+  printf("\nTotal Max Error %f\n", l_total_max_error);
 
-  if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-    if ( l_total_max_error >= 0.005 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
-  } else {
-    if ( l_total_max_error >= 0.00005 ) {
-      return EXIT_FAILURE;
-    } else {
-      return EXIT_SUCCESS;
-    }
+  if (0.005 <= l_total_max_error && l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16) {
+    printf("FAILURE\n");
+    return EXIT_FAILURE;
+  }
+  else if (0.00005 <= l_total_max_error) {
+    printf("FAILURE\n");
+    return EXIT_FAILURE;
+  }
+  else {
+    printf("SUCCESS\n");
+    return EXIT_SUCCESS;
   }
 }
