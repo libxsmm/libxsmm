@@ -1847,7 +1847,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #if !defined(__MIC__)
   const char * /*const*/ target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   /* large enough temporary buffer for generated code */
-  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = "", jit_name[384] = "";
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
