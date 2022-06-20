@@ -144,8 +144,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "magazine", "magazine", "{4E612A76-6EF6-4E71-92A4-B10764E4314E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "magazine_blaze", "..\samples\magazine\magazine_blaze.vcxproj", "{9D98361B-9BB5-485C-BAC7-AFBA216B973E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "magazine_eigen", "..\samples\magazine\magazine_eigen.vcxproj", "{AE28E17A-6A33-463E-B586-F7B7501256F1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "magazine_xsmm", "..\samples\magazine\magazine_xsmm.vcxproj", "{0EC5E28C-54A4-403B-AA7F-541007E74116}"
 	ProjectSection(ProjectDependencies) = postProject
