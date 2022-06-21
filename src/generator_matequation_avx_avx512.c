@@ -812,7 +812,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
     if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) {
       cur_node->fusion_info.gather.fused_reduce_cols_add = 1;
       cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD;
-      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
+      cur_node->info.u_op.flags = 0;
       if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
       } else {
