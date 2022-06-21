@@ -199,7 +199,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       SLURMDIR=$0
     fi
     for SLURMFILE in $(ls -1 "${SLURMDIR}"); do
-    if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
+    if [[ (-d ${SLURMDIR}) && (! "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(basename ${SLURMFILE%.*})
     elif [ -e "${TEST}" ]; then
@@ -269,18 +269,17 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
-      if [[ "none" != "${CONFIG}" && ("" = "$1" || "none" != "${PARTITION}" || "none" != "${ENV}") ]]; then
-        if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          if [ "${ENVVAL}" ]; then
-            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG}/${ENVVAL})"
-          else
-            echo "+++ TEST ${TESTID} (${PARTITION}/${CONFIG})"
-          fi
-        elif [ "${ENVVAL}" ]; then
-          echo "+++ TEST ${TESTID} (${CONFIG}/${ENVVAL})"
-        else
-          echo "+++ TEST ${TESTID} (${CONFIG})"
-        fi
+      HEADER=""
+      if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
+        HEADER="${PARTITION}"
+      fi
+      if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
+      if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
+      HEADER=$(echo "${HEADER}" | tr -s " " "/")
+      if [ "${TESTID}" ]; then
+        echo "+++ TEST ${TESTID} (${HEADER})"
+      else
+        echo "+++ TEST ${HEADER}"
       fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
