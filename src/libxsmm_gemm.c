@@ -36,7 +36,7 @@
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
 #if 0
-/* @TODO this kernle business doesn't work anymore */
+/* @TODO this kernle business does not work anymore */
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif

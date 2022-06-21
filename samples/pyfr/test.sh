@@ -13,7 +13,8 @@ EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
 export OMP_NUM_THREADS=${OMP_NUM_THREADS:-2}
+export TEST_N=${TEST_N:-48000}
 
 for M in "${HERE}"/mats/p*/*/*-sp.mtx; do
-  echo "${HERE}/pyfr_driver_asp_reg ${M} 48000 10 >/dev/null"
-done | ${EXEC}
+  echo "${HERE}/pyfr_driver_asp_reg ${M} ${TEST_N} 10"
+done | ${EXEC} "$@"

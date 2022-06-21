@@ -190,6 +190,7 @@ libxsmm_matdiff
 libxsmm_matdiff_
 libxsmm_matdiff_clear
 libxsmm_matdiff_clear_
+libxsmm_matdiff_epsilon
 libxsmm_matdiff_reduce
 libxsmm_matdiff_reduce_
 libxsmm_matrix_eqn_create

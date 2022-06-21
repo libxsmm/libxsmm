@@ -991,7 +991,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
   } else if ((m_tiles == 2) && (n_tiles == 1)) {
     libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tile_mate_id, 2, -1, 0, -1);
   } else {
-    /* In this case we can't do paired tilestores */
+    /* In this case we cannot do paired tilestores */
     libxsmm_generator_gemm_amx_fill_array_4_entries(_C_tile_mate_id, -1, -1, -1, -1);
   }
 

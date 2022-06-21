@@ -101,6 +101,8 @@ LIBXSMM_API void libxsmm_dnn_smax_fwd_exec_f32( libxsmm_dnn_smax_fwd_config cfg,
   LIBXSMM_VLA_DECL(4, const float,  input,  in_act_ptr, Bc, bn, bc);
   LIBXSMM_VLA_DECL(2,   const int,  label,   label_ptr,         bn);
 
+  LIBXSMM_UNUSED(scratch);
+
   /* lazy barrier init */
   libxsmm_barrier_init( cfg.barrier, ltid );
 
@@ -183,6 +185,8 @@ LIBXSMM_API void libxsmm_dnn_smax_bwd_exec_f32( libxsmm_dnn_smax_bwd_config cfg,
   LIBXSMM_VLA_DECL(4, const float, output,   out_act_ptr,  Bc, bn, bc);
   LIBXSMM_VLA_DECL(4,       float, dinput, delin_act_ptr,  Bc, bn, bc);
   LIBXSMM_VLA_DECL(2,   const int,  label,     label_ptr,          bn);
+
+  LIBXSMM_UNUSED(scratch);
 
   /* lazy barrier init */
   libxsmm_barrier_init( cfg.barrier, ltid );

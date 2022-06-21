@@ -52,7 +52,7 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
