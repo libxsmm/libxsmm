@@ -322,26 +322,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_matrix_eqn_function xmateqn;
 } libxsmm_code_pointer;
 
-struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  double* a_dense;
+struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm {
+  int M, N, K, ldb, ldc, N_chunksize;
   libxsmm_gemmfunction kernel;
-};
-
-struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  float* a_dense;
-  libxsmm_gemmfunction kernel;
+  libxsmm_datatype datatype;
+  void* a_dense;
 };
 
 /** Packed structure storing the mateltw argument description. */
