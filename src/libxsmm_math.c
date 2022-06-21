@@ -179,6 +179,24 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 }
 
 
+LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
+{
+  double result;
+  if (NULL != input) {
+    if (0 < input->rsq) {
+      result = LIBXSMM_MIN(input->normf_rel, input->linf_abs) / input->rsq;
+    }
+    else {
+      const double a = LIBXSMM_MAX(input->norm1_abs, input->linf_abs);
+      const double b = LIBXSMM_MAX(input->normi_abs, input->l2_abs);
+      result = LIBXSMM_MAX(a, b);
+    }
+  }
+  else result = 0;
+  return result;
+}
+
+
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
 {
   if (NULL != output && NULL != input) {

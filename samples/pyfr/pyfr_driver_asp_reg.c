@@ -13,10 +13,6 @@
 #define REALTYPE double
 #define REPS 100
 
-#if !defined(FSSPMDM)
-#define FSSPMDM LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REALTYPE, fsspmdm))
-#endif
-
 #if !defined(GEMM)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 #   include <mkl.h>
@@ -173,12 +169,12 @@ int main(int argc, char* argv[]) {
   libxsmm_timer_tickint l_start, l_end;
   double l_total;
 
-  REALTYPE alpha = 1.0;
-  REALTYPE beta = 1.0;
+  REALTYPE alpha = 1;
+  REALTYPE beta = 1;
   char trans = 'N';
 
-  FSSPMDM* gemm_op_betazero = NULL;
-  FSSPMDM* gemm_op_betaone = NULL;
+  libxsmm_fsspmdm* gemm_op_betazero = NULL;
+  libxsmm_fsspmdm* gemm_op_betaone = NULL;
 
   if (argc != 4) {
     fprintf( stderr, "need csr-filename N reps!\n" );
@@ -252,17 +248,17 @@ int main(int argc, char* argv[]) {
 
   /* setting up fsspmdm */
   l_n_block = 48;
-  beta = 0.0;
-  gemm_op_betazero = LIBXSMM_CONCATENATE(FSSPMDM,_create)( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, 1, l_a_dense );
-  beta = 1.0;
-  gemm_op_betaone = LIBXSMM_CONCATENATE(FSSPMDM,_create)( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, 0, l_a_dense );
+  beta = 0;
+  gemm_op_betazero = libxsmm_fsspmdm_create( LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 1, l_a_dense );
+  beta = 1;
+  gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 0, l_a_dense );
 
   /* compute golden results */
   printf("computing golden solution...\n");
   for ( l_j = 0; l_j < l_n; l_j++ ) {
     for (l_i = 0; l_i < l_m; l_i++ ) {
       l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
-      l_c_gold_betazero[(l_n*l_i) + l_j] = 0.0;
+      l_c_gold_betazero[(l_n*l_i) + l_j] = 0;
       for (l_z = 0; l_z < l_elems; l_z++) {
         l_c_gold_betazero[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
       }
@@ -284,21 +280,21 @@ int main(int argc, char* argv[]) {
   #pragma omp parallel for private(l_z)
 #endif
   for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-    LIBXSMM_CONCATENATE(FSSPMDM,_execute)( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
+    libxsmm_fsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
   }
 #if defined(_OPENMP)
   #pragma omp parallel for private(l_z)
 #endif
   for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-    LIBXSMM_CONCATENATE(FSSPMDM,_execute)( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
+    libxsmm_fsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
   }
   printf("...done!\n");
 
   /* BLAS code */
   printf("computing BLAS (A dense) solution...\n");
-  beta = 0.0;
+  beta = 0;
   GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
-  beta = 1.0;
+  beta = 1;
   GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
   printf("...done!\n");
 
@@ -332,7 +328,7 @@ int main(int argc, char* argv[]) {
     #pragma omp parallel for private(l_z)
 #endif
     for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-      LIBXSMM_CONCATENATE(FSSPMDM,_execute)( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
+      libxsmm_fsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -348,7 +344,7 @@ int main(int argc, char* argv[]) {
     #pragma omp parallel for private(l_z)
 #endif
     for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-      LIBXSMM_CONCATENATE(FSSPMDM,_execute)( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
+      libxsmm_fsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -359,7 +355,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   l_start = libxsmm_timer_tick();
-  beta = 0.0;
+  beta = 0;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
     GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
   }
@@ -370,7 +366,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "GB/s    BLAS    (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   l_start = libxsmm_timer_tick();
-  beta = 1.0;
+  beta = 1;
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
     GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
   }
@@ -381,8 +377,8 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "GB/s    BLAS    (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   /* free */
-  LIBXSMM_CONCATENATE(FSSPMDM,_destroy)( gemm_op_betazero );
-  LIBXSMM_CONCATENATE(FSSPMDM,_destroy)( gemm_op_betaone );
+  libxsmm_fsspmdm_destroy( gemm_op_betazero );
+  libxsmm_fsspmdm_destroy( gemm_op_betaone );
 
   return ret;
 }

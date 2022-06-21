@@ -99,7 +99,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
     for ( s1 = 0; s1 < S1; s1++) {
       for ( s3 = 0; s3 < S3; s3++) {
         float cur = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
-        float z = expf(cur - max);
+        float z = LIBXSMM_EXPF(cur - max);
         LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) = z;
         sum += z;
       }
@@ -236,7 +236,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
     }
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
-        float z = expf(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) - max);
+        float z = LIBXSMM_EXPF(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) - max);
         LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) = z;
         sum += z;
       }

@@ -95,6 +95,9 @@ libxsmm_dvalue
 libxsmm_finalize
 libxsmm_finalize_
 libxsmm_free
+libxsmm_fsspmdm_create
+libxsmm_fsspmdm_destroy
+libxsmm_fsspmdm_execute
 libxsmm_gcd
 libxsmm_gemm_batch
 libxsmm_gemm_batch_
@@ -190,6 +193,7 @@ libxsmm_matdiff
 libxsmm_matdiff_
 libxsmm_matdiff_clear
 libxsmm_matdiff_clear_
+libxsmm_matdiff_epsilon
 libxsmm_matdiff_reduce
 libxsmm_matdiff_reduce_
 libxsmm_matrix_eqn_create

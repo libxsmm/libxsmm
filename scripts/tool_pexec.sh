@@ -112,55 +112,46 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   else
     LOGFILE_OUTER=${LOGFILE}
   fi
-  ${XARGS} </dev/stdin >"${LOGFILE_OUTER}" -P${NP} -I%% bash -c "set -eo pipefail; \
-    _PEXEC_NARGS=\$(IFS=\" \"; set -- %%; echo \"\$#\"); \
-    _PEXEC_BASENAME() { \
-      local _PEXEC_BASENAME_PRE=\"\" _PEXEC_BASENAME_CMD=\"\" _PEXEC_BASENAME_ARGS=\"\"; \
-      local _PEXEC_BASENAME_INPUT=\"\$*\" _PEXEC_BASENAME_WORDS=\"\"; \
-      for WORD in \${_PEXEC_BASENAME_INPUT}; do \
+  ${XARGS} </dev/stdin >"${LOGFILE_OUTER}" -P${NP} -I%%% bash -c "set -eo pipefail; \
+    _PEXEC_CMDPRETTY() { \
+      local _PEXEC_CMDPRETTY_PRE=\"\" _PEXEC_CMDPRETTY_CMD=\"\" _PEXEC_CMDPRETTY_ARGS=\"\"; \
+      local _PEXEC_CMDPRETTY_INPUT=\"\$*\" _PEXEC_CMDPRETTY_WORDS=\"\"; \
+      for WORD in \${_PEXEC_CMDPRETTY_INPUT}; do \
+        local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/'); \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
-          _PEXEC_BASENAME_CMD=\$(echo \"\${WORD}\" | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/'); \
-          _PEXEC_BASENAME_PRE=\${_PEXEC_BASENAME_WORDS}; \
-          _PEXEC_BASENAME_ARGS=\"\"; \
+          _PEXEC_CMDPRETTY_PRE=\${_PEXEC_CMDPRETTY_WORDS}; \
+          _PEXEC_CMDPRETTY_CMD=\${_PEXEC_CMDPRETTY_WORD}; \
+          _PEXEC_CMDPRETTY_ARGS=\"\"; \
           continue; \
         fi; \
-        _PEXEC_BASENAME_WORDS=\"\${_PEXEC_BASENAME_WORDS} \${WORD}\"; \
-        _PEXEC_BASENAME_ARGS=\"\${_PEXEC_BASENAME_WORDS} \${WORD}\"; \
+        _PEXEC_CMDPRETTY_WORDS=\"\${_PEXEC_CMDPRETTY_WORDS} \${_PEXEC_CMDPRETTY_WORD}\"; \
+        _PEXEC_CMDPRETTY_ARGS=\"\${_PEXEC_CMDPRETTY_ARGS} \${_PEXEC_CMDPRETTY_WORD}\"; \
       done; \
-      echo \"\${_PEXEC_BASENAME_CMD}\${_PEXEC_BASENAME_PRE}\${_PEXEC_BASENAME_ARGS}\" \
+      echo \"\${_PEXEC_CMDPRETTY_CMD}\${_PEXEC_CMDPRETTY_PRE}\${_PEXEC_CMDPRETTY_ARGS}\" \
       | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g'; \
     }; \
+    _PEXEC_CMDLINE=\"%%%\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY %%%); \
     _PEXEC_TRAP_EXIT() { \
       local _PEXEC_TRAP_RESULT=\$?; \
       if [ \"0\" != \"\${_PEXEC_TRAP_RESULT}\" ]; then \
         local ERROR=\"ERROR\"; \
         if [ \"139\" = \"\${_PEXEC_TRAP_RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
-        if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
-          1>&2 printf \" -> \${ERROR}[%03d]: \$(echo %% | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/')\n\" \${_PEXEC_TRAP_RESULT}; \
-        else \
-          1>&2 printf \" -> \${ERROR}[%03d]: %%\n\" \${_PEXEC_TRAP_RESULT}; \
-        fi; \
+        1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_BASENAME}\n\" \${_PEXEC_TRAP_RESULT}; \
         exit 1; \
       elif [ \"0\" = \"${QUIET}\" ]; then \
-        if [ \"1\" = \"\${_PEXEC_NARGS}\" ]; then \
-          1>&2 echo \" -> VALID[000]: \$(echo %% | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/')\"; \
-        else \
-          1>&2 echo \" -> VALID[000]: %%\"; \
-        fi; \
+        1>&2 echo \" -> VALID[000]: \${_PEXEC_BASENAME}\"; \
       fi; \
     }; \
     if [[ ${LOGFILE} != /dev/* ]]; then \
-      _PEXEC_LOGFILE=\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\$(_PEXEC_BASENAME %%)\2/p\"); \
+      _PEXEC_LOGFILE=\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_BASENAME}\2/p\"); \
     else \
       _PEXEC_LOGFILE=/dev/stdout; \
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
-    if [ \"1\" = \"\${_PEXEC_NARGS}\" ] && \
-       [ \"\$(${FILE} -bL --mime %% | ${SED} -n '/^text\//p')\" ]; \
-    then \
-      source %%; \
+    if [ \"\$(${FILE} -bL --mime \"\${_PEXEC_CMDLINE%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
+      source %%%; \
     else \
-      %%; \
+      %%%; \
     fi >\"\${_PEXEC_LOGFILE}\" 2>&1"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then

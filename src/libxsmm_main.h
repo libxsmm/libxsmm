@@ -168,7 +168,11 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
+#if defined(LIBXSMM_UNPACKED)
 #define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE) LIBXSMM_MEMSET127(DST, 0, SIZE)
+#else
+# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE)
+#endif
 #define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
   LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
   LIBXSMM_DESCRIPTOR_CLEAR_AUX(BLOB, LIBXSMM_DESCRIPTOR_MAXSIZE)
@@ -318,26 +322,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_matrix_eqn_function xmateqn;
 } libxsmm_code_pointer;
 
-struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  double* a_dense;
+struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm {
+  int M, N, K, ldb, ldc, N_chunksize;
   libxsmm_gemmfunction kernel;
-};
-
-struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  float* a_dense;
-  libxsmm_gemmfunction kernel;
+  libxsmm_datatype datatype;
+  void* a_dense;
 };
 
 /** Packed structure storing the mateltw argument description. */
@@ -580,4 +569,3 @@ LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 
 #endif /*LIBXSMM_MAIN_H*/
-
