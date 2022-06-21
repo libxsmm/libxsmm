@@ -48,7 +48,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       REVSTART="HEAD^"
     fi
     if [ "0" != "${LIMIT}" ] && [ "${GIT}" ] && \
-       [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
+       [ "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} "\[full ci\]")" ];
     then
       LIMIT=0
     fi
@@ -147,7 +147,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" | tr -s [[:punct:][:space:]] - | ${SED} -e "s/^-//" -e "s/-$//")
+      LABEL=$(echo "${BUILDKITE_LABEL}" | tr -s [[:punct:][:space:]] - | ${SED} "s/^-//;s/-$//")
     fi
     if [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
@@ -188,10 +188,10 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   # control log
   echo && echo "^^^ +++"
   while [ "${TEST}" ] || TEST=$(eval " \
-    ${SED} -n -e '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
+    ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
-    ${SED} -e 's/^ *- *//' -e 's/^  *//' | tr '\n' ' ' | \
-    ${SED} -e 's/  *$//'") && [ "${TEST}" ];
+    ${SED} 's/^ *- *//;s/^  *//' | tr '\n' ' ' | \
+    ${SED} 's/  *$//'") && [ "${TEST}" ];
   do
     if [ -d "${TEST}" ]; then
       SLURMDIR=${TEST}
@@ -214,9 +214,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
        [ "$(command -v date)" ];
     then
       NOW=$(date +%s)
-      LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+      LIMITFILE=$(echo "${LABEL}" | ${SED} "s/[^A-Za-z0-9._-]//g")
       if [ ! "${LIMITFILE}" ]; then
-        LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+        LIMITFILE=$(echo "${TESTID}" | ${SED} "s/[^A-Za-z0-9._-]//g")
       fi
       if [ "${LIMITFILE}" ]; then
         if [ "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
@@ -270,13 +270,13 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       fi
       # print some header if all tests are selected or in case of multi-tests
       HEADER=""
-      if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-        HEADER="${PARTITION}"
-      fi
+      if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then HEADER="${PARTITION}"; fi
       if [ "none" != "${CONFIG}" ]; then HEADER="${HEADER} ${CONFIG}"; fi
       if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
-      HEADER=$(echo "${HEADER}" | tr -s " " "/")
-      if [ "${TESTID}" ]; then
+      HEADER=$(echo "${HEADER}" \
+        | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
+        | tr [[:lower:]] [[:upper:]] | tr -s " " "/")
+      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr [[:upper:]] [[:lower:]])" ]; then
         echo "+++ TEST ${TESTID} (${HEADER})"
       else
         echo "+++ TEST ${HEADER}"
@@ -291,7 +291,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOROOT}/scripts/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
-          LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
+          LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
           mkdir -p "${REPOROOT}/licenses"
           cp -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u "${LICSDIR}"/licenses/* "${REPOROOT}/licenses" 2>/dev/null
