@@ -173,7 +173,44 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_ele
       printf("ERROR: Ternary needs three children!\n");
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
+  }
+}
+
+LIBXSMM_API_INTERN void libxsmm_matrix_eqn_propagate_tmp_info( libxsmm_matrix_eqn_elem* cur_node ) {
+  if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if ( (cur_node->le == NULL) && (cur_node->ri == NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.arg.dtype;
+    }
+    else {
+      printf("ERROR: Arg cannot have left or right child!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    if ( cur_node->le != NULL ) {
+      cur_node->tmp.dtype = cur_node->info.u_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+    } else if ( (cur_node->ri != NULL) ) {
+      printf("ERROR: Unary cannot have right childs!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.b_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->ri );
+    } else {
+      printf("ERROR: Binary needs left and right child!\n");
+    }
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if ( (cur_node->le != NULL) && (cur_node->ri != NULL) && (cur_node->r2 != NULL) ) {
+      cur_node->tmp.dtype = cur_node->info.t_op.dtype;
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->le );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->ri );
+      libxsmm_matrix_eqn_propagate_tmp_info( cur_node->r2 );
+    } else {
+      printf("ERROR: Ternary needs all three children!\n");
+    }
+  } else {
+    /* should not happen */
   }
 }
 
@@ -256,7 +293,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqn
       printf("ERROR: Ternary needs all three children!\n");
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -311,7 +348,7 @@ void libxsmm_generator_assign_new_timestamp(libxsmm_matrix_eqn_elem* cur_node, l
     cur_node->visit_timestamp = *current_timestamp;
     *current_timestamp = *current_timestamp + 1;
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -777,15 +814,16 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_opt_exec_plan( libxsmm_blasint idx ) 
   libxsmm_blasint *tmp_storage_pool = NULL;
   assert(NULL != libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist, nothing to optimize!\n" );
+    fprintf( stderr, "the requested equation does not exist, nothing to optimize!\n" );
   }
-  if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
-    fprintf( stderr, "the requested equation is not yet finalized, so can't optimize!\n" );
+  else if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
+    fprintf( stderr, "the requested equation is not yet finalized, so cannot optimize!\n" );
   }
 #if 0
   printf("\n");
   printf("Assigning register scores to find optimal traversal plan (i.e. that minimizes tmp storage)... \n");
 #endif
+  libxsmm_matrix_eqn_propagate_tmp_info( libxsmm_matrix_eqns[idx]->eqn_root );
   libxsmm_matrix_eqn_assign_reg_scores( libxsmm_matrix_eqns[idx]->eqn_root );
   max_reg_score = libxsmm_matrix_eqns[idx]->eqn_root->reg_score;
   tmp_storage_pool = (libxsmm_blasint*) calloc(max_reg_score, sizeof(libxsmm_blasint));
@@ -832,7 +870,7 @@ void libxsmm_generator_reoptimize_eqn(libxsmm_matrix_eqn *eqn) {
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info );
 LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm_matrix_eqn_elem* cur_node, libxsmm_matrix_eqn_node_type type, libxsmm_matrix_eqn_info info ) {
   if ( type == LIBXSMM_MATRIX_EQN_NODE_NONE ) {
-    /* shouldn't happen */
+    /* should not happen */
     fprintf( stderr, "wrong op node type to add!\n");
   }
 
@@ -849,7 +887,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
     if ( cur_node->le == NULL ) {
       cur_node->le = node;
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       fprintf( stderr, "this is not a leaf node, so we cannot add a node!\n");
       free( node );
       node = NULL;
@@ -871,7 +909,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
     } else if ( cur_node->ri == NULL ) {
       cur_node->ri = node;
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       fprintf( stderr, "this is not a leaf node, so we cannot add a node!\n");
       free( node );
       node = NULL;
@@ -895,7 +933,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
     } else if ( cur_node->r2 == NULL ) {
       cur_node->r2 = node;
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       fprintf( stderr, "this is not a leaf node, so we cannot add a node!\n");
       free( node );
       node = NULL;
@@ -913,7 +951,7 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
 
     return cur_node;
   } else {
-    /* shouldn't happen */
+    /* should not happen */
     fprintf( stderr, "at this position we cannot add an op!\n");
   }
 
@@ -1026,7 +1064,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_print( libxsmm_matrix_eqn_elem* c
       printf("ERROR: Ternary needs left, right and right2 child!\n");
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -1069,7 +1107,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
       printf("ERROR: Ternary needs left, right and right2 child!\n");
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -1077,7 +1115,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
     fprintf( stderr, "the requested equation is already finalized!\n" );
@@ -1102,7 +1140,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
 
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_ready_for_jit( libxsmm_blasint eqn_idx ) {
   if ( libxsmm_matrix_eqns[eqn_idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[eqn_idx]->is_constructed == 0 ) {
@@ -1201,7 +1239,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg( const libxsmm_blasint idx, con
   union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1231,7 +1269,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_arg_v2( const libxsmm_matrix_eqn_ar
   libxsmm_blasint idx = arg_metadata.eqn_idx;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1261,7 +1299,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op( const libxsmm_blasint idx
   union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1289,7 +1327,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_unary_op_v2(const libxsmm_matrix_eq
   libxsmm_blasint idx = op_metadata.eqn_idx;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1316,7 +1354,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op( const libxsmm_blasint id
   union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1362,7 +1400,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_binary_op_v2(const libxsmm_matrix_e
                             (type ==  LIBXSMM_MELTW_TYPE_BINARY_MATMUL_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1392,7 +1430,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op( const libxsmm_blasint i
   union libxsmm_matrix_eqn_info info /*= { 0 }*/;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1439,7 +1477,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2(const libxsmm_matrix_
                             (type ==  LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS_B_TRANS)) ? 1 : 0;
 
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
     return 1;
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 1 ) {
@@ -1466,7 +1504,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2(const libxsmm_matrix_
 
 LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
     fprintf( stderr, "the requested equation is not yet finalized!\n" );
@@ -1481,7 +1519,7 @@ LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx ) {
 
 LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx ) {
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
-    fprintf( stderr, "the requested equation doesn't exist!\n" );
+    fprintf( stderr, "the requested equation does not exist!\n" );
   }
   if ( libxsmm_matrix_eqns[idx]->is_constructed == 0 ) {
     fprintf( stderr, "the requested equation is not yet finalized!\n" );

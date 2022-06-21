@@ -80,7 +80,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
   /* init libxsmm */
   LIBXSMM_INIT
 
-  /* in case of zero we don't need to do anything */
+  /* in case of zero we do not need to do anything */
   if (LIBXSMM_FEQ(input, 0)) {
     qvalue = 0;
   } else {
@@ -239,7 +239,7 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 
     /* DAZ */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
-    /* we don't round inf and NaN */
+    /* we do not round inf and NaN */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u;
     /* shift right */
     res = (unsigned short)(hybrid_in.u >> 16);
@@ -260,7 +260,7 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat1
 
     /* DAZ */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
-    /* we don't round inf and NaN */
+    /* we do not round inf and NaN */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u + 0x00008000;
     /* shift right */
     res = (unsigned short)(hybrid_in.u >> 16);
@@ -284,7 +284,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : hybrid_in.u;
     /* RNE round */
     fixup = (hybrid_in.u >> 16) & 1;
-    /* we don't round inf and NaN */
+    /* we do not round inf and NaN */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x7f800000 ) ? ( ((hybrid_in.u & 0x007fffff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x00400000 ) : hybrid_in.u + 0x00007fff + fixup;
     /* shift right */
     res = (unsigned short)(hybrid_in.u >> 16);
@@ -440,7 +440,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
 
     short_round = libxsmm_convert_f32_to_f16( in[i] );
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (short_round & 0x7c00) == 0x7c00 ) {
       do_round = 0;
     }
@@ -479,7 +479,7 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
 
     short_round = libxsmm_convert_f32_to_f16( in[i] );
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (short_round & 0x7c00) == 0x7c00 ) {
       do_round = 0;
     }

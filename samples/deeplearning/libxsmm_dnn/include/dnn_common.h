@@ -126,7 +126,7 @@ LIBXSMM_INLINE void rnaz_mask_fp32_bf16(float* in, float* out, unsigned int len)
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -155,7 +155,7 @@ LIBXSMM_INLINE void rne_mask_fp32_bf16(float* in, float* out, unsigned int len) 
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -185,7 +185,7 @@ LIBXSMM_INLINE void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len)
 
     int_round = *((unsigned int*)&(in[i]));
 
-    /* we don't round NaN and inf */
+    /* we do not round NaN and inf */
     if ( (int_round & 0x7f800000) == 0x7f800000 ) {
       do_round = 0;
     }
@@ -2547,7 +2547,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
           lcl_buffer_ptr[i] = 0.0;
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       for( ho = 0; ho < ofh; ho++ ) {
@@ -2567,7 +2567,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
               } else if ( param->type == 1 ) {
                 LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) += LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
               } else {
-                /* shouldn't happen */
+                /* should not happen */
               }
             }
           }
@@ -2587,7 +2587,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
           }
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
     }
   }
@@ -2658,7 +2658,7 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           }
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
 
       for( hi = 0; hi < ifh; hi++ ) {
@@ -2753,18 +2753,18 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       /* Handling the padding at the start */
       for (ho = 0; ho < ho_start; ho++) {
         for (wo = 0; wo < ofwp; wo++) {
-          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
-          *output_ptr2 = 0;
           unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          float* output_ptr2 = &LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofhp, ofwp);
           *relumask_ptr2 = 0;
+          *output_ptr2 = 0;
         }
       }
       for (wo = 0; wo < wo_start; wo++) {
         for (ho = 0; ho < ofhp; ho++) {
-          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
-          *output_ptr2 = 0;
           unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          float* output_ptr2 = &LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofhp, ofwp);
           *relumask_ptr2 = 0;
+          *output_ptr2 = 0;
         }
       }
 
@@ -2800,18 +2800,18 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
       /* Handling the padding at the end */
       for (ho = ho_end; ho < ofhp; ho++) {
         for (wo = 0; wo < ofwp; wo++) {
-          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
-          *output_ptr2 = 0;
           unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          float* output_ptr2 = &LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofhp, ofwp);
           *relumask_ptr2 = 0;
+          *output_ptr2 = 0;
         }
       }
       for (wo = wo_end; wo < ofwp; wo++) {
         for (ho = 0; ho < ofhp; ho++) {
-          float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofhp, ofwp);
-          *output_ptr2 = 0;
           unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(4, relumask, img, fm, ho, wo, nFm, ofhp, ofwp);
+          float* output_ptr2 = &LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofhp, ofwp);
           *relumask_ptr2 = 0;
+          *output_ptr2 = 0;
         }
       }
 
@@ -3116,13 +3116,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp_fp64(naive_fusedbatchnorm_t* param, 
   const int ofw = ifw/sw;
   const double nhw = (double)(nImg * ifh * ifw);
   const double recp_nhw = 1.0f/nhw;
-
   int img, fm, hi, wi, ho, wo;
-
-  if (param->pad_h_in != 0 || param->pad_w_in != 0 || param->pad_h_out != 0 || param->pad_w_out != 0) {
-    printf("Error: naive_fusedbatchnorm_bp_fp64 does not support padding!\n");
-    return;
-  }
 
   LIBXSMM_VLA_DECL(4, const double, input,      input_ptr,      nFm, ifh, ifw);
   LIBXSMM_VLA_DECL(4,       double, dinput,     dinput_ptr,     nFm, ifh, ifw);
@@ -3130,6 +3124,11 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp_fp64(naive_fusedbatchnorm_t* param, 
   LIBXSMM_VLA_DECL(4, const double, output,     output_ptr,     nFm, ofh, ofw);
   LIBXSMM_VLA_DECL(4,       double, doutput,    doutput_ptr,    nFm, ofh, ofw);
   LIBXSMM_UNUSED(beta_ptr);
+
+  if (param->pad_h_in != 0 || param->pad_w_in != 0 || param->pad_h_out != 0 || param->pad_w_out != 0) {
+    printf("Error: naive_fusedbatchnorm_bp_fp64 does not support padding!\n");
+    return;
+  }
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
@@ -3267,18 +3266,18 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the start */
         for (ho = 0; ho < ho_start; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
-            *output_ptr2 = 0;
             unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
+            float* output_ptr2 = &LIBXSMM_VLA_ACCESS(5, output, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
+            *output_ptr2 = 0;
           }
         }
         for (wo = 0; wo < wo_start; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
-            *output_ptr2 = 0;
             unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
+            float* output_ptr2 = &LIBXSMM_VLA_ACCESS(5, output, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
+            *output_ptr2 = 0;
           }
         }
 
@@ -3314,18 +3313,18 @@ LIBXSMM_INLINE void naive_fusedgroupnorm_fp(naive_fusedgroupnorm_t* param, const
         /* Handling the padding at the end */
         for (ho = ho_end; ho < ofhp; ho++) {
           for (wo = 0; wo < ofwp; wo++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
-            *output_ptr2 = 0;
             unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
+            float* output_ptr2 = &LIBXSMM_VLA_ACCESS(5, output, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
+            *output_ptr2 = 0;
           }
         }
         for (wo = wo_end; wo < ofwp; wo++) {
           for (ho = 0; ho < ofhp; ho++) {
-            float* output_ptr2           = &LIBXSMM_VLA_ACCESS(5, output,   img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
-            *output_ptr2 = 0;
             unsigned char* relumask_ptr2 = &LIBXSMM_VLA_ACCESS(5, relumask, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
+            float* output_ptr2 = &LIBXSMM_VLA_ACCESS(5, output, img, g, fmg, ho, wo, nG, nFMG, ofhp, ofwp);
             *relumask_ptr2 = 0;
+            *output_ptr2 = 0;
           }
         }
 

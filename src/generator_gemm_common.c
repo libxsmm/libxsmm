@@ -68,7 +68,7 @@ void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*         
       }
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VMAXPS, i_micro_kernel_config->vector_name, inout_vreg, zero_vreg, inout_vreg );
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
@@ -320,7 +320,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_micro_kernel_config->vector_name, l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
         return;
       }
@@ -386,7 +386,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
           i_micro_kernel_config->vector_name,
           0, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
@@ -1208,7 +1208,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VPDPBUSD;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
     } else {
-      /* shouldn't happen as we caught this case earlier */
+      /* should not happen as we caught this case earlier */
       io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
       io_micro_kernel_config->vector_reg_count = 0;
       io_micro_kernel_config->use_masking_a_c = 0;
@@ -1406,7 +1406,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     } else {
-      /* shouldn't happen as we caught this case earlier */
+      /* should not happen as we caught this case earlier */
       io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
       io_micro_kernel_config->vector_reg_count = 0;
       io_micro_kernel_config->use_masking_a_c = 0;
@@ -1604,7 +1604,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     } else {
-      /* shouldn't happen as we caught this case earlier */
+      /* should not happen as we caught this case earlier */
       io_micro_kernel_config->instruction_set = LIBXSMM_TARGET_ARCH_GENERIC;
       io_micro_kernel_config->vector_reg_count = 0;
       io_micro_kernel_config->use_masking_a_c = 0;
@@ -2871,7 +2871,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned i
       *io_block = i_max_block;
     } else {
       *io_block = i_range;
-      /* in case we don't have a full vector length, we use masking */
+      /* in case we do not have a full vector length, we use masking */
       if ( (*io_block) % i_nomask_block != 0 ) {
         *o_use_mask = 1;
       }

@@ -3,7 +3,7 @@
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 EXEC=${HERE}/../../scripts/tool_pexec.sh
 
-cd ${HERE} && cat <<EOM | ${EXEC}
+cd ${HERE} && cat <<EOM | ${EXEC} "$@"
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_0_argopmode_0_16b.sh
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_0_argopmode_0_32b.sh
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_1_argopmode_0_16b.sh

@@ -2578,7 +2578,7 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       return;
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }

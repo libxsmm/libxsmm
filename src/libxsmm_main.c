@@ -1863,7 +1863,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #if !defined(__MIC__)
   const char * /*const*/ target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   /* large enough temporary buffer for generated code */
-  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = "", jit_name[384] = "";
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
@@ -2240,8 +2240,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  if  (0 == generated_code.last_error /* no error raised */
-    && 0 != generated_code.code_size /*check (tcopy issue?)*/)
+  if  (0 == generated_code.last_error
+    && 0 != generated_code.code_size /*check (tcopy issue?)*/
+# if !defined(NDEBUG)
+    && generated_code.code_size <= generated_code.buffer_size
+# endif
+    /* no error raised */)
   {
     char* code_buffer = NULL;
 # if defined(__APPLE__) && defined(__arm64__)

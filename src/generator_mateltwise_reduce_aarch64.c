@@ -779,7 +779,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
       i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 64, i_gp_reg_mapping->gp_reg_reduced_elts_squared );
   }
 
-  /* In this case we don't support the algorithm with "on the fly transpose" */
+  /* In this case we do not support the algorithm with "on the fly transpose" */
   m                 = i_mateltwise_desc->m;
   n                 = i_mateltwise_desc->n;
   use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;

@@ -11,7 +11,7 @@
 
 #define LIBXSMM_PARALLEL_KERNEL_TEST
 #if defined(_OPENMP)
-#include "omp.h"
+# include <omp.h>
 #endif
 #include "kernel.c"
 #undef LIBXSMM_PARALLEL_KERNEL_TEST

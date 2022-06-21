@@ -249,7 +249,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
           libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
                                                       i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     } else {
@@ -1363,7 +1363,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
     * the following three TBL instructions are specific to 512 bit vector length
     * if the vector length is larger, fill the rest with zeros,
     * if the vector length is shorter, extend the TBL instructions with TBX instructions,
-    * and don't forget to subtract VL/elemSize every step from i_vec_index
+    * and do not forget to subtract VL/elemSize every step from i_vec_index
     */
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL,
                                              i_vec_c0, i_vec_index, 0, i_vec_C0,

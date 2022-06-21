@@ -128,7 +128,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
     }
     libxsmm_free( flt_in );
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -178,7 +178,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 

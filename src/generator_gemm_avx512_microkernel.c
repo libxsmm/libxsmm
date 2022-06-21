@@ -1825,7 +1825,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                                           l_k%2,
                                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           } else {
-            /* shouldn't happen */
+            /* should not happen */
           }
         } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           if( (io_generated_code->arch < LIBXSMM_X86_AVX512_CLX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CLX)
@@ -2094,7 +2094,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n,
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
       } else {
-        /* shouldn't happen */
+        /* should not happen */
       }
     }
   }
@@ -2120,7 +2120,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
   }
 #endif
 
-  /* lazy fix of when QMADD doesn't work (transB and not FP32/I16)*/
+  /* lazy fix of when QMADD does not work (transB and not FP32/I16)*/
   if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) != 0) || ( ( LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) &&
                                                                      ( LIBXSMM_DATATYPE_I16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )    ) ) {
     libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
@@ -2238,7 +2238,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
                                                         0,
                                                         i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
@@ -2256,7 +2256,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
           return;
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }

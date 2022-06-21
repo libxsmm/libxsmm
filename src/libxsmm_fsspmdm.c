@@ -302,20 +302,18 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense)
-      || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4)
+      || ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense) )
     {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
-    } else {
-      libxsmm_free( aa_dense );
     }
 
     /* Sparse (regular) fastest */
-    if ( (1 == fsspmdm_hint && NULL != k_sparse1)
-      || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4)
+      || (1 == fsspmdm_hint && NULL != k_sparse1) )
     {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
@@ -328,8 +326,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( (2 == fsspmdm_hint && NULL != k_sparse2)
-      || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4)
+      || (2 == fsspmdm_hint && NULL != k_sparse2) )
     {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
@@ -342,8 +340,8 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( (3 == fsspmdm_hint && NULL != k_sparse4)
-      || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) )
+    if ( (0 == fsspmdm_hint && dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2)
+      || (3 == fsspmdm_hint && NULL != k_sparse4) )
     {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
@@ -353,6 +351,17 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
       LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
 #endif
+    }
+
+    if ( k_dense != new_handle->kernel ) {
+      if ( NULL != new_handle->kernel ) {
+        libxsmm_free( aa_dense );
+      }
+      else { /* fallback */
+        new_handle->N_chunksize = N_dense;
+        new_handle->kernel = k_dense;
+        new_handle->a_dense = aa_dense;
+      }
     }
 
     libxsmm_free( B );
@@ -631,20 +640,18 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Dense fastest (or within 10%) */
-    if ( ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense)
-      || (dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_dense <= dt_sparse1 && dt_dense <= dt_sparse2 && dt_dense <= dt_sparse4)
+      || ((4 <= fsspmdm_hint || 0 > fsspmdm_hint) && NULL != k_dense && NULL != aa_dense) )
     {
       assert(NULL != k_dense && NULL != aa_dense);
       new_handle->N_chunksize = N_dense;
       new_handle->kernel = k_dense;
       new_handle->a_dense = aa_dense;
-    } else {
-      libxsmm_free( aa_dense );
     }
 
     /* Sparse (regular) fastest */
-    if ( (1 == fsspmdm_hint && NULL != k_sparse1)
-      || (dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_sparse1 < dt_dense && dt_sparse1 <= dt_sparse2 && dt_sparse1 <= dt_sparse4)
+      || (1 == fsspmdm_hint && NULL != k_sparse1) )
     {
       assert(NULL != k_sparse1);
       new_handle->kernel = k_sparse1;
@@ -657,8 +664,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (wide) fastest */
-    if ( (2 == fsspmdm_hint && NULL != k_sparse2)
-      || (dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4) )
+    if ( (0 == fsspmdm_hint && dt_sparse2 < dt_dense && dt_sparse2 < dt_sparse1 && dt_sparse2 <= dt_sparse4)
+      || (2 == fsspmdm_hint && NULL != k_sparse2) )
     {
       assert(NULL != k_sparse2);
       new_handle->kernel = k_sparse2;
@@ -671,8 +678,8 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     }
 
     /* Sparse (widest) fastest */
-    if ( (3 == fsspmdm_hint && NULL != k_sparse4)
-      || (dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2) )
+    if ( (0 == fsspmdm_hint && dt_sparse4 < dt_dense && dt_sparse4 < dt_sparse1 && dt_sparse4 < dt_sparse2)
+      || (3 == fsspmdm_hint && NULL != k_sparse4) )
     {
       assert(NULL != k_sparse4);
       new_handle->kernel = k_sparse4;
@@ -682,6 +689,17 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
       LIBXSMM_ASSIGN127( &fp, &k_sparse4 );
       libxsmm_free( fp );
 #endif
+    }
+
+    if ( k_dense != new_handle->kernel ) {
+      if ( NULL != new_handle->kernel ) {
+        libxsmm_free( aa_dense );
+      }
+      else { /* fallback */
+        new_handle->N_chunksize = N_dense;
+        new_handle->kernel = k_dense;
+        new_handle->a_dense = aa_dense;
+      }
     }
 
     libxsmm_free( B );

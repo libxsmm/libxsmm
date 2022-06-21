@@ -222,9 +222,11 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           ? "" : (((2 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && LIBXSMM_MAX_STATIC_TARGET_ARCH < feature_cpu)
             ? "highly " : NULL));
         if (NULL != compiler_support) {
+          const int max_static_target_arch = LIBXSMM_MAX_STATIC_TARGET_ARCH;
           const char *const name = libxsmm_cpuid_name( /* exclude MIC when running on Core processors */
-            (((int)(LIBXSMM_X86_AVX512_MIC == LIBXSMM_MAX_STATIC_TARGET_ARCH) ||
-              (int)(LIBXSMM_X86_AVX512_KNM == LIBXSMM_MAX_STATIC_TARGET_ARCH)) && (LIBXSMM_X86_AVX512_CORE <= feature_cpu))
+            (((LIBXSMM_X86_AVX512_MIC == max_static_target_arch) ||
+              (LIBXSMM_X86_AVX512_KNM == max_static_target_arch))
+                && (LIBXSMM_X86_AVX512_CORE <= feature_cpu))
               ? LIBXSMM_X86_AVX2 : LIBXSMM_MAX_STATIC_TARGET_ARCH);
           fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n", compiler_support, name);
         }
