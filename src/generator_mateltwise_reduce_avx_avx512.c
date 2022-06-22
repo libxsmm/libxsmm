@@ -3248,7 +3248,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
                                                  reduce_instr,
                                                  i_micro_kernel_config->vector_name,
                                                  20, 21, 24 );
-        if (im == 0 && reduce_on_output > 0) {
+        if (im == 0 && reduce_on_output == 0) {
           if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
             if ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX)) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
