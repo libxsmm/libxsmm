@@ -93,7 +93,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         {
           *io_column_count = LIBXSMM_MAX(*io_column_count, column_count);
           *io_row_count = LIBXSMM_MAX(*io_row_count, row_count);
-          *o_element_count = LIBXSMM_MAX(0, element_count);
+          *o_element_count = LIBXSMM_MAX(1/*avoid zero-sized allocation*/, element_count);
           /* allocate CSC data structure matching mtx file, and set everything to zero for init */
           /* coverity[tainted_data] */
           *o_row_idx = (unsigned int*)calloc(*o_element_count, sizeof(unsigned int));
