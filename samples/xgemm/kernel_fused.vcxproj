@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="kernel_fused_ops.c" />
+    <ClCompile Include="kernel_fused.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="kernel.sh" />
@@ -36,7 +36,7 @@
     <None Include="README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>kernel_fused_ops</ProjectName>
+    <ProjectName>kernel_fused</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{6CB03F3E-89F3-4864-87A8-BE2288EA5FE7}</ProjectGuid>
   </PropertyGroup>
