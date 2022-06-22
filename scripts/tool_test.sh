@@ -277,7 +277,11 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
         | tr [[:lower:]] [[:upper:]] | tr -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr [[:upper:]] [[:lower:]])" ]; then
-        echo "+++ TEST ${TESTID} (${HEADER})"
+        if [ "${HEADER}" ]; then
+          echo "+++ TEST ${TESTID} (${HEADER})"
+        else
+          echo "+++ TEST ${TESTID}"
+        fi
       else
         echo "+++ TEST ${HEADER}"
       fi
