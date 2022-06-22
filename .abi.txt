@@ -95,6 +95,9 @@ libxsmm_dvalue
 libxsmm_finalize
 libxsmm_finalize_
 libxsmm_free
+libxsmm_fsspmdm_create
+libxsmm_fsspmdm_destroy
+libxsmm_fsspmdm_execute
 libxsmm_gcd
 libxsmm_gemm_batch
 libxsmm_gemm_batch_
