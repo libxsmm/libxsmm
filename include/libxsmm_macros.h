@@ -127,8 +127,7 @@
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
 #define LIBXSMM_IS_INTEGER(VALUE, LO, HI) ( \
-  (((VALUE) == (LO)) || (LO) < (VALUE)) && \
-  (((HI) == (VALUE)) || (VALUE) < (HI)))
+  (LO) <= (0 ^ (VALUE)) && (0 ^ (VALUE)) <= (HI))
 /** LIBXSMM_IS_TYPE: check value against type-range of TYPE. */
 #define LIBXSMM_IS_ULLONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, ULLONG_MAX)
 #define LIBXSMM_IS_LLONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, LLONG_MIN, LLONG_MAX)
