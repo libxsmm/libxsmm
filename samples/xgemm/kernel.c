@@ -202,25 +202,27 @@ double get_random_posneg_p5_num() {
   double tmp = libxsmm_rng_f64()-0.5;
 
   if ( tmp < -0.4 ) {
-    tmp = -0.5;
+    tmp = -0.4;
+  } else if ( tmp < -0.3 ) {
+    tmp = -0.3;
   } else if ( tmp < -0.2 ) {
-    tmp = -0.25;
+    tmp = -0.2;
   } else if ( tmp < -0.1 ) {
-    tmp = -0.125;
-  } else if ( tmp < -0.05 ) {
-    tmp = -0.0625;
+    tmp = -0.1;
   } else if ( tmp < 0 ) {
     tmp = 0;
   } else if ( tmp < 0.1 ) {
-    tmp = 0.0625;
+    tmp = 0.1;
   } else if ( tmp < 0.2 ) {
-    tmp = 0.125;
+    tmp = 0.2;
   } else if ( tmp < 0.3 ) {
-    tmp = 0.25;
-  } else if ( tmp < 0.6 ) {
+    tmp = 0.3;
+  } else if ( tmp < 0.4 ) {
+    tmp = 0.4;
+  } else if ( tmp < 0.5 ) {
     tmp = 0.5;
   } else {
-    tmp = 1.0;
+    tmp = 0.5;
   }
 
   return tmp;
@@ -230,13 +232,25 @@ double get_random_pos_p5_num() {
   double tmp = libxsmm_rng_f64();
 
   if ( tmp < 0.1 ) {
-    tmp = 0.0625;
+    tmp = 0.1;
   } else if ( tmp < 0.2 ) {
-    tmp = 0.125;
+    tmp = 0.2;
   } else if ( tmp < 0.3 ) {
-    tmp = 0.25;
-  } else if ( tmp < 0.6 ) {
+    tmp = 0.3;
+  } else if ( tmp < 0.4 ) {
+    tmp = 0.4;
+  } else if ( tmp < 0.5 ) {
     tmp = 0.5;
+  } else if ( tmp < 0.6 ) {
+    tmp = 0.6;
+  } else if ( tmp < 0.7 ) {
+    tmp = 0.7;
+  } else if ( tmp < 0.8 ) {
+    tmp = 0.8;
+  } else if ( tmp < 0.9 ) {
+    tmp = 0.9;
+  } else if ( tmp < 1.0 ) {
+    tmp = 1.0;
   } else {
     tmp = 1.0;
   }
