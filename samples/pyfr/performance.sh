@@ -9,12 +9,15 @@
 ###############################################################################
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
-EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 export OMP_PROC_BIND=${OMP_PROC_BIND:-TRUE}
-export OMP_NUM_THREADS=${OMP_NUM_THREADS:-2}
-export TEST_N=${TEST_N:-48000}
+export PERF_R=${PERF_R:-500000}
+export PERF_N=${TEST_N:-48}
 
-for MTX in "${HERE}"/mats/p*/*/*-sp.mtx; do
-  echo "${HERE}/pyfr_driver_asp_reg ${MTX} ${TEST_N} 10"
-done | ${EXEC} "$@"
+for MTX in "${HERE}"/mats/p*/{pri,hex}/m{3,6}-sp.mtx; do
+  echo "${HERE}/pyfr_driver_asp_reg ${MTX} ${PERF_N} ${PERF_R} 1"
+done
+
+for MTX in "${HERE}"/mats/p*/{pri,hex}/m{0,132,460}-sp.mtx; do
+  echo "${HERE}/pyfr_driver_asp_reg ${MTX} ${PERF_N} ${PERF_R} 0"
+done
