@@ -1,1 +1,1 @@
-master-1.17-2571
+dev/kvoronin/batchnorm_with_new_reduce-1.17-2572
