@@ -367,7 +367,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
            i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF     ) {
         int l_imm;
         /* adjust offset based on vector width */
-        switch ( i_asimdwidth ) {
+        switch ( (int)i_asimdwidth ) {
           case LIBXSMM_AARCH64_ASIMD_WIDTH_H:
             l_imm = i_offset/2;
             break;
@@ -584,7 +584,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }
 
-    switch ( i_asimdwidth ) {
+    switch ( (int)i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
         l_q = 0x1 & (i_index >> 1);
         l_s = 0x1 & (i_index >> 0);
@@ -664,7 +664,7 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
       return;
     }
 
-    switch ( i_asimdwidth ) {
+    switch ( (int)i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
         l_opc = 0x0;
         l_imm = (signed char)(i_offset/4);
