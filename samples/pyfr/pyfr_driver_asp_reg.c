@@ -152,13 +152,16 @@ int main(int argc, char* argv[]) {
   REALTYPE *l_c_betazero = NULL, *l_c_gold_betazero = NULL, *l_c_dense_betazero = NULL;
   REALTYPE *l_c_betaone = NULL, *l_c_gold_betaone = NULL, *l_c_dense_betaone = NULL;
 
+  const char *const env_fsspmdm_nblock = getenv("FSSPMDM_NBLOCK");
+  int l_n_block = ((NULL == env_fsspmdm_nblock || '\0' == *env_fsspmdm_nblock)
+    ? 48 : atoi(env_fsspmdm_nblock));
+
   libxsmm_matdiff_info diff;
   int l_m, l_n, l_k;
   int l_i, l_j, l_z;
   int l_elems;
   int l_reps;
   int l_beta;
-  int l_n_block = 48;
 
   libxsmm_timer_tickint l_start, l_end;
   double l_total;
@@ -175,10 +178,11 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-
   /* read sparse A */
   l_csr_file = argv[1];
   l_n = atoi(argv[2]);
+  /* sanitize blocksize */
+  if (l_n < l_n_block) l_n_block = l_n;
   l_reps = atoi(argv[3]);
   l_beta = (4 < argc ? atoi(argv[4]) : -1);
 
@@ -217,6 +221,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (0 >= l_beta) {
+    const char *const env_fsspmdm_nts = getenv("FSSPMDM_NTS");
     /* allocate C */
     l_c_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
     l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
@@ -235,7 +240,8 @@ int main(int argc, char* argv[]) {
     }
     /* setting up fsspmdm */
     beta = 0;
-    gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 1, l_a_dense);
+    gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta,
+      (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, l_a_dense);
   }
 
   if (0 > l_beta || 0 < l_beta) {
@@ -257,7 +263,9 @@ int main(int argc, char* argv[]) {
     }
     /* setting up fsspmdm */
     beta = 1;
-    gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 0, l_a_dense);
+    gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE),
+      l_m, LIBXSMM_MIN(l_n_block, l_n), l_k, l_k, l_n, l_n,
+      &alpha, &beta, 0, l_a_dense);
   }
 
   /* compute golden results */
