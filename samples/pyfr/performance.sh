@@ -21,9 +21,11 @@ export FSSPMDM_NBLOCK=40
 
 for MTX in "${HERE}"/mats/p*/{pri,hex}/m{3,6}-sp.mtx; do
   "${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" 1
+  echo
 done
 
 export FSSPMDM_NTS=0
 for MTX in "${HERE}"/mats/p*/{pri,hex}/m{0,132,460}-sp.mtx; do
   "${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" 0
+  echo
 done
