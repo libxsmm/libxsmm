@@ -11,7 +11,9 @@
 #include <libxsmm.h>
 
 #define REALTYPE double
-#define REPS 100
+#define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
+#define EPSILON_double 1e-8
+#define EPSILON_float 1e-4
 
 #if !defined(GEMM)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -329,20 +331,36 @@ int main(int argc, char* argv[]) {
   if (0 >= l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-    ret |= diff.linf_abs > 1e-4;
-    printf("\tmax error beta=0 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+    printf("\tmax error beta=0 (libxmm vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+      ret |= 1;
+    }
+    else printf("\n");
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betazero, l_c_dense_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=0 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+    printf("\tmax error beta=0 (dense vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    }
+    else printf("\n");
   }
   if (0 > l_beta || 0 < l_beta) {
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-    ret |= diff.linf_abs > 1e-4;
-    printf("\tmax error beta=1 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+    printf("\tmax error beta=1 (libxmm vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+      ret |= 1;
+    }
+    else printf("\n");
     libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
       l_c_gold_betaone, l_c_dense_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-    printf("\tmax error beta=1 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+    printf("\tmax error beta=1 (dense vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    }
+    else printf("\n");
   }
 
   /* Let's measure performance */
