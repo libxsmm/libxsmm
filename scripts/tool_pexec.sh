@@ -118,7 +118,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       local _PEXEC_CMDPRETTY_PRE=\"\" _PEXEC_CMDPRETTY_CMD=\"\" _PEXEC_CMDPRETTY_ARGS=\"\"; \
       local _PEXEC_CMDPRETTY_INPUT=\"\$*\" _PEXEC_CMDPRETTY_WORDS=\"\"; \
       for WORD in \${_PEXEC_CMDPRETTY_INPUT}; do \
-        local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" | ${SED} -e \"s/^\${_PEXEC_CMDPRETTY_HERE}\///\"); \
+        local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" | ${SED} \"s/^\${_PEXEC_CMDPRETTY_HERE}\///\"); \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
           _PEXEC_CMDPRETTY_PRE=\${_PEXEC_CMDPRETTY_WORDS}; \
           _PEXEC_CMDPRETTY_CMD=\${_PEXEC_CMDPRETTY_WORD}; \
