@@ -1098,7 +1098,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
         if ( l_neg ) {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                     l_rvc, 0, 0, l_rvc, l_tuplet );
+                                                     l_rvc, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc, l_tuplet );
         }
 
         /* See if we need to save the accumulator */
@@ -1196,9 +1196,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
 
           if ( l_neg ) {
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                       l_rvc + l_n , 0, 0, l_rvc + l_n, l_tuplet );
+                                                       l_rvc + l_n , LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc + l_n, l_tuplet );
             libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
-                                                       l_rvc + l_n + 1, 0, 0, l_rvc + l_n + 1, l_tuplet );
+                                                       l_rvc + l_n + 1, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc + l_n + 1, l_tuplet );
           }
 
           /* See if we need to save the accumulator */
