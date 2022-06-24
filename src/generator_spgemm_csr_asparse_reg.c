@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Freddie Witherden
 ******************************************************************************/
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_x86_instructions.h"
