@@ -56,11 +56,11 @@ LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
         if (3 == sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) &&
             0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
         {
-          /* allocate CSC datastructure matching mtx file */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count + 1));
-          *o_values = (REALTYPE*) malloc(sizeof(REALTYPE) * ((size_t)*o_element_count));
-          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count));
+          /* allocate CSC datastructure matching mtx file, and set everything to zero */
+          *o_column_idx = (unsigned int*) calloc(*o_element_count, sizeof(unsigned int));
+          *o_row_idx = (unsigned int*)calloc((size_t)*o_row_count + 1, sizeof(unsigned int));
+          *o_values = (REALTYPE*) calloc(*o_element_count, sizeof(REALTYPE));
+          l_row_idx_id = (unsigned int*) calloc(*o_row_count, sizeof(unsigned int));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
@@ -70,12 +70,6 @@ LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
             fprintf( stderr, "could not allocate sp data!\n" );
             return -1;
           }
-
-          /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*((size_t)*o_row_count + 1));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*((size_t)*o_element_count));
-          memset(*o_values, 0, sizeof(REALTYPE)*((size_t)*o_element_count));
-          memset(l_row_idx_id, 0, sizeof(unsigned int)*((size_t)*o_row_count));
 
           /* init column idx */
           for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
@@ -130,23 +124,22 @@ LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
   }
 
   /* free helper data structure */
-  if ( l_row_idx_id != NULL ) {
-    free( l_row_idx_id );
-  }
+  free( l_row_idx_id );
+
   return 0;
 }
 
 int main(int argc, char* argv[]) {
   int ret = 0;
 
-  const char* l_csr_file;
-  REALTYPE* l_a_sp;
-  unsigned int* l_rowptr;
-  unsigned int* l_colidx;
+  const char* l_csr_file = NULL;
+  unsigned int* l_rowptr = NULL;
+  unsigned int* l_colidx = NULL;
   unsigned int l_rowcount, l_colcount, l_elements;
 
-  REALTYPE* l_a_dense;
-  REALTYPE* l_b;
+  REALTYPE* l_a_dense = NULL;
+  REALTYPE* l_a_sp = NULL;
+  REALTYPE* l_b = NULL;
 
   REALTYPE *l_c_betazero = NULL, *l_c_gold_betazero = NULL, *l_c_dense_betazero = NULL;
   REALTYPE *l_c_betaone = NULL, *l_c_gold_betaone = NULL, *l_c_dense_betaone = NULL;
@@ -423,14 +416,23 @@ int main(int argc, char* argv[]) {
   }
 
   /* free */
-  libxsmm_free(l_c_betazero);
-  libxsmm_free(l_c_gold_betazero);
+  libxsmm_fsspmdm_destroy(gemm_op_betazero);
+  libxsmm_fsspmdm_destroy(gemm_op_betaone);
+
   libxsmm_free(l_c_dense_betazero);
-  libxsmm_free(l_c_betaone);
-  libxsmm_free(l_c_gold_betaone);
+  libxsmm_free(l_c_gold_betazero);
+  libxsmm_free(l_c_betazero);
+
   libxsmm_free(l_c_dense_betaone);
-  libxsmm_fsspmdm_destroy( gemm_op_betazero );
-  libxsmm_fsspmdm_destroy( gemm_op_betaone );
+  libxsmm_free(l_c_gold_betaone);
+  libxsmm_free(l_c_betaone);
+
+  libxsmm_free(l_a_dense);
+  libxsmm_free(l_b);
+
+  free(l_rowptr);
+  free(l_colidx);
+  free(l_a_sp);
 
   return ret;
 }
