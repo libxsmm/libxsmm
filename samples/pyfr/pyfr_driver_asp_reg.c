@@ -25,13 +25,10 @@ LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 #endif
 
 
-int my_csr_reader( const char*           i_csr_file_in,
-                   unsigned int**        o_row_idx,
-                   unsigned int**        o_column_idx,
-                   REALTYPE**            o_values,
-                   unsigned int*         o_row_count,
-                   unsigned int*         o_column_count,
-                   unsigned int*         o_element_count ) {
+LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
+  unsigned int** o_row_idx, unsigned int** o_column_idx, REALTYPE** o_values,
+  unsigned int* o_row_count, unsigned int* o_column_count, unsigned int* o_element_count)
+{
   FILE *l_csr_file_handle;
   const unsigned int l_line_length = 512;
   char l_line[512/*l_line_length*/+1];
