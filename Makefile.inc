@@ -2160,6 +2160,9 @@ ifneq (Darwin,$(UNAME))
   endif
 endif
 
+ifeq (,$(wildcard $(BLAS_INCFILE) $(MKLROOT)/include/mkl.h))
+  MKL := 0
+endif
 ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   MKL_THREADS := sequential
@@ -2192,6 +2195,7 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   endif
 endif
+
 ifneq (0,$(MKL))
   ifeq (,$(BLAS_INCFILE))
     BLAS_IFLAGS += -I$(call quote,$(MKLROOT)/include)
