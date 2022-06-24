@@ -796,12 +796,12 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
   if ( ((0x3 & i_vec_instr) == 2) && (i_vec_reg_src_1 != LIBXSMM_AARCH64_ASIMD_REG_UNDEF) ) {
-      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: %u\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
@@ -839,7 +839,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     if ( ((0x4 & i_vec_instr) == 0x4) && ((0x18 & i_vec_instr) != 0x18) ) {
       unsigned char l_idx = (unsigned char)(( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_idx_shf << 1 : i_idx_shf);
       if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
-        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: %u\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: 0x%08x\n", i_vec_instr);
         exit(-1);
       }
 
@@ -860,7 +860,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       } else if ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) {
         l_shift = (unsigned char)(0x40 | (((0x4 & i_vec_instr) == 0x4) ? (0x40 - (i_idx_shf & 0x3f)) : (i_idx_shf & 0x3f) ));
       } else {
-        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: %u\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: 0x%08x\n", i_vec_instr);
         exit(-1);
       }
       code[code_head] |= (unsigned int)(l_shift << 16);
@@ -1138,7 +1138,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_TBX:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
@@ -1176,7 +1176,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         /* we assign 0 <- 1 anyways, so we just skip that */
         l_vec_instr = l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ? LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P : LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P;
       } else {
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
     } else {
@@ -1209,7 +1209,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
       if(i_index >= l_elementSizeBits){
         /* the index must be within bounds */
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: 0x%08x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
         exit(-1);
       }
 
