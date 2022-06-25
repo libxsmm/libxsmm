@@ -251,7 +251,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
 {
   /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
   libxsmm_gemm_descriptor* result = NULL;
-  switch (iprec) {
+  switch ((int)iprec) {
     case LIBXSMM_DATATYPE_F64: {
       const double aa = (NULL != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA));
       const double bb = (NULL != beta  ? *((const double*)beta)  : (LIBXSMM_BETA));
