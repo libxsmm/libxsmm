@@ -50,6 +50,7 @@ typedef struct libxsmm_dnn_bn_fwd_config {
   libxsmm_blasint  pad_h_out;
   libxsmm_blasint  pad_w_out;
   libxsmm_blasint  use_hw_blocking;
+  libxsmm_blasint  use_new_reduce;
   libxsmm_blasint  threads;
   size_t           scratch_size;
 
@@ -61,6 +62,8 @@ typedef struct libxsmm_dnn_bn_fwd_config {
 
   libxsmm_matrix_eqn_function  func10;
   libxsmm_meltwfunction_unary  reduce_kernel;
+  libxsmm_meltwfunction_unary  reduce_beta0_kernel;
+  libxsmm_meltwfunction_unary  reduce_beta1_kernel;
   libxsmm_meltwfunction_unary  all_zero_kernel;
   libxsmm_meltwfunction_unary  all_zero_hp_kernel;
   libxsmm_meltwfunction_unary  all_zero_wp_kernel;
