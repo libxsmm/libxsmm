@@ -14,7 +14,6 @@
 #define GENERATOR_AARCH64_INSTRUCTIONS_H
 
 #include "generator_common.h"
-#include "../include/libxsmm_typedefs.h"
 
 /* defining gp register mappings */
 #define LIBXSMM_AARCH64_GP_REG_W0                         0

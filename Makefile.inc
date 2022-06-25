@@ -137,7 +137,7 @@ ifeq (0,$(DBG))
     DFLAGS += -DNDEBUG
   endif
 else # debugging enabled
-  ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
+  ifneq (0,$(shell echo "$$((1<$(DBG)||0>$(DBG)))"))
     DFLAGS += -D_DEBUG
   endif
   SYM := $(DBG)
@@ -151,7 +151,7 @@ else
 endif
 
 # Optimization flag derived from OPT flag
-OPTFLAG ?= -O$(patsubst O%,%,$(OPT))
+OPTFLAGS ?= -O$(patsubst O%,%,$(OPT))
 
 # Kind of Clang-analysis (thread, address, ...)
 SANITIZE ?= $(NULL)
@@ -545,7 +545,7 @@ ifneq (,$(strip $(FC)))
       FORTRAN ?= 1
     endif
   else ifneq (0,$(INTEL))
-    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION_NUM) && 0<$(FC_VERSION_NUM)))"))
+    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION_NUM)&&0<$(FC_VERSION_NUM)))"))
       override FC := $(NULL)
     endif
   endif
@@ -554,6 +554,7 @@ FORTRAN ?= 2
 
 ifeq (,$(strip $(FC)))
   ifeq (0,$(FORTRAN))
+    FC_VERSION_NUM := 0
     FC_VERSION := $(NULL)
   else # keep FC_VERSION for message about outdated compiler
     FORTRAN := 0
@@ -1043,7 +1044,7 @@ ifneq (Darwin,$(UNAME))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
         ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5) 2>/dev/null)
     endif
-    ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
+    ifneq (0,$(shell echo "$$((1<$(SONAMELNK)||0>$(SONAMELNK)))"))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
         ln -fs $(call qndir,$1.$5) $(call qndir,$1) 2>/dev/null)
     endif
@@ -1242,14 +1243,14 @@ ifneq (0,$(INTEL))
     endif
   endif
   endif
-  CXXFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
-  CFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
+  CXXFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
+  CFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
   ifeq (,$(strip $(GFC)))
-    FCFLAGS += $(OPTFLAG) $(NO_OFFLOAD_FLAG)
+    FCFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
     # flag specifying output directory must be last
     FMFLAGS += -module
   else
-    FCFLAGS += $(OPTFLAG)
+    FCFLAGS += $(OPTFLAGS)
     ifeq (0,$(ICX))
       FMFLAGS += -J
     endif
@@ -1387,7 +1388,7 @@ ifneq (0,$(INTEL))
   endif
   endif
   # workaround for certain bits introduced by GCC 7.0
-  ifneq (0,$(shell echo "$$(((180000<=$(CC_VERSION_NUM) && 180001>$(CC_VERSION_NUM)) || (170006>$(CC_VERSION_NUM) && 0!=$(CC_VERSION_NUM))))"))
+  ifneq (0,$(shell echo "$$(((180000<=$(CC_VERSION_NUM)&&180001>$(CC_VERSION_NUM))||(170006>$(CC_VERSION_NUM)&&0!=$(CC_VERSION_NUM))))"))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
@@ -1488,7 +1489,11 @@ else # GCC assumed
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
-          CSTD := -std=c89
+          ifneq (0,$(shell echo "$$((0==$(CLANG)||140000>$(CC_VERSION_NUM)))"))
+            CSTD := -std=c89
+          else
+            CSTD := -std=c99
+          endif
         endif
         CPEDANTIC += -Wno-long-long
         CXXFLAGS += $(CPEDANTIC)
@@ -1521,9 +1526,9 @@ else # GCC assumed
   else # fallback
     FMFLAGS += -I
   endif
-  CXXFLAGS += $(OPTFLAG)
-  CFLAGS += $(OPTFLAG)
-  FCFLAGS += $(OPTFLAG)
+  CXXFLAGS += $(OPTFLAGS)
+  CFLAGS += $(OPTFLAGS)
+  FCFLAGS += $(OPTFLAGS)
   ifeq (0,$(DBG))
     ifneq (0,$(IPO))
       CXXFLAGS += -flto
@@ -1551,7 +1556,7 @@ else # GCC assumed
       ifneq (Darwin,$(UNAME))
         ifneq (0,$(XSMM_GCC))
           OMPFLAG_FORCE := -fopenmp
-        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION_NUM)))"))
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG)&&30900<=$(CC_VERSION_NUM)))"))
           OMPFLAG_FORCE := -fopenmp
           OMPRT := omp
         endif
@@ -1676,9 +1681,9 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
-    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC) && 80000<=$(GCC_VERSION_NUM)) || \
-          (0!=$(CLANG) && (40000<=$(CC_VERSION_NUM) || 0==$(CC_VERSION_NUM))) || \
-          (0!=$(PGI) && 190000<=$(CC_VERSION_NUM))))"))
+    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC)&&80000<=$(GCC_VERSION_NUM))|| \
+          (0!=$(CLANG)&&(40000<=$(CC_VERSION_NUM)||0==$(CC_VERSION_NUM)))|| \
+          (0!=$(PGI)&&190000<=$(CC_VERSION_NUM))))"))
     ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
       CTARGET := -mfma -mavx512f -mavx512cd
       ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
@@ -1692,7 +1697,7 @@ ifeq (undefined,$(origin TARGET))
         else ifneq (,$(filter 1 2 3,$(INTEL) $(XSMM_GCC)))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION_NUM)))"))
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG)&&80100<=$(CC_VERSION_NUM)))"))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
         endif
         ifneq (,$(filter-out 0,$(VNNI)))
@@ -1706,7 +1711,7 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET)) # fallback to AVX2
     ifneq (,$(filter 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION_NUM) && 0==$(PGI)) || 0==$(CC_VERSION_NUM)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||(40800<=$(GCC_VERSION_NUM)&&0==$(PGI))||0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -march=core-avx2
       else
         CTARGET ?= -mavx2 -mfma
@@ -1715,7 +1720,7 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET)) # fallback to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION_NUM) || 0==$(CC_VERSION_NUM)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||40400<=$(GCC_VERSION_NUM)||0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -mavx
       endif
     endif
@@ -1876,7 +1881,7 @@ ifeq (0,$(COMPATIBLE))
         ifneq (,$(strip $(SIMD))) # explicit
         ifneq (Darwin,$(UNAME))
         ifneq (,$(CTARGET))
-        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION_NUM) && 60000<=$(CXX_VERSION_NUM)))"))
+        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION_NUM)&&60000<=$(CXX_VERSION_NUM)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CXXFLAGS += -fopenmp-simd
           CFLAGS += -fopenmp-simd
@@ -2110,7 +2115,7 @@ ifneq (,$(strip $(MKLROOT)))
   ifeq (0,$(PGI))
     MKL ?= $(BLAS)
     ifneq (,$(strip $(FC)))
-      ifneq (0,$(shell echo "$$((0==$(XSMM_GCC) || 40600<=$(GCC_VERSION_NUM)))"))
+      ifneq (0,$(shell echo "$$((0==$(XSMM_GCC)||40600<=$(GCC_VERSION_NUM)))"))
         MKL_DIRECT ?= 0
       else
         MKL_DIRECT := 0
@@ -2156,6 +2161,9 @@ ifneq (Darwin,$(UNAME))
   endif
 endif
 
+ifeq (,$(wildcard $(BLAS_INCFILE) $(MKLROOT)/include/mkl.h))
+  MKL := 0
+endif
 ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   MKL_THREADS := sequential
@@ -2188,6 +2196,7 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   endif
 endif
+
 ifneq (0,$(MKL))
   ifeq (,$(BLAS_INCFILE))
     BLAS_IFLAGS += -I$(call quote,$(MKLROOT)/include)
@@ -2425,7 +2434,7 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
   DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
   CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% TMUX \
-  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE FORCE_CXX VNAME \
+  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \

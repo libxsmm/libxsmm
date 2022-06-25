@@ -104,7 +104,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* Make sure i_src_location is no bigger than the end of the code */
   if ( (unsigned int)i_src_location > io_generated_code->code_size )
   {
-     fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n",i_src_location,io_generated_code->code_size);
+     fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n", i_src_location, io_generated_code->code_size);
      exit(-1);
   }
 
@@ -1611,7 +1611,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     case LIBXSMM_X86_INSTR_VPGATHERQQ_VEX:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: %u\n", i_vmove_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: 0x%08x\n", i_vmove_instr);
       exit(-1);
   }
 
@@ -1636,11 +1636,11 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     /* ceck for gather */
     if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
       if (i_reg_idx > 15) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: %u\n", i_vmove_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: 0x%08x\n", i_vmove_instr);
         exit(-1);
       }
       if ( (i_vec_reg_mask_0 == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_mask_0) ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: same register names cannot be used multiple times: %u\n", i_vmove_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: same register names cannot be used multiple times: 0x%08x\n", i_vmove_instr);
         exit(-1);
       }
     }
@@ -1855,7 +1855,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
                                                              const unsigned int      i_imm8 ) {
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )  == 0) &&
        (libxsmm_x86_instruction_vec_is_regonly( i_vec_instr ) == 0)    ) {
-    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: %u\n", i_vec_instr);
+    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: 0x%08x\n", i_vec_instr);
     exit(-1);
   }
 
@@ -1891,13 +1891,13 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 2 src operand instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 2 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src1 = 0;
     } else if ( ((i_vec_instr >> 28) & 3) == 1 ) {
       if ( i_reg_number_src0 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 1 src operand instruction (0x%08x), i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src0 = 0;
@@ -1923,7 +1923,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         l_reg_number_src0 = i_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruciotn (%u), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruction (0x%08x), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
@@ -2140,7 +2140,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
 {
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )     == 0) &&
        (libxsmm_x86_instruction_vec_is_regmemonly( i_vec_instr ) == 0)    ) {
-    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: %u\n", i_vec_instr);
+    fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: 0x%08x\n", i_vec_instr);
     exit(-1);
   }
 
@@ -2175,7 +2175,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src1 = 0;
@@ -2186,7 +2186,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     /* check that we have an UNDEF for both vec reg operands */
     if ( ((i_vec_instr >> 28) & 3) == 1 ) {
       if ( (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF) || (i_reg_number_dst != LIBXSMM_X86_VEC_REG_UNDEF) ) {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 0 src operand instruction (%u), i_reg_number_src1 and i_reg_number_dst needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 0 src operand instruction (0x%08x), i_reg_number_src1 and i_reg_number_dst needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
       l_reg_number_src1 = 0;
@@ -2199,7 +2199,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
         l_reg_number_src1 = l_reg_number_dst;
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a op-code modrm/reg extended instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a op-code modrm/reg extended instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
         exit(-1);
       }
     }
@@ -2219,11 +2219,11 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
       /* ceck for gather/scatter */
       if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
         if (i_gp_reg_idx > 32) {
-          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: SIB addressing mode is required for instruction number: %u\n", i_vec_instr);
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: SIB addressing mode is required for instruction number: 0x%08x\n", i_vec_instr);
           exit(-1);
         }
         if ( (i_mask_rnd_exp_cntl != 0) || (0 == i_mask_reg_number) ) {
-          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: merge masking with a valid mask registers (>k0) is required for instrucion number: %u\n", i_vec_instr);
+          fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: merge masking with a valid mask registers (>k0) is required for instruction number: 0x%08x\n", i_vec_instr);
           exit(-1);
         }
       }
@@ -2525,7 +2525,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     case LIBXSMM_X86_INSTR_CLFLUSHOPT:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: %u\n", i_prefetch_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: 0x%08x\n", i_prefetch_instr);
       exit(-1);
       break;
   }
@@ -2538,11 +2538,11 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
       if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 ) {
         l_reg_op_ext = ((i_prefetch_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) must have only one operand!\n", i_prefetch_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) must have only one operand!\n", i_prefetch_instr);
         exit(-1);
       }
     } else {
-      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (%u) has no op-code modrm/reg extension!\n", i_prefetch_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) has no op-code modrm/reg extension!\n", i_prefetch_instr);
       exit(-1);
     }
 
@@ -2609,7 +2609,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_LEAQ:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: %u\n", i_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
       break;
   }
@@ -2702,7 +2702,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_XORQ_RM_IMM32:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Unknown instruction type: %u\n", i_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
       break;
   }
@@ -2747,7 +2747,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       if ( ((l_alu_instr >> 28) & 0x3) == 0x1 ) {
         l_reg_number_dst = ((l_alu_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_alu_imm: In case of a op-code modrm/reg extended instruction (%u) only one register operand is allowed!\n", l_alu_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_alu_imm: In case of a op-code modrm/reg extended instruction (0x%08x) only one register operand is allowed!\n", l_alu_instr);
         exit(-1);
       }
     }
@@ -2774,7 +2774,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
         l_immediate = l_immediate >> 8;
       }
     } else {
-      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);
       exit(-1);
     }
   } else {
@@ -2810,7 +2810,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     case LIBXSMM_X86_INSTR_MOVQ_R_IMM64:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: %u\n", i_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
       break;
   }
@@ -2839,7 +2839,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
         l_immediate = (size_t)((size_t)l_immediate >> (size_t)8);
       }
     } else {
-      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (%u) is not an imm-instruction!\n", l_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);
       exit(-1);
     }
   } else {
@@ -3011,7 +3011,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     case LIBXSMM_X86_INSTR_XORQ_R_RM:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: %u\n", i_alu_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
       break;
   }
@@ -3048,7 +3048,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
       if ( i_gp_reg_number_src != LIBXSMM_X86_GP_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a 1 src operand instruction (%u), i_gp_reg_number_src needs to be LIBXSMM_X86_GP_REG_UNDEF!\n", i_alu_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a 1 src operand instruction (0x%08x), i_gp_reg_number_src needs to be LIBXSMM_X86_GP_REG_UNDEF!\n", i_alu_instr);
         exit(-1);
       }
       l_gp_reg_number_src = 0;
@@ -3066,7 +3066,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
       if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
         l_gp_reg_number_dest = ((i_alu_instr >> 20) & 0x07);
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (%u) we need a single operand instruction!\n", i_alu_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (0x%08x) we need a single operand instruction!\n", i_alu_instr);
         exit(-1);
       }
     }
@@ -3165,7 +3165,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
     case LIBXSMM_X86_INSTR_KMOVQ_GPR_ST:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_mask_move: unexpected instruction number: %u\n", i_mask_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_mask_move: unexpected instruction number: 0x%08x\n", i_mask_instr);
       exit(-1);
   }
 
@@ -3251,7 +3251,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
     case LIBXSMM_X86_INSTR_KMOVQ_ST:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_mask_move_mem: unexpected instruction number: %u\n", i_mask_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_mask_move_mem: unexpected instruction number: 0x%08x\n", i_mask_instr);
       exit(-1);
   }
 
@@ -3370,7 +3370,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
     case LIBXSMM_X86_INSTR_KXORQ:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: unexpected instruction number: %u\n", i_mask_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: unexpected instruction number: 0x%08x\n", i_mask_instr);
       exit(-1);
   }
 
@@ -3382,13 +3382,13 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
     /* check that we have an UNDEF for 2 src operands */
     if ( ((i_mask_instr >> 28) & 3) == 2 ) {
       if ( i_mask_reg_number_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 1 src operand instruction (%u), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 1 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
         exit(-1);
       }
       l_src1 = 0;
     } else {
       if ( i_mask_reg_number_src_1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
-        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 2 src operand instruction (%u), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 2 src operand instruction (0x%08x), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
         exit(-1);
       } else {
         l_src1 = i_mask_reg_number_src_1;
@@ -3711,7 +3711,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
     case LIBXSMM_X86_INSTR_TILEZERO:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_tile_move: unexpected instruction number: %u\n", i_tmove_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_tile_move: unexpected instruction number: 0x%08x\n", i_tmove_instr);
       exit(-1);
   }
 
@@ -3733,7 +3733,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
               i_tmove_instr, i_gp_reg_base, i_gp_reg_idx, i_scale,
               i_displacement, LIBXSMM_X86_SIMD_NAME_XMM, 0, i_tile_reg_number );
       } else {
-        fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction %u requires SIB addressing\n", i_tmove_instr);
+        fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction 0x%08x requires SIB addressing\n", i_tmove_instr);
         exit(-1);
       }
     }
@@ -3824,7 +3824,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
     case LIBXSMM_X86_INSTR_TDPBF16PS:
       break;
     default:
-      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: %u\n", i_tcompute_instr);
+      fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: 0x%08x\n", i_tcompute_instr);
       exit(-1);
   }
 

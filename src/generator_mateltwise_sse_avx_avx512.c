@@ -22,7 +22,7 @@
 
 LIBXSMM_API_INTERN
 int libxsmm_generator_meltw_get_rbp_relative_offset( libxsmm_meltw_stack_var stack_var ) {
-  switch ( stack_var ) {
+  switch ( (int)stack_var ) {
     case LIBXSMM_MELTW_STACK_VAR_OP_ARG_0:
       return -8;
     case LIBXSMM_MELTW_STACK_VAR_OP_ARG_1:
