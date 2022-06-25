@@ -190,7 +190,7 @@ LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &rwlock);
 LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &rwlock);
 ```
 
-For a lock not backed by an OS level primitive (fully featured lock), the synchronization layer also provides a simple lock based on atomic operations:
+For a lock not backed by an OS level primitive (fully featured lock), the synchronization layer also a simple lock based on atomic operations:
 
 ```C
 static union { char pad[LIBXSMM_CACHELINE]; volatile LIBXSMM_ATOMIC_LOCKTYPE state; } lock;
@@ -198,6 +198,3 @@ LIBXSMM_ATOMIC_ACQUIRE(&lock.state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED)
 /* locked code section */
 LIBXSMM_ATOMIC_RELEASE(&lock.state, LIBXSMM_ATOMIC_RELAXED);
 ```
-
-In addition to the LIBXSMM_LOCK_\* macros or LIBXSMM_ATOMIC_LOCKTYPE, API-based lock primitives are also available (libxsmm_mutex_\*, and libxsmm_rwlock_\*). However, the underlying implementation of the latter is experimental.
-

@@ -1736,7 +1736,7 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
 {
   int result = EXIT_SUCCESS;
   if (NULL != value && NULL != dvalue) {
-    switch (datatype) {
+    switch ((int)datatype) {
       case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double   *)value); break;
       case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float    *)value); break;
       case LIBXSMM_DATATYPE_I64: *dvalue = (double)(*(const long long*)value); break;
@@ -1755,7 +1755,7 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
 
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 {
-  switch (datatype) {
+  switch ((int)datatype) {
     case LIBXSMM_DATATYPE_F64:  return "f64";
     case LIBXSMM_DATATYPE_F32:  return "f32";
     case LIBXSMM_DATATYPE_BF16: return "bf16";

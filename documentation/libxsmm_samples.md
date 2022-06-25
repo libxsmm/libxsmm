@@ -4,7 +4,42 @@
 
 The first code sample given for LIBXSMM was a performance reproducer exercising the same set of kernels usually generated for CP2K's SMM library. The code sample attempted to model the way "matrix stacks" are processed in CP2K, however there are two different code paths in CP2K: (1) the "main" code path used when processing stacks on the host-side, and (2) a code path targeting offload devices. Beside of the host-sided parallelization via MPI (and perhaps OpenMP), the secondly mentioned code path relies on an additional level of parallelization (which is obviously necessary to drive a potentially highly parallel offload device). Also, the additional level of parallelism is not exactly "nested" in the sense that it participates on sharing the same resources as the host-side. In fact, this "artificial benchmark" (cp2k code sample) is modeling a code path as utilized in the secondly mentioned case (offload device).
 
-## Hello LIBXSMM
+## Elementwise correctness- and performance tests
+
+This folder contains tests for kernels, which work on each element of a given input separately. Examples for these operations are adding two matrices or vectors, or applying the square root to all elements individually.
+
+*Disclosure: Performance tests haven't been implemented for all types yet.*
+
+### Build
+
+```bash
+cd /path/to/libxsmm
+make
+or
+make BLAS=0 LIBXSMM_NO_BLAS=1 STATIC=0 -j 64
+
+cd /path/to/libxsmm/samples/eltwise
+make -j 16
+```
+
+### Test specific kernels
+
+To run a specific kernel, call one of the executable with its arguments. The arguments will be listed, when you call it without any.
+
+### Test collections
+
+In this directory, there are multiple bash files, which will execute multiple random tests for a specific type of operation.
+These collections call bash scripts from the subdirectory "kernel_test", which will in turn call the executables in this directory.
+
+### Compare performance between different architectures
+
+If your machine supports multiple architectures like ARM ASIMD and ARM SVE, you can set the environment variable **ARCH1** to a second architecture. The performance tests will then run the kernels on both architectures, and compare them.
+
+### Useful environment variables
+
+When you want to test another architecture, specify **LIBXSMM_TARGET**.
+
+If you want more debugging information, set **LIBXSMM_VERBOSE**. Setting it to -1 will print all debug information, and write the JIT-ed kernels into local files.# Hello LIBXSMM
 
 This example is focused on a specific functionality but may be considered as "Hello LIBXSMM". Copy and paste the example code and build it either manually and as described in our [main documentation](https://libxsmm.readthedocs.io/#hello-libxsmm) (see underneath the source code), or use GNU Make:
 
@@ -542,120 +577,6 @@ for optimal performance with the Conv1dOpti layer.
 Each batch will run on a seperate thread thus performance may go down if some core are not free,
 or batch size is not equal to the number of free cores.
 Keep the batch size as power of 2 with the MKLDNN backend (Conv1d) for optimal performance.
-## Deep Learning with GxM
-
-### Compiling and Building GxM
-
-1. Install Pre-requisite Libraries: Google logging module (glog), gflags, Google's data interchange format (Protobuf), OpenCV, LMDB
-2. In Makefile.config, set GXM_LIBRARY_PATH variable to the path containing above libraries
-3. In Makefile.config, set LIBXSMM_PATH variable to the path containing LIBXSMM library
-4. Set/clear other flags in Makefile.config as required (see associated comments in Makefile.config)
-5. source setup_env.sh
-6. make clean; make
-
-### Running GxM
-
-The network topology definitions directory is "model_zoo". Currently, it contains definitions for
-AlexNet (without LRN), ResNet-50, Inception v3 along with CIFAR10 and MNIST as simple test definitions.
-Each topology definition is in a .prototxt file. ResNet-50 can run with "dummy data", raw JPEG image data
-or with LMDB. Filenames indicate the data source along with the minibatch size. Inception v3 runs only with
-compressed LMDB data.
-
-The hyperparameter definitions for each topology are also in the corresponding directory under "model_zoo" in
-a .prototxt file with the suffix "solver". For a single-node, this file is called solver.prototxt. For multi-node
-the filename also contains the global minibatch size (=single node minibatch size x number of nodes);, e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
-flag that specifies whether to start execution from a checkpoint (and thus read load weights from the "./weights"
-directory) or from scratch; by default execution starts from scratch.
-
-Optimal parallelization of Convolutional layers in LIBXSMM happens when the number of OpenMP threads = MiniBatch.
-Therefore, on Xeon
-
-```bash
-export OMP_NUM_THREADS=<MiniBatch>
-export KMP_AFFINITY=compact,granularity=fine,1,0
-```
-
-The command line for a training run is:
-
-```bash
-./build/bin/gxm train <topology filename> <hyperparameter filename>
-```
-
-For example:
-
-```bash
-./build/bin/gxm train model_zoo/resnet/1_resnet50_dummy_56.prototxt model_zoo/resnet/solver.prototxt
-```
-
-### Preping on RHEL 8.0 / CentOS 8.0
-
-```bash
-dnf install protobuf
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-compiler-3.5.0-7.el8.x86_64.rpm
-dnf install protobuf-compiler-3.5.0-7.el8.x86_64.rpm
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/protobuf-devel-3.5.0-7.el8.x86_64.rpm
-dnf install protobuf-devel-3.5.0-7.el8.x86_64.rpm
-dnf install lmdb
-dnf install lmdb-devel
-wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-devel-3.4.1-9.el8.x86_64.rpm
-wget http://repo.okay.com.mx/centos/8/x86_64/release/opencv-3.4.1-9.el8.x86_64.rpm
-dnf install opencv-3.4.1-9.el8.x86_64.rpm
-dnf install opencv-devel-3.4.1-9.el8.x86_64.rpm
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-2.1.2-6.el8.x86_64.rpm
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/gflags-devel-2.1.2-6.el8.x86_64.rpm
-dnf install gflags-2.1.2-6.el8.x86_64.rpm
-dnf install gflags-devel-2.1.2-6.el8.x86_64.rpm
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-devel-0.3.5-3.el8.x86_64.rpm
-wget http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/glog-0.3.5-3.el8.x86_64.rpm
-dnf install glog-0.3.5-3.el8.x86_64.rpm
-dnf install glog-devel-0.3.5-3.el8.x86_64.rpm
-```
-
-Make sure that the makefile follows the OpenCV Ver 3 path!
-
-## DNN Training with Incremental Sparsification + Sparse JIT Kernels
-
-### This project contains code for the following DNN models
-
-1. Resnet - ported from [link](https://pytorch.org/vision/stable/models.html)
-2. Transformer - ported from [link](https://github.com/pytorch/fairseq)
-3. DLRM - ported from [link](https://github.com/facebookresearch/dlrm)
-4. PCL_MLP - A python extension of the `torch.nn.Linear` module that uses efficient sparse JIT kernels for matrix multiplication (supports forward, backward and update pass) - ported from [link](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/sparse_weight_mult)
-
-### Features
-
-1. Training scripts for all three models located at the root of each directory in a form of a shell file
-2. By specifying each of the four parameters, the pruning criteria (magnitude-based or random-based), the pruning start time and end time and target sparsity you can apply incremental sparsity to model weights for training
-3. Additionally, by specifying a tensorboard log directory, one can examine training logs and metrics using tensorboard.
-
-### Data preparation
-
-Each model requires an extensive amount of data to be properly stress-tested against incremental sparsity. According to [The State of Sparsity](https://arxiv.org/abs/1902.09574) and by extensive experimentation, using a relatively small dataset or an overparameterized model may lead to false performance implications. For instance, when a ResNet-50 model is trained with the CIFAR-10 dataset or if the base Transformer is trained with a limited sentence pair dataset (i.e., EN-VI) it may seem as if the model isn't impacted even with extremely high sparsity since the model was overdetermined to begin with.
-
-- For Resnet
-- For Resnet training, a smaller subset of ImageNet was used, called ImageNette due to its massiveness in size. Download from [here](https://github.com/fastai/imagenette). 
-- For Transformer
-- As a neural machine translation task, the transformer model requires the WMT2014 EN_DE dataset. Preprocessing steps are described [here](https://fairseq.readthedocs.io/en/latest/getting_started.html#data-pre-processing)
-- For DLRM
-- Training the DLRM requires the terabyte dataset [link](https://labs.criteo.com/2013/12/download-terabyte-click-logs/)
-
-### Running scripts
-
-Each project consists of two scripts: a script that launches `sbatch` scripts for experimenting various target sparsities (usually named as `launch_pruning_runs.sh`)and a script that runs a single experiment. Use accordingly.
-
-1. ResNet model
-`./launch_pruning_jobs.sh ${TARGET_SPARSITY}` or
-`python train.py ${TARGET_SPARSITY}`
-2.  Transformer(FAIRSEQ) model
-`./launch_pruning_runs.sh` or `./prune_en_de.sh ${TARGET_SPARSITY} ${PRUNE_TYPE} ${EMB}`
-where PRUNE_TYPE is either `magnitude` or `random` and EMB indicates whether the embedding portion is pruned alongside the weights
-3. DLRM model
-`./launch_pruning_runs.sh` or `./run_terabyte.sh ${TARGET_SPARSITY} ${PRUNE_TYPE}`
-where PRUNE_TYPE is either `magnitude` or `random` 
-## Xsmm LSTM
-
-This code may be integrated with Tensorflow to make use of LIBXSMM's LSTM. Support for creating a Python wheel and a pip package can be found in the [directory](https://github.com/libxsmm/libxsmm/tree/master/samples/deeplearning/tf_lstm_ops) as well.
-
 ## Dispatch<a name="dispatch-microbenchmark"></a>
 
 ### Microbenchmark

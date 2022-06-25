@@ -63,7 +63,7 @@ int libxsmm_generator_mateqn_get_fp_relative_offset( libxsmm_meqn_stack_var stac
    *
    * * */
 
-  switch ( stack_var ) {
+  switch ( (int)stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
       return -256;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
