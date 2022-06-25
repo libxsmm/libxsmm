@@ -21,9 +21,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, DENTST) \
-  (0 < (DENREF) ? ((NOMINATOR) / (DENREF)) : \
-  (0 < (DENTST) ? ((NOMINATOR) / (DENTST)) : 0))
+/**
+ * LIBXSMM_MATDIFF_DIV devises the nominator by the reference-denominator
+ * unless the latter is zero in which case the fallback is returned.
+ */
+#define LIBXSMM_MATDIFF_DIV_DEN(A) (0 < (A) ? (A) : 1)   /* Clang: WA for div-by-zero */
+#define LIBXSMM_MATDIFF_DIV(NOMINATOR, DENREF, FALLBACK) /* Clang: >= instead of < */ \
+  (0 >= (DENREF) ? (FALLBACK) : ((NOMINATOR) / LIBXSMM_MATDIFF_DIV_DEN(DENREF)))
 
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
@@ -43,27 +47,27 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     switch (datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
-#       include "template/libxsmm_matdiff.tpl.c"
+#       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_F32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
-#       include "template/libxsmm_matdiff.tpl.c"
+#       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_I32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
-#       include "template/libxsmm_matdiff.tpl.c"
+#       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_I16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
-#       include "template/libxsmm_matdiff.tpl.c"
+#       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_I8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
-#       include "template/libxsmm_matdiff.tpl.c"
+#       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       default: {
@@ -124,7 +128,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         }
       }
       if (0 == result_nan) {
-        info->rsq = 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->var_tst);
+        info->rsq = LIBXSMM_MAX(0.0, 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->l2_abs));
         if (0 != ntotal) { /* final variance */
           info->var_ref /= ntotal;
           info->var_tst /= ntotal;
@@ -171,6 +175,24 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   else {
     result = EXIT_FAILURE;
   }
+  return result;
+}
+
+
+LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
+{
+  double result;
+  if (NULL != input) {
+    if (0 < input->rsq) {
+      result = LIBXSMM_MIN(input->normf_rel, input->linf_abs) / input->rsq;
+    }
+    else {
+      const double a = LIBXSMM_MAX(input->norm1_abs, input->linf_abs);
+      const double b = LIBXSMM_MAX(input->normi_abs, input->l2_abs);
+      result = LIBXSMM_MAX(a, b);
+    }
+  }
+  else result = 0;
   return result;
 }
 

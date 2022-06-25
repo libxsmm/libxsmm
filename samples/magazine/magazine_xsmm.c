@@ -16,7 +16,7 @@
 #if 0 /* auto-dispatch SMM kernel */
 # define AUTO
 #endif
-#if 0 /* disable auto-prefetch */
+#if 0 /* disable prefetch */
 # define NOPREFETCH
 #endif
 
@@ -33,9 +33,12 @@ int main(int argc, char* argv[])
   const libxsmm_blasint lda = (5 < argc ? LIBXSMM_MAX(atoi(argv[5]), m) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * m, PAD) / sizeof(TYPE)));
   const libxsmm_blasint ldb = (6 < argc ? LIBXSMM_MAX(atoi(argv[6]), k) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * k, PAD) / sizeof(TYPE)));
   const libxsmm_blasint ldc = (7 < argc ? LIBXSMM_MAX(atoi(argv[7]), m) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * m, PAD) / sizeof(TYPE)));
-  /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
-  const TYPE alpha = 1, beta = 1;
+  /* micro-kernels are limited to certain alpha- and beta-values */
+#if defined(AUTO)
+  const TYPE alpha = 1;
+#endif
+  const TYPE beta = 1;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, PAD) / sizeof(TYPE);
   const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, PAD) / sizeof(TYPE);
@@ -63,9 +66,26 @@ int main(int argc, char* argv[])
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   union { /* convert between fn.ptr and (data)pointer */
     LIBXSMM_MMFUNCTION_TYPE(TYPE) fun;
+    libxsmm_gemmfunction xfun;
     const void* ptr;
-  } xmm;
+  } xmm = { 0 };
+# if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
+    LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
+    LIBXSMM_DATATYPE(TYPE));
+  int prefetch = LIBXSMM_PREFETCH_NONE;
+  libxsmm_gemm_param gemm_param;
+  memset(&gemm_param, 0, sizeof(gemm_param));
+#   if STREAM_A(1)
+  prefetch |= LIBXSMM_GEMM_PREFETCH_AL2;
+#   endif
+#   if STREAM_C(1)
+  prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
+#   endif
+  xmm.xfun = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+# else
   xmm.fun = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &flags);
+# endif
 #endif
 
   /* initialize data according to touch-first policy */
@@ -74,7 +94,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-    j = (i * shuffle) % size;
+    j = (shuffle * i) % size;
 #else
     j = i;
 #endif
@@ -94,14 +114,18 @@ int main(int argc, char* argv[])
 #endif
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
+# if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+#   pragma omp for private(i, j) firstprivate(gemm_param)
+# else
 #   pragma omp for private(i, j)
+# endif
 #endif
     for (i = 0; i < size - 1; ++i) {
 #if defined(SHUFFLE)
 # if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-      const int p = ((i + 1) * shuffle) % size;
+      const int p = (shuffle * ((size_t)i + 1)) % size;
 # endif
-      j = (i * shuffle) % size;
+      j = (shuffle * i) % size;
 #else
 # if !defined(AUTO) && !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       const int p = i + 1; /* next location */
@@ -112,13 +136,21 @@ int main(int argc, char* argv[])
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
          &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
+#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+      gemm_param.a.primary    = a + STREAM_A(j * na);
+      gemm_param.a.quaternary = a + STREAM_A(p * na);
+      gemm_param.b.primary    = b + STREAM_B(j * nb);
+      gemm_param.b.quaternary = b + STREAM_B(p * nb);
+      gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
+      gemm_param.c.quaternary = c + STREAM_C(SYNC(p, nc, size));
+      xmm.xfun(&gemm_param);
 #else
       xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif
     }
   }
 #if defined(SHUFFLE)
-  j = ((size - 1) * shuffle) % size;
+  j = (shuffle * ((size_t)size - 1)) % size;
 #else
   j = size - 1;
 #endif
@@ -126,13 +158,21 @@ int main(int argc, char* argv[])
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
      &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
+#elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+  gemm_param.a.primary    = a + STREAM_A(j * na);
+  gemm_param.a.quaternary = gemm_param.a.primary;
+  gemm_param.b.primary    = b + STREAM_B(j * nb);
+  gemm_param.b.quaternary = gemm_param.b.primary;
+  gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
+  gemm_param.c.quaternary = gemm_param.c.primary;
+  xmm.xfun(&gemm_param);
 #else
   xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   if (0 < duration) {
-    libxsmm_kernel_info info;
+    libxsmm_kernel_info info = { 0 };
 #if defined(AUTO) /* no explicit kernel hence no query */
     info.nflops = 2 * m * n * k;
 #else

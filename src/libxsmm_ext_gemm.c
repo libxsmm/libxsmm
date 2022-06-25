@@ -777,7 +777,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
     const int ngroups = (int)LIBXSMM_ABS(group_count);
     int group = 0, group_next = LIBXSMM_GEMM_NPARGROUPS;
     libxsmm_code_pointer kernel[LIBXSMM_GEMM_NPARGROUPS];
-    libxsmm_blasint base[LIBXSMM_GEMM_NPARGROUPS], i;
+    libxsmm_blasint base[LIBXSMM_GEMM_NPARGROUPS] = { 0 }, i;
 #if !defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
     int kflags[LIBXSMM_GEMM_NPARGROUPS];
 #endif

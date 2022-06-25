@@ -248,7 +248,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
           libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
                                                       i_gp_reg_scratch, i_vec_reg, 3, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     } else {
@@ -637,7 +637,7 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
   /* load RNG state */
   /* The memory layout is currently designed for architectures with upto 512 bit vector length.
    * If an architecture has a wider vector length, a lot of things need to be fixed (for both aarch64 and x86).
-   * Load the first VL in fp32 values, the rest doesn't matter */
+   * Load the first VL in fp32 values, the rest does not matter */
   if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
      * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
@@ -1360,7 +1360,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
     * the following three TBL instructions are specific to 512 bit vector length
     * if the vector length is larger, fill the rest with zeros,
     * if the vector length is shorter, extend the TBL instructions with TBX instructions,
-    * and don't forget to subtract VL/elemSize every step from i_vec_index
+    * and do not forget to subtract VL/elemSize every step from i_vec_index
     */
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_TBL,
                                              i_vec_c0, i_vec_index, 0, i_vec_C0,

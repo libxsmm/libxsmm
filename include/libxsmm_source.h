@@ -115,7 +115,6 @@
 #include "../src/libxsmm_perf.c"
 #include "../src/libxsmm_python.c"
 #include "../src/libxsmm_rng.c"
-#include "../src/libxsmm_spmdm.c"
 #include "../src/libxsmm_sync.c"
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"

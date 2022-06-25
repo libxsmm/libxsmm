@@ -136,7 +136,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
                                                     l_n,
                                                     i_n_blocking );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
 
         libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code,
@@ -647,7 +647,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                     l_n,
                                                     l_vec_reg_acc_start + l_n );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -750,7 +750,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                         l_n,
                                                         l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
             } else {
-              /* shouldn't happen */
+              /* should not happen */
             }
           } else {
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -804,7 +804,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                         l_n,
                                                         l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
             } else {
-              /* shouldn't happen */
+              /* should not happen */
             }
           } else {
             libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,

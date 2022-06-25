@@ -18,7 +18,7 @@ int main(/*int argc, char* argv[]*/) {
   /* generates and dispatches a matrix multiplication kernel */
   libxsmm_dmmfunction kernel = libxsmm_dmmdispatch(
     m, n, k, NULL /*lda*/, NULL /*ldb*/, NULL /*ldc*/, &alpha, &beta, &flags, NULL /*prefetch*/);
-  assert(kernel);
+  assert(NULL != kernel && NULL != a && NULL != b && NULL != c);
   for (i = 0; i < batchsize; ++i) { /* initialize input */
     for (ki = 0; ki < k; ++ki) {
       for (j = 0; j < m; ++j) a[i * j * ki] = ((double)1) / ((i + j + ki) % 25);

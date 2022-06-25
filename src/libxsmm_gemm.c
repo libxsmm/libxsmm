@@ -36,7 +36,7 @@
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
 #if 0
-/* @TODO this kernle business doesn't work anymore */
+/* @TODO this kernle business does not work anymore */
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
@@ -1725,11 +1725,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
 #endif
       && 0 != index_stride)
     {
-      const int oprec = LIBXSMM_GETENUM_OUT(descriptor->datatype);
-      const libxsmm_blasint typesize = LIBXSMM_TYPESIZE(oprec);
-      const libxsmm_blasint csize = (libxsmm_blasint)descriptor->ldc * descriptor->n * typesize;
-      /* finalize assumption if matrix-size is a multiple of the vector-width */
-      descriptor->flags |= (unsigned short)(0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
+      descriptor->flags |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
     }
   }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)
