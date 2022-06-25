@@ -44,7 +44,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     libxsmm_matdiff_clear(info);
     inf = info->min_ref;
-    switch (datatype) {
+    switch ((int)datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
 #       include "template/libxsmm_matdiff.h"

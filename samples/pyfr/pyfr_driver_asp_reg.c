@@ -11,7 +11,9 @@
 #include <libxsmm.h>
 
 #define REALTYPE double
-#define REPS 100
+#define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
+#define EPSILON_double 1e-8
+#define EPSILON_float 1e-4
 
 #if !defined(GEMM)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -23,13 +25,10 @@ LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
 #endif
 
 
-int my_csr_reader( const char*           i_csr_file_in,
-                   unsigned int**        o_row_idx,
-                   unsigned int**        o_column_idx,
-                   REALTYPE**            o_values,
-                   unsigned int*         o_row_count,
-                   unsigned int*         o_column_count,
-                   unsigned int*         o_element_count ) {
+LIBXSMM_INLINE int my_csr_reader(const char* i_csr_file_in,
+  unsigned int** o_row_idx, unsigned int** o_column_idx, REALTYPE** o_values,
+  unsigned int* o_row_count, unsigned int* o_column_count, unsigned int* o_element_count)
+{
   FILE *l_csr_file_handle;
   const unsigned int l_line_length = 512;
   char l_line[512/*l_line_length*/+1];
@@ -57,11 +56,11 @@ int my_csr_reader( const char*           i_csr_file_in,
         if (3 == sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) &&
             0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
         {
-          /* allocate CSC datastructure matching mtx file */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count + 1));
-          *o_values = (REALTYPE*) malloc(sizeof(REALTYPE) * ((size_t)*o_element_count));
-          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)*o_row_count));
+          /* allocate CSC datastructure matching mtx file, and set everything to zero */
+          *o_column_idx = (unsigned int*) calloc(*o_element_count, sizeof(unsigned int));
+          *o_row_idx = (unsigned int*)calloc((size_t)*o_row_count + 1, sizeof(unsigned int));
+          *o_values = (REALTYPE*) calloc(*o_element_count, sizeof(REALTYPE));
+          l_row_idx_id = (unsigned int*) calloc(*o_row_count, sizeof(unsigned int));
 
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
@@ -71,12 +70,6 @@ int my_csr_reader( const char*           i_csr_file_in,
             fprintf( stderr, "could not allocate sp data!\n" );
             return -1;
           }
-
-          /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*((size_t)*o_row_count + 1));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*((size_t)*o_element_count));
-          memset(*o_values, 0, sizeof(REALTYPE)*((size_t)*o_element_count));
-          memset(l_row_idx_id, 0, sizeof(unsigned int)*((size_t)*o_row_count));
 
           /* init column idx */
           for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
@@ -131,40 +124,36 @@ int my_csr_reader( const char*           i_csr_file_in,
   }
 
   /* free helper data structure */
-  if ( l_row_idx_id != NULL ) {
-    free( l_row_idx_id );
-  }
+  free( l_row_idx_id );
+
   return 0;
 }
 
 int main(int argc, char* argv[]) {
   int ret = 0;
 
-  char* l_csr_file;
-  REALTYPE* l_a_sp;
-  unsigned int* l_rowptr;
-  unsigned int* l_colidx;
+  const char* l_csr_file = NULL;
+  unsigned int* l_rowptr = NULL;
+  unsigned int* l_colidx = NULL;
   unsigned int l_rowcount, l_colcount, l_elements;
 
-  REALTYPE* l_a_dense;
-  REALTYPE* l_b;
-  REALTYPE* l_c_betaone;
-  REALTYPE* l_c_betazero;
-  REALTYPE* l_c_gold_betaone;
-  REALTYPE* l_c_gold_betazero;
-  REALTYPE* l_c_dense_betaone;
-  REALTYPE* l_c_dense_betazero;
-  libxsmm_matdiff_info diff;
-  int l_m;
-  int l_n;
-  int l_k;
+  REALTYPE* l_a_dense = NULL;
+  REALTYPE* l_a_sp = NULL;
+  REALTYPE* l_b = NULL;
 
-  int l_i;
-  int l_j;
-  int l_z;
+  REALTYPE *l_c_betazero = NULL, *l_c_gold_betazero = NULL, *l_c_dense_betazero = NULL;
+  REALTYPE *l_c_betaone = NULL, *l_c_gold_betaone = NULL, *l_c_dense_betaone = NULL;
+
+  const char *const env_fsspmdm_nblock = getenv("FSSPMDM_NBLOCK");
+  int l_n_block = ((NULL == env_fsspmdm_nblock || '\0' == *env_fsspmdm_nblock)
+    ? 48 : atoi(env_fsspmdm_nblock));
+
+  libxsmm_matdiff_info diff;
+  int l_m, l_n, l_k;
+  int l_i, l_j, l_z;
   int l_elems;
   int l_reps;
-  int l_n_block;
+  int l_beta;
 
   libxsmm_timer_tickint l_start, l_end;
   double l_total;
@@ -176,16 +165,19 @@ int main(int argc, char* argv[]) {
   libxsmm_fsspmdm* gemm_op_betazero = NULL;
   libxsmm_fsspmdm* gemm_op_betaone = NULL;
 
-  if (argc != 4) {
-    fprintf( stderr, "need csr-filename N reps!\n" );
+  if (argc < 4) {
+    fprintf( stderr, "need csr-filename N reps [beta=0|1]!\n" );
     exit(-1);
   }
-
 
   /* read sparse A */
   l_csr_file = argv[1];
   l_n = atoi(argv[2]);
+  /* sanitize blocksize */
+  if (l_n < l_n_block) l_n_block = l_n;
   l_reps = atoi(argv[3]);
+  l_beta = (4 < argc ? atoi(argv[4]) : -1);
+
   if (my_csr_reader(  l_csr_file,
                  &l_rowptr,
                  &l_colidx,
@@ -196,18 +188,12 @@ int main(int argc, char* argv[]) {
   }
   l_m = l_rowcount;
   l_k = l_colcount;
-  printf("CSR matrix data structure we just read:\n");
+  printf("CSR matrix data structure we just read (%s):\n", l_csr_file);
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   /* allocate dense matrices */
   l_a_dense = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_m, 64);
   l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_k * l_n, 64);
-  l_c_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
-  l_c_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
-  l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
-  l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
-  l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
-  l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
@@ -226,159 +212,227 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  /* touch C */
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rng_f64();
-  }
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_betaone[l_i] = l_c_gold_betaone[l_i];
-  }
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_dense_betaone[l_i] = l_c_gold_betaone[l_i];
-  }
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_betazero[l_i] = l_c_betaone[l_i];
-  }
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_gold_betazero[l_i] = l_c_gold_betaone[l_i];
-  }
-  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_dense_betazero[l_i] = l_c_dense_betaone[l_i];
+  if (0 >= l_beta) {
+    const char *const env_fsspmdm_nts = getenv("FSSPMDM_NTS");
+    /* allocate C */
+    l_c_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    l_c_gold_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    l_c_dense_betazero = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    assert(NULL != l_c_betazero && NULL != l_c_gold_betazero && NULL != l_c_dense_betazero);
+    libxsmm_rng_set_seed(25071975);
+    /* touch C */
+    for (l_i = 0; l_i < (l_m*l_n); l_i++) {
+      l_c_gold_betazero[l_i] = (REALTYPE)libxsmm_rng_f64();
+    }
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+      l_c_betazero[l_i] = l_c_gold_betazero[l_i];
+    }
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+      l_c_dense_betazero[l_i] = l_c_gold_betazero[l_i];
+    }
+    /* setting up fsspmdm */
+    beta = 0;
+    gemm_op_betazero = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta,
+      (NULL == env_fsspmdm_nts || '\0' == *env_fsspmdm_nts || 0 != atoi(env_fsspmdm_nts)) ? 1 : 0, l_a_dense);
   }
 
-  /* setting up fsspmdm */
-  l_n_block = 48;
-  beta = 0;
-  gemm_op_betazero = libxsmm_fsspmdm_create( LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 1, l_a_dense );
-  beta = 1;
-  gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE), l_m, l_n_block, l_k, l_k, l_n, l_n, &alpha, &beta, 0, l_a_dense );
+  if (0 > l_beta || 0 < l_beta) {
+    /* allocate C */
+    l_c_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    l_c_gold_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    l_c_dense_betaone = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * l_m * l_n, 64);
+    assert(NULL != l_c_betaone && NULL != l_c_gold_betaone && NULL != l_c_dense_betaone);
+    libxsmm_rng_set_seed(25071975);
+    /* touch C */
+    for (l_i = 0; l_i < l_m * l_n; l_i++) {
+      l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rng_f64();
+    }
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+      l_c_betaone[l_i] = l_c_gold_betaone[l_i];
+    }
+    for ( l_i = 0; l_i < (l_m*l_n); l_i++) {
+      l_c_dense_betaone[l_i] = l_c_gold_betaone[l_i];
+    }
+    /* setting up fsspmdm */
+    beta = 1;
+    gemm_op_betaone = libxsmm_fsspmdm_create(LIBXSMM_DATATYPE(REALTYPE),
+      l_m, LIBXSMM_MIN(l_n_block, l_n), l_k, l_k, l_n, l_n,
+      &alpha, &beta, 0, l_a_dense);
+  }
 
   /* compute golden results */
-  printf("computing golden solution...\n");
-  for ( l_j = 0; l_j < l_n; l_j++ ) {
-    for (l_i = 0; l_i < l_m; l_i++ ) {
-      l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
-      l_c_gold_betazero[(l_n*l_i) + l_j] = 0;
-      for (l_z = 0; l_z < l_elems; l_z++) {
-        l_c_gold_betazero[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
+  printf("\ncomputing golden solution...\n");
+  if (0 >= l_beta) {
+    for (l_j = 0; l_j < l_n; l_j++) {
+      for (l_i = 0; l_i < l_m; l_i++) {
+        l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
+        l_c_gold_betazero[(l_n * l_i) + l_j] = 0;
+        for (l_z = 0; l_z < l_elems; l_z++) {
+          l_c_gold_betazero[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+        }
       }
     }
   }
-  for ( l_j = 0; l_j < l_n; l_j++ ) {
-    for (l_i = 0; l_i < l_m; l_i++ ) {
-      l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
-      for (l_z = 0; l_z < l_elems; l_z++) {
-        l_c_gold_betaone[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
+  if (0 > l_beta || 0 < l_beta) {
+    for (l_j = 0; l_j < l_n; l_j++) {
+      for (l_i = 0; l_i < l_m; l_i++) {
+        l_elems = l_rowptr[l_i + 1] - l_rowptr[l_i];
+        for (l_z = 0; l_z < l_elems; l_z++) {
+          l_c_gold_betaone[(l_n * l_i) + l_j] += l_a_sp[l_rowptr[l_i] + l_z] * l_b[(l_n * l_colidx[l_rowptr[l_i] + l_z]) + l_j];
+        }
       }
     }
   }
-  printf("...done!\n");
+  printf("\tdone!\n");
 
   /* libxsmm generated code */
   printf("computing libxsmm (A sparse) solution...\n");
+  if (0 >= l_beta) {
 #if defined(_OPENMP)
-  #pragma omp parallel for private(l_z)
+#   pragma omp parallel for private(l_z)
 #endif
-  for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-    libxsmm_fsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
+    for (l_z = 0; l_z < l_n; l_z += l_n_block) {
+      libxsmm_fsspmdm_execute(gemm_op_betazero, l_b + l_z, l_c_betazero + l_z);
+    }
   }
+  if (0 > l_beta || 0 < l_beta) {
 #if defined(_OPENMP)
-  #pragma omp parallel for private(l_z)
+#   pragma omp parallel for private(l_z)
 #endif
-  for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-    libxsmm_fsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
+    for (l_z = 0; l_z < l_n; l_z += l_n_block) {
+      libxsmm_fsspmdm_execute(gemm_op_betaone, l_b + l_z, l_c_betaone + l_z);
+    }
   }
-  printf("...done!\n");
+  printf("\tdone!\n");
 
   /* BLAS code */
   printf("computing BLAS (A dense) solution...\n");
-  beta = 0;
-  GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
-  beta = 1;
-  GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
-  printf("...done!\n");
+  if (0 >= l_beta) {
+    beta = 0;
+    GEMM(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n);
+  }
+  if (0 > l_beta || 0 < l_beta) {
+    beta = 1;
+    GEMM(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n);
+  }
+  printf("\tdone!\n");
 
-  /* check for errors */
-  libxsmm_matdiff_clear(&diff);
-  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
-    l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-  ret |= diff.linf_abs > 1e-4;
-  printf("max error beta=0 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
-
-  libxsmm_matdiff_clear(&diff);
-  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
-    l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-  ret |= diff.linf_abs > 1e-4;
-  printf("max error beta=1 (libxmm vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
-
-  libxsmm_matdiff_clear(&diff);
-  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
-    l_c_gold_betazero, l_c_dense_betazero, NULL/*ldref*/, NULL/*ldtst*/);
-  printf("max error beta=0 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
-
-  libxsmm_matdiff_clear(&diff);
-  libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
-    l_c_gold_betaone, l_c_dense_betaone, NULL/*ldref*/, NULL/*ldtst*/);
-  printf("max error beta=1 (dense vs. gold): %f (%f != %f)\n", diff.linf_abs, diff.v_ref, diff.v_tst);
+  printf("\nvalidating results...\n"); /* check for errors */
+  if (0 >= l_beta) {
+    libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+      l_c_gold_betazero, l_c_betazero, NULL/*ldref*/, NULL/*ldtst*/);
+    printf("\tmax error beta=0 (libxmm vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+      ret |= 1;
+    }
+    else printf("\n");
+    libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+      l_c_gold_betazero, l_c_dense_betazero, NULL/*ldref*/, NULL/*ldtst*/);
+    printf("\tmax error beta=0 (dense vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    }
+    else printf("\n");
+  }
+  if (0 > l_beta || 0 < l_beta) {
+    libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+      l_c_gold_betaone, l_c_betaone, NULL/*ldref*/, NULL/*ldtst*/);
+    printf("\tmax error beta=1 (libxmm vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+      ret |= 1;
+    }
+    else printf("\n");
+    libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(REALTYPE), l_m, l_n,
+      l_c_gold_betaone, l_c_dense_betaone, NULL/*ldref*/, NULL/*ldtst*/);
+    printf("\tmax error beta=1 (dense vs. gold): %f", diff.linf_abs);
+    if (EPSILON(REALTYPE) < libxsmm_matdiff_epsilon(&diff)) {
+      printf(" (%f != %f)\n", diff.v_ref, diff.v_tst);
+    }
+    else printf("\n");
+  }
 
   /* Let's measure performance */
-  l_start = libxsmm_timer_tick();
-  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+  if (0 >= l_beta) {
+    l_start = libxsmm_timer_tick();
+    for (l_j = 0; l_j < l_reps; l_j++) {
 #if defined(_OPENMP)
-    #pragma omp parallel for private(l_z)
+#     pragma omp parallel for private(l_z)
 #endif
-    for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-      libxsmm_fsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
+      for (l_z = 0; l_z < l_n; l_z += l_n_block) {
+        libxsmm_fsspmdm_execute(gemm_op_betazero, l_b + l_z, l_c_betazero + l_z);
+      }
     }
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * (((double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("\nperformance: RM, M=%i, N=%i, K=%i, beta=0\n", l_m, l_n, l_k);
+    printf("\tLIBXSMM time[s]: %f\n", l_total / (double)l_reps);
+    printf("\tLIBXSMM GFLOPS : %f (sparse)\n", (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tLIBXSMM GFLOPS : %f (dense)\n", (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tLIBXSMM GB/s   : %f\n", ((double)sizeof(REALTYPE) * (((double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total);
 
-  l_start = libxsmm_timer_tick();
-  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+    l_start = libxsmm_timer_tick();
+    beta = 0;
+    for (l_j = 0; l_j < l_reps; l_j++) {
+      GEMM(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("\tBLAS time[s]   : %f\n", l_total / (double)l_reps);
+    printf("\tBLAS GFLOPS    : %f\n", (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tBLAS GB/s      : %f\n", ((double)sizeof(REALTYPE) * ((2.0 * (double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total);
+  }
+
+  /* Let's measure performance */
+  if (0 > l_beta || 0 < l_beta) {
+    l_start = libxsmm_timer_tick();
+    for (l_j = 0; l_j < l_reps; l_j++) {
 #if defined(_OPENMP)
-    #pragma omp parallel for private(l_z)
+#     pragma omp parallel for private(l_z)
 #endif
-    for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-      libxsmm_fsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
+      for (l_z = 0; l_z < l_n; l_z += l_n_block) {
+        libxsmm_fsspmdm_execute(gemm_op_betaone, l_b + l_z, l_c_betaone + l_z);
+      }
     }
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("\nperformance: RM, M=%i, N=%i, K=%i, beta=1\n", l_m, l_n, l_k);
+    printf("\tLIBXSMM time[s]: %f\n", l_total / (double)l_reps);
+    printf("\tLIBXSMM GFLOPS : %f (sparse)\n", (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tLIBXSMM GFLOPS : %f (dense)\n", (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tLIBXSMM GB/s   : %f\n", ((double)sizeof(REALTYPE) * ((2.0 * (double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total);
 
-  l_start = libxsmm_timer_tick();
-  beta = 0;
-  for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+    l_start = libxsmm_timer_tick();
+    beta = 1;
+    for (l_j = 0; l_j < l_reps; l_j++) {
+      GEMM(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    printf("\tBLAS time[s]   : %f\n", l_total / (double)l_reps);
+    printf("\tBLAS GFLOPS    : %f\n", (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total);
+    printf("\tBLAS GB/s      : %f\n", ((double)sizeof(REALTYPE) * ((2.0 * (double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total);
   }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  fprintf(stdout, "time[s] BLAS    (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  BLAS    (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    BLAS    (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
-
-  l_start = libxsmm_timer_tick();
-  beta = 1;
-  for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    GEMM( &trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  fprintf(stdout, "time[s] BLAS    (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  BLAS    (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    BLAS    (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(REALTYPE) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   /* free */
-  libxsmm_fsspmdm_destroy( gemm_op_betazero );
-  libxsmm_fsspmdm_destroy( gemm_op_betaone );
+  libxsmm_fsspmdm_destroy(gemm_op_betazero);
+  libxsmm_fsspmdm_destroy(gemm_op_betaone);
+
+  libxsmm_free(l_c_dense_betazero);
+  libxsmm_free(l_c_gold_betazero);
+  libxsmm_free(l_c_betazero);
+
+  libxsmm_free(l_c_dense_betaone);
+  libxsmm_free(l_c_gold_betaone);
+  libxsmm_free(l_c_betaone);
+
+  libxsmm_free(l_a_dense);
+  libxsmm_free(l_b);
+
+  free(l_rowptr);
+  free(l_colidx);
+  free(l_a_sp);
 
   return ret;
 }

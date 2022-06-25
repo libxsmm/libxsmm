@@ -13,7 +13,6 @@
 #define GENERATOR_X86_INSTRUCTIONS_H
 
 #include "generator_common.h"
-#include "../include/libxsmm_typedefs.h"
 
 typedef enum libxsmm_x86_simd_name {
   LIBXSMM_X86_SIMD_NAME_XMM = 0x0,

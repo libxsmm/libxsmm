@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Freddie Witherden
 ******************************************************************************/
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_x86_instructions.h"
@@ -1034,6 +1034,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
         unsigned int l_rvc = l_base_c_reg + op.acc_idxs[l_z];
         unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+        unsigned int l_neg = 0;
         unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
 
         /* See if we need to load/zero the accumulator */
@@ -1043,15 +1044,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                          l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                          l_rg, l_c_disp );
 
-          /* Zero (elide if constant is +ve) */
+          /* Zero (elide through FMUL + optional FNEG) */
           if ( l_beta0 ) {
-            if ( 1 == op.src_sgns[l_z] ) {
-              l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
-            } else {
-              libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                                         l_rvc, l_rvc, 0, l_rvc,
-                                                         LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-            }
+            l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
+            l_neg = op.src_sgns[l_z] == -1;
           /* Load */
           } else {
             libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
@@ -1100,6 +1096,11 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                    (unsigned char)(l_rva % l_values_per_reg),
                                                    l_rvc, l_tuplet );
 
+        if ( l_neg ) {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
+                                                     l_rvc, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc, l_tuplet );
+        }
+
         /* See if we need to save the accumulator */
         if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_z] ) {
           libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF,
@@ -1122,6 +1123,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
           unsigned int l_rva = (l_unique > l_reg_unique) ? ~0U : l_u;
           unsigned int l_rvc = l_base_c_reg + l_n_blocking*op.acc_idxs[l_z];
           unsigned int l_c_disp = op.c_disps[l_z]*i_xgemm_desc->ldc*l_fbytes;
+          unsigned int l_neg = 0;
           unsigned int l_fma_insn = (op.src_sgns[l_z] == 1) ? LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V : LIBXSMM_AARCH64_INSTR_ASIMD_FMLS_E_V;
           unsigned int l_stp_insn = (l_c_is_nt) ? LIBXSMM_AARCH64_INSTR_ASIMD_STNP_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_STP_I_OFF;
 
@@ -1134,18 +1136,10 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                              l_rg, l_c_disp );
             }
 
-            /* Zero (elide if constant is +ve) */
+            /* Zero (elide through FMUL + optional FNEG) */
             if ( l_beta0 ) {
-              if ( 1 == op.src_sgns[l_z] ) {
-                l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
-              } else {
-                libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                                            l_rvc + l_n, l_rvc + l_n, 0, l_rvc + l_n,
-                                                            LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-                libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V,
-                                                            l_rvc + l_n + 1, l_rvc + l_n + 1, 0, l_rvc + l_n + 1,
-                                                            LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
-              }
+              l_fma_insn = LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_E_V;
+              l_neg = op.src_sgns[l_z] == -1;
             /* Load paired */
             } else {
               libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_OFF,
@@ -1199,6 +1193,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
                                                      l_rva / l_values_per_reg,
                                                      (unsigned char)(l_rva % l_values_per_reg),
                                                      l_rvc + l_n + 1, l_tuplet );
+
+          if ( l_neg ) {
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
+                                                       l_rvc + l_n , LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc + l_n, l_tuplet );
+            libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FNEG_V,
+                                                       l_rvc + l_n + 1, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, l_rvc + l_n + 1, l_tuplet );
+          }
 
           /* See if we need to save the accumulator */
           if ( LIBXSMM_ASPARSE_REG_FLAG_LAST & op.flags[l_z] ) {

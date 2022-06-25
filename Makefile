@@ -1332,9 +1332,9 @@ $(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version
 	@echo >>$@
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
-$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dl.md $(ROOTDIR)/documentation/libxsmm_aux.md \
-$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md \
-$(ROOTDIR)/documentation/libxsmm_compat.md $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.md
+$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_aux.md $(ROOTDIR)/documentation/libxsmm_prof.md \
+$(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md $(ROOTDIR)/documentation/libxsmm_compat.md \
+$(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1346,7 +1346,6 @@ $(ROOTDIR)/documentation/libxsmm_compat.md $(ROOTDIR)/documentation/libxsmm_vali
 		iconv -t utf-8 index.md && echo && \
 		echo "# LIBXSMM Domains" && \
 		iconv -t utf-8 libxsmm_mm.md && echo && \
-		iconv -t utf-8 libxsmm_dl.md && echo && \
 		iconv -t utf-8 libxsmm_aux.md && echo && \
 		iconv -t utf-8 libxsmm_prof.md && echo && \
 		iconv -t utf-8 libxsmm_tune.md && echo && \
@@ -1406,37 +1405,10 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 		-o $@
 	@rm $(TMPFILE)
 
-$(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		>$(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tensorflow.md \
-	| sed \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--template=$(call qndir,$(TMPFILE)) --listings \
-		-f gfm+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="TensorFlow with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $(call qndir,$@)
-	@rm $(TMPFILE)
-
 .PHONY: documentation
 documentation: \
 $(DOCDIR)/libxsmm.$(DOCEXT) \
-$(DOCDIR)/libxsmm_samples.$(DOCEXT) \
-$(DOCDIR)/tensorflow.$(DOCEXT)
+$(DOCDIR)/libxsmm_samples.$(DOCEXT)
 
 .PHONY: mkdocs
 mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md

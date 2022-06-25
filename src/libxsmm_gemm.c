@@ -537,7 +537,7 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
 {
-  switch (prefetch) {
+  switch ((int)prefetch) {
     case LIBXSMM_GEMM_PREFETCH_SIGONLY:            return 2;
     case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C:          return 3;
     case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD:          return 4;
@@ -688,7 +688,7 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
 {
-  switch (iprec) {
+  switch ((int)iprec) {
     case LIBXSMM_DATATYPE_F64: {
       libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F64, oprec, &transa, &transb,
         &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
@@ -735,7 +735,7 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype opr
   const void* beta, void* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_INIT
-  switch (iprec) {
+  switch ((int)iprec) {
     case LIBXSMM_DATATYPE_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
       LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
