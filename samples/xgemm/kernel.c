@@ -258,6 +258,52 @@ double get_random_pos_p5_num() {
   return tmp;
 }
 
+void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint cols_rows ) {
+  double* d_data = (double*) data;
+  float* f_data = (float*) data;
+  libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
+  libxsmm_blasint l_r, l_i, l_j;
+  if (cols_rows == 0) {
+    for (l_r = 0; l_r < br; l_r++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        double column_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+        for (l_i = 0; l_i < ld; l_i++) {
+          if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+            d_data[(l_r * ld * n) + (l_j * ld) + l_i] *= column_coeff;
+          } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+            f_data[(l_r * ld * n) + (l_j * ld) + l_i] *= (float)column_coeff;
+          } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
+            libxsmm_bfloat16_hp tmp /*= { 0 }*/;
+            tmp.i[1] = bf_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp.f *= (float)column_coeff;
+            bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+          } else {
+          }
+        }
+      }
+    }
+  } else {
+    for (l_r = 0; l_r < br; l_r++) {
+      for (l_i = 0; l_i < ld; l_i++) {
+        double row_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+        for (l_j = 0; l_j < n; l_j++) {
+          if ( dtype == LIBXSMM_DATATYPE_F64 ) {
+            d_data[(l_r * ld * n) + (l_j * ld) + l_i] *= row_coeff;
+          } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+            f_data[(l_r * ld * n) + (l_j * ld) + l_i] *= (float)row_coeff;
+          } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
+            libxsmm_bfloat16_hp tmp /*= { 0 }*/;
+            tmp.i[1] = bf_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp.f *= (float)row_coeff;
+            bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+          } else {
+          }
+        }
+      }
+    }
+  }
+}
+
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -272,12 +318,12 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
     for (l_i = 0; l_i < ld; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         if ( dtype == LIBXSMM_DATATYPE_F64 ) {
-          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = get_random_posneg_p5_num();
+          d_data[(l_r * ld * n) + (l_j * ld) + l_i] = (pos_val_only > 0 ) ? get_random_pos_p5_num() :  get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (float)get_random_posneg_p5_num();
+          f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (pos_val_only > 0 ) ? (float)get_random_pos_p5_num() : (float)get_random_posneg_p5_num();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
           libxsmm_bfloat16_hp tmp /*= { 0 }*/;
-          tmp.f = (float)get_random_posneg_p5_num();
+          tmp.f = (pos_val_only > 0 ) ? (float)get_random_pos_p5_num() : (float)get_random_posneg_p5_num();
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (get_random_posneg_p5_num() * 40.0);
@@ -1508,14 +1554,20 @@ int main(int argc, char* argv []) {
       }
 
       if (l_gemm_def.trans_a == 0) {
-        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k, l_gemm_def.unsigned_a );
+        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
       } else {
-        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_m, l_gemm_def.unsigned_a );
+        init_random_matrix( l_gemm_def.in_type, l_a, l_br, l_lda, l_m, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_a );
       }
       if (l_gemm_def.trans_b == 0) {
-        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n, l_gemm_def.unsigned_b );
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
+        if (l_gemm_def.unary_postop == RELU_BITMASK) {
+          negate_random_cols_rows( l_gemm_def.in_type, l_b, l_br, l_ldb, l_n, 0 );
+        }
       } else {
-        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k, l_gemm_def.unsigned_b );
+        init_random_matrix( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k, (l_gemm_def.unary_postop == RELU_BITMASK) ? 1 : l_gemm_def.unsigned_b );
+        if (l_gemm_def.unary_postop == RELU_BITMASK) {
+          negate_random_cols_rows( l_gemm_def.in_type, l_b, l_br, l_ldb, l_k, 1 );
+        }
       }
       if ( l_beta == 0 ) {
         init_garbage_matrix( l_gemm_def.out_type, l_c,      1, l_ldc, l_n );
