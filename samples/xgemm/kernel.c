@@ -264,9 +264,9 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
   libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
   libxsmm_blasint l_r, l_i, l_j;
   if (cols_rows == 0) {
-    for (l_r = 0; l_r < br; l_r++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        double column_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+    for (l_j = 0; l_j < n; l_j++) {
+      double column_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+      for (l_r = 0; l_r < br; l_r++) {
         for (l_i = 0; l_i < ld; l_i++) {
           if ( dtype == LIBXSMM_DATATYPE_F64 ) {
             d_data[(l_r * ld * n) + (l_j * ld) + l_i] *= column_coeff;
@@ -283,9 +283,9 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
       }
     }
   } else {
-    for (l_r = 0; l_r < br; l_r++) {
-      for (l_i = 0; l_i < ld; l_i++) {
-        double row_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+    for (l_i = 0; l_i < ld; l_i++) {
+      double row_coeff = ( libxsmm_rng_f64() > 0.5 ) ? -1.0 : 1.0;
+      for (l_r = 0; l_r < br; l_r++) {
         for (l_j = 0; l_j < n; l_j++) {
           if ( dtype == LIBXSMM_DATATYPE_F64 ) {
             d_data[(l_r * ld * n) + (l_j * ld) + l_i] *= row_coeff;
