@@ -435,8 +435,7 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  /* round up to nearest multiple of 4 */
-  libxsmm_blasint Nn = ((N + 3) / 4) * 4;
+  libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_type  unary_type;
