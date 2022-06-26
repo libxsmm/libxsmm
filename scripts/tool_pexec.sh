@@ -119,7 +119,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       local _PEXEC_CMDPRETTY_INPUT=\"\$*\" _PEXEC_CMDPRETTY_WORDS=\"\"; \
       for WORD in \${_PEXEC_CMDPRETTY_INPUT}; do \
         local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" \
-        | ${SED} \"s/^\${_PEXEC_CMDPRETTY_HERE}\///\" \
+        | ${SED} \"s/.*\${_PEXEC_CMDPRETTY_HERE}\///\" \
         | ${SED} -n 's/\(.*[^.]\)\..*/\1/p'); \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
           _PEXEC_CMDPRETTY_PRE=\${_PEXEC_CMDPRETTY_WORDS}; \
@@ -131,7 +131,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         _PEXEC_CMDPRETTY_ARGS=\"\${_PEXEC_CMDPRETTY_ARGS} \${_PEXEC_CMDPRETTY_WORD}\"; \
       done; \
       echo \"\${_PEXEC_CMDPRETTY_CMD}\${_PEXEC_CMDPRETTY_PRE}\${_PEXEC_CMDPRETTY_ARGS}\" \
-      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//'; \
+      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//'; \
     }; \
     _PEXEC_CMDLINE=\"%%%\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY %%%); \
     _PEXEC_TRAP_EXIT() { \
