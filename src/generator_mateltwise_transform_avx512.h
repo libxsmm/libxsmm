@@ -260,6 +260,14 @@ void libxsmm_generator_transform_norm_to_normt_08bit_avx512_microkernel( libxsmm
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_two_8x8_08bit_vnni4_to_vnni4t_avx512( libxsmm_generated_code* io_generated_code,
+                                                                       const char              i_vector_name,
+                                                                       const unsigned int      i_vec_reg_srcdst_start,
+                                                                       const unsigned int      i_shuffle_op,
+                                                                       const unsigned int      i_mask_reg_1,
+                                                                       const unsigned int      i_mask_reg_2 );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_two_8x8_16bit_vnni2_to_vnni2t_avx512( libxsmm_generated_code* io_generated_code,
                                                                        const char              i_vector_name,
                                                                        const unsigned int      i_vec_reg_srcdst_start,
