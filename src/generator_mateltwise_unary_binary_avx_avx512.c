@@ -340,7 +340,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : LIBXSMM_X86_INSTR_VPBROADCASTW;
 
-  /* In this case we don't have to load any data  */
+  /* In this case we do not have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
 
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
@@ -396,7 +396,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
         /* If compute is in F32 and input is BF16 (or input is BF16 and output is F32), then upconvert BF16 -> FP32 */
         if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
              (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ) {
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
         }
 
         /* quantize tensor */
@@ -447,7 +447,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
               /* If compute is in F32 and input is BF16 (or input is BF16 and output is F32), then upconvert BF16 -> FP32 */
               if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
                    (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ) {
-                libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+                libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
               }
 
               /* quantize tensor */
@@ -511,7 +511,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
             /* If compute is in F32 and input is BF16 (or input is BF16 and output is F32), then upconvert BF16 -> FP32 */
             if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
                  (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) && LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ) {
-              libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+              libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
             }
             /* quantize tensor */
             if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DEQUANT)) {
@@ -633,7 +633,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
             } else {
               libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
                                                                    cur_vreg, cur_vreg,
-                                                                   i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1, i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1);
+                                                                   i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1, i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1, 0 );
             }
           }
           if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT)) {
@@ -1077,7 +1077,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
               cur_vreg,
               0, 0, 0, (cur_mask_reg) << 4);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         /* Compare to generate mask  */
@@ -1117,7 +1117,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
           /* Blend exp-fma result with input reg based on elu mask */
           libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vblend_instr, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->tmp_vreg2, cur_vreg, cur_mask_reg, 0 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -1235,7 +1235,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
                                                                  cur_vreg,
                                                                  0, 0, 0, (i_micro_kernel_config->tmp_vreg2) << 4);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         l_vlen = (io_generated_code->arch <=LIBXSMM_X86_AVX512_VL256_CPX) ? l_vlen/2:l_vlen ;
@@ -1252,7 +1252,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
               (io_generated_code->arch <=LIBXSMM_X86_AVX512_VL256_CPX) ? 'x' : 'y',
               i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
 
-            libxsmm_generator_cvtbf16ps_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
+            libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
           } else {
             libxsmm_x86_instruction_unified_vec_move( io_generated_code,
               i_micro_kernel_config->vmove_instruction_in,
@@ -1301,7 +1301,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
                                                          cur_mask_reg,
                                                          0 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -1554,7 +1554,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             'y',
             i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr)) ? _i_mask_reg : 0, 0 );
 
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
+          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
         } else {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             vmove_instr_in2,
@@ -1576,7 +1576,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             'y',
             i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
 
-          libxsmm_generator_cvtbf16ps_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2 );
+          libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2 );
         } else {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             i_micro_kernel_config->vmove_instruction_in,
@@ -1687,7 +1687,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       reserved_mask_regs++;
     } else {
       mask_reg_in = i_micro_kernel_config->inout_vreg_mask;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_in, i_m % i_vlen_in);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_in, i_m % i_vlen_in, LIBXSMM_DATATYPE_F32);
     }
   }
 
@@ -1711,7 +1711,7 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       } else {
         mask_reg_out = i_micro_kernel_config->reserved_zmms;
         i_micro_kernel_config->reserved_zmms =  i_micro_kernel_config->reserved_zmms + 1;
-        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_out, i_m % i_vlen_out);
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg_out, i_m % i_vlen_out, LIBXSMM_DATATYPE_F32);
       }
     }
   }
@@ -2328,7 +2328,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   i_micro_kernel_config->reserved_mask_regs = 1;
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
 
-  /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
+  /* if we need FP32->BF16 downconverts and we do not have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
        LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) && ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) ) {
     i_micro_kernel_config->use_fp32bf16_cvt_replacement = 1;

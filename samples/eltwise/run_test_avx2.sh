@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-export LIBXSMM_TARGET=hsw
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
 
-cat <<EOM | ../../scripts/tool_pexec.sh
+export LIBXSMM_TARGET=hsw
+cd ${HERE} && cat <<EOM | ${EXEC} "$@"
 ./kernel_test/binary_add_32b_eqld.sh
 ./kernel_test/binary_add_32b_gtld.sh
 ./kernel_test/binary_div_32b_eqld.sh
@@ -91,6 +93,18 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/reduce_add_rows_x_32b_gtld.sh
 ./kernel_test/reduce_add_rows_x_x2_32b_eqld.sh
 ./kernel_test/reduce_add_rows_x_x2_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_cols_x2_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_cols_x2_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_cols_x_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_cols_x_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_cols_x_x2_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_cols_x_x2_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_rows_x2_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_rows_x2_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_rows_x_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_rows_x_32b_gtld.sh
+./kernel_test/init_acc_reduce_add_rows_x_x2_32b_eqld.sh
+./kernel_test/init_acc_reduce_add_rows_x_x2_32b_gtld.sh
 ./kernel_test/reduce_max_cols_32b_eqld.sh
 ./kernel_test/reduce_max_cols_32b_gtld.sh
 ./kernel_test/reduce_max_rows_32b_eqld.sh
@@ -104,6 +118,8 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/unary_scatter_32b_eqld.sh
 ./kernel_test/unary_scatter_32b_gtld.sh
 EOM
+RESULT=$?
 
 rm -f tmp.??????????
 unset LIBXSMM_TARGET
+exit ${RESULT}

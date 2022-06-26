@@ -13,7 +13,6 @@
 #define GENERATOR_X86_INSTRUCTIONS_H
 
 #include "generator_common.h"
-#include "../include/libxsmm_typedefs.h"
 
 typedef enum libxsmm_x86_simd_name {
   LIBXSMM_X86_SIMD_NAME_XMM = 0x0,
@@ -635,18 +634,6 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_rdseed_load ( libxsmm_generated_code *io_generated_code,
                                            const unsigned int      i_gp_reg_number );
-
-/**
- * Generates a sequence to load function arguments from the stack (arguments )
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arg_number the number of an argument which was passed on the stack
- * @param i_gp_reg_number the destination register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_load_arg_to_reg( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_arg_number,
-                                              const unsigned int      i_gp_reg_number );
 
 /**
  * Generates ld/stconfig/tilerelease instructions

@@ -66,9 +66,6 @@
     <ClInclude Include="..\include\libxsmm_cpuid.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_spmdm.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -116,18 +113,6 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_spmdm_end.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_rng.h">
       <Filter>include</Filter>
@@ -184,9 +169,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_packed_gemmnn.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_spgemm_csc_bsparse.h">
@@ -294,6 +276,15 @@
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_aarch64_sve.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_matdiff.h">
+      <Filter>src\template</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -326,9 +317,6 @@
     <ClCompile Include="..\src\libxsmm_perf.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_spmdm.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -343,24 +331,6 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_math.c">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_bfloat16_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_fp32_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\transpose.tpl.c">
-      <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_common.c">
       <Filter>src\generator</Filter>
@@ -572,6 +542,12 @@
     <ClCompile Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_aarch64_sve.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_lpflt_quant.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\scripts\libxsmm_specialized.py">
@@ -612,8 +588,6 @@
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
     </None>
-    <None Include="..\.test-rnn.yml" />
-    <None Include="..\.test-dnn.yml" />
     <None Include="..\scripts\tool_cpuinfo.sh">
       <Filter>scripts</Filter>
     </None>
@@ -626,6 +600,7 @@
     <None Include="..\scripts\tool_getenvars.sh">
       <Filter>scripts</Filter>
     </None>
+    <None Include="..\.test-cnn.yml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

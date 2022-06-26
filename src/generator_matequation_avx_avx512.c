@@ -80,7 +80,7 @@ int libxsmm_generator_mateqn_get_rbp_relative_offset( libxsmm_meqn_stack_var sta
    *
    * * */
 
-  switch ( stack_var ) {
+  switch ( (int)stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
       return -256;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
@@ -812,7 +812,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
     if (cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD) {
       cur_node->fusion_info.gather.fused_reduce_cols_add = 1;
       cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD;
-      cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_XOR_ACC;
+      cur_node->info.u_op.flags = 0;
       if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
       } else {
@@ -896,6 +896,7 @@ void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, lib
       info.arg.ld = cur_node->tmp.ld;
       info.arg.in_pos = -(cur_node->tmp.id + 1);  /*(cur_node->tmp.id >= 0) ? -(cur_node->tmp.id + 1) : cur_node->tmp.id;*/
       info.arg.dtype = cur_node->tmp.dtype;
+      assert(NULL != new_arg_node);
       new_arg_node->le = NULL;
       new_arg_node->ri = NULL;
       new_arg_node->r2 = NULL;
@@ -920,6 +921,7 @@ void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, lib
           cur_node->up->r2 = new_arg_node;
         }
       }
+      assert(NULL != new_eqn);
       new_eqn->eqn_root = cur_node;
       new_eqn->is_constructed = 1;
       libxsmm_generator_matequation_enqueue_equation(new_eqn, jiting_queue, queue_size);
@@ -966,7 +968,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   memset(&fusion_knobs, 0, sizeof(libxsmm_matrix_eqn_fusion_knobs));
 
   if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 
@@ -1046,7 +1048,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
             temp_reg,
             0 );
       }
-      copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
+      copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,

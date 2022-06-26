@@ -3,9 +3,6 @@
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
 fi
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-  exit 0;
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
   exit 0;
 fi
@@ -27,15 +24,13 @@ import random as rnd
 import time as time
 rnd.seed(time.time())
 randnum = rnd.sample(range(1,101), 18)
-randnumk = rnd.sample(range(4,101,2), 18)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
 for m in randnum:
     for n in randnum:
-        for k in randnumk:
-            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
-                 + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
+        for k in randnum:
+            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' 100 100 100\n'
             if 0 == (i % 2):
                 f1.write(line)
             else:
@@ -45,20 +40,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16 nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16 nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32_FLAT nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32_FLAT nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16 addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32_FLAT addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16 offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32_FLAT offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16 strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF16F32_FLAT strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16 addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32_FLAT addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16 offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32_FLAT offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16 strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF16F32_FLAT strdbr 5 1 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

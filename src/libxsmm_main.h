@@ -169,7 +169,7 @@
 #endif
 
 #if defined(LIBXSMM_UNPACKED)
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE) LIBXSMM_MEMSET127(DST, 0, SIZE)
+#define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #else
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE)
 #endif
@@ -185,11 +185,7 @@
   (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
   (DESCRIPTOR).flags = (unsigned int)((FLAGS) | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
-  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  (DESCRIPTOR).meltw_datatype_aux = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0; \
-  (DESCRIPTOR).meltw_ldx = 0; (DESCRIPTOR).meltw_ldy = 0; (DESCRIPTOR).meltw_ldz = 0; \
-  (DESCRIPTOR).meltw_param = 0; (DESCRIPTOR).meltw_flags = 0; \
-  (DESCRIPTOR).meltw_operation = 0
+  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC)
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -326,26 +322,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_matrix_eqn_function xmateqn;
 } libxsmm_code_pointer;
 
-struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  double* a_dense;
+struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm {
+  int M, N, K, ldb, ldc, N_chunksize;
   libxsmm_gemmfunction kernel;
-};
-
-struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  float* a_dense;
-  libxsmm_gemmfunction kernel;
+  libxsmm_datatype datatype;
+  void* a_dense;
 };
 
 /** Packed structure storing the mateltw argument description. */
@@ -588,4 +569,3 @@ LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR_PRIVATE(unsigned int libxsmm_thread_count);
 
 #endif /*LIBXSMM_MAIN_H*/
-

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-cat <<EOM | ../../scripts/tool_pexec.sh
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
+
+cd ${HERE} && cat <<EOM | ${EXEC} "$@"
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_0_argopmode_0_32b.sh
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_1_argopmode_0_32b.sh
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_1_implicitidx_1_argopmode_0_32b.sh
@@ -98,5 +101,7 @@ cat <<EOM | ../../scripts/tool_pexec.sh
 ./kernel_test/opreduce_op_sub_redop_none_oporder_0_regvecin_1_implicitidx_1_argopmode_0_32b.sh
 ./kernel_test/opreduce_op_sub_redop_none_oporder_1_regvecin_1_implicitidx_1_argopmode_0_32b.sh
 EOM
+RESULT=$?
 
 rm -f tmp.??????????
+exit ${RESULT}

@@ -63,7 +63,7 @@ int libxsmm_generator_mateqn_get_fp_relative_offset( libxsmm_meqn_stack_var stac
    *
    * * */
 
-  switch ( stack_var ) {
+  switch ( (int)stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
       return -256;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
@@ -663,7 +663,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   unsigned int all_nodes_f32 = 1;
 
   if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 
@@ -720,7 +720,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, l_gp_reg_mapping.temp_reg );
     } else {
       libxsmm_generator_meqn_getaddr_stack_tmp_i_aarch64( io_generated_code,  cur_eqn->eqn_root->tmp.id * l_kernel_config.tmp_size, l_gp_reg_mapping.gp_reg_scratch_0, l_gp_reg_mapping.temp_reg );
-      copy_mateqn_desc.datatype = cur_eqn->eqn_root->tmp.dtype;
+      copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);
     }
 
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, l_gp_reg_mapping.temp_reg );

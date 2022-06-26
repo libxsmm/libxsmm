@@ -9,11 +9,11 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
@@ -25,7 +25,7 @@ inline void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, 
 #endif
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
+  libxsmm_bfloat16_hp bf16_hp;
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
@@ -85,9 +85,11 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   }
 #else
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
+    float buf[4096];
+    LIBXSMM_VLA_DECL(2, float, tmp, buf, S3);
     float max = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3));
     float sum = 0.0;
+    assert((sizeof(*buf) * S1 * S3) <= sizeof(buf));
     for ( s1 = 0; s1 < S1; s1++) {
       for ( s3 = 0; s3 < S3; s3++) {
         float cur = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
@@ -97,15 +99,15 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
     for ( s1 = 0; s1 < S1; s1++) {
       for ( s3 = 0; s3 < S3; s3++) {
         float cur = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
-        float z = expf(cur - max);
-        tmp[s1][s3] = z;
+        float z = LIBXSMM_EXPF(cur - max);
+        LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) = z;
         sum += z;
       }
     }
-    sum = 1.0 / sum;
+    sum = (float)(1.0 / sum);
     for ( s1 = 0; s1 < S1; s1++) {
       for( s3 = 0; s3 < S3; s3++) {
-        float cur = tmp[s1][s3] * sum;
+        float cur = LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) * sum;
         libxsmm_rne_convert_fp32_bf16( &cur, &LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3), 1 );
       }
     }
@@ -222,9 +224,11 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
   }
 #else
   for (s2 = 0; s2 < S2; s2++) {
-    float tmp[S1][S3];
+    float buf[4096];
+    LIBXSMM_VLA_DECL(2, float, tmp, buf, S3);
     float max = LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     float sum = 0.0;
+    assert((sizeof(*buf)* S1* S3) <= sizeof(buf));
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
         if (max < LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)) max = LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
@@ -232,15 +236,15 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
     }
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
-        float z = expf(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) - max);
-        tmp[s1][s3] = z;
+        float z = LIBXSMM_EXPF(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) - max);
+        LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) = z;
         sum += z;
       }
     }
-    sum = 1.0 / sum;
+    sum = (float)(1.0 / sum);
     for (s1 = 0; s1 < S1; s1++) {
       for(s3 = 0; s3 < S3; s3++) {
-        LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3) = tmp[s1][s3] * sum;
+        LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3) = LIBXSMM_VLA_ACCESS(2, tmp, s1, s3, S3) * sum;
       }
     }
   }
@@ -304,17 +308,18 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
 
 void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
-  LIBXSMM_ALIGNED(float tmp[S1][S3], 64);
+  LIBXSMM_ALIGNED(float tmp[4096], 64);
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
-  libxsmm_matrix_arg  arg_array[1];
+  libxsmm_matrix_arg arg_array[1];
   eqn_param.inputs = arg_array;
+  assert((sizeof(*tmp) * S1 * S3) <= sizeof(tmp));
   for (s2 = 0; s2 < S2; s2++) {
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &tmp[0][0];
+    eqn_param.output.primary = tmp;
     func0(&eqn_param);
-    arg_array[0].primary = &tmp[0][0];
+    arg_array[0].primary = tmp;
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
@@ -322,17 +327,18 @@ void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsm
 
 void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
-  LIBXSMM_ALIGNED(float tmp[S1][S3], 64);
+  LIBXSMM_ALIGNED(float tmp[4096], 64);
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   libxsmm_matrix_arg  arg_array[1];
   eqn_param.inputs = arg_array;
+  assert((sizeof(*tmp) * S1 * S3) <= sizeof(tmp));
   for (s2 = 0; s2 < S2; s2++) {
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &tmp[0][0];
+    eqn_param.output.primary = tmp;
     func0(&eqn_param);
-    arg_array[0].primary = &tmp[0][0];
+    arg_array[0].primary = tmp;
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
@@ -341,19 +347,20 @@ void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, lib
 #if 1
 void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
-  LIBXSMM_ALIGNED(float tmp[S1][S3], 64);
+  LIBXSMM_ALIGNED(float tmp[4096], 64);
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   libxsmm_matrix_arg arg_array[2];
   eqn_param.inputs = arg_array;
+  assert((sizeof(*tmp) * S1 * S3) <= sizeof(tmp));
   for (s2 = 0; s2 < S2; s2++) {
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
     arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &tmp[0][0];
+    eqn_param.output.primary = tmp;
     func0(&eqn_param);
-    arg_array[0].primary = &tmp[0][0];
+    arg_array[0].primary = tmp;
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }
@@ -361,19 +368,20 @@ void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout
 
 void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
-  LIBXSMM_ALIGNED(float tmp[S1][S3], 64);
+  LIBXSMM_ALIGNED(float tmp[4096], 64);
   libxsmm_matrix_eqn_param eqn_param;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   libxsmm_matrix_arg arg_array[2];
   eqn_param.inputs = arg_array;
+  assert((sizeof(*tmp) * S1 * S3) <= sizeof(tmp));
   for (s2 = 0; s2 < S2; s2++) {
     arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, gout, 0, s2, 0, S2, S3);
     arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = &tmp[0][0];
+    eqn_param.output.primary = tmp;
     func0(&eqn_param);
-    arg_array[0].primary = &tmp[0][0];
+    arg_array[0].primary = tmp;
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, ginp, 0, s2, 0, S2, S3);
     func1(&eqn_param);
   }

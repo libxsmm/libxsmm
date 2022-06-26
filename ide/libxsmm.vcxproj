@@ -32,6 +32,7 @@
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\include\libxsmm_lpflt_quant.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
@@ -39,7 +40,6 @@
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
-    <ClInclude Include="..\include\libxsmm_spmdm.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
@@ -55,6 +55,7 @@
     <ClInclude Include="..\src\generator_gemm_sse_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_sse_microkernel.h" />
     <ClInclude Include="..\src\generator_mateltwise_aarch64.h" />
+    <ClInclude Include="..\src\generator_mateltwise_aarch64_sve.h" />
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.h" />
     <ClInclude Include="..\src\generator_mateltwise_misc_aarch64.h" />
     <ClInclude Include="..\src\generator_mateltwise_misc_avx_avx512.h" />
@@ -74,7 +75,6 @@
     <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_avx_avx512.h" />
-    <ClInclude Include="..\src\generator_packed_gemmnn.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_aarch64.h" />
     <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_bc_rm_aarch64.h" />
@@ -109,15 +109,12 @@
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_matrixeqn.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h" />
-    <ClInclude Include="..\src\libxsmm_spmdm_end.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_xcopy.h" />
     <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
+    <ClInclude Include="..\src\template\libxsmm_matdiff.h" />
     <ClInclude Include="..\src\template\libxsmm_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -135,6 +132,7 @@
     <ClCompile Include="..\src\generator_gemm_sse_microkernel.c" />
     <ClCompile Include="..\src\generator_mateltwise.c" />
     <ClCompile Include="..\src\generator_mateltwise_aarch64.c" />
+    <ClCompile Include="..\src\generator_mateltwise_aarch64_sve.c" />
     <ClCompile Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.c" />
     <ClCompile Include="..\src\generator_mateltwise_misc_aarch64.c" />
     <ClCompile Include="..\src\generator_mateltwise_misc_avx_avx512.c" />
@@ -193,6 +191,7 @@
     <ClCompile Include="..\src\libxsmm_generator.c" />
     <ClCompile Include="..\src\libxsmm_hash.c" />
     <ClCompile Include="..\src\libxsmm_gemm.c" />
+    <ClCompile Include="..\src\libxsmm_lpflt_quant.c" />
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
     <ClCompile Include="..\src\libxsmm_math.c" />
@@ -202,59 +201,10 @@
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />
     <ClCompile Include="..\src\libxsmm_rng.c" />
-    <ClCompile Include="..\src\libxsmm_spmdm.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
     <ClCompile Include="..\src\libxsmm_xcopy.c" />
-    <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_bfloat16_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_fp32_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\transpose.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.codefile" />
@@ -589,7 +539,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820;6011</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
@@ -627,7 +577,7 @@
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificWarnings>4710;4711;4752;4820;6011</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4101;4710;4711;4752;4820;6011;26451</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>

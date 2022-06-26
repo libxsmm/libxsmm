@@ -36,7 +36,7 @@
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
 #if 0
-/* @TODO this kernle business doesn't work anymore */
+/* @TODO this kernle business does not work anymore */
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
@@ -356,7 +356,7 @@ LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
   const char* env_w = getenv("LIBXSMM_GEMM_WRAP");
-  LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
+  LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr = { 0 };
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
 #if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
   { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
@@ -429,7 +429,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     internal_gemm_nstretch = 1.0f;
     internal_gemm_kstretch = 1.0f;
   }
-  else if (LIBXSMM_X86_AVX2 <= archid) {
+  else if (LIBXSMM_X86_AVX2_ADL <= archid) {
     internal_gemm_vwidth = 32;
     internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 3.0f;
@@ -537,7 +537,7 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
 {
-  switch (prefetch) {
+  switch ((int)prefetch) {
     case LIBXSMM_GEMM_PREFETCH_SIGONLY:            return 2;
     case LIBXSMM_GEMM_PREFETCH_BL2_VIA_C:          return 3;
     case LIBXSMM_GEMM_PREFETCH_AL2_AHEAD:          return 4;
@@ -602,7 +602,7 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
   const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
   libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
-  char string_a[128], string_b[128], typeprefix = 0;
+  char string_a[128] = "", string_b[128] = "", typeprefix = 0;
 
   switch (iprec | oprec) {
     case LIBXSMM_DATATYPE_F64: {
@@ -645,8 +645,8 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
       }
     }
     else { /* dump A, B, and C matrices into MHD files */
-      char extension_header[256];
-      size_t data_size[2], size[2];
+      char extension_header[256] = "";
+      size_t data_size[2] = { 0 }, size[2] = { 0 };
 
       if (NULL != a) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
@@ -688,7 +688,7 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb, double dbeta, void* c, libxsmm_blasint ldc)
 {
-  switch (iprec) {
+  switch ((int)iprec) {
     case LIBXSMM_DATATYPE_F64: {
       libxsmm_gemm_print2(ostream, LIBXSMM_DATATYPE_F64, oprec, &transa, &transb,
         &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
@@ -710,7 +710,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
 {
   const libxsmm_descriptor* desc;
-  libxsmm_code_pointer code;
+  libxsmm_code_pointer code = { NULL };
   size_t code_size;
   code.xgemm = kernel;
   if (NULL != libxsmm_get_kernel_xinfo(code, &desc, &code_size) &&
@@ -735,7 +735,7 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype opr
   const void* beta, void* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_INIT
-  switch (iprec) {
+  switch ((int)iprec) {
     case LIBXSMM_DATATYPE_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
       LIBXSMM_BLAS_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -827,7 +827,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   union {
     libxsmm_gemm_handle* ptr;
     libxsmm_gemm_blob* blob;
-  } result;
+  } result = { 0 };
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m && 0 < ntasks) {
     unsigned int ntm = 0, ntn = 0, ntk = 0, mt = 1, nt = 1, kt = 1;
@@ -1725,11 +1725,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
 #endif
       && 0 != index_stride)
     {
-      const int oprec = LIBXSMM_GETENUM_OUT(descriptor->datatype);
-      const libxsmm_blasint typesize = LIBXSMM_TYPESIZE(oprec);
-      const libxsmm_blasint csize = (libxsmm_blasint)descriptor->ldc * descriptor->n * typesize;
-      /* finalize assumption if matrix-size is a multiple of the vector-width */
-      descriptor->flags |= (unsigned short)(0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
+      descriptor->flags |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
     }
   }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)

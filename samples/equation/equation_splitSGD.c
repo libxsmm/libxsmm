@@ -9,11 +9,11 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
@@ -24,7 +24,7 @@ void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, 
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
+      libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.f = in[j * ld + i];
       out_lo[j * ld + i] = bf16_hp.i[0];
       out_hi[j * ld + i] = bf16_hp.i[1];
@@ -36,7 +36,7 @@ void reference_pack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, fl
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
+      libxsmm_bfloat16_hp bf16_hp;
       bf16_hp.i[0] = in_lo[j * ld + i];
       bf16_hp.i[1] = in_hi[j * ld + i];
       out[j * ld + i] = bf16_hp.f;
@@ -48,8 +48,8 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
     for (i = 0; i < M; i++) {
-      union libxsmm_bfloat16_hp bf16_hp;
-      union libxsmm_bfloat16_hp bf16_wt;
+      libxsmm_bfloat16_hp bf16_hp;
+      libxsmm_bfloat16_hp bf16_wt;
       bf16_wt.i[0] = 0;
       bf16_wt.i[1] = dwt[j * ld + i];
       bf16_hp.i[0] = out_lo[j * ld + i];

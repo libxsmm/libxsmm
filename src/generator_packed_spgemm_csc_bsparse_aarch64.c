@@ -335,7 +335,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop( libxsmm_generate
         }
       }
     } else {
-      /* shouldn't happen */
+      /* should not happen */
     }
   }
 

@@ -3,9 +3,6 @@
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
 fi
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-  exit 0;
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
   exit 0;
 fi
@@ -34,7 +31,8 @@ i = 0
 for m in randnum:
     for n in randnum:
         for k in randnumk:
-            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' 100 100 100\n'
+            line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
+                 + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
             if 0 == (i % 2):
                 f1.write(line)
             else:

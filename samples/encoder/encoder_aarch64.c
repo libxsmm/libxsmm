@@ -179,7 +179,7 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
                 libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, i, d, tuple[w] );
               }
             } else {
-              /* shouldn't happen */
+              /* should not happen */
             }
           }
         }
@@ -203,7 +203,7 @@ void test_asimd_compute( char* test_name, libxsmm_generated_code* mycode, unsign
           } else if ( has_index_shift == 2 ) {
             libxsmm_aarch64_instruction_asimd_compute( mycode, instr, s, t, 28, d, tuple[w] );
           } else {
-            /* shouldn't happen */
+            /* should not happen */
           }
         }
       }

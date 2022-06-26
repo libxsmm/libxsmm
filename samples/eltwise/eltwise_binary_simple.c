@@ -167,7 +167,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -176,7 +176,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
   int ret = EXIT_SUCCESS;
-  libxsmm_meltw_binary_param binary_param;
+  libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
@@ -197,10 +197,10 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 
   libxsmm_rng_set_seed(1);
 
-  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi),   64);
-  in2       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in1)*N*LIBXSMM_MAX(M,ldi),   64);
-  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
-  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
+  in        = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in)*N*LIBXSMM_MAX(M,ldi), 64);
+  in2       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in1)*N*LIBXSMM_MAX(M,ldi), 64);
+  out       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
+  out_gold  = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
   _in       = in;
   _in2      = in2;
 

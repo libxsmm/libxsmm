@@ -52,13 +52,13 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
 int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
   const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype, dtype, dtype );
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_matdiff_info norms_out;
   char *in;
   char *out, *out_gold;
@@ -73,9 +73,9 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
     exit(-1);
   }
 
-  in       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*N*ldi, 64);
-  out      = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
-  out_gold = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
+  in       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype)*N*ldi, 64);
+  out      = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
+  out_gold = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype)*M*ldo, 64);
 
   init_random_matrix( dtype, in,       1, ldi, N, 0 );
   init_zero_matrix(   dtype, out,      1, ldo, M );
@@ -118,8 +118,8 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_vnni_to_vnniT_16bit: ldi needs to be equal to or bigger than M\n");
@@ -226,8 +226,8 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint i, j, j2;
   unsigned int s;
   int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_vnni_to_vnniT_08bit: ldi needs to be equal to or bigger than M\n");
@@ -336,9 +336,9 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = N + (N%2);
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_to_vnni2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -437,9 +437,9 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_to_vnni_16bit: ldi needs to be equal to or bigger than M\n");
@@ -538,9 +538,9 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padn_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -628,9 +628,9 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -719,9 +719,9 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod2_16bit: ldi needs to be equal to or bigger than M\n");
@@ -809,9 +809,9 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padn_mod4_08bit: ldi needs to be equal to or bigger than M\n");
@@ -899,9 +899,9 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   int ret = EXIT_SUCCESS;
   libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod4_08bit: ldi needs to be equal to or bigger than M\n");
@@ -990,9 +990,9 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
   libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape;
+  libxsmm_meltw_unary_shape unary_shape = { 0 };
 
   if ( M > ldi ) {
     fprintf( stderr, "test_norm_padm_mod4_08bit: ldi needs to be equal to or bigger than M\n");

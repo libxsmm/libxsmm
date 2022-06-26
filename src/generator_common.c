@@ -440,6 +440,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_CMPQ:
       libxsmm_strncpy(o_instr_name, "cmpq", i_instr_name_max_length, 4 );
       break;
+    case LIBXSMM_X86_INSTR_ANDQ:
+      libxsmm_strncpy(o_instr_name, "andq", i_instr_name_max_length, 4 );
+      break;
     case LIBXSMM_X86_INSTR_JL:
       libxsmm_strncpy(o_instr_name, "jl", i_instr_name_max_length, 2 );
       break;
@@ -554,7 +557,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_TDPBF16PS:
       libxsmm_strncpy(o_instr_name, "tdpbf16ps", i_instr_name_max_length, 9 );
       break;
-    /* default, we didn't had a match */
+    /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
       exit(-1);
@@ -739,7 +742,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
       l_return = 1;
       break;
-    /* default, we didn't had a match */
+    /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
       exit(-1);
@@ -915,7 +918,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
+    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ||  io_generated_code->arch == LIBXSMM_X86_AVX2_ADL ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
@@ -1034,7 +1037,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_UNSUP_ARCH:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "unsupported arch for the selected module was specified (error #%u)!", i_error_code );
+        "unsupported architecture (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_LDA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

@@ -32,7 +32,7 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
         } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
           f_data[(l_r * ld * n) + (l_j * ld) + l_i] = (neg_values) ? (float)(0.05 - libxsmm_rng_f64()/10.0) : (float)libxsmm_rng_f64();
         } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
-          union libxsmm_bfloat16_hp tmp;
+          libxsmm_bfloat16_hp tmp /*= { 0 }*/;
           tmp.f = (neg_values) ? (float)(0.05 - libxsmm_rng_f64()/10.0) : (float)libxsmm_rng_f64();
           bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
         } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
@@ -50,12 +50,12 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
 
 void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
-  memset( l_data, 0x0, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
+  memset( l_data, 0x0, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
 void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
-  memset( l_data, 0xdeadbeef, br*ld*n*LIBXSMM_TYPESIZE(dtype) );
+  memset( l_data, 0xdeadbeef, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
 void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
@@ -71,7 +71,7 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
         d_data[(i*ld)+j] = d_data[i*ld];
       } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
         f_data[(i*ld)+j] = f_data[i*ld];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
         s_data[(i*ld)+j] = s_data[i*ld];
       } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
         c_data[(i*ld)+j] = c_data[i*ld];
@@ -94,7 +94,7 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
         d_data[(i*ld)+j] = d_data[j];
       } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
         f_data[(i*ld)+j] = f_data[j];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
         s_data[(i*ld)+j] = s_data[j];
       } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
         c_data[(i*ld)+j] = c_data[j];
@@ -117,7 +117,7 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
         d_data[(i*ld)+j] = d_data[0];
       } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
         f_data[(i*ld)+j] = f_data[0];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
         s_data[(i*ld)+j] = s_data[0];
       } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
         c_data[(i*ld)+j] = c_data[0];
@@ -150,6 +150,7 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
     double* f_data      = (double*) malloc( sizeof(double)*n*ld );
     libxsmm_blasint i;
+    assert(NULL != f_data_gold && NULL != f_data);
     for ( i = 0; i < n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
     for ( i = 0; i < n*ld; ++i ) f_data[i]      = (double)i_data[i];
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
@@ -161,6 +162,7 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     double* f_data_gold = (double*) malloc( sizeof(double)*n*ld );
     double* f_data      = (double*) malloc( sizeof(double)*n*ld );
     libxsmm_blasint i;
+    assert(NULL != f_data_gold && NULL != f_data);
     for ( i = 0; i < n*ld; ++i ) f_data_gold[i] = (double)i_data_gold[i];
     for ( i = 0; i < n*ld; ++i ) f_data[i]      = (double)i_data[i];
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
@@ -220,8 +222,8 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
   size_t l_warmupRuns = 1000, l_warmupIndex;
   size_t l_benchmarkRuns, l_benchmarkIndex;
   double l_warmupDuration, l_duration;
-  double l_performance[MAX_BENCHMARK_ARCHITECTURES];
-  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES];
+  double l_performance[MAX_BENCHMARK_ARCHITECTURES] = { 0 };
+  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   const char* l_arch = NULL;
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
@@ -256,7 +258,8 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
       /* printing results */
       if (getBenchmarkedArch(1)) printf("Architecture  : %s\n", l_arch);
       printf("Iterations/s  : %.3f\n", l_performance[l_archIndex]);
-      printf("Runs          : %ld\n", l_benchmarkRuns); /* how often the kernel was run; could be interesting */
+      /* how often the kernel was run; could be interesting */
+      printf("Runs          : %" PRIuPTR "\n", (uintptr_t)l_benchmarkRuns);
       if (l_archIndex > 0) /* comparison with the first/main architecture */
         printf("Speedup       : %.6fx\n", l_performance[l_archIndex] / l_performance[0]);
       printf("\n");
@@ -274,8 +277,8 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
   size_t l_warmupRuns = 1000, l_warmupIndex;
   size_t l_benchmarkRuns, l_benchmarkIndex;
   double l_warmupDuration, l_duration;
-  double l_performance[MAX_BENCHMARK_ARCHITECTURES];
-  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES];
+  double l_performance[MAX_BENCHMARK_ARCHITECTURES] = { 0 };
+  const char* l_archNames[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   const char* l_arch = NULL;
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
@@ -310,7 +313,8 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
       /* printing results */
       if (getBenchmarkedArch(1)) printf("Architecture  : %s\n", l_arch);
       printf("Iterations/s  : %.3f\n", l_performance[l_archIndex]);
-      printf("Runs          : %ld\n", l_benchmarkRuns); /* how often the kernel was run; could be interesting */
+      /* how often the kernel was run; could be interesting */
+      printf("Runs          : %" PRIuPTR "\n", (uintptr_t)l_benchmarkRuns);
       if (l_archIndex > 0) /* comparison with the first/main architecture */
         printf("Speedup       : %.6fx\n", l_performance[l_archIndex] / l_performance[0]);
       printf("\n");

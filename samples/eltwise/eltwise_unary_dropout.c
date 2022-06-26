@@ -23,17 +23,17 @@
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  union libxsmm_bfloat16_hp bf16_hp;
+  libxsmm_bfloat16_hp bf16_hp /*= { 0 }*/;
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
 }
 
 void lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int width ) {
+  union { unsigned int i; float f; } rng_num = { 0 };
   const unsigned int state_ld = 16;
   const float one = 1.0f;
   unsigned int w;
-  union { unsigned int i; float f; } rng_num;
 
   for ( w = 0 ; w < width; ++w ) {
     unsigned int state_0 = rng_state[w + (0 * state_ld)];
@@ -128,7 +128,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
     }
     libxsmm_free( flt_in );
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -178,7 +178,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
       }
     }
   } else {
-    /* shouldn't happen */
+    /* should not happen */
   }
 }
 
@@ -192,7 +192,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unsigned int s;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
@@ -207,9 +207,9 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
     exit(-1);
   }
 
-  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi,   64);
-  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
-  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
+  in        = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in) *N*ldi, 64);
+  out       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
+  out_gold  = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 
@@ -318,7 +318,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   libxsmm_blasint i;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
-  libxsmm_meltw_unary_param unary_param;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_matdiff_info norms_out;
@@ -333,9 +333,9 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
     exit(-1);
   }
 
-  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in)  *N*ldi,   64);
-  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
-  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,   64);
+  in        = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_in) *N*ldi, 64);
+  out       = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
+  out_gold  = (char*) libxsmm_aligned_malloc((size_t)LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64);
   mask      = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
   mask_gold = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld, 64);
 

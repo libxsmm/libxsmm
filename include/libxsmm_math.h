@@ -45,6 +45,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst);
 
+/** Combine absolute and relative norms into a value which can be used to check against a margin. */
+LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input);
 /**
  * Reduces input into output such that the difference is maintained or increased (max function).
  * The very first (initial) output should be zeroed (libxsmm_matdiff_clear).

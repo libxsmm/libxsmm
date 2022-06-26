@@ -156,6 +156,12 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* insert ret instruction */
     code[code_head] = 0xd65f03c0;
 
@@ -278,7 +284,7 @@ unsigned int libxsmm_aarch64_instruction_add_data( libxsmm_generated_code*     i
     l_npad = LIBXSMM_UP( l_dsize, i_alignment) - l_dsize;
 
     /* Ensure we have enough space */
-    if ( l_dsize + l_npad + i_ndata_bytes > sizeof(io_const_data->const_data) ) {
+    if ( ((size_t)l_dsize + l_npad + i_ndata_bytes) > sizeof(io_const_data->const_data) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
       return ~0U;
     }
@@ -329,6 +335,12 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rt */
@@ -355,7 +367,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
            i_vmove_instr == LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF     ) {
         int l_imm;
         /* adjust offset based on vector width */
-        switch ( i_asimdwidth ) {
+        switch ( (int)i_asimdwidth ) {
           case LIBXSMM_AARCH64_ASIMD_WIDTH_H:
             l_imm = i_offset/2;
             break;
@@ -422,6 +434,13 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_imm5 = 0x0;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rd */
@@ -445,7 +464,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     } else if ( i_asimdwidth == LIBXSMM_AARCH64_ASIMD_WIDTH_D ) {
       l_imm5 = 0x8 | ((i_index & 0x1) << 4);
     } else {
-      /* shouldn't happen */
+      /* should not happen */
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected datatype for instruction: %u\n", i_vmove_instr);
       exit(-1);
     }
@@ -485,6 +504,12 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
@@ -542,6 +567,12 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_q = 0, l_s = 0, l_sz = 0;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
     /* setting Rt */
@@ -553,7 +584,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
       code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
     }
 
-    switch ( i_asimdwidth ) {
+    switch ( (int)i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
         l_q = 0x1 & (i_index >> 1);
         l_s = 0x1 & (i_index >> 0);
@@ -627,7 +658,13 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
     unsigned char l_opc = 0x0;
     signed char l_imm = 0x0;
 
-    switch ( i_asimdwidth ) {
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    switch ( (int)i_asimdwidth ) {
       case LIBXSMM_AARCH64_ASIMD_WIDTH_S:
         l_opc = 0x0;
         l_imm = (signed char)(i_offset/4);
@@ -759,18 +796,24 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: %u\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
   if ( ((0x3 & i_vec_instr) == 2) && (i_vec_reg_src_1 != LIBXSMM_AARCH64_ASIMD_REG_UNDEF) ) {
-      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: %u\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_vec_instr);
@@ -796,7 +839,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     if ( ((0x4 & i_vec_instr) == 0x4) && ((0x18 & i_vec_instr) != 0x18) ) {
       unsigned char l_idx = (unsigned char)(( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) ? i_idx_shf << 1 : i_idx_shf);
       if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
-        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: %u\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: 0x%08x\n", i_vec_instr);
         exit(-1);
       }
 
@@ -817,7 +860,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       } else if ( i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D ) {
         l_shift = (unsigned char)(0x40 | (((0x4 & i_vec_instr) == 0x4) ? (0x40 - (i_idx_shf & 0x3f)) : (i_idx_shf & 0x3f) ));
       } else {
-        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: %u\n", i_vec_instr);
+        fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: 0x%08x\n", i_vec_instr);
         exit(-1);
       }
       code[code_head] |= (unsigned int)(l_shift << 16);
@@ -877,6 +920,12 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_vmove_instr);
@@ -982,6 +1031,12 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_prefetch_instr);
     /* fix prfop */
@@ -1019,8 +1074,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                               const unsigned int             i_vec_reg_dst,
                                               const unsigned int             i_pred_reg,
                                               const libxsmm_aarch64_sve_type i_type ) {
-  unsigned char l_vec_reg_src_0 = i_vec_reg_src_0;
-  unsigned char l_vec_reg_src_1 = i_vec_reg_src_1;
+  unsigned char l_vec_reg_src_0 = LIBXSMM_CAST_UCHAR(i_vec_reg_src_0);
+  unsigned char l_vec_reg_src_1 = LIBXSMM_CAST_UCHAR(i_vec_reg_src_1);
 
   unsigned char l_has_two_sources = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1;
   unsigned char l_is_predicated = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED) == LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED;
@@ -1083,7 +1138,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_TBX:
       break;
     default:
-      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: %x\n", i_vec_instr);
+      fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       exit(-1);
   }
 
@@ -1121,7 +1176,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         /* we assign 0 <- 1 anyways, so we just skip that */
         l_vec_instr = l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ? LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P : LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P;
       } else {
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction %x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
     } else {
@@ -1130,8 +1185,14 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size >> 2;
+    unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *) io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits, 0x10 must not be used as flags */
     code[code_head] = (unsigned int)(0xffffff10 & l_vec_instr);
@@ -1148,7 +1209,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
 
       if(i_index >= l_elementSizeBits){
         /* the index must be within bounds */
-        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: %x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
+        fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: 0x%08x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
         exit(-1);
       }
 
@@ -1221,6 +1282,12 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_pred_instr);
     /* setting Rd */
@@ -1279,6 +1346,12 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
   if ( io_generated_code->code_type > 1 ) {
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int*)io_generated_code->generated_code;
+
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
 
     /* fix bits */
     code[code_head] = (unsigned int)(0xffffff00 & i_move_instr);
@@ -1365,6 +1438,12 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     unsigned char l_opc = 0x0;
     signed char l_imm = 0x0;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     if ( (0x20 & i_gp_reg_0) == 0x20 ) {
       l_opc = 0x1;
       l_imm = (char)(i_offset/8);
@@ -1427,11 +1506,17 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
   }
 
   if ( io_generated_code->code_type > 1 ) {
+    unsigned char l_hw = (unsigned char)(i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0)
+      ? (0x1 & i_shift) : (0x3 & i_shift); /* computing hw */
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
-    /* computing hw */
-    unsigned char l_hw = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1 & i_shift) : (0x3 & i_shift);
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffe00000 & i_alu_instr);
     /* setting Rd */
@@ -1532,6 +1617,12 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
     unsigned int code_head = io_generated_code->code_size/4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
 
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
     /* fix bits */
     code[code_head]  = (unsigned int)(0xffc00000 & i_alu_instr);
     /* setting Rd */
@@ -1626,11 +1717,17 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned char l_imm = (unsigned char)(i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0)
+      ? (0x1f & i_imm6) : (0x3f & i_imm6); /* computing hw */
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int code_head = io_generated_code->code_size / 4;
 
-    /* computing hw */
-    unsigned char l_imm = (unsigned char)( i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0 ) ? (0x1f & i_imm6) : (0x3f & i_imm6);
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
      /* fix bits */
     code[code_head]  = (unsigned int)(0xffffff00 & i_alu_instr);
     /* setting Rd */
@@ -1772,13 +1869,18 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
   }
 
   if ( io_generated_code->code_type > 1 ) {
+    unsigned int* code = (unsigned int*)io_generated_code->generated_code;
     unsigned int l_lab = --io_loop_label_tracker->label_count;
-    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab])/4;
-    unsigned int code_head = io_generated_code->code_size/4;
-    unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int l_jmp_dst = (io_loop_label_tracker->label_address[l_lab]) / 4;
+    unsigned int code_head = io_generated_code->code_size / 4;
+    int l_jmp_imm = (int)l_jmp_dst - (int)code_head; /* computing jump immediate */
 
-    /* computing jump immediate */
-    int l_jmp_imm = (int)l_jmp_dst - (int)code_head;
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
      /* fix bits */
     code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
     /* setting Rd */
@@ -1875,13 +1977,19 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
   io_jump_label_tracker->label_source[i_label_no].ref_count++;
 
   if ( io_generated_code->code_type > 1 ) {
-    unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no])/4;
-    unsigned int code_head = io_generated_code->code_size/4;
+    unsigned int l_jmp_dst = (io_jump_label_tracker->label_address[i_label_no]) / 4;
     unsigned int* code     = (unsigned int *)io_generated_code->generated_code;
+    unsigned int code_head = io_generated_code->code_size / 4;
+    int l_jmp_imm = (l_jmp_dst == 0) /* computing jump immediate */
+      ? 0 : (int)l_jmp_dst - (int)code_head;
 
-    /* computing jump immediate */
-    int l_jmp_imm = (l_jmp_dst == 0) ? 0 : (int)l_jmp_dst - (int)code_head;
-     /* fix bits */
+    /* Ensure we have enough space */
+    if ( io_generated_code->buffer_size - io_generated_code->code_size < 4 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
+    }
+
+    /* fix bits */
     code[code_head]  = (unsigned int)(0xff000000 & i_jmp_instr);
     /* setting Rd */
     code[code_head] |= (unsigned int)(0x1f & i_gp_reg_cmp);
@@ -1898,4 +2006,3 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
     exit(-1);
   }
 }
-

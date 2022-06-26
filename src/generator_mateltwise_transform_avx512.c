@@ -432,7 +432,7 @@ void libxsmm_generator_transform_norm_to_normt_64bit_avx512_microkernel( libxsmm
     l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
 
     for (l_i = 0; l_i < 2; ++l_i) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_4rem_mask << (l_i * 4) );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_4rem_mask << (l_i * 4) );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }
@@ -800,7 +800,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_spr_microkernel( lib
     l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
 
     for (l_i = 0; l_i < 4; ++l_i) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_4rem_mask << (l_i * 4) );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_4rem_mask << (l_i * 4) );
         libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }
@@ -1021,7 +1021,7 @@ void libxsmm_generator_transform_norm_to_normt_32bit_avx512_pre_spr_microkernel(
     l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
 
     for (l_i = 0; l_i < 2; ++l_i) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 8) );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_8rem_mask << (l_i * 8) );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }
@@ -1380,7 +1380,7 @@ void libxsmm_generator_transform_norm_to_normt_16bit_avx512_microkernel( libxsmm
     l_mask_regs[0] = i_mask_reg_3; l_mask_regs[1] = i_mask_reg_4;
     l_mask_regs[2] = i_mask_reg_5; l_mask_regs[3] = i_mask_reg_6;
     for (l_i = 0; l_i < l_m_8rem_masks; ++l_i) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 4) );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_8rem_mask << (l_i * 4) );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }
@@ -1944,7 +1944,7 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_spr_microkernel( l
     l_mask_regs[2] = i_mask_reg_5;    l_mask_regs[3] = i_mask_reg_6;
 
     for (l_i = 0; l_i < 4; ++l_i) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_8rem_mask << (l_i * 4) );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_8rem_mask << (l_i * 4) );
       if ( l_i < 3 ) {
           libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
       }
@@ -2146,7 +2146,7 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_pre_spr_microkerne
     l_mask_regs[0] = i_mask_reg_3;    l_mask_regs[1] = i_mask_reg_4;
 
     for (l_i = 0; l_i < 2; ++l_i) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_m_16rem_mask << (l_i * 8) );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_16rem_mask << (l_i * 8) );
       libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }

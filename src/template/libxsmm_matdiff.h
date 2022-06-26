@@ -30,8 +30,9 @@ for (i = 0; i < nn; ++i) {
     if (ri < info->min_ref) info->min_ref = ri;
     if (ri > info->max_ref) info->max_ref = ri;
 
-    if (LIBXSMM_NOTNAN(ti) && inf > ta) {
-      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+    if (LIBXSMM_NOTNAN(ti) && (inf > ta || ti == ri)) {
+      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
+      const double dri = LIBXSMM_MATDIFF_DIV(di, ra, ta);
 
       /* minimum/maximum of test set */
       if (ti < info->min_tst) info->min_tst = ti;
@@ -47,17 +48,14 @@ for (i = 0; i < nn; ++i) {
       }
 
       /* maximum error relative to current value */
-      if (0 < ra) {
-        const double dri = di / ra;
-        if (info->linf_rel < dri) info->linf_rel = dri;
-        /* sum of relative differences */
-        v0 = dri * dri;
-        if (inf > v0) {
-          v0 -= compd;
-          v1 = info->l2_rel + v0;
-          compd = (v1 - info->l2_rel) - v0;
-          info->l2_rel = v1;
-        }
+      if (info->linf_rel < dri) info->linf_rel = dri;
+      /* sum of relative differences */
+      v0 = dri * dri;
+      if (inf > v0) {
+        v0 -= compd;
+        v1 = info->l2_rel + v0;
+        compd = (v1 - info->l2_rel) - v0;
+        info->l2_rel = v1;
       }
 
       /* row-wise sum of reference values with Kahan compensation */
@@ -131,7 +129,8 @@ if (0 == result_nan) {
   /* Infinity-norm relative to reference */
   info->normi_rel = LIBXSMM_MATDIFF_DIV(info->normi_abs, normr, normt);
   /* Froebenius-norm relative to reference */
-  info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr, normft);
+  info->normf_rel = LIBXSMM_MATDIFF_DIV(info->l2_abs, normfr,
+    LIBXSMM_MIN(normft * normft, info->l2_abs));
 
   for (j = 0; j < mm; ++j) {
     double compri = 0, compti = 0, comp1 = 0;
@@ -139,7 +138,7 @@ if (0 == result_nan) {
 
     for (i = 0; i < nn; ++i) {
       const double ri = real_ref[i*ldr + j], ti = (NULL != real_tst ? real_tst[i*ldt + j] : 0);
-      const double di = (NULL != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
       const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
@@ -172,5 +171,5 @@ if (0 == result_nan) {
   }
 
   /* One-norm relative to reference */
-  info->norm1_rel = LIBXSMM_MATDIFF_DIV(info->norm1_abs, normrc, normtc);
+  info->norm1_rel = LIBXSMM_MATDIFF_DIV(info->norm1_abs, normrc, info->norm1_abs);
 }

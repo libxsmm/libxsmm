@@ -66,7 +66,7 @@ LIBXSMM_API_INLINE float internal_rng_scalar_float_next(int i)
 {
   const uint32_t rng_mantissa = (internal_rng_state0[i] + internal_rng_state3[i]) >> 9;
   const uint32_t t = internal_rng_state1[i] << 9;
-  union { uint32_t i; float f; } rng;
+  union { uint32_t i; float f; } rng = { 0 };
 
   internal_rng_state2[i] ^= internal_rng_state0[i];
   internal_rng_state3[i] ^= internal_rng_state1[i];
@@ -200,7 +200,7 @@ LIBXSMM_API unsigned int* libxsmm_rng_create_extstate(unsigned int/*uint32_t*/ s
 }
 
 
-LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size( )
+LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size(void)
 {
   return (unsigned int)(64*sizeof(unsigned int));
 }

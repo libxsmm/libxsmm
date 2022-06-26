@@ -323,7 +323,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
     }
 #if 0
     else {
-      /* shouldn't happen */
+      /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
@@ -359,7 +359,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
   } else {
     ones_mask_reg = 13;
     help_mask_reg = 12;
-    libxsmm_generator_initialize_avx_mask(io_generated_code, ones_mask_reg, 8);
+    libxsmm_generator_initialize_avx_mask(io_generated_code, ones_mask_reg, 8, LIBXSMM_DATATYPE_F32);
   }
 
   if (use_m_masking == 1) {
@@ -377,7 +377,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
-        /* shouldn't happen */
+        /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
         free(p_jump_label_tracker);
 #endif
@@ -392,9 +392,9 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         max_m_unrolling = 7;
       }
 #endif
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       if (idx_tsize == 8) {
-        libxsmm_generator_initialize_avx_64bit_mask( io_generated_code, idx_mask_reg, m % vlen);
+        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64);
       } else {
         idx_mask_reg = mask_reg;
       }
@@ -891,7 +891,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
-        /* shouldn't happen */
+        /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
         free(p_jump_label_tracker);
 #endif
@@ -905,19 +905,19 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
       }
       if (i_micro_kernel_config->datatype_size_in == 4) {
         use_mask_move_instr = 1;
-        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         unsigned int half_m = m/2;
         unsigned int half_vlen = vlen/2;
         if ( half_m % half_vlen > 0) {
           use_mask_move_instr = 1;
-          libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, half_m % half_vlen);
+          libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, half_m % half_vlen, LIBXSMM_DATATYPE_F32);
         }
         if ((m % vlen) % 2 == 1) {
           use_m_scalar_loads_stores = m % vlen;
         }
       } else {
-        /* shouldn't happen */
+        /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
         free(p_jump_label_tracker);
 #endif
@@ -1400,7 +1400,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
       }
     } else {
 #if 0
-      /* shouldn't happen */
+      /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
@@ -1436,7 +1436,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
   } else {
     ones_mask_reg = 13;
     help_mask_reg = 12;
-    libxsmm_generator_initialize_avx_mask(io_generated_code, ones_mask_reg, 8);
+    libxsmm_generator_initialize_avx_mask(io_generated_code, ones_mask_reg, 8, LIBXSMM_DATATYPE_F32);
   }
 
   if (use_m_masking == 1) {
@@ -1454,7 +1454,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
       } else if (i_micro_kernel_config->datatype_size_in == 2) {
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_reg, mask_inout_count, LIBXSMM_DATATYPE_BF16);
       } else {
-        /* shouldn't happen */
+        /* should not happen */
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
         free(p_jump_label_tracker);
 #endif
@@ -1469,9 +1469,9 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         max_m_unrolling = 7;
       }
 #endif
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen);
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       if (idx_tsize == 8) {
-        libxsmm_generator_initialize_avx_64bit_mask( io_generated_code, idx_mask_reg, m % vlen);
+        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64);
       } else {
         idx_mask_reg = mask_reg;
       }
