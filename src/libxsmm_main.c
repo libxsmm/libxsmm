@@ -1852,8 +1852,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
   LIBXSMM_MEMZERO127(&generated_code);
-  generated_code.generated_code = jit_buffer;
-  generated_code.buffer_size = sizeof(jit_buffer);
+  if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
+    generated_code.generated_code = jit_buffer;
+    generated_code.buffer_size = sizeof(jit_buffer);
+  }
+  else {
+    void *const buffer = malloc(LIBXSMM_MALLOC_LIMIT);
+    generated_code.generated_code = (NULL != buffer ? ((char*)buffer) : jit_buffer);
+    generated_code.buffer_size = LIBXSMM_MALLOC_LIMIT;
+  }
   /* setup code generation */
   generated_code.arch = libxsmm_target_archid;
   generated_code.code_type = 2;
@@ -2304,6 +2311,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   }
   else {
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
+  }
+  if (jit_buffer != generated_code.generated_code) {
+    free(generated_code.generated_code);
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
