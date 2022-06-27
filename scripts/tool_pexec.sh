@@ -30,7 +30,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       if [ "0" != "${QT_DEFAULT}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
       echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
-      echo "       -o|--logfile  [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
+      echo "       -o|--log      [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
+      echo "       -c|--cut      [PEXEC_CT]: cut name of each case (-f argument of cut)"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
       echo "       Environment [variables] will precede command line arguments."
@@ -43,8 +44,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     -q|--quiet)
       QUIET=1
       shift 1;;
-    -o|--logfile)
-      LOGFILE=$2
+    -o|--log)
+      LOG=$2
+      shift 2;;
+    -c|--cut)
+      CUT=$2
       shift 2;;
     -j|--nprocs)
       CONSUMED=$((CONSUMED|1))
@@ -68,10 +72,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       shift 1;;
     esac
   done
-  LOGFILE=${PEXEC_LG:-${LOGFILE}}; if [ ! "${LOGFILE}" ]; then LOGFILE=${LG_DEFAULT}; fi
+  LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
-  NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
-  if [ ! "${LOGFILE}" ]; then LOGFILE="/dev/stdout"; fi
+  CUT=${PEXEC_CT:-${CUT}}; NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
+  if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
   fi
@@ -107,12 +111,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
     1>&2 echo
   fi
-  if [[ ${LOGFILE} != /dev/* ]]; then
-    LOGFILE_OUTER=/dev/stdout
+  if [[ ${LOG} != /dev/* ]]; then
+    LOG_OUTER=/dev/stdout
   else
-    LOGFILE_OUTER=${LOGFILE}
+    LOG_OUTER=${LOG}
   fi
-  ${XARGS} </dev/stdin >"${LOGFILE_OUTER}" -P${NP} -I%%% bash -c "set -eo pipefail; \
+  ${XARGS} </dev/stdin >"${LOG_OUTER}" -P${NP} -I%%% bash -c "set -eo pipefail; \
     _PEXEC_CMDPRETTY() { \
       local _PEXEC_CMDPRETTY_HERE=\$(cd \"\$(dirname \"\$0\")\" && pwd -P | ${SED} 's/\//\\\\\//g'); \
       local _PEXEC_CMDPRETTY_PRE=\"\" _PEXEC_CMDPRETTY_CMD=\"\" _PEXEC_CMDPRETTY_ARGS=\"\"; \
@@ -131,7 +135,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         _PEXEC_CMDPRETTY_ARGS=\"\${_PEXEC_CMDPRETTY_ARGS} \${_PEXEC_CMDPRETTY_WORD}\"; \
       done; \
       echo \"\${_PEXEC_CMDPRETTY_CMD}\${_PEXEC_CMDPRETTY_PRE}\${_PEXEC_CMDPRETTY_ARGS}\" \
-      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//'; \
+      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
+      | if [ \"${CUT}\" ]; then cut -d_ -f\"${CUT}\"; else cat; fi; \
     }; \
     _PEXEC_CMDLINE=\"%%%\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY %%%); \
     _PEXEC_TRAP_EXIT() { \
@@ -145,17 +150,17 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         1>&2 echo \" -> VALID[000]: \${_PEXEC_BASENAME}\"; \
       fi; \
     }; \
-    if [[ ${LOGFILE} != /dev/* ]]; then \
-      _PEXEC_LOGFILE=\$(echo \"${LOGFILE}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_BASENAME}\2/p\"); \
+    if [[ ${LOG} != /dev/* ]]; then \
+      _PEXEC_LOG=\$(echo \"${LOG}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_BASENAME}\2/p\"); \
     else \
-      _PEXEC_LOGFILE=/dev/stdout; \
+      _PEXEC_LOG=/dev/stdout; \
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"\$(${FILE} -bL --mime \"\${_PEXEC_CMDLINE%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
       source %%%; \
     else \
       %%%; \
-    fi >\"\${_PEXEC_LOGFILE}\" 2>&1"
+    fi >\"\${_PEXEC_LOG}\" 2>&1"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
