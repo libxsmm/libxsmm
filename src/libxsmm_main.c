@@ -2247,7 +2247,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     const size_t data_size = generated_code.data_size;
     const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-    LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
