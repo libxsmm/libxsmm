@@ -661,6 +661,56 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
 
   /* Perform binary postop if requested */
   if (i_gemm_def->binary_postop == COLBIAS_ADD) {
+    if (i_gemm_def->unary_postop == RELU_BITMASK) {
+      int i = 0, j = 0;
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->out_type), 64);
+      float max_float;
+      memcpy(l_c_tmp, l_c_gold, (size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->out_type));
+      if (i_gemm_def->beta == 0) {
+        init_zero_matrix( i_gemm_def->out_type, l_c_tmp, 1, i_gemm_def->ldc, i_gemm_def->n );
+        i_gemm_def->beta = 1.0;
+      }
+      /* Run matmul */
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) {
+        max_float = LIBXSMM_ABS(l_c_tmp[0]);
+      } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
+        libxsmm_bfloat16 val = l_c_tmp[0];
+        union libxsmm_bfloat16_hp bf16_hp;
+        bf16_hp.i[0] = 0;
+        bf16_hp.i[1] = val;
+        max_float = LIBXSMM_ABS(bf16_hp.f);
+      }
+
+      for (j = 0; j < i_gemm_def->n; j++) {
+        for (i = 0; i < i_gemm_def->ldc; i++) {
+          if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) {
+            float val = LIBXSMM_ABS(l_c_tmp[j*i_gemm_def->ldc+i]);
+            max_float = LIBXSMM_MAX(val, max_float);
+          } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
+            libxsmm_bfloat16 val = l_c_tmp[j*i_gemm_def->ldc+i];
+            union libxsmm_bfloat16_hp bf16_hp;
+            bf16_hp.i[0] = 0;
+            bf16_hp.i[1] = val;
+            max_float = LIBXSMM_MAX(LIBXSMM_ABS(bf16_hp.f), max_float);
+          }
+        }
+      }
+      libxsmm_free(l_c_tmp);
+
+      for (i = 0; i < i_gemm_def->ldc; i++) {
+        if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) {
+          float *ptr = (float*)ref_fusion_arguments->colbias;
+          ptr[i] = 2 * max_float;
+        } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
+          libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)ref_fusion_arguments->colbias;
+          union libxsmm_bfloat16_hp bf16_hp;
+          bf16_hp.f = 2 * max_float;
+          ptr[i] = bf16_hp.i[1];
+        }
+      }
+    }
+
     if (i_gemm_def->beta == 0) {
       init_zero_matrix( i_gemm_def->out_type, l_c_gold, 1, i_gemm_def->ldc, i_gemm_def->n );
       i_gemm_def->beta = 1.0;
