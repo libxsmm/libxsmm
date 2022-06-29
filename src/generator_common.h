@@ -1323,7 +1323,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
 } libxsmm_jump_label_tracker;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
-  unsigned char const_data[20480];
+  unsigned char const_data[81920];
   unsigned int const_data_size;
   unsigned int const_data_pc_load_insns[128];
   unsigned int const_data_nload_insns;

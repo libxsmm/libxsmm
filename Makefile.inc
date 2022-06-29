@@ -2446,9 +2446,10 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   $(.VARIABLES))),$(if $(filter-out default automatic,$(origin $V)),$(if $($V),$V))))
 ENVSTATE := $(strip $(foreach V,$(STATE),$(if $(filter environment%,$(origin $V)),$V)))
 VALSTATE := $(foreach V,$(STATE),$V=$(subst \
-  $(USER),$(if $(USER),$$USER),$(subst \
-  $(HOME),$(if $(HOME),$$HOME),$(subst \
-  $(HOMEDIR),$(if $(HOMEDIR),$$HOME),$(filter-out $(EXCLUDE_VALUE),$($V)))))?)
+  /$(USER),$(if $(USER),/$$USER),$(patsubst $(USER)%,$(if $(USER),$$USER%),$(subst \
+  /$(HOME),$(if $(HOME),/$$HOME),$(patsubst $(HOME)%,$(if $(HOME),$$HOME%),$(subst \
+  /$(HOMEDIR),$(if $(HOMEDIR),/$$HOME),$(patsubst $(HOMEDIR)%,$(if $(HOMEDIR),$$HOME%),$(filter-out \
+  $(EXCLUDE_VALUE),$($V))))))))?)
 DIRSTATE ?= .
 PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
 
