@@ -373,14 +373,11 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         fi
         echo >> "${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
-      else
-        # setup environment on a per-test basis
-        if [ "${CONFIGFILE}" ]; then
-          if [ -e "${ENVFILE}" ]; then
-            eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
-          fi
-          source "${CONFIGFILE}" ""
+      elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
+        if [ -e "${ENVFILE}" ]; then
+          eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
         fi
+        source "${CONFIGFILE}" ""
       fi
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
