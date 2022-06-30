@@ -60,7 +60,7 @@ void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*         
     const unsigned int                 aux_gpr,
     const unsigned int                 aux_vreg,
     const unsigned int                 use_masked_cmp) {
-  if (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch  < LIBXSMM_X86_AVX512_VL256) {
     if (is_32_bit_relu == 1) {
       if (store_bitmask == 1) {
         libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCMPPS, i_micro_kernel_config->vector_name, zero_vreg, inout_vreg, aux_vreg, 6 );
@@ -129,7 +129,7 @@ void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generate
 
   /* Apply sigmoid  */
   if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
-    const char i_vname = (i_micro_kernel_config_mod->instruction_set < LIBXSMM_X86_AVX512) ? 'y' : 'z';
+    const char i_vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
     libxsmm_generator_sigmoid_ps_rational_78_avx512( io_generated_code, out_vreg, i_micro_kernel_config_mod->vec_x2,
         i_micro_kernel_config_mod->vec_nom, i_micro_kernel_config_mod->vec_denom,
         i_micro_kernel_config_mod->mask_hi, i_micro_kernel_config_mod->mask_lo,
@@ -450,7 +450,7 @@ void libxsmm_generator_gemm_prepare_coeffs_sigmoid_ps_rational_78_avx_avx512( li
         LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
         i_micro_kernel_config->vector_name,
         i_micro_kernel_config->vec_c0, 0, 1, 1 );
-    if (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512) {
+    if (io_generated_code->arch  < LIBXSMM_X86_AVX512) {
       libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) &pade78_sigm_array[8], "pade78_sigm_array2_", i_micro_kernel_config->vector_name, i_micro_kernel_config->vec_c0);
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
