@@ -83,21 +83,12 @@ void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*         
           inout_vreg);
     } else {
       unsigned int current_mask_reg = 7;
-#if 0
-      libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
-          (is_32_bit_relu == 1) ? LIBXSMM_X86_INSTR_VCMPPS : LIBXSMM_X86_INSTR_VPCMPW,
-          i_micro_kernel_config->vector_name,
-          zero_vreg,
-          inout_vreg,
-          current_mask_reg, 6 );
-#else
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code,
           (is_32_bit_relu == 1) ? LIBXSMM_X86_INSTR_VCMPPS : LIBXSMM_X86_INSTR_VPCMPW,
           i_micro_kernel_config->vector_name,
           zero_vreg,
           inout_vreg,
           current_mask_reg, use_masked_cmp, 0, 0, 5);
-#endif
       /* Blend output result with zero reg based on relu mask */
       libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code,
           (is_32_bit_relu == 1) ? LIBXSMM_X86_INSTR_VPBLENDMD : LIBXSMM_X86_INSTR_VPBLENDMW,
