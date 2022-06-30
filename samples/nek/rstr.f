@@ -167,7 +167,7 @@
               DO j = 1, k
                 tm2(:,:,j) = MATMUL(tm1(:,:,j), dy) ! [mm,n]x[n,nn]->[mm,nn]
               END DO
-              ! because we can't RESHAPE d
+              ! because we cannot RESHAPE d
               d(:,:,:,i) = RESHAPE(                                     &
      &                        MATMUL(RESHAPE(tm2, (/mm*nn, k/)), dz),   &
      &                        (/mm,nn,kk/)) ! [mm*nn,k]x[k,kk]->[mm*nn,kk]

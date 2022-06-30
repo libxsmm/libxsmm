@@ -801,7 +801,7 @@ int main(int argc, char* argv[])
   }
 
   if (pad_w !=0 || pad_h !=0 || pad_h_in != 0 || pad_w_in != 0 || pad_h_out !=0 || pad_w_out != 0) {
-    printf("\nThis code doesn't support padding right now\n!");
+    printf("\nThis code does not support padding right now\n!");
     return -1;
   }
 

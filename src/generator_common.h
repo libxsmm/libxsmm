@@ -1303,7 +1303,7 @@ typedef struct libxsmm_tile_config {
   unsigned char  tile7cols;
 } libxsmm_tile_config;
 
-/* structure for tracking local labels in assembly we don't allow overlapping loops */
+/* structure for tracking local labels in assembly we do not allow overlapping loops */
 LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_address[512];
   unsigned int label_count;
@@ -1323,7 +1323,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
 } libxsmm_jump_label_tracker;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
-  unsigned char const_data[20480];
+  unsigned char const_data[81920];
   unsigned int const_data_size;
   unsigned int const_data_pc_load_insns[128];
   unsigned int const_data_nload_insns;

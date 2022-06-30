@@ -66,6 +66,9 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   else
     res.use_hw_blocking = 1; /* using [hw, bc] blocks */
 
+  /* enables usage of reduce with beta = 0 and beta = 1 instead of explicit zeroing + reduction + accumulation */
+  res.use_new_reduce = 1;
+
   /* when masking is on, bc must be divisible by 8 for compressing mask into char array (otherwise strides are wrong for relumask */
   if ( (res.fuse_type == 4 || res.fuse_type == 5) && (res.bc % BITS_PER_CHAR != 0)) {
     fprintf( stderr, "bc = %d is not divisible by BITS_PER_CHAR = %d. Bailing...!\n", res.bc, BITS_PER_CHAR);
@@ -134,6 +137,28 @@ LIBXSMM_API libxsmm_dnn_bn_fwd_config setup_libxsmm_dnn_bn_fwd(libxsmm_blasint N
   res.reduce_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
   if ( res.reduce_kernel == NULL) {
     fprintf( stderr, "JIT for TPP fwd reduce_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  if (res.use_hw_blocking == 0)
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.W / res.num_W_blocks, ld, tmp_ld, res.datatype_in, res.datatype_comp, res.datatype_comp);
+  else
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ld, tmp_ld, res.datatype_in, res.datatype_comp, res.datatype_comp);
+  unary_flags             = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+  res.reduce_beta0_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
+  if ( res.reduce_beta0_kernel == NULL) {
+    fprintf( stderr, "JIT for TPP fwd reduce_beta0_kernel failed. Bailing...!\n");
+    exit(-1);
+  }
+
+  if (res.use_hw_blocking == 0)
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.W / res.num_W_blocks, ld, tmp_ld, res.datatype_in, res.datatype_comp, res.datatype_comp);
+  else
+    unary_shape           = libxsmm_create_meltw_unary_shape(res.bc, res.H*res.W / res.num_HW_blocks, ld, tmp_ld, res.datatype_in, res.datatype_comp, res.datatype_comp);
+  unary_flags             = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC;
+  res.reduce_beta1_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD, unary_shape, unary_flags);
+  if ( res.reduce_beta1_kernel == NULL) {
+    fprintf( stderr, "JIT for TPP fwd reduce_beta1_kernel failed. Bailing...!\n");
     exit(-1);
   }
 
@@ -702,6 +727,9 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
   LIBXSMM_VLA_DECL(3, float, sumsq_N, ((float*)scratch) + sumsq_N_offset, N, bc);   /* [CP, N, bc] */
   LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
 
+  LIBXSMM_VLA_DECL(3, float, sums_N, ((float*)scratch) + sum_N_offset, N, 2*bc);    /* [CP, N, 2*bc] */
+  LIBXSMM_ASSUME_ALIGNED(sums_N_, 64);
+
   libxsmm_meltw_unary_param  all_zero_param;
   libxsmm_meltw_binary_param add_param;
   libxsmm_meltw_unary_param  reduce_param;
@@ -731,13 +759,24 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
 
       int hi, w, wb, hwb;
 
-      float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
-      float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
+      float *sum_ncp_ptr = NULL, *sumsq_ncp_ptr = NULL, *sums_ncp_ptr = NULL;
 
-      all_zero_param.out.primary = sum_ncp_ptr;
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = sumsq_ncp_ptr;
-      cfg.all_zero_kernel(&all_zero_param);
+      if (cfg.use_new_reduce)
+        sums_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, sums_N,  cp, n, 0, N, 2*bc);
+      else {
+        sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
+        sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
+      }
+
+      /*float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
+        float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc); */
+
+      if (!cfg.use_new_reduce) {
+        all_zero_param.out.primary = sum_ncp_ptr;
+        cfg.all_zero_kernel(&all_zero_param);
+        all_zero_param.out.primary = sumsq_ncp_ptr;
+        cfg.all_zero_kernel(&all_zero_param);
+      }
 
       /* #pragma omp simd  */
       /* for (int cb = 0; cb < bc; cb++) {  */
@@ -745,12 +784,61 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
       /*   sumsq_ncp_ptr[cb] = 0.0f;  */
       /* } */
 
-      LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
       if (cfg.use_hw_blocking == 0) { /* w-blocking */
-        reduce_param.out.primary = lcl_sum_X_X2;                                                    /* [2*bc]  */
-        for (hi = 0; hi < H; hi++) {
-          for (wb = 0; wb < num_W_blocks; wb++) {
-            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
+        if (cfg.use_new_reduce) {
+          reduce_param.out.primary = sums_ncp_ptr;/*(void*)&LIBXSMM_VLA_ACCESS(3, sums_N, cp, n, 0, N, 2*bc); */ /* [2*bc]  */
+          for (hi = 0; hi < H; hi++) {
+            for (wb = 0; wb < num_W_blocks; wb++) {
+              reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
+              if (hi == 0 && wb == 0)
+                cfg.reduce_beta0_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+              else
+                cfg.reduce_beta1_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+            }
+          } /* loop over H */
+        } else {
+          LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
+          reduce_param.out.primary = lcl_sum_X_X2;                                                    /* [2*bc]  */
+
+          for (hi = 0; hi < H; hi++) {
+            for (wb = 0; wb < num_W_blocks; wb++) {
+              reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
+              cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+
+              add_param.in0.primary = sum_ncp_ptr;
+              add_param.in1.primary = lcl_sum_X_X2;
+              add_param.out.primary = sum_ncp_ptr;
+              cfg.helper_add_kernel(&add_param);
+
+              add_param.in0.primary = sumsq_ncp_ptr;
+              add_param.in1.primary = &lcl_sum_X_X2[bc];
+              add_param.out.primary = sumsq_ncp_ptr;
+              cfg.helper_add_kernel(&add_param);
+            }
+          } /* loop over H */
+        }
+      } else { /* hw-blocking (implies no padding) */
+        if (cfg.use_new_reduce) {
+          reduce_param.out.primary = sums_ncp_ptr;/* (void*)&LIBXSMM_VLA_ACCESS(3, sums_N, cp, n, 0, N, 2*bc); */ /* [2*bc]  */
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            hi = (hwb*(HW/num_HW_blocks))/W;
+            w  = (hwb*(HW/num_HW_blocks))%W;
+
+            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
+            if (hwb == 0)
+              cfg.reduce_beta0_kernel(&reduce_param);                                               /* [HW, bc] -----> [2 * bc] */
+            else
+              cfg.reduce_beta1_kernel(&reduce_param);                                               /* [HW, bc] -----> [2 * bc] */
+          } /* loop over hw blocks */
+        } else {
+          LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
+          reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
+
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            hi = (hwb*(HW/num_HW_blocks))/W;
+            w  = (hwb*(HW/num_HW_blocks))%W;
+
+            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
             cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
 
             add_param.in0.primary = sum_ncp_ptr;
@@ -762,32 +850,13 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
             add_param.in1.primary = &lcl_sum_X_X2[bc];
             add_param.out.primary = sumsq_ncp_ptr;
             cfg.helper_add_kernel(&add_param);
-          }
+          } /* loop over hw blocks */
         }
-      } else { /* hw-blocking (implies no padding) */
-        reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          hi = (hwb*(HW/num_HW_blocks))/W;
-          w  = (hwb*(HW/num_HW_blocks))%W;
-          reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
-          cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
-
-          add_param.in0.primary = sum_ncp_ptr;
-          add_param.in1.primary = lcl_sum_X_X2;
-          add_param.out.primary = sum_ncp_ptr;
-          cfg.helper_add_kernel(&add_param);
-
-          add_param.in0.primary = sumsq_ncp_ptr;
-          add_param.in1.primary = &lcl_sum_X_X2[bc];
-          add_param.out.primary = sumsq_ncp_ptr;
-          cfg.helper_add_kernel(&add_param);
-
           /* #pragma omp simd */
           /* for (int cb = 0; cb < bc; cb++) {  */
           /*   sum_ncp_ptr[cb] += lcl_sum_X_X2[cb];  */
           /*   sumsq_ncp_ptr[cb] += lcl_sum_X_X2[bc + cb];  */
           /* }  */
-        } /* loop over hw blocks */
       } /* if-else for the presence of input padding */
     } /* loop over cpxnt for temporary arrays */
 
@@ -810,12 +879,18 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_f32( libxsmm_dnn_bn_fwd_config cfg, con
       for(ni = 0; ni < N; ni++){
 
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, bc);
+        if (cfg.use_new_reduce)
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sums_N, cp, ni, 0, N, 2*bc);
+        else
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, bc);
         cfg.helper_add_kernel(&add_param);
 
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, bc);
+        if (cfg.use_new_reduce)
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sums_N, cp, ni, bc, N, 2*bc);
+        else
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, bc);
         cfg.helper_add_kernel(&add_param);
 
@@ -1013,6 +1088,9 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
     LIBXSMM_VLA_DECL(3, float, sumsq_N, ((float*)scratch) + sumsq_N_offset, N, bc);  /* [CP, N, bc] */
     LIBXSMM_ASSUME_ALIGNED(sumsq_N_, 64);
 
+    LIBXSMM_VLA_DECL(3, float, sums_N, ((float*)scratch) + sum_N_offset, N, 2*bc);    /* [CP, N, 2*bc] */
+    LIBXSMM_ASSUME_ALIGNED(sums_N_, 64);
+
     libxsmm_meltw_unary_param  reduce_param;
 
     memset( &reduce_param,  0, sizeof(reduce_param));
@@ -1023,13 +1101,24 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
 
       int hi, w, wb, hwb;
 
-      float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
-      float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
+      float *sum_ncp_ptr = NULL, *sumsq_ncp_ptr = NULL, *sums_ncp_ptr = NULL;
 
-      all_zero_param.out.primary = sum_ncp_ptr;
-      cfg.all_zero_kernel(&all_zero_param);
-      all_zero_param.out.primary = sumsq_ncp_ptr;
-      cfg.all_zero_kernel(&all_zero_param);
+      if (cfg.use_new_reduce)
+        sums_ncp_ptr  = &LIBXSMM_VLA_ACCESS(3, sums_N,  cp, n, 0, N, 2*bc);
+      else {
+        sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
+        sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc);
+      }
+
+      /*float *sum_ncp_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_N,   cp, n, 0, N, bc);
+        float *sumsq_ncp_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, n, 0, N, bc); */
+
+      if (!cfg.use_new_reduce) {
+        all_zero_param.out.primary = sum_ncp_ptr;
+        cfg.all_zero_kernel(&all_zero_param);
+        all_zero_param.out.primary = sumsq_ncp_ptr;
+        cfg.all_zero_kernel(&all_zero_param);
+      }
 
       /* #pragma omp simd  */
       /* for (int cb = 0; cb < bc; cb++) {  */
@@ -1037,13 +1126,62 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
       /*   sumsq_ncp_ptr[cb] = 0.0f;  */
       /* } */
 
-      LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
       if (cfg.use_hw_blocking == 0) { /* w-blocking */
-        reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
-        for (hi = 0; hi < H; hi++) {
-          for (wb = 0; wb < num_W_blocks; wb++) {
-            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
-            cfg.reduce_kernel(&reduce_param);                                                      /* [HW, bc] -----> [2 * bc] */
+        if (cfg.use_new_reduce) {
+          reduce_param.out.primary = sums_ncp_ptr;/*(void*)&LIBXSMM_VLA_ACCESS(3, sums_N, cp, n, 0, N, 2*bc); */ /* [2*bc]  */
+          for (hi = 0; hi < H; hi++) {
+            for (wb = 0; wb < num_W_blocks; wb++) {
+              reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
+              if (hi == 0 && wb == 0)
+                cfg.reduce_beta0_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+              else
+                cfg.reduce_beta1_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+            }
+          } /* loop over H */
+        } else {
+          LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
+          reduce_param.out.primary = lcl_sum_X_X2;                                                    /* [2*bc]  */
+
+          for (hi = 0; hi < H; hi++) {
+            for (wb = 0; wb < num_W_blocks; wb++) {
+              reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, wb*(W/num_W_blocks), 0, CP, ifhp, ifwp, bc);
+              cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
+
+              add_param.in0.primary = sum_ncp_ptr;
+              add_param.in1.primary = lcl_sum_X_X2;
+              add_param.out.primary = sum_ncp_ptr;
+              cfg.helper_add_kernel(&add_param);
+
+              add_param.in0.primary = sumsq_ncp_ptr;
+              add_param.in1.primary = &lcl_sum_X_X2[bc];
+              add_param.out.primary = sumsq_ncp_ptr;
+              cfg.helper_add_kernel(&add_param);
+            }
+          } /* loop over H */
+        }
+      } else { /* hw-blocking (implies no padding) */
+        if (cfg.use_new_reduce) {
+          reduce_param.out.primary = sums_ncp_ptr;/* (void*)&LIBXSMM_VLA_ACCESS(3, sums_N, cp, n, 0, N, 2*bc); */ /* [2*bc]  */
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            hi = (hwb*(HW/num_HW_blocks))/W;
+            w  = (hwb*(HW/num_HW_blocks))%W;
+
+            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
+            if (hwb == 0)
+              cfg.reduce_beta0_kernel(&reduce_param);                                               /* [HW, bc] -----> [2 * bc] */
+            else
+              cfg.reduce_beta1_kernel(&reduce_param);                                               /* [HW, bc] -----> [2 * bc] */
+          } /* loop over hw blocks */
+        } else {
+          LIBXSMM_ALIGNED(float lcl_sum_X_X2[2*bc], 64);
+          reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
+
+          for(hwb=0; hwb < num_HW_blocks; hwb++){
+            hi = (hwb*(HW/num_HW_blocks))/W;
+            w  = (hwb*(HW/num_HW_blocks))%W;
+
+            reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
+            cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
 
             add_param.in0.primary = sum_ncp_ptr;
             add_param.in1.primary = lcl_sum_X_X2;
@@ -1054,32 +1192,13 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
             add_param.in1.primary = &lcl_sum_X_X2[bc];
             add_param.out.primary = sumsq_ncp_ptr;
             cfg.helper_add_kernel(&add_param);
-          }
+          } /* loop over hw blocks */
         }
-      } else { /* hw-blocking (implies no padding) */
-        reduce_param.out.primary = lcl_sum_X_X2;                                                   /* [2*bc]  */
-        for(hwb=0; hwb < num_HW_blocks; hwb++){
-          hi = (hwb*(HW/num_HW_blocks))/W;
-          w  = (hwb*(HW/num_HW_blocks))%W;
-          reduce_param.in.primary = (void*)&LIBXSMM_VLA_ACCESS(5, inp, n, cp, hi, w, 0, CP, H, W, bc);
-          cfg.reduce_kernel(&reduce_param);                                                       /* [HW, bc] -----> [2 * bc] */
-
-          add_param.in0.primary = sum_ncp_ptr;
-          add_param.in1.primary = lcl_sum_X_X2;
-          add_param.out.primary = sum_ncp_ptr;
-          cfg.helper_add_kernel(&add_param);
-
-          add_param.in0.primary = sumsq_ncp_ptr;
-          add_param.in1.primary = &lcl_sum_X_X2[bc];
-          add_param.out.primary = sumsq_ncp_ptr;
-          cfg.helper_add_kernel(&add_param);
-
           /* #pragma omp simd */
           /* for (int cb = 0; cb < bc; cb++) {  */
           /*   sum_ncp_ptr[cb] += lcl_sum_X_X2[cb];  */
           /*   sumsq_ncp_ptr[cb] += lcl_sum_X_X2[bc + cb];  */
           /* }  */
-        } /* loop over hw blocks */
       } /* if-else for the presence of input padding */
     } /* loop over cpxnt for temporary arrays */
 
@@ -1102,12 +1221,18 @@ LIBXSMM_API void libxsmm_dnn_bn_fwd_exec_bf16( libxsmm_dnn_bn_fwd_config cfg, co
       for(ni = 0; ni < N; ni++){
 
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, bc);
+        if (cfg.use_new_reduce)
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sums_N, cp, ni, 0, N, 2*bc);
+        else
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sum_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 0, cp, 0, CP, bc);
         cfg.helper_add_kernel(&add_param);
 
         add_param.in0.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, bc);
-        add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, bc);
+        if (cfg.use_new_reduce)
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sums_N, cp, ni, bc, N, 2*bc);
+        else
+          add_param.in1.primary = &LIBXSMM_VLA_ACCESS(3, sumsq_N, cp, ni, 0, N, bc);
         add_param.out.primary = &LIBXSMM_VLA_ACCESS(3, sum_X_X2, 1, cp, 0, CP, bc);
         cfg.helper_add_kernel(&add_param);
 

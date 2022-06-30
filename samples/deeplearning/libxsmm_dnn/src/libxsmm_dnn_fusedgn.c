@@ -24,6 +24,7 @@ LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N
   libxsmm_blasint ld  = bc;
   libxsmm_blasint tmp_ld, tmp_ld2;
   libxsmm_blasint my_eqn10;
+  libxsmm_blasint group_size;
 
   libxsmm_meltw_unary_shape  unary_shape;
   libxsmm_meltw_binary_shape binary_shape;
@@ -137,7 +138,7 @@ LIBXSMM_API libxsmm_dnn_gn_fwd_config setup_libxsmm_dnn_gn_fwd(libxsmm_blasint N
   }
 
   /* TPP for reducing groups */
-  libxsmm_blasint group_size = res.C/res.G;
+  group_size = res.C/res.G;
 
   ld = group_size;                /* group_size = (CP*bc)/G */
   tmp_ld = 1;
@@ -818,9 +819,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
   const libxsmm_blasint thr_begin_N = (ltid * chunksize_N < work_N) ? (ltid * chunksize_N) : work_N;
   const libxsmm_blasint thr_end_N = ((ltid + 1) * chunksize_N < work_N) ? ((ltid + 1) * chunksize_N) : work_N;
 
-  /* lazy barrier init */
-  libxsmm_barrier_init(cfg.barrier, ltid);
-
   LIBXSMM_VLA_DECL(5, const float,         inp ,     pinp     + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
   LIBXSMM_VLA_DECL(5, const float,         inp_add,  pinp_add + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
   LIBXSMM_VLA_DECL(5,       float,         out,      pout,      CP, ofhp, ofwp, bc);                                         /* [N, CP, ofhp, ofwp, bc] */
@@ -841,6 +839,11 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
   libxsmm_matrix_arg arg_array[6];
   libxsmm_matrix_eqn_param eqn_param;
 
+  LIBXSMM_UNUSED(scratch);
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(cfg.barrier, ltid);
+
   memset( &all_zero_param,        0, sizeof(all_zero_param));
   memset( &add_param,             0, sizeof(add_param));
   memset( &reduce_param,          0, sizeof(reduce_param));
@@ -855,9 +858,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
     int cp, n;
     int cpxnt;
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      n  = cpxnt/CP;
-      cp = cpxnt%CP;
-
       LIBXSMM_ALIGNED(float tmp[2*bc], 64);
       LIBXSMM_ALIGNED(float sum_X[G], 64);
       LIBXSMM_ALIGNED(float sum_X2[G], 64);
@@ -866,6 +866,9 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
 
       int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0;
       int i, j, g;
+
+      n  = cpxnt/CP;
+      cp = cpxnt%CP;
 
       all_zero_param.out.primary = tmp;
       cfg.all_zero_kernel(&all_zero_param);
@@ -1024,6 +1027,8 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
       libxsmm_meltw_unary_param  m_reduce_rows_param;
       libxsmm_meltw_unary_param  v_reduce_rows_param;
 
+      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
+
       memset( &m_reduce_rows_param, 0, sizeof(m_reduce_rows_param));
       memset( &v_reduce_rows_param, 0, sizeof(v_reduce_rows_param));
 
@@ -1032,7 +1037,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_f32( libxsmm_dnn_gn_fwd_config cfg, con
       all_zero_param.out.primary = sum_X2;
       cfg.all_zero_G_kernel(&all_zero_param);
 
-      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
       for (cp = 0; cp < CP; cp++){                      /* [cp, HW, bc] */
         all_zero_param.out.primary = tmp;
         cfg.all_zero_kernel(&all_zero_param);
@@ -1245,9 +1249,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
   const libxsmm_blasint thr_begin_N = (ltid * chunksize_N < work_N) ? (ltid * chunksize_N) : work_N;
   const libxsmm_blasint thr_end_N = ((ltid + 1) * chunksize_N < work_N) ? ((ltid + 1) * chunksize_N) : work_N;
 
-  /* lazy barrier init */
-  libxsmm_barrier_init(cfg.barrier, ltid);
-
   LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, inp ,    pinp     + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
   LIBXSMM_VLA_DECL(5, const libxsmm_bfloat16, inp_add, pinp_add + (hi_start * ifwp + wi_start) * bc, CP, ifhp, ifwp, bc);      /* [N, CP, ifhp, ifwp, bc] + "padding" offset */
   LIBXSMM_VLA_DECL(5,       libxsmm_bfloat16,  out,    pout,      CP, ofhp, ofwp, bc);                                         /* [N, CP, ofhp, ofwp, bc] */
@@ -1268,6 +1269,11 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
   libxsmm_matrix_arg arg_array[6];
   libxsmm_matrix_eqn_param eqn_param;
 
+  LIBXSMM_UNUSED(scratch);
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(cfg.barrier, ltid);
+
   memset( &all_zero_param,        0, sizeof(all_zero_param));
   memset( &add_param,             0, sizeof(add_param));
   memset( &reduce_param,          0, sizeof(reduce_param));
@@ -1282,9 +1288,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
     int n, cp;
     int cpxnt;
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      n  = cpxnt/CP;
-      cp = cpxnt%CP;
-
       LIBXSMM_ALIGNED(float tmp[2*bc], 64);
       LIBXSMM_ALIGNED(float sum_X[G], 64);
       LIBXSMM_ALIGNED(float sum_X2[G], 64);
@@ -1293,6 +1296,11 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
 
       int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0;
       int i, j, g;
+
+      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
+
+      n  = cpxnt/CP;
+      cp = cpxnt%CP;
 
       all_zero_param.out.primary = tmp;
       cfg.all_zero_kernel(&all_zero_param);
@@ -1303,8 +1311,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
       cfg.all_zero_G_kernel(&all_zero_param);
       all_zero_param.out.primary = sum_X2;
       cfg.all_zero_G_kernel(&all_zero_param);
-
-      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
 
       reduce_param.out.primary   = new_tmp;                  /* [2*bc] */
       if (cfg.use_hw_blocking == 0) { /* w-blocking */
@@ -1451,6 +1457,8 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
       libxsmm_meltw_unary_param  m_reduce_rows_param;
       libxsmm_meltw_unary_param  v_reduce_rows_param;
 
+      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
+
       memset( &m_reduce_rows_param, 0, sizeof(m_reduce_rows_param));
       memset( &v_reduce_rows_param, 0, sizeof(v_reduce_rows_param));
 
@@ -1459,7 +1467,6 @@ LIBXSMM_API void libxsmm_dnn_gn_fwd_exec_bf16( libxsmm_dnn_gn_fwd_config cfg, co
       all_zero_param.out.primary = sum_X2;
       cfg.all_zero_G_kernel(&all_zero_param);
 
-      LIBXSMM_ALIGNED(float new_tmp[2*bc], 64);
       for (cp = 0; cp < CP; cp++){                      /* [cp, HW, bc] */
         all_zero_param.out.primary = tmp;
         cfg.all_zero_kernel(&all_zero_param);
@@ -1690,16 +1697,6 @@ LIBXSMM_API void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, flo
   libxsmm_matrix_arg arg_array[10];
   libxsmm_matrix_eqn_param eqn_param;
 
-  memset( &all_zero_param,        0, sizeof(all_zero_param));
-  memset( &all_relu_param,        0, sizeof(all_relu_param));
-  memset( &ewise_copy_param,      0, sizeof(ewise_copy_param));
-  memset( &eqn_param,             0, sizeof(eqn_param));
-
-  eqn_param.inputs = arg_array;
-
-  /* lazy barrier init */
-  libxsmm_barrier_init(cfg.barrier, ltid);
-
   const int group_size = (CP*bc)/G;
 
   const float scale = 1.0f / ((float)group_size * HW);
@@ -1718,9 +1715,19 @@ LIBXSMM_API void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, flo
 
   const libxsmm_blasint dbeta_N_offset = (LIBXSMM_UP2((uintptr_t)(((float*)scratch) + N * CP * bc), 64) - ((uintptr_t)(scratch))) / sizeof(float);
   LIBXSMM_VLA_DECL(3, float, dgamma_N, ((float*)scratch),                  CP, bc);  /* [N, CP, bc] */
-  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
   LIBXSMM_VLA_DECL(3, float, dbeta_N,  ((float*)scratch) + dbeta_N_offset, CP, bc);  /* [N, CP, bc] */
+  LIBXSMM_ASSUME_ALIGNED(dgamma_N_, 64);
   LIBXSMM_ASSUME_ALIGNED(dbeta_N_, 64);
+
+  memset( &all_zero_param,        0, sizeof(all_zero_param));
+  memset( &all_relu_param,        0, sizeof(all_relu_param));
+  memset( &ewise_copy_param,      0, sizeof(ewise_copy_param));
+  memset( &eqn_param,             0, sizeof(eqn_param));
+
+  eqn_param.inputs = arg_array;
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(cfg.barrier, ltid);
 
   if (group_size <= bc){
     LIBXSMM_ALIGNED(float a[bc], 64);
@@ -1732,11 +1739,11 @@ LIBXSMM_API void libxsmm_dnn_gn_bwd_exec_f32( libxsmm_dnn_gn_bwd_config cfg, flo
     int n, cp;
     int cpxnt;
     for ( cpxnt = thr_begin_dN; cpxnt < thr_end_dN; ++cpxnt ) {
-      n  = cpxnt/CP;
-      cp = cpxnt%CP;
-
       int hi = 0, ho = 0, w = 0, wb = 0, hwb = 0;
       int j, g, lg;
+
+      n  = cpxnt/CP;
+      cp = cpxnt%CP;
 
       /* for(j = 0; j < bc; j++){
           dgamma_N[n*CP*bc + cp*bc + j] = 0.0f;

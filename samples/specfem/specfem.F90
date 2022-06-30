@@ -116,7 +116,7 @@ module specfem_par
   ! for verification
   real(kind=CUSTOM_REAL), dimension(:,:),allocatable :: accel_default
 
-  !slow-down: please don't use unless you're sure... !dir$ ATTRIBUTES align:LIBXSMM_ALIGNMENT :: displ,accel,ibool,accel_default
+  !slow-down: please do not use unless you're sure... !dir$ ATTRIBUTES align:LIBXSMM_ALIGNMENT :: displ,accel,ibool,accel_default
 
   ! gravity
   logical,parameter :: GRAVITY_VAL = .true.

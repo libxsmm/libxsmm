@@ -291,7 +291,7 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) + (VALUE))
 # define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) + (VALUE))
 # define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) + (VALUE))
-# define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((size_t)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((size_t)VALUE))
+# define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) ((LONG)LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) - ((LONG)VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB16(DST_PTR, VALUE, KIND) - (VALUE))
 # define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) (LIBXSMM_ATOMIC_FETCH_SUB64(DST_PTR, VALUE, KIND) - (VALUE))
 # define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) InterlockedExchangeAdd((volatile LONG*)(DST_PTR), (LONG)VALUE)
@@ -625,7 +625,7 @@ typedef enum libxsmm_atomic_kind {
 #     endif
 #     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #   endif
-# elif !defined(LIBXSMM_SYNC_NONE) /* based on atomic primitives */
+# else /* based on atomic primitives */
 #   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #     define LIBXSMM_LOCK_ACQUIRED_spin 0
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 1
@@ -673,58 +673,6 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK)
 #     define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK)
 #     define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) LIBXSMM_LOCK_RELEASE_rwlock(LOCK)
-#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock int
-#     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
-#     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
-#   endif
-# else /* experimental */
-#   if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-#     define LIBXSMM_LOCK_ACQUIRED_spin 0
-#     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
-#     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
-#     define LIBXSMM_LOCK_TYPE_spin libxsmm_spinlock*
-#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_spinlock_create()); }
-#     define LIBXSMM_LOCK_DESTROY_spin(LOCK) libxsmm_spinlock_destroy(*(LOCK))
-#     define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) libxsmm_spinlock_trylock(*(LOCK))
-#     define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) libxsmm_spinlock_acquire(*(LOCK))
-#     define LIBXSMM_LOCK_RELEASE_spin(LOCK) libxsmm_spinlock_release(*(LOCK))
-#     define LIBXSMM_LOCK_TRYREAD_spin(LOCK) LIBXSMM_LOCK_TRYLOCK_spin(LOCK)
-#     define LIBXSMM_LOCK_ACQREAD_spin(LOCK) LIBXSMM_LOCK_ACQUIRE_spin(LOCK)
-#     define LIBXSMM_LOCK_RELREAD_spin(LOCK) LIBXSMM_LOCK_RELEASE_spin(LOCK)
-#     define LIBXSMM_LOCK_ATTR_TYPE_spin int
-#     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
-#     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
-#   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-#     define LIBXSMM_LOCK_ACQUIRED_mutex 0
-#     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
-#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
-#     define LIBXSMM_LOCK_TYPE_mutex libxsmm_mutex*
-#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_mutex_create()); }
-#     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) libxsmm_mutex_destroy(*(LOCK))
-#     define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) libxsmm_mutex_trylock(*(LOCK))
-#     define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) libxsmm_mutex_acquire(*(LOCK))
-#     define LIBXSMM_LOCK_RELEASE_mutex(LOCK) libxsmm_mutex_release(*(LOCK))
-#     define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
-#     define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
-#     define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
-#     define LIBXSMM_LOCK_ATTR_TYPE_mutex int
-#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
-#     define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
-#   endif
-#   if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-#     define LIBXSMM_LOCK_ACQUIRED_rwlock 0
-#     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
-#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
-#     define LIBXSMM_LOCK_TYPE_rwlock libxsmm_rwlock*
-#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_rwlock_create()); }
-#     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) libxsmm_rwlock_destroy(*(LOCK))
-#     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) libxsmm_rwlock_trylock(*(LOCK))
-#     define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) libxsmm_rwlock_acquire(*(LOCK))
-#     define LIBXSMM_LOCK_RELEASE_rwlock(LOCK) libxsmm_rwlock_release(*(LOCK))
-#     define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) libxsmm_rwlock_tryread(*(LOCK))
-#     define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) libxsmm_rwlock_acqread(*(LOCK))
-#     define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) libxsmm_rwlock_relread(*(LOCK))
 #     define LIBXSMM_LOCK_ATTR_TYPE_rwlock int
 #     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
@@ -789,33 +737,6 @@ LIBXSMM_API void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid);
 LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier);
 /** DEPRECATED: use libxsmm_barrier_destroy instead. */
 #define libxsmm_barrier_release libxsmm_barrier_destroy
-
-/** Spin-lock, which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_SPINLOCK). */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spinlock libxsmm_spinlock;
-LIBXSMM_API libxsmm_spinlock* libxsmm_spinlock_create(void);
-LIBXSMM_API void libxsmm_spinlock_destroy(const libxsmm_spinlock* spinlock);
-LIBXSMM_API int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock);
-LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock);
-LIBXSMM_API void libxsmm_spinlock_release(libxsmm_spinlock* spinlock);
-
-/** Mutual-exclusive lock (Mutex), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX). */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mutex libxsmm_mutex;
-LIBXSMM_API libxsmm_mutex* libxsmm_mutex_create(void);
-LIBXSMM_API void libxsmm_mutex_destroy(const libxsmm_mutex* mutex);
-LIBXSMM_API int libxsmm_mutex_trylock(libxsmm_mutex* mutex);
-LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex);
-LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex);
-
-/** Reader-Writer lock (RW-lock), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK). */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_rwlock libxsmm_rwlock;
-LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void);
-LIBXSMM_API void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock);
-LIBXSMM_API int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock);
-LIBXSMM_API void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock);
-LIBXSMM_API void libxsmm_rwlock_release(libxsmm_rwlock* rwlock);
-LIBXSMM_API int libxsmm_rwlock_tryread(libxsmm_rwlock* rwlock);
-LIBXSMM_API void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock);
-LIBXSMM_API void libxsmm_rwlock_relread(libxsmm_rwlock* rwlock);
 
 /** Utility function to receive the process ID of the calling process. */
 LIBXSMM_API unsigned int libxsmm_get_pid(void);

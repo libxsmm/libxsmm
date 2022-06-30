@@ -15,6 +15,7 @@ OMP = 1
 
 # explore AVX/ARCH=native
 SSE = 0
+AVX=
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc

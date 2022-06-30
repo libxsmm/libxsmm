@@ -63,7 +63,7 @@ int libxsmm_generator_mateqn_get_fp_relative_offset( libxsmm_meqn_stack_var stac
    *
    * * */
 
-  switch ( stack_var ) {
+  switch ( (int)stack_var ) {
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR0:
       return -256;
     case LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR1:
@@ -663,7 +663,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   unsigned int all_nodes_f32 = 1;
 
   if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 

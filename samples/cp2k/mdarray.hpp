@@ -730,7 +730,7 @@ class mdarray_base
         for (int i = 0; i < N; i++) {
             if (dest__.dims_[i].begin() != dims_[i].begin() ||
                 dest__.dims_[i].end() != dims_[i].end()) {
-                printf("error at line %i of file %s: array dimensions don't match\n",
+                printf("error at line %i of file %s: array dimensions do not match\n",
                        __LINE__, __FILE__);
                 raise(SIGTERM);
                 exit(-1);

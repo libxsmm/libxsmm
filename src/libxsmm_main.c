@@ -679,8 +679,12 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
+  const char *const env_verbose_banner = getenv("LIBXSMM_VERBOSE_BANNER");
+  const int verbose_banner = (0 > libxsmm_verbosity
+    || NULL == env_verbose_banner || '\0' == *env_verbose_banner
+    || 0 != atoi(env_verbose_banner) ? 1 : 0);
   libxsmm_finalize();
-  if (0 != libxsmm_verbosity) { /* print statistic on termination */
+  if (0 != libxsmm_verbosity && 0 != verbose_banner) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
@@ -1072,7 +1076,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
           /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
           ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
-            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C)
+            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C/*KNx*/)
           : INTERNAL_PREFETCH;
 #endif
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
@@ -1539,7 +1543,11 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   const int cpuid = libxsmm_cpuid();
   int target_archid;
-  if (NULL != arch && '\0' != *arch) {
+  if (NULL != arch && '\0' != *arch
+    && arch != libxsmm_stristr(arch, "default")
+    && arch != libxsmm_stristr(arch, "cpuid")
+    && arch != libxsmm_stristr(arch, "auto"))
+  {
 #if defined(LIBXSMM_PLATFORM_X86)
     const int jit = atoi(arch);
 #endif
@@ -1712,7 +1720,7 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
 {
   int result = EXIT_SUCCESS;
   if (NULL != value && NULL != dvalue) {
-    switch (datatype) {
+    switch ((int)datatype) {
       case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double   *)value); break;
       case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float    *)value); break;
       case LIBXSMM_DATATYPE_I64: *dvalue = (double)(*(const long long*)value); break;
@@ -1731,7 +1739,7 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
 
 LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 {
-  switch (datatype) {
+  switch ((int)datatype) {
     case LIBXSMM_DATATYPE_F64:  return "f64";
     case LIBXSMM_DATATYPE_F32:  return "f32";
     case LIBXSMM_DATATYPE_BF16: return "bf16";
@@ -1845,13 +1853,20 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #if !defined(__MIC__)
   const char * /*const*/ target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   /* large enough temporary buffer for generated code */
-  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = "", jit_name[384] = "";
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE] = { 0 }, jit_name[384] = { 0 };
   libxsmm_generated_code generated_code /*= { 0 }*/;
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
   LIBXSMM_MEMZERO127(&generated_code);
-  generated_code.generated_code = jit_buffer;
-  generated_code.buffer_size = sizeof(jit_buffer);
+  if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
+    generated_code.generated_code = jit_buffer;
+    generated_code.buffer_size = sizeof(jit_buffer);
+  }
+  else {
+    void *const buffer = malloc(LIBXSMM_MALLOC_LIMIT);
+    generated_code.generated_code = (NULL != buffer ? ((char*)buffer) : jit_buffer);
+    generated_code.buffer_size = LIBXSMM_MALLOC_LIMIT;
+  }
   /* setup code generation */
   generated_code.arch = libxsmm_target_archid;
   generated_code.code_type = 2;
@@ -2222,8 +2237,12 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  if  (0 == generated_code.last_error /* no error raised */
-    && 0 != generated_code.code_size /*check (tcopy issue?)*/)
+  if  (0 == generated_code.last_error
+    && 0 != generated_code.code_size /*check (tcopy issue?)*/
+# if !defined(NDEBUG)
+    && generated_code.code_size <= generated_code.buffer_size
+# endif
+    /* no error raised */)
   {
     char* code_buffer = NULL;
 # if defined(__APPLE__) && defined(__arm64__)
@@ -2234,7 +2253,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     const size_t data_size = generated_code.data_size;
     const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-    LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
@@ -2298,6 +2316,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   }
   else {
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
+  }
+  if (jit_buffer != generated_code.generated_code) {
+    free(generated_code.generated_code);
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);

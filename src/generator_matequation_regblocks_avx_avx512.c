@@ -238,10 +238,10 @@ void libxsmm_configure_mateqn_microkernel_loops( libxsmm_generated_code*        
   max_nm_unrolling = max_nm_unrolling / n_tmp_reg_blocks;
 
   if (max_nm_unrolling < 1) {
-    printf("Can't nenerate run this code variant, ran out of zmm registers...\n");
+    printf("Cannot generate run this code variant, ran out of zmm registers...\n");
   }
   if ((max_nm_unrolling < m_trips) && (i_use_m_input_masking == 1)) {
-    printf("Can't generate run this code variant, ran out of zmm registers and we want to mask M...\n");
+    printf("Cannot generate run this code variant, ran out of zmm registers and we want to mask M...\n");
   }
 
   if (i_use_m_input_masking == 1) {
@@ -831,7 +831,7 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_
   unsigned int im, in, left_vreg, right_vreg, dst_vreg;
   unsigned int binary_op_instr = 0;
 
-  switch (i_op_type) {
+  switch ((int)i_op_type) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
       binary_op_instr = LIBXSMM_X86_INSTR_VADDPS;
     } break;
@@ -883,7 +883,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block( libxsmm_generated
   unsigned int im, in, left_vreg, right_vreg, dst_vreg;
   unsigned int ternary_op_instr = 0;
 
-  switch (i_op_type) {
+  switch ((int)i_op_type) {
     case LIBXSMM_MELTW_TYPE_TERNARY_MULADD: {
       ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
     } break;
@@ -1129,7 +1129,7 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_unary_op_req_zmms(libxsmm_generated_code*    io_generated_code, libxsmm_meltw_unary_type u_type) {
   unsigned int result = 0;
 
-  switch (u_type) {
+  switch ((int)u_type) {
     case LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD: {
       result = 1;
     } break;
@@ -1176,7 +1176,7 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_binary_op_req_zmms( libxsmm_generated_code*    io_generated_code, libxsmm_meltw_binary_type b_type) {
   unsigned int result = 0;
   LIBXSMM_UNUSED(io_generated_code);
-  switch (b_type) {
+  switch ((int)b_type) {
     case LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD: {
       result = 1;
     } break;
@@ -1392,7 +1392,7 @@ void libxsmm_generator_matequation_tmp_register_block_avx_avx512_kernel( libxsmm
   unsigned int arg_id = 0, i = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
   if ( eqn == NULL ) {
-    fprintf( stderr, "The requested equation doesn't exist... nothing to JIT,,,\n" );
+    fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 

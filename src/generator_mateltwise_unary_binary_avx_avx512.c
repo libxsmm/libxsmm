@@ -350,7 +350,7 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : (( i_micro_kernel_config->datatype_size_in == 2 ) ? LIBXSMM_X86_INSTR_VPBROADCASTW : LIBXSMM_X86_INSTR_VPBROADCASTB);
 
-  /* In this case we don't have to load any data  */
+  /* In this case we do not have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
 
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
@@ -1127,7 +1127,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
               cur_vreg,
               0, 0, 0, (cur_mask_reg) << 4);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         /* Compare to generate mask  */
@@ -1167,7 +1167,7 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
           /* Blend exp-fma result with input reg based on elu mask */
           libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vblend_instr, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->tmp_vreg2, cur_vreg, cur_mask_reg, 0 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -1285,7 +1285,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
                                                                  cur_vreg,
                                                                  0, 0, 0, (i_micro_kernel_config->tmp_vreg2) << 4);
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       } else {
         l_vlen = (io_generated_code->arch <=LIBXSMM_X86_AVX512_VL256_CPX) ? l_vlen/2:l_vlen ;
@@ -1361,7 +1361,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
                                                          cur_mask_reg,
                                                          0 );
         } else {
-          /* shouldn't happen */
+          /* should not happen */
         }
       }
     }
@@ -2428,7 +2428,7 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
   i_micro_kernel_config->use_fp32bf8_cvt_generic = 0;
 
-  /* if we need FP32->BF16 downconverts and we don't have native instruction, then prepare stack */
+  /* if we need FP32->BF16 downconverts and we do not have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
        LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) && ((io_generated_code->arch < LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) ) {
     i_micro_kernel_config->use_fp32bf16_cvt_replacement = 1;
