@@ -90,7 +90,7 @@ void libxsmm_generator_gemm_amx_prefetch_output( libxsmm_generated_code*        
 }
 
 LIBXSMM_API_INTERN
-int is_tile_in_last_tilerow(const libxsmm_micro_kernel_config* i_micro_kernel_config, int tile) {
+int libxsmm_is_tile_in_last_tilerow(const libxsmm_micro_kernel_config* i_micro_kernel_config, int tile) {
   int result = 0, i = 0;
   int max_im = 0, pos = 0;
   for (i = 0; i < 4; i++) {
@@ -124,7 +124,7 @@ void libxsmm_x86_cvtstore_tile_from_I32_to_F32( libxsmm_generated_code*         
   /*unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;*/
   unsigned int scf_vreg            = i_micro_kernel_config->scf_vreg;
   unsigned int batch_vstores       = (reserved_zmms + n_cols < 32) ? 1 : 0;
-  int tile_in_last_tilerow         = is_tile_in_last_tilerow(i_micro_kernel_config, tile);
+  int tile_in_last_tilerow         = libxsmm_is_tile_in_last_tilerow(i_micro_kernel_config, tile);
   int maskid                       = ((tile_in_last_tilerow > 0) && (i_micro_kernel_config->m_remainder > 0)) ? i_micro_kernel_config->mask_m_fp32 : 0;
 
   /* Check if we have to save the tmp registers  */
@@ -687,7 +687,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
-  int tile_in_last_tilerow         = is_tile_in_last_tilerow(i_micro_kernel_config, tile);
+  int tile_in_last_tilerow         = libxsmm_is_tile_in_last_tilerow(i_micro_kernel_config, tile);
   int maskid                       = ((tile_in_last_tilerow > 0) && (i_micro_kernel_config->m_remainder > 0)) ? i_micro_kernel_config->mask_m_fp32 : 0;
 
   if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||

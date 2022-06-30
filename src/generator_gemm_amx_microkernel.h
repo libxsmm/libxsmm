@@ -33,7 +33,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3);
 
 LIBXSMM_API_INTERN
-int is_tile_in_last_tilerow(const libxsmm_micro_kernel_config* i_micro_kernel_config, int tile);
+int libxsmm_is_tile_in_last_tilerow(const libxsmm_micro_kernel_config* i_micro_kernel_config, int tile);
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_cvtstore_tile_from_I32_to_F32( libxsmm_generated_code*            io_generated_code,
