@@ -121,7 +121,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   unsigned int adjust_B_pf_ptrs = 0;
 
   /* Local variables used for A transpose case */
-  libxsmm_descriptor_blob           l_blob_opa;
   const libxsmm_gemm_descriptor *   l_xgemm_desc_opa;
   libxsmm_gemm_descriptor           l_new_xgemm_desc_opa;
   libxsmm_descriptor_blob           l_meltw_blob;
