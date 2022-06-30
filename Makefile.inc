@@ -1053,7 +1053,7 @@ ifneq (Darwin,$(UNAME))
   endif
 else # macOS
   solink = -o $(call qbname,$1).$2$(call qsuffix,$1) \
-           -install_name $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) \
+           -install_name $(call qbname,$(call qapath,$1)).$2$(call qsuffix,$1) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
     solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
