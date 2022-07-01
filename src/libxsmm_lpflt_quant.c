@@ -429,6 +429,9 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
   return res;
 }
 
+#if 0
+/* this code attempts to convert in one step from fp32 to bf8 just using
+ * integer code, however it doesn't hand RNE in all case correctly */
 LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
   unsigned int f32_bias = 127;
   unsigned int bf8_bias = 15;
@@ -492,36 +495,29 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
 
   return res;
 }
+#endif
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
   unsigned int i = 0;
 
   /* truncate buffer to bf8 */
   for ( i = 0; i < length; ++i ) {
-#if 10
-    out[i] = libxsmm_convert_f32_to_bf8( in[i] );
-#else
-    unsigned short short_round = 0;
-    unsigned int do_round = 1;
+    libxsmm_float16_ushort hybrid_in = { 0 };
+    libxsmm_bfloat8 res;
+    unsigned int fixup;
 
-    short_round = libxsmm_convert_f32_to_f16( in[i] );
+    hybrid_in.f = libxsmm_convert_f32_to_f16( in[i] );
 
-    /* we do not round NaN and inf */
-    if ( (short_round & 0x7c00) == 0x7c00 ) {
-      do_round = 0;
-    }
+    /* DAZ */
+    hybrid_in.u = ( (hybrid_in.u & 0x7c00) == 0x0 ) ? ( hybrid_in.u & 0x8000 ) : hybrid_in.u;
+    /* RNE round */
+    fixup = (hybrid_in.u >> 8) & 1;
+    /* we do not round inf and NaN */
+    hybrid_in.u = ( (hybrid_in.u & 0x7c00) == 0x7c00 ) ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 ) : hybrid_in.u + 0x007f + fixup;
+    /* shift right */
+    res = (unsigned short)(hybrid_in.u >> 8);
 
-    /* perform round nearest tie even */
-    if ( do_round != 0 ) {
-      unsigned short fixup = (short_round >> 8) & 1;
-      short_round = short_round + 0x007f + fixup;
-    }
-
-    /* create the bf8 value by shifting out the lower 16bits */
-    short_round = short_round >> 8;
-
-    out[i] = (unsigned char)short_round;
-#endif
+    out[i] = res;
   }
 }
 

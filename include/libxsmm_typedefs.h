@@ -114,6 +114,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
   unsigned int u;
 } libxsmm_float_uint;
 
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float16_ushort {
+  libxsmm_float16 f;
+  unsigned short  u;
+} libxsmm_float16_ushort;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_f32 {
   libxsmm_bfloat16 i[2];
   float f;
