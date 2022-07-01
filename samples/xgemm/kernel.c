@@ -556,8 +556,6 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
 
 #if 0
     libxsmm_blasint l_i, l_j;
-    float* f_data =      (float*)data;
-    float* f_data_gold = (float*)data_gold;
     for (l_i = 0; l_i < m; l_i++) {
       for (l_j = 0; l_j < n; l_j++) {
         printf("gold: %f, computed: %f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i] );
