@@ -2659,8 +2659,10 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
                                                           const unsigned int      i_vec_rand ) {
   char i_vname_2 = (i_vname == 'z')?'y':'x';
   /* @TODO check for valid i_vnames */
+  /* SAE is only available for 512bit */
   libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
-                                                          i_vec_reg, i_vec_reg, 0, 1, 1, 0x00 );
+                                                          i_vec_reg, i_vec_reg, 0, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
+
   /* and with naninf */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname_2,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 24, 1,
