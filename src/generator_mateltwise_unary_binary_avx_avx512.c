@@ -670,20 +670,11 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
                                                        i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_rand);
             }
 
-            if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
-              libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
-                                                                 cur_vreg, cur_vreg,
-                                                                 i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-                                                                 i_micro_kernel_config->dcvt_zmm_aux2,
-                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
-                                                                 stochastic_rnd, i_micro_kernel_config->prng_vreg_rand);
-            } else {
-              libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
-                                                                 cur_vreg, cur_vreg,
-                                                                 i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-                                                                 i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
-                                                                 stochastic_rnd, i_micro_kernel_config->prng_vreg_rand);
-            }
+            libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
+                                                                cur_vreg, cur_vreg,
+                                                                i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
+                                                                i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux1,
+                                                                stochastic_rnd, i_micro_kernel_config->prng_vreg_rand);
           }
 
           if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_QUANT)) {
@@ -2428,7 +2419,6 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
   i_micro_kernel_config->reserved_zmms = 0;
   i_micro_kernel_config->reserved_mask_regs = 1;
   i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
-  i_micro_kernel_config->use_fp32bf8_cvt_generic = 0;
 
   /* if we need FP32->BF16 downconverts and we do not have native instruction, then prepare stack */
   if ( (LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) || LIBXSMM_DATATYPE_F32 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
@@ -2442,26 +2432,15 @@ void libxsmm_configure_kernel_vregs_masks( libxsmm_generated_code*              
     i_micro_kernel_config->dcvt_zmm_aux1 = i_micro_kernel_config->reserved_zmms + 1;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   } else if ( (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 ) || LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) &&
-       LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)) {
-    /* if we need FP32->BF8 downconverts and we don't have native instruction, then prepare stack */
-    if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
-      libxsmm_generator_vcvtneps2bf8_generic_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
-    } else {
-      libxsmm_generator_vcvtneps2bf8_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
-    }
+       LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) && (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT)) {
+    libxsmm_generator_vcvtneps2bf8_avx512_prep_stack( io_generated_code, i_gp_reg_tmp );
 
     i_micro_kernel_config->dcvt_mask_aux0 = i_micro_kernel_config->reserved_mask_regs;
     i_micro_kernel_config->dcvt_mask_aux1 = i_micro_kernel_config->reserved_mask_regs + 1;
     i_micro_kernel_config->reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs + 2;
     i_micro_kernel_config->dcvt_zmm_aux0 = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->dcvt_zmm_aux1 = i_micro_kernel_config->reserved_zmms + 1;
-
-    if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
-      i_micro_kernel_config->dcvt_zmm_aux2 = i_micro_kernel_config->reserved_zmms + 2;
-      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 3;
-    } else {
-      i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
-    }
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
   if ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mateltwise_desc->m % i_micro_kernel_config->vlen_in != 0)) {
@@ -2497,15 +2476,10 @@ void libxsmm_finalize_kernel_vregs_masks( libxsmm_generated_code*               
   }
 
   if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
-    if ( i_micro_kernel_config->use_fp32bf8_cvt_generic == 1 ) {
-      libxsmm_generator_vcvtneps2bf8_generic_avx512_clean_stack( io_generated_code, i_gp_reg_tmp );
-    } else {
-      libxsmm_generator_vcvtneps2bf8_avx512_clean_stack( io_generated_code, i_gp_reg_tmp );
-    }
+    libxsmm_generator_vcvtneps2bf8_avx512_clean_stack( io_generated_code, i_gp_reg_tmp );
   } else if (i_micro_kernel_config->use_fp32bf16_cvt_replacement == 1) {
     libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, i_gp_reg_tmp );
   }
-
 }
 
 LIBXSMM_API_INTERN
