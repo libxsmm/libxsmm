@@ -398,9 +398,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
     } else {
       error_bound = 0.007;
     }
-  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    /* machine epsilon for BF8 = 0.125, error_bound = 2*epsilon */
-    error_bound = 0.25;
   } else {
     error_bound = 0.00001;
   }

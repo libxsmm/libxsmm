@@ -517,19 +517,8 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    if ( norms_out.normf_rel > 0.00001 ) {
-      ret = EXIT_FAILURE;
-    }
-  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    /* error threshold  2*epsilon (bf8 epsilon = 0.125 */
-    if ( norms_out.normf_rel > 0.25 ) {
-      ret = EXIT_FAILURE;
-    }
-  } else {
-    if ( norms_out.normf_rel > 0.007 ) {
-      ret = EXIT_FAILURE;
-    }
+  if ( norms_out.normf_rel > 0.00001 ) {
+    ret = EXIT_FAILURE;
   }
 
   libxsmm_free( out_fwd );
