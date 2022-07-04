@@ -23,17 +23,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_GEMM_XCOPY_JIT) && defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
-# define LIBXSMM_GEMM_XCOPY_JIT
-#endif
-#if !defined(LIBXSMM_GEMM_KPARALLEL) && 0
-# define LIBXSMM_GEMM_KPARALLEL
-#endif
-#if !defined(LIBXSMM_GEMM_BATCHSIZE)
-# define LIBXSMM_GEMM_BATCHSIZE 1024
-#endif
-#if !defined(LIBXSMM_GEMM_TASKGRAIN)
-# define LIBXSMM_GEMM_TASKGRAIN 128
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) && 0
+# define LIBXSMM_GEMM_BATCHREDUCE
 #endif
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK
@@ -624,67 +615,6 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype opr
       }
     }
   }
-}
-
-
-LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int ntasks,
-  unsigned int m, unsigned int n, unsigned int k,           /* whole problem size */
-  unsigned int tm, unsigned int tn, unsigned int tk,        /* tile size (kernel) */
-  unsigned int* nmt, unsigned int* nnt, unsigned int* nkt,  /* number of tiles */
-  unsigned int* mt, unsigned int* nt, unsigned int* kt)     /* number of tasks */
-{
-  unsigned int result = EXIT_SUCCESS, replan = 0;
-  LIBXSMM_ASSERT(NULL != nmt && NULL != nnt && NULL != nkt);
-  LIBXSMM_ASSERT(NULL != mt && NULL != nt && NULL != kt);
-  LIBXSMM_ASSERT(0 < ntasks);
-  *nmt = (m + tm - 1) / LIBXSMM_MAX(tm, 1);
-  *nnt = (n + tn - 1) / LIBXSMM_MAX(tn, 1);
-  *nkt = (k + tk - 1) / LIBXSMM_MAX(tk, 1);
-#if !defined(NDEBUG)
-  *mt = *nt = *kt = 0;
-#endif
-  do {
-    if (1 >= replan) *mt = libxsmm_product_limit(*nmt, ntasks, 0);
-    if (1 == replan || ntasks <= *mt) { /* M-parallelism */
-      *nt = 1;
-      *kt = 1;
-      replan = 0;
-    }
-    else {
-      const unsigned int mntasks = libxsmm_product_limit((*nmt) * (*nnt), ntasks, 0);
-      if (0 == replan && *mt >= mntasks) replan = 1;
-      if (2 == replan || (0 == replan && ntasks <= mntasks)) { /* MN-parallelism */
-        *nt = mntasks / *mt;
-        *kt = 1;
-        replan = 0;
-      }
-      else { /* MNK-parallelism */
-        const unsigned int mnktasks = libxsmm_product_limit((*nmt) * (*nnt) * (*nkt), ntasks, 0);
-        if (mntasks < mnktasks) {
-#if defined(LIBXSMM_GEMM_KPARALLEL)
-          *nt = mntasks / *mt;
-          *kt = mnktasks / mntasks;
-          replan = 0;
-#else
-          static int error_once = 0;
-          if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-          {
-            fprintf(stderr, "LIBXSMM WARNING: XGEMM K-parallelism triggered!\n");
-          }
-#endif
-        }
-#if defined(LIBXSMM_GEMM_KPARALLEL)
-        else
-#endif
-        if (0 == replan) replan = 2;
-      }
-    }
-  } while (0 != replan);
-  if (0 == *mt || 0 == *nt || 0 == *kt) {
-    result = EXIT_FAILURE;
-  }
-  return result;
 }
 
 
