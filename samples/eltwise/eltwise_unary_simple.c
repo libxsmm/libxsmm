@@ -439,7 +439,7 @@ int main( int argc, char* argv[] ) {
   char opname[256];
   int ret = EXIT_FAILURE;
 
-  if ( argc > 11 ) {
+  if ( argc != 11 && argc != 10 ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }
