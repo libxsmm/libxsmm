@@ -4,6 +4,61 @@
 
 The first code sample given for LIBXSMM was a performance reproducer exercising the same set of kernels usually generated for CP2K's SMM library. The code sample attempted to model the way "matrix stacks" are processed in CP2K, however there are two different code paths in CP2K: (1) the "main" code path used when processing stacks on the host-side, and (2) a code path targeting offload devices. Beside of the host-sided parallelization via MPI (and perhaps OpenMP), the secondly mentioned code path relies on an additional level of parallelization (which is obviously necessary to drive a potentially highly parallel offload device). Also, the additional level of parallelism is not exactly "nested" in the sense that it participates on sharing the same resources as the host-side. In fact, this "artificial benchmark" (cp2k code sample) is modeling a code path as utilized in the secondly mentioned case (offload device).
 
+## 1D Dilated Convolutional Layer
+
+This package contains the optimized kernels for the 1D dilated convolutional layer. 
+The C++ implementation has code for both FP32 and BF16 formats.
+You can run this code on AVX-512 enabled CPUs. Ex. - Cascade Lake or Cooper lake.
+
+### Install instructions
+
+Install PyTorch in an anaconda or virtual environment before installing the package.
+Use GCC version 8.3.0 or higher.
+
+```bash
+conda activate environment              # Activate anaconda or virtual environment containing PyTorch
+
+cd Conv1dOpti-extension/
+python setup.py install                 # Install package
+cd ..
+```
+
+A user can either use run.sh script to run the torch_example.py code,
+or he/she can follow the following commands.
+
+```bash
+export LD_LIBRARY_PATH={LIBXSMM_ROOT/lib}           # Set LD_LIBRARY_PATH
+export OMP_NUM_THREADS=28                           # Set number of threads
+export KMP_AFFINITY=compact,1,0,granularity=fine    # Set KMP affinity
+
+python torch_example.py                             # Run the pytorch example
+```
+
+In the previous example, we compare "nn.Conv1d" layer with our optimized "Conv1dOpti" layer.
+The example shows how "nn.Conv1d" can be replaced with "Conv1dOpti" layer in a neural network
+without requiring any other change.
+The optimized python layer can be imported using "from Conv1dOpti_ext import Conv1dOpti" in python.
+The example checks the accuracy of the results and calculates the computation time of both layers.
+
+### Limitations of the current version
+
+- Keep padding=0 in the options. The current layer doesn't do padding.
+  Explicit padding is needed for the optimized convolutional layer.
+  You can use the example for reference.
+- Optimized convolutional layer code can only run with stride = 1.
+- Similarly, apply the nonlinearity (Ex. ReLU) separately.  
+
+To run code in BFloat16, set enable_BF16 flag to True. BFloat16 code runs only when the parameters of Input width,
+number of filters and input channels to the layer are even number.
+Ex. -  Filters = 16, Channels = 16, Input width = 60000, enable_BF16 = True   BF16 run
+If any of the previous parameter is odd number then code runs in FP32 format.
+
+Keep batch size as multiple of ununtilized cores (Ex. - 28, 56, 84, 128 .... on a 28 core cascade lake)
+for optimal performance with the Conv1dOpti layer.
+Each batch will run on a seperate thread thus performance may go down if some core are not free,
+or batch size is not equal to the number of free cores.
+Keep the batch size as power of 2 with the MKLDNN backend (Conv1d) for optimal performance.
+
 ## Elementwise correctness- and performance tests
 
 This folder contains tests for kernels, which work on each element of a given input separately. Examples for these operations are adding two matrices or vectors, or applying the square root to all elements individually.
@@ -428,4 +483,82 @@ rm -rf opentuner.db
 ```
 
 The tuning script uses the environment variables `LIBXSMM_TCOPY_M` and `LIBXSMM_TCOPY_N`, which are internal to LIBXSMM. These variables are used to adjust certain thresholds in `libxsmm_otrans` or to request a specific tiling-scheme inside of the `libxsmm_otrans_omp` routine.
+
+## Dispatch<a name="dispatch-microbenchmark"></a>
+
+### Microbenchmark
+
+This code sample benchmarks the performance of (1)&#160;the dispatch mechanism, and (2)&#160;the time needed to JIT-generate code for the first time. Both mechanisms are relevant when replacing GEMM calls (see [Call Wrapper](https://libxsmm.readthedocs.io/libxsmm_mm/#call-wrapper) section of the reference documentation), or in any case of calling LIBXSMM's native [GEMM functionality](https://libxsmm.readthedocs.io/libxsmm_mm/).
+
+**Command Line Interface (CLI)**
+
+* Optionally takes the number of dispatches/code-generations (default:&#160;10000).
+* Optionally takes the number of threads (default:&#160;1).
+
+**Measurements (Benchmark)**
+
+* Duration of an empty function call (serves as a reference timing).
+* Duration to find an already generated kernel (cached/non-cached).
+* Duration to JIT-generate a GEMM kernel.
+
+In case of a multi-threaded benchmark, the timings represent a highly contended request (worst case). For thread-scaling, it can be observed that read-only accesses (code dispatch) stay roughly with a constant duration whereas write-accesses (code generation) are serialized and hence the duration scales linearly with the number of threads.
+
+The [Fortran example](https://github.com/libxsmm/libxsmm/blob/master/samples/utilities/dispatch/dispatch.f) (`dispatch.f`) could use `libxsmm_dmmdispatch` (or similar) like the C code (`dispatch.c`) but intentionally shows the lower-level dispatch interface `libxsmm_xmmdispatch` and also omits using the LIBXSMM module. Not using the module confirms: the same task can be achieved by relying only on FORTRAN&#160;77 language level.
+
+### User-Data Dispatch
+
+Further, another [Fortran example](https://github.com/libxsmm/libxsmm/blob/master/samples/utilities/dispatch/dispatch_udt.f) about [user-data dispatch](https://libxsmm.readthedocs.io/libxsmm_aux/#user-data-dispatch) is not exactly a benchmark. Dispatching user-data containing multiple kernels can obviously save multiple singular dispatches. The C interface for dispatching user-data is designed to follow the same flow as the Fortran interface.
+
+## Scratch Memory Allocation (Microbenchmark)
+
+This code sample aims to benchmark the performance of the scratch memory allocation. This facility is a viable option to satisfy the need for temporary memory when using the DNN domain of LIBXSMM (small convolutions).  Although any kind of readable/writable buffer can be bound to a convolution handle, LIBXSMM's `libxsmm_aligned_scratch` features a thread-safe linear allocator mechanism which can help to lower allocation overhead.
+
+## SMM Benchmark
+
+This collection of code samples exercises different memory streaming cases when performing the matrix multiplication *C~m&#8239;x&#8239;n~ = alpha &middot; A~m&#8239;x&#8239;k~ &middot; B~k&#8239;x&#8239;n~ + beta &middot; C~m&#8239;x&#8239;n~*: (1)&#160;streaming the matrices A, B, and C which is usually referred as batched matrix multiplication, (2)&#160;streaming the inputs A and B but accumulating C within cache, (3)&#160;streaming the A and C matrices while B is kept in cache, (4)&#160;streaming the B and C matrices while A is kept in cache, and (4)&#160;not streaming any of the operands but repeating the very same multiplication until the requested number of matrix multiplications has been completed.
+
+Beside of measuring the duration of a test case, the performance is presented in GFLOPS/s. As an alternative metric, the memory bandwidth is given (the artificial "cached" case omits to present the cache-memory bandwidth). The "pseudo-performance" given in FLOPS/cycle is an artificial scoring, it not only uses a non-standard formula for calculating the FLOPS (*2 \* M \* N \* K - M \* N* rather than *2 \* M \* N \* K*) but also relies on (pseudo-)clock cycles:
+
+```
+$ ./specialized.sh 0
+m=32 n=32 k=32 size=87381 memory=2048.0 MB (DP)
+
+Batched (A,B,C)...
+        pseudo-perf.: 10.7 FLOPS/cycle
+        performance: 23.9 GFLOPS/s
+        bandwidth: 11.1 GB/s
+        duration: 239 ms
+Finished
+```
+
+There are two sub collections of samples codes: (1)&#160;a collection of C++ code samples showing either BLAS, Compiler-generated code (inlined code), LIBXSMM/dispatched, LIBXSMM/specialized functions to carry out the multiplication, and (2)&#160;a Fortran sample code showing BLAS versus LIBXSMM including some result validation.
+
+**C/C++ Code Samples: Command Line Interface (CLI)**
+
+* Takes an optional number (1st arg.) to select the streaming-case (0...8)
+* Optionally takes the M, N, and K parameter of the GEMM in this order
+* If only M is supplied, the N and K "inherit" the M-value
+* Example I  (A,B,C): ./specialized.sh 0 16 8 9
+* Example II   (A,B): ./specialized.sh 6 16
+
+**Fortran Code Sample: Command Line Interface (CLI)**
+
+* Optionally takes the M, N, and K parameter of the GEMM in this order
+* Optional problem size (in MB) of the workload; M/N/K must have been supplied
+* Optional total problem size (in MB) implying the number of repeated run
+* If only M is supplied, the N and K are "inheriting" the M-value
+* Shows the performance of each of the streaming cases
+* Example I: ./smm.sh 16 8 9 1024 16384
+* Example II: ./smm.sh 16
+
+## Wrapped DGEMM
+
+This code sample is calling DGEMM and there is no dependency on the LIBXSMM API as it only relies on LAPACK/BLAS interface. Two variants are linked when building the source code: (1) code which is dynamically linked against LAPACK/BLAS, (2) code which is linked using `--wrap=`*symbol* as possible when using a GNU&#160;GCC compatible tool chain. For more information, see the [Call Wrapper](https://libxsmm.readthedocs.io/libxsmm_mm/#call-wrapper) section of the reference documentation.
+
+The same (source-)code will execute in three flavors when running `dgemm-test.sh`: (1) code variant which is dynamically linked against the originally supplied LAPACK/BLAS library, (2) code variant which is linked using the wrapper mechanism of the GNU&#160;GCC tool chain, and (3) the first code but using the LD_PRELOAD mechanism (available under Linux).
+
+**Command Line Interface (CLI)**
+
+* Optionally takes the number of repeated DGEMM calls
+* Shows the performance of the workload (wall time)
 

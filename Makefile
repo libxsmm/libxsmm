@@ -1376,9 +1376,9 @@ $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.m
 $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md
 	@cd $(ROOTDIR)
 	@if [ "$$(command -v git)" ] && [ "$$(git ls-files version.txt)" ]; then \
-		git ls-files $(SPLDIR)/*/README.md | xargs -I{} cat {}; \
+		git ls-files $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(SPLDIR)/utilities/*/README.md | xargs -I {} cat {}; \
 	else \
-		@cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(SPLDIR)/utilities/*/README.md; \
+		cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(SPLDIR)/utilities/*/README.md; \
 	fi \
 	| sed \
 		-e 's/^#/##/' \
