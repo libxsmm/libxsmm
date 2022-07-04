@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="diff.c" />
+    <ClCompile Include="memcmp.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>diff</ProjectName>
+    <ProjectName>memcmp</ProjectName>
     <ProjectGuid>{7E730036-A678-4529-83F3-DFFB68CA278E}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
