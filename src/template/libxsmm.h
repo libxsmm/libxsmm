@@ -241,20 +241,6 @@ LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(const char transa_array[], const cha
    const float beta_array[],       float* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 
-/**
- * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
- * Pointer arguments are used to filter intercepted GEMM calls such that
- * non-NULL values match. Otherwise (NULL) the respective argument is
- * considered a "free value", i.e., every value can match; libxsmmext required.
- */
-LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_datatype precision, const int* flags,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta);
-
-/** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin); libxsmmext required. */
-LIBXSMM_APIEXT void libxsmm_mmbatch_end(void);
-
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_descriptor* descriptor );
 LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opreduce_vecs_idx( const libxsmm_blasint m, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
@@ -390,32 +376,6 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize);
-
-/** Initialize GEMM-handle; allows to better amortize setup overhead. */
-LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
-  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta, int flags, /*unsigned*/int ntasks);
-
-/** Calculate required scratch buffer size needed to perform libxsmm_gemm_task. */
-LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
-
-/** Low-level type-agnostic GEMM suitable for external threads or tasks. */
-LIBXSMM_API void libxsmm_gemm_task(const libxsmm_gemm_handle* handle, void* scratch,
-  const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int ntasks);
-
-/** General dense matrix multiplication (sequential). */
-LIBXSMM_API void libxsmm_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
-
-/** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
-LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,

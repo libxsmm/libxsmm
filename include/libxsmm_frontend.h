@@ -100,7 +100,6 @@
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch_v2))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_USEOMP(LIBXSMM_XGEMM_SYMBOL(TYPE))
 #define LIBXSMM_BLAS_SYMBOL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, KIND))
 #define LIBXSMM_CBLAS_SYMBOL            LIBXSMM_TPREFIX
 
@@ -560,13 +559,6 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype opr
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define libxsmm_blas_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   libxsmm_blas_xgemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
-    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-
-#define libxsmm_dgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_xgemm_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
-    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-#define libxsmm_sgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_xgemm_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */

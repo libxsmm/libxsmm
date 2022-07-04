@@ -61,7 +61,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/autobatch \
+XFILES := \
   $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap \
   $(OUTDIR)/dgemv-blas $(OUTDIR)/dgemv-wrap
 
@@ -81,9 +81,6 @@ ifneq (0,$(XWRAP))
   endif
   DFLAGS += -DWRAP
 endif
-
-$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 
 ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
