@@ -172,12 +172,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
     }
 # endif
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
-    else { /* parallelized */
-      libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
+    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc); /* sequential */
 # if defined(_DEBUG)
     if (NULL != d) {
       libxsmm_matdiff_info diff;
@@ -226,12 +221,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
     }
 # endif
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
-    else { /* parallelized */
-      libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
+    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc); /* sequential */
 # if defined(_DEBUG)
     if (NULL != d) {
       libxsmm_matdiff_info diff;
@@ -334,98 +324,6 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_sgemm_batch(
 }
 
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
-
-
-LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_gemm_blob blob;
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  const int outerpar = omp_get_active_level(), nthreads = (0 == outerpar ? omp_get_max_threads() : omp_get_num_threads());
-#elif defined(_OPENMP)
-  const int outerpar = omp_in_parallel(), nthreads = (0 == outerpar ? omp_get_max_threads() : 1);
-#else
-  const int nthreads = 1;
-#endif
-  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, iprec, oprec, transa, transb,
-    m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_AUTO, nthreads);
-  const size_t scratch_size = libxsmm_gemm_handle_get_scratch_size(handle);
-  void* scratch = NULL;
-  if (NULL != handle && (0 == scratch_size ||
-      NULL != (scratch = libxsmm_scratch_malloc(scratch_size, LIBXSMM_CACHELINE, LIBXSMM_MALLOC_INTERNAL_CALLER))))
-  {
-#if defined(_OPENMP)
-    if (0 == outerpar) { /* enable internal parallelization */
-# if defined(LIBXSMM_EXT_TASKS)
-      if (0 == libxsmm_gemm_tasks)
-# endif
-      {
-#       pragma omp parallel num_threads(nthreads)
-        libxsmm_gemm_task(handle, scratch, a, b, c, omp_get_thread_num(), nthreads);
-      }
-# if defined(LIBXSMM_EXT_TASKS)
-      else { /* tasks requested */
-        const int ntasks = nthreads; /* TODO: apply grain-size */
-#       pragma omp parallel num_threads(nthreads)
-        { /* first thread discovering work will launch all tasks */
-#         pragma omp single nowait /* anyone is good */
-          { int tid; for (tid = 0; tid < ntasks; ++tid) {
-#             pragma omp task untied
-              libxsmm_gemm_task(handle, scratch, a, b, c, tid, ntasks);
-            }
-          }
-        } /* implicit synchronization (barrier) */
-      }
-# endif
-    }
-    else { /* assume external parallelization */
-# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-      const int ntasks = nthreads; /* TODO: apply grain-size */
-      int tid; for (tid = 0; tid < ntasks; ++tid) {
-#       pragma omp task untied
-        libxsmm_gemm_task(handle, scratch, a, b, c, tid, ntasks);
-      }
-      if (0 == libxsmm_nosync) { /* allow to omit synchronization */
-#       pragma omp taskwait
-      }
-# else
-      libxsmm_gemm_task(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
-# endif
-    }
-    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
-      const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
-      const double imbalance = 100.0 * LIBXSMM_DELTA((unsigned int)nthreads, ntasks) / nthreads;
-      static double max_imbalance = 50.0;
-      if (max_imbalance < imbalance) {
-        fprintf(stderr, "LIBXSMM WARNING: XGEMM %.0f%% imbalance (%u of %i workers utilized)!\n",
-          imbalance, ntasks, nthreads);
-        max_imbalance = imbalance;
-      }
-    }
-#else
-    libxsmm_gemm_task(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
-#endif /*defined(_OPENMP)*/
-    libxsmm_free(scratch);
-  }
-  else { /* fallback or error */
-    static int error_once = 0;
-    if (NULL == handle) { /* fallback */
-      if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM WARNING: XGEMM fallback code path triggered!\n");
-      }
-    }
-    else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
-      1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: failed to allocate GEMM-scratch memory!\n");
-    }
-    libxsmm_blas_xgemm(iprec, oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-}
 
 
 LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
@@ -731,53 +629,6 @@ LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(
 
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_xgemm_omp)(const libxsmm_datatype*, const libxsmm_datatype*,
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_xgemm_omp)(const libxsmm_datatype* iprec, const libxsmm_datatype* oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  LIBXSMM_ASSERT(NULL != iprec && NULL != oprec);
-  libxsmm_xgemm_omp(*iprec, *oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_dgemm_omp)(const char*, const char*,
-  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*,
-  const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_dgemm_omp)(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_sgemm_omp)(const char*, const char*,
-  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*,
-  const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_sgemm_omp)(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_gemm_batch_omp)(const libxsmm_datatype*, const libxsmm_datatype*,

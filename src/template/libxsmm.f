@@ -203,8 +203,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
@@ -437,34 +435,6 @@
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
-          END SUBROUTINE
-
-          !> General dense MM; MT via libxsmmext (double-precision).
-          !> Implicit FORTRAN 77 interface: similar to DGEMM.
-          PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_dgemm_omp_")
-            IMPORT :: C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-            REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
-            REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
-          END SUBROUTINE
-
-          !> General dense MM; MT via libxsmmext (single-precision).
-          !> Implicit FORTRAN 77 interface: similar to SGEMM.
-          PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_sgemm_omp_")
-            IMPORT :: C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(C_FLOAT), INTENT(IN)    :: alpha, beta
-            REAL(C_FLOAT), INTENT(IN)    :: a(lda,*), b(ldb,*)
-            REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
           !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.

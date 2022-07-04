@@ -129,7 +129,6 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for a GEMM handle. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[128]; } libxsmm_gemm_blob;
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
@@ -446,14 +445,6 @@ typedef enum libxsmm_gemm_flags {
   /** Marker flag; do not use. */
   LIBXSMM_GEMM_FLAG_INVALID = 524288
 } libxsmm_gemm_flags;
-
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_gemm_handle_flags {
-  LIBXSMM_GEMM_HANDLE_FLAG_AUTO   = 0,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
-} libxsmm_gemm_handle_flags;
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {

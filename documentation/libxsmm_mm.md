@@ -44,14 +44,6 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/,
 
 For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This only re-exposes the underlying GEMM/BLAS implementation, but the interface accepts optional arguments (or NULL pointers in C) where the regular GEMM expects a value. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
-```C
-/** OpenMP parallelized dense matrix multiplication. */
-libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k,
-  &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-```
-
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. These routines will open an internal parallel region and rely on "classic" thread based OpenMP. If these routines are called from inside of a parallel region, the parallelism will be based on tasks (<span>OpenMP&#160;3.0</span>). Please note that all OpenMP-based routines are hosted by the extension library (libxsmmext), which keeps the main library agnostic with respect to a threading runtime.
-
 ### Manual Code Dispatch
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.

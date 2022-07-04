@@ -95,7 +95,7 @@
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid);
+LIBXSMM_API_INTERN void libxsmm_gemm_init(void);
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
@@ -132,20 +132,6 @@ LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemm);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
-
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
-  libxsmm_xcopykernel copy_a, copy_b, copy_i, copy_o;
-  libxsmm_xmmfunction kernel[2];
-  unsigned int m, n, k, lda, ldb, ldc;
-  /* kernel size (tile) */
-  unsigned int km, kn, kk;
-  /* tile size per task */
-  unsigned int dm, dn, dk;
-  unsigned int itypesize, otypesize;
-  /* number of tasks per direction */
-  unsigned int mt, nt, kt;
-  int gemm_flags, flags;
-};
 
 LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
   libxsmm_blasint batchsize, int multithreaded);
