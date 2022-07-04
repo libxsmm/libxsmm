@@ -437,17 +437,17 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
                 const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
                 const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
                 if (v < asize) {
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+# if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                   libxsmm_mmkernel_info kernel_info;
-#endif
+# endif
                   /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
                     (const char*)a + sa * base[u], (const char*)b + sb * base[u], (char*)c + sc * base[u],
                     0 < group_count ? isize : -asize, (int)i, nchunks, itypesize, otypesize,
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+# if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                     EXIT_SUCCESS == libxsmm_get_mmkernel_info(kernel[g].xgemm, &kernel_info) ? kernel_info.flags : 0);
-#else
+# else
                     kflags[g]);
-#endif
+# endif
                 }
               }
             }
@@ -462,17 +462,17 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
                   if (v < asize) {
 #                   pragma omp task
                     {
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+#   if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                       libxsmm_mmkernel_info kernel_info;
-#endif
+#   endif
                       /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
                         (const char*)a + sa * base[u], (const char*)b + sb * base[u], (char*)c + sc * base[u],
                         0 < group_count ? isize : -asize, (int)i, nchunks, itypesize, otypesize,
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+#   if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                         EXIT_SUCCESS == libxsmm_get_mmkernel_info(kernel[g].xgemm, &kernel_info) ? kernel_info.flags : 0);
-#else
+#   else
                         kflags[g]);
-#endif
+#   endif
                     }
                   }
                 }
@@ -487,19 +487,19 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
               if (v < asize) {
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
 #               pragma omp task
-#endif
+# endif
                 {
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+# if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                   libxsmm_mmkernel_info kernel_info;
-#endif
+# endif
                   /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
                     (const char*)a + sa * base[u], (const char*)b + sb * base[u], (char*)c + sc * base[u],
                     0 < group_count ? isize : -asize, (int)i, nchunks, itypesize, otypesize,
-#if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
+# if defined(LIBXSMM_EXT_GEMM_PARGROUPS_INFO)
                     EXIT_SUCCESS == libxsmm_get_mmkernel_info(kernel[g].xgemm, &kernel_info) ? kernel_info.flags : 0);
-#else
+# else
                     kflags[g]);
-#endif
+# endif
                 }
               }
             }
