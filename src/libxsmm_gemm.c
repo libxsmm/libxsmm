@@ -330,28 +330,28 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init()
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
 #if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
   { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-    const char* env_w = getenv("LIBXSMM_GEMM_WRAP");
+    const char *const env_wrap = getenv("LIBXSMM_GEMM_WRAP");
 # if defined(__STATIC) /* with static library the user controls interceptor already */
-    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) /* LIBXSMM_WRAP=0: no promotion */
-      ? (0 < (LIBXSMM_WRAP) ? (LIBXSMM_WRAP + 2) : (LIBXSMM_WRAP - 2)) : atoi(env_w));
+    libxsmm_gemm_wrap = ((NULL == env_wrap || 0 == *env_wrap) /* LIBXSMM_WRAP=0: no promotion */
+      ? (0 < (LIBXSMM_WRAP) ? (LIBXSMM_WRAP + 2) : (LIBXSMM_WRAP - 2)) : atoi(env_wrap));
 # else
-    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+    libxsmm_gemm_wrap = ((NULL == env_wrap || 0 == *env_wrap) ? (LIBXSMM_WRAP) : atoi(env_wrap));
 # endif
   }
 #endif
 #if (0 != LIBXSMM_SYNC)
   { /* initialize locks for the batch interface */
-    const char *const env_locks = getenv("LIBXSMM_GEMM_NLOCKS");
-    const int nlocks = ((NULL == env_locks || 0 == *env_locks) ? -1/*default*/ : atoi(env_locks));
+    const char *const env_nlocks = getenv("LIBXSMM_GEMM_NLOCKS");
+    const int nlocks = ((NULL == env_nlocks || 0 == *env_nlocks) ? -1/*default*/ : atoi(env_nlocks));
     unsigned int i;
     internal_gemm_nlocks = LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MIN(nlocks, LIBXSMM_GEMM_MAXNLOCKS));
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
   { /* determines grain-size of tasks (when available) */
-    const char *const env_s = getenv("LIBXSMM_GEMM_NPARGROUPS");
-    libxsmm_gemm_npargroups = ((NULL == env_s || 0 == *env_s || 0 >= atoi(env_s))
-      ? (LIBXSMM_GEMM_NPARGROUPS) : atoi(env_s));
+    const char *const env_npargroups = getenv("LIBXSMM_GEMM_NPARGROUPS");
+    libxsmm_gemm_npargroups = ((NULL == env_npargroups || 0 == *env_npargroups || 0 >= atoi(env_npargroups))
+      ? (LIBXSMM_GEMM_NPARGROUPS) : atoi(env_npargroups));
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
   /* determine BLAS function-pointers */
