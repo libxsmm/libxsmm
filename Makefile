@@ -992,7 +992,6 @@ DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
 	| grep -v /encoder/ \
-	| grep -v /packed/ \
 	$(NULL)))
 
 .PHONY: samples $(DIRS_SAMPLES)
@@ -1375,7 +1374,12 @@ $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.m
 	@rm $(TMPFILE)
 
 $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md
-	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md \
+	@cd $(ROOTDIR)
+	@if [ "$$(command -v git)" ] && [ "$$(git ls-files version.txt)" ]; then \
+		git ls-files $(SPLDIR)/*/README.md | xargs -I{} cat {}; \
+	else \
+		@cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(SPLDIR)/utilities/*/README.md; \
+	fi \
 	| sed \
 		-e 's/^#/##/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1726,20 +1730,20 @@ $(OUTDIR)/libxsmm.env: $(OUTDIR)/.make $(INCDIR)/libxsmm.h
 
 .PHONY: deb
 deb:
-	@if [ "" != "$$(command -v git)" ]; then \
+	@if [ "$$(command -v git)" ]; then \
 		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
 		VERSION_ARCHIVE_SONAME=$$($(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
 	fi; \
-	if [ "" != "$${VERSION_ARCHIVE}" ] && [ "" != "$${VERSION_ARCHIVE_SONAME}" ]; then \
+	if [ "$${VERSION_ARCHIVE}" ] && [ "$${VERSION_ARCHIVE_SONAME}" ]; then \
 		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
 		ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
 		ARCHIVE_NAME=libxsmm$${VERSION_ARCHIVE_SONAME}; \
 		ARCHIVE_DATE="$$(LANG=C date -R)"; \
-		if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+		if [ "$${ARCHIVE_AUTHOR_NAME}" ] && [ "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
 			ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
 		else \
 			echo "Warning: Please git-config user.name and user.email!"; \
-			if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] || [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+			if [ "$${ARCHIVE_AUTHOR_NAME}" ] || [ "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
 				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME}$${ARCHIVE_AUTHOR_MAIL}"; \
 			fi \
 		fi; \
