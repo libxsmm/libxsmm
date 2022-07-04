@@ -147,19 +147,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   int gemm_flags, flags;
 };
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_mmbatch_item {
-  struct {
-    const void *a, *b;
-    void *c;
-  } value;
-  struct {
-    libxsmm_gemm_descriptor desc;
-    unsigned int count;
-    const char* symbol;
-  } stat;
-  /* TODO: consider padding */
-} libxsmm_mmbatch_item;
-
 LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
   libxsmm_blasint batchsize, int multithreaded);
 
@@ -186,14 +173,6 @@ LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* tr
 
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
-/** auto-batch descriptor (filter). */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
-/** Records a batch of SMMs or is used for batch-reduce. */
-LIBXSMM_APIVAR_PUBLIC(void* libxsmm_mmbatch_array);
-/** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
-LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
-/** Maximum size of the recorded batch. */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mmbatch_size);
 /** Maximum number of parallelized batch-groups. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */

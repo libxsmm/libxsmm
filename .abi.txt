@@ -220,11 +220,7 @@ libxsmm_mhd_typename
 libxsmm_mhd_write
 libxsmm_mmbatch
 libxsmm_mmbatch_
-libxsmm_mmbatch_begin
-libxsmm_mmbatch_begin_
 libxsmm_mmbatch_blas
-libxsmm_mmbatch_end
-libxsmm_mmbatch_end_
 libxsmm_mmbatch_kernel
 libxsmm_offset
 libxsmm_original_dgemm

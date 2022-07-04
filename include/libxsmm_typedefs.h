@@ -455,18 +455,6 @@ typedef enum libxsmm_gemm_handle_flags {
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
 } libxsmm_gemm_handle_flags;
 
-/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
-typedef enum libxsmm_mmbatch_flags {
-  /** Handle recorded batch unsynchronized-parallel. */
-  LIBXSMM_MMBATCH_FLAG_DEFAULT      = LIBXSMM_GEMM_FLAG_INVALID * 0,
-  /** Synchronize among C matrices. */
-  LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  /** Handle recorded batch sequentially. */
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = LIBXSMM_GEMM_FLAG_INVALID * 2,
-  /** Only record a statistic of potential SMMs. */
-  LIBXSMM_MMBATCH_FLAG_STATISTIC    = LIBXSMM_GEMM_FLAG_INVALID * 4
-} libxsmm_mmbatch_flags;
-
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
   /** No prefetching and no prefetch fn. signature. */
