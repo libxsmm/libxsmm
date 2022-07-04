@@ -57,7 +57,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+XFILES := $(OUTDIR)/smm $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
 .PHONY: all
 all: $(XFILES)
@@ -66,10 +66,10 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP)
+$(OUTDIR)/smm: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP)
 	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-.PHONY: $(OUTDIR)/$(OUTNAME)
+.PHONY: $(OUTDIR)/smm
 endif
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(DEPDIR)/include/libxsmm_source.h
