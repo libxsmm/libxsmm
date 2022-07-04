@@ -1,5 +1,5 @@
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = .
 INCDIR = .
 BLDDIR = obj
