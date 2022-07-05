@@ -1066,7 +1066,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
 {
   LIBXSMM_ASSERT(NULL != descriptor);
   if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & descriptor->flags)) {
-    const uintptr_t vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
+    const uintptr_t vw = libxsmm_cpuid_vlen32(libxsmm_target_archid) * 4;
     /* assume that all C-matrices are aligned eventually */
     if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)
 #if 0 /* should fallback in BE */
