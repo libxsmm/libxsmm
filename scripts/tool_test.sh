@@ -191,7 +191,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   rm -f "${REPOROOT}"/.env_??????
   ENVFILE=$(${MKTEMP} "${REPOROOT}/.env_XXXXXX")
   chmod +r "${ENVFILE}"
-  declare -px > "${ENVFILE}"
+  declare -px >"${ENVFILE}"
 
   RESULT=0
   # control log
@@ -296,12 +296,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
-        echo "#!/usr/bin/env bash" > "${TESTSCRIPT}"
-        echo "set -eo pipefail" >> "${TESTSCRIPT}"
-        echo "cd ${REPOREMOTE}" >> "${TESTSCRIPT}"
-        echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >> "${TESTSCRIPT}"
-        if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >> "${TESTSCRIPT}"; fi
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOREMOTE}/scripts/tool_cpuinfo.sh -nc)\"; fi" >> "${TESTSCRIPT}"
+        echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
+        echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
+        echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
+        if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOREMOTE}/scripts/tool_cpuinfo.sh -nc)\"; fi" >>"${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
@@ -309,20 +309,20 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           cp -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u "${LICSDIR}"/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
-          echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >> "${TESTSCRIPT}"
+          echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >>"${TESTSCRIPT}"
         fi
         # setup environment on a per-test basis
         ENVREMOTE=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ -e \"${ENVREMOTE}\" ]; then" >> "${TESTSCRIPT}"
+        echo "if [ -e \"${ENVREMOTE}\" ]; then" >>"${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\" \"${REPOREMOTE}/.env.sh\"" >> "${TESTSCRIPT}"
-          echo "  source \"${REPOREMOTE}/.env.sh\"" >> "${TESTSCRIPT}"
+          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+          echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
         else
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\"" >> "${TESTSCRIPT}"
+          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\"" >>"${TESTSCRIPT}"
         fi
-        echo "fi" >> "${TESTSCRIPT}"
+        echo "fi" >>"${TESTSCRIPT}"
         if [ -e "${CONFIGFILE}" ]; then
-          echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >> "${TESTSCRIPT}"
+          echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e "${SLURMFILE}" ]; then
@@ -331,47 +331,47 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
             ABSDIR=${ABSDIR}/..
           fi
           ABSDIR=$(cd "${ABSDIR}"; pwd -P)
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd $(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/") && make -e \${MAKEJ}" >> "${TESTSCRIPT}"
-          echo "RESULT=\$?" >> "${TESTSCRIPT}"
-          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> "${TESTSCRIPT}"
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd $(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/") && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          echo "RESULT=\$?" >>"${TESTSCRIPT}"
+          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           # control log
-          echo "echo \"--- RUN ${TESTID}\"" >> "${TESTSCRIPT}"
+          echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSDIR}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
-            "${SLURMFILE}" > "${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run"
+            "${SLURMFILE}" >"${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run"
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
-              echo -n "${TOOL_COMMAND} ${RUNREM} ${TOOL_COMMAND_POST}" >> "${TESTSCRIPT}"
+              echo -n "${TOOL_COMMAND} ${RUNREM} ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
               TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "${DIRPAT}") "
               if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "${DIRPAT}")"
               fi
               ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" "${RUNFILE}"
-              echo -n "${RUNREM}" >> "${TESTSCRIPT}"
+              echo -n "${RUNREM}" >>"${TESTSCRIPT}"
             fi
           else
-            echo -n "${RUNREM}" >> "${TESTSCRIPT}"
+            echo -n "${RUNREM}" >>"${TESTSCRIPT}"
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
           then
-            echo " | cat -s | tail -n ${LIMITLOG}" >> "${TESTSCRIPT}"
+            echo " | cat -s | tail -n ${LIMITLOG}" >>"${TESTSCRIPT}"
           elif [ "0" = "${LIMITLOG}" ]; then
-            echo " >/dev/null" >> "${TESTSCRIPT}"
+            echo " >/dev/null" >>"${TESTSCRIPT}"
           else
-            echo >> "${TESTSCRIPT}"
+            echo >>"${TESTSCRIPT}"
           fi
-          echo "rm -f ${RUNREM}" >> "${TESTSCRIPT}"
+          echo "rm -f ${RUNREM}" >>"${TESTSCRIPT}"
         else
-          echo "${TEST}" >> "${TESTSCRIPT}"
+          echo "${TEST}" >>"${TESTSCRIPT}"
         fi
-        echo >> "${TESTSCRIPT}"
+        echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
       elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
         if [ -e "${ENVFILE}" ]; then
@@ -406,7 +406,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     done # CONFIGS
     done # PARTITIONS
     if [ "${TOUCHFILE}" ]; then
-      echo "${JOBID}" > "${TOUCHFILE}"
+      echo "${JOBID}" >"${TOUCHFILE}"
       TOUCHFILE=""
     fi
     done # SLURMFILE

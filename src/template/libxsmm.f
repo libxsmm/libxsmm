@@ -69,21 +69,6 @@
      &        LIBXSMM_GEMM_FLAG_BETA_0),                                &
      &    LIBXSMM_GEMM_FLAG_INVALID = 131072
 
-        !> Flag enumeration which can be IORed.
-        INTEGER(C_INT), PARAMETER ::                                    &
-          ! Handle recorded batch unsynchronized-parallel.
-     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0                         &
-     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
-          ! Synchronize among C matrices.
-     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 1                         &
-     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
-          ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 2                         &
-     &        * LIBXSMM_GEMM_FLAG_INVALID,                              &
-          ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 4                         &
-     &        * LIBXSMM_GEMM_FLAG_INVALID
-
         !> Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_DATATYPE_F64  = 0,                                    &
@@ -218,11 +203,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
@@ -456,34 +437,6 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> General dense MM; MT via libxsmmext (double-precision).
-          !> Implicit FORTRAN 77 interface: similar to DGEMM.
-          PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_dgemm_omp_")
-            IMPORT :: C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-            REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
-            REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
-          END SUBROUTINE
-
-          !> General dense MM; MT via libxsmmext (single-precision).
-          !> Implicit FORTRAN 77 interface: similar to SGEMM.
-          PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_sgemm_omp_")
-            IMPORT :: C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(C_FLOAT), INTENT(IN)    :: alpha, beta
-            REAL(C_FLOAT), INTENT(IN)    :: a(lda,*), b(ldb,*)
-            REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
-          END SUBROUTINE
-
           !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
           !> index_stride==0: pointers to pointers of elements, e.g.,
@@ -581,31 +534,6 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
-          END SUBROUTINE
-
-          !> This function is a no-op unless LIBXSMM is built to intercept GEMM.
-          !> Pointer arguments are used to filter intercepted GEMM calls such that
-          !> non-NULL values match. Otherwise (NULL) the respective argument is
-          !> considered a "free value", i.e., every value can match;
-          !> libxsmmext required.
-          !> Implicit FORTRAN 77 interface:
-          !> INTEGER(4)   :: gemm_precision, flags
-          !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
-          !> REAL(4|8)    :: alpha, beta
-          SUBROUTINE libxsmm_mmbatch_begin(gemm_precision, flags,       &
-     &    m, n, k,  lda, ldb, ldc, alpha, beta) BIND(C)
-            IMPORT :: C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INT), INTENT(IN), VALUE :: gemm_precision
-            INTEGER(C_INT), INTENT(IN) :: flags
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-          END SUBROUTINE
-
-          !> Processes the batch of previously recorded SMMs
-          !> (libxsmm_mmbatch_begin); libxsmmext required.
-          !> Implicit FORTRAN 77 interface: available.
-          SUBROUTINE libxsmm_mmbatch_end() BIND(C)
           END SUBROUTINE
 
           !> Reduces input into output such that the difference is maintained

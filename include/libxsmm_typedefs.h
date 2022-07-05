@@ -114,6 +114,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
   unsigned int u;
 } libxsmm_float_uint;
 
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float16_ushort {
+  libxsmm_float16 f;
+  unsigned short  u;
+} libxsmm_float16_ushort;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_f32 {
   libxsmm_bfloat16 i[2];
   float f;
@@ -133,7 +138,6 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for a GEMM handle. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[128]; } libxsmm_gemm_blob;
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
@@ -452,26 +456,6 @@ typedef enum libxsmm_gemm_flags {
   /** Marker flag; do not use. */
   LIBXSMM_GEMM_FLAG_INVALID = 524288
 } libxsmm_gemm_flags;
-
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_gemm_handle_flags {
-  LIBXSMM_GEMM_HANDLE_FLAG_AUTO   = 0,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
-} libxsmm_gemm_handle_flags;
-
-/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
-typedef enum libxsmm_mmbatch_flags {
-  /** Handle recorded batch unsynchronized-parallel. */
-  LIBXSMM_MMBATCH_FLAG_DEFAULT      = LIBXSMM_GEMM_FLAG_INVALID * 0,
-  /** Synchronize among C matrices. */
-  LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  /** Handle recorded batch sequentially. */
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = LIBXSMM_GEMM_FLAG_INVALID * 2,
-  /** Only record a statistic of potential SMMs. */
-  LIBXSMM_MMBATCH_FLAG_STATISTIC    = LIBXSMM_GEMM_FLAG_INVALID * 4
-} libxsmm_mmbatch_flags;
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {

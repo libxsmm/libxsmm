@@ -387,17 +387,19 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   double error_bound =0.0;
-  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    if(op == RCP_OP || op == RCP_SQRT_OP){
-      error_bound = 0.0027;
-    } else{
+  if ( op == RCP_OP || op == RCP_SQRT_OP ) {
+    error_bound = 0.0027;
+  } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
+              op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
+    if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
       error_bound = 0.0007;
+    } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
+      error_bound = 0.007;
+    } else {
+      error_bound = 0.007;
     }
-  } else if ( ((dtype_in == LIBXSMM_DATATYPE_BF8) || (dtype_out == LIBXSMM_DATATYPE_BF8)) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    /* machine epsilon for BF8 = 0.125, error_bound = 2*epsilon */
-    error_bound = 0.25;
   } else {
-    error_bound = 0.007;
+    error_bound = 0.00001;
   }
 
   if ( norms_out.normf_rel > error_bound ) {
@@ -437,7 +439,7 @@ int main( int argc, char* argv[] ) {
   char opname[256];
   int ret = EXIT_FAILURE;
 
-  if ( argc > 11 ) {
+  if ( argc != 11 && argc != 10 ) {
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }

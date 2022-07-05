@@ -52,3 +52,4 @@ for optimal performance with the Conv1dOpti layer.
 Each batch will run on a seperate thread thus performance may go down if some core are not free,
 or batch size is not equal to the number of free cores.
 Keep the batch size as power of 2 with the MKLDNN backend (Conv1d) for optimal performance.
+

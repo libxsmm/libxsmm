@@ -1566,12 +1566,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int reserved_zmms;
   unsigned int reserved_mask_regs;
   unsigned int use_fp32bf16_cvt_replacement;
-  unsigned int use_fp32bf8_cvt_generic;
   unsigned int dcvt_mask_aux0;
   unsigned int dcvt_mask_aux1;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
-  unsigned int dcvt_zmm_aux2;
   unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
@@ -1734,12 +1732,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
-  unsigned int                      use_fp32bf8_cvt_generic;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
   unsigned int                      dcvt_zmm_aux0;
   unsigned int                      dcvt_zmm_aux1;
-  unsigned int                      dcvt_zmm_aux3;
   unsigned int                      reduce_vreg;
   unsigned int                      n_avail_gpr;
   unsigned int                      gpr_pool[16];
