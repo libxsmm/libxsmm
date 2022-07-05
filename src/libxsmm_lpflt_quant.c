@@ -508,8 +508,6 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
 
     hybrid_in.f = libxsmm_convert_f32_to_f16( in[i] );
 
-    /* DAZ */
-    hybrid_in.u = ( (hybrid_in.u & 0x7c00) == 0x0 ) ? ( hybrid_in.u & 0x8000 ) : hybrid_in.u;
     /* RNE round */
     fixup = (hybrid_in.u >> 8) & 1;
     /* we do not round inf and NaN */
