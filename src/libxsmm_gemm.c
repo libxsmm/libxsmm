@@ -29,6 +29,9 @@
 #if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
 # define LIBXSMM_GEMM_CHECK_EPSILON 1E-16
 #endif
+#if !defined(LIBXSMM_GEMM_TASKGRAIN)
+# define LIBXSMM_GEMM_TASKGRAIN 128
+#endif
 
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK
@@ -73,6 +76,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_l
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_mmbatch_size);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_npargroups);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
 
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
@@ -356,6 +360,19 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init()
     const char *const env_npargroups = getenv("LIBXSMM_GEMM_NPARGROUPS");
     libxsmm_gemm_npargroups = ((NULL == env_npargroups || 0 == *env_npargroups || 0 >= atoi(env_npargroups))
       ? (LIBXSMM_GEMM_NPARGROUPS) : atoi(env_npargroups));
+  }
+  { /* determines if OpenMP tasks are used (when available) */
+    const char *const env_tasks = getenv("LIBXSMM_GEMM_TASKS");
+    const int gemm_tasks = ((NULL == env_tasks || 0 == *env_tasks) ? 0/*disabled*/ : atoi(env_tasks));
+    libxsmm_gemm_tasks = (0 <= gemm_tasks ? LIBXSMM_ABS(gemm_tasks) : 1/*enabled*/);
+  }
+  { /* determines grain-size of tasks (when available) */
+    const char *const env_taskgrain = getenv("LIBXSMM_GEMM_TASKGRAIN");
+    const int gemm_taskgrain = ((NULL == env_taskgrain || 0 == *env_taskgrain || 0 >= atoi(env_taskgrain))
+      ? (LIBXSMM_GEMM_TASKGRAIN) : atoi(env_taskgrain));
+    /* adjust grain-size or scale beyond the number of threads */
+    libxsmm_gemm_taskgrain = LIBXSMM_MAX(0 < libxsmm_gemm_tasks
+      ? (gemm_taskgrain / libxsmm_gemm_tasks) : gemm_taskgrain, 1);
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
   /* determine BLAS function-pointers */
