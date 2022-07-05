@@ -211,6 +211,8 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VUNPCKLPS:
     case LIBXSMM_X86_INSTR_VUNPCKHPD:
     case LIBXSMM_X86_INSTR_VUNPCKHPS:
+    case LIBXSMM_X86_INSTR_VPUNPCKLBW:
+    case LIBXSMM_X86_INSTR_VPUNPCKHBW:
     case LIBXSMM_X86_INSTR_VPUNPCKLWD:
     case LIBXSMM_X86_INSTR_VPUNPCKHWD:
     case LIBXSMM_X86_INSTR_VPUNPCKLDQ:
