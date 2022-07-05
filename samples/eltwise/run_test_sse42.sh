@@ -4,7 +4,7 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 export LIBXSMM_TARGET=wsm
-cd ${HERE} && cat <<EOM | ${EXEC} "$@"
+cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_trans_08b_eqld.sh
 ./kernel_test/unary_trans_08b_gtld.sh
 ./kernel_test/unary_trans_16b_eqld.sh

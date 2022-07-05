@@ -61,7 +61,6 @@ libxsmm_dgemm_
 libxsmm_dgemm_batch
 libxsmm_dgemm_batch_omp
 libxsmm_dgemm_descriptor_init
-libxsmm_dgemm_omp_
 libxsmm_diff
 libxsmm_diff_16
 libxsmm_diff_32
@@ -110,12 +109,9 @@ libxsmm_gemm_descriptor_init2
 libxsmm_gemm_descriptor_init3
 libxsmm_gemm_dprint
 libxsmm_gemm_dprint2
-libxsmm_gemm_handle_get_scratch_size
-libxsmm_gemm_handle_init
 libxsmm_gemm_internal_set_batchflag
 libxsmm_gemm_print
 libxsmm_gemm_print2
-libxsmm_gemm_task
 libxsmm_gemm_xprint
 libxsmm_generator_gemm_directasm
 libxsmm_generator_gemm_inlineasm
@@ -220,11 +216,7 @@ libxsmm_mhd_typename
 libxsmm_mhd_write
 libxsmm_mmbatch
 libxsmm_mmbatch_
-libxsmm_mmbatch_begin
-libxsmm_mmbatch_begin_
 libxsmm_mmbatch_blas
-libxsmm_mmbatch_end
-libxsmm_mmbatch_end_
 libxsmm_mmbatch_kernel
 libxsmm_offset
 libxsmm_original_dgemm
@@ -323,7 +315,6 @@ libxsmm_sgemm_
 libxsmm_sgemm_batch
 libxsmm_sgemm_batch_omp
 libxsmm_sgemm_descriptor_init
-libxsmm_sgemm_omp_
 libxsmm_shuffle
 libxsmm_shuffle_
 libxsmm_sink
@@ -355,9 +346,6 @@ libxsmm_xdiff_
 libxsmm_xdispatch
 libxsmm_xdispatch_
 libxsmm_xfree
-libxsmm_xgemm
-libxsmm_xgemm_omp
-libxsmm_xgemm_omp_
 libxsmm_xhash_
 libxsmm_xmalloc
 libxsmm_xmmcall_

@@ -1099,7 +1099,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
-      libxsmm_gemm_init(libxsmm_target_archid);
+      libxsmm_gemm_init();
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -1852,8 +1852,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
   LIBXSMM_MEMZERO127(&generated_code);
-  generated_code.generated_code = jit_buffer;
-  generated_code.buffer_size = sizeof(jit_buffer);
+  if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
+    generated_code.generated_code = jit_buffer;
+    generated_code.buffer_size = sizeof(jit_buffer);
+  }
+  else {
+    void *const buffer = malloc(LIBXSMM_MALLOC_LIMIT);
+    generated_code.generated_code = (NULL != buffer ? ((char*)buffer) : jit_buffer);
+    generated_code.buffer_size = LIBXSMM_MALLOC_LIMIT;
+  }
   /* setup code generation */
   generated_code.arch = libxsmm_target_archid;
   generated_code.code_type = 2;
@@ -2240,7 +2247,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     const size_t data_size = generated_code.data_size;
     const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-    LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
@@ -2304,6 +2310,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   }
   else {
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
+  }
+  if (jit_buffer != generated_code.generated_code) {
+    free(generated_code.generated_code);
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);

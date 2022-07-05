@@ -44,14 +44,6 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/,
 
 For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This only re-exposes the underlying GEMM/BLAS implementation, but the interface accepts optional arguments (or NULL pointers in C) where the regular GEMM expects a value. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
-```C
-/** OpenMP parallelized dense matrix multiplication. */
-libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k,
-  &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-```
-
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. These routines will open an internal parallel region and rely on "classic" thread based OpenMP. If these routines are called from inside of a parallel region, the parallelism will be based on tasks (<span>OpenMP&#160;3.0</span>). Please note that all OpenMP-based routines are hosted by the extension library (libxsmmext), which keeps the main library agnostic with respect to a threading runtime.
-
 ### Manual Code Dispatch
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.
@@ -189,18 +181,7 @@ It can be desired to dispatch user-defined data, i.e., to query a value based on
 
 Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: <span>(1)&#160;static</span> linkage, and <span>(2)&#160;dynamic</span> linkage of the application against the original BLAS library. When calls are intercepted, one can select a sequential (default) or an OpenMP-parallelized implementation (`make WRAP=2`).
 
-```bash
-LIBXSMM STATISTIC: 1000 multiplications
-dgemm(trans=NN mnk=32,32,21 ldx=32,21,32 a,b=1,0): 8% [main$omp$1]
-dgemm(trans=NN mnk=32,21,32 ldx=32,32,32 a,b=1,0): 8% [main$omp$1]
-dgemm(trans=NN mnk=10,21,32 ldx=10,32,10 a,b=1,0): 5% [main$omp$1]
-dgemm(trans=NN mnk=32,10,32 ldx=32,32,32 a,b=1,0): 5% [main$omp$1]
-dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
-```
-
-Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBXSMM_VERBOSE=4 (or higher). The histogram displays the call sites (debug symbol name) of all intercepted GEMMs ([example](https://github.com/libxsmm/libxsmm/blob/master/samples/utilities/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With <span>level&#160;5</span> (or higher), the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic` even when linked statically) in order to display the symbol names of where the GEMMs originated (call site).
-
-**Note**: Intercepting GEMM calls is low effort but implies overhead, which can be relatively high for small-sized problems. LIBXSMM's native programming interface has lower overhead and allows to amortize this overhead when using the same multiplication kernel in a consecutive fashion along with sophisticated data prefetch.
+**Note**: Intercepting GEMM calls is low effort but implies overhead, which can be relatively high for small-sized problems. LIBXSMM's native programming interface has lower overhead and can amortize overhead when using the same multiplication kernel in a consecutive fashion (and employ sophisticated data prefetch on top).
 
 #### Static Linkage
 
