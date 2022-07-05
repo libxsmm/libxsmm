@@ -1099,7 +1099,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
-      libxsmm_gemm_init(libxsmm_target_archid);
+      libxsmm_gemm_init();
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);

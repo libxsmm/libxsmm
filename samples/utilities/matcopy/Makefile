@@ -9,11 +9,11 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
-# Fortran code here does not allow for PEDANTIC=2
-#override PEDANTIC = 1
-BLAS = 0
-OMP = 0
+OMP = 1
 SYM = 1
+
+# explore AVX/ARCH=native
+SSE = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -56,8 +56,16 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) #$(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(OBJECTS) $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+ifneq (,$(strip $(FC)))
+ifneq (0,$(shell echo "$$((3>$(XSMM_GCC) || 40600<=$(FC_VERSION_NUM)))"))
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
+	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(EXTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)
+endif
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)
+endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
