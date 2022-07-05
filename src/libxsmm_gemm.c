@@ -23,9 +23,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) && 0
+#if !defined(LIBXSMM_GEMM_BATCHREDUCE) && 0
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
+#if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
+# define LIBXSMM_GEMM_CHECK_EPSILON 1E-16
+#endif
+
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK
 #else
@@ -658,7 +662,36 @@ LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+#if !defined(NDEBUG)
+  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+  double check = 0;
+  void* d = NULL;
+  if (NULL != env_check) {
+    const size_t size = sizeof(double) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
+    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
+    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
+    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+  }
+#endif
   LIBXSMM_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#if !defined(NDEBUG)
+  if (NULL != d) {
+    libxsmm_matdiff_info diff;
+    libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F64, *m, *n, d, c, ldc, ldc)) {
+      const double epsilon = libxsmm_matdiff_epsilon(&diff);
+      if (LIBXSMM_ABS(check) < epsilon) {
+        LIBXSMM_STDIO_ACQUIRE();
+        fprintf(stderr, "LIBXSMM: ");
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F64, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " => %g ERROR\n", epsilon);
+        LIBXSMM_STDIO_RELEASE();
+      }
+    }
+    libxsmm_free(d);
+  }
+#endif
 }
 
 
@@ -668,7 +701,36 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+#if !defined(NDEBUG)
+  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+  double check = 0;
+  void* d = NULL;
+  if (NULL != env_check) {
+    const size_t size = sizeof(float) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
+    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
+    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
+    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+  }
+#endif
   LIBXSMM_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#if !defined(NDEBUG)
+  if (NULL != d) {
+    libxsmm_matdiff_info diff;
+    libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, *m, *n, d, c, ldc, ldc)) {
+      const double epsilon = libxsmm_matdiff_epsilon(&diff);
+      if (LIBXSMM_ABS(check) < epsilon) {
+        LIBXSMM_STDIO_ACQUIRE();
+        fprintf(stderr, "LIBXSMM: ");
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F32, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " => %g ERROR\n", epsilon);
+        LIBXSMM_STDIO_RELEASE();
+      }
+    }
+    libxsmm_free(d);
+  }
+#endif
 }
 
 
