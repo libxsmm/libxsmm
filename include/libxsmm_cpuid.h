@@ -85,5 +85,12 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id);
  */
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
 
+/**
+ * SIMD vector length (VLEN) measured in Bytes.
+ * Do not use libxsmm_cpuid() to match the current CPU!
+ * Use libxsmm_get_target_archid() instead.
+ */
+#define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
+
 #endif /*LIBXSMM_CPUID_H*/
 
