@@ -3,6 +3,9 @@
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
 fi
+if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
+  exit 0;
+fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
   exit 0;
 fi
