@@ -157,8 +157,6 @@ LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* tr
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
-
 /** Maximum number of parallelized batch-groups. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */

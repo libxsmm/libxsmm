@@ -31,7 +31,8 @@ void libxsmm_generator_gemm_apply_relu_to_vreg( libxsmm_generated_code*         
     const unsigned int                 store_bitmask_offset,
     const unsigned int                 is_32_bit_relu,
     const unsigned int                 aux_gpr,
-    const unsigned int                 aux_vreg);
+    const unsigned int                 aux_vreg,
+    const unsigned int                 use_masked_cmp);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_sigmoid_to_vreg_from_scratch( libxsmm_generated_code*             io_generated_code,

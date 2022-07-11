@@ -23,9 +23,16 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) && 0
+#if !defined(LIBXSMM_GEMM_BATCHREDUCE) && 0
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
+#if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
+# define LIBXSMM_GEMM_CHECK_EPSILON 1E-16
+#endif
+#if !defined(LIBXSMM_GEMM_TASKGRAIN)
+# define LIBXSMM_GEMM_TASKGRAIN 128
+#endif
+
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK
 #else
@@ -69,6 +76,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_l
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_mmbatch_size);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_npargroups);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
+LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
 
 LIBXSMM_APIVAR_PRIVATE_DEF(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
@@ -352,6 +360,19 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init()
     const char *const env_npargroups = getenv("LIBXSMM_GEMM_NPARGROUPS");
     libxsmm_gemm_npargroups = ((NULL == env_npargroups || 0 == *env_npargroups || 0 >= atoi(env_npargroups))
       ? (LIBXSMM_GEMM_NPARGROUPS) : atoi(env_npargroups));
+  }
+  { /* determines if OpenMP tasks are used (when available) */
+    const char *const env_tasks = getenv("LIBXSMM_GEMM_TASKS");
+    const int gemm_tasks = ((NULL == env_tasks || 0 == *env_tasks) ? 0/*disabled*/ : atoi(env_tasks));
+    libxsmm_gemm_tasks = (0 <= gemm_tasks ? LIBXSMM_ABS(gemm_tasks) : 1/*enabled*/);
+  }
+  { /* determines grain-size of tasks (when available) */
+    const char *const env_taskgrain = getenv("LIBXSMM_GEMM_TASKGRAIN");
+    const int gemm_taskgrain = ((NULL == env_taskgrain || 0 == *env_taskgrain || 0 >= atoi(env_taskgrain))
+      ? (LIBXSMM_GEMM_TASKGRAIN) : atoi(env_taskgrain));
+    /* adjust grain-size or scale beyond the number of threads */
+    libxsmm_gemm_taskgrain = LIBXSMM_MAX(0 < libxsmm_gemm_tasks
+      ? (gemm_taskgrain / libxsmm_gemm_tasks) : gemm_taskgrain, 1);
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
   /* determine BLAS function-pointers */
@@ -658,7 +679,36 @@ LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+#if !defined(NDEBUG)
+  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+  double check = 0;
+  void* d = NULL;
+  if (NULL != env_check) {
+    const size_t size = sizeof(double) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
+    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
+    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
+    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+  }
+#endif
   LIBXSMM_XGEMM(double, double, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#if !defined(NDEBUG)
+  if (NULL != d) {
+    libxsmm_matdiff_info diff;
+    libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F64, *m, *n, d, c, ldc, ldc)) {
+      const double epsilon = libxsmm_matdiff_epsilon(&diff);
+      if (LIBXSMM_ABS(check) < epsilon) {
+        LIBXSMM_STDIO_ACQUIRE();
+        fprintf(stderr, "LIBXSMM: ");
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F64, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " => %g ERROR\n", epsilon);
+        LIBXSMM_STDIO_RELEASE();
+      }
+    }
+    libxsmm_free(d);
+  }
+#endif
 }
 
 
@@ -668,7 +718,36 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+#if !defined(NDEBUG)
+  const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+  double check = 0;
+  void* d = NULL;
+  if (NULL != env_check) {
+    const size_t size = sizeof(float) * LIBXSMM_MAX(NULL != ldc ? *ldc : *m, 1) * (*n);
+    check = atof(env_check) * LIBXSMM_GEMM_CHECK_EPSILON;
+    d = LIBXSMM_NEQ(0, check) ? libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER) : NULL;
+    if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+  }
+#endif
   LIBXSMM_XGEMM(float, float, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#if !defined(NDEBUG)
+  if (NULL != d) {
+    libxsmm_matdiff_info diff;
+    libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+    if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, *m, *n, d, c, ldc, ldc)) {
+      const double epsilon = libxsmm_matdiff_epsilon(&diff);
+      if (LIBXSMM_ABS(check) < epsilon) {
+        LIBXSMM_STDIO_ACQUIRE();
+        fprintf(stderr, "LIBXSMM: ");
+        libxsmm_gemm_print(stderr, LIBXSMM_DATATYPE_F32, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " => %g ERROR\n", epsilon);
+        LIBXSMM_STDIO_RELEASE();
+      }
+    }
+    libxsmm_free(d);
+  }
+#endif
 }
 
 
@@ -987,7 +1066,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
 {
   LIBXSMM_ASSERT(NULL != descriptor);
   if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & descriptor->flags)) {
-    const uintptr_t vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
+    const uintptr_t vw = libxsmm_cpuid_vlen32(libxsmm_target_archid) * 4;
     /* assume that all C-matrices are aligned eventually */
     if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)
 #if 0 /* should fallback in BE */
