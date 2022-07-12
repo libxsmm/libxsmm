@@ -1604,6 +1604,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in1,
             (io_generated_code->arch > LIBXSMM_X86_AVX512) ? 'y' : 'x',
             i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr)) ? _i_mask_reg : 0, 0 );
+
           libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
         } else if (LIBXSMM_DATATYPE_BF8 == libxsmm_meltw_getenum_precision( i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) /*LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )*/) {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
@@ -1635,6 +1636,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             (im * l_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
             (io_generated_code->arch > LIBXSMM_X86_AVX512) ? 'y' : 'x',
             i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
+
           libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2 );
         } else if (LIBXSMM_DATATYPE_BF8 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT) /*LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )*/) {
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,

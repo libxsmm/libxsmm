@@ -425,15 +425,15 @@ int main( int argc, char* argv[] ) {
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing binary (BF16, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
     res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
-    printf("Testing binary (BF8, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing binary (F32, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
     res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing binary (BF16, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
     res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
+    printf("Testing binary (BF8, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
+    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing binary (F32, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
     res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
