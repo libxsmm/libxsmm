@@ -1,6 +1,4 @@
 .kernel_test_??????.slurm
-bf16sgemm
 kernel
 kernel_fused
 kernel_parallel
-xgemm

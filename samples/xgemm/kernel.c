@@ -337,7 +337,8 @@ double get_random_pos_p5_num() {
 void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint cols_rows ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
-  libxsmm_bfloat16* bf_data = (libxsmm_bfloat16*) data;
+  libxsmm_bfloat16* bf16_data = (libxsmm_bfloat16*) data;
+  libxsmm_bfloat8* bf8_data = (libxsmm_bfloat8*) data;
   libxsmm_blasint l_r, l_i, l_j;
   if (cols_rows == 0) {
     for (l_j = 0; l_j < n; l_j++) {
@@ -350,9 +351,18 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
             f_data[(l_r * ld * n) + (l_j * ld) + l_i] *= (float)column_coeff;
           } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
             libxsmm_bfloat16_f32 tmp /*= { 0 }*/;
-            tmp.i[1] = bf_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp.i[0] = 0;
+            tmp.i[1] = bf16_data[(l_r * ld * n) + (l_j * ld) + l_i];
             tmp.f *= (float)column_coeff;
-            bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+            bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+          } else if ( dtype == LIBXSMM_DATATYPE_BF8 ) {
+            libxsmm_bfloat8_f16 tmp /*= { 0 }*/;
+            float tmp_f = 0.0f;
+            tmp.i[0] = 0;
+            tmp.i[1] = bf8_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp_f = libxsmm_convert_f16_to_f32( tmp.hf );
+            tmp_f *= (float)column_coeff;
+            libxsmm_rne_convert_fp32_bf8( &tmp_f, &(bf8_data[(l_r * ld * n) + (l_j * ld) + l_i]), 1 );
           } else {
           }
         }
@@ -369,9 +379,18 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
             f_data[(l_r * ld * n) + (l_j * ld) + l_i] *= (float)row_coeff;
           } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
             libxsmm_bfloat16_f32 tmp /*= { 0 }*/;
-            tmp.i[1] = bf_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp.i[0] = 0;
+            tmp.i[1] = bf16_data[(l_r * ld * n) + (l_j * ld) + l_i];
             tmp.f *= (float)row_coeff;
-            bf_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+            bf16_data[(l_r * ld * n) + (l_j * ld) + l_i] = tmp.i[1];
+          } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
+            libxsmm_bfloat8_f16 tmp /*= { 0 }*/;
+            float tmp_f = 0.0f;
+            tmp.i[0] = 0;
+            tmp.i[1] = bf8_data[(l_r * ld * n) + (l_j * ld) + l_i];
+            tmp_f = libxsmm_convert_f16_to_f32( tmp.hf );
+            tmp_f *= (float)row_coeff;
+            libxsmm_rne_convert_fp32_bf8( &tmp_f, &(bf8_data[(l_r * ld * n) + (l_j * ld) + l_i]), 1 );
           } else {
           }
         }
