@@ -487,7 +487,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     libxsmm_bfloat8* h_c   = (libxsmm_bfloat8*)l_c_gold;
     libxsmm_bfloat8* tmp_c = (libxsmm_bfloat8*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat8), 64);
     /* Copy to tmp_c */
-    memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat16));
+    memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat8));
     /* convert to vnni  */
     for (l_i = 0; l_i < n/4; l_i++) {
       for (l_j = 0; l_j < m; l_j++) {
@@ -1757,9 +1757,9 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
-  if (l_gemm_def.out_type != LIBXSMM_DATATYPE_BF16) {
+  if ((l_gemm_def.out_type != LIBXSMM_DATATYPE_BF16) && (l_gemm_def.out_type != LIBXSMM_DATATYPE_BF8)) {
     if (cvt_C_to_vnni > 0) {
-      fprintf(stderr, "ERROR: requested C to be converted to vnni but output prec is not BF16!\n");
+      fprintf(stderr, "ERROR: requested C to be converted to vnni but output prec is not BF16 or BF8!\n");
       exit(EXIT_FAILURE);
     }
   }
@@ -1806,7 +1806,7 @@ int main(int argc, char* argv []) {
       }
       if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
 
-      while ((cvt_C_to_vnni > 0) && (l_keep_going > 0) && (l_n % 2 != 0) ) {
+      while ((cvt_C_to_vnni > 0) && (l_keep_going > 0) && (((l_n % 2 != 0) && (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16)) || ((l_n % 4 != 0) && (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8)))  ) {
         if ( fgets( l_line, 512, l_file_handle) == NULL ) {
           l_keep_going = 0;
           break;
@@ -1910,7 +1910,11 @@ int main(int argc, char* argv []) {
           ref_matmul( &l_gemm_def, l_a, l_b, l_c_gold );
         }
         if (cvt_C_to_vnni > 0) {
-          convert_output_to_vnni2(&l_gemm_def, l_c_gold);
+          if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
+            convert_output_to_vnni2(&l_gemm_def, l_c_gold);
+          } else {
+            convert_output_to_vnni4(&l_gemm_def, l_c_gold);
+          }
         }
       }
 
@@ -1923,7 +1927,11 @@ int main(int argc, char* argv []) {
 #endif
       {
         if (cvt_C_to_vnni > 0) {
-          error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );
+          if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
+            error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );
+          } else {
+            error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
+          }
         } else {
           error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n );
         }
