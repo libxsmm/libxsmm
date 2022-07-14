@@ -70,7 +70,7 @@ float fsigmoid(float x) {
 void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
-    memset(out_mask, 0, ldo_mask*N);
+    memset(out_mask, 0, (size_t)ldo_mask*N);
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -93,7 +93,7 @@ void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
 void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
-    memset(out_mask, 0, ldo_mask*N);
+    memset(out_mask, 0, (size_t)ldo_mask*N);
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0x0 : (1 << (i%8)) );
@@ -1868,7 +1868,7 @@ int main(int argc, char* argv []) {
         l_relu_bitmask      = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
         l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
         init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, mask_ld, l_n, 0 );
-        memcpy(l_relu_bitmask_gold, l_relu_bitmask, mask_ld * l_n * sizeof(char));
+        memcpy(l_relu_bitmask_gold, l_relu_bitmask, sizeof(char) * mask_ld * l_n);
         fusion_arguments.relu_bitmask = l_relu_bitmask;
         ref_fusion_arguments.relu_bitmask = l_relu_bitmask_gold;
       }
@@ -1985,7 +1985,6 @@ int main(int argc, char* argv []) {
         } else {
           printf("%i %i %i %i %i %i %i %i %i %s %f %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9), error );
         }
-        printf("CL reproducer is : srun ./kernel_fused %d %d %d %d %d %d %g %g %d %d %d %d %s %s %s %d %d %d %d %d %d %d\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b, "nopf", argv[8], argv[9], l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop, cvt_C_to_vnni);
       } else {
         printf("%i %i %i %i %i %i %i %i %i %s %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_br, l_br_type, l_br_unroll, l_precision, ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
       }
@@ -2011,9 +2010,15 @@ int main(int argc, char* argv []) {
 
         assert(NULL != prefetch && NULL != br_type);
         l_runtime_libxsmm /= (double)l_n_threads;
+#if defined(USE_GEMM_EXT_FRONTEND)
+        printf("Command line:\n%s %i %i %i %i %i %i %f %f %i %i %i %i %s %s %s %i %i %i %i %i %i %i\n\n", argv[0],
+          l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b,
+          prefetch, l_precision, br_type, l_br, l_br_unroll, l_reps, l_tc_config, l_binary_postop, l_unary_postop, cvt_C_to_vnni);
+#else
         printf("Command line:\n%s %i %i %i %i %i %i %f %f %i %i %i %i %s %s %s %i %i %i %i\n\n", argv[0],
           l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_aligned_a, l_aligned_c, l_trans_a, l_trans_b,
           prefetch, l_precision, br_type, l_br, l_br_unroll, l_reps, l_tc_config);
+#endif
       }
       printf("%fs for LIBXSMM\n", l_runtime_libxsmm);
       printf("%f GFLOPS\n", ((double)((double)l_reps * (double)l_m * (double)l_n * (double)l_k * (double)l_br * (double)l_n_threads) * 2.0) / (l_runtime_libxsmm * 1.0e9));
