@@ -2056,9 +2056,31 @@ int main(int argc, char* argv []) {
   }
 
   if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-    if ( l_total_max_error >= 0.005 ) {
+    if ( l_total_max_error >= 0.000005 ) {
       if (l_gemm_def.unary_postop == SIGMOID) {
         if ( l_total_max_error >= 0.007 ) {
+          return EXIT_FAILURE;
+        } else {
+          return EXIT_SUCCESS;
+        }
+      } else {
+        return EXIT_FAILURE;
+      }
+    } else {
+      if (l_gemm_def.unary_postop == RELU_BITMASK) {
+        if ( l_total_max_error_bitmask >= 0.005 ) {
+          return EXIT_FAILURE;
+        } else {
+          return EXIT_SUCCESS;
+        }
+      } else {
+        return EXIT_SUCCESS;
+      }
+    }
+  } else if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8 ) {
+    if ( l_total_max_error >= 0.000005 ) {
+      if (l_gemm_def.unary_postop == SIGMOID) {
+        if ( l_total_max_error >= 0.002 ) {
           return EXIT_FAILURE;
         } else {
           return EXIT_SUCCESS;
