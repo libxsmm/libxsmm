@@ -2100,13 +2100,13 @@ int main(int argc, char* argv []) {
       if (l_gemm_def.unary_postop == SIGMOID) {
         if ( l_total_max_error >= 0.008 ) {
           if (l_gemm_def.binary_postop == COLBIAS_ADD) {
+             return EXIT_FAILURE;
+          } else {
             if ( l_total_max_error >= 0.012 ) {
               return EXIT_FAILURE;
             } else {
               return EXIT_SUCCESS;
             }
-          } else {
-            return EXIT_FAILURE;
           }
         } else {
           return EXIT_SUCCESS;
