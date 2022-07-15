@@ -923,37 +923,55 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
   }
 
   /* Run matmul */
-  if ( (i_gemm_def->unary_postop == SIGMOID) &&
-       (i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16) ) {
-    char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
-    i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
-    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
-    ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
-    apply_sigmoid(i_gemm_def, l_c_tmp);
-    libxsmm_rne_convert_fp32_bf16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
-    i_gemm_def->out_type = LIBXSMM_DATATYPE_BF16;
-    libxsmm_free(l_c_tmp);
-  } else if ( (i_gemm_def->unary_postop == SIGMOID) &&
-              (i_gemm_def->out_type == LIBXSMM_DATATYPE_BF8) ) {
-    char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
-    i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
-    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
-    ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
-    apply_sigmoid(i_gemm_def, l_c_tmp);
-    libxsmm_rne_convert_fp32_bf8( (float*)l_c_tmp, (libxsmm_bfloat8*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
-    i_gemm_def->out_type = LIBXSMM_DATATYPE_BF8;
-    libxsmm_free(l_c_tmp);
+  if ( i_gemm_def->unary_postop == SIGMOID ) {
+    if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_sigmoid(i_gemm_def, l_c_tmp);
+      libxsmm_rne_convert_fp32_bf16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_BF16;
+      libxsmm_free(l_c_tmp);
+    } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF8 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_sigmoid(i_gemm_def, l_c_tmp);
+      libxsmm_rne_convert_fp32_bf8( (float*)l_c_tmp, (libxsmm_bfloat8*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_BF8;
+      libxsmm_free(l_c_tmp);
+    } else {
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
+      apply_sigmoid(i_gemm_def, l_c_gold);
+    }
+  } else if ( (i_gemm_def->unary_postop == RELU_NOBITMASK) || (i_gemm_def->unary_postop == RELU_BITMASK) ) {
+    unsigned int l_use_bitmask = ( i_gemm_def->unary_postop == RELU_NOBITMASK ) ? 0 : 1;
+    if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_relu(i_gemm_def, l_c_tmp, ref_fusion_arguments->relu_bitmask, l_use_bitmask);
+      libxsmm_rne_convert_fp32_bf16( (float*)l_c_tmp, (libxsmm_bfloat16*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_BF16;
+      libxsmm_free(l_c_tmp);
+    } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF8 ) {
+      char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * sizeof(float), 64);
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_F32;
+      libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)l_c_gold, (float*)l_c_tmp, i_gemm_def->ldc*i_gemm_def->n );
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
+      apply_relu(i_gemm_def, l_c_tmp, ref_fusion_arguments->relu_bitmask, l_use_bitmask);
+      libxsmm_rne_convert_fp32_bf8( (float*)l_c_tmp, (libxsmm_bfloat8*)l_c_gold, i_gemm_def->ldc*i_gemm_def->n );
+      i_gemm_def->out_type = LIBXSMM_DATATYPE_BF8;
+      libxsmm_free(l_c_tmp);
+    } else {
+      ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
+      apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, l_use_bitmask);
+    }
   } else {
     ref_matmul( i_gemm_def, l_a, l_b, l_c_gold );
-  }
-
-  /* Perform unary postop if requested */
-  if (i_gemm_def->unary_postop == RELU_NOBITMASK) {
-    apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, 0);
-  } else if (i_gemm_def->unary_postop == RELU_BITMASK) {
-    apply_relu(i_gemm_def, l_c_gold, ref_fusion_arguments->relu_bitmask, 1);
-  } else if ((i_gemm_def->unary_postop == SIGMOID) && (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32)) {
-    apply_sigmoid(i_gemm_def, l_c_gold);
   }
 }
 
