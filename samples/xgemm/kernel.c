@@ -2098,7 +2098,7 @@ int main(int argc, char* argv []) {
   } else if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8 ) {
     if ( l_total_max_error >= 0.005 ) {
       if (l_gemm_def.unary_postop == SIGMOID) {
-        if ( l_total_max_error >= 0.008 ) {
+        if ( l_total_max_error >= 0.009 ) {
           if (l_gemm_def.binary_postop == COLBIAS_ADD) {
              return EXIT_FAILURE;
           } else {
