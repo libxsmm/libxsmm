@@ -2080,8 +2080,16 @@ int main(int argc, char* argv []) {
   } else if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8 ) {
     if ( l_total_max_error >= 0.005 ) {
       if (l_gemm_def.unary_postop == SIGMOID) {
-        if ( l_total_max_error >= 0.004 ) {
-          return EXIT_FAILURE;
+        if ( l_total_max_error >= 0.008 ) {
+          if (l_gemm_def.binary_postop == COLBIAS_ADD) {
+            if ( l_total_max_error >= 0.012 ) {
+              return EXIT_FAILURE;
+            } else {
+              return EXIT_SUCCESS;
+            }
+          } else {
+            return EXIT_FAILURE;
+          }
         } else {
           return EXIT_SUCCESS;
         }
