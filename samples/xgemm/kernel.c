@@ -2126,7 +2126,7 @@ int main(int argc, char* argv []) {
       }
     }
   } else {
-    if ( l_total_max_error >= 0.000005 ) {
+    if ( l_total_max_error >= 0.000007 ) {
       if (l_gemm_def.unary_postop == SIGMOID) {
         if ( l_total_max_error >= 0.0007 ) {
           return EXIT_FAILURE;
