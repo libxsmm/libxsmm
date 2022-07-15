@@ -60,8 +60,8 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)tmp_sinp_lp, sinp, ld_in*n );
   } else if (dtype_lp == 1) {
     tmp_sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
-    tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size*2 );
-    tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size*2 );
+    tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
+    tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
     if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
       fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
       exit(-1);
@@ -69,7 +69,6 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)tmp_sinp_lp, ld_in*n );
     libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)tmp_sinp_lp, sinp, ld_in*n );
   }
-
   if (reduce_op == 0) {
     /* Calculate reference results...  */
     if (reduce_rows == 1) {
@@ -160,7 +159,6 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint _ld_in , libxsmm_blasint n_cols_idx,
   unsigned int reduce_rows, unsigned int reduce_op, unsigned int reduce_elts, unsigned int reduce_elts_squared, unsigned int dtype_lp, unsigned int idx_type,
   float *sinp, float *result_reduce_elts,
-  //libxsmm_bfloat16 *sinp_bf16, libxsmm_bfloat16 *result_reduce_elts_bf16,
   char *sinp_lp, char *result_reduce_elts_lp,
 #ifdef FP16_REDUCE_COLSIDX
   unsigned short *sinp_hp, unsigned short *result_reduce_elts_hp,
@@ -350,23 +348,19 @@ int main(int argc, char* argv[])
     result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size*2 );
     memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat16)*result_size*2 );
     result_reduce_elts_squared_lp = NULL;
-#if 0
     if (reduce_on_outputs > 0) {
       libxsmm_rne_convert_fp32_bf16( result_reduce_elts, (libxsmm_bfloat16*)result_reduce_elts_lp, result_size*2 );
       libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
     }
-#endif
   } else if (dtype_lp == 1) {
     sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
     result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size*2 );
     memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat8)*result_size*2 );
     result_reduce_elts_squared_lp = NULL;
-#if 0
     if (reduce_on_outputs > 0) {
       libxsmm_rne_convert_fp32_bf8( result_reduce_elts, (libxsmm_bfloat8*)result_reduce_elts_lp, result_size*2 );
       libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
     }
-#endif
   }
 
   ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
