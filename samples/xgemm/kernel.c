@@ -73,18 +73,18 @@ void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
     memset(out_mask, 0, (size_t)ldo_mask*N);
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
-        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] < 0.0f ) ? 0x0 : (1 << (i%8)) );
+        out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in[(j*ldi) + i] <= 0.0f ) ? 0x0 : (1 << (i%8)) );
       }
     }
   }
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       if ( type == 0 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? 0.0f : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? 0.0f : in[(j*ldi) + i];
       } else if ( type == 1 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
       } else if ( type == 2 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] < 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
       }
     }
   }
@@ -103,13 +103,13 @@ void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint l
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       if ( type == 0 ) {
-        out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? 0 : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( ((in[(j*ldi) + i] & 0x8000) == 0x8000) || (in[(j*ldi) + i] == 0x0) ) ? 0 : in[(j*ldi) + i];
       } else if ( type == 1 ) {
         union libxsmm_bfloat16_f32 bf16_hp;
         union libxsmm_bfloat16_f32 bf16_hp_out;
         bf16_hp.i[0] = 0;
         bf16_hp.i[1] = in[(j*ldi) + i];
-        bf16_hp_out.f = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? alpha*bf16_hp.f : bf16_hp.f;
+        bf16_hp_out.f = ( ((in[(j*ldi) + i] & 0x8000) == 0x8000) || (in[(j*ldi) + i] == 0x0) ) ? alpha*bf16_hp.f : bf16_hp.f;
         out[(j*ldo) + i] = bf16_hp_out.i[1];
       } else if ( type == 2 ) {
         float in_f;
@@ -120,7 +120,7 @@ void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint l
         in_f = bf16_hp.f;
         in_f = alpha * (expf(in_f)-1.0);
         libxsmm_rne_convert_fp32_bf16( &in_f, &res, 1 );
-        out[(j*ldo) + i] = ( (in[(j*ldi) + i] & 0x8000) == 0x8000 ) ? res : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( ((in[(j*ldi) + i] & 0x8000) == 0x8000) || (in[(j*ldi) + i] == 0x0) ) ? res : in[(j*ldi) + i];
       }
     }
   }
@@ -1863,11 +1863,11 @@ int main(int argc, char* argv []) {
       }
 
       if (l_gemm_def.unary_postop == RELU_BITMASK) {
-        libxsmm_blasint mask_ld = ((l_ldc+15)-((l_ldc+15)%16))/8;
+        libxsmm_blasint mask_ld = LIBXSMM_UPDIV(l_ldc, 16)*2;
         l_gemm_def.uop_ld   = mask_ld;
         l_relu_bitmask      = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
         l_relu_bitmask_gold = (char*)libxsmm_aligned_malloc(((size_t)mask_ld) * (size_t)l_n, 64);
-        init_random_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, mask_ld, l_n, 0 );
+        init_zero_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask, 1, mask_ld, l_n );
         memcpy(l_relu_bitmask_gold, l_relu_bitmask, sizeof(char) * mask_ld * l_n);
         fusion_arguments.relu_bitmask = l_relu_bitmask;
         ref_fusion_arguments.relu_bitmask = l_relu_bitmask_gold;
