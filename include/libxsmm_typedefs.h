@@ -724,6 +724,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction_ext)( 
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
+  const void* ptr_const; void* ptr;
   void (*xmm)(const void* a, const void* b, void* c);
   void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm;
@@ -770,4 +771,3 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {
 } libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
-

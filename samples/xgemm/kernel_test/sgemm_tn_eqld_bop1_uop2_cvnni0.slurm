@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
+  exit 0;
+fi
+if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
+  exit 0;
+fi
+
 TESTFILE1=$(mktemp -p .)
 TESTFILE2=$(mktemp -p .)
 
@@ -31,21 +38,30 @@ f1.close()
 f2.close()
 END
 
-./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 SP nobr 1 0 1 1 0 0 0
+PREC="SP"
+TRA=1
+TRB=0
+BINARY_POSTOP=1
+UNARY_POSTOP=2
+CVNNI=0
 
-./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 SP nobr 1 0 1 1 0 0 0
+./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 SP addrbr 5 0 1 1 0 0 0
+./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 SP offsbr 5 0 1 1 0 0 0
 
-#./kernel_fused_ops ${TESTFILE1} 1 1 0 0 1 0 SP strdbr 5 0 1 1 0 0 0
 
-#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 SP addrbr 5 1 1 1 0 0 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 SP addrbr 5 0 1 0
 
-#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 SP offsbr 5 1 1 1 0 0 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 SP offsbr 5 0 1 0
 
-#./kernel_fused_ops ${TESTFILE2} 1 1 0 0 1 0 SP strdbr 5 1 1 1 0 0 0
+#./kernel ${TESTFILE1} 1 1 0 0 1 0 SP strdbr 5 0 1 0
+
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 SP addrbr 5 1 1 0
+
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 SP offsbr 5 1 1 0
+
+#./kernel ${TESTFILE2} 1 1 0 0 1 0 SP strdbr 5 1 1 0
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}
