@@ -488,7 +488,7 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
 
 LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
 {
-  const int minalign = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid);
+  const int minalign = libxsmm_cpuid_vlen(libxsmm_target_archid);
   const uintptr_t address = (uintptr_t)ptr;
   int ptr_is_aligned;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));

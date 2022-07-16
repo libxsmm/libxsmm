@@ -64,11 +64,7 @@ int main(int argc, char* argv[])
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  union { /* convert between fn.ptr and (data)pointer */
-    LIBXSMM_MMFUNCTION_TYPE(TYPE) fun;
-    libxsmm_gemmfunction xfun;
-    const void* ptr;
-  } xmm = { 0 };
+  libxsmm_xmmfunction kernel = { NULL };
 # if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
     LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
@@ -82,9 +78,10 @@ int main(int argc, char* argv[])
 #   if STREAM_C(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
 #   endif
-  xmm.xfun = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
+  kernel.gemm = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch);
 # else
-  xmm.fun = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &flags);
+  kernel.LIBXSMM_TPREFIX(TYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(
+    m, n, k, &lda, &ldb, &ldc, &flags);
 # endif
 #endif
 
@@ -143,9 +140,11 @@ int main(int argc, char* argv[])
       gemm_param.b.quaternary = b + STREAM_B(p * nb);
       gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
       gemm_param.c.quaternary = c + STREAM_C(SYNC(p, nc, size));
-      xmm.xfun(&gemm_param);
+      kernel.gemm(&gemm_param);
 #else
-      xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
+      kernel.LIBXSMM_TPREFIX(TYPE,mm)(
+        a + STREAM_A(j * na), b + STREAM_B(j * nb),
+        c + STREAM_C(SYNC(j, nc, size)));
 #endif
     }
   }
@@ -165,9 +164,11 @@ int main(int argc, char* argv[])
   gemm_param.b.quaternary = gemm_param.b.primary;
   gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
   gemm_param.c.quaternary = gemm_param.c.primary;
-  xmm.xfun(&gemm_param);
+  kernel.gemm(&gemm_param);
 #else
-  xmm.fun(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(SYNC(j, nc, size)));
+  kernel.LIBXSMM_TPREFIX(TYPE,mm)(
+    a + STREAM_A(j * na), b + STREAM_B(j * nb),
+    c + STREAM_C(SYNC(j, nc, size)));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
@@ -176,7 +177,7 @@ int main(int argc, char* argv[])
 #if defined(AUTO) /* no explicit kernel hence no query */
     info.nflops = 2 * m * n * k;
 #else
-    libxsmm_get_kernel_info(xmm.ptr, &info);
+    libxsmm_get_kernel_info(kernel.ptr_const, &info);
 #endif
     printf("%.1f GFLOPS/s\n", (1E-9 * info.nflops) / duration * size);
   }

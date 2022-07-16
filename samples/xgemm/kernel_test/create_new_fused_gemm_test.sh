@@ -23,6 +23,9 @@ for BINARY_POSTOP in 0 1; do
           if [[ ("$PREC" == 'BF16F32_FLAT' && "$CVNNI" == '1') ]]; then
             continue
           fi
+          if [[ ("$PREC" == 'BF8F32'  &&  "$CVNNI" == '1') ]]; then
+            continue
+          fi
 
           for TRA in 0 1; do
             for TRB in 0 1; do

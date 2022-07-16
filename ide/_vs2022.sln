@@ -425,6 +425,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memcmp", "..\samples\utilit
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "transpose", "transpose", "{BD0EFA14-F9BC-4306-9736-F80F8851BC1A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemmbatch", "..\tests\gemmbatch.vcxproj", "{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -1239,6 +1245,18 @@ Global
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|Win32.Build.0 = symbols|Win32
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|x64.ActiveCfg = symbols|x64
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|x64.Build.0 = symbols|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.debug|Win32.ActiveCfg = debug|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.debug|Win32.Build.0 = debug|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.debug|x64.ActiveCfg = debug|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.debug|x64.Build.0 = debug|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.release|Win32.ActiveCfg = release|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.release|Win32.Build.0 = release|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.release|x64.ActiveCfg = release|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.release|x64.Build.0 = release|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.symbols|Win32.ActiveCfg = symbols|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.symbols|Win32.Build.0 = symbols|Win32
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.symbols|x64.ActiveCfg = symbols|x64
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1324,6 +1342,7 @@ Global
 		{6CB03F3E-89F3-4864-87A8-BE2288EA5FE7} = {927066C2-55DE-4180-8620-40C62B8000DE}
 		{7E730036-A678-4529-83F3-DFFB68CA278E} = {FD191424-DD79-4B60-B004-7B6224898031}
 		{BD0EFA14-F9BC-4306-9736-F80F8851BC1A} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
+		{36BFCDFC-1CF2-404E-9B23-4D79F9A57F8C} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}
