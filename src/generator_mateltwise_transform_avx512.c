@@ -2828,6 +2828,8 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_08bit_avx512_microkernel( libxs
                                                                            const unsigned int                      i_mask_reg_6,
                                                                            const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  LIBXSMM_UNUSED( i_gp_reg_mask_2 );
+  LIBXSMM_UNUSED( i_mask_reg_6 );
 
   if ( (i_mateltwise_desc->m % 4 == 0) && (i_mateltwise_desc->n % 4 == 0) ) {
     unsigned int l_ldi = i_mateltwise_desc->ldi*4;
