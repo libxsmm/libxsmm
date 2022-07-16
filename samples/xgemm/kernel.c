@@ -2099,7 +2099,7 @@ int main(int argc, char* argv []) {
         if (l_gemm_def.binary_postop == COLBIAS_ADD) {
            return EXIT_FAILURE;
         } else {
-          if ( l_total_max_error >= 0.012 ) {
+          if ( l_total_max_error >= 0.018 ) {
             return EXIT_FAILURE;
           } else {
             return EXIT_SUCCESS;
