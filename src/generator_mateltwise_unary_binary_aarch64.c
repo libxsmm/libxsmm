@@ -223,7 +223,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_configure_aarch64_vlens(const libxsmm_meltw_descriptor* i_mateltwise_desc, libxsmm_mateltwise_kernel_config* i_micro_kernel_config) {
   /* First, determine the vlen compute based on the architecture; there may be architectures with different widths for different types */
   /* At the moment, all types are assumed to be of the same length */
-  unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set) * 4;
+  unsigned int l_asimd_bytes_per_register = libxsmm_cpuid_vlen(i_micro_kernel_config->instruction_set);
 
   unsigned char l_inp_type = LIBXSMM_CAST_UCHAR(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP));
   unsigned int  l_inp_type_size = LIBXSMM_TYPESIZE(l_inp_type); /* like libxsmm_typesize; returns 0 if type is unknown */
@@ -1522,7 +1522,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
                                                                         const unsigned char     i_tmp_pred_reg,
                                                                         unsigned int* const     io_mask_adv ) {
 
-  unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4; /* in bytes, 512 bit -> 64 bytes */
+  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch); /* in bytes, 512 bit -> 64 bytes */
   unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte, 512 bit -> 64 bytes -> 8 bytes*/
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be read, 512 bit -> .. -> 2 bytes */
 
@@ -1643,7 +1643,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                            0, LIBXSMM_AARCH64_SVE_TYPE_B );
 #endif
 
-  unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
+  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
   unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte */
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be stored */
   unsigned char im_mod = im & 3;

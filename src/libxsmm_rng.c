@@ -259,25 +259,31 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 
 LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n)
 {
+  unsigned int result;
+  if (1 < n) {
 #if defined(LIBXSMM_RNG_DRAND48)
-  const unsigned int q = ((1U << 31) / n) * n;
-  unsigned int r = (unsigned int)lrand48();
-  if (q != (1U << 31))
+    const unsigned int rmax = (1U << 31);
+    unsigned int r = (unsigned int)lrand48();
 #else
-  const unsigned int rand_max1 = (unsigned int)(RAND_MAX)+1U;
-  const unsigned int q = (rand_max1 / n) * n;
-  unsigned int r = (unsigned int)rand();
-  if (q != rand_max1)
+    const unsigned int rmax = (unsigned int)(RAND_MAX + 1U);
+    unsigned int r = (unsigned int)rand();
 #endif
-  {
+    const unsigned int nmax = LIBXSMM_MIN(n, rmax);
+    const unsigned int q = (rmax / nmax) * nmax;
 #if defined(LIBXSMM_RNG_DRAND48)
     /* coverity[dont_call] */
     while (q <= r) r = (unsigned int)lrand48();
 #else
     while (q <= r) r = (unsigned int)rand();
 #endif
+    if (n <= nmax) result = r % nmax;
+    else { /* input range exhausts RNG-state (precision) */
+      const double s = ((double)n / nmax) * r + 0.5;
+      result = (unsigned int)s;
+    }
   }
-  return r % n;
+  else result = 0;
+  return result;
 }
 
 

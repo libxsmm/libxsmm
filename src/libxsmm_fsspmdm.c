@@ -43,7 +43,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   typesize = libxsmm_typesize(datatype);
   { /* Compute the vector/chunk sizes */
-    const int vl = 4 * libxsmm_cpuid_vlen32(libxsmm_target_archid) / typesize;
+    const int vl = libxsmm_cpuid_vlen(libxsmm_target_archid) / typesize;
     N_sparse1 = N_dense = vl;
     /* Dense NEON benefits from larger sizes */
     if (libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&

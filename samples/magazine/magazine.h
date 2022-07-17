@@ -61,12 +61,32 @@
 # define PAD 1
 #endif
 
+#if defined(__cplusplus)
+# define INLINE_KEYWORD inline
+# define INLINE INLINE_KEYWORD
+#else /* C */
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+#   define INLINE_KEYWORD inline
+# elif defined(_MSC_VER)
+#   define INLINE_KEYWORD __inline
+#   define INLINE_FIXUP
+# endif
+# if !defined(INLINE_KEYWORD)
+#   define INLINE_KEYWORD
+#   define INLINE_FIXUP
+# endif
+# define INLINE static INLINE_KEYWORD
+#endif
+#if defined(INLINE_FIXUP) && !defined(inline)
+# define inline INLINE_KEYWORD
+#endif
+
 #if defined(SHUFFLE)
 # include <libxsmm_source.h>
 #endif
 
 
-static void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
+INLINE void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
   int i, j;
   for (i = 0; i < ncols; ++i) {
@@ -82,7 +102,7 @@ static void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale
 }
 
 
-static double norm(const TYPE* src, int nrows, int ncols, int ld) {
+INLINE double norm(const TYPE* src, int nrows, int ncols, int ld) {
   int i, j;
   double result = 0, comp = 0;
   for (i = 0; i < ncols; ++i) {
@@ -97,7 +117,7 @@ static double norm(const TYPE* src, int nrows, int ncols, int ld) {
 }
 
 
-static double seconds(void) {
+INLINE double seconds(void) {
 #if defined(_OPENMP)
   return omp_get_wtime();
 #elif defined(_WIN32)
@@ -113,4 +133,3 @@ static double seconds(void) {
 }
 
 #endif /*MAGAZINE_H*/
-
