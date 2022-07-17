@@ -363,7 +363,7 @@ void libxsmm_generator_transform_two_4x4_64bit_norm_to_normt_avx512( libxsmm_gen
                                                                      const unsigned int      i_mask_reg_1,
                                                                      const unsigned int      i_mask_reg_2 )
 {
-  if ( (i_vec_reg_src_start + 4 < i_vec_reg_dst_start) || (i_vec_reg_dst_start + 4 < i_vec_reg_src_start) ) {
+  if ( (i_vec_reg_src_start + 4 > i_vec_reg_dst_start) && (i_vec_reg_dst_start + 4 > i_vec_reg_src_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -615,7 +615,7 @@ void libxsmm_generator_transform_two_8x8_32bit_norm_to_normt_avx512( libxsmm_gen
                                                                      const unsigned int      i_mask_reg_1,
                                                                      const unsigned int      i_mask_reg_2 )
 {
-  if ( (i_vec_reg_srcdst_start + 8 < i_vec_reg_tmp_start) || (i_vec_reg_tmp_start + 8 < i_vec_reg_srcdst_start) ) {
+  if ( (i_vec_reg_srcdst_start + 8 > i_vec_reg_tmp_start) && (i_vec_reg_tmp_start + 8 > i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -652,7 +652,7 @@ void libxsmm_generator_transform_four_4x4_32bit_norm_to_normt_avx512( libxsmm_ge
                                                                       const unsigned int      i_vec_reg_srcdst_start,
                                                                       const unsigned int      i_vec_reg_tmp_start )
 {
-  if ( (i_vec_reg_srcdst_start + 4 < i_vec_reg_tmp_start) || (i_vec_reg_tmp_start + 4 < i_vec_reg_srcdst_start) ) {
+  if ( (i_vec_reg_srcdst_start + 4 > i_vec_reg_tmp_start) && (i_vec_reg_tmp_start + 4 > i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1239,7 +1239,7 @@ void libxsmm_generator_transform_four_16x16_08bit_norm_to_normt_avx512( libxsmm_
                                                                         const unsigned int      i_vec_reg_srcdst_start,
                                                                         const unsigned int      i_vec_reg_tmp_start )
 {
-  if ( (i_vec_reg_srcdst_start + 16 < i_vec_reg_tmp_start) || (i_vec_reg_srcdst_start + 16 < i_vec_reg_tmp_start) ) {
+  if ( (i_vec_reg_srcdst_start + 16 > i_vec_reg_tmp_start) && (i_vec_reg_tmp_start + 16 > i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1283,7 +1283,7 @@ void libxsmm_generator_transform_four_8x8_16bit_norm_to_normt_avx512( libxsmm_ge
                                                               const unsigned int      i_vec_reg_src_start,
                                                               const unsigned int      i_vec_reg_dst_start )
 {
-    if ( (i_vec_reg_src_start + 8 < i_vec_reg_dst_start) || (i_vec_reg_dst_start + 8 < i_vec_reg_src_start) ) {
+    if ( (i_vec_reg_src_start + 8 > i_vec_reg_dst_start) && (i_vec_reg_dst_start + 8 > i_vec_reg_src_start) ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
         return;
     }
@@ -1822,7 +1822,7 @@ void libxsmm_generator_transform_two_8x8_16bit_vnni2_to_vnni2t_avx512( libxsmm_g
                                                                      const unsigned int      i_mask_reg_1,
                                                                      const unsigned int      i_mask_reg_2 )
 {
-  if ( (i_vec_reg_srcdst_start + 4 < i_vec_reg_tmp_start) || (i_vec_reg_tmp_start + 4 < i_vec_reg_srcdst_start) ) {
+  if ( (i_vec_reg_srcdst_start + 4 > i_vec_reg_tmp_start) && (i_vec_reg_tmp_start + 4 > i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1859,7 +1859,7 @@ void libxsmm_generator_transform_four_4x4_16bit_vnni2_to_vnni2t_avx512( libxsmm_
                                                                      const unsigned int      i_vec_reg_tmp_start,
                                                                      const unsigned int      i_shuffle_op )
 {
-  if ( (i_vec_reg_srcdst_start + 2 < i_vec_reg_tmp_start) || (i_vec_reg_tmp_start + 2 < i_vec_reg_srcdst_start) ) {
+  if ( (i_vec_reg_srcdst_start + 2 > i_vec_reg_tmp_start) && (i_vec_reg_tmp_start + 2 > i_vec_reg_srcdst_start) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1945,9 +1945,7 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_spr_microkernel( l
 
     for (l_i = 0; l_i < 4; ++l_i) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, (long long)l_m_8rem_mask << (l_i * 4) );
-      if ( l_i < 3 ) {
-          libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
-      }
+      libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD, i_gp_reg_mask, l_mask_regs[l_i] );
     }
   }
 
@@ -2072,6 +2070,10 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_spr_microkernel( l
       /* advance output pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                        i_gp_reg_out, i_micro_kernel_config->datatype_size_in * 32 );
+
+      /* advance input pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_in, l_ldi * i_micro_kernel_config->datatype_size_in * 8 );
 
       /* close n footer */
       libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
@@ -2828,8 +2830,6 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_08bit_avx512_microkernel( libxs
                                                                            const unsigned int                      i_mask_reg_6,
                                                                            const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
-  LIBXSMM_UNUSED( i_gp_reg_mask_2 );
-  LIBXSMM_UNUSED( i_mask_reg_6 );
 
   if ( (i_mateltwise_desc->m % 4 == 0) && (i_mateltwise_desc->n % 4 == 0) ) {
     unsigned int l_ldi = i_mateltwise_desc->ldi*4;
