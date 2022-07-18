@@ -166,9 +166,15 @@ int main(int argc, char* argv[])
         for (i = 0; i < size; ++i) { /* use pointers instead of indexes */
           pa[i] = a + ia[i]; pb[i] = b + ib[i]; pc[i] = c + ic[i]; pd[i] = d + ic[i];
         }
+        USEOMP(libxsmm_gemm_batch)(LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
+          &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
         libxsmm_gemm_batch(LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
           &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
           0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
+        GEMM_BATCH(&transa, &transb, &m, &n, &k,
+          &alpha, pa, &lda, pb, &ldb,
+          &beta, pd, &ldc, &group_count, &size);
         GEMM_BATCH(&transa, &transb, &m, &n, &k,
           &alpha, pa, &lda, pb, &ldb,
           &beta, pd, &ldc, &group_count, &size);
