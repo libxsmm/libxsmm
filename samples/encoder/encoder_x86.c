@@ -814,6 +814,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VUNPCKLPS", &mycode, LIBXSMM_X86_INSTR_VUNPCKLPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VUNPCKHPD", &mycode, LIBXSMM_X86_INSTR_VUNPCKHPD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VUNPCKHPS", &mycode, LIBXSMM_X86_INSTR_VUNPCKHPS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPUNPCKLBW", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLBW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPUNPCKHBW", &mycode, LIBXSMM_X86_INSTR_VPUNPCKHBW, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPUNPCKLWD", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLWD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPUNPCKHWD", &mycode, LIBXSMM_X86_INSTR_VPUNPCKHWD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPUNPCKLDQ", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLDQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
@@ -1279,6 +1281,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VUNPCKLPS", &mycode, LIBXSMM_X86_INSTR_VUNPCKLPS, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VUNPCKHPD", &mycode, LIBXSMM_X86_INSTR_VUNPCKHPD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VUNPCKHPS", &mycode, LIBXSMM_X86_INSTR_VUNPCKHPS, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPUNPCKLBW", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLBW, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPUNPCKHBW", &mycode, LIBXSMM_X86_INSTR_VPUNPCKHBW, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPUNPCKLWD", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLWD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPUNPCKHWD", &mycode, LIBXSMM_X86_INSTR_VPUNPCKHWD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPUNPCKLDQ", &mycode, LIBXSMM_X86_INSTR_VPUNPCKLDQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
