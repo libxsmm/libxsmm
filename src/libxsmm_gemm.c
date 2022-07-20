@@ -1366,7 +1366,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_datatype iprec, libxsmm_datatype oprec,
     int result = EXIT_FAILURE;
     LIBXSMM_INIT
     if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, otypesize)) { /* check if an SMM is suitable */
-      const libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
       const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
