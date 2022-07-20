@@ -44,9 +44,31 @@ LIBXSMM_INLINE
 void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld_in, libxsmm_blasint n_cols_idx,
                               float *sinp, float *ref_result_reduce_elts, float *ref_result_reduce_elts_squared, unsigned long long *cols_ind_array,
                               unsigned int reduce_op, unsigned int reduce_rows,
-                              unsigned int record_idx, unsigned long long *ref_argop_off ) {
+                              unsigned int record_idx, unsigned long long *ref_argop_off, unsigned int dtype_lp ) {
   libxsmm_blasint i = 0, j = 0, jj = 0;
-
+  char *tmp_sinp_lp = NULL, *tmp_ref_result_reduce_elts_lp = NULL, *tmp_ref_result_reduce_elts_squared_lp = NULL;
+  int result_size = (reduce_rows == 1) ? n : ld_in;
+  if (dtype_lp == 2) {
+    tmp_sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat16)*ld_in*n );
+    tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
+    tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size );
+    if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
+      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      exit(-1);
+    }
+    libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)tmp_sinp_lp, ld_in*n );
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)tmp_sinp_lp, sinp, ld_in*n );
+  } else if (dtype_lp == 1) {
+    tmp_sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
+    tmp_ref_result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
+    tmp_ref_result_reduce_elts_squared_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size );
+    if (tmp_sinp_lp == NULL || tmp_ref_result_reduce_elts_lp == NULL || tmp_ref_result_reduce_elts_squared_lp == NULL ) {
+      fprintf(stderr,"Error : reference_reduce_kernel allocation failed\n");
+      exit(-1);
+    }
+    libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)tmp_sinp_lp, ld_in*n );
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)tmp_sinp_lp, sinp, ld_in*n );
+  }
   if (reduce_op == 0) {
     /* Calculate reference results...  */
     if (reduce_rows == 1) {
@@ -114,14 +136,30 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
       }
     }
   }
+  if (dtype_lp == 2) {
+    libxsmm_rne_convert_fp32_bf16( ref_result_reduce_elts, (libxsmm_bfloat16*)tmp_ref_result_reduce_elts_lp, result_size );
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)tmp_ref_result_reduce_elts_lp, ref_result_reduce_elts, result_size );
+    libxsmm_rne_convert_fp32_bf16( ref_result_reduce_elts_squared, (libxsmm_bfloat16*)tmp_ref_result_reduce_elts_squared_lp, result_size );
+    libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)tmp_ref_result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
+  } else if (dtype_lp == 1) {
+    libxsmm_rne_convert_fp32_bf8( ref_result_reduce_elts, (libxsmm_bfloat8*)tmp_ref_result_reduce_elts_lp, result_size );
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)tmp_ref_result_reduce_elts_lp, ref_result_reduce_elts, result_size );
+    libxsmm_rne_convert_fp32_bf8( ref_result_reduce_elts_squared, (libxsmm_bfloat8*)tmp_ref_result_reduce_elts_squared_lp, result_size );
+    libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)tmp_ref_result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
+  }
+  if (dtype_lp == 1 || dtype_lp == 2) {
+    free (tmp_sinp_lp);
+    free (tmp_ref_result_reduce_elts_lp);
+    free (tmp_ref_result_reduce_elts_squared_lp);
+  }
 }
 
 LIBXSMM_INLINE
 void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel, libxsmm_meltwfunction_unary *res_kernel2, libxsmm_meltw_unary_param *res_unary_param, libxsmm_meltw_unary_param *res_unary_param2,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint _ld_in , libxsmm_blasint n_cols_idx,
-  unsigned int reduce_rows, unsigned int reduce_op, unsigned int reduce_elts, unsigned int reduce_elts_squared, unsigned int use_bf16, unsigned int idx_type,
+  unsigned int reduce_rows, unsigned int reduce_op, unsigned int reduce_elts, unsigned int reduce_elts_squared, unsigned int dtype_lp, unsigned int idx_type,
   float *sinp, float *result_reduce_elts,
-  libxsmm_bfloat16 *sinp_bf16, libxsmm_bfloat16 *result_reduce_elts_bf16,
+  char *sinp_lp, char *result_reduce_elts_lp,
 #ifdef FP16_REDUCE_COLSIDX
   unsigned short *sinp_hp, unsigned short *result_reduce_elts_hp,
 #endif
@@ -169,12 +207,15 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unary_shape.in_type = LIBXSMM_DATATYPE_F16;
   unary_shape.out_type = LIBXSMM_DATATYPE_F16;
 #else
-  if (use_bf16 == 0) {
+  if (dtype_lp == 0) {
     unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
     unary_shape.out_type = LIBXSMM_DATATYPE_F32;
-  } else {
+  } else if (dtype_lp == 2) {
     unary_shape.in0_type = LIBXSMM_DATATYPE_BF16;
     unary_shape.out_type = LIBXSMM_DATATYPE_BF16;
+  } else if (dtype_lp == 1) {
+    unary_shape.in0_type = LIBXSMM_DATATYPE_BF8;
+    unary_shape.out_type = LIBXSMM_DATATYPE_BF8;
   }
 #endif
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
@@ -206,23 +247,23 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   }
 
   /* Setup param struct  */
-  if (use_bf16 == 0) {
+  if (dtype_lp == 0) {
     unary_param.in.primary = sinp;
     unary_param.out.primary = result_reduce_elts;
   } else {
-    unary_param.in.primary = sinp_bf16;
-    unary_param.out.primary = result_reduce_elts_bf16;
+    unary_param.in.primary = sinp_lp;
+    unary_param.out.primary = result_reduce_elts_lp;
   }
 #ifdef FP16_REDUCE_COLSIDX
   params2.in.primary  = sinp_hp;
   params2.out.primary = result_reduce_elts_hp;
 #else
-  if (use_bf16 == 0) {
+  if (dtype_lp == 0) {
     params2.in.primary  = sinp;
     params2.out.primary  = result_reduce_elts;
   } else {
-    params2.in.primary  = sinp_bf16;
-    params2.out.primary  = result_reduce_elts_bf16;
+    params2.in.primary  = sinp_lp;
+    params2.out.primary  = result_reduce_elts_lp;
   }
 #endif
   if (idx_type == 0) {
@@ -239,7 +280,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, k, iters = 1000, reduce_op = 0, use_bf16 = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, k, iters = 1000, reduce_op = 0, dtype_lp = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
   unsigned int record_idx = 0;
@@ -247,9 +288,9 @@ int main(int argc, char* argv[])
   float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
   unsigned long long *ref_argop_off, *argop_off;
   unsigned int *ref_argop_off_i32, *argop_off_i32;
-  libxsmm_bfloat16 *sinp_bf16 = NULL;
-  libxsmm_bfloat16 *result_reduce_elts_bf16 = NULL;
-  libxsmm_bfloat16 *result_reduce_elts_squared_bf16 = NULL;
+  char *sinp_lp = NULL;
+  char *result_reduce_elts_lp = NULL;
+  char *result_reduce_elts_squared_lp = NULL;
 #ifdef FP16_REDUCE_COLSIDX
   unsigned short *sinp_hp, *result_reduce_elts_hp;
 #endif
@@ -280,14 +321,14 @@ int main(int argc, char* argv[])
   if ( argc > 5 ) reduce_elts_squared = atoi(argv[5]);
   if ( argc > 6 ) reduce_rows = atoi(argv[6]);
   if ( argc > 7 ) reduce_op = atoi(argv[7]);
-  if ( argc > 8 ) use_bf16 = atoi(argv[8]);
+  if ( argc > 8 ) dtype_lp = atoi(argv[8]);
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
   if ( argc > 10 ) iters = atoi(argv[10]);
   if ( argc > 11 ) idx_type = atoi(argv[11]);
   if ( argc > 12 ) record_idx = atoi(argv[12]);
   if ( argc > 13 ) reduce_on_outputs = atoi(argv[13]);
 
-  printf("CL is: %d %d %d %d %d %d %d %d %llu %d %d %d %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, use_bf16, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
+  printf("CL is: %d %d %d %d %d %d %d %d %llu %d %d %d %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dtype_lp, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -302,13 +343,23 @@ int main(int argc, char* argv[])
     sfill_matrix ( result_reduce_elts, result_size*2, result_size*2, 1 );
   }
 
-  if (use_bf16 == 1) {
-    sinp_bf16  = (libxsmm_bfloat16*) malloc( sizeof(libxsmm_bfloat16)*ld_in*n );
-    result_reduce_elts_bf16 = (libxsmm_bfloat16*) malloc( sizeof(libxsmm_bfloat16)*result_size*2 );
-    memset(result_reduce_elts_bf16, 0, sizeof(libxsmm_bfloat16)*result_size*2 );
-    result_reduce_elts_squared_bf16 = NULL;
+  if (dtype_lp == 2) {
+    sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat16)*ld_in*n );
+    result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size*2 );
+    memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat16)*result_size*2 );
+    result_reduce_elts_squared_lp = NULL;
     if (reduce_on_outputs > 0) {
-      libxsmm_rne_convert_fp32_bf16( result_reduce_elts, result_reduce_elts_bf16, result_size*2 );
+      libxsmm_rne_convert_fp32_bf16( result_reduce_elts, (libxsmm_bfloat16*)result_reduce_elts_lp, result_size*2 );
+      libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
+    }
+  } else if (dtype_lp == 1) {
+    sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
+    result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size*2 );
+    memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat8)*result_size*2 );
+    result_reduce_elts_squared_lp = NULL;
+    if (reduce_on_outputs > 0) {
+      libxsmm_rne_convert_fp32_bf8( result_reduce_elts, (libxsmm_bfloat8*)result_reduce_elts_lp, result_size*2 );
+      libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
     }
   }
 
@@ -326,14 +377,18 @@ int main(int argc, char* argv[])
   if (reduce_op == 0) {
     if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
       result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16 + result_size;
+      if (dtype_lp == 2) {
+        result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat16*) result_reduce_elts_lp + result_size);
+      } else if (dtype_lp == 1) {
+        result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat8*) result_reduce_elts_lp + result_size);
       }
     }
     if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
       result_reduce_elts_squared = (float*) result_reduce_elts;
-      if (use_bf16 == 1) {
-        result_reduce_elts_squared_bf16 = (libxsmm_bfloat16*) result_reduce_elts_bf16;
+      if (dtype_lp == 2) {
+        result_reduce_elts_squared_lp = result_reduce_elts_lp;
+      } else if (dtype_lp == 1) {
+        result_reduce_elts_squared_lp = result_reduce_elts_lp;
       }
     }
   }
@@ -347,9 +402,10 @@ int main(int argc, char* argv[])
     cols_ind_array_32bit[j] = (unsigned int) cols_ind_array[j];
   }
 
-  if (use_bf16 == 1) {
-    libxsmm_rne_convert_fp32_bf16( sinp, sinp_bf16, ld_in*n );
-    libxsmm_convert_bf16_f32( sinp_bf16, sinp, ld_in*n );
+  if (dtype_lp == 2) {
+    libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)sinp_lp, ld_in*n );
+  } else if (dtype_lp == 1) {
+    libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)sinp_lp, ld_in*n );
   }
 
 #ifdef FP16_REDUCE_COLSIDX
@@ -365,7 +421,7 @@ int main(int argc, char* argv[])
     }
   }
 #endif
-  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off );
+  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp );
   if (reduce_on_outputs > 0) {
     if (reduce_op == 0) {
       if (reduce_elts == 1) {
@@ -383,16 +439,16 @@ int main(int argc, char* argv[])
 
   printf("JITing reduce kernel... \n");
 #ifdef FP16_REDUCE_COLSIDX
-  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, dtype_lp, idx_type,
       sinp, result_reduce_elts,
-      sinp_bf16, result_reduce_elts_bf16,
+      sinp_lp, result_reduce_elts_lp,
       sinp_hp, result_reduce_elts_hp,
       cols_ind_array, cols_ind_array_32bit,
       record_idx, argop_off, argop_off_i32, reduce_on_outputs );
 #else
-  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, use_bf16, idx_type,
+  setup_tpp_kernel_and_param_struct( &kernel, &kernel2, &unary_param, &params2, m, n, ld_in, (libxsmm_blasint)n_cols_idx, reduce_rows, reduce_op, reduce_elts, reduce_elts_squared, dtype_lp, idx_type,
       sinp, result_reduce_elts,
-      sinp_bf16, result_reduce_elts_bf16,
+      sinp_lp, result_reduce_elts_lp,
       cols_ind_array, cols_ind_array_32bit,
       record_idx, argop_off, argop_off_i32, reduce_on_outputs );
 #endif
@@ -419,7 +475,7 @@ int main(int argc, char* argv[])
 
   /* compare */
   printf("##########################################\n");
-  if (use_bf16 == 0) {
+  if (dtype_lp == 0) {
     if (n_cols_idx == 0) {
       printf("#   FP32 Correctness - Eltwise reduce         #\n");
     } else {
@@ -435,8 +491,10 @@ int main(int argc, char* argv[])
 
   if (reduce_elts > 0) {
     printf("##########################################\n");
-    if (use_bf16 == 1) {
-      libxsmm_convert_bf16_f32( result_reduce_elts_bf16, result_reduce_elts, result_size );
+    if (dtype_lp == 2) {
+      libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, result_reduce_elts, result_size );
+    } else if (dtype_lp == 1) {
+      libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, result_reduce_elts, result_size );
     }
     libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_F32, result_size_check, 1, ref_result_reduce_elts, result_reduce_elts, 0, 0);
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
@@ -452,11 +510,13 @@ int main(int argc, char* argv[])
   /* compare */
   if (reduce_elts_squared > 0) {
     if (n_cols_idx == 0) {
-      if (use_bf16 == 1) {
-        libxsmm_convert_bf16_f32( result_reduce_elts_squared_bf16, result_reduce_elts_squared, result_size );
+      if (dtype_lp == 2) {
+        libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_squared_lp, result_reduce_elts_squared, result_size );
+      } else if (dtype_lp == 1) {
+        libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_squared_lp, result_reduce_elts_squared, result_size );
       }
       printf("##########################################\n");
-      if (use_bf16 == 0) {
+      if (dtype_lp == 0) {
         printf("# FP32 Correctness - Eltwise-square reduce  #\n");
       } else {
         printf("# BF16 Correctness - Eltwise-square reduce  #\n");
@@ -500,7 +560,7 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off );
+    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
@@ -524,9 +584,9 @@ int main(int argc, char* argv[])
 
   free(sinp);
   free(result_reduce_elts);
-  if (use_bf16 == 1) {
-    free(sinp_bf16);
-    free(result_reduce_elts_bf16);
+  if (dtype_lp != 0) {
+    free(sinp_lp);
+    free(result_reduce_elts_lp);
   }
   free(ref_result_reduce_elts);
   free(ref_result_reduce_elts_squared);

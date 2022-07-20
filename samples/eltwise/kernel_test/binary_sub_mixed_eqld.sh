@@ -31,21 +31,38 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
+  for PREC_IN in 1 2 4
   do
-    for PREC_IN1 in 2 4
-    do
-      for PREC_COMP in 4
+    if [ ${PREC_IN} -ne 1 ];
+    then
+      for PREC_IN1 in 2 4
       do
-        for PREC_OUT in 2 4
+        for PREC_COMP in 4
         do
-          for BCAST in 0 1 2 3 4 5 6
+          for PREC_OUT in 2 4
           do
-            ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+            for BCAST in 0 1 2 3 4 5 6
+            do
+              ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+            done
           done
         done
       done
-    done
+    else
+      for PREC_IN1 in 1 4
+      do
+        for PREC_COMP in 4
+        do
+          for PREC_OUT in 1 4
+          do
+            for BCAST in 0 1 2 3 4 5 6
+            do
+              ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+            done
+          done
+        done
+      done
+    fi
   done
 done
 

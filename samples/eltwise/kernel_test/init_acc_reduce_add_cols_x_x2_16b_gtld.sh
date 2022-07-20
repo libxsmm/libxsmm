@@ -36,7 +36,7 @@ do
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
   N_ADJ=$((${N} + ${N_IDX}))
-  ./eltwise_unary_reduce ${M} ${N_ADJ} 100 ${REDUCE_X} ${REDUCE_X2} ${REDUCE_ROWS} ${REDUCE_OP} 1 ${N_IDX} 0 0 0 1
+  ./eltwise_unary_reduce ${M} ${N_ADJ} 100 ${REDUCE_X} ${REDUCE_X2} ${REDUCE_ROWS} ${REDUCE_OP} 2 ${N_IDX} 0 0 0 1
 done
 
 rm ${TESTFILE1}
