@@ -1366,7 +1366,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_datatype iprec, libxsmm_datatype oprec,
     int result = EXIT_FAILURE;
     LIBXSMM_INIT
     if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, otypesize)) { /* check if an SMM is suitable */
-      libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      libxsmm_bitfield prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
       const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
@@ -1374,7 +1374,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_datatype iprec, libxsmm_datatype oprec,
         NULL != ldc ? *ldc : m,
         iprec, iprec, oprec, oprec);
       const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c, index_stride,
-        batchsize, 0/*multi-threaded*/, (libxsmm_bitfield*)&prefetch);
+        batchsize, 0/*multi-threaded*/, &prefetch);
       libxsmm_xmmfunction kernel = { NULL };
       kernel.gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
       if (NULL != kernel.ptr_const) {
