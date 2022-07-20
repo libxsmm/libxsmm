@@ -100,6 +100,7 @@ libxsmm_fsspmdm_execute
 libxsmm_gcd
 libxsmm_gemm_batch
 libxsmm_gemm_batch_
+libxsmm_gemm_batch_flags
 libxsmm_gemm_batch_omp
 libxsmm_gemm_batch_omp_
 libxsmm_gemm_descriptor_dinit
@@ -109,7 +110,6 @@ libxsmm_gemm_descriptor_init2
 libxsmm_gemm_descriptor_init3
 libxsmm_gemm_dprint
 libxsmm_gemm_dprint2
-libxsmm_gemm_internal_set_batchflag
 libxsmm_gemm_print
 libxsmm_gemm_print2
 libxsmm_gemm_xprint

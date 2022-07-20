@@ -47,6 +47,8 @@
 
 /* like LIBXSMM_ACCESS (LIBXSMM_INDEX1), but based on Byte-measured index/stride; returns the value */
 #define LIBXSMM_VALUE1(TYPE, ARRAY, ...) (*(TYPE*)LIBXSMM_ACCESS(1, char, ARRAY, __VA_ARGS__))
+/* like LIBXSMM_VALUE1, but if ARRAY is NULL then FB is returned */
+#define LIBXSMM_VALUE1_CHECKED(TYPE, FB, ARRAY, ...) (NULL != (ARRAY) ? LIBXSMM_VALUE1(TYPE, ARRAY, __VA_ARGS__) : ((TYPE)(FB)))
 
 /* kernel uses consecutive stores */
 #define LIBXSMM_MZERO_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
