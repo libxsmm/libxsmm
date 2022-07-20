@@ -1216,9 +1216,7 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libx
   }
 #else
   LIBXSMM_UNUSED(batchsize); LIBXSMM_UNUSED(multithreaded);
-# if !defined(NDEBUG)
   LIBXSMM_UNUSED(prefetch); LIBXSMM_UNUSED(gemm_shape);
-# endif
 #endif /*defined(LIBXSMM_GEMM_BATCHREDUCE)*/
   return result;
 }
