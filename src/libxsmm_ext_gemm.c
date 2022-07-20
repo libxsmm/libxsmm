@@ -99,13 +99,17 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_dgemm_batch(transa_array, transb_array, m_array, n_array, k_array,
-        alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+      libxsmm_gemm_xbatch(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+        transa_array, transb_array, m_array, n_array, k_array,
+        alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
+        beta_array, (void**)c_array, ldc_array,
         group_count, group_size);
     }
     else { /* parallelized */
-      libxsmm_dgemm_batch_omp(transa_array, transb_array, m_array, n_array, k_array,
-        alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+      libxsmm_gemm_xbatch_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+        transa_array, transb_array, m_array, n_array, k_array,
+        alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
+        beta_array, (void**)c_array, ldc_array,
         group_count, group_size);
     }
   }
@@ -128,14 +132,16 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_sgemm_batch(transa_array, transb_array, m_array, n_array, k_array,
-        alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
-        group_count, group_size);
+      libxsmm_gemm_xbatch(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+        transa_array, transb_array, m_array, n_array, k_array,
+        alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
+        beta_array, (void**)c_array, ldc_array, group_count, group_size);
     }
     else { /* parallelized */
-      libxsmm_sgemm_batch_omp(transa_array, transb_array, m_array, n_array, k_array,
-        alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
-        group_count, group_size);
+      libxsmm_gemm_xbatch_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+        transa_array, transb_array, m_array, n_array, k_array,
+        alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
+        beta_array, (void**)c_array, ldc_array, group_count, group_size);
     }
   }
   else {
@@ -502,29 +508,20 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
 }
 
 
-LIBXSMM_APIEXT void libxsmm_dgemm_batch_omp(
-  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
-  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+LIBXSMM_APIEXT void libxsmm_gemm_xbatch_omp(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
+                           const void* b_array[], const libxsmm_blasint ldb_array[],
+  const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
 {
   if (NULL != group_count) {
     const libxsmm_blasint ptrsize = sizeof(void*);
-    internal_gemm_batch_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, transa_array, transb_array, m_array, n_array, k_array,
-      alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array, beta_array, (void**)c_array, ldc_array,
-      0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, group_size, *group_count);
-  }
-}
-
-
-LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(
-  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[], const float* b_array[], const libxsmm_blasint ldb_array[],
-  const float beta_array[], float* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
-{
-  if (NULL != group_count) {
-    const libxsmm_blasint ptrsize = sizeof(void*);
-    internal_gemm_batch_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, transa_array, transb_array, m_array, n_array, k_array,
-      alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array, beta_array, (void**)c_array, ldc_array,
+    internal_gemm_batch_omp(iprec, oprec,
+      transa_array, transb_array, m_array, n_array, k_array,
+      alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
+      beta_array, (void**)c_array, ldc_array,
       0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, group_size, *group_count);
   }
 }
