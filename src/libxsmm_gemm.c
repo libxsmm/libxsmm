@@ -758,301 +758,299 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_gemmfunction kernel, libxsmm_blas
     libxsmm_gemm_param gemm_param;
     memset(&gemm_param, 0, sizeof(gemm_param));
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
-    if (0 == (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS & flags)) {
-      if (0 != index_stride) { /* stride arrays contain indexes */
-        const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
-        libxsmm_blasint i = begin * index_stride;
+    if (0 != index_stride) { /* stride arrays contain indexes */
+      const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
+      libxsmm_blasint i = begin * index_stride;
 #if (0 != LIBXSMM_SYNC)
-        if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
 #endif
-        { /* no locking */
-          libxsmm_blasint ai, bi, ci;
+      { /* no locking */
+        libxsmm_blasint ai, bi, ci;
 #if defined(LIBXSMM_GEMM_FASTPATH)
-          const unsigned char ibits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(itypesize);
-          const unsigned char obits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(otypesize);
-          if (NULL != stride_a && NULL != stride_b && NULL != stride_c
-            && itypesize == (1 << ibits) && otypesize == (1 << obits))
+        const unsigned char ibits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(itypesize);
+        const unsigned char obits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(otypesize);
+        if (NULL != stride_a && NULL != stride_b && NULL != stride_c
+          && itypesize == (1 << ibits) && otypesize == (1 << obits))
+        {
+          ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
+          bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
+          ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
+# if defined(LIBXSMM_BATCH_CHECK)
+          if (0 <= ai && 0 <= bi && 0 <= ci)
+# endif
           {
-            ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
-            bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
-            ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
+            gemm_param.a.primary = &a0[ai << ibits];
+            gemm_param.b.primary = &b0[bi << ibits];
+            gemm_param.c.primary = &c0[ci << obits];
+            for (i += index_stride; i <= end1; i += index_stride) {
+              ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
+              bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
+              ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
 # if defined(LIBXSMM_BATCH_CHECK)
-            if (0 <= ai && 0 <= bi && 0 <= ci)
+              if (0 <= ai && 0 <= bi && 0 <= ci)
 # endif
-            {
-              gemm_param.a.primary = &a0[ai << ibits];
-              gemm_param.b.primary = &b0[bi << ibits];
-              gemm_param.c.primary = &c0[ci << obits];
-              for (i += index_stride; i <= end1; i += index_stride) {
-                ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
-                bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
-                ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
-# if defined(LIBXSMM_BATCH_CHECK)
-                if (0 <= ai && 0 <= bi && 0 <= ci)
-# endif
-                {
-                  gemm_param.a.quaternary = &a0[ai << ibits];
-                  gemm_param.b.quaternary = &b0[bi << ibits];
-                  gemm_param.c.quaternary = &c0[ci << obits];
-                  kernel(&gemm_param);
-                  gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                  gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                  gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-                }
+              {
+                gemm_param.a.quaternary = &a0[ai << ibits];
+                gemm_param.b.quaternary = &b0[bi << ibits];
+                gemm_param.c.quaternary = &c0[ci << obits];
+                kernel(&gemm_param);
+                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
               }
             }
-          }
-          else
-#endif
-          { /* mixed specification of strides or general typesize */
-            ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
-            bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
-            ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
-#if defined(LIBXSMM_BATCH_CHECK)
-            if (0 <= ai && 0 <= bi && 0 <= ci)
-#endif
-            {
-              gemm_param.a.primary = &a0[ai * itypesize];
-              gemm_param.b.primary = &b0[bi * itypesize];
-              gemm_param.c.primary = &c0[ci * otypesize];
-              for (i += index_stride; i <= end1; i += index_stride) {
-                ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
-                bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
-                ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
-#if defined(LIBXSMM_BATCH_CHECK)
-                if (0 <= ai && 0 <= bi && 0 <= ci)
-#endif
-                {
-                  gemm_param.a.quaternary = &a0[ai * itypesize];
-                  gemm_param.b.quaternary = &b0[bi * itypesize];
-                  gemm_param.c.quaternary = &c0[ci * otypesize];
-                  kernel(&gemm_param);
-                  gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                  gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                  gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-                }
-              }
-            }
-          }
-          if ( /* remainder multiplication */
-#if defined(LIBXSMM_BATCH_CHECK)
-            0 <= ai && 0 <= bi && 0 <= ci &&
-#endif
-            end == size)
-          {
-            gemm_param.a.quaternary = gemm_param.a.primary;
-            gemm_param.b.quaternary = gemm_param.b.primary;
-            gemm_param.c.quaternary = gemm_param.c.primary;
-            kernel(&gemm_param);
           }
         }
+        else
+#endif
+        { /* mixed specification of strides or general typesize */
+          ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
+          bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
+          ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
+#if defined(LIBXSMM_BATCH_CHECK)
+          if (0 <= ai && 0 <= bi && 0 <= ci)
+#endif
+          {
+            gemm_param.a.primary = &a0[ai * itypesize];
+            gemm_param.b.primary = &b0[bi * itypesize];
+            gemm_param.c.primary = &c0[ci * otypesize];
+            for (i += index_stride; i <= end1; i += index_stride) {
+              ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
+              bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
+              ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
+#if defined(LIBXSMM_BATCH_CHECK)
+              if (0 <= ai && 0 <= bi && 0 <= ci)
+#endif
+              {
+                gemm_param.a.quaternary = &a0[ai * itypesize];
+                gemm_param.b.quaternary = &b0[bi * itypesize];
+                gemm_param.c.quaternary = &c0[ci * otypesize];
+                kernel(&gemm_param);
+                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+              }
+            }
+          }
+        }
+        if ( /* remainder multiplication */
+#if defined(LIBXSMM_BATCH_CHECK)
+          0 <= ai && 0 <= bi && 0 <= ci &&
+#endif
+          end == size)
+        {
+          gemm_param.a.quaternary = gemm_param.a.primary;
+          gemm_param.b.quaternary = gemm_param.b.primary;
+          gemm_param.c.quaternary = gemm_param.c.primary;
+          kernel(&gemm_param);
+        }
+      }
 #if (0 != LIBXSMM_SYNC)
-        else { /* synchronize among C-indexes */
-          LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock = NULL;
+      else { /* synchronize among C-indexes */
+        LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock = NULL;
 # if defined(LIBXSMM_GEMM_LOCKFWD)
-          LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = NULL;
+        LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = NULL;
 # endif
-          libxsmm_blasint ai, bi, ci;
+        libxsmm_blasint ai, bi, ci;
 # if defined(LIBXSMM_GEMM_FASTPATH)
-          const unsigned char ibits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(itypesize);
-          const unsigned char obits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(otypesize);
-          if (NULL != stride_a && NULL != stride_b && NULL != stride_c
-            && itypesize == (1 << ibits) && otypesize == (1 << obits))
+        const unsigned char ibits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(itypesize);
+        const unsigned char obits = (unsigned char)LIBXSMM_INTRINSICS_BITSCANBWD32(otypesize);
+        if (NULL != stride_a && NULL != stride_b && NULL != stride_c
+          && itypesize == (1 << ibits) && otypesize == (1 << obits))
+        {
+          ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
+          bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
+          ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
+#   if defined(LIBXSMM_BATCH_CHECK)
+          if (0 <= ai && 0 <= bi && 0 <= ci)
+#   endif
           {
-            ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
-            bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
-            ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
+            gemm_param.a.primary = &a0[ai << ibits];
+            gemm_param.b.primary = &b0[bi << ibits];
+            gemm_param.c.primary = &c0[ci << obits];
+            lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
+            for (i += index_stride; i <= end1; i += index_stride) {
+              ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
+              bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
+              ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
 #   if defined(LIBXSMM_BATCH_CHECK)
-            if (0 <= ai && 0 <= bi && 0 <= ci)
+              if (0 <= ai && 0 <= bi && 0 <= ci)
 #   endif
-            {
-              gemm_param.a.primary = &a0[ai << ibits];
-              gemm_param.b.primary = &b0[bi << ibits];
-              gemm_param.c.primary = &c0[ci << obits];
-              lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-              for (i += index_stride; i <= end1; i += index_stride) {
-                ai = LIBXSMM_VALUE1(const libxsmm_blasint, stride_a, i) - index_base;
-                bi = LIBXSMM_VALUE1(const libxsmm_blasint, stride_b, i) - index_base;
-                ci = LIBXSMM_VALUE1(const libxsmm_blasint, stride_c, i) - index_base;
-#   if defined(LIBXSMM_BATCH_CHECK)
-                if (0 <= ai && 0 <= bi && 0 <= ci)
-#   endif
-                {
-                  LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-                  gemm_param.a.quaternary = &a0[ai << ibits];
-                  gemm_param.b.quaternary = &b0[bi << ibits];
-                  gemm_param.c.quaternary = &c0[ci << obits];
+              {
+                LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
+                gemm_param.a.quaternary = &a0[ai << ibits];
+                gemm_param.b.quaternary = &b0[bi << ibits];
+                gemm_param.c.quaternary = &c0[ci << obits];
 #   if defined(LIBXSMM_GEMM_LOCKFWD)
-                  if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 #   else
-                  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+                LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 #   endif
-                  kernel(&gemm_param);
+                kernel(&gemm_param);
 #   if defined(LIBXSMM_GEMM_LOCKFWD)
-                  if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
+                if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 #   else
-                  LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
+                LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 #   endif
-                  gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                  gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                  gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-                }
+                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
               }
             }
           }
-          else
+        }
+        else
 # endif
-          { /* mixed specification of strides or general typesize */
-            ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
-            bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
-            ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
+        { /* mixed specification of strides or general typesize */
+          ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
+          bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
+          ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
 # if defined(LIBXSMM_BATCH_CHECK)
-            if (0 <= ai && 0 <= bi && 0 <= ci)
+          if (0 <= ai && 0 <= bi && 0 <= ci)
 # endif
-            {
-              gemm_param.a.primary = &a0[ai * itypesize];
-              gemm_param.b.primary = &b0[bi * itypesize];
-              gemm_param.c.primary = &c0[ci * otypesize];
-              lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-              for (i += index_stride; i <= end1; i += index_stride) {
-                ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
-                bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
-                ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
+          {
+            gemm_param.a.primary = &a0[ai * itypesize];
+            gemm_param.b.primary = &b0[bi * itypesize];
+            gemm_param.c.primary = &c0[ci * otypesize];
+            lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
+            for (i += index_stride; i <= end1; i += index_stride) {
+              ai = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_a, i) - index_base;
+              bi = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_b, i) - index_base;
+              ci = LIBXSMM_VALUE1_CHECKED(const libxsmm_blasint, index_base, stride_c, i) - index_base;
 # if defined(LIBXSMM_BATCH_CHECK)
-                if (0 <= ai && 0 <= bi && 0 <= ci)
+              if (0 <= ai && 0 <= bi && 0 <= ci)
 # endif
-                {
-                  LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
-                  gemm_param.a.quaternary = &a0[ai * itypesize];
-                  gemm_param.b.quaternary = &b0[bi * itypesize];
-                  gemm_param.c.quaternary = &c0[ci * otypesize];
+              {
+                LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ci, internal_gemm_nlocks)].state;
+                gemm_param.a.quaternary = &a0[ai * itypesize];
+                gemm_param.b.quaternary = &b0[bi * itypesize];
+                gemm_param.c.quaternary = &c0[ci * otypesize];
 # if defined(LIBXSMM_GEMM_LOCKFWD)
-                  if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 # else
-                  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+                LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 # endif
-                  kernel(&gemm_param);
+                kernel(&gemm_param);
 # if defined(LIBXSMM_GEMM_LOCKFWD)
-                  if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
+                if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 # else
-                  LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
+                LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 # endif
-                  gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-                  gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-                  gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-                }
+                gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+                gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+                gemm_param.c.primary = gemm_param.c.quaternary; /* next */
               }
             }
           }
-          LIBXSMM_ASSERT(NULL != lock);
-          if ( /* remainder multiplication */
-# if defined(LIBXSMM_BATCH_CHECK)
-            0 <= ai && 0 <= bi && 0 <= ci &&
-# endif
-            end == size)
-          {
-            gemm_param.a.quaternary = gemm_param.a.primary;
-            gemm_param.b.quaternary = gemm_param.b.primary;
-            gemm_param.c.quaternary = gemm_param.c.primary;
-            LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
-            kernel(&gemm_param);
-            LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
-          }
         }
-#endif /*(0 != LIBXSMM_SYNC)*/
+        LIBXSMM_ASSERT(NULL != lock);
+        if ( /* remainder multiplication */
+# if defined(LIBXSMM_BATCH_CHECK)
+          0 <= ai && 0 <= bi && 0 <= ci &&
+# endif
+          end == size)
+        {
+          gemm_param.a.quaternary = gemm_param.a.primary;
+          gemm_param.b.quaternary = gemm_param.b.primary;
+          gemm_param.c.quaternary = gemm_param.c.primary;
+          LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+          kernel(&gemm_param);
+          LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
+        }
       }
-      else { /* array of pointers to matrices (singular strides are measured in Bytes) */
-        const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
-        const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
-        const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
-        char *ai = &a0[da * begin], *bi = &b0[db * begin], *ci = &c0[dc * begin];
-        const libxsmm_blasint end1 = (end != size ? end : (end - 1));
-        libxsmm_blasint i;
-        gemm_param.a.primary = *((void**)ai);
-        gemm_param.b.primary = *((void**)bi);
-        gemm_param.c.primary = *((void**)ci);
-#if (0 != LIBXSMM_SYNC)
-        if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
-#endif
-        { /* no locking */
-          for (i = begin; i < end1; ++i) {
-            char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
-            gemm_param.a.quaternary = *((void**)an);
-            gemm_param.b.quaternary = *((void**)bn);
-            gemm_param.c.quaternary = *((void**)cn);
-#if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
-#endif
-            {
-              kernel(&gemm_param);
-            }
-            gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-            gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-            gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-            ai = an; bi = bn; ci = cn; /* next */
-          }
-          if ( /* remainder multiplication */
-#if defined(LIBXSMM_BATCH_CHECK)
-            NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary &&
-#endif
-            end == size)
-          {
-            gemm_param.a.quaternary = gemm_param.a.primary;
-            gemm_param.b.quaternary = gemm_param.b.primary;
-            gemm_param.c.quaternary = gemm_param.c.primary;
-            kernel(&gemm_param);
-          }
-        }
-#if (0 != LIBXSMM_SYNC)
-        else { /* synchronize among C-indexes */
-          LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.primary, internal_gemm_nlocks)].state;
-# if defined(LIBXSMM_GEMM_LOCKFWD)
-          LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = NULL;
-# endif
-          LIBXSMM_ASSERT(NULL != lock);
-          for (i = begin + 1; i <= end1; ++i) {
-            char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
-            gemm_param.a.quaternary = *((void**)an);
-            gemm_param.b.quaternary = *((void**)bn);
-            gemm_param.c.quaternary = *((void**)cn);
-# if defined(LIBXSMM_BATCH_CHECK)
-            if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
-# endif
-            {
-              LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.quaternary, internal_gemm_nlocks)].state;
-# if defined(LIBXSMM_GEMM_LOCKFWD)
-              if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
-# else
-              LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
-# endif
-              kernel(&gemm_param);
-# if defined(LIBXSMM_GEMM_LOCKFWD)
-              if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
-# else
-              LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
-# endif
-            }
-            gemm_param.a.primary = gemm_param.a.quaternary; /* next */
-            gemm_param.b.primary = gemm_param.b.quaternary; /* next */
-            gemm_param.c.primary = gemm_param.c.quaternary; /* next */
-            ai = an; bi = bn; ci = cn; /* next */
-          }
-          if ( /* remainder multiplication */
-# if defined(LIBXSMM_BATCH_CHECK)
-            NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary &&
-# endif
-            end == size)
-          {
-            gemm_param.a.quaternary = gemm_param.a.primary;
-            gemm_param.b.quaternary = gemm_param.b.primary;
-            gemm_param.c.quaternary = gemm_param.c.primary;
-            LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
-            kernel(&gemm_param);
-            LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
-          }
-        }
 #endif /*(0 != LIBXSMM_SYNC)*/
+    }
+    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
+      const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
+      const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
+      const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
+      char *ai = &a0[da * begin], *bi = &b0[db * begin], *ci = &c0[dc * begin];
+      const libxsmm_blasint end1 = (end != size ? end : (end - 1));
+      libxsmm_blasint i;
+      gemm_param.a.primary = *((void**)ai);
+      gemm_param.b.primary = *((void**)bi);
+      gemm_param.c.primary = *((void**)ci);
+#if (0 != LIBXSMM_SYNC)
+      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+#endif
+      { /* no locking */
+        for (i = begin; i < end1; ++i) {
+          char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
+          gemm_param.a.quaternary = *((void**)an);
+          gemm_param.b.quaternary = *((void**)bn);
+          gemm_param.c.quaternary = *((void**)cn);
+#if defined(LIBXSMM_BATCH_CHECK)
+          if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
+#endif
+          {
+            kernel(&gemm_param);
+          }
+          gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+          gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+          gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+          ai = an; bi = bn; ci = cn; /* next */
+        }
+        if ( /* remainder multiplication */
+#if defined(LIBXSMM_BATCH_CHECK)
+          NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary &&
+#endif
+          end == size)
+        {
+          gemm_param.a.quaternary = gemm_param.a.primary;
+          gemm_param.b.quaternary = gemm_param.b.primary;
+          gemm_param.c.quaternary = gemm_param.c.primary;
+          kernel(&gemm_param);
+        }
       }
+#if (0 != LIBXSMM_SYNC)
+      else { /* synchronize among C-indexes */
+        LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.primary, internal_gemm_nlocks)].state;
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+        LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = NULL;
+# endif
+        LIBXSMM_ASSERT(NULL != lock);
+        for (i = begin + 1; i <= end1; ++i) {
+          char *const an = ai + da, *const bn = bi + db, *const cn = ci + dc;
+          gemm_param.a.quaternary = *((void**)an);
+          gemm_param.b.quaternary = *((void**)bn);
+          gemm_param.c.quaternary = *((void**)cn);
+# if defined(LIBXSMM_BATCH_CHECK)
+          if (NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary)
+# endif
+          {
+            LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKPTR(gemm_param.c.quaternary, internal_gemm_nlocks)].state;
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
+# else
+            LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+# endif
+            kernel(&gemm_param);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            if (lock != lock1 || i == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
+# else
+            LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
+# endif
+          }
+          gemm_param.a.primary = gemm_param.a.quaternary; /* next */
+          gemm_param.b.primary = gemm_param.b.quaternary; /* next */
+          gemm_param.c.primary = gemm_param.c.quaternary; /* next */
+          ai = an; bi = bn; ci = cn; /* next */
+        }
+        if ( /* remainder multiplication */
+# if defined(LIBXSMM_BATCH_CHECK)
+          NULL != gemm_param.a.primary && NULL != gemm_param.b.primary && NULL != gemm_param.c.primary &&
+# endif
+          end == size)
+        {
+          gemm_param.a.quaternary = gemm_param.a.primary;
+          gemm_param.b.quaternary = gemm_param.b.primary;
+          gemm_param.c.quaternary = gemm_param.c.primary;
+          LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+          kernel(&gemm_param);
+          LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock);
+        }
+      }
+#endif /*(0 != LIBXSMM_SYNC)*/
     }
   }
   /* coverity[missing_unlock] */
