@@ -303,14 +303,12 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
     libxsmm_xmmfunction kernel[LIBXSMM_GEMM_NPARGROUPS];
     libxsmm_blasint base[LIBXSMM_GEMM_NPARGROUPS] = { 0 }, i;
     libxsmm_bitfield kflags[LIBXSMM_GEMM_NPARGROUPS] = { 0 };
-    int max_nthreads = 1;
 #if defined(_OPENMP)
 # if defined(LIBXSMM_EXT_TASKS)
     const int outerpar = omp_get_active_level();
 # else
     const int outerpar = omp_in_parallel();
 # endif
-    if (0 == outerpar) max_nthreads = omp_get_max_threads();
 #endif
     for (i = 0; i < max_npargroups; ++i) {
 #if !defined(NDEBUG)
@@ -359,6 +357,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         const unsigned char itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
 #if defined(_OPENMP)
         const int nchunks = (int)LIBXSMM_UPDIV(size, libxsmm_gemm_taskgrain);
+        const int max_nthreads = (0 == outerpar ? omp_get_max_threads() : 1);
         const int ntasks = nchunks * npargroups, nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
         if (1 < nthreads) {
           LIBXSMM_OMP_VAR(i);
