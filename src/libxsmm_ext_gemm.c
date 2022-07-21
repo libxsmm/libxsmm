@@ -353,7 +353,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         else break;
       }
       LIBXSMM_ASSERT(0 < libxsmm_gemm_taskgrain);
-      if (0 != suitable) { /* check if an SMM is suitable */
+      if (0 != suitable && 0 < size) { /* check if an SMM is suitable */
         const unsigned char itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
 #if defined(_OPENMP)
         const int nchunks = (int)LIBXSMM_UPDIV(size, libxsmm_gemm_taskgrain);
