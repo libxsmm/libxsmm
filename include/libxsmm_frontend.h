@@ -98,8 +98,9 @@
 #define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE3(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch_v2))
-#define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
+#define LIBXSMM_BATCH_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_batch))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
+#define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_SYMBOL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, KIND))
 #define LIBXSMM_CBLAS_SYMBOL            LIBXSMM_TPREFIX
 
@@ -430,7 +431,7 @@
 
 /** Helper macro to setup a matrix with some initial values. */
 #define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) do { \
-  /*const*/ double libxsmm_matinit_seed_ = (double)(SEED); /* avoid constant conditional */ \
+  /*const*/ libxsmm_blasint libxsmm_matinit_seed_ = SEED; /* avoid constant conditional */ \
   const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
   const libxsmm_blasint libxsmm_matinit_nrows_ = (libxsmm_blasint)NROWS; \
   const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
@@ -442,17 +443,18 @@
       for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_nrows_; ++libxsmm_matinit_j_) { \
         const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
         ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_scale_ * (1.0 + \
-          libxsmm_matinit_i_ * libxsmm_matinit_nrows_ + libxsmm_matinit_j_)); \
+          (double)libxsmm_matinit_i_ * libxsmm_matinit_nrows_ + libxsmm_matinit_j_)); \
       } \
       for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
         const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
-        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)(SEED); \
+        ((TYPE*)(DST))[libxsmm_matinit_k_] = (TYPE)libxsmm_matinit_seed_; \
       } \
     } \
   } \
   else { /* shuffle based initialization */ \
     const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
-    const TYPE libxsmm_matinit_maxval2_ = (TYPE)(libxsmm_matinit_maxval_ / 2), libxsmm_matinit_inv_ = (TYPE)((SCALE) / libxsmm_matinit_maxval2_); \
+    const TYPE libxsmm_matinit_maxval2_ = (TYPE)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2); /* non-zero */ \
+    const TYPE libxsmm_matinit_inv_ = (TYPE)((SCALE) / libxsmm_matinit_maxval2_); \
     const size_t libxsmm_matinit_shuffle_ = libxsmm_shuffle(libxsmm_matinit_maxval_); \
     OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
     for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
