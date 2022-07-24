@@ -469,9 +469,8 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
                                                      ( (i_n_processed + l_n)*i_packed_width ) +
                                                      ( (i_packed_processed + l_p)*i_micro_kernel_config->vector_length ) );
-
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR : LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR,
+                                                (i_micro_kernel_config->datatype_size_out == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR : LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR,
                                                 i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, 0,
                                                 l_reg, LIBXSMM_AARCH64_SVE_REG_P0 );
         }
@@ -515,7 +514,6 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                                      (l_k*i_packed_width) +
                                                      ( (i_packed_processed + l_p)*i_micro_kernel_config->vector_length ) );
-
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR : LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR,
                                                 i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, 0,
@@ -526,15 +524,12 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
           if ( l_nnz_idx[l_n][0] != -1 ) {
             libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
                                                        l_nnz_idx[l_n][0] * i_micro_kernel_config->datatype_size_in );
-
             libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
                                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_help_1, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-
             libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                   (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
                                                   i_gp_reg_mapping->gp_reg_help_1,
                                                   LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+1, LIBXSMM_AARCH64_SVE_REG_P0 );
-
             libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                                      l_max_reg_block, l_max_reg_block+1,
@@ -559,9 +554,8 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
                                                    ( (i_n_processed + l_n)*i_packed_width ) +
                                                    ( (i_packed_processed + l_p)*i_micro_kernel_config->vector_length ) );
-
         libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                              (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR : LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR,
+                                              (i_micro_kernel_config->datatype_size_out == 4) ? LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR : LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR,
                                               i_gp_reg_mapping->gp_reg_c, i_gp_reg_mapping->gp_reg_help_2, 0,
                                               l_reg, LIBXSMM_AARCH64_SVE_REG_P0 );
       }
