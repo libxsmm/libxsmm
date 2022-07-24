@@ -458,7 +458,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop_simd_p
     libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                           (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
                                           i_gp_reg_mapping->gp_reg_b,
-                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_n_blocking+1, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                          LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_n_blocking+1, LIBXSMM_AARCH64_SVE_REG_P0 );
 
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_ADD_I,
@@ -488,7 +488,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop_simd_p
     if ( l_use_masking ) {
       /* @TODO */
     } else {
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
                                             i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
                                             l_n, LIBXSMM_AARCH64_SVE_REG_UNDEF );
 
