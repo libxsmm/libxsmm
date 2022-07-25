@@ -44,7 +44,7 @@ LIBXSMM_INLINE
 void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld_in, libxsmm_blasint n_cols_idx,
                               float *sinp, float *ref_result_reduce_elts, float *ref_result_reduce_elts_squared, unsigned long long *cols_ind_array,
                               unsigned int reduce_op, unsigned int reduce_rows,
-                              unsigned int record_idx, unsigned long long *ref_argop_off, unsigned int dtype_lp ) {
+                              unsigned int record_idx, unsigned long long *ref_argop_off, unsigned int dtype_lp, unsigned int reduce_on_output ) {
   libxsmm_blasint i = 0, j = 0, jj = 0;
   char *tmp_sinp_lp = NULL, *tmp_ref_result_reduce_elts_lp = NULL, *tmp_ref_result_reduce_elts_squared_lp = NULL;
   int result_size = (reduce_rows == 1) ? n : ld_in;
@@ -73,8 +73,10 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
     /* Calculate reference results...  */
     if (reduce_rows == 1) {
       for (j = 0; j < n; j++) {
-        ref_result_reduce_elts[j] = 0;
-        ref_result_reduce_elts_squared[j] = 0;
+        if ( reduce_on_output == 0 ) {
+          ref_result_reduce_elts[j] = 0;
+          ref_result_reduce_elts_squared[j] = 0;
+        }
         for (i = 0; i < m; i++) {
           ref_result_reduce_elts[j] += sinp[j*ld_in + i];
           ref_result_reduce_elts_squared[j] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
@@ -84,8 +86,10 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
       if (n_cols_idx == 0) {
         /* In this case we reduce columns */
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
-          ref_result_reduce_elts_squared[i] = 0;
+          if ( reduce_on_output == 0 ) {
+            ref_result_reduce_elts[i] = 0;
+            ref_result_reduce_elts_squared[i] = 0;
+          }
           for (j = 0; j < n; j++) {
             ref_result_reduce_elts[i] += sinp[j*ld_in + i];
             ref_result_reduce_elts_squared[i] += sinp[j*ld_in + i] * sinp[j*ld_in + i];
@@ -93,7 +97,9 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
         }
       } else {
         for (i = 0; i < m; i++) {
-          ref_result_reduce_elts[i] = 0;
+          if ( reduce_on_output == 0 ) {
+            ref_result_reduce_elts[i] = 0;
+          }
           for (jj = 0; jj < n_cols_idx; jj++) {
             j = (libxsmm_blasint)cols_ind_array[jj];
             ref_result_reduce_elts[i] += sinp[j*ld_in + i];
@@ -280,7 +286,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, i, j, k, iters = 1000, reduce_op = 0, dtype_lp = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0, dtype_lp = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
   unsigned int record_idx = 0;
@@ -339,32 +345,38 @@ int main(int argc, char* argv[])
   /* Allocate arrays  */
   sinp  = (float*) malloc( sizeof(float)*ld_in*n );
   result_reduce_elts = (float*) malloc( sizeof(float)*result_size*2 );
+  /* Fill matrices with random data */
+  sfill_matrix ( sinp, ld_in, m, n );
   if (reduce_on_outputs > 0) {
     sfill_matrix ( result_reduce_elts, result_size*2, result_size*2, 1 );
   }
+  ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
+  ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
 
   if (dtype_lp == 2) {
     sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat16)*ld_in*n );
+    libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)sinp_lp, ld_in*n );
+  } else if (dtype_lp == 1) {
+    sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
+    libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)sinp_lp, ld_in*n );
+  }
+
+  if (dtype_lp == 2) {
     result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat16)*result_size*2 );
     memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat16)*result_size*2 );
     result_reduce_elts_squared_lp = NULL;
     if (reduce_on_outputs > 0) {
       libxsmm_rne_convert_fp32_bf16( result_reduce_elts, (libxsmm_bfloat16*)result_reduce_elts_lp, result_size*2 );
-      libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
     }
   } else if (dtype_lp == 1) {
-    sinp_lp  = (char*) malloc( sizeof(libxsmm_bfloat8)*ld_in*n );
     result_reduce_elts_lp = (char*) malloc( sizeof(libxsmm_bfloat8)*result_size*2 );
     memset(result_reduce_elts_lp, 0, sizeof(libxsmm_bfloat8)*result_size*2 );
     result_reduce_elts_squared_lp = NULL;
     if (reduce_on_outputs > 0) {
       libxsmm_rne_convert_fp32_bf8( result_reduce_elts, (libxsmm_bfloat8*)result_reduce_elts_lp, result_size*2 );
-      libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, result_reduce_elts, result_size*2 );
     }
   }
 
-  ref_result_reduce_elts = (float*) malloc(result_size*sizeof(float) );
-  ref_result_reduce_elts_squared = (float*) malloc(result_size*sizeof(float) );
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array_32bit = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
   ref_argop_off        = (unsigned long long*) malloc(ld_in*sizeof(unsigned long long));
@@ -375,37 +387,44 @@ int main(int argc, char* argv[])
   result_reduce_elts_squared = NULL;
 
   if (reduce_op == 0) {
-    if ((reduce_elts == 1) && (reduce_elts_squared == 1)) {
+    if (reduce_elts == 1) {
       result_reduce_elts_squared = (float*) result_reduce_elts + result_size;
       if (dtype_lp == 2) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat16*) result_reduce_elts_lp + result_size);
+        /* @TODO this needs clean-up */
+        libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
+        libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype_lp == 1) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat8*) result_reduce_elts_lp + result_size);
+        /* @TODO this needs clean-up */
+        libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
+        libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
+      } else {
+        /* @TODO this needs clean-up */
+        memcpy( (void*)ref_result_reduce_elts, (void*)result_reduce_elts, sizeof(float)*result_size );
+        memcpy( (void*)ref_result_reduce_elts_squared, (void*)result_reduce_elts_squared, sizeof(float)*result_size );
       }
     }
     if ((reduce_elts == 0) && (reduce_elts_squared == 1)) {
       result_reduce_elts_squared = (float*) result_reduce_elts;
       if (dtype_lp == 2) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
+        /* @TODO this needs clean-up */
+        libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype_lp == 1) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
+        /* @TODO this needs clean-up */
+        libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
+      } else {
+        memcpy( (void*)ref_result_reduce_elts_squared, (void*)result_reduce_elts_squared, sizeof(float)*result_size );
       }
     }
   }
-
-  /* Fill matrices with random data */
-  sfill_matrix ( sinp, ld_in, m, n );
 
   /* Initialize cold_ind array */
   for (j = 0; j < n_cols_idx; j++) {
     cols_ind_array[j] = rand() % n;
     cols_ind_array_32bit[j] = (unsigned int) cols_ind_array[j];
-  }
-
-  if (dtype_lp == 2) {
-    libxsmm_rne_convert_fp32_bf16( sinp, (libxsmm_bfloat16*)sinp_lp, ld_in*n );
-  } else if (dtype_lp == 1) {
-    libxsmm_rne_convert_fp32_bf8( sinp, (libxsmm_bfloat8*)sinp_lp, ld_in*n );
   }
 
 #ifdef FP16_REDUCE_COLSIDX
@@ -421,21 +440,8 @@ int main(int argc, char* argv[])
     }
   }
 #endif
-  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp );
-  if (reduce_on_outputs > 0) {
-    if (reduce_op == 0) {
-      if (reduce_elts == 1) {
-        for (i = 0; i < result_size; i++) {
-          ref_result_reduce_elts[i] += result_reduce_elts[i];
-        }
-      }
-      if (reduce_elts_squared == 1) {
-        for (i = 0; i < result_size; i++) {
-          ref_result_reduce_elts_squared[i] += result_reduce_elts_squared[i];
-        }
-      }
-    }
-  }
+  printf("Running reference reduce kernel... \n");
+  reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp, reduce_on_outputs );
 
   printf("JITing reduce kernel... \n");
 #ifdef FP16_REDUCE_COLSIDX
@@ -475,17 +481,21 @@ int main(int argc, char* argv[])
 
   /* compare */
   printf("##########################################\n");
-  if (dtype_lp == 0) {
-    if (n_cols_idx == 0) {
-      printf("#   FP32 Correctness - Eltwise reduce         #\n");
+  if (n_cols_idx == 0) {
+    if (dtype_lp == 0) {
+      printf("#   FP32 Correctness - Eltwise reduce    #\n");
+    } else if (dtype_lp == 1) {
+      printf("#   BF8  Correctness - Eltwise reduce    #\n");
     } else {
-      printf("#   FP32 Correctness - Eltwise reduce colsidx #\n");
+      printf("#   BF16 Correctness - Eltwise reduce    #\n");
     }
   } else {
-    if (n_cols_idx == 0) {
-      printf("#   BF16 Correctness - Eltwise reduce         #\n");
+    if (dtype_lp == 0) {
+      printf("# FP32 Correctness - Eltwise red. colsidx#\n");
+    } else if (dtype_lp == 1) {
+      printf("# BF8  Correctness - Eltwise red. colsidx#\n");
     } else {
-      printf("#   BF16 Correctness - Eltwise reduce colsidx #\n");
+      printf("# BF16 Correctness - Eltwise red. colsidx#\n");
     }
   }
 
@@ -518,6 +528,8 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       if (dtype_lp == 0) {
         printf("# FP32 Correctness - Eltwise-square reduce  #\n");
+      } else if (dtype_lp == 1) {
+        printf("# BF8  Correctness - Eltwise-square reduce  #\n");
       } else {
         printf("# BF16 Correctness - Eltwise-square reduce  #\n");
       }
@@ -560,7 +572,7 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
   /* Calculate reference results...  */
   for (k = 0; k < iters; k++) {
-    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp );
+    reference_reduce_kernel( m, n, ld_in, (libxsmm_blasint)n_cols_idx, sinp, ref_result_reduce_elts, ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype_lp, reduce_on_outputs );
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
