@@ -505,6 +505,8 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   unsigned int l_ld_bytes = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   LIBXSMM_UNUSED(i_mask_reg);
+  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+
 #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
     for (in = 0; in < i_n_blocking; in++) {
@@ -550,6 +552,14 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
     }
   }  else {
 #endif
+
+  if( l_is_sve ){
+    /* define predicate registers 0 and 1 for storing */
+    /* TODO: implement predication without re-initializing the predicate registers all the time */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 1, i_mask_last_m_chunk * i_micro_kernel_config->datatype_size_in, i_gp_reg_mapping->gp_reg_scratch_0 );
+  }
+
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
