@@ -175,10 +175,10 @@ int main(int argc, char* argv[])
         libxsmm_gemm_batch(iprec, oprec,
           &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
           0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
-        USEOMP(libxsmm_gemm_xbatch)(iprec, oprec, &transa, &transb, &m, &n, &k,
+        USEOMP(libxsmm_gemm_groups)(iprec, oprec, &transa, &transb, &m, &n, &k,
           &alpha, (const void**)pa, &lda, (const void**)pb, &ldb,
           &beta, (void**)pc, &ldc, &group_count, &size);
-        libxsmm_gemm_xbatch(iprec, oprec, &transa, &transb, &m, &n, &k,
+        libxsmm_gemm_groups(iprec, oprec, &transa, &transb, &m, &n, &k,
           &alpha, (const void**)pa, &lda, (const void**)pb, &ldb,
           &beta, (void**)pc, &ldc, &group_count, &size);
         for (i = 0; i < 4; ++i) {

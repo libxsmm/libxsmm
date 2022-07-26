@@ -108,10 +108,10 @@ libxsmm_gemm_descriptor_init2
 libxsmm_gemm_descriptor_init3
 libxsmm_gemm_dprint
 libxsmm_gemm_dprint2
+libxsmm_gemm_groups
+libxsmm_gemm_groups_omp
 libxsmm_gemm_print
 libxsmm_gemm_print2
-libxsmm_gemm_xbatch
-libxsmm_gemm_xbatch_omp
 libxsmm_gemm_xprint
 libxsmm_generator_gemm_directasm
 libxsmm_generator_gemm_inlineasm

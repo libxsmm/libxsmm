@@ -99,14 +99,14 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_gemm_xbatch(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+      libxsmm_gemm_groups(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
         beta_array, (void**)c_array, ldc_array,
         group_count, group_size);
     }
     else { /* parallelized */
-      libxsmm_gemm_xbatch_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
+      libxsmm_gemm_groups_omp(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
         beta_array, (void**)c_array, ldc_array,
@@ -132,13 +132,13 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      libxsmm_gemm_xbatch(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+      libxsmm_gemm_groups(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
         beta_array, (void**)c_array, ldc_array, group_count, group_size);
     }
     else { /* parallelized */
-      libxsmm_gemm_xbatch_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
+      libxsmm_gemm_groups_omp(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
         beta_array, (void**)c_array, ldc_array, group_count, group_size);
@@ -506,7 +506,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
 }
 
 
-LIBXSMM_APIEXT void libxsmm_gemm_xbatch_omp(
+LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
