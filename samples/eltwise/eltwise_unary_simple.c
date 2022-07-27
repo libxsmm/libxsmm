@@ -490,7 +490,7 @@ int main( int argc, char* argv[] ) {
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary BF16 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
-  } else if ( op == COPY_OP && dtype_in == 1 && dtype_out == 1 && (dtype_comp == 4 || dtype_comp == 2) ) {
+  } else if ( op == COPY_OP && dtype_in == 1 && dtype_out == 1 && (dtype_comp == 4 || dtype_comp == 1) ) {
     printf("Testing unary BF8 BF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
