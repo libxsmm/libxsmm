@@ -1899,7 +1899,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
-          generated_code.arch = LIBXSMM_X86_AVX2;
+          generated_code.arch = LIBXSMM_X86_AVX512_VL256;
         }
 # endif
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm);
