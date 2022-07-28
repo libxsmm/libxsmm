@@ -3001,7 +3001,10 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 #if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
-  if (NULL != descriptor) {
+#if !defined(NDEBUG)
+  if (NULL != descriptor)
+#endif
+  {
     libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
@@ -3025,9 +3028,11 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
 #endif
   }
+#if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */
     result.xmm = NULL;
   }
+#endif
   return result;
 }
 
