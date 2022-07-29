@@ -639,7 +639,7 @@ LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype opr
 }
 
 
-LIBXSMM_API void libxsmm_gemm_xbatch(
+LIBXSMM_API void libxsmm_gemm_groups(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
