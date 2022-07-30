@@ -207,6 +207,8 @@
 #define LIBXSMM_X86_INSTR_VUNPCKLPS        0x30041614
 #define LIBXSMM_X86_INSTR_VUNPCKHPD        0x30851615
 #define LIBXSMM_X86_INSTR_VUNPCKHPS        0x30041615
+#define LIBXSMM_X86_INSTR_VPUNPCKLBW       0x30051660
+#define LIBXSMM_X86_INSTR_VPUNPCKHBW       0x30051668
 #define LIBXSMM_X86_INSTR_VPUNPCKLWD       0x30051661
 #define LIBXSMM_X86_INSTR_VPUNPCKHWD       0x30051669
 #define LIBXSMM_X86_INSTR_VPUNPCKLDQ       0x30051662
@@ -396,6 +398,9 @@
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
+#define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052520
+#define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052530
+
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
@@ -404,7 +409,9 @@
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
+#define LIBXSMM_X86_INSTR_VPSLLW_I         0x246d1671
 #define LIBXSMM_X86_INSTR_VPSRAD_I         0x244d1672
+#define LIBXSMM_X86_INSTR_VPSRAW_I         0x244d1671
 #define LIBXSMM_X86_INSTR_VPSRLD_I         0x242d1672
 #define LIBXSMM_X86_INSTR_VPSLLVW          0x30852612
 #define LIBXSMM_X86_INSTR_VPSLLVD          0x30052647
@@ -1318,7 +1325,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
 } libxsmm_jump_label_tracker;
 
 LIBXSMM_EXTERN_C typedef struct libxsmm_const_data_tracker {
-  unsigned char const_data[20480];
+  unsigned char const_data[81920];
   unsigned int const_data_size;
   unsigned int const_data_pc_load_insns[128];
   unsigned int const_data_nload_insns;
@@ -1353,6 +1360,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int m_loop_exists;
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
+  unsigned int fused_b8colbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
@@ -1371,6 +1379,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int reserved_mask_regs;
   unsigned int vnni_perm_reg;
   unsigned int zero_reg;
+  unsigned int scf_vreg;
+  unsigned int aux_vreg;
   unsigned int vec_x2;
   unsigned int vec_nom;
   unsigned int vec_denom;
@@ -1656,6 +1666,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dropout_invprob_vreg;
   unsigned int dropout_vreg_avxmask;
 
+  /* aux variable for stochastic rounding */
+  unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_rand;
+
   /* aux variable for quantization */
   unsigned int quant_vreg_scf;
 
@@ -1723,6 +1737,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      cvt_result_to_bf8;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
   unsigned int                      dcvt_zmm_aux0;

@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+TESTFILE1=$(mktemp -p .)
+TESTFILE2=$(mktemp -p .)
+TESTFILE3=$(mktemp -p .)
+TESTFILE4=$(mktemp -p .)
+TESTFILE5=$(mktemp -p .)
+TESTFILE6=$(mktemp -p .)
+TESTFILE7=$(mktemp -p .)
+TESTFILE8=$(mktemp -p .)
+
+if [ -x "$(command -v python3)" ]; then
+  PYTHON=$(command -v python3)
+else
+  PYTHON=$(command -v python)
+fi
+
+${PYTHON} << END
+import random as rnd
+import time as time
+rnd.seed(time.time())
+randnum = range(1,101,1)
+randnumk = range(1,101,1)
+f1 = open("${TESTFILE1}", "w+")
+f2 = open("${TESTFILE2}", "w+")
+f3 = open("${TESTFILE3}", "w+")
+f4 = open("${TESTFILE4}", "w+")
+f5 = open("${TESTFILE5}", "w+")
+f6 = open("${TESTFILE6}", "w+")
+f7 = open("${TESTFILE7}", "w+")
+f8 = open("${TESTFILE8}", "w+")
+i = 0
+gtld = 1
+for m in randnum:
+    for n in randnum:
+        for k in randnumk:
+            if 0 == gtld:
+                line = str(m) + ' ' + str(n) + ' ' + str(k) + ' ' \
+                     + str(m) + ' ' + str(k) + ' ' + str(m) + '\n'
+            else:
+                line = str(m) + ' ' + str(n) + ' ' + str(k) + ' 100 100 100\n'
+
+            if 0 == (i % 8):
+                f1.write(line)
+            elif 1 == (i % 8):
+                f2.write(line)
+            elif 2 == (i % 8):
+                f3.write(line)
+            elif 3 == (i % 8):
+                f4.write(line)
+            elif 4 == (i % 8):
+                f5.write(line)
+            elif 5 == (i % 8):
+                f6.write(line)
+            elif 6 == (i % 8):
+                f7.write(line)
+            else:
+                f8.write(line)
+            i = i + 1
+f1.close()
+f2.close()
+f3.close()
+f4.close()
+f5.close()
+f6.close()
+f7.close()
+f8.close()
+END
+
+PREC="SP"
+TRA=0
+TRB=0
+BINARY_POSTOP=1
+UNARY_POSTOP=3
+CVNNI=0
+BRTYPE="nobr"
+BRCOUNT=5
+TESTFUSED=0
+
+if [ ${TESTFUSED} == 0 ]; then
+  (trap 'kill 0' SIGINT;
+  ./kernel ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE1}.out &
+  ./kernel ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE2}.out &
+  ./kernel ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE3}.out &
+  ./kernel ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE4}.out &
+  ./kernel ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE5}.out &
+  ./kernel ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE6}.out &
+  ./kernel ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE7}.out &
+  ./kernel ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 | tee ${TESTFILE8}.out )
+  wait
+else
+  (trap 'kill 0' SIGINT; 
+  ./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE1}.fused.out &
+  ./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE2}.fused.out &
+  ./kernel_fused ${TESTFILE3} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE3}.fused.out &
+  ./kernel_fused ${TESTFILE4} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE4}.fused.out &
+  ./kernel_fused ${TESTFILE5} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE5}.fused.out &
+  ./kernel_fused ${TESTFILE6} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE6}.fused.out &
+  ./kernel_fused ${TESTFILE7} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE7}.fused.out &
+  ./kernel_fused ${TESTFILE8} 1 1 0 0 ${TRA} ${TRB} ${PREC} ${BRTYPE} ${BRCOUNT} 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI} | tee ${TESTFILE8}.fused.out )
+  wait
+fi
+
+rm ${TESTFILE1}
+rm ${TESTFILE2}
+rm ${TESTFILE3}
+rm ${TESTFILE4}
+rm ${TESTFILE5}
+rm ${TESTFILE6}
+rm ${TESTFILE7}
+rm ${TESTFILE8}

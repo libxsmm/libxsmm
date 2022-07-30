@@ -88,7 +88,7 @@ LIBXSMM_API void libxsmm_dnn_opt_exec_bf16( libxsmm_dnn_opt_config cfg, libxsmm_
   libxsmm_barrier_init( cfg.barrier, ltid );
 
   for ( i = thr_begin; i < thr_end; ++i ) {
-    libxsmm_bfloat16_hp t1, t2;
+    libxsmm_bfloat16_f32 t1, t2;
     t1.i[0] =0;
     t1.i[1] = delwt_ptr[i];
     master_wt_ptr[i] = master_wt_ptr[i] - (cfg.lr*t1.f);

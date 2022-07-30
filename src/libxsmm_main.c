@@ -1099,7 +1099,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_DEFAULT_CONFIG)
 #     include <libxsmm_dispatch.h>
 #endif
-      libxsmm_gemm_init(libxsmm_target_archid);
+      libxsmm_gemm_init();
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -1760,6 +1760,7 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_F32:  return "f32";
     case LIBXSMM_DATATYPE_BF16: return "bf16";
     case LIBXSMM_DATATYPE_F16:  return "f16";
+    case LIBXSMM_DATATYPE_BF8:  return "bf8";
     case LIBXSMM_DATATYPE_I64:  return "i64";
     case LIBXSMM_DATATYPE_I32:  return "i32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
@@ -1784,6 +1785,11 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
                LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "bf16f32";
+      }
+      else if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP(datatype) &&
+               LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
+      {
+        return "bf8f32";
       }
       else {
         return "void";
@@ -1868,8 +1874,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   libxsmm_kernel_xinfo extra /*= { 0 }*/;
 
   LIBXSMM_MEMZERO127(&generated_code);
-  generated_code.generated_code = jit_buffer;
-  generated_code.buffer_size = sizeof(jit_buffer);
+  if (LIBXSMM_CAPACITY_REGISTRY != regindex) {
+    generated_code.generated_code = jit_buffer;
+    generated_code.buffer_size = sizeof(jit_buffer);
+  }
+  else {
+    void *const buffer = malloc(LIBXSMM_MALLOC_LIMIT);
+    generated_code.generated_code = (NULL != buffer ? ((char*)buffer) : jit_buffer);
+    generated_code.buffer_size = LIBXSMM_MALLOC_LIMIT;
+  }
   /* setup code generation */
   generated_code.arch = libxsmm_target_archid;
   generated_code.code_type = 2;
@@ -1902,7 +1915,11 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           /* TODO: shall we update variable "target_arch" (name)? */
-          generated_code.arch = LIBXSMM_X86_AVX2;
+          if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE ) {
+            generated_code.arch = LIBXSMM_X86_AVX512_VL256;
+          } else {
+            generated_code.arch = LIBXSMM_X86_AVX2;
+          }
         }
 # endif
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm);
@@ -2256,7 +2273,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     const size_t data_size = generated_code.data_size;
     const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-    LIBXSMM_ASSERT(total_size <= LIBXSMM_CODE_MAXSIZE);
     /* attempt to create executable buffer */
 # if defined(__APPLE__) && defined(__arm64__)
     /* TODO: proper buffer x-allocation provides kernel info, etc. */
@@ -2320,6 +2336,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   }
   else {
     result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
+  }
+  if (jit_buffer != generated_code.generated_code) {
+    free(generated_code.generated_code);
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
@@ -3008,13 +3027,10 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 #if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
-  if (NULL != descriptor) {
-    const int batch_reduce =
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
-      LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI |
-      LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
+#if !defined(NDEBUG)
+  if (NULL != descriptor)
+#endif
+  {
     libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
@@ -3022,7 +3038,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
     /* @TODO fix this code for the 3 kernel types we have
      * right now XGEMM ABI and BRGEMM go to 96 byte */
-    wrap.kind = (libxsmm_descriptor_kind)(0 == (batch_reduce & descriptor->flags)
+    wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
@@ -3038,9 +3054,11 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
 #endif
   }
+#if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */
     result.xmm = NULL;
   }
+#endif
   return result;
 }
 
@@ -3108,12 +3126,15 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
     l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
 
   /* add more BRGEMM related fields */
-  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (brgemm_config.br_unroll_hint != 0) ) {
-    desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-  }
-  if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
-    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) ) {
+    if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+      desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+      desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    }
+    if (brgemm_config.br_unroll_hint != 0)
+      desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
+    else
+      desc->c3 = 0;
   }
 
   /* JIT! */
@@ -3158,12 +3179,15 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
     l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
 
   /* add more BRGEMM related fields */
-  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (brgemm_config.br_unroll_hint != 0) ) {
-    desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-  }
-  if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
-    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) ) {
+    if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+      desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+      desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    }
+    if (brgemm_config.br_unroll_hint != 0)
+      desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
+    else
+      desc->c3 = 0;
   }
 
   /* setting binary post-op eltwise fields */

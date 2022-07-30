@@ -20,12 +20,6 @@
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
-#if !defined(LIBXSMM_GEMM_MMBATCH_SCALE)
-# define LIBXSMM_GEMM_MMBATCH_SCALE 1.5
-#endif
-#if !defined(LIBXSMM_GEMM_MMBATCH_VERBOSITY)
-# define LIBXSMM_GEMM_MMBATCH_VERBOSITY ((LIBXSMM_VERBOSITY_HIGH) + 1)
-#endif
 #if !defined(LIBXSMM_GEMM_NPARGROUPS)
 # define LIBXSMM_GEMM_NPARGROUPS 128
 #endif
@@ -95,7 +89,7 @@
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid);
+LIBXSMM_API_INTERN void libxsmm_gemm_init(void);
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
@@ -133,37 +127,9 @@ LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemm);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, double, gemv);
 LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_BLAS_CONST*, *, float, gemv);
 
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
-  libxsmm_xcopykernel copy_a, copy_b, copy_i, copy_o;
-  libxsmm_xmmfunction kernel[2];
-  unsigned int m, n, k, lda, ldb, ldc;
-  /* kernel size (tile) */
-  unsigned int km, kn, kk;
-  /* tile size per task */
-  unsigned int dm, dn, dk;
-  unsigned int itypesize, otypesize;
-  /* number of tasks per direction */
-  unsigned int mt, nt, kt;
-  int gemm_flags, flags;
-};
+LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c);
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_mmbatch_item {
-  struct {
-    const void *a, *b;
-    void *c;
-  } value;
-  struct {
-    libxsmm_gemm_descriptor desc;
-    unsigned int count;
-    const char* symbol;
-  } stat;
-  /* TODO: consider padding */
-} libxsmm_mmbatch_item;
-
-LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
-  libxsmm_blasint batchsize, int multithreaded);
-
-LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
+LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_gemmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int ntasks,
   unsigned char itypesize, unsigned char otypesize, int flags);
@@ -184,16 +150,6 @@ LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* tr
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
-
-/** auto-batch descriptor (filter). */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
-/** Records a batch of SMMs or is used for batch-reduce. */
-LIBXSMM_APIVAR_PUBLIC(void* libxsmm_mmbatch_array);
-/** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
-LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
-/** Maximum size of the recorded batch. */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_mmbatch_size);
 /** Maximum number of parallelized batch-groups. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
@@ -216,4 +172,3 @@ LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_def
 LIBXSMM_APIVAR_PRIVATE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 #endif /*LIBXSMM_GEMM_H*/
-

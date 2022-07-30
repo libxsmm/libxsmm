@@ -194,7 +194,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype opr
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
-   const void* beta,       void* c, const libxsmm_blasint* ldc,
+  const void* beta,        void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
@@ -204,56 +204,28 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
-   const void* beta,       void* c, const libxsmm_blasint* ldc,
+  const void* beta,        void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (double-precision). */
-LIBXSMM_API void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
+/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+LIBXSMM_API void libxsmm_gemm_groups(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
-                              const double* b_array[], const libxsmm_blasint ldb_array[],
-   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
+  const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
+                           const void* b_array[], const libxsmm_blasint ldb_array[],
+  const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 
-/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (single-precision). */
-LIBXSMM_API void libxsmm_sgemm_batch(const char transa_array[], const char transb_array[],
+/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[],
-                             const float* b_array[], const libxsmm_blasint ldb_array[],
-   const float beta_array[],       float* c_array[], const libxsmm_blasint ldc_array[],
+  const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
+                           const void* b_array[], const libxsmm_blasint ldb_array[],
+  const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
-
-/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (double-precision). */
-LIBXSMM_APIEXT void libxsmm_dgemm_batch_omp(const char transa_array[], const char transb_array[],
-  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
-                              const double* b_array[], const libxsmm_blasint ldb_array[],
-   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
-
-/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (single-precision). */
-LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(const char transa_array[], const char transb_array[],
-  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[],
-                             const float* b_array[], const libxsmm_blasint ldb_array[],
-   const float beta_array[],       float* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
-
-/**
- * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
- * Pointer arguments are used to filter intercepted GEMM calls such that
- * non-NULL values match. Otherwise (NULL) the respective argument is
- * considered a "free value", i.e., every value can match; libxsmmext required.
- */
-LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_datatype precision, const int* flags,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta);
-
-/** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin); libxsmmext required. */
-LIBXSMM_APIEXT void libxsmm_mmbatch_end(void);
 
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_descriptor* descriptor );
@@ -390,32 +362,6 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride[], libxsmm_blasint batchsize);
-
-/** Initialize GEMM-handle; allows to better amortize setup overhead. */
-LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
-  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta, int flags, /*unsigned*/int ntasks);
-
-/** Calculate required scratch buffer size needed to perform libxsmm_gemm_task. */
-LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
-
-/** Low-level type-agnostic GEMM suitable for external threads or tasks. */
-LIBXSMM_API void libxsmm_gemm_task(const libxsmm_gemm_handle* handle, void* scratch,
-  const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int ntasks);
-
-/** General dense matrix multiplication (sequential). */
-LIBXSMM_API void libxsmm_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
-
-/** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
-LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
@@ -650,7 +596,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
-   const double* beta,       double* c, const libxsmm_blasint* ldc)
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -658,7 +604,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
-   const double* beta,       double* c, const libxsmm_blasint* ldc)
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -668,7 +614,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -676,7 +622,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -686,7 +632,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
-   const double* beta,       double* c, const libxsmm_blasint* ldc)
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -694,7 +640,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
-   const double* beta,       double* c, const libxsmm_blasint* ldc)
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -704,7 +650,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -712,7 +658,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }

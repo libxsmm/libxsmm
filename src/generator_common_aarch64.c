@@ -136,7 +136,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
     }
     /* increment register if needed; add via immediate */
     if( i_adv_gpr ) {
-      unsigned int l_sve_length = libxsmm_cpuid_vlen32( io_generated_code->arch ) * 4;/* 512 bits = 64 bytes for the A64FX */
+      unsigned int l_sve_length = libxsmm_cpuid_vlen( io_generated_code->arch );/* 512 bits = 64 bytes for the A64FX */
       unsigned int l_offset = i_datatype_size * (i_masked_elems ? i_masked_elems : l_sve_length / i_datatype_size);
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
     }
@@ -643,7 +643,7 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
      * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
-    unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
+    unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
     unsigned int l_increment = 64 / l_vector_length;
     libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_prng_state_ptr,
                                           LIBXSMM_AARCH64_GP_REG_UNDEF,               0, prng_state0_vreg, 0 );
@@ -676,7 +676,7 @@ void libxsmm_generator_store_prng_state_aarch64_asimd( libxsmm_generated_code* i
   if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* the same notes as in libxsmm_generator_load_prng_state_aarch64_asimd() apply here */
-    unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;
+    unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
     unsigned int l_increment = 64 / l_vector_length;
     libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_prng_state_ptr,
                                           LIBXSMM_AARCH64_GP_REG_UNDEF,               0, prng_state0_vreg, 0 );
@@ -2425,7 +2425,7 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
                                              const libxsmm_aarch64_sve_type i_sve_type ) {
 
   unsigned int l_bytes_length = (1 << (unsigned int) i_sve_type) * i_element_count;
-  unsigned int l_vector_length = libxsmm_cpuid_vlen32(io_generated_code->arch) * 4;/* number of bytes per vector */
+  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);/* number of bytes per vector */
   unsigned int l_remainder = l_bytes_length % l_vector_length;
   unsigned int l_i;
   unsigned int l_incremented_size = l_bytes_length - l_remainder;

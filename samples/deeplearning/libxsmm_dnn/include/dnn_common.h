@@ -106,7 +106,7 @@ LIBXSMM_INLINE void truncate_mask_fp32_bf16(float* in, float* out, unsigned int 
 
   /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
-    libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_f32 t;
 
     t.f = in[i];
     t.i[0] = 0;
@@ -343,7 +343,7 @@ LIBXSMM_INLINE void init_buf_bf16(libxsmm_bfloat16* buf, size_t size, int initPo
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
-    libxsmm_bfloat16_hp tmp;
+    libxsmm_bfloat16_f32 tmp;
     tmp.f = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
     buf[i] = tmp.i[1];
   }
@@ -1652,7 +1652,7 @@ LIBXSMM_INLINE void matrix_copy_f32_bf16(int size, float *src, libxsmm_bfloat16 
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_f32 t;
     t.f = src[i];
     dst[i] = t.i[1];
   }
@@ -1665,7 +1665,7 @@ LIBXSMM_INLINE void matrix_copy_bf16_f32(int size, libxsmm_bfloat16 *src, float 
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_f32 t;
     t.i[1] = src[i];
     t.i[0] = 0;
     dst[i] = t.f;
@@ -1789,7 +1789,7 @@ LIBXSMM_INLINE void convert_ck_f32_to_c4k_bf16(int C, int K, float *src, libxsmm
 #endif
   for (y = 0; y < C; y++) {
     for (x = 0; x < K; x++) {
-      libxsmm_bfloat16_hp t;
+      libxsmm_bfloat16_f32 t;
       t.f = src[y*K + x];
       dst[y*4*K + x] = t.i[1];
     }

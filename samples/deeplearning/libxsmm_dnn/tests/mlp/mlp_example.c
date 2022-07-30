@@ -41,7 +41,7 @@ LIBXSMM_INLINE void my_init_buf_mlp_bf16(libxsmm_bfloat16* buf, size_t size, int
   int i;
   zero_buf_bf16(buf, size);
   for (i = 0; i < (int)size; ++i) {
-    libxsmm_bfloat16_hp tmp;
+    libxsmm_bfloat16_f32 tmp;
     tmp.f = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
     buf[i] = tmp.i[1];
   }

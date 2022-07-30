@@ -90,7 +90,7 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 
 int main(void)
 {
-  union { libxsmm_xmmfunction x; void* p; } f[MAX_NKERNELS];
+  libxsmm_xmmfunction f[MAX_NKERNELS];
   const OTYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
   const int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_registry_info registry_info;
@@ -173,7 +173,7 @@ int main(void)
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-      f[i].x.LIBXSMM_TPREFIX2(ITYPE,OTYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(
+      f[i].LIBXSMM_TPREFIX2(ITYPE,OTYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE,OTYPE)(
         m, n, k, &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &flags);
     }
   }
@@ -186,21 +186,21 @@ int main(void)
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-      union { libxsmm_xmmfunction x; void* p; } fi;
+      libxsmm_xmmfunction fi;
       libxsmm_descriptor_blob blob;
       const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_DATATYPE2(ITYPE,OTYPE),
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
 
-      fi.x = libxsmm_xmmdispatch(desc);
-      if (NULL != fi.p && NULL != f[i].p) {
-        if (fi.p != f[i].p) {
+      fi = libxsmm_xmmdispatch(desc);
+      if (NULL != fi.ptr_const && NULL != f[i].ptr_const) {
+        if (fi.ptr_const != f[i].ptr_const) {
           libxsmm_kernel_info a_info, b_info;
-          const int ra = libxsmm_get_kernel_info(f[i].p, &a_info);
-          const int rb = libxsmm_get_kernel_info(fi.p, &b_info);
+          const int ra = libxsmm_get_kernel_info(f[i].ptr_const, &a_info);
+          const int rb = libxsmm_get_kernel_info(fi.ptr_const, &b_info);
 
           /* perform deeper check based on another code generation (used as reference) */
           if (EXIT_SUCCESS == ra && EXIT_SUCCESS == rb && (a_info.code_size != b_info.code_size ||
-            0 != memcmp(f[i].p, fi.p, a_info.code_size)))
+            0 != memcmp(f[i].ptr_const, fi.ptr_const, a_info.code_size)))
           {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
             fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel does not match!\n",
@@ -253,9 +253,9 @@ int main(void)
       int j = i + 1;
       /* avoid to double-release kernels */
       for (; j < nkernels; ++j) {
-        if (f[i].p == f[j].p) f[j].p = NULL;
+        if (f[i].ptr_const == f[j].ptr_const) f[j].ptr_const = NULL;
       }
-      libxsmm_release_kernel(f[i].p);
+      libxsmm_release_kernel(f[i].ptr_const);
     }
   }
 

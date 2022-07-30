@@ -29,17 +29,30 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC_IN in 2 4
+  for PREC_IN in 1 2 4
   do
-    for PREC_OUT in 2 4
-    do
-      for RELU_OP in D L E
+    if [ ${PREC_IN} -ne 1 ];
+    then
+      for PREC_OUT in 2 4
       do
-        ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
-        ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
-        ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+        for RELU_OP in D L E
+        do
+          ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+          ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+          ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+        done
       done
-    done
+    else
+      for PREC_OUT in 1 4
+      do
+        for RELU_OP in D L E
+        do
+          ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+          ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+          ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} 100 100
+        done
+      done
+    fi
   done
 done
 

@@ -37,6 +37,7 @@
 #define LIBXSMM_TYPENAME_float f32
 #define LIBXSMM_TYPENAME_libxsmm_bfloat16 bf16
 #define LIBXSMM_TYPENAME_libxsmm_float16 f16
+#define LIBXSMM_TYTPNAME_libxsmm_bfloat8 bf8
 #define LIBXSMM_TYPENAME_int i32
 #define LIBXSMM_TYPENAME_short i16
 #define LIBXSMM_TYPENAME_char i8
@@ -47,6 +48,7 @@
 #define LIBXSMM_TYPEINFO_FP_float 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
 #define LIBXSMM_TYPEINFO_FP_libxsmm_float16 1
+#define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat8 1
 #define LIBXSMM_TYPEINFO_FP_int 0
 #define LIBXSMM_TYPEINFO_FP_short 0
 #define LIBXSMM_TYPEINFO_FP_char 0
@@ -57,6 +59,7 @@
 #define LIBXSMM_TYPESYMBOL_float F32
 #define LIBXSMM_TYPESYMBOL_libxsmm_bfloat16 BF16
 #define LIBXSMM_TYPESYMBOL_libxsmm_float16 F16
+#define LIBXSMM_TYPESYMBOL_libxsmm_bfloat8 BF8
 #define LIBXSMM_TYPESYMBOL_int I32
 #define LIBXSMM_TYPESYMBOL_short I16
 #define LIBXSMM_TYPESYMBOL_char I8
@@ -66,11 +69,12 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_BF8  ? 1 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
-  0/*invalid*/)))))))))
+  0/*invalid*/))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -110,15 +114,20 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float_uint {
   unsigned int u;
 } libxsmm_float_uint;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_float16_ushort {
+  libxsmm_float16 f;
+  unsigned short  u;
+} libxsmm_float16_ushort;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_f32 {
   libxsmm_bfloat16 i[2];
   float f;
-} libxsmm_bfloat16_hp;
+} libxsmm_bfloat16_f32;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_qp {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat8_f16 {
   libxsmm_bfloat8 i[2];
   libxsmm_float16 hf;
-} libxsmm_bfloat8_qp;
+} libxsmm_bfloat8_f16;
 
 #if defined(__cplusplus)
 namespace Eigen { struct bfloat16; }
@@ -129,7 +138,6 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for a GEMM handle. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[128]; } libxsmm_gemm_blob;
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
@@ -149,6 +157,7 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
   LIBXSMM_DATATYPE_F16,
+  LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_I64,
   LIBXSMM_DATATYPE_I32,
   LIBXSMM_DATATYPE_I16,
@@ -208,7 +217,8 @@ typedef enum libxsmm_meltw_unary_flags {
   LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS            = 2048,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC = 4096,
   LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP= 8192,
-  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 16384
+  LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH = 16384,
+  LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND   = 32768
 } libxsmm_meltw_unary_flags;
 
 typedef enum libxsmm_meltw_unary_type {
@@ -386,30 +396,39 @@ typedef enum libxsmm_gemm_flags {
   /** Aligned load/store instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_C = 16,
   /** Batch-reduce Ai * Bi. */
-  /** AMX hint to avoid tileconfig/release, it's negated bits, so that 0 is default "on" */
-  LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 32,
-  LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 64,
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 128,
-  /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 256,
-  /** Batch-reduce Ai * Bi. */
-  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 512,
   /** Aligned C matrix, but using NTS Hint when storing */
-  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_GEMM_FLAG_ALIGN_C,
+  LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT = 32 | LIBXSMM_GEMM_FLAG_ALIGN_C,
+  /** AMX hint to avoid tileconfig/release, it's negated bits, so that 0 is default "on" */
+  LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG = 64,
+  LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG = 128,
   /* in case of integer GEMM, if A is unsigned */
-  LIBXSMM_GEMM_FLAG_A_UNSIGNED = 2048,
+  LIBXSMM_GEMM_FLAG_A_UNSIGNED = 256,
   /* in case of integer GEMM, if B is unsigned */
-  LIBXSMM_GEMM_FLAG_B_UNSIGNED = 4096,
+  LIBXSMM_GEMM_FLAG_B_UNSIGNED = 512,
   /* in case of integer GEMM, if C is unsigned */
-  LIBXSMM_GEMM_FLAG_C_UNSIGNED = 8192,
+  LIBXSMM_GEMM_FLAG_C_UNSIGNED = 1024,
   /* in case of integer GEMM, if A and B are unsigned */
   LIBXSMM_GEMM_FLAG_AB_UNSIGNED = LIBXSMM_GEMM_FLAG_A_UNSIGNED | LIBXSMM_GEMM_FLAG_B_UNSIGNED,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates A */
-  LIBXSMM_GEMM_FLAG_VNNI_A = 16384,
+  LIBXSMM_GEMM_FLAG_VNNI_A = 2048,
   /* for low precision we also require up-front packed formats "VNNI" for best performance, this flag indicates B */
-  LIBXSMM_GEMM_FLAG_VNNI_B = 32768,
+  LIBXSMM_GEMM_FLAG_VNNI_B = 4096,
   /* for low precision we also require post packed formats "VNNI" for best performance, this flag indicated C */
-  LIBXSMM_GEMM_FLAG_VNNI_C = 65536,
+  LIBXSMM_GEMM_FLAG_VNNI_C = 8192,
+  /** use GEMM ABI */
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI = 16384,
+  /** use XGEMM_EXT ABI */
+  LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI = 32768,
+
+  /* Pseudo-flag denoting big descriptor */
+  LIBXSMM_GEMM_FLAG_DESC_ISBIG = 65536,
+  /** Batch-reduce Ai * Bi. */
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS = 65536,
+  /** Batch-reduce Ai * Bi. */
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET = 131072,
+  /** Batch-reduce Ai * Bi. */
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE = 262144,
+
   /* combined types */
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0                      = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_ADDRESS        = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT,
@@ -439,33 +458,9 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_OFFSET_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BATCH_REDUCE_STRIDE_AB_UNSIGNED         = LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
   LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT_BETA_0_BATCH_REDUCE_STRIDE_AB_UNSIGNED  = LIBXSMM_GEMM_FLAG_BETA_0       | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE | LIBXSMM_GEMM_FLAG_AB_UNSIGNED,
-  /** use GEMM ABI */
-  LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI = 131072,
-  /** use XGEMM_EXT ABI */
-  LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI = 262144,
   /** Marker flag; do not use. */
   LIBXSMM_GEMM_FLAG_INVALID = 524288
 } libxsmm_gemm_flags;
-
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_gemm_handle_flags {
-  LIBXSMM_GEMM_HANDLE_FLAG_AUTO   = 0,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
-} libxsmm_gemm_handle_flags;
-
-/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
-typedef enum libxsmm_mmbatch_flags {
-  /** Handle recorded batch unsynchronized-parallel. */
-  LIBXSMM_MMBATCH_FLAG_DEFAULT      = LIBXSMM_GEMM_FLAG_INVALID * 0,
-  /** Synchronize among C matrices. */
-  LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  /** Handle recorded batch sequentially. */
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = LIBXSMM_GEMM_FLAG_INVALID * 2,
-  /** Only record a statistic of potential SMMs. */
-  LIBXSMM_MMBATCH_FLAG_STATISTIC    = LIBXSMM_GEMM_FLAG_INVALID * 4
-} libxsmm_mmbatch_flags;
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
@@ -745,6 +740,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_gemmfunction_ext)( 
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
+  const void* ptr_const; void* ptr;
   void (*xmm)(const void* a, const void* b, void* c);
   void (*xgemm)(const void* in_struct);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm;
@@ -791,4 +787,3 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {
 } libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
-

@@ -1,5 +1,6 @@
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
+TSTDIR = ./kernel_test
 SRCDIR = .
 INCDIR = .
 BLDDIR = obj
@@ -37,12 +38,24 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_binary_simple $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform $(OUTDIR)/eltwise_unary_quantization
+XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter \
+          $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_binary_simple \
+          $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \
+          $(OUTDIR)/eltwise_unary_simple $(OUTDIR)/eltwise_unary_relu \
+          $(OUTDIR)/eltwise_unary_quantization
+
 .PHONY: all
-all: $(XFILES)
+all: $(XFILES) scripts
 
 .PHONY: compile
 compile: $(OBJECTS)
+
+.PHONY: scripts
+scripts: $(TSTDIR)/.create_new_opreduce_simple_test
+$(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple_test.sh Makefile
+	$(info Creating opreduce test scripts...)
+	@cd $(TSTDIR) && ./create_new_opreduce_simple_test.sh >/dev/null
+	@touch $@
 
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -101,4 +114,4 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@rm -f $(XFILES) $(MODULES)
 endif
-
+	@rm -f $(TSTDIR)/.create_new_opreduce_simple_test

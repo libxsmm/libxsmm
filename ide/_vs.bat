@@ -20,6 +20,11 @@ IF %VS_COMNTOOLS%=="" (
   )
 )
 
+IF EXIST %ONEAPI_ROOT%setvars-vcvarsall.bat (
+  CALL "%ONEAPI_ROOT%setvars-vcvarsall.bat"
+  GOTO START_VISUAL_STUDIO
+)
+
 SET ICL_VERSION=%2
 REM IF "%ICL_VERSION%"=="" SET ICL_VERSION=%VS_VERSION:~2,4%
 IF "%ICL_VERSION%"=="" SET ICL_VERSION=99
@@ -39,6 +44,7 @@ IF "%ICPP_COMPILER%"=="" (
     GOTO SELECT_ICL_VERSION
   )
 )
+
 REM CALL "%ICPP_COMPILER%bin\compilervars.bat" intel64 vs%VS_VERSION%
 IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
@@ -53,6 +59,7 @@ IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
   )
 )
 
+:START_VISUAL_STUDIO
 SET MPI_ROOT="%I_MPI_ROOT:-RT=%"
 
 IF EXIST %VS_COMNTOOLS%"..\IDE\devenv.exe" (

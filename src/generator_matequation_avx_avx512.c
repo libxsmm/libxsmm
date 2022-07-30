@@ -429,6 +429,7 @@ LIBXSMM_API_INTERN
 int libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(libxsmm_matrix_eqn_elem  *xgemm_node) {
   int result = 0;
   if (((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16)) ||
+      ((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF8)) ||
       ((xgemm_node->le->tmp.dtype == LIBXSMM_DATATYPE_F32) && (xgemm_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F32))) {
     result = 1;
   }
