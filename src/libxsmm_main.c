@@ -3011,13 +3011,10 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 #if !defined(LIBXSMM_UNPACKED) /* CCE/Classic */
   LIBXSMM_ASSERT((sizeof(*descriptor) + sizeof(libxsmm_descriptor_kind)) <= (LIBXSMM_DESCRIPTOR_MAXSIZE));
 #endif
-  if (NULL != descriptor) {
-    const int batch_reduce =
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS |
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET |
-      LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE |
-      LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI |
-      LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
+#if !defined(NDEBUG)
+  if (NULL != descriptor)
+#endif
+  {
     libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
     LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
@@ -3025,7 +3022,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
     /* @TODO fix this code for the 3 kernel types we have
      * right now XGEMM ABI and BRGEMM go to 96 byte */
-    wrap.kind = (libxsmm_descriptor_kind)(0 == (batch_reduce & descriptor->flags)
+    wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
@@ -3041,9 +3038,11 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
 #endif
   }
+#if !defined(NDEBUG)
   else { /* quietly accept NULL-descriptor */
     result.xmm = NULL;
   }
+#endif
   return result;
 }
 
@@ -3111,12 +3110,15 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
     l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
 
   /* add more BRGEMM related fields */
-  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (brgemm_config.br_unroll_hint != 0) ) {
-    desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-  }
-  if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
-    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) ) {
+    if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+      desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+      desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    }
+    if (brgemm_config.br_unroll_hint != 0)
+      desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
+    else
+      desc->c3 = 0;
   }
 
   /* JIT! */
@@ -3161,12 +3163,15 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
     l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
 
   /* add more BRGEMM related fields */
-  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) && (brgemm_config.br_unroll_hint != 0) ) {
-    desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
-  }
-  if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
-    desc->c1 = (long long)brgemm_config.br_stride_a_hint;
-    desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+  if ( (brgemm_config.br_type != LIBXSMM_GEMM_BATCH_REDUCE_NONE) ) {
+    if ( brgemm_config.br_type == LIBXSMM_GEMM_BATCH_REDUCE_STRIDE ) {
+      desc->c1 = (long long)brgemm_config.br_stride_a_hint;
+      desc->c2 = (long long)brgemm_config.br_stride_b_hint;
+    }
+    if (brgemm_config.br_unroll_hint != 0)
+      desc->c3 = (unsigned char)(((brgemm_config.br_unroll_hint < 255) && (brgemm_config.br_unroll_hint > 0)) ? brgemm_config.br_unroll_hint : 0);
+    else
+      desc->c3 = 0;
   }
 
   /* setting binary post-op eltwise fields */
