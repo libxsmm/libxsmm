@@ -504,8 +504,8 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
   unsigned int l_ld_bytes = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
-  LIBXSMM_UNUSED(i_mask_reg);
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  LIBXSMM_UNUSED(i_mask_reg);
 
 #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
@@ -1537,6 +1537,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch); /* in bytes, 512 bit -> 64 bytes */
   unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte, 512 bit -> 64 bytes -> 8 bytes*/
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be read, 512 bit -> .. -> 2 bytes */
+  unsigned char im_mod = im & 3; /* 4 = number of bits per float within predicate register */
 
   if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -1564,7 +1565,6 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
 #else
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
  *    * 1024 needs to respect the size of the mask data array */
-  unsigned char im_mod = im & 3; /* 4 = number of bits per float within predicate register */
   if(im_mod == 0){
     /* count of sections, that will be loaded: max 4, max i_m_blocking & 3 at the end */
     unsigned int copied_sections = i_m_blocking - im < 3 ? i_m_blocking & 3 : 4;
@@ -1638,8 +1638,14 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                                                          const unsigned char     i_tmp_pred_reg1,
                                                                          const unsigned char     i_gp_reg_scratch,
                                                                          unsigned int* const     io_mask_adv ) {
+  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
+  unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte */
+  unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be stored */
+  unsigned char im_mod = im & 3;
+
   if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   /* store bitflags (l_blend_reg) to bitflag array in memory */
@@ -1654,11 +1660,6 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                            i_tmp_pred_reg0, i_tmp_pred_reg0, 0, i_tmp_pred_reg0,
                                            0, LIBXSMM_AARCH64_SVE_TYPE_B );
 #endif
-
-  unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
-  unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte */
-  unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be stored */
-  unsigned char im_mod = im & 3;
 #ifdef SVE_MASKS_HAVE_PADDING
   /* ideal: store predicate into register, store register into memory (only 2 bytes) */
   /* Antonio cannot find an instruction for that -> ensure the buffer has padding, and write over the end :/ */
@@ -1680,7 +1681,6 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, i_gp_reg_scratch, LIBXSMM_AARCH64_GP_REG_XSP, l_stack_offset );
 #else
-
   if(im_mod == 3 || im == i_m_blocking-1){
     unsigned int copied_sections = im_mod + 1;
     unsigned int l_mask_length_bytes = LIBXSMM_UPDIV(m, 16)*2;
