@@ -1547,7 +1547,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
       /* Load B itself (elide if already loaded) */
-      if ( l_curr_rvb_disp != l_b_disp + l_n*l_vbytes ) {
+      if ( l_curr_rvb_disp != l_b_disp + (int)(l_n*l_vbytes) ) {
         libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
                                               l_gp_reg_mapping.gp_reg_help_1, 0, l_n,
                                               l_rvb, LIBXSMM_AARCH64_SVE_REG_P0 );
