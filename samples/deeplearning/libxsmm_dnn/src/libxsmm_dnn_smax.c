@@ -253,7 +253,7 @@ LIBXSMM_API void libxsmm_dnn_smax_fwd_exec_bf16( libxsmm_dnn_smax_fwd_config cfg
   libxsmm_barrier_init( cfg.barrier, ltid );
 
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
-    libxsmm_bfloat16_hp in;
+    libxsmm_bfloat16_f32 in;
     in.i[0] = 0;
     in.i[1] = pinput_bf16[i];
     pinput_fp32[i] = in.f;
@@ -315,7 +315,7 @@ LIBXSMM_API void libxsmm_dnn_smax_fwd_exec_bf16( libxsmm_dnn_smax_fwd_config cfg
   libxsmm_barrier_wait( cfg.barrier, ltid );
 
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
-    libxsmm_bfloat16_hp in;
+    libxsmm_bfloat16_f32 in;
     in.f = poutput_fp32[i];
     poutput_bf16[i] = in.i[1];
   }
@@ -365,7 +365,7 @@ LIBXSMM_API void libxsmm_dnn_smax_bwd_exec_bf16( libxsmm_dnn_smax_bwd_config cfg
   libxsmm_barrier_init( cfg.barrier, ltid );
 
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
-    libxsmm_bfloat16_hp out;
+    libxsmm_bfloat16_f32 out;
     out.i[0] = 0;
     out.i[1] = poutput_bf16[i];
     poutput_fp32[i] = out.f;
@@ -394,7 +394,7 @@ LIBXSMM_API void libxsmm_dnn_smax_bwd_exec_bf16( libxsmm_dnn_smax_bwd_config cfg
   libxsmm_barrier_wait( cfg.barrier, ltid );
 
   for ( i = nc_thr_begin; i < nc_thr_end; ++i ) {
-    libxsmm_bfloat16_hp in;
+    libxsmm_bfloat16_f32 in;
     in.f = pdinput_fp32[i];
     pdinput_bf16[i] = in.i[1];
   }

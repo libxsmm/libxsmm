@@ -22,7 +22,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-
 LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
@@ -430,38 +429,99 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
   return res;
 }
 
+#if 0
+/* this code attempts to convert in one step from fp32 to bf8 just using
+ * integer code, however it doesn't hand RNE in all case correctly */
+LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
+  unsigned int f32_bias = 127;
+  unsigned int bf8_bias = 15;
+  libxsmm_float_uint hybrid_in;
+  unsigned char res = 0;
+  unsigned int s, e, m, e_f32, m_f32;
+  unsigned int fixup;
+  hybrid_in.f = in;
+
+  /* DAZ */
+  hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : ( hybrid_in.u & 0xffffffff );
+
+  s = ( hybrid_in.u & 0x80000000 ) >> 24;
+  e_f32 = ( hybrid_in.u & 0x7f800000 ) >> 23;
+  m_f32 = ( hybrid_in.u & 0x007fffff );
+
+  /* special value */
+  if ( e_f32 == 0xff ) {
+    e = 0x1f;
+    m = (m_f32 == 0) ? 0 : (m_f32 >> 21) | 0x20;
+  /* overflow */
+  } else if ( e_f32 > (f32_bias + bf8_bias) ) {
+    e = 0x1f;
+    m = 0x0;
+  /* smaller than denormal f16 */
+  } else if ( e_f32 < f32_bias - bf8_bias - 2 ) {
+    e = 0x0;
+    m = 0x0;
+  /* denormal */
+  } else if ( e_f32 <= f32_bias - bf8_bias ) {
+    /* RNE */
+    /* denormalized mantissa */
+    m = m_f32 | 0x00800000;
+    /* addtionally subnormal shift */
+    m = m >> ((f32_bias - bf8_bias) + 1 - e_f32);
+    /* preserve sticky bit (some sticky bits are lost when denormalizing) */
+    m |= (((m_f32 & 0x1fff) + 0x1fff) >> 21);
+    /* RNE Round */
+    fixup = (m >> 21) & 0x1;
+    m = m + 0x000fffff + fixup;
+    m = m >> 21;
+    e = 0x0;
+  /* normal */
+  } else {
+    /* RNE round */
+    fixup = (m_f32 >> 21) & 0x1;
+    hybrid_in.u = hybrid_in.u + 0x000fffff + fixup;
+    e = ( hybrid_in.u & 0x7f800000 ) >> 23;
+    m = ( hybrid_in.u & 0x007fffff );
+    e -= (f32_bias - bf8_bias);
+    m = m >> 21;
+  }
+
+  /* set result to 0 */
+  res = 0x0;
+  /* set exp and mant */
+  res |= e << 2;
+  res |= m;
+  /* sign it */
+  res |= s;
+
+  return res;
+}
+#endif
+
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
   unsigned int i = 0;
 
   /* truncate buffer to bf8 */
   for ( i = 0; i < length; ++i ) {
-    unsigned short short_round = 0;
-    unsigned int do_round = 1;
+    libxsmm_float16_ushort hybrid_in = { 0 };
+    libxsmm_bfloat8 res;
+    unsigned int fixup;
 
-    short_round = libxsmm_convert_f32_to_f16( in[i] );
+    hybrid_in.f = libxsmm_convert_f32_to_f16( in[i] );
 
-    /* we do not round NaN and inf */
-    if ( (short_round & 0x7c00) == 0x7c00 ) {
-      do_round = 0;
-    }
+    /* RNE round */
+    fixup = (hybrid_in.u >> 8) & 1;
+    /* we do not round inf and NaN */
+    hybrid_in.u = ( (hybrid_in.u & 0x7c00) == 0x7c00 ) ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 ) : hybrid_in.u + 0x007f + fixup;
+    /* shift right */
+    res = (unsigned short)(hybrid_in.u >> 8);
 
-    /* perform round nearest tie even */
-    if ( do_round != 0 ) {
-      unsigned short fixup = (short_round >> 8) & 1;
-      short_round = short_round + 0x007f + fixup;
-    }
-
-    /* create the bf8 value by shifting out the lower 16bits */
-    short_round = short_round >> 8;
-
-    out[i] = (unsigned char)short_round;
+    out[i] = res;
   }
 }
 
 LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, unsigned int length) {
   unsigned int i = 0;
 
-  /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
     unsigned short tmp = ((unsigned short)in[i]) << 8;
     out[i] = libxsmm_convert_f16_to_f32( tmp );

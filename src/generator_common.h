@@ -398,6 +398,9 @@
 #define LIBXSMM_X86_INSTR_VPMOVSDB         0x28062421
 #define LIBXSMM_X86_INSTR_VPMOVUSDB        0x28062411
 #define LIBXSMM_X86_INSTR_VPMOVZXWD        0x20052533
+#define LIBXSMM_X86_INSTR_VPMOVSXBW        0x20052520
+#define LIBXSMM_X86_INSTR_VPMOVZXBW        0x20052530
+
 #define LIBXSMM_X86_INSTR_VPMOVSXBD        0x20052421
 #define LIBXSMM_X86_INSTR_VPMOVZXBD        0x20052431
 #define LIBXSMM_X86_INSTR_VPMOVUSWB        0xe0062510
@@ -406,7 +409,9 @@
 
 /* shift instructions */
 #define LIBXSMM_X86_INSTR_VPSLLD_I         0x246d1672
+#define LIBXSMM_X86_INSTR_VPSLLW_I         0x246d1671
 #define LIBXSMM_X86_INSTR_VPSRAD_I         0x244d1672
+#define LIBXSMM_X86_INSTR_VPSRAW_I         0x244d1671
 #define LIBXSMM_X86_INSTR_VPSRLD_I         0x242d1672
 #define LIBXSMM_X86_INSTR_VPSLLVW          0x30852612
 #define LIBXSMM_X86_INSTR_VPSLLVD          0x30052647
@@ -1355,6 +1360,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int m_loop_exists;
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
+  unsigned int fused_b8colbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
@@ -1660,6 +1666,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int dropout_invprob_vreg;
   unsigned int dropout_vreg_avxmask;
 
+  /* aux variable for stochastic rounding */
+  unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_rand;
+
   /* aux variable for quantization */
   unsigned int quant_vreg_scf;
 
@@ -1727,6 +1737,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      cvt_result_to_bf8;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
   unsigned int                      dcvt_zmm_aux0;

@@ -42,19 +42,31 @@ int unequal_fp32_vals(float a, float b) {
 }
 
 float upconvert_bf16(libxsmm_bfloat16 x) {
-  libxsmm_bfloat16_hp bf16_hp;
+  libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
   bf16_hp.i[0] = 0;
   return bf16_hp.f;
 }
 
 int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
-  libxsmm_bfloat16_hp bf16_hp, bf16_hp2;
+  libxsmm_bfloat16_f32 bf16_hp, bf16_hp2;
   bf16_hp.i[1] = a;
   bf16_hp.i[0] = 0;
   bf16_hp2.i[1] = b;
   bf16_hp2.i[0] = 0;
   if (fabs(bf16_hp.f - bf16_hp2.f) < EPS) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+int unequal_bf8_vals(libxsmm_bfloat8 a, libxsmm_bfloat8 b) {
+  float af, bf;
+  libxsmm_convert_bf8_f32( &a, &af, 1);
+  libxsmm_convert_bf8_f32( &b, &bf, 1);
+
+  if (fabs(af - bf) < EPS) {
     return 0;
   } else {
     return 1;
@@ -122,7 +134,7 @@ void eqn0_bf16bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, lib
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       float Arg0, Arg1, Arg2, Arg3, res;
-      libxsmm_bfloat16_hp bf16_hp;
+      libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.i[0] = 0;
       bf16_hp.i[1] = bf16_arg0[(i*ld)+j];
       Arg0 = bf16_hp.f;
@@ -148,7 +160,7 @@ void eqn0_bf16f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
       float Arg0, Arg1, Arg2, Arg3;
-      libxsmm_bfloat16_hp bf16_hp;
+      libxsmm_bfloat16_f32 bf16_hp;
       bf16_hp.i[0] = 0;
       bf16_hp.i[1] = bf16_arg0[(i*ld)+j];
       Arg0 = bf16_hp.f;
@@ -179,6 +191,57 @@ void eqn0_f32bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, floa
   }
 }
 
+void eqn0_bf8bf8(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat8 *bf8_arg0, libxsmm_bfloat8 *bf8_arg1, libxsmm_bfloat8 *bf8_arg2, libxsmm_bfloat8* bf8_arg3, libxsmm_bfloat8 *bf8_out) {
+  libxsmm_blasint i, j;
+
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      float Arg0, Arg1, Arg2, Arg3, res;
+      libxsmm_convert_bf8_f32( &(bf8_arg0[(i*ld)+j]), &Arg0, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg1[(i*ld)+j]), &Arg1, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg2[(i*ld)+j]), &Arg2, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg3[(i*ld)+j]), &Arg3, 1);
+#if 0
+      res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+#else
+      res = (Arg0 + 1.0f + Arg1) * ((Arg2*Arg2) + Arg3);
+#endif
+      libxsmm_rne_convert_fp32_bf8( &res, &bf8_out[(i*ld)+j], 1 );
+    }
+  }
+}
+
+void eqn0_bf8f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat8 *bf8_arg0, libxsmm_bfloat8 *bf8_arg1, libxsmm_bfloat8 *bf8_arg2, libxsmm_bfloat8* bf8_arg3, float *out) {
+  libxsmm_blasint i, j;
+
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      float Arg0, Arg1, Arg2, Arg3;
+      libxsmm_convert_bf8_f32( &(bf8_arg0[(i*ld)+j]), &Arg0, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg1[(i*ld)+j]), &Arg1, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg2[(i*ld)+j]), &Arg2, 1);
+      libxsmm_convert_bf8_f32( &(bf8_arg3[(i*ld)+j]), &Arg3, 1);
+      out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+    }
+  }
+}
+
+void eqn0_f32bf8(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, float*arg3, libxsmm_bfloat8 *bf8_out) {
+  libxsmm_blasint i, j;
+
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      float Arg0, Arg1, Arg2, Arg3, res;
+      Arg0 = arg0[(i*ld)+j];
+      Arg1 = arg1[(i*ld)+j];
+      Arg2 = arg2[(i*ld)+j];
+      Arg3 = arg3[(i*ld)+j];
+      res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+      libxsmm_rne_convert_fp32_bf8( &res, &bf8_out[(i*ld)+j], 1 );
+    }
+  }
+}
+
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2;
   libxsmm_matrix_eqn_function func0, func1, func2;
@@ -190,7 +253,9 @@ int main( int argc, char* argv[] ) {
   float *arg0, *arg1, *arg2, *arg3, *out, *eqn_out;
   libxsmm_matrix_arg arg_array[4];
   libxsmm_bfloat16 *bf16_arg0, *bf16_arg1, *bf16_arg2, *bf16_arg3, *bf16_out, *bf16_eqn_out;
+  libxsmm_bfloat8 *bf8_arg0, *bf8_arg1, *bf8_arg2, *bf8_arg3, *bf8_out, *bf8_eqn_out;
   libxsmm_matrix_arg bf16_arg_array[4];
+  libxsmm_matrix_arg bf8_arg_array[4];
   libxsmm_matrix_eqn_arg_metadata arg_metadata;
   libxsmm_matrix_eqn_op_metadata  op_metadata;
   libxsmm_meqn_arg_shape          arg_shape_in, arg_shape_out;
@@ -200,6 +265,7 @@ int main( int argc, char* argv[] ) {
   unsigned long long *unique_random_array;
   float              *large_input;
   libxsmm_bfloat16   *large_input_bf16;
+  libxsmm_bfloat8   *large_input_bf8;
 
   int M = 64;
   int N = 64;
@@ -236,6 +302,15 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 3) {
     in_dt = LIBXSMM_DATATYPE_BF16;;
     out_dt = LIBXSMM_DATATYPE_F32;
+  } else if (datatype_mode == 4) {
+    in_dt = LIBXSMM_DATATYPE_BF8;
+    out_dt = LIBXSMM_DATATYPE_BF8;
+  } else if (datatype_mode == 5) {
+    in_dt = LIBXSMM_DATATYPE_F32;
+    out_dt = LIBXSMM_DATATYPE_BF8;
+  } else if (datatype_mode == 6) {
+    in_dt = LIBXSMM_DATATYPE_BF8;;
+    out_dt = LIBXSMM_DATATYPE_F32;
   }
 
   arg0 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
@@ -249,6 +324,7 @@ int main( int argc, char* argv[] ) {
   unique_random_array = (unsigned long long*) libxsmm_aligned_malloc( sizeof(unsigned long long)*large_N,   64);
   large_input = (float*) libxsmm_aligned_malloc( sizeof(float)*large_N*ld,   64);
   large_input_bf16 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*large_N*ld,   64);
+  large_input_bf8 = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*large_N*ld,   64);
 
   bf16_arg0 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
   bf16_arg1 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
@@ -256,6 +332,13 @@ int main( int argc, char* argv[] ) {
   bf16_arg3 = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
   bf16_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
   bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld,   64);
+
+  bf8_arg0 = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
+  bf8_arg1 = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
+  bf8_arg2 = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
+  bf8_arg3 = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
+  bf8_out  = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
+  bf8_eqn_out  = (libxsmm_bfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat8)*N*ld,   64);
 
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_out);
@@ -274,6 +357,12 @@ int main( int argc, char* argv[] ) {
       libxsmm_rne_convert_fp32_bf16( &arg3[(i*ld)+j], &bf16_arg3[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &out[(i*ld)+j], &bf16_out[(i*ld)+j], 1 );
       libxsmm_rne_convert_fp32_bf16( &eqn_out[(i*ld)+j], &bf16_eqn_out[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &arg0[(i*ld)+j], &bf8_arg0[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &arg1[(i*ld)+j], &bf8_arg1[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &arg2[(i*ld)+j], &bf8_arg2[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &arg3[(i*ld)+j], &bf8_arg3[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &out[(i*ld)+j], &bf8_out[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &eqn_out[(i*ld)+j], &bf8_eqn_out[(i*ld)+j], 1 );
     }
   }
 
@@ -281,6 +370,7 @@ int main( int argc, char* argv[] ) {
     for ( j = 0; j < ld; ++j ) {
       large_input[(i*ld)+j] = (float)libxsmm_rng_f64();
       libxsmm_rne_convert_fp32_bf16( &large_input[(i*ld)+j], &large_input_bf16[(i*ld)+j], 1 );
+      libxsmm_rne_convert_fp32_bf8( &large_input[(i*ld)+j], &large_input_bf8[(i*ld)+j], 1 );
     }
   }
 
@@ -294,6 +384,10 @@ int main( int argc, char* argv[] ) {
   bf16_arg_array[2].primary = bf16_arg2;
   bf16_arg_array[3].primary = bf16_arg3;
 
+  bf8_arg_array[0].primary = bf8_arg0;
+  bf8_arg_array[1].primary = bf8_arg1;
+  bf8_arg_array[2].primary = bf8_arg2;
+  bf8_arg_array[3].primary = bf8_arg3;
 
 #if 0
   for ( i = 0; i < N; ++i ) {
@@ -330,7 +424,13 @@ int main( int argc, char* argv[] ) {
     eqn0_f32bf16(M, N, ld, arg0, arg1, arg2, arg3, bf16_out);
   } else if (datatype_mode == 3) {
     eqn0_bf16f32(M, N, ld, bf16_arg0, bf16_arg1, bf16_arg2, bf16_arg3, out);
-  }
+  } else if (datatype_mode == 4) {
+    eqn0_bf8bf8(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, bf8_out);
+  } else if (datatype_mode == 5) {
+    eqn0_f32bf8(M, N, ld, arg0, arg1, arg2, arg3, bf8_out);
+  } else if (datatype_mode == 6) {
+    eqn0_bf8f32(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, out);
+   }
 
   my_eqn0 = libxsmm_matrix_eqn_create();
 #if 0
@@ -362,13 +462,17 @@ int main( int argc, char* argv[] ) {
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;
-  } else {
+  } else if ( in_dt == LIBXSMM_DATATYPE_BF16  ) {
     eqn_param.inputs = bf16_arg_array;
+  } else if ( in_dt == LIBXSMM_DATATYPE_BF8  ) {
+    eqn_param.inputs = bf8_arg_array;
   }
   if ( out_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.output.primary = eqn_out;
-  } else {
-   eqn_param.output.primary  = bf16_eqn_out;
+  } else if ( in_dt == LIBXSMM_DATATYPE_BF16  ) {
+    eqn_param.output.primary  = bf16_eqn_out;
+  } else if ( in_dt == LIBXSMM_DATATYPE_BF8  ) {
+    eqn_param.output.primary  = bf8_eqn_out;
   }
   func0(&eqn_param);
 #endif
@@ -389,6 +493,13 @@ int main( int argc, char* argv[] ) {
           /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
           s = 1;
         }
+      } else if (out_dt == LIBXSMM_DATATYPE_BF8) {
+        libxsmm_convert_bf8_f32(&(bf8_out[(i*ld)+j]), &(out[(i*ld)+j]), 1);
+        libxsmm_convert_bf8_f32(&(bf8_eqn_out[(i*ld)+j]), &(eqn_out[(i*ld)+j]), 1);
+        if ( unequal_bf8_vals(bf8_out[(i*ld)+j], bf8_eqn_out[(i*ld)+j])  ) {
+          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, upconvert_bf16(bf16_out[(i*ld)+j]), upconvert_bf16(bf16_eqn_out[(i*ld)+j]));*/
+          s = 1;
+        }
       }
 #if 0
       else {
@@ -406,6 +517,12 @@ int main( int argc, char* argv[] ) {
     printf("Equation IN: F32, OUT: BF16 \n");
   } else if (datatype_mode == 3) {
     printf("Equation IN: BF16, OUT: F32 \n");
+  } else if (datatype_mode == 4) {
+    printf("Equation IN: BF8, OUT: BF8 \n");
+  } else if (datatype_mode == 5) {
+    printf("Equation IN: F32, OUT: BF8 \n");
+  } else if (datatype_mode == 6) {
+    printf("Equation IN: BF8, OUT: F32 \n");
   }
   if ( s == 0 ) {
     /*printf("SUCCESS\n");*/
@@ -440,6 +557,12 @@ int main( int argc, char* argv[] ) {
     eqn0_f32bf16(M, N, ld, arg0, arg1, arg2, arg3, bf16_out);
   } else if (datatype_mode == 3) {
     eqn0_bf16f32(M, N, ld, bf16_arg0, bf16_arg1, bf16_arg2, bf16_arg3, out);
+  } else if (datatype_mode == 4) {
+    eqn0_bf8bf8(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, bf8_out);
+  } else if (datatype_mode == 5) {
+    eqn0_f32bf8(M, N, ld, arg0, arg1, arg2, arg3, bf8_out);
+  } else if (datatype_mode == 6) {
+    eqn0_bf8f32(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, out);
   }
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -451,6 +574,12 @@ int main( int argc, char* argv[] ) {
       eqn0_f32bf16(M, N, ld, arg0, arg1, arg2, arg3, bf16_out);
     } else if (datatype_mode == 3) {
       eqn0_bf16f32(M, N, ld, bf16_arg0, bf16_arg1, bf16_arg2, bf16_arg3, out);
+    } else if (datatype_mode == 4) {
+      eqn0_bf8bf8(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, bf8_out);
+    } else if (datatype_mode == 5) {
+      eqn0_f32bf8(M, N, ld, arg0, arg1, arg2, arg3, bf8_out);
+    } else if (datatype_mode == 6) {
+      eqn0_bf8f32(M, N, ld, bf8_arg0, bf8_arg1, bf8_arg2, bf8_arg3, out);
     }
   }
   l_end = libxsmm_timer_tick();

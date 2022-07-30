@@ -2,4 +2,3 @@
 kernel
 kernel_fused
 kernel_parallel
-xgemm
