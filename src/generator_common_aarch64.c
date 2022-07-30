@@ -1043,6 +1043,9 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_gene
                                                                     const unsigned int                    i_gp_reg_tmp1,
                                                                     const libxsmm_aarch64_sve_type        i_sve_type,
                                                                     const unsigned char                   i_pred_reg ) {
+  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE512) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
 
   unsigned long long thres_array = 0x40879fff;
   unsigned long long absmask_array = 0x7fffffff;
@@ -1144,6 +1147,9 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
                                                                         const unsigned int                    i_gp_reg_tmp1,
                                                                         const libxsmm_aarch64_sve_type        i_sve_type,
                                                                         const unsigned char                   i_pred_reg ) {
+  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE512) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
 
   unsigned long long thres_array    = 0x408f5fff;
   unsigned long long absmask_array  = 0x7fffffff;
@@ -1323,6 +1329,9 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
                                                      const unsigned int                    i_vec_exp_mask, /* contains 0x000000ff in every element for masking the exponent */
                                                      const libxsmm_aarch64_sve_type        i_sve_type,
                                                      const unsigned char                   i_pred_reg ) {
+    if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE512) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    }
 
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,
@@ -1543,6 +1552,9 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve(  libxsmm_generated_code
                                                           const unsigned int                             i_vec_exp_mask, /* contains 0x000000ff for masking the exponent */
                                                           const libxsmm_aarch64_sve_type                 i_sve_type,
                                                           const unsigned char                            i_pred_reg ) {
+  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE512) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
 
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
                                              i_vec_x, i_vec_x, 0, i_vec_xr,

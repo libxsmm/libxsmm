@@ -350,7 +350,7 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
   unsigned int l_ld_bytes = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned int offset = 0;
-  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_micro_kernel_config->datatype_size_in));
 
   LIBXSMM_UNUSED(i_mask_reg);
@@ -505,6 +505,8 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   unsigned int l_ld_bytes = i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   LIBXSMM_UNUSED(i_mask_reg);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+
 #if 0 /* todo: code from X86, that is still missing in ASIMD/SVE */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
     for (in = 0; in < i_n_blocking; in++) {
@@ -550,6 +552,14 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
     }
   }  else {
 #endif
+
+  if( l_is_sve ){
+    /* define predicate registers 0 and 1 for storing */
+    /* TODO: implement predication without re-initializing the predicate registers all the time */
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 1, i_mask_last_m_chunk * i_micro_kernel_config->datatype_size_out, i_gp_reg_mapping->gp_reg_scratch_0 );
+  }
+
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
@@ -614,7 +624,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
   unsigned int bcast_row = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0))) ? 1 : 0;
   unsigned int bcast_col = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
-  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   unsigned char l_pred_reg = LIBXSMM_CAST_UCHAR(i_mask_reg);
   unsigned char l_op_needs_predicates =
     i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_X2 &&
@@ -1046,10 +1056,11 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu( libxsmm_generated_code*   
                                                       unsigned int                            i_mask_last_m_chunk,
                                                       unsigned int                            i_mask_reg) {
   unsigned int im, in;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_vlen);
 
-  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+  if( l_is_sve ){
 
     unsigned char l_pred_reg = LIBXSMM_CAST_UCHAR(i_mask_reg);
     unsigned char l_blend_reg = 7; /* sve predicate register for blending; todo should be a function input / part of the config */
@@ -1256,8 +1267,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_relu_inv( libxsmm_generated_code
   unsigned int im, in;
   unsigned int l_ld_bytes = i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in;
   unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? i_micro_kernel_config->datatype_size_in * i_vlen * i_m_blocking : i_micro_kernel_config->datatype_size_in * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
-  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ){
+  if( l_is_sve ){
 
     unsigned char l_tmp_pred_reg = 6;
     unsigned char l_blend_reg = 7; /* vector register for blending; todo should be a function input / part of the reg mapping */
@@ -1526,15 +1538,11 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   unsigned int l_predicate_length = l_vector_length / 8; /* 4 bytes/float, 8 bits in 1 byte, 512 bit -> 64 bytes -> 8 bytes*/
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be read, 512 bit -> .. -> 2 bytes */
 
-#ifdef SVE_MASKS_HAVE_PADDING
-  /* Warning! this code is specific to a sve vector length of 512 bits (A64FX)
- *    * and it writes over the end of the mask space (which is UB).
- *       * If the caller ensures there is enough padding, it will be fine. */
+  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
 
-  /* load 2 bytes from memory into first 16 bits of predicate register */
-  libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_P_I_OFF,
-                                        i_gp_reg_mask, 0, 0, i_blend_reg, 0 );
-#elif defined(SVE_SLOW_COPY)
+#if defined(SVE_SLOW_COPY)
   /* for 64x8 on A64FX, this is 3x slower */
   /* warning! this only works for the vector length 256 and 512; 128 needs byte-mixing
  *    * 1024 needs to respect the size of the mask data array */
@@ -1630,6 +1638,10 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
                                                                          const unsigned char     i_tmp_pred_reg1,
                                                                          const unsigned char     i_gp_reg_scratch,
                                                                          unsigned int* const     io_mask_adv ) {
+  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+  }
+
   /* store bitflags (l_blend_reg) to bitflag array in memory */
 #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* mv l_blend_reg into l_tmp_pred_reg */
@@ -1757,6 +1769,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
                                                          unsigned int                            i_mask_last_m_chunk,
                                                          unsigned int                            i_mask_reg) {
   unsigned int im, in;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_vlen);
 
@@ -1766,7 +1779,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout( libxsmm_generated_code*
       /*unsigned int l_vlen = ( l_bf16_compute > 0 ) ? 32 : 16;*/
       unsigned int cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
-      if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+      if( l_is_sve ){
 
         /* could/should be function parameters */
         unsigned char l_blend_reg = 7;
@@ -1891,6 +1904,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout_inv( libxsmm_generated_c
                                                              unsigned int                            i_mask_last_m_chunk,
                                                              unsigned int                            i_mask_reg ) {
   unsigned int im, in;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(i_mask_last_m_chunk);
   LIBXSMM_UNUSED(i_mask_reg);
   LIBXSMM_UNUSED(i_vlen);
@@ -1905,7 +1919,7 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_dropout_inv( libxsmm_generated_c
         return;
       }
 
-      if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+      if( l_is_sve ){
 
         /* these predicate registers maybe should be function parameters */
         unsigned char l_tmp_pred_reg = 6;
@@ -1986,7 +2000,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
   unsigned int offset = 0, offset2 = 0;
   unsigned int _in_blocking = (bcast_col == 1) ? 1 : i_n_blocking;
 
-  unsigned char l_is_sve = io_generated_code->arch == LIBXSMM_AARCH64_A64FX;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   unsigned char l_is_predicated = (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_DIV) || (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD);
   unsigned char l_pred_reg = LIBXSMM_CAST_UCHAR(i_mask_reg);
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_micro_kernel_config->datatype_size_in));
@@ -2196,6 +2210,7 @@ void libxsmm_setup_input_output_aarch64_masks( libxsmm_generated_code*          
                                                unsigned int*                           i_mask_reg_out) {
   unsigned int i_vlen_in = i_micro_kernel_config->vlen_in;
   unsigned int i_vlen_out = i_micro_kernel_config->vlen_out;
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(io_generated_code);
   LIBXSMM_UNUSED(i_micro_kernel_config);
   LIBXSMM_UNUSED(i_mateltwise_desc);
@@ -2206,7 +2221,7 @@ void libxsmm_setup_input_output_aarch64_masks( libxsmm_generated_code*          
   *i_mask_reg_out = 0;
   *i_use_m_output_masking = i_m % i_vlen_out;
 
-  if(io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+  if( l_is_sve ){
     /* reserving predicate 0 and 1 for ptrue and remainder (when loading/storing) */
     i_micro_kernel_config->reserved_mask_regs += 2;
   }
@@ -2313,7 +2328,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
                                                           unsigned int                            i_gp_reg_tmp1,
                                                           const unsigned int                      i_gp_reg_aux0,
                                                           const unsigned int                      i_gp_reg_aux1 ) {
-  unsigned char l_is_sve = (io_generated_code->arch == LIBXSMM_AARCH64_A64FX);
+  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   unsigned char l_pred_reg = 0; /* todo decide which predicate register to use */
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_micro_kernel_config->datatype_size_in));
   libxsmm_aarch64_asimd_tupletype l_tupletype = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
@@ -2533,7 +2548,7 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
     unsigned char l_zero_reg = LIBXSMM_CAST_UCHAR(i_micro_kernel_config->reserved_zmms);
     i_micro_kernel_config->reserved_zmms = l_zero_reg + 1;
     i_micro_kernel_config->zero_vreg = l_zero_reg;
-    if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+    if( l_is_sve ) {
       /* the sve data type does not matter, maybe we should add a new enum value for that */
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V, l_zero_reg, l_zero_reg, 0, l_zero_reg, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
     } else {
