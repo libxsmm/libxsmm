@@ -664,17 +664,17 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   }
 
   if (l_emu_amx > 0) {
-    int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
-    i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
-    gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
+    i_micro_kernel_config->gemm_scratch_ld = 16;
+    i_micro_kernel_config->emulation_scratch_offset = 32 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/;
+    gemm_scratch_size =  64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
     if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       i_micro_kernel_config->emulation_scratch_offset = 0;
       gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     }
   } else {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
-      int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
-      gemm_scratch_size = LIBXSMM_MAX(32*64, expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4/*i_micro_kernel_config->datatype_size*/);
+      i_micro_kernel_config->gemm_scratch_ld = 16;
+      gemm_scratch_size = LIBXSMM_MAX(32*64, 64 * i_micro_kernel_config->gemm_scratch_ld * 4/*i_micro_kernel_config->datatype_size*/);
     } else {
       /* Allocate scratch for stashing 32 zmms  */
       if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
