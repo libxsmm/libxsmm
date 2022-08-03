@@ -108,8 +108,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrappe
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxsmm_generated_code*        io_generated_code,
                                                                            libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                            const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
-                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_const ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
+  libxsmm_gemm_descriptor xgemm_desc_mod = *i_xgemm_desc_const;
+  libxsmm_gemm_descriptor *i_xgemm_desc = (libxsmm_gemm_descriptor*) &xgemm_desc_mod;
 
   /* initialize n-blocking */
   unsigned int l_n_count = 0;          /* array counter for blocking arrays */
@@ -265,6 +267,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_mapping->gp_reg_c );
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_1, 32LL * 64LL );
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_c);
+    i_xgemm_desc->ldc = i_xgemm_desc->m;
+    l_new_xgemm_desc_opa.ldc = i_xgemm_desc->m;
   }
 
   if ( ( i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc->m != 0) && (i_xgemm_desc->k != 0) ) {
@@ -712,6 +716,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   /* In this case we vnni-format C from scratch  */
   if (l_micro_kernel_config.vnni_format_C > 0) {
+    i_xgemm_desc->ldc = i_xgemm_desc_const->ldc;
+    l_new_xgemm_desc_opa.ldc = i_xgemm_desc_const->ldc;
     libxsmm_generator_gemm_vnni_store_C_from_scratch( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc);
   }
 
