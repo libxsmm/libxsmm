@@ -665,7 +665,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
 
   if (l_emu_amx > 0) {
     i_micro_kernel_config->gemm_scratch_ld = 16;
-    i_micro_kernel_config->emulation_scratch_offset = 32 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/;
+    i_micro_kernel_config->emulation_scratch_offset = 64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/;
     gemm_scratch_size =  64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
     if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       i_micro_kernel_config->emulation_scratch_offset = 0;
