@@ -94,6 +94,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
   }
 
   /* Store FP32 tiles to scratch  */
+  i_micro_kernel_config->ldc_emu = (i_micro_kernel_config->gemm_scratch_ld * 4)/4;
   libxsmm_x86_instruction_tile_move_emu( io_generated_code,
       i_micro_kernel_config->instruction_set,
       LIBXSMM_X86_INSTR_TILESTORED,
@@ -110,9 +111,10 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
         gp_reg_gemm_scratch,
         i_gp_reg_mapping->gp_reg_ldc,
         4,
-        i_xgemm_desc->ldc * n_cols * 4 /*i_micro_kernel_config->datatype_size*/,
+        i_micro_kernel_config->gemm_scratch_ld * n_cols * 4 /*i_micro_kernel_config->datatype_size*/,
         tile1, i_micro_kernel_config, 0);
   }
+  i_micro_kernel_config->ldc_emu = (i_xgemm_desc->ldc * 4)/4;
 
   /* Fully unroll in N dimension  */
   eager_result_store = ( ((unsigned int)n_cols > (max_unrolling - reserved_zmms)) || ((fuse_relu == 0) && (fuse_relu_bwd == 0)) || (tile1 < 0)) ? 1 : 0;
@@ -145,7 +147,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
           LIBXSMM_X86_INSTR_VMOVUPS,
           gp_reg_gemm_scratch,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (col + n_cols) * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
+          (col + n_cols) * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/,
           i_micro_kernel_config->vector_name,
           reg_0, 0, 1, 0 );
     }
@@ -160,7 +162,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
                                                       i_micro_kernel_config->vector_name,
                                                       gp_reg_gemm_scratch,
                                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                       reg_0,
                                                       reg_1);
       } else {
@@ -170,7 +172,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
                                                  i_micro_kernel_config->vector_name,
                                                  gp_reg_gemm_scratch,
                                                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                 col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                  reg_0,
                                                  reg_1, i_micro_kernel_config);
       }
@@ -201,7 +203,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
           LIBXSMM_X86_INSTR_VMOVUPS,
           gp_reg_gemm_scratch,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
+          col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/,
           i_micro_kernel_config->vector_name,
           reg_1, 0, 1, 0 );
 
@@ -231,7 +233,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
                                                       i_micro_kernel_config->vector_name,
                                                       gp_reg_gemm_scratch,
                                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                      col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                       reg_0,
                                                       reg_0);
       } else {
@@ -241,7 +243,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore_emu( libxsmm_generated_code*   
                                                  i_micro_kernel_config->vector_name,
                                                  gp_reg_gemm_scratch,
                                                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                 col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                 col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                  reg_0,
                                                  reg_0, i_micro_kernel_config);
       }
@@ -519,6 +521,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
 
         libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, gp_reg_gemm_scratch );
 
+        i_micro_kernel_config->ldc_emu = (i_micro_kernel_config->gemm_scratch_ld * 4)/4;
         libxsmm_x86_instruction_tile_move_emu( io_generated_code,
             i_micro_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_TILESTORED,
@@ -527,6 +530,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
             4,
             0,
             tile, i_micro_kernel_config, 0);
+       i_micro_kernel_config->ldc_emu = (i_xgemm_desc->ldc * 4)/4;
 
         if (i_micro_kernel_config->vnni_format_C == 0) {
           for (col = 0; col < (unsigned int)n_cols; col++) {
@@ -537,7 +541,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
                 LIBXSMM_X86_INSTR_VMOVUPS,
                 gp_reg_gemm_scratch,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
+                col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/,
                 i_micro_kernel_config->vector_name,
                 reg_0, 0, 1, 0 );
 
@@ -562,7 +566,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
                 LIBXSMM_X86_INSTR_VMOVUPS,
                 gp_reg_gemm_scratch,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                (col + 1) * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/,
+                (col + 1) * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/,
                 i_micro_kernel_config->vector_name,
                 reg_0, 0, 1, 0 );
 
@@ -572,7 +576,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
                                                             i_micro_kernel_config->vector_name,
                                                             gp_reg_gemm_scratch,
                                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                            col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                            col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                             reg_0,
                                                             reg_0);
             } else {
@@ -582,7 +586,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
                                                        i_micro_kernel_config->vector_name,
                                                        gp_reg_gemm_scratch,
                                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                       col * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                       col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
                                                        reg_0,
                                                        reg_0, i_micro_kernel_config);
             }

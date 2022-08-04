@@ -27,7 +27,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
     libxsmm_descriptor_blob blob;
     const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, i_xgemm_desc->m, i_xgemm_desc->n,
-      i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0,
+      i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0,
       (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, LIBXSMM_MELTW_OPERATION_UNARY);
     libxsmm_mateltwise_kernel_config l_trans_config;
     unsigned int l_gp_reg_in = i_gp_reg_mapping->gp_reg_help_2;
@@ -51,7 +51,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*  
     libxsmm_descriptor_blob blob;
     const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
       LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, i_xgemm_desc->m, i_xgemm_desc->n,
-      i_xgemm_desc->ldc, i_xgemm_desc->ldc, 0, 0,
+      i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0,
       (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4, LIBXSMM_MELTW_OPERATION_UNARY);
     libxsmm_mateltwise_kernel_config l_trans_config;
     unsigned int l_gp_reg_in = i_gp_reg_mapping->gp_reg_help_2;
@@ -664,24 +664,24 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
   }
 
   if (l_emu_amx > 0) {
-    int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
-    i_micro_kernel_config->emulation_scratch_offset = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/;
-    gemm_scratch_size = expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
+    i_micro_kernel_config->gemm_scratch_ld = 16;
+    i_micro_kernel_config->emulation_scratch_offset = 64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/;
+    gemm_scratch_size =  64 * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/ + 8 * 32 * 32 + 32 * 64 ;
     if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       i_micro_kernel_config->emulation_scratch_offset = 0;
       gemm_scratch_size = 8 * 32 * 32 + 32 * 64 ;
     }
   } else {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
-      int expand_scratch_factor = (i_micro_kernel_config->n_tiles == 1) ? 2 : 1;
-      gemm_scratch_size = LIBXSMM_MAX(32*64, expand_scratch_factor * i_xgemm_desc->n * i_xgemm_desc->ldc * 4/*i_micro_kernel_config->datatype_size*/);
+      i_micro_kernel_config->gemm_scratch_ld = 16;
+      gemm_scratch_size = LIBXSMM_MAX(32*64, 64 * i_micro_kernel_config->gemm_scratch_ld * 4/*i_micro_kernel_config->datatype_size*/);
     } else {
       /* Allocate scratch for stashing 32 zmms  */
       if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ) {
         gemm_scratch_size = 32 * 64;
       }
       if (i_micro_kernel_config->vnni_format_C > 0) {
-        gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->ldc * 4;
+        gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->m * 4;
       }
     }
   }
