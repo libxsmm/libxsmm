@@ -784,27 +784,58 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat8* h_b = (libxsmm_bfloat8*)b;
     float*           f_c = (float*)c;
     int l_k_block = 4;
+    const char *const env_bf8_gemm_via_stack_alloc_tensors = getenv("BF8_GEMM_VIA_STACK");
+    int bf8_gemm_via_stack_alloc_tensors = 0;
+    if ( 0 == env_bf8_gemm_via_stack_alloc_tensors ) {
+    } else {
+      bf8_gemm_via_stack_alloc_tensors = atoi(env_bf8_gemm_via_stack_alloc_tensors);
+    }
+    if (bf8_gemm_via_stack_alloc_tensors == 0) {
+      for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+        for (l_j = 0; l_j < n; l_j++) {
+          for (l_i = 0; l_i < m; l_i++) {
+            if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
+              f_c[(l_j * ldc) + l_i] = 0.0f;
+            }
+            for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+              for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+                union libxsmm_bfloat8_f16 tmp_a_hf;
+                union libxsmm_bfloat8_f16 tmp_b_hf;
+                float tmp_a_f;
+                float tmp_b_f;
+                tmp_a_hf.i[0] = 0;
+                tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
+                tmp_b_hf.i[0] = 0;
+                tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+                tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
+                tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
 
-    for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        for (l_i = 0; l_i < m; l_i++) {
-          if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
-            f_c[(l_j * ldc) + l_i] = 0.0f;
+                f_c[(l_j * ldc) + l_i] += tmp_a_f * tmp_b_f;
+              }
+            }
           }
-          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
-            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-              union libxsmm_bfloat8_f16 tmp_a_hf;
-              union libxsmm_bfloat8_f16 tmp_b_hf;
-              float tmp_a_f;
-              float tmp_b_f;
-              tmp_a_hf.i[0] = 0;
-              tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
-              tmp_b_hf.i[0] = 0;
-              tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
-              tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
-              tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
+        }
+      }
+    } else {
+      for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+        for (l_j = 0; l_j < n; l_j++) {
+          for (l_i = 0; l_i < m; l_i++) {
+            if ( (i_gemm_def->beta == 0) && (l_r == 0) ) {
+              f_c[(l_j * ldc) + l_i] = 0.0f;
+            }
+            for (l_s = 0; l_s < k; l_s++) {
+                union libxsmm_bfloat8_f16 tmp_a_hf;
+                union libxsmm_bfloat8_f16 tmp_b_hf;
+                float tmp_a_f;
+                float tmp_b_f;
+                tmp_a_hf.i[0] = 0;
+                tmp_a_hf.i[1] = h_a[(l_r * lda * k) + (l_s * lda) +l_i];
+                tmp_b_hf.i[0] = 0;
+                tmp_b_hf.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + l_s];
+                tmp_a_f = libxsmm_convert_f16_to_f32( tmp_a_hf.hf );
+                tmp_b_f = libxsmm_convert_f16_to_f32( tmp_b_hf.hf );
 
-              f_c[(l_j * ldc) + l_i] += tmp_a_f * tmp_b_f;
+                f_c[(l_j * ldc) + l_i] += tmp_a_f * tmp_b_f;
             }
           }
         }
