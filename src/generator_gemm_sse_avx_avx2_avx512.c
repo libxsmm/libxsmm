@@ -137,7 +137,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
   if ( 0 == env_bf8_gemm_via_stack_alloc_tensors ) {
   } else {
-    bf8_gemm_via_stack_alloc_tensors = atoi(env_bf8_gemm_via_stack_alloc_tensors);
+    if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( l_xgemm_desc->datatype ) ) {
+      bf8_gemm_via_stack_alloc_tensors = atoi(env_bf8_gemm_via_stack_alloc_tensors);
+    }
   }
 
   /* @TODO we need to implement a consolidate solution for callee save stuff
