@@ -496,6 +496,100 @@ void libxsmm_generator_transform_norm_to_vnni4_mbit_scalar_sse_microkernel( libx
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_norm_mbit_scalar_sse_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                            libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                            const unsigned int                      i_gp_reg_in,
+                                                                            const unsigned int                      i_gp_reg_out,
+                                                                            const unsigned int                      i_gp_reg_m_loop,
+                                                                            const unsigned int                      i_gp_reg_n_loop,
+                                                                            const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                            const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  unsigned int l_load_instr  = LIBXSMM_X86_INSTR_UNDEF;
+  unsigned int l_store_instr = LIBXSMM_X86_INSTR_UNDEF;
+  unsigned int l_gp_temp = LIBXSMM_X86_GP_REG_R15;
+  unsigned int l_n = 0;
+
+  /* GP temp registers: check against loop and address registers */
+  if ( (l_gp_temp == i_gp_reg_m_loop) || (l_gp_temp == i_gp_reg_n_loop) ||
+       (l_gp_temp == i_gp_reg_in)     || (l_gp_temp == i_gp_reg_out) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GP_TEMP_MAPPING );
+    return;
+  }
+
+  if ( i_mateltwise_desc->n % 4 != 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  /* select load and store instructions */
+  if ( i_micro_kernel_config->datatype_size_in == 8 ) {
+    l_load_instr = LIBXSMM_X86_INSTR_MOVQ;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVQ;
+  } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
+    l_load_instr = LIBXSMM_X86_INSTR_MOVD;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVD;
+  } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
+    l_load_instr = LIBXSMM_X86_INSTR_MOVW;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVW;
+  } else if ( i_micro_kernel_config->datatype_size_in == 1 ) {
+    l_load_instr = LIBXSMM_X86_INSTR_MOVB;
+    l_store_instr = LIBXSMM_X86_INSTR_MOVB;
+  } else {
+    /* should not happen */
+  }
+
+  /* save l_gp_temp to stack */
+  libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_temp );
+
+  /* n loop header */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_n_loop, 4 );
+
+  /* m loop header */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, i_gp_reg_m_loop, 1 );
+
+  /* actual vnni reverse formatting */
+  for ( l_n = 0; l_n < 4; ++l_n ) {
+    libxsmm_x86_instruction_alu_mem( io_generated_code, l_load_instr,
+                                     i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_in * l_n,
+                                     l_gp_temp, 0 );
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code, l_store_instr,
+                                     i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, i_micro_kernel_config->datatype_size_out * i_mateltwise_desc->ldo * l_n,
+                                     l_gp_temp, 1 );
+  }
+
+  /* advance input pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_in, i_micro_kernel_config->datatype_size_in * 4 );
+
+  /* advance output pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_out, i_micro_kernel_config->datatype_size_out );
+
+  /* close m loop */
+  libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                              i_gp_reg_m_loop, i_mateltwise_desc->m );
+
+  /* advance input pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_in, (4 * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in) - (i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m * 4) );
+  /* advance output pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_out, (4 * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - (i_micro_kernel_config->datatype_size_out * i_mateltwise_desc->m) );
+
+  /* close n loop */
+  libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                              i_gp_reg_n_loop, i_mateltwise_desc->n );
+
+  /* restore l_gp_temp */
+  libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_temp );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_sse_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                               libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                               const unsigned int                      i_gp_reg_in,
@@ -1115,6 +1209,20 @@ void libxsmm_generator_transform_norm_to_vnni4_08bit_sse_microkernel( libxsmm_ge
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_norm_08bit_sse_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                      libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                      const unsigned int                      i_gp_reg_in,
+                                                                      const unsigned int                      i_gp_reg_out,
+                                                                      const unsigned int                      i_gp_reg_m_loop,
+                                                                      const unsigned int                      i_gp_reg_n_loop,
+                                                                      const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                      const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  libxsmm_generator_transform_vnni4_to_norm_mbit_scalar_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                         i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
+                                                                         i_micro_kernel_config, i_mateltwise_desc);
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni4_to_vnni4t_08bit_sse_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                         libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                         const unsigned int                      i_gp_reg_in,
@@ -1285,6 +1393,10 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       libxsmm_generator_transform_vnni4_to_vnni4t_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          i_micro_kernel_config, i_mateltwise_desc );
+    } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM) {
+      libxsmm_generator_transform_vnni4_to_norm_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                       l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                       i_micro_kernel_config, i_mateltwise_desc);
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4) {
       libxsmm_generator_transform_norm_to_vnni4_08bit_sse_microkernel( io_generated_code, io_loop_label_tracker,
                                                                        l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
