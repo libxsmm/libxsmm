@@ -446,6 +446,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       libxsmm_generator_generic_loop_header_no_idx_inc( io_generated_code, io_loop_label_tracker, loop_reg, 0);
     }
 
+    if (is_offset_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_a, tmp_reg2);
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, tmp_reg );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg, loop_reg, 8, 0, tmp_reg, 0 );
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_a);
+    }
+
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
@@ -454,14 +461,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
             i_gp_reg_mapping->gp_reg_a,
             1 );
 
+    if (is_offset_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg2, i_gp_reg_mapping->gp_reg_a);
+    }
+
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR, tmp_reg );
 
     if (is_brgemm > 0) {
-      if (is_stride_brgemm > 0) {
-        libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, loop_reg, tmp_reg2);
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, tmp_reg2, l_xgemm_desc->m * l_xgemm_desc->k * 4);
-        libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg2, tmp_reg);
-      }
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, loop_reg, tmp_reg2);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, tmp_reg2, l_xgemm_desc->m * l_xgemm_desc->k * 4);
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg2, tmp_reg);
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -478,6 +487,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
     libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
     libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
 
+    if (is_offset_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, tmp_reg2);
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, tmp_reg );
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg, loop_reg, 8, 0, tmp_reg, 0 );
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_b);
+    }
+
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
@@ -486,14 +502,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
             i_gp_reg_mapping->gp_reg_b,
             1 );
 
+    if (is_offset_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg2, i_gp_reg_mapping->gp_reg_b);
+    }
+
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg );
 
     if (is_brgemm > 0) {
-      if (is_stride_brgemm > 0) {
-        libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, loop_reg, tmp_reg2);
-        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, tmp_reg2, l_xgemm_desc->n * l_xgemm_desc->k * 4);
-        libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg2, tmp_reg);
-      }
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, loop_reg, tmp_reg2);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_IMUL, tmp_reg2, l_xgemm_desc->n * l_xgemm_desc->k * 4);
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg2, tmp_reg);
     }
 
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -526,6 +544,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
 
     if (is_brgemm > 0) {
       /* Adjust descriptor for internal strided BRGEMM */
+      if (is_offset_brgemm > 0) {
+        l_xgemm_desc->flags = l_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
+        l_xgemm_desc->flags = l_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+      }
       l_xgemm_desc->c1 = l_xgemm_desc->m * l_xgemm_desc->k * 4;
       l_xgemm_desc->c2 = l_xgemm_desc->n * l_xgemm_desc->k * 4;
     }
