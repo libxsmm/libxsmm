@@ -28,6 +28,13 @@ void libxsmm_generator_generic_loop_footer_with_idx_inc( libxsmm_generated_code*
     const unsigned int                 i_loop_bound);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_generic_loop_footer_with_idx_inc_reg_bound( libxsmm_generated_code*             io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const unsigned int                 i_loop_reg,
+    const unsigned int                 i_loop_step,
+    const unsigned int                 i_loop_reg_bound);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_x86_save_gpr_regs(libxsmm_generated_code*   io_generated_code,
     const unsigned short    i_save_bitmask);
 
