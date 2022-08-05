@@ -1,1 +1,1 @@
-fix_amx_gemm_scratch_size_alloc-1.17-2686
+bf8_gemms_via_stack_allocated_tensors-1.17-2684
