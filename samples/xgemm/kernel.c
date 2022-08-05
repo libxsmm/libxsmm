@@ -790,7 +790,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     } else {
       bf8_gemm_via_stack_alloc_tensors = atoi(env_bf8_gemm_via_stack_alloc_tensors);
     }
-    if (bf8_gemm_via_stack_alloc_tensors == 0) {
+    if (bf8_gemm_via_stack_alloc_tensors == 0 || 1) {
       for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
         for (l_j = 0; l_j < n; l_j++) {
           for (l_i = 0; l_i < m; l_i++) {
@@ -856,7 +856,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     } else {
       bf8_gemm_via_stack_alloc_tensors = atoi(env_bf8_gemm_via_stack_alloc_tensors);
     }
-    if (bf8_gemm_via_stack_alloc_tensors == 0) {
+    if (bf8_gemm_via_stack_alloc_tensors == 0 || 1) {
       for (l_j = 0; l_j < n; l_j++) {
         for (l_i = 0; l_i < m; l_i++) {
           if ( i_gemm_def->beta == 0 ) {

@@ -1910,7 +1910,8 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR   = 23,
   LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR            = 24,
   LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR            = 25,
-  LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR     = 26
+  LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR     = 26,
+  LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR        = 27
 } libxsmm_gemm_stack_var;
 
 #if 0
