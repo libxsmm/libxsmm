@@ -453,6 +453,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_a);
     }
 
+    if (is_address_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_a, tmp_reg2);
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_a, loop_reg, 8, 0, i_gp_reg_mapping->gp_reg_a, 0 );
+    }
+
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
@@ -461,7 +466,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
             i_gp_reg_mapping->gp_reg_a,
             1 );
 
-    if (is_offset_brgemm > 0) {
+    if ((is_offset_brgemm > 0) || (is_address_brgemm > 0)) {
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg2, i_gp_reg_mapping->gp_reg_a);
     }
 
@@ -494,6 +499,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_b);
     }
 
+    if (is_address_brgemm > 0) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, tmp_reg2);
+      libxsmm_x86_instruction_alu_mem( io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, loop_reg, 8, 0, i_gp_reg_mapping->gp_reg_b, 0 );
+    }
+
     libxsmm_x86_instruction_alu_mem( io_generated_code,
             LIBXSMM_X86_INSTR_MOVQ,
             struct_gp_reg,
@@ -502,7 +512,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
             i_gp_reg_mapping->gp_reg_b,
             1 );
 
-    if (is_offset_brgemm > 0) {
+    if ((is_offset_brgemm > 0) || (is_address_brgemm > 0)) {
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, tmp_reg2, i_gp_reg_mapping->gp_reg_b);
     }
 
@@ -546,6 +556,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       /* Adjust descriptor for internal strided BRGEMM */
       if (is_offset_brgemm > 0) {
         l_xgemm_desc->flags = l_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
+        l_xgemm_desc->flags = l_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+      }
+      if (is_address_brgemm > 0) {
+        l_xgemm_desc->flags = l_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
         l_xgemm_desc->flags = l_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
       }
       l_xgemm_desc->c1 = l_xgemm_desc->m * l_xgemm_desc->k * 4;
