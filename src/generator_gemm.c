@@ -282,8 +282,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   /* check for VNNI flag being set in case of low precision GEMM */
   if ( ( LIBXSMM_DATATYPE_I16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
-       ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
-       ( LIBXSMM_DATATYPE_BF8  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )   ) {
+       ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
       return;
