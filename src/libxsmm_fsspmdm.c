@@ -41,6 +41,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
     return NULL;
   }
 
+  LIBXSMM_INIT
   typesize = libxsmm_typesize(datatype);
   { /* Compute the vector/chunk sizes */
     const int vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
