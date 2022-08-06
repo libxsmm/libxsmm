@@ -21,6 +21,8 @@
 #include "generator_mateltwise_transform_avx.h"
 #include "generator_mateltwise_transform_sse.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
+#include "generator_mateltwise_unary_binary_avx_avx512.h"
+#include "generator_mateltwise_transform_common.h"
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( libxsmm_generated_code*        io_generated_code,
