@@ -876,16 +876,19 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       for (j = 0; j < i_gemm_def->n; j++) {
         for (i = 0; i < i_gemm_def->m; i++) {
           if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) {
-            float val = LIBXSMM_ABS(l_c_tmp[j*i_gemm_def->ldc+i]);
+            const float *const pval = (const float*)l_c_tmp;
+            const float val = LIBXSMM_ABS(pval[j*i_gemm_def->ldc+i]);
             max_float = LIBXSMM_MAX(val, max_float);
           } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16 ) {
-            libxsmm_bfloat16 val = l_c_tmp[j*i_gemm_def->ldc+i];
+            const libxsmm_bfloat16 *const pval = (const libxsmm_bfloat16*)l_c_tmp;
+            const libxsmm_bfloat16 val = pval[j*i_gemm_def->ldc+i];
             union libxsmm_bfloat16_f32 bf16_hp;
             bf16_hp.i[0] = 0;
             bf16_hp.i[1] = val;
             max_float = LIBXSMM_MAX(LIBXSMM_ABS(bf16_hp.f), max_float);
           } else if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_BF8 ) {
-            libxsmm_bfloat8 val = l_c_tmp[j*i_gemm_def->ldc+i];
+            const libxsmm_bfloat8 *const pval = (const libxsmm_bfloat8*)l_c_tmp;
+            const libxsmm_bfloat8 val = pval[j*i_gemm_def->ldc+i];
             union libxsmm_bfloat8_f16 bf8_hp;
             float tmp_f = 0.0f;
             bf8_hp.i[0] = 0;
