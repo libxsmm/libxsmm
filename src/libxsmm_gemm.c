@@ -746,6 +746,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
   const libxsmm_blasint end = LIBXSMM_MIN(span, size);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != kernel);
+  LIBXSMM_UNUSED(flags);
   if (begin < end) {
     char *const a0 = (char*)a, *const b0 = (char*)b, *const c0 = (char*)c;
     libxsmm_gemm_param gemm_param;
