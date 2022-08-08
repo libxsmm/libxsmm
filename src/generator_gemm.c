@@ -334,6 +334,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         l_xgemm_desc_mod.c3 = 0;
         libxsmm_generator_gemm_amx_kernel_emu_wrapper( io_generated_code, &l_xgemm_desc_mod );
       }
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR ) &&
+                ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ))) {
+      libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else {
       if (l_emu_amx != 0) {
         io_generated_code->arch = libxsmm_cpuid();
