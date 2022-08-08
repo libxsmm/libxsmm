@@ -723,12 +723,19 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     int is_brgemm         = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
     unsigned int a_size  = (i_xgemm_desc->m * i_xgemm_desc->k) * 4;
     unsigned int b_size  = (i_xgemm_desc->k * i_xgemm_desc->n) * 4;
+    unsigned int c_size  = (i_xgemm_desc->m * i_xgemm_desc->n) * 4;
     unsigned int a_pad  = (a_size % 64 == 0) ? 0 : ((a_size + 63)/64) * 64 - a_size;
     unsigned int b_pad  = (b_size % 64 == 0) ? 0 : ((b_size + 63)/64) * 64 - b_size;
+    unsigned int c_pad  = (c_size % 64 == 0) ? 0 : ((c_size + 63)/64) * 64 - c_size;
     a_size += a_pad;
     b_size += b_pad;
+    c_size += c_pad;
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, a_size );
     libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_SPR)) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, c_size );
+      libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR, LIBXSMM_X86_GP_REG_RSP );
+    }
     if (is_brgemm == 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, a_size );
       libxsmm_generator_gemm_setval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR, LIBXSMM_X86_GP_REG_RSP );
@@ -765,7 +772,7 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_RBP );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_RBP);
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 144 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, LIBXSMM_X86_GP_REG_RSP, 160 );
 
   /* The stack now looks like this:
    *      10th param (if applicable)                <-- RBP+80
@@ -792,8 +799,11 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      FP32 A EMULATION PTR                      <-- RBP-120,
    *      FP32 B EMULATION PTR                      <-- RBP-128,
    *      MELTW STRUCT PTR                          <-- RBP-136,
-   *      A SCRATCH PTR                             <-- RBP-144, RSP
-   */
+   *      A SCRATCH PTR                             <-- RBP-144,
+   *      C SCRATCH PTR                             <-- RBP-152,
+   *      C OUTPUT PTR                              <-- RBP-160, RSP
+   *
+   * */
   if ( (((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) || (i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0)) ) {
     libxsmm_generator_gemm_setup_stack_frame_fill_ext_gemm_stack_vars( io_generated_code, i_xgemm_desc, i_micro_kernel_config, i_gp_reg_mapping );
   } else {
@@ -836,7 +846,9 @@ void libxsmm_generator_gemm_setup_stack_frame( libxsmm_generated_code*          
    *      FP32 A EMULATION PTR                  <-- RBP-120,
    *      FP32 B EMULATION PTR                  <-- RBP-128,
    *      MELTW STRUCT PTR                      <-- RBP-136,
-   *      A SCRATCH PTR                         <-- RBP-144, RSP
+   *      A SCRATCH PTR                         <-- RBP-144,
+   *      C SCRATCH PTR                         <-- RBP-152,
+   *      C OUTPUT PTR                          <-- RBP-160, RSP
    *
    *      [ Potentianl  pad for 64b align ]
    *      AV2 mask, 64b aligned                 <-- (RBP-104) contains this address
@@ -1012,6 +1024,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
    *      FP32 B EMULATION PTR                      <-- RBP-128
    *      MELTW STRUCT PTR                          <-- RBP-136
    *      A SCRATCH PTR                             <-- RBP-144
+   *      C SCRATCH PTR                             <-- RBP-152
+   *      C OUTPUT PTR                              <-- RBP-160
    */
 
   switch ( stack_var ) {
@@ -1071,6 +1085,10 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -136;
     case LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR:
       return -144;
+    case LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR:
+      return -152;
+    case LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR:
+      return -160;
     default:
       return 0;
   }
