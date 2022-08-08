@@ -1051,23 +1051,16 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 }
 
 
-LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libxsmm_gemm_shape* gemm_shape,
-  const void* c, const void* alpha, const void* beta)
+LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c)
 {
   libxsmm_bitfield result = (libxsmm_bitfield)gemm_flags;
-  const uintptr_t vw = (size_t)libxsmm_cpuid_vlen(libxsmm_target_archid);
   LIBXSMM_ASSERT(NULL != gemm_shape);
-  LIBXSMM_UNUSED(alpha);
-  if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)) {
-    const unsigned char otypesize = libxsmm_typesize(gemm_shape->out_type);
-    if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, vw)) { /* aligned C-matrices? */
-      double dbeta;
-      if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & result)) {
+  if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & result)) {
+    const uintptr_t vw = (size_t)libxsmm_cpuid_vlen(libxsmm_target_archid);
+    if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)) {
+      const unsigned char otypesize = libxsmm_typesize(gemm_shape->out_type);
+      if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, vw)) { /* aligned C-matrices? */
         result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
-      }
-      else if (EXIT_SUCCESS == libxsmm_dvalue(gemm_shape->comp_type, beta, &dbeta) && LIBXSMM_FEQ(0, dbeta)) {
-        result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT
-          | LIBXSMM_GEMM_FLAG_BETA_0; /* LIBXSMM_GEMM_FLAG_BETA_0 is missing */
       }
     }
   }
@@ -1220,13 +1213,16 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
     LIBXSMM_INIT
     if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, otypesize)) { /* check if an SMM is suitable */
       const libxsmm_bitfield prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-      const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
+      double dbeta = LIBXSMM_BETA;
+      const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS) |
+          ((EXIT_SUCCESS != libxsmm_dvalue(oprec, beta, &dbeta) || LIBXSMM_NEQ(0, dbeta))
+        ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
       const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
         NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
         NULL != ldc ? *ldc : m,
         iprec, iprec, oprec, oprec);
-      const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c, alpha, beta);
+      const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c);
       libxsmm_xmmfunction kernel = { NULL };
       kernel.gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
       if (NULL != kernel.ptr_const) {
