@@ -437,12 +437,16 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.
+          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
-          !> index_stride==0: pointers to pointers of elements, e.g.,
-          !> double** for the C matrices.
-          !> index_stride!=0: pointer to elements, e.g.,
-          !> const double* for the A and B matrices.
+          !> index_stride==0: stride_* are each scalar strides used to walk
+          !>                  the corresponding a, b, or c operand with a, b,
+          !>                  and c each being a pointer to pointers
+          !>                  of the respective matrices.
+          !> index_stride!=0: stride_* are indexes determining the start of
+          !>                  the corresponding a, b, or c operand with a, b,
+          !>                  and c each being a pointer to the respective
+          !>                  matrix-data.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> REAL(4|8)    :: alpha, beta
