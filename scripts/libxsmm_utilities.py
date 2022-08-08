@@ -210,7 +210,7 @@ def version_numbers(version, branch=None):
     if version_list and not version_list[0][0].isdigit():
         vbranch = version_list[0]
     else:
-        vbranch = "master"
+        vbranch = "main"
     if branch is None or vbranch == branch:
         minor = update = patch = 0
         major = 1
