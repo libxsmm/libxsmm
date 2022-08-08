@@ -359,27 +359,6 @@ typedef enum libxsmm_meltw_ternary_type {
   LIBXSMM_MELTW_TYPE_TERNARY_MATMUL_A_VNNI_TRANS_B_TRANS  =  19
 } libxsmm_meltw_ternary_type;
 
-/** Flag enumeration which can be binary ORed, for very simple dispatch interface */
-typedef enum libxsmm_basic_gemm_flags {
-  LIBXSMM_BASIC_GEMM_FLAG_NONE = 0,
-  /** Transpose matrix A. */
-  LIBXSMM_BASIC_GEMM_FLAG_TRANS_A = 1,
-  /** Transpose matrix B. */
-  LIBXSMM_BASIC_GEMM_FLAG_TRANS_B = 2,
-  /** Transpose matrix A and B. */
-  LIBXSMM_BASIC_GEMM_FLAG_TRANS_AB = LIBXSMM_BASIC_GEMM_FLAG_TRANS_A | LIBXSMM_BASIC_GEMM_FLAG_TRANS_B,
-  /** Beta=0|1 */
-  LIBXSMM_BASIC_GEMM_FLAG_BETA_0 = 4,
-  /** Generate aligned load instructions. */
-  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_A = 8,
-  /** Aligned load/store instructions. */
-  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C = 16,
-  /** Aligned C matrix, but using NTS Hint when storing */
-  LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C_NTS_HINT = 1024 | LIBXSMM_BASIC_GEMM_FLAG_ALIGN_C,
-  /** Marker flag; do not use. */
-  LIBXSMM_BASIC_GEMM_FLAG_INVALID = 524288
-} libxsmm_basic_gemm_flags;
-
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_NONE = 0,
