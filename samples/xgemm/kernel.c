@@ -84,7 +84,7 @@ void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
       } else if ( type == 1 ) {
         out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? alpha*in[(j*ldi) + i] : in[(j*ldi) + i];
       } else if ( type == 2 ) {
-        out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? alpha * (expf(in[(j*ldi) + i])-1.0) : in[(j*ldi) + i];
+        out[(j*ldo) + i] = ( in[(j*ldi) + i] <= 0.0f ) ? alpha * (LIBXSMM_EXPF(in[(j*ldi) + i])-1.0f) : in[(j*ldi) + i];
       }
     }
   }
@@ -118,7 +118,7 @@ void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint l
         bf16_hp.i[1] = in[(j*ldi) + i];
         bf16_hp.i[0] = 0;
         in_f = bf16_hp.f;
-        in_f = alpha * (expf(in_f)-1.0);
+        in_f = alpha * (LIBXSMM_EXPF(in_f)-1.0f);
         libxsmm_rne_convert_fp32_bf16( &in_f, &res, 1 );
         out[(j*ldo) + i] = ( ((in[(j*ldi) + i] & 0x8000) == 0x8000) || (in[(j*ldi) + i] == 0x0) ) ? res : in[(j*ldi) + i];
       }
@@ -156,7 +156,7 @@ void relu_bf8_bf8_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
         bf8_hp.i[1] = in[(j*ldi) + i];
         bf8_hp.i[0] = 0;
         in_f = libxsmm_convert_f16_to_f32( bf8_hp.hf );
-        in_f = alpha * (expf(in_f)-1.0);
+        in_f = alpha * (LIBXSMM_EXPF(in_f)-1.0f);
         libxsmm_rne_convert_fp32_bf8( &in_f, &res, 1 );
         out[(j*ldo) + i] = ( ((in[(j*ldi) + i] & 0x80) == 0x80) || (in[(j*ldi) + i] == 0x00) ) ? res : in[(j*ldi) + i];
       }
@@ -165,9 +165,9 @@ void relu_bf8_bf8_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
 }
 
 void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbias) {
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
+  const libxsmm_blasint ldc = i_gemm_def->ldc;
+  const libxsmm_blasint m = i_gemm_def->m;
+  const libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint i, j;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold  = (float*)l_c_gold;
@@ -234,9 +234,9 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
 }
 
 void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
-  unsigned int ldc = i_gemm_def->ldc;
-  unsigned int m = i_gemm_def->m;
-  unsigned int n = i_gemm_def->n;
+  const libxsmm_blasint ldc = i_gemm_def->ldc;
+  const libxsmm_blasint m = i_gemm_def->m;
+  const libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint i, j;
   if (i_gemm_def->out_type == LIBXSMM_DATATYPE_F32) {
     float* f_c_gold = (float*)l_c_gold;
@@ -872,7 +872,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       }
       /* Run matmul */
       ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
-      /* determin max value */
+      /* determine max value */
       for (j = 0; j < i_gemm_def->n; j++) {
         for (i = 0; i < i_gemm_def->m; i++) {
           if ( i_gemm_def->out_type == LIBXSMM_DATATYPE_F32 ) {
@@ -1264,6 +1264,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
     }
   }
 #else
+  LIBXSMM_UNUSED(i_fusion_arguments);
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 #endif
 
