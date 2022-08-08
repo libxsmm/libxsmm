@@ -296,7 +296,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
   char *out, *out_gold;
-  unsigned int *rng_state;
+  unsigned int *rng_state = NULL;
 
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
