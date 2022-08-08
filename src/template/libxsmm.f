@@ -203,7 +203,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_task
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
@@ -451,11 +451,12 @@
           !> INTEGER(4|8) :: index_base, index_stride, batchsize
           !> INTEGER(4)   :: tid, nthreads
           !> Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_mmbatch(iprec, oprec, transa, transb, &
-     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
+          PURE SUBROUTINE libxsmm_gemm_batch_task(                      &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, b, ldb, beta, c, ldc, index_base,              &
      &    index_stride, stride_a, stride_b, stride_c, batchsize,        &
      &    tid, nthreads)                                                &
-     &    BIND(C, NAME="libxsmm_mmbatch_")
+     &    BIND(C, NAME="libxsmm_gemm_batch_task_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             !> Determines index-base (usually 0, 1 for one-based indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
@@ -480,7 +481,7 @@
             INTEGER(C_INT), INTENT(IN) :: tid, nthreads
           END SUBROUTINE
 
-          !> Process a series of SMMs (batch). See also libxsmm_mmbatch.
+          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch_task.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> REAL(4|8)    :: alpha, beta
