@@ -16,6 +16,8 @@
 #include "generator_common_x86.h"
 #include "generator_gemm_amx_microkernel.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
+#include "generator_mateltwise_unary_binary_avx_avx512.h"
+#include "generator_mateltwise_transform_common.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
