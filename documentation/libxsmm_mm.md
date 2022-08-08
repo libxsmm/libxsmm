@@ -75,7 +75,7 @@ if (xmm) { /* JIT'ted code */
 }
 ```
 
-Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/libxsmm/libxsmm/blob/main/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`. The handle encapsulated by such a `LIBXSMM_?MMFUNCTION` can be called per `libxsmm_call`. Beside of dispatching code, one can also call statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) by using the prototype functions included with the FORTRAN and C/C++ interface. Prototypes are present whenever static code was requested at compile-time of the library (e.g. per `make MNK="1 2 3 4 5"`).
+Similarly in FORTRAN (see [samples/utilities/smmbench/smm.f](https://github.com/libxsmm/libxsmm/blob/main/samples/utilities/smmbench/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`. The handle encapsulated by such a `LIBXSMM_?MMFUNCTION` can be called per `libxsmm_call`. Beside of dispatching code, one can also call statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) by using the prototype functions included with the FORTRAN and C/C++ interface. Prototypes are present whenever static code was requested at compile-time of the library (e.g. per `make MNK="1 2 3 4 5"`).
 
 ```FORTRAN
 TYPE(LIBXSMM_DMMFUNCTION) :: xmm

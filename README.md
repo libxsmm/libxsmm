@@ -77,7 +77,7 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-This Deep Learning domain is detailed in the following sample codes [TPP OP Lib](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/op_lib_tpp). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by libxsmm. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/) and postfixed by "tpp".  
+The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/libxsmm_dnn/tests). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning).
 
 ### Service Functions
 
@@ -105,7 +105,7 @@ The main interface file is *generated*, and it is therefore **not** stored in th
 * [Classic Library (ABI)](#classic-library-abi) and [Link Instructions](#link-instructions) (C/C++ and FORTRAN)
 * [Header-Only](#header-only) (C and C++)
 
-**Note**: LIBXSMM is available as prebuilt package for Fedora/RedHat/CentOS, Ubuntu, and FreeBSD. Further, LIBXSMM can be installed with the [Spack Package Manager](http://computation.llnl.gov/projects/spack-hpc-package-manager) or per [EasyBuild+EasyConfig](https://github.com/easybuilders).
+**Note**: LIBXSMM is available as prebuilt package for Fedora/RedHat/CentOS, Ubuntu, and FreeBSD. Further, LIBXSMM can be installed with the [Spack Package Manager](https://computing.llnl.gov/projects/spack-hpc-package-manager) or per [EasyBuild+EasyConfig](https://github.com/easybuilders).
 
 ### Classic Library (ABI)
 
