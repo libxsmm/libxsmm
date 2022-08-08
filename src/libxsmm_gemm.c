@@ -755,7 +755,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
       libxsmm_blasint i = begin * index_stride;
 #if (0 != LIBXSMM_SYNC)
-      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
 #endif
       { /* no locking */
         libxsmm_blasint ai, bi, ci;
@@ -964,7 +964,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       gemm_param.b.primary = *((void**)bi);
       gemm_param.c.primary = *((void**)ci);
 #if (0 != LIBXSMM_SYNC)
-      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
 #endif
       { /* no locking */
         for (i = begin; i < end1; ++i) {
