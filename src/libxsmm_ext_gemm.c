@@ -339,7 +339,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
             NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in),
             NULL != ldc ? ldc[g] : im,
             iprec, iprec, oprec, oprec);
-          const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c);
+          const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c, alpha, beta);
           kernel[i].gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
           if (NULL != kernel[i].ptr_const) {
             if (size < asize) size = asize;
