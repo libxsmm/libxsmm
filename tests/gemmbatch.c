@@ -275,10 +275,12 @@ int main(int argc, char* argv[])
   libxsmm_free(ib);
   libxsmm_free(ic);
   libxsmm_free(id);
+#if defined(GEMM_BATCH)
   libxsmm_free(pa);
   libxsmm_free(pb);
   libxsmm_free(pc);
   libxsmm_free(pd);
+#endif
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
