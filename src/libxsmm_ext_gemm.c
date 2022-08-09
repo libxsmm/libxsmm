@@ -338,7 +338,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         suitable = LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize) && LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta);
         if (0 != suitable) {
           const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
-          const libxsmm_gemm_shape shape = libxsmm_get_gemm_shape(im, in, ik,
+          const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(im, in, ik,
             NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik),
             NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in),
             NULL != ldc ? ldc[g] : im,

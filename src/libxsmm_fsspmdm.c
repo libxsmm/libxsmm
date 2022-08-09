@@ -168,7 +168,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   /* Also generate a dense kernel */
   if (NULL != aa_dense) {
-    const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
+    const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
       N_dense, M, K, ldb, K, ldc, datatype, datatype, datatype, datatype);
     k_dense = libxsmm_dispatch_gemm_v2(gemm_shape, flags, prefetch_flags);
   }
@@ -225,21 +225,21 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   {
     /* Attempt to JIT a sparse kernel */
     if (N_sparse1 <= N) {
-      const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse1, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse1 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* If that worked try to JIT a second (wider) sparse kernel */
     if (NULL != k_sparse1 && 0 == (N % N_sparse2)) {
-      const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse2, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse2 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);
     }
     /* And if that worked try going even wider still */
     if (NULL != k_sparse2 && 0 == (N % N_sparse4)) {
-      const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
+      const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
         M, N_sparse4, K, 0, ldb, ldc, datatype, datatype, datatype, datatype);
       k_sparse4 = libxsmm_create_spgemm_csr_areg_v2(gemm_shape, flags, prefetch_flags, N,
         a_csr_rowptr, a_csr_colidx, a_csr_values);

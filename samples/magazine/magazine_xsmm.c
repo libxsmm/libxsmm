@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
   libxsmm_xmmfunction kernel = { NULL };
 # if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
-  const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(m, n, k, lda, ldb, ldc,
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
     LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE), LIBXSMM_DATATYPE(TYPE),
     LIBXSMM_DATATYPE(TYPE));
   int prefetch = LIBXSMM_PREFETCH_NONE;

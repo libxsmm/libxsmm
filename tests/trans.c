@@ -75,7 +75,7 @@ int main(void)
         && (LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||
             LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
       {
-        const libxsmm_meltw_unary_shape unary_shape = libxsmm_get_meltw_unary_shape(
+        const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           m[test], n[test], ldi[test], ldo[test],
           LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE) );
         const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(

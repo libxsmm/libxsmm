@@ -809,16 +809,16 @@ int main(int argc, char* argv[])
   /* JIT GEMM kernel */
   ldx = stride_w*CHANNEL_BLOCKING;
   if ( prec_bf16 == 0 ) {
-    l_shape = libxsmm_get_gemm_shape( CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING,
+    l_shape = libxsmm_create_gemm_shape( CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING,
                                          CHANNEL_BLOCKING, ldx, CHANNEL_BLOCKING,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
   } else {
     l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
-    l_shape = libxsmm_get_gemm_shape( CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING,
+    l_shape = libxsmm_create_gemm_shape( CHANNEL_BLOCKING, ofwp, CHANNEL_BLOCKING,
                                          CHANNEL_BLOCKING, ldx, CHANNEL_BLOCKING,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
   }
-  l_brconfig = libxsmm_get_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_OFFSET, 0, 0, brcount );
+  l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_OFFSET, 0, 0, brcount );
   fwd_brgemma = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
   l_flags |= LIBXSMM_GEMM_FLAG_BETA_0;
   fwd_brgemmz = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );

@@ -1195,7 +1195,7 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   return ret;
 }
 
-LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_get_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_datatype type ) {
+LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_create_meqn_arg_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint ld, const libxsmm_datatype type ) {
   libxsmm_meqn_arg_shape res /*= { 0 }*/;
 
   res.m = m;
@@ -1206,7 +1206,7 @@ LIBXSMM_API libxsmm_meqn_arg_shape libxsmm_get_meqn_arg_shape( const libxsmm_bla
   return res;
 }
 
-LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_get_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint ) {
+LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_create_matrix_arg_attributes( const libxsmm_matrix_arg_type type, const libxsmm_matrix_arg_set_type set_type, const libxsmm_blasint set_cardinality_hint, const libxsmm_blasint set_stride_hint ) {
   libxsmm_matrix_arg_attributes res /*= { {0} }*/;
 
   res.type = type;
@@ -1217,7 +1217,7 @@ LIBXSMM_API libxsmm_matrix_arg_attributes libxsmm_get_matrix_arg_attributes( con
   return res;
 }
 
-LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_get_matrix_eqn_arg_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint in_arg_pos ) {
+LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_create_matrix_eqn_arg_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint in_arg_pos ) {
   libxsmm_matrix_eqn_arg_metadata res /*= { 0 }*/;
 
   res.eqn_idx = eqn_idx;
@@ -1226,7 +1226,7 @@ LIBXSMM_API libxsmm_matrix_eqn_arg_metadata libxsmm_get_matrix_eqn_arg_metadata(
   return res;
 }
 
-LIBXSMM_API libxsmm_matrix_eqn_op_metadata libxsmm_get_matrix_eqn_op_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint op_arg_pos ) {
+LIBXSMM_API libxsmm_matrix_eqn_op_metadata libxsmm_create_matrix_eqn_op_metadata( const libxsmm_blasint eqn_idx, const libxsmm_blasint op_arg_pos ) {
   libxsmm_matrix_eqn_op_metadata res /*= { 0 }*/;
 
   res.eqn_idx = eqn_idx;

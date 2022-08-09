@@ -303,7 +303,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   }
   unary_flags = (use_64bit_index == IDX_64BIT) ? (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES | unary_flags) : (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | unary_flags) ;
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
-  unary_shape = libxsmm_get_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
+  unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
   l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   l_unary_param.in.primary   = (use_16bit_dtype == DTYPE_32BIT) ? (void*)sinp : (void*)binp;
   if (use_gather_or_scatter == GATHER) {

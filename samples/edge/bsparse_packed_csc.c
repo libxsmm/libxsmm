@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
   char* l_csc_file =     ( argc == 7 ) ?      argv[6]  : "file.csc";
 
   libxsmm_gemmfunction mykernel = NULL;
-  const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
+  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
     M, N, K, K, 0, N, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
   const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
