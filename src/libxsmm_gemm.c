@@ -1222,8 +1222,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
         const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
           NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
           NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
-          NULL != ldc ? *ldc : m,
-          iprec, iprec, oprec, oprec);
+          NULL != ldc ? *ldc : m, iprec, iprec, oprec, oprec);
         const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags |
           (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0), &shape, c);
         libxsmm_xmmfunction kernel = { NULL };
