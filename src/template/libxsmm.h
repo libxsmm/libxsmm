@@ -163,12 +163,13 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
  * The kind of matrix operands (a, b, c) depend on index_stride:
  * index_stride==0: pointers to pointers of elements, e.g., double** for the C matrices.
  * index_stride!=0: pointer to elements, e.g., const double* for the A and B matrices.
+ * Alpha, Beta, and LDx are scalar values which are constant for the entire batch.
  */
 LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc,
-  /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
+  /** Determines index-base (usually 0, but 1 for one-based indexes). */
   libxsmm_blasint index_base,
   /**
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
@@ -186,7 +187,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   /**
    * Number of matrix multiplications. If the size is given as a negative value,
-   * then internal synchronization is omitted.
+   * then the internal synchronization is omitted.
    */
   libxsmm_blasint batchsize,
   /** Thread-ID (TID), and number of threads. */
