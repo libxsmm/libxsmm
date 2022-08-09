@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldc = (7 < argc ? LIBXSMM_MAX(atoi(argv[7]), m) : (libxsmm_blasint)(LIBXSMM_UP2(sizeof(TYPE) * m, PAD) / sizeof(TYPE)));
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
-  const TYPE alpha = 1, beta = 1;
+  const TYPE alpha = ALPHA, beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, PAD) / sizeof(TYPE);
   const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, PAD) / sizeof(TYPE);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-    const int j = (i * shuffle) % size;
+    const int j = (shuffle * i) % size;
 #else
     const int j = i;
 #endif
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     }
     ia[i] = (int)STREAM_A(j * na);
     ib[i] = (int)STREAM_B(j * nb);
-    ic[i] = (int)STREAM_C(SYNC(j, nc, size));
+    ic[i] = (int)STREAM_C(j * nc);
   }
 
   start = libxsmm_timer_tick();
@@ -96,11 +96,12 @@ int main(int argc, char* argv[])
   { /* calculate checksum */
     double check = 0;
     for (i = 0; i < size; ++i) {
-      const double cn = norm(c + STREAM_C(SYNC(i, nc, size)), (int)m, (int)n, (int)ldc);
+      const double cn = norm(c + STREAM_C(i * nc), (int)m, (int)n, (int)ldc);
       if (check < cn) check = cn;
     }
     printf("\n%f (check)\n", check);
   }
+
   libxsmm_free(ia);
   libxsmm_free(ib);
   libxsmm_free(ic);
@@ -110,4 +111,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-

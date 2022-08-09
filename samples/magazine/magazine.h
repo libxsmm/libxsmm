@@ -25,6 +25,13 @@
 # define TYPE double
 #endif
 
+#if !defined(ALPHA)
+# define ALPHA 1
+#endif
+#if !defined(BETA)
+# define BETA 1
+#endif
+
 #if 1
 # define STREAM_A(EXPR) (EXPR)
 #else
@@ -35,16 +42,10 @@
 #else
 # define STREAM_B(EXPR) 0
 #endif
-#if 0
+#if 1
 # define STREAM_C(EXPR) (EXPR)
-# define SYNC(IDX, INC, END) ((IDX) * (INC))
-#elif defined(_OPENMP)
-# define STREAM_C(EXPR) (EXPR)
-# define SYNC(IDX, INC, END) (((1048573 * omp_get_thread_num()) % (END)) * (INC))
 #else
 # define STREAM_C(EXPR) 0
-/* synchronization among C matrices */
-# define SYNC(IDX, INC, END) 0
 #endif
 
 /**

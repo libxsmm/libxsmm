@@ -511,7 +511,9 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
     /* RNE round */
     fixup = (hybrid_in.u >> 8) & 1;
     /* we do not round inf and NaN */
-    hybrid_in.u = ( (hybrid_in.u & 0x7c00) == 0x7c00 ) ? ( ((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200 ) : hybrid_in.u + 0x007f + fixup;
+    hybrid_in.u = (unsigned short)(((hybrid_in.u & 0x7c00) == 0x7c00)
+      ? (((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200)
+      : hybrid_in.u + 0x007f + fixup);
     /* shift right */
     res = (unsigned short)(hybrid_in.u >> 8);
 

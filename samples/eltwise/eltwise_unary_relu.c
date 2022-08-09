@@ -72,7 +72,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( in_value <= 0.0f ) ? alpha*in_value : in_value;
         } else if ( type == 2 ) {
-          out_value = ( in_value <= 0.0f ) ? alpha*(expf(in_value)-1.0f) : in_value;
+          out_value = ( in_value <= 0.0f ) ? alpha*(LIBXSMM_EXPF(in_value)-1.0f) : in_value;
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value <= 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -110,7 +110,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           out_value = ( f_in[(j*ldi) + i] <= 0.0f ) ? alpha*f_in[(j*ldi) + i] : f_in[(j*ldi) + i];
         } else if ( type == 2 ) {
-          out_value = ( f_in[(j*ldi) + i] <= 0.0f ) ? alpha * (expf(f_in[(j*ldi) + i])-1.0f) : f_in[(j*ldi) + i];
+          out_value = ( f_in[(j*ldi) + i] <= 0.0f ) ? alpha * (LIBXSMM_EXPF(f_in[(j*ldi) + i])-1.0f) : f_in[(j*ldi) + i];
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( f_in[(j*ldi) + i] <= 0.0f ) ? 0x0 : (1 << (i%8)) );
@@ -149,7 +149,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else if ( type == 1 ) {
           f_out[(j*ldo) + i] = ( in_value <= 0.0f ) ? alpha*in_value : in_value;
         } else if ( type == 2 ) {
-          f_out[(j*ldo) + i] = ( in_value <= 0.0f ) ? alpha*(expf(in_value)-1.0f) : in_value;
+          f_out[(j*ldo) + i] = ( in_value <= 0.0f ) ? alpha*(LIBXSMM_EXPF(in_value)-1.0f) : in_value;
         }
         if ( type != 2) {
           out_mask[(j*ldo_mask) + i/8] |= (unsigned char)(( in_value <= 0.0f ) ? 0x0 : (1 << (i%8)) );
