@@ -285,12 +285,16 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
   LIBXSMM_INIT
   if ( /* check for sensible arguments */
 #if defined(LIBXSMM_BATCH_CHECK)
-    NULL != a && NULL != b && NULL != c && (1 == group_count || -1 == group_count ||
-    (0 == index_stride && (NULL == stride_a || 0 != *stride_a) && (NULL == stride_b || 0 != *stride_b) && (NULL == stride_c || 0 != *stride_c))) &&
+    NULL != a && NULL != b && NULL != c && (1 == group_count || -1 == group_count || (0 == index_stride
+      && (NULL == stride_a || 0 != *stride_a)
+      && (NULL == stride_b || 0 != *stride_b)
+      && (NULL == stride_c || 0 != *stride_c))) &&
 #endif
     0 != group_count)
   {
-    int result = EXIT_SUCCESS;
+    double dalpha = LIBXSMM_ALPHA, dbeta = LIBXSMM_BETA;
+    int result = libxsmm_dvalue(oprec, alpha, &dalpha) | libxsmm_dvalue(oprec, beta, &dbeta);
+    const int beta_flag = (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
     const int max_npargroups = (int)(0 < libxsmm_gemm_npargroups
       ? LIBXSMM_MIN(libxsmm_gemm_npargroups, LIBXSMM_GEMM_NPARGROUPS) : LIBXSMM_GEMM_NPARGROUPS);
     const libxsmm_bitfield prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
@@ -303,9 +307,6 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
     libxsmm_xmmfunction kernel[LIBXSMM_GEMM_NPARGROUPS];
     libxsmm_blasint base[LIBXSMM_GEMM_NPARGROUPS] = { 0 }, i;
     libxsmm_bitfield kflags[LIBXSMM_GEMM_NPARGROUPS] = { 0 };
-    double dbeta = LIBXSMM_BETA;
-    const int beta_flag = ((EXIT_SUCCESS != libxsmm_dvalue(oprec, beta, &dbeta)
-      || LIBXSMM_NEQ(0, dbeta)) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
 #if defined(_OPENMP)
 # if defined(LIBXSMM_EXT_TASKS)
     const int outerpar = omp_get_active_level();
@@ -331,18 +332,18 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
       }
       for (i = 0; i < npargroups; ++i) {
         const libxsmm_blasint g = group + i, im = m[g], in = n[g], ik = k[g];
-        suitable = LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize);
+        const char* const ta = (NULL != transa ? (transa + g) : NULL);
+        const char* const tb = (NULL != transb ? (transb + g) : NULL);
+        const int gemm_flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS);
+        suitable = LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize) && LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta);
         if (0 != suitable) {
           const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
-          const char *const ta = (NULL != transa ? (transa + g) : NULL);
-          const char *const tb = (NULL != transb ? (transb + g) : NULL);
-          const int gemm_flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS) | beta_flag;
           const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(im, in, ik,
             NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik),
             NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in),
             NULL != ldc ? ldc[g] : im,
             iprec, iprec, oprec, oprec);
-          const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags, &shape, c);
+          const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags | beta_flag, &shape, c);
           kernel[i].gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
           if (NULL != kernel[i].ptr_const) {
             if (size < asize) size = asize;
