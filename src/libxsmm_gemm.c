@@ -1219,7 +1219,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
       if (EXIT_SUCCESS == result) result = libxsmm_dvalue(oprec, beta, &dbeta);
       if (EXIT_SUCCESS == result && LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta)) {
         const libxsmm_bitfield prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-        const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
+        const libxsmm_gemm_shape shape = libxsmm_get_gemm_shape(m, n, k,
           NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
           NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
           NULL != ldc ? *ldc : m,

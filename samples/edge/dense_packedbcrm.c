@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
   REALTYPE* c2 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
 
   libxsmm_gemmfunction mykernel = NULL;
-  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+  const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
     l_m, l_n, l_k, l_k, l_n, l_n, LIBXSMM_DATATYPE(REALTYPE),
     LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE), LIBXSMM_DATATYPE(REALTYPE) );
   const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N') | ( ( l_beta == 0 ) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0 );

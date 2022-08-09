@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 
   const libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_bitfield l_prefetch_flags = LIBXSMM_GEMM_PREFETCH_NONE;
-  const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(
+  const libxsmm_gemm_shape gemm_shape = libxsmm_get_gemm_shape(
       NB, K, C, C, 0, K, LIBXSMM_DATATYPE(float),
       LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float), LIBXSMM_DATATYPE(float) );
   libxsmm_gemm_param gemm_param;

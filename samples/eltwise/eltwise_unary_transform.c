@@ -57,7 +57,7 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
 }
 
 int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
-  const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype, dtype, dtype );
+  const libxsmm_meltw_unary_shape unary_shape = libxsmm_get_meltw_unary_shape( M, N, ldi, ldo, dtype, dtype, dtype );
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_matdiff_info norms_out;
   char *in;

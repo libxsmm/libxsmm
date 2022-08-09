@@ -493,7 +493,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
   /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+  arg_shape_out = libxsmm_get_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
   my_eqn1 = libxsmm_matrix_eqn_create();
@@ -504,7 +504,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   /*libxsmm_matrix_eqn_tree_print( my_eqn1 );*/
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
+  arg_shape_out = libxsmm_get_meqn_arg_shape( S3, S1, ld, out_dt );
   func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
 
   if (datatype_mode == 0) {
@@ -598,7 +598,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+  arg_shape_out = libxsmm_get_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
   func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
 #if 0
   my_eqn3 = libxsmm_matrix_eqn_create();
@@ -618,7 +618,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
+  arg_shape_out = libxsmm_get_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
   func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
 #endif
 #else

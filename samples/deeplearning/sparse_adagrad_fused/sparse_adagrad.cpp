@@ -99,9 +99,9 @@ public:
   EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
 #ifdef USE_LIBXSMM_JIT
-    libxsmm_meltw_unary_shape unary_shape_cols_idx = libxsmm_create_meltw_unary_shape( E, 0, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    libxsmm_meltw_unary_shape unary_shape_reduce = libxsmm_create_meltw_unary_shape( E, 1, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( E, 1, _ld, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltw_unary_shape unary_shape_cols_idx = libxsmm_get_meltw_unary_shape( E, 0, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltw_unary_shape unary_shape_reduce = libxsmm_get_meltw_unary_shape( E, 1, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    libxsmm_meltw_binary_shape binary_shape = libxsmm_get_meltw_binary_shape( E, 1, _ld, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
 #endif
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
     h = (T*)my_malloc((size_t)M * sizeof(T), alignment);

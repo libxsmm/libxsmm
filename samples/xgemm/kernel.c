@@ -1162,7 +1162,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_flags |= (0 != i_gemm_def->vnni_c ? LIBXSMM_GEMM_FLAG_VNNI_C : 0);
 
   /* setting update GEMM struct */
-  l_shape = libxsmm_create_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
+  l_shape = libxsmm_get_gemm_shape( i_gemm_def->m,  i_gemm_def->n, i_gemm_def->k,
       i_gemm_def->lda, i_gemm_def->ldb, i_gemm_def->ldc,
       i_gemm_def->in_type, i_gemm_def->in_type, i_gemm_def->out_type, i_gemm_def->comp_type );
 

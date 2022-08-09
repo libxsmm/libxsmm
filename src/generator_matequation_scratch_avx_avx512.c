@@ -24,7 +24,7 @@
 #include "generator_gemm_amx_emu.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
+void libxsmm_generator_matequation_get_unary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(cur_op->info.u_op.type) > 0) {
     *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
       cur_op->info.u_op.dtype, out_precision, cur_op->le->tmp.m, cur_op->le->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, 0, 0,
@@ -47,7 +47,7 @@ void libxsmm_generator_matequation_create_unary_descriptor(libxsmm_descriptor_bl
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
+void libxsmm_generator_matequation_get_binary_descriptor(libxsmm_descriptor_blob *blob, libxsmm_matrix_eqn_elem *cur_op, libxsmm_meltw_descriptor **desc, libxsmm_datatype in_precision, libxsmm_datatype out_precision) {
   *desc = libxsmm_meltw_descriptor_init2(blob, in_precision, cur_op->ri->tmp.dtype, LIBXSMM_DATATYPE_UNSUPPORTED,
     cur_op->info.b_op.dtype, out_precision, cur_op->tmp.m, cur_op->tmp.n, cur_op->le->tmp.ld, cur_op->tmp.ld, cur_op->ri->tmp.ld, 0,
     LIBXSMM_CAST_USHORT(cur_op->info.b_op.flags), LIBXSMM_CAST_USHORT(cur_op->info.b_op.type), LIBXSMM_MELTW_OPERATION_BINARY);
@@ -690,7 +690,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
         }
 
         /* Prepare descriptor  */
-        libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
+        libxsmm_generator_matequation_get_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
         libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le,
             temp_reg, 0);
@@ -698,7 +698,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
             temp_reg, 1);
         libxsmm_generator_matequation_set_output_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op,
             temp_reg, (timestamp == last_timestamp) );
-        libxsmm_generator_matequation_create_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
+        libxsmm_generator_matequation_get_binary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else {
         /* This should not happen  */
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );

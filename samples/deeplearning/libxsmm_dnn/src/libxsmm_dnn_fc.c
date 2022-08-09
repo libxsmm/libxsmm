@@ -239,8 +239,8 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
 
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
-    l_shape                         = libxsmm_create_gemm_shape(res.bk, res.bn, res.bc, lda, ldb, ldc, dtype, dtype, dtype, dtype);
-    l_brconfig                      = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
+    l_shape                         = libxsmm_get_gemm_shape(res.bk, res.bn, res.bc, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+    l_brconfig                      = libxsmm_get_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
     res.fwd_compute_kernel_strd = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
     if ( res.fwd_compute_kernel_strd == NULL ) {
       fprintf( stderr, "JIT for BRGEMM TPP gemm_fwd failed. Bailing...!\n");
@@ -341,14 +341,14 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
 
 #if 0
     /* Eltwise TPPs  */
-    l_unary_shape       = libxsmm_create_meltw_unary_shape(res.bn * res.bk, 1, ld_zero, ld_zero, dtype, dtype, dtype);
+    l_unary_shape       = libxsmm_get_meltw_unary_shape(res.bn * res.bk, 1, ld_zero, ld_zero, dtype, dtype, dtype);
     res.fwd_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     if ( res.fwd_zero_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP fwd_zero_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape         = libxsmm_create_meltw_unary_shape(res.bk, res.bn, ldc, ldc, dtype, dtype, dtype);
+    l_unary_shape         = libxsmm_get_meltw_unary_shape(res.bk, res.bn, ldc, ldc, dtype, dtype, dtype);
     if ( res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_RELU_WITH_MASK || res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK )
       l_unary_flags       = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
     else
@@ -359,7 +359,7 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
       exit(-1);
     }
 
-    l_unary_shape                  = libxsmm_create_meltw_unary_shape(res.bk, res.bn, ldc, ldc, dtype, dtype, dtype);
+    l_unary_shape                  = libxsmm_get_meltw_unary_shape(res.bk, res.bn, ldc, ldc, dtype, dtype, dtype);
     l_unary_flags                  = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
     res.fwd_colbcast_load_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, l_unary_flags);
     if ( res.fwd_colbcast_load_kernel == NULL ) {
@@ -374,7 +374,7 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
               (datatype_comp == LIBXSMM_DATATYPE_F32) ) {
     l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-    l_shape = libxsmm_create_gemm_shape( res.bk, res.bn, res.bc,
+    l_shape = libxsmm_get_gemm_shape( res.bk, res.bn, res.bc,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -392,11 +392,11 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
 
     l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
     unroll_hint = (res.C/res.bc)/res.fwd_bf;
-    l_shape = libxsmm_create_gemm_shape( res.bk, res.bn, res.bc,
+    l_shape = libxsmm_get_gemm_shape( res.bk, res.bn, res.bc,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
+    l_brconfig = libxsmm_get_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
                                                           res.bk*res.bc*sizeof(libxsmm_bfloat16),
                                                           res.bc*res.bn*sizeof(libxsmm_bfloat16),
                                                           unroll_hint );
@@ -440,7 +440,7 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
     }
 
     /* Also JIT eltwise TPPs... */
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bk, res.bn, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( res.bk, res.bn, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     res.fwd_store_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.fwd_store_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP fwd_store_kernel failed. Bailing...!\n");
@@ -464,7 +464,7 @@ LIBXSMM_API libxsmm_dnn_fc_fwd_config setup_libxsmm_dnn_fc_fwd(libxsmm_blasint N
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bk*res.bn, 1, ld_zero, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( res.bk*res.bn, 1, ld_zero, ld_zero, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     res.fwd_zero_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.fwd_zero_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP fwd_zero_kernel failed. Bailing...!\n");
@@ -909,8 +909,8 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     /* @TODO: egeor, kvorinon: setting FP32 back to its old value */
     l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
-    l_shape                         = libxsmm_create_gemm_shape(res.bc, res.bn, res.bk, lda, ldb, ldc, dtype, dtype, dtype, dtype);
-    l_brconfig                      = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
+    l_shape                         = libxsmm_get_gemm_shape(res.bc, res.bn, res.bk, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+    l_brconfig                      = libxsmm_get_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
     res.bwd_compute_kernel_strd = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
     if ( res.bwd_compute_kernel_strd == NULL ) {
       fprintf( stderr, "JIT for BRGEMM TPP gemm_bwd failed. Bailing...!\n");
@@ -924,7 +924,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       exit(-1);
     }
 
-    l_unary_shape            = libxsmm_create_meltw_unary_shape(res.bk, res.bc, ldaT, lda, dtype, dtype, dtype);
+    l_unary_shape            = libxsmm_get_meltw_unary_shape(res.bk, res.bc, ldaT, lda, dtype, dtype, dtype);
     l_unary_flags            = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, l_unary_shape, l_unary_flags);
     if ( res.norm_to_normT_kernel == NULL ) {
@@ -934,7 +934,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     if (res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_RELU || res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU ||
         res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_RELU_WITH_MASK || res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK) {
-      l_unary_shape         = libxsmm_create_meltw_unary_shape(res.bk, res.bn, ld_relu_bwd, ld_relu_bwd, dtype, dtype, dtype);
+      l_unary_shape         = libxsmm_get_meltw_unary_shape(res.bk, res.bn, ld_relu_bwd, ld_relu_bwd, dtype, dtype, dtype);
       if ( res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_RELU_WITH_MASK || res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK )
         l_unary_flags       = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
       else
@@ -946,7 +946,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       }
     }
 
-    l_unary_shape         = libxsmm_create_meltw_unary_shape(res.bn * res.bc, 1, ld_zero_bwd, ld_zero_bwd, dtype, dtype, dtype);
+    l_unary_shape         = libxsmm_get_meltw_unary_shape(res.bn * res.bc, 1, ld_zero_bwd, ld_zero_bwd, dtype, dtype, dtype);
     l_unary_flags         = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.bwd_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, l_unary_shape, l_unary_flags);
     if ( res.bwd_zero_kernel == NULL ) {
@@ -966,8 +966,8 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     stride_a = res.K*res.bn*sizeof(float);
     stride_b = res.C*res.bn*sizeof(float);
 
-    l_shape                         = libxsmm_create_gemm_shape(updM, updN, res.bn, lda, ldb, ldc, dtype, dtype, dtype, dtype);
-    l_brconfig                      = libxsmm_create_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
+    l_shape                         = libxsmm_get_gemm_shape(updM, updN, res.bn, lda, ldb, ldc, dtype, dtype, dtype, dtype);
+    l_brconfig                      = libxsmm_get_gemm_batch_reduce_config(LIBXSMM_GEMM_BATCH_REDUCE_STRIDE, stride_a, stride_b, 0 /*br_unroll_hint*/);
     res.upd_compute_kernel_strd = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
     if ( res.upd_compute_kernel_strd == NULL ) {
       fprintf( stderr, "JIT for BRGEMM TPP gemm_upd failed. Bailing...!\n");
@@ -983,7 +983,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     }
 
     /* JIT TPP kernels */
-    l_unary_shape         = libxsmm_create_meltw_unary_shape(res.bk, res.bc, ld_zero_upd, ld_zero_upd, dtype, dtype, dtype);
+    l_unary_shape         = libxsmm_get_meltw_unary_shape(res.bk, res.bc, ld_zero_upd, ld_zero_upd, dtype, dtype, dtype);
     l_unary_flags         = LIBXSMM_MELTW_FLAG_UNARY_NONE;
     res.upd_zero_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_XOR, l_unary_shape, l_unary_flags);
     if ( res.upd_zero_kernel == NULL ) {
@@ -993,7 +993,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     if (res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS || res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU ||
         res.fuse_type == LIBXSMM_DNN_FC_ELTW_FUSE_BIAS_RELU_WITH_MASK) {
-      l_unary_shape               = libxsmm_create_meltw_unary_shape(res.bk, res.bn, delbias_K, delbias_N, dtype, dtype, dtype);
+      l_unary_shape               = libxsmm_get_meltw_unary_shape(res.bk, res.bn, delbias_K, delbias_N, dtype, dtype, dtype);
       l_unary_flags               = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
       res.delbias_reduce_kernel = libxsmm_dispatch_meltw_unary_v2(LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT, l_unary_shape, l_unary_flags);
       if ( res.delbias_reduce_kernel == NULL ) {
@@ -1019,7 +1019,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-    l_shape = libxsmm_create_gemm_shape( res.bc, res.bn, res.bk,
+    l_shape = libxsmm_get_gemm_shape( res.bc, res.bn, res.bk,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -1036,11 +1036,11 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
     unroll_hint = (res.K/res.bk)/res.bwd_bf;
-    l_shape = libxsmm_create_gemm_shape( res.bc, res.bn, res.bk,
+    l_shape = libxsmm_get_gemm_shape( res.bc, res.bn, res.bk,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
+    l_brconfig = libxsmm_get_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
                                                           res.bk*res.bc*sizeof(libxsmm_bfloat16),
                                                           res.bk*res.bn*sizeof(libxsmm_bfloat16),
                                                           unroll_hint );
@@ -1059,7 +1059,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     /* Also JIT eltwise TPPs... */
     res.bwd_store_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.bwd_store_kernel == NULL ) {
@@ -1067,21 +1067,21 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( res.bc, res.bn, ldc, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     res.bwd_relu_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT );
     if ( res.bwd_relu_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP bwd_relu_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bn, delbias_K, delbias_N, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bk, bn, delbias_K, delbias_N, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     res.delbias_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD_NCNC_FORMAT, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS );
     if( res.delbias_reduce_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP delbias_reduce_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( res.bc*res.bn, 1, ld_zero_bwd, ld_zero_bwd, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( res.bc*res.bn, 1, ld_zero_bwd, ld_zero_bwd, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     res.bwd_zero_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.bwd_zero_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP bwd_zero_kernel failed. Bailing...!\n");
@@ -1089,7 +1089,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     }
 
     /* JITing the tranpose kernel */
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bc, ldaT, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bk, bc, ldaT, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.vnni_to_vnniT_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.vnni_to_vnniT_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP vnni_to_vnniT_kernel failed. Bailing...!\n");
@@ -1105,7 +1105,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     l_tc_flags = LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
     l_tr_flags = LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG | ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') );
-    l_shape = libxsmm_create_gemm_shape( updM, updN, res.bn,
+    l_shape = libxsmm_get_gemm_shape( updM, updN, res.bn,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -1122,11 +1122,11 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
 
     l_flags = ( LIBXSMM_GEMM_VNNI_FLAGS('N', 'N', 'V', 'N') ) | LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG | LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG;
     unroll_hint = (res.N/res.bn)/res.upd_bf;
-    l_shape = libxsmm_create_gemm_shape( updM, updN, res.bn,
+    l_shape = libxsmm_get_gemm_shape( updM, updN, res.bn,
                                          lda, ldb, ldc,
                                          LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
                                          LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-    l_brconfig = libxsmm_create_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
+    l_brconfig = libxsmm_get_gemm_batch_reduce_config( LIBXSMM_GEMM_BATCH_REDUCE_STRIDE,
                                                           res.bk*res.bn*sizeof(libxsmm_bfloat16),
                                                           res.bc*res.bn*sizeof(libxsmm_bfloat16),
                                                           unroll_hint );
@@ -1148,14 +1148,14 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     }
 
     /* Also JIT eltwise TPPs... */
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bbk, bbc, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bbk, bbc, ldc, ldc, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
     res.upd_store_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.upd_store_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP upd_cvtfp32bf16_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bbk, bbc, ld_zero_upd, ld_zero_upd, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bbk, bbc, ld_zero_upd, ld_zero_upd, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     res.upd_zero_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.upd_zero_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP upd_zero_kernel failed. Bailing...!\n");
@@ -1163,21 +1163,21 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
     }
 
     /* JITing the tranpose kernels */
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bn, lda, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bk, bn, lda, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.norm_to_vnni_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP norm_to_vnni_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bbk, bbc, ldc, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bbk, bbc, ldc, ldc, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.norm_to_vnni_kernel_wt = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.norm_to_vnni_kernel_wt == NULL ) {
       fprintf( stderr, "JIT for TPP norm_to_vnni_kernel failed. Bailing...!\n");
       exit(-1);
     }
 
-    l_unary_shape = libxsmm_create_meltw_unary_shape( bc, bn, ldb_orig, ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
+    l_unary_shape = libxsmm_get_meltw_unary_shape( bc, bn, ldb_orig, ldb, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.norm_to_normT_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.norm_to_normT_kernel == NULL ) {
       fprintf( stderr, "JIT for TPP norm_to_normT_kernel failed. Bailing...!\n");

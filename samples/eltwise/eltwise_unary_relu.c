@@ -304,7 +304,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
-  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_unary_shape unary_shape = libxsmm_get_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_blasint mask_ld = (bitm == 0) ? ldo : LIBXSMM_UPDIV(ldo, 16)*2;
   libxsmm_meltw_unary_type unary_type;
@@ -432,7 +432,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;
-  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_unary_shape unary_shape = libxsmm_get_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
   libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_blasint mask_ld = LIBXSMM_UPDIV(ldi, 16)*2;
   libxsmm_meltw_unary_type unary_type;

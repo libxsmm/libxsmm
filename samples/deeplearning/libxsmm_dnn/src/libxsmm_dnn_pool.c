@@ -65,7 +65,7 @@ LIBXSMM_API libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const 
   res.scratch_size = (((R*S)+63)/64)*64*sizeof(int)*threads;
 
   /* Setup fwd kernels */
-  unary_shape = libxsmm_create_meltw_unary_shape( res.bc, 0, res.bc, res.bc, datatype_in, datatype_out, LIBXSMM_DATATYPE_F32 );
+  unary_shape = libxsmm_get_meltw_unary_shape( res.bc, 0, res.bc, res.bc, datatype_in, datatype_out, LIBXSMM_DATATYPE_F32 );
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NO_PREFETCH;
   if ( res.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX ) {
     unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP;
@@ -75,7 +75,7 @@ LIBXSMM_API libxsmm_dnn_pooling_fwd_config setup_libxsmm_dnn_pooling_fwd( const 
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
   } else {
     res.fwd_pool_reduce_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
-    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
+    binary_shape = libxsmm_get_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
     binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     res.fwd_scale_kernel = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MUL, binary_shape, binary_flags );
   }
@@ -96,7 +96,7 @@ LIBXSMM_API libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const 
   libxsmm_matrix_eqn_op_metadata  op_metadata;
   libxsmm_meqn_arg_shape          arg_shape;
   libxsmm_blasint                 eqn_idx = 0;
-  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_create_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
+  libxsmm_matrix_arg_attributes   arg_singular_attr = libxsmm_get_matrix_arg_attributes( LIBXSMM_MATRIX_ARG_TYPE_SINGULAR, LIBXSMM_MATRIX_ARG_SET_TYPE_NONE, 0, 0);
   libxsmm_bitfield                unary_flags  = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_bitfield                binary_flags = LIBXSMM_MELTW_FLAG_BINARY_NONE;
   libxsmm_meltw_unary_shape       unary_shape;
@@ -145,10 +145,10 @@ LIBXSMM_API libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const 
   /* Setup bwd kernels */
   if ( res.pool_type == LIBXSMM_DNN_POOLING_TYPE_MAX ) {
     eqn_idx = libxsmm_matrix_eqn_create();
-    arg_metadata[0] = libxsmm_create_matrix_eqn_arg_metadata(eqn_idx, 0);
-    arg_metadata[1] = libxsmm_create_matrix_eqn_arg_metadata(eqn_idx, 1);
-    op_metadata     = libxsmm_create_matrix_eqn_op_metadata(eqn_idx, -1);
-    arg_shape       = libxsmm_create_meqn_arg_shape( bc, 1, bc, datatype_in );
+    arg_metadata[0] = libxsmm_get_matrix_eqn_arg_metadata(eqn_idx, 0);
+    arg_metadata[1] = libxsmm_get_matrix_eqn_arg_metadata(eqn_idx, 1);
+    op_metadata     = libxsmm_get_matrix_eqn_op_metadata(eqn_idx, -1);
+    arg_shape       = libxsmm_get_meqn_arg_shape( bc, 1, bc, datatype_in );
     unary_flags     = LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
 
     libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_SCATTER, datatype_out, unary_flags);
@@ -161,11 +161,11 @@ LIBXSMM_API libxsmm_dnn_pooling_bwd_config setup_libxsmm_dnn_pooling_bwd( const 
     libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape, arg_singular_attr);
     res.func_bwd_max_pool = libxsmm_dispatch_matrix_eqn_v2( eqn_idx, arg_shape );
   } else {
-    binary_shape = libxsmm_create_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
+    binary_shape = libxsmm_get_meltw_binary_shape( res.bc, 1, res.bc, 1, res.bc, datatype_in, datatype_in, datatype_out, datatype_comp );
     binary_flags = LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1;
     res.func_bwd_avg_pool = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MULADD, binary_shape, binary_flags );
   }
-  unary_shape = libxsmm_create_meltw_unary_shape( res.bc*res.W, 1, res.bc*res.W, res.bc*res.W, datatype_in, datatype_out, datatype_comp );
+  unary_shape = libxsmm_get_meltw_unary_shape( res.bc*res.W, 1, res.bc*res.W, res.bc*res.W, datatype_in, datatype_out, datatype_comp );
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   res.bwd_zero_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, unary_flags );
 
