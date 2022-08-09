@@ -1613,6 +1613,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   int bf8_output_gemm = (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int a_in_vnni = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 0;
   int defer_relu_bitmask_compute = 0;
+  int defer_c_vnni_format = 0;
   libxsmm_descriptor_blob           l_meltw_blob;
   libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
@@ -1722,6 +1723,11 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
     if ( l_micro_kernel_config.fused_relu > 0 ) {
       defer_relu_bitmask_compute = 1;
       l_micro_kernel_config.fused_relu = 0;
+    }
+
+    if (l_micro_kernel_config.vnni_format_C > 0) {
+      defer_c_vnni_format = 1;
+      l_micro_kernel_config.vnni_format_C = 0;
     }
 
     libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R8 );
@@ -2147,7 +2153,9 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
               32,
               tmp_reg,
               1 );
-      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR, tmp_reg );
+      if (defer_c_vnni_format == 0) {
+        libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR, tmp_reg );
+      }
       libxsmm_x86_instruction_alu_mem( io_generated_code,
               LIBXSMM_X86_INSTR_MOVQ,
               struct_gp_reg,
@@ -2156,10 +2164,27 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
               tmp_reg,
               1 );
       l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
-        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, i_xgemm_desc_const->m, i_xgemm_desc_const->n, i_xgemm_desc->ldc, i_xgemm_desc_const->ldc, 0, 0,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, i_xgemm_desc_const->m, i_xgemm_desc_const->n, i_xgemm_desc->ldc, (defer_c_vnni_format == 0) ? i_xgemm_desc_const->ldc : i_xgemm_desc->ldc, 0, 0,
         0, LIBXSMM_CAST_USHORT(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY), LIBXSMM_MELTW_OPERATION_UNARY);
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
       libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
+
+      if (defer_c_vnni_format > 0) {
+        libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR, tmp_reg );
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+                LIBXSMM_X86_INSTR_MOVQ,
+                struct_gp_reg,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                64,
+                tmp_reg,
+                1 );
+        l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+          LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, i_xgemm_desc_const->m, i_xgemm_desc_const->n, i_xgemm_desc->ldc, i_xgemm_desc_const->ldc, 0, 0,
+          0, LIBXSMM_CAST_USHORT(LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4), LIBXSMM_MELTW_OPERATION_UNARY);
+
+        libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
+        libxsmm_generator_transform_x86_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
+      }
 
       libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R15 );
       libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_R14 );
