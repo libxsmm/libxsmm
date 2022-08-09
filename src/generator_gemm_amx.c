@@ -2221,8 +2221,8 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
                 tmp_reg,
                 1 );
       }
-      l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
-        LIBXSMM_DATATYPE_F32, LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype ), i_xgemm_desc_const->m, i_xgemm_desc_const->n, i_xgemm_desc_const->ldc, i_xgemm_desc_const->ldc, 0, 0,
+      l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype ), LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+        LIBXSMM_DATATYPE_F32, (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc_const->datatype ), i_xgemm_desc_const->m, i_xgemm_desc_const->n, i_xgemm_desc_const->ldc, i_xgemm_desc_const->ldc, 0, 0,
         (defer_relu_bitmask_compute > 0) ? LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT : 0, LIBXSMM_CAST_USHORT(LIBXSMM_MELTW_TYPE_UNARY_RELU), LIBXSMM_MELTW_OPERATION_UNARY);
       libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
       libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
