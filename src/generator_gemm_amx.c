@@ -1759,6 +1759,35 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
       }
     }
 
+    if (l_micro_kernel_config.fused_b8colbias > 0) {
+      /* Convert BF8 colbias to F32 */
+      l_micro_kernel_config.fused_b8colbias = 0;
+      l_micro_kernel_config.fused_scolbias = 1;
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, tmp_reg );
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+              LIBXSMM_X86_INSTR_MOVQ,
+              struct_gp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              32,
+              tmp_reg,
+              1 );
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR, tmp_reg );
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+              LIBXSMM_X86_INSTR_MOVQ,
+              struct_gp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              64,
+              tmp_reg,
+              1 );
+      l_mateltwise_desc = libxsmm_meltw_descriptor_init2(&l_meltw_blob, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED,
+        LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, i_xgemm_desc_const->m, 1, i_xgemm_desc_const->m, i_xgemm_desc_const->m, 0, 0,
+        0, LIBXSMM_CAST_USHORT(LIBXSMM_MELTW_TYPE_UNARY_IDENTITY), LIBXSMM_MELTW_OPERATION_UNARY);
+      libxsmm_generator_mateltwise_init_micro_kernel_config_fullvector( io_generated_code, &l_mateltwise_kernel_config, l_mateltwise_desc );
+      libxsmm_generator_unary_binary_avx512_microkernel( io_generated_code, io_loop_label_tracker, &l_mateltwise_gp_reg_mapping, &l_mateltwise_kernel_config, l_mateltwise_desc );
+      libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR, tmp_reg );
+      libxsmm_generator_gemm_setval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, tmp_reg );
+    }
+
     if (is_brgemm > 0) {
       libxsmm_generator_gemm_getval_stack_var( io_generated_code, &l_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, bound_reg );
       libxsmm_generator_generic_loop_header_no_idx_inc( io_generated_code, io_loop_label_tracker, loop_reg, 0);
