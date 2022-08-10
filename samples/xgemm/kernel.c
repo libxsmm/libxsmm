@@ -63,9 +63,23 @@ typedef struct fusion_args {
   char *relu_bitmask;
 } fusion_args;
 
+
+#if 0
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
+#else
+float fsigmoid(float x) {
+  libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_meltw_unary_param unary_param;
+  float in = x, out;
+  unary_param.in.primary  = (void*)&in;
+  unary_param.out.primary = (void*)&out;
+  unary_kernel( &unary_param );
+  return out;
+}
+#endif
 
 void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
