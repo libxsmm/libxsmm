@@ -300,13 +300,6 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
     const libxsmm_blasint ngroups = LIBXSMM_ABS(group_count);
     libxsmm_xmmfunction kernel;
     libxsmm_blasint i, j = 0;
-#if defined(_OPENMP)
-# if defined(LIBXSMM_EXT_TASKS)
-    const int outerpar = omp_get_active_level();
-# else
-    const int outerpar = omp_in_parallel();
-# endif
-#endif
     for (i = 0; i < ngroups; ++i) {
       const libxsmm_blasint isize = batchsize[i], asize = LIBXSMM_ABS(isize);
       if (0 < asize) {
@@ -338,7 +331,12 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         if (NULL != kernel.ptr_const) { /* check if an SMM is suitable */
           const unsigned char itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
 #if defined(_OPENMP)
-          const int max_nthreads = (0 == outerpar ? omp_get_max_threads() : 1);
+# if defined(LIBXSMM_EXT_TASKS)
+          const int outerpar = omp_get_active_level();
+# else
+          const int outerpar = omp_in_parallel();
+# endif
+          const int max_nthreads = (0 == outerpar ? omp_get_max_threads() : omp_get_num_threads());
           const int ntasks = (int)LIBXSMM_UPDIV(asize, libxsmm_gemm_taskgrain);
           const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
           if (1 < nthreads && 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & flags)) {
