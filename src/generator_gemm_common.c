@@ -438,15 +438,13 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
               0, 2, 1, 0 );
         }
       } else {
-        const char l_vname = ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX2 ) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256 ) ) ? 'x' :
-                             ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'x' : 'y';
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             ( io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->c_vmove_instruction,
             i_gp_reg_mapping->gp_reg_help_2,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_m * (i_micro_kernel_config->vector_length),
-            l_vname,
+            'x',
             0, 0, 1, 0 );
       }
       /* up-convert bf8 to fp32 */
