@@ -65,8 +65,65 @@ typedef struct fusion_args {
 
 
 #if 0
+float ftanh_rational_78(float x) {
+#if 0
+  float x2, nom, denom, result;
+  if (x > 4.97f) {
+    return 1.0f;
+  }
+  if (x < -4.97f) {
+    return -1.0f;
+  }
+  x2 = x * x;
+  nom = 36.0f * x2 + 6930.0f;
+  nom = nom * x2 + 270270.0f;
+  nom = nom * x2 + 2027025.0f;
+  nom = nom * x;
+  denom = x2 + 630.0f;
+  denom = denom * x2 + 51975.0f;
+  denom = denom * x2 + 945945.0f;
+  denom = denom * x2 + 2027025.0f;
+  result = nom * (1.0f/denom);
+  return result;
+#else
+  float x2, nom, denom, result;
+  libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  libxsmm_meltw_unary_param unary_param;
+  unary_param.in.primary  = (void*)&denom;
+  unary_param.out.primary = (void*)&denom;
+
+  if (x > 4.97f) {
+    return 1.0f;
+  }
+  if (x < -4.97f) {
+    return -1.0f;
+  }
+  x2 = x * x;
+  nom = 36.0f * x2 + 6930.0f;
+  nom = nom * x2 + 270270.0f;
+  nom = nom * x2 + 2027025.0f;
+  nom = nom * x;
+  denom = x2 + 630.0f;
+  denom = denom * x2 + 51975.0f;
+  denom = denom * x2 + 945945.0f;
+  denom = denom * x2 + 2027025.0f;
+#if 0
+  unary_kernel( &unary_param );
+#else
+  denom = (float)(1.0f/denom);
+#endif
+  result = nom * denom;
+  return result;
+#endif
+}
+
 float fsigmoid(float x) {
+#if 0
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
+#else
+  return (ftanh_rational_78(x/2.0f) + 1.0f)/2.0f;
+#endif
 }
 #else
 float fsigmoid(float x) {
