@@ -24,7 +24,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_bf8_ABC_tensors_to_stack_fo
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_bf8_eltwise_fusion(   libxsmm_generated_code*        io_generated_code,
                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                          libxsmm_gp_reg_mapping*        i_gp_reg_mapping,
                                                                           libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                           libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_orig,

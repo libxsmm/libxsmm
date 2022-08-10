@@ -1882,7 +1882,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_bf8_ABC_tensors_to_stack_fo
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_bf8_eltwise_fusion(   libxsmm_generated_code*        io_generated_code,
                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
-                                                                          libxsmm_gp_reg_mapping*        i_gp_reg_mapping,
                                                                           libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                           libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
@@ -2239,7 +2238,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
 
   /* Apply eltwise fusion in case of emulating BF8 on amx stack */
   if (bf8_gemm_via_stack_alloc_tensors > 0) {
-    libxsmm_generator_gemm_emit_bf8_eltwise_fusion(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, l_defer_c_vnni_format, l_defer_relu_bitmask_compute );
+    libxsmm_generator_gemm_emit_bf8_eltwise_fusion(io_generated_code, io_loop_label_tracker, &l_micro_kernel_config, l_xgemm_desc, i_xgemm_desc, l_defer_c_vnni_format, l_defer_relu_bitmask_compute );
   }
 
   /* Properly destroy stack frame...  */
