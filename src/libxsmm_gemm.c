@@ -70,7 +70,6 @@ LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_sgemm_function libxsmm_original_sg
 LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
 LIBXSMM_APIVAR_PUBLIC_DEF(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
 /* definition of corresponding variables */
-LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_npargroups);
 LIBXSMM_APIVAR_PUBLIC_DEF(unsigned int libxsmm_gemm_taskgrain);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_tasks);
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_gemm_wrap);
@@ -349,11 +348,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init()
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
-  { /* determines grain-size of tasks (when available) */
-    const char *const env_npargroups = getenv("LIBXSMM_GEMM_NPARGROUPS");
-    libxsmm_gemm_npargroups = ((NULL == env_npargroups || 0 == *env_npargroups || 0 >= atoi(env_npargroups))
-      ? (LIBXSMM_GEMM_NPARGROUPS) : atoi(env_npargroups));
-  }
   { /* determines if OpenMP tasks are used (when available) */
     const char *const env_tasks = getenv("LIBXSMM_GEMM_TASKS");
     const int gemm_tasks = ((NULL == env_tasks || 0 == *env_tasks) ? 0/*disabled*/ : atoi(env_tasks));
@@ -647,11 +641,11 @@ LIBXSMM_API void libxsmm_gemm_groups(
   libxsmm_blasint i, j = 0;
   for (i = 0; i < ngroups; ++i) {
     const libxsmm_blasint size = group_size[i];
-    libxsmm_gemm_batch(iprec, oprec,
+    libxsmm_gemm_batch_task(iprec, oprec,
       transa_array + i, transb_array + i, m_array[i], n_array[i], k_array[i],
       palpha + i * typesize, a_array + j, lda_array + i, b_array + j, ldb_array + i,
-      pbeta + i * typesize, c_array + j, ldc_array + i,
-      0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
+      pbeta + i * typesize, c_array + j, ldc_array + i, 0/*index_base*/, 0/*index_stride*/,
+      &ptrsize, &ptrsize, &ptrsize, size, 0/*tid*/, 1/*ntasks*/);
     j += LIBXSMM_ABS(size);
   }
 }
@@ -741,9 +735,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   unsigned char itypesize, unsigned char otypesize, int flags)
 {
   int result = EXIT_SUCCESS;
-  const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
-  const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, ntasks);
-  const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
+  const libxsmm_blasint size = LIBXSMM_ABS(batchsize), nsplit = LIBXSMM_MIN(size, ntasks);
+  const libxsmm_blasint tasksize = LIBXSMM_UPDIV(size, nsplit);
+  const libxsmm_blasint begin = (tid < nsplit ? (tid * tasksize) : size), span = begin + tasksize;
   const libxsmm_blasint end = LIBXSMM_MIN(span, size);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != kernel);
   LIBXSMM_UNUSED(flags);
@@ -756,7 +750,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
       libxsmm_blasint i = begin * index_stride;
 #if (0 != LIBXSMM_SYNC)
-      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
+      if (1 == nsplit || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
 #endif
       { /* no locking */
         libxsmm_blasint ai, bi, ci;
@@ -958,14 +952,14 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
-      char *ai = &a0[da * begin], *bi = &b0[db * begin], *ci = &c0[dc * begin];
+      char *ai = &a0[begin * da], *bi = &b0[begin * db], *ci = &c0[begin * dc];
       const libxsmm_blasint end1 = (end != size ? end : (end - 1));
       libxsmm_blasint i;
       gemm_param.a.primary = *((void**)ai);
       gemm_param.b.primary = *((void**)bi);
       gemm_param.c.primary = *((void**)ci);
 #if (0 != LIBXSMM_SYNC)
-      if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
+      if (1 == nsplit || 0 == internal_gemm_nlocks || 0 > batchsize /*|| 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags)*/)
 #endif
       { /* no locking */
         for (i = begin; i < end1; ++i) {

@@ -13,17 +13,13 @@
 
 #include "libxsmm_main.h"
 
-#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_BLAS_WRAP_DYNAMIC
-#endif
-
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
-#if !defined(LIBXSMM_GEMM_NPARGROUPS)
-# define LIBXSMM_GEMM_NPARGROUPS 128
-#endif
 
+#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
+# define LIBXSMM_BLAS_WRAP_DYNAMIC
+#endif
 #if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && \
     (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
     (defined(LIBXSMM_BLAS_WRAP_DYNAMIC) || !defined(NDEBUG) || defined(_WIN32)) /* debug */
@@ -150,8 +146,6 @@ LIBXSMM_API_INTERN void libxsmm_sgemm_batch_blas(const char* transa, const char*
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Maximum number of parallelized batch-groups. */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_taskgrain);
 /** Determines if OpenMP tasks are used. */

@@ -19,6 +19,9 @@
 #if !defined(BETA)
 # define BETA 1
 #endif
+#if 1 /* process batch of A, B, and C in "random" order */
+# define SHUFFLE
+#endif
 
 #if !defined(GEMM)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint na = lda * k, nb = ldb * n, nc = ldc * n;
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const libxsmm_blasint size = (0 >= batchsize
-    ? (libxsmm_blasint)((1ULL << 30/*1 GB*/) / (sizeof(TYPE) * ((size_t)na + nb + nc)))
+    ? (libxsmm_blasint)((512ULL << 20/*512 MB*/) / (sizeof(TYPE) * ((size_t)na + nb + nc)))
     : batchsize);
   const size_t shuffle = libxsmm_shuffle((unsigned int)size);
   /* allocate A, B, C, and D/Gold matrix buffers */
@@ -79,10 +82,20 @@ int main(int argc, char* argv[])
   TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
   TYPE *const d = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
 #if defined(GEMM_BATCH)
-  const TYPE* *const pa = (const TYPE**)libxsmm_aligned_malloc(sizeof(TYPE*) * size, LIBXSMM_CACHELINE);
-  const TYPE* *const pb = (const TYPE**)libxsmm_aligned_malloc(sizeof(TYPE*) * size, LIBXSMM_CACHELINE);
-  TYPE* *const pc = (TYPE**)libxsmm_aligned_malloc(sizeof(TYPE*) * size, LIBXSMM_CACHELINE);
-  TYPE* *const pd = (TYPE**)libxsmm_aligned_malloc(sizeof(TYPE*) * size, LIBXSMM_CACHELINE);
+  const TYPE* *const pa = (const TYPE**)libxsmm_malloc(sizeof(TYPE*) * size);
+  const TYPE* *const pb = (const TYPE**)libxsmm_malloc(sizeof(TYPE*) * size);
+  TYPE* *const pc = (TYPE**)libxsmm_malloc(sizeof(TYPE*) * size);
+  TYPE* *const pd = (TYPE**)libxsmm_malloc(sizeof(TYPE*) * size);
+  TYPE *const palpha = (TYPE*)libxsmm_malloc(sizeof(TYPE) * size);
+  TYPE *const pbeta = (TYPE*)libxsmm_malloc(sizeof(TYPE) * size);
+  libxsmm_blasint *const psize = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const plda = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const pldb = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const pldc = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const pm = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const pn = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const pk = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  char *const ta = (char*)libxsmm_malloc(size), *const tb = (char*)libxsmm_malloc(size);
 #endif
   libxsmm_blasint *const ia = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
   libxsmm_blasint *const ib = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
@@ -93,7 +106,13 @@ int main(int argc, char* argv[])
 
   if (NULL != a && NULL != b && NULL != c && NULL != d
 #if defined(GEMM_BATCH)
-    && NULL != pa && NULL != pb && NULL != pc
+    && NULL != pa && NULL != pb && NULL != pc && NULL != pd
+    && NULL != plda && NULL != pldb && NULL != pldc
+    && NULL != pm && NULL != pn && NULL != pk
+    && NULL != ta && NULL != tb
+    && NULL != palpha
+    && NULL != pbeta
+    && NULL != psize
 #endif
     && NULL != ia && NULL != ib && NULL != ic)
   {
@@ -107,15 +126,18 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for private(i)
 #endif
     for (i = 0; i < size; ++i) {
+#if defined(SHUFFLE)
       const libxsmm_blasint j = (i * shuffle) % size;
-      const libxsmm_blasint ja = j * na, jb = j * nb, jc = j * nc;
-      LIBXSMM_MATINIT(TYPE, 25 + i, a + ja, m, k, lda, scale);
-      LIBXSMM_MATINIT(TYPE, 75 + i, b + jb, k, n, ldb, scale);
+#else
+      const libxsmm_blasint j = i;
+#endif
+      ia[i] = j * na; ib[i] = j * nb; ic[i] = j * nc;
+      LIBXSMM_MATINIT(TYPE, 25 + i, a + i * na, m, k, lda, scale);
+      LIBXSMM_MATINIT(TYPE, 75 + i, b + i * nb, k, n, ldb, scale);
       if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-        LIBXSMM_MATINIT(TYPE, 42 + i, c + jc, m, n, ldc, scale);
-        LIBXSMM_MATINIT(TYPE, 42 + i, d + jc, m, n, ldc, scale);
+        LIBXSMM_MATINIT(TYPE, 42 + i, c + i * nc, m, n, ldc, scale);
+        LIBXSMM_MATINIT(TYPE, 42 + i, d + i * nc, m, n, ldc, scale);
       }
-      ia[i] = ja; ib[i] = jb; ic[i] = jc;
     }
 
     if (NULL != id) { /* duplicate indexes (requested percentage) */
@@ -257,6 +279,51 @@ int main(int argc, char* argv[])
         else FPRINTF(stderr, "\n");
       }
     }
+
+    if (EXIT_SUCCESS == result) {
+      for (i = 0; i < size; ++i) { /* many groups */
+        plda[i] = lda; pldb[i] = ldb; pldc[i] = ldc;
+        palpha[i] = alpha; pbeta[i] = beta;
+        pm[i] = m; pn[i] = n; pk[i] = k;
+        ta[i] = transa; tb[i] = transb;
+        psize[i] = 1;
+      }
+      USEOMP(libxsmm_gemm_groups)(iprec, oprec, ta, tb, pm, pn, pk,
+        palpha, (const void**)pa, plda, (const void**)pb, pldb,
+        pbeta, (void**)pc, pldc, &size, psize);
+      GEMM_BATCH(ta, tb, pm, pn, pk,
+        palpha, pa, plda, pb, pldb,
+        pbeta, pd, pldc, &size, psize);
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
+        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+        else FPRINTF(stderr, "\n");
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+      libxsmm_gemm_groups(iprec, oprec, ta, tb, pm, pn, pk,
+        palpha, (const void**)pa, plda, (const void**)pb, pldb,
+        pbeta, (void**)pc, pldc, &size, psize);
+      GEMM_BATCH(ta, tb, pm, pn, pk,
+        palpha, pa, plda, pb, pldb,
+        pbeta, pd, pldc, &size, psize);
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
+        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+        else FPRINTF(stderr, "\n");
+      }
+    }
 #endif
 
     if (EXIT_SUCCESS == result) {
@@ -280,6 +347,17 @@ int main(int argc, char* argv[])
   libxsmm_free(pb);
   libxsmm_free(pc);
   libxsmm_free(pd);
+  libxsmm_free(pm);
+  libxsmm_free(pn);
+  libxsmm_free(pk);
+  libxsmm_free(ta);
+  libxsmm_free(tb);
+  libxsmm_free(plda);
+  libxsmm_free(pldb);
+  libxsmm_free(pldc);
+  libxsmm_free(palpha);
+  libxsmm_free(pbeta);
+  libxsmm_free(psize);
 #endif
   libxsmm_free(a);
   libxsmm_free(b);
