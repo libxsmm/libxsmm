@@ -510,9 +510,9 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
           }
         }
         else { /* trigger fallback */
-          if (EXIT_SUCCESS == libxsmm_gemm_batch_blas(iprec, oprec, ta, tb, im, in, ik, ialpha,
-            (const char*)a + j * sa, &ilda, (const char*)b + j * sb, &ildb, ibeta, (char*)c + j * sc, &ildc,
-            index_base, index_stride, stride_a, stride_b, stride_c, batchsize[i]))
+          if (EXIT_SUCCESS == libxsmm_gemm_batch_blas(iprec, oprec, ta, tb, im, in, ik,
+            ialpha, (const char*)a + j * sa, &ilda, stride_a, (const char*)b + j * sb, &ildb, stride_b,
+            ibeta, (char*)c + j * sc, &ildc, stride_c, index_stride, index_base, batchsize[i]))
           {
             if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
               const size_t threshold = LIBXSMM_MNK_SIZE(im, in, im);
