@@ -125,14 +125,13 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_st
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+      libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, transa, transb,
+        *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+        -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
     }
     else { /* parallelized */
       LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
-    libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
-      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
-      batchsize);
   }
   else {
     LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(double)(transa, transb, m, n, k,
@@ -157,14 +156,13 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_st
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
     if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
-      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+      libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, transa, transb,
+        *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+        -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
     }
     else { /* parallelized */
       LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
-    libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
-      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
-      batchsize);
   }
   else {
     LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(float)(transa, transb, m, n, k,

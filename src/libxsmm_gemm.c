@@ -104,10 +104,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm_batch_strid
     LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
     LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
     LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
-    LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
-    libxsmm_blas_error("dgemm_batch_strided")(transa, transb, m, n, k,
-      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
-      batchsize);
+    libxsmm_dgemm_batch_blas(transa, transb,
+      *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      -1/*index_stride*/, 0/*index_base*/, *batchsize);
   }
 #else
   libxsmm_blas_error("dgemm_batch_strided")(transa, transb, m, n, k,
@@ -139,10 +138,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm_batch_strid
     LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
     LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
     LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
-    LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
-    libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
-      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
-      batchsize);
+    libxsmm_sgemm_batch_blas(transa, transb,
+      *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      -1/*index_stride*/, 0/*index_base*/, *batchsize);
   }
 #else
   libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
@@ -869,7 +867,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
     libxsmm_gemm_param gemm_param;
     memset(&gemm_param, 0, sizeof(gemm_param));
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
-    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= LIBXSMM_ABS(index_stride)) { /* stride arrays contain indexes */
       const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
       libxsmm_blasint i = begin * index_stride;
 #if (0 != LIBXSMM_SYNC)
@@ -1071,10 +1069,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       }
 #endif /*(0 != LIBXSMM_SYNC)*/
     }
-    else if (0 != index_stride) {
-      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
-    }
-    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
+    else if (0 == index_stride) { /* array of pointers to matrices (singular strides are measured in Bytes) */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1166,6 +1161,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
       }
 #endif /*(0 != LIBXSMM_SYNC)*/
     }
+    else {
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+    }
   }
   /* coverity[missing_unlock] */
   return result;
@@ -1202,7 +1200,7 @@ LIBXSMM_API_INTERN void libxsmm_dgemm_batch_blas(
   {
     const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
-    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= LIBXSMM_ABS(index_stride)) { /* stride arrays contain indexes */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base) : 0);
@@ -1217,10 +1215,7 @@ LIBXSMM_API_INTERN void libxsmm_dgemm_batch_blas(
         ai = an; bi = bn; ci = cn; /* next */
       }
     }
-    else if (0 != index_stride) {
-      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
-    }
-    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
+    else if (0 == index_stride) { /* array of pointers to matrices (singular strides are measured in Bytes) */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1237,6 +1232,9 @@ LIBXSMM_API_INTERN void libxsmm_dgemm_batch_blas(
         }
         ai = an; bi = bn; ci = cn; /* next */
       }
+    }
+    else {
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
   }
 }
@@ -1255,7 +1253,7 @@ LIBXSMM_API_INTERN void libxsmm_sgemm_batch_blas(
   {
     const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
-    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= LIBXSMM_ABS(index_stride)) { /* stride arrays contain indexes */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base) : 0);
@@ -1270,10 +1268,7 @@ LIBXSMM_API_INTERN void libxsmm_sgemm_batch_blas(
         ai = an; bi = bn; ci = cn; /* next */
       }
     }
-    else if (0 != index_stride) {
-      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
-    }
-    else { /* array of pointers to matrices (singular strides are measured in Bytes) */
+    else if (0 == index_stride) { /* array of pointers to matrices (singular strides are measured in Bytes) */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
@@ -1291,6 +1286,9 @@ LIBXSMM_API_INTERN void libxsmm_sgemm_batch_blas(
         }
         ai = an; bi = bn; ci = cn; /* next */
       }
+    }
+    else {
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
   }
 }
