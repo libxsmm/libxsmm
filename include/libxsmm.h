@@ -177,8 +177,12 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
    * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
    * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c
    *                  with each being an array of pointers to the respective matrices.
+   * index_stride <0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                  with each being a pointer to the respective matrix-data.
+   *                  The index_stride is otherwise not used.
    * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c
    *                  with each being a pointer to the respective matrix-data.
+   *                  The index_stride is used to walk stride_*.
    */
   libxsmm_blasint index_stride,
   /** Determines index-base (0 for zero-based indexes, and 1 for one-based indexes). */
@@ -211,7 +215,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+/** Process groups of homogeneous batches. */
 LIBXSMM_API void libxsmm_gemm_groups(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -220,7 +224,7 @@ LIBXSMM_API void libxsmm_gemm_groups(
   const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 
-/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+/** Process groups of homogeneous batches with OpenMP (libxsmmext). */
 LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],

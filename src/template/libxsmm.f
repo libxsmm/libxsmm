@@ -439,14 +439,20 @@
 
           !> Process a series of SMMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
-          !> index_stride==0: stride_* are each scalar strides used to walk
-          !>                  the corresponding a, b, or c operand with
-          !>                  a, b, and c each being an array of pointers
+          !> index_stride==0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being an array of pointers
           !>                  to the respective matrices.
-          !> index_stride!=0: stride_* are indexes determining the start of
-          !>                  the corresponding a, b, or c operand with a, b,
-          !>                  and c each being a pointer to the respective
-          !>                  matrix-data.
+          !> index_stride <0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being a pointer to the
+          !>                  respective matrix-data.
+          !>                  The index_stride is otherwise not used.
+          !> index_stride!=0: stride_* are indexes determining the start
+          !>                  of the corresponding a, b, or c
+          !>                  with each being a pointer to the
+          !>                  respective matrix-data.
+          !>                  The index_stride is used to walk stride_*.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
           !> CHAR         :: transa, transb
