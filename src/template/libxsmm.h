@@ -160,10 +160,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
 
 /**
  * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
- * The kind of matrix operands (a, b, c) depend on index_stride:
- * index_stride==0: pointers to pointers of elements, e.g., double** for the C matrices.
- * index_stride!=0: pointer to elements, e.g., const double* for the A and B matrices.
- * Alpha, Beta, and LDx are scalar values which are constant for the entire batch.
+ * The kind of matrix operands (a, b, c) depend on index_stride.
  */
 LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
@@ -172,20 +169,22 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   /**
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
-   * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes, and
-   * smaller strides than sizeof libxsmm_blasint are invalid).
+   * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes).
    * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
-   * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c
-   *                  with each being an array of pointers to the respective matrices.
-   * index_stride <0: stride_* are each scalar strides used to walk the corresponding a, b, or c
-   *                  with each being a pointer to the respective matrix-data.
-   *                  The index_stride is otherwise not used.
-   * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c
-   *                  with each being a pointer to the respective matrix-data.
-   *                  The index_stride is used to walk stride_*.
+   * index_stride=0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                 with each being an array of pointers to the respective matrices.
+   * index_stride<0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                 with each being a pointer to the respective matrix-data.
+   *                 The index_stride is not used otherwise.
+   * index_stride>0: stride_* are indexes determining the start of the corresponding a, b, or c
+   *                 with each being a pointer to the respective matrix-data.
+   *                 The index_stride is used to walk stride_*.
    */
   libxsmm_blasint index_stride,
-  /** Determines index-base (0 for zero-based indexes, and 1 for one-based indexes). */
+  /**
+   * Determines index-base (0 for zero-based indexes, and 1 for one-based indexes).
+   * The index_base is measured in Bytes only if index_stride=0.
+   */
   libxsmm_blasint index_base,
   /**
    * Number of matrix multiplications. If the size is given as a negative value,

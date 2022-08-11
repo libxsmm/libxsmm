@@ -869,7 +869,7 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
     libxsmm_gemm_param gemm_param;
     memset(&gemm_param, 0, sizeof(gemm_param));
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
-    if (sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
       const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
       libxsmm_blasint i = begin * index_stride;
 #if (0 != LIBXSMM_SYNC)
@@ -1202,7 +1202,7 @@ LIBXSMM_API_INTERN void libxsmm_dgemm_batch_blas(
   {
     const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
-    if (sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base) : 0);
@@ -1255,7 +1255,7 @@ LIBXSMM_API_INTERN void libxsmm_sgemm_batch_blas(
   {
     const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
-    if (sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
+    if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= index_stride) { /* stride arrays contain indexes */
       const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base) : 0);
       const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base) : 0);
       const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base) : 0);
