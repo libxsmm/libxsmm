@@ -107,6 +107,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrappe
   libxsmm_x86_instruction_close_stream_gemm( io_generated_code, &l_gp_reg_mapping, 0, i_xgemm_desc->prefetch );
 }
 
+/* Setup A (in vnni4 or flat) and B bf8 tensors as fp32 tensors in stack */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_bf8_AB_tensors_to_stack_as_fp32( libxsmm_generated_code*      io_generated_code,
                                                                                     libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                     const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
@@ -143,7 +144,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_bf8_AB_tensors_to_stack_as_
   l_mateltwise_gp_reg_mapping.gp_reg_param_struct = struct_gp_reg;
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR, struct_gp_reg );
 
-  /* Loop over all batch-reduce iterations */
+  /* Loop over all batch-reduce iterations to cover all Ai / Bi*/
   if (is_brgemm > 0) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_BRCOUNT, bound_reg );
     libxsmm_generator_generic_loop_header_no_idx_inc( io_generated_code, io_loop_label_tracker, loop_reg, 0);
