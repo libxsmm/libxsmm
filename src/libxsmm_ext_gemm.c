@@ -508,31 +508,21 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
           }
         }
         else { /* trigger fallback */
-          if (EXIT_SUCCESS == libxsmm_gemm_batch_blas(iprec, oprec, ta, tb, im, in, ik,
+          libxsmm_gemm_batch_blas(iprec, oprec, ta, tb, im, in, ik,
             ialpha, (const char*)a + j * sa, &ilda, stride_a, (const char*)b + j * sb, &ildb, stride_b,
-            ibeta, (char*)c + j * sc, &ildc, stride_c, index_stride, index_base, batchsize[i]))
-          {
-            if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
-              const size_t threshold = LIBXSMM_MNK_SIZE(im, in, im);
-              static size_t threshold_max = 0;
-              if (threshold_max < threshold) {
-                LIBXSMM_STDIO_ACQUIRE();
-                fprintf(stderr, "LIBXSMM WARNING: ");
-                libxsmm_gemm_print2(stderr, iprec, oprec, ta, tb, &im, &in, &ik,
-                  ialpha, NULL/*a*/, &ilda, NULL/*b*/, &ildb, ibeta, NULL/*c*/, &ildc);
-                fprintf(stderr, " => batched GEMM/omp was falling back!\n");
-                LIBXSMM_STDIO_RELEASE();
-                threshold_max = threshold;
-              }
+            ibeta, (char*)c + j * sc, &ildc, stride_c, index_stride, index_base, batchsize[i]);
+          if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+            const size_t threshold = LIBXSMM_MNK_SIZE(im, in, im);
+            static size_t threshold_max = 0;
+            if (threshold_max < threshold) {
+              LIBXSMM_STDIO_ACQUIRE();
+              fprintf(stderr, "LIBXSMM WARNING: ");
+              libxsmm_gemm_print2(stderr, iprec, oprec, ta, tb, &im, &in, &ik,
+                ialpha, NULL/*a*/, &ilda, NULL/*b*/, &ildb, ibeta, NULL/*c*/, &ildc);
+              fprintf(stderr, " => batched GEMM/omp was falling back!\n");
+              LIBXSMM_STDIO_RELEASE();
+              threshold_max = threshold;
             }
-          }
-          else {
-            if (0 != libxsmm_verbosity /* library code is expected to be mute */
-              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-            {
-              fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
-            }
-            return; /* exit routine */
           }
         }
       }
