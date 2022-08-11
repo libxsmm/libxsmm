@@ -167,30 +167,28 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
  */
 LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc,
-  /** Determines index-base (usually 0, but 1 for one-based indexes). */
-  libxsmm_blasint index_base,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   /**
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
    * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes, and
    * smaller strides than sizeof libxsmm_blasint are invalid).
+   * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
+   * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                  with each being an array of pointers to the respective matrices.
+   * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c
+   *                  with each being a pointer to the respective matrix-data.
    */
   libxsmm_blasint index_stride,
-  /**
-   * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
-   * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c operand
-   *                  with a, b, and c each being a pointer to pointers of the respective matrices.
-   * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c operand
-   *                  with a, b, and c each being a pointer to the respective matrix-data.
-   */
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  /** Determines index-base (0 for zero-based indexes, and 1 for one-based indexes). */
+  libxsmm_blasint index_base,
   /**
    * Number of matrix multiplications. If the size is given as a negative value,
    * then the internal synchronization is omitted.
    */
   libxsmm_blasint batchsize,
-  /** Thread-ID (TID), and number of threads. */
+  /** Task-ID (TID), and number of tasks. */
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_task. */
@@ -669,4 +667,3 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 
 #endif /*__cplusplus*/
 #endif /*LIBXSMM_H*/
-

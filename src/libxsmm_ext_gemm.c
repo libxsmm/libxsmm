@@ -130,6 +130,9 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_st
     else { /* parallelized */
       LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
+    libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
+      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      batchsize);
   }
   else {
     LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(double)(transa, transb, m, n, k,
@@ -159,6 +162,9 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_st
     else { /* parallelized */
       LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
     }
+    libxsmm_blas_error("sgemm_batch_strided")(transa, transb, m, n, k,
+      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      batchsize);
   }
   else {
     LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(float)(transa, transb, m, n, k,
