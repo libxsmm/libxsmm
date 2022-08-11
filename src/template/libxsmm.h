@@ -160,36 +160,38 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
 
 /**
  * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
- * The kind of matrix operands (a, b, c) depend on index_stride:
- * index_stride==0: pointers to pointers of elements, e.g., double** for the C matrices.
- * index_stride!=0: pointer to elements, e.g., const double* for the A and B matrices.
+ * The kind of matrix operands (a, b, c) depend on index_stride.
  */
 LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc,
-  /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
-  libxsmm_blasint index_base,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   /**
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
-   * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes, and
-   * smaller strides than sizeof libxsmm_blasint are invalid).
+   * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes).
+   * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
+   * index_stride=0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                 with each being an array of pointers to the respective matrices.
+   * index_stride<0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                 with each being a pointer to the respective matrix-data.
+   *                 The index_stride is not used otherwise.
+   * index_stride>0: stride_* are indexes determining the start of the corresponding a, b, or c
+   *                 with each being a pointer to the respective matrix-data.
+   *                 The index_stride is used to walk stride_*.
    */
   libxsmm_blasint index_stride,
   /**
-   * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
-   * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c operand
-   *                  with a, b, and c each being a pointer to pointers of the respective matrices.
-   * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c operand
-   *                  with a, b, and c each being a pointer to the respective matrix-data.
+   * Determines index-base (0 for zero-based indexes, and 1 for one-based indexes).
+   * The index_base is measured in Bytes only if index_stride=0.
    */
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_base,
   /**
    * Number of matrix multiplications. If the size is given as a negative value,
-   * then internal synchronization is omitted.
+   * then the internal synchronization is omitted.
    */
   libxsmm_blasint batchsize,
-  /** Thread-ID (TID), and number of threads. */
+  /** Task-ID (TID), and number of tasks. */
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
 /** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_task. */
@@ -212,7 +214,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+/** Process groups of homogeneous batches. */
 LIBXSMM_API void libxsmm_gemm_groups(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -221,7 +223,7 @@ LIBXSMM_API void libxsmm_gemm_groups(
   const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 
-/** Like libxsmm_gemm_batch, but groups of homogeneous batches are possible. */
+/** Process groups of homogeneous batches with OpenMP (libxsmmext). */
 LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -668,4 +670,3 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 
 #endif /*__cplusplus*/
 #endif /*LIBXSMM_H*/
-
