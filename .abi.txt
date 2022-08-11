@@ -221,9 +221,11 @@ libxsmm_mhd_write
 libxsmm_offset
 libxsmm_original_dgemm
 libxsmm_original_dgemm_batch
+libxsmm_original_dgemm_batch_strided
 libxsmm_original_dgemv
 libxsmm_original_sgemm
 libxsmm_original_sgemm_batch
+libxsmm_original_sgemm_batch_strided
 libxsmm_original_sgemv
 libxsmm_otrans
 libxsmm_otrans_

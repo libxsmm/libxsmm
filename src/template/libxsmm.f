@@ -439,16 +439,17 @@
 
           !> Process a series of SMMs (batch). See also libxsmm_gemm_batch_omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
-          !> index_stride=0: stride_* are each scalar strides used
-          !>                 to walk the corresponding a, b, or c
-          !>                 with each being an array of pointers
-          !>                 to the respective matrices.
-          !> index_stride<0: stride_* are each scalar strides used
-          !>                 to walk the corresponding a, b, or c
-          !>                 with each being a pointer to the
-          !>                 respective matrix-data.
-          !>                 The index_stride is not used otherwise.
-          !> index_stride>0: stride_* are indexes determining the start
+          !> index_stride==0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being an array of pointers
+          !>                  to the respective matrices.
+          !> index_stride!=0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being a pointer to the
+          !>                  respective matrix-data.
+          !>                  The index_stride is not used otherwise.
+          !> index_stride is non-zero but smaller than libxsmm_blasint:
+          !>                 stride_* are indexes determining the start
           !>                 of the corresponding a, b, or c
           !>                 with each being a pointer to the
           !>                 respective matrix-data.

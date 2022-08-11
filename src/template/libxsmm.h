@@ -171,19 +171,20 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
    * The index_stride is measured in Bytes (sizeof libxsmm_blasint determines packed indexes).
    * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
-   * index_stride=0: stride_* are each scalar strides used to walk the corresponding a, b, or c
-   *                 with each being an array of pointers to the respective matrices.
-   * index_stride<0: stride_* are each scalar strides used to walk the corresponding a, b, or c
-   *                 with each being a pointer to the respective matrix-data.
-   *                 The index_stride is not used otherwise.
-   * index_stride>0: stride_* are indexes determining the start of the corresponding a, b, or c
-   *                 with each being a pointer to the respective matrix-data.
-   *                 The index_stride is used to walk stride_*.
+   * index_stride==0: stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                  with each being an array of pointers to the respective matrices.
+   * index_stride!=0: stride_* are indexes determining the start of the corresponding a, b, or c
+   *                  with each being a pointer to the respective matrix-data.
+   *                  The index_stride is used to walk stride_*.
+   * index_stride is non-zero but smaller than sizeof libxsmm_blasint (invalid):
+   *                  stride_* are each scalar strides used to walk the corresponding a, b, or c
+   *                  with each being a pointer to the respective matrix-data.
+   *                  The index_stride is not used otherwise.
    */
   libxsmm_blasint index_stride,
   /**
    * Determines index-base (0 for zero-based indexes, and 1 for one-based indexes).
-   * The index_base is measured in Bytes only if index_stride=0.
+   * The index_base is measured in Bytes only if index_stride is zero.
    */
   libxsmm_blasint index_base,
   /**
