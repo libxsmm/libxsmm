@@ -20,6 +20,28 @@
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
 #if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
+LIBXSMM_API libxsmm_dgemm_batch_strided_function libxsmm_original_dgemm_batch_strided(void)
+{
+# if (0 != LIBXSMM_BLAS)
+  LIBXSMM_BLAS_WRAPPER(1, double, gemm_batch_strided, libxsmm_original_dgemm_batch_strided_function, libxsmm_original_dgemm_batch_strided/*self*/);
+  /*LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_batch_strided_function);*/
+# else
+  LIBXSMM_BLAS_WRAPPER(0, double, gemm_batch_strided, libxsmm_original_dgemm_batch_strided_function, libxsmm_original_dgemm_batch_strided/*self*/);
+# endif
+  return libxsmm_original_dgemm_batch_strided_function;
+}
+
+LIBXSMM_API libxsmm_sgemm_batch_strided_function libxsmm_original_sgemm_batch_strided(void)
+{
+# if (0 != LIBXSMM_BLAS)
+  LIBXSMM_BLAS_WRAPPER(1, float, gemm_batch_strided, libxsmm_original_sgemm_batch_strided_function, libxsmm_original_sgemm_batch_strided/*self*/);
+  /*LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_batch_strided_function);*/
+# else
+  LIBXSMM_BLAS_WRAPPER(0, float, gemm_batch_strided, libxsmm_original_sgemm_batch_strided_function, libxsmm_original_sgemm_batch_strided/*self*/);
+# endif
+  return libxsmm_original_sgemm_batch_strided_function;
+}
+
 LIBXSMM_API libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void)
 {
 # if (0 != LIBXSMM_BLAS)
@@ -86,6 +108,64 @@ LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void)
   return libxsmm_original_sgemv_function;
 }
 #endif /*defined(LIBXSMM_BLAS_WRAP_DYNAMIC)*/
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_strided)(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+  const double* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const double* beta, double* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  const libxsmm_blasint* batchsize)
+{
+  LIBXSMM_ASSERT(NULL != transa && NULL != transb && NULL != m && NULL != n && NULL != k);
+  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize);
+  LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
+  LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
+  LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
+  LIBXSMM_INIT
+  if (0 != libxsmm_gemm_wrap) {
+    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+    }
+    else { /* parallelized */
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+    }
+  }
+  else {
+    LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(double)(transa, transb, m, n, k,
+      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      batchsize);
+  }
+}
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_strided)(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+  const float* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const float* beta, float* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  const libxsmm_blasint* batchsize)
+{
+  LIBXSMM_ASSERT(NULL != transa && NULL != transb && NULL != m && NULL != n && NULL != k);
+  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize);
+  LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
+  LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
+  LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
+  LIBXSMM_INIT
+  if (0 != libxsmm_gemm_wrap) {
+    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+    }
+    else { /* parallelized */
+      LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); /* TODO */
+    }
+  }
+  else {
+    LIBXSMM_GEMM_BATCH_STRIDED_SYMBOL(float)(transa, transb, m, n, k,
+      alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+      batchsize);
+  }
+}
 
 
 LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
@@ -247,6 +327,32 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const c
   else {
     LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
+}
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_dgemm_batch_strided(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+  const double* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const double* beta, double* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  const libxsmm_blasint* batchsize)
+{
+  LIBXSMM_FSYMBOL(__wrap_dgemm_batch_strided)(transa, transb, m, n, k,
+    alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+    batchsize);
+}
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_sgemm_batch_strided(
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+  const float* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const float* beta, float* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  const libxsmm_blasint* batchsize)
+{
+  LIBXSMM_FSYMBOL(__wrap_sgemm_batch_strided)(transa, transb, m, n, k,
+    alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+    batchsize);
 }
 
 
