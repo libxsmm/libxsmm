@@ -1247,8 +1247,8 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
   libxsmm_blasint index_stride, libxsmm_blasint index_base, libxsmm_blasint batchsize,
   /*unsigned*/int tid, /*unsigned*/int ntasks)
 {
-  static int error_once = 0;
 #if defined(LIBXSMM_BATCH_CHECK)
+  static int error_once = 0;
   if (NULL != a && NULL != b && NULL != c && 0 <= tid && tid < ntasks)
 #endif
   {

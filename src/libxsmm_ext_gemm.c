@@ -391,7 +391,9 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const libxsmm_blasint batchsize[], libxsmm_blasint group_count)
 {
+#if defined(LIBXSMM_BATCH_CHECK)
   static int error_once = 0;
+#endif
   LIBXSMM_INIT
   if ( /* check for sensible arguments */
 #if defined(LIBXSMM_BATCH_CHECK)
