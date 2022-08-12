@@ -48,8 +48,8 @@ LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
 #endif
 
 #define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
-#define EPSILON_double 1e-8
-#define EPSILON_float 1e-4
+#define EPSILON_double 1e-15
+#define EPSILON_float 1e-6
 
 
 int main(int argc, char* argv[])
@@ -166,11 +166,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -191,11 +191,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -213,11 +213,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -237,11 +237,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -261,11 +261,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -281,11 +281,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -301,11 +301,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -325,11 +325,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -345,11 +345,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -371,11 +371,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -401,11 +401,11 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 
@@ -420,23 +420,25 @@ int main(int argc, char* argv[])
       result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
-        if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&di)) {
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
           FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
           result = EXIT_FAILURE;
         }
-        else FPRINTF(stderr, "\n");
       }
     }
 #endif
 
     if (EXIT_SUCCESS == result) {
+      double epsilon;
       libxsmm_matdiff_reduce(&diff, &di);
-      FPRINTF(stderr, "Total error: %f", diff.linf_abs);
-      if (EPSILON(TYPE) < libxsmm_matdiff_epsilon(&diff)) {
-        FPRINTF(stderr, " (%f != %f)\n", diff.v_ref, diff.v_tst);
+      epsilon = libxsmm_matdiff_epsilon(&diff);
+      FPRINTF(stderr, "Total error (%f): %f", epsilon, diff.linf_abs);
+      if (EPSILON(TYPE) >= epsilon) FPRINTF(stderr, "\n");
+      else {
+        FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
         result = EXIT_FAILURE;
       }
-      else FPRINTF(stderr, "\n");
     }
   }
   else result = EXIT_FAILURE;
