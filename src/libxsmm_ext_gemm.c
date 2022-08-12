@@ -516,7 +516,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
           if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
             const size_t threshold = LIBXSMM_MNK_SIZE(im, in, im);
             static size_t threshold_max = 0;
-            if (threshold_max < threshold) {
+            if (threshold_max != threshold) {
               LIBXSMM_STDIO_ACQUIRE();
               fprintf(stderr, "LIBXSMM WARNING: ");
               libxsmm_gemm_print2(stderr, iprec, oprec, ta, tb, &im, &in, &ik,

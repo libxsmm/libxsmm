@@ -1289,7 +1289,7 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
       if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
         const size_t threshold = LIBXSMM_MNK_SIZE(m, n, m);
         static size_t threshold_max = 0;
-        if (threshold_max < threshold) {
+        if (threshold_max != threshold) {
           LIBXSMM_STDIO_ACQUIRE();
           fprintf(stderr, "LIBXSMM WARNING: ");
           libxsmm_gemm_print2(stderr, iprec, oprec, transa, transb, &m, &n, &k,
