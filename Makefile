@@ -492,7 +492,7 @@ endif
 endif
 
 .PHONY: lib
-lib: headers drytest lib_hst lib_mic
+lib: headers lib_hst lib_mic
 
 .PHONY: libs
 libs: lib
@@ -1026,10 +1026,6 @@ specfem: lib_hst
 specfem_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
-.PHONY: drytest
-drytest: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh \
-	$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
-
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
 	@echo >>$@
@@ -1235,14 +1231,14 @@ endif
 	@echo >>$@
 	@chmod +x $@
 
+.PHONY: test-all
+test-all: tests
+
 .PHONY: test
 test: tests
 
-.PHONY: perf
-perf: perf-cp2k
-
-.PHONY: test-all
-test-all: tests test-cp2k test-smm test-nek
+.PHONY: drytest
+drytest: build-tests
 
 .PHONY: build-tests
 build-tests: lib_hst
@@ -1252,36 +1248,16 @@ build-tests: lib_hst
 tests: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
 
-.PHONY: cpp-test
-cpp-test: test-cpp
-
-.PHONY: test-cpp
-test-cpp: $(INCDIR)/libxsmm_source.h
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
-		ECXXFLAGS='-DUSE_HEADER_ONLY $(ECXXFLAGS)' clean compile"
-
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
 	@$(FLOCK) $(call qdir,$@) "./cp2k-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*128)))"
-
-.PHONY: perf-cp2k
-perf-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(call qndir,$@)"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
 test-smm: $(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt
 $(ROOTDIR)/$(UTLDIR)/smmbench/smm-test.txt: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh lib_hst smm
 	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
-endif
-
-.PHONY: perf-smm
-ifneq (,$(strip $(FC)))
-perf-smm: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.txt
-$(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.txt: $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh lib_hst smm
-	@$(FLOCK) $(call qdir,$@) "./smmf-perf.sh $(call qndir,$@)"
 endif
 
 .PHONY: test-nek
