@@ -2456,8 +2456,7 @@ PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
 %/.make:
-	@mkdir -p $(call qbname,$@)
-	@touch $@
+	@mkdir -p $(call qdir,$@) && touch $@
 
 .make:
 	@touch $@
