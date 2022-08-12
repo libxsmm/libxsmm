@@ -1006,12 +1006,6 @@ cp2k: lib_hst
 cp2k_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
-.PHONY: wrap wrap_mic
-wrap: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
-wrap_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
-
 .PHONY: nek nek_mic
 nek: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
@@ -1248,7 +1242,7 @@ test: tests
 perf: perf-cp2k
 
 .PHONY: test-all
-test-all: tests test-cp2k test-smm test-nek test-wrap
+test-all: tests test-cp2k test-smm test-nek
 
 .PHONY: build-tests
 build-tests: lib_hst
@@ -1275,10 +1269,6 @@ $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh 
 perf-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(call qndir,$@)"
-
-.PHONY: test-wrap
-test-wrap: wrap
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
@@ -1600,7 +1590,6 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh wrap-test.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,specialized specialized.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,dispatched dispatched.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
