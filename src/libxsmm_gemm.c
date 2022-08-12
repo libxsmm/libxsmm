@@ -724,7 +724,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
 }
 
 
-LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
+LIBXSMM_API void libxsmm_blas_gemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc)
@@ -1214,7 +1214,7 @@ LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatyp
 #if defined(LIBXSMM_BATCH_CHECK)
         if (0 <= ai && 0 <= bi && 0 <= ci)
 #endif
-        libxsmm_blas_xgemm(iprec, oprec, transa, transb, &m, &n, &k,
+        libxsmm_blas_gemm(iprec, oprec, transa, transb, &m, &n, &k,
           alpha, &a0[ai * itypesize], lda, &b0[bi * itypesize], ldb,
           beta, &c0[ci * otypesize], ldc);
       }
@@ -1229,7 +1229,7 @@ LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatyp
 #if defined(LIBXSMM_BATCH_CHECK)
         if (NULL != ai && NULL != bi && NULL != ci)
 #endif
-        libxsmm_blas_xgemm(iprec, oprec, transa, transb, &m, &n, &k, alpha, ai, lda, bi, ldb, beta, ci, ldc);
+        libxsmm_blas_gemm(iprec, oprec, transa, transb, &m, &n, &k, alpha, ai, lda, bi, ldb, beta, ci, ldc);
       }
     }
     else {
@@ -1358,19 +1358,19 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char* transa, const char* 
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_xgemm)(const libxsmm_datatype*, const libxsmm_datatype*,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_gemm)(const libxsmm_datatype*, const libxsmm_datatype*,
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*,
   const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_xgemm)(const libxsmm_datatype* iprec, const libxsmm_datatype* oprec,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_gemm)(const libxsmm_datatype* iprec, const libxsmm_datatype* oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_ASSERT(NULL != iprec && NULL != oprec);
-  libxsmm_blas_xgemm(*iprec, *oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_blas_gemm(*iprec, *oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 

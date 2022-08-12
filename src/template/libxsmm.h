@@ -382,6 +382,18 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
+/**
+ * General dense matrix multiplication, which re-exposes LAPACK/BLAS
+ * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
+ * when supplying NULL-arguments in certain places.
+ */
+LIBXSMM_API void libxsmm_blas_gemm(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 $MNK_INTERFACE_LIST
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/

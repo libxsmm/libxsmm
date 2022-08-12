@@ -15,13 +15,13 @@ libxsmm_blas_dgemm2
 libxsmm_blas_dgemm3
 libxsmm_blas_dgemm_
 libxsmm_blas_error
+libxsmm_blas_gemm
+libxsmm_blas_gemm_
 libxsmm_blas_sgemm0
 libxsmm_blas_sgemm1
 libxsmm_blas_sgemm2
 libxsmm_blas_sgemm3
 libxsmm_blas_sgemm_
-libxsmm_blas_xgemm
-libxsmm_blas_xgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_convert_bf16_f32
 libxsmm_convert_bf8_f32
