@@ -2459,6 +2459,6 @@ $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 	@mkdir -p $(call qdir,$@) && touch $@
 
 .make:
-	@touch $@
+	@-touch $@
 
 .DEFAULT_GOAL := $(NULL)
