@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2086,SC2164
+# shellcheck disable=SC2086
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
@@ -26,10 +26,11 @@ TESTS_NEEDBLAS="gemm.c"
 TESTS_NEEDBLAS_GREP=$(echo ${TESTS_NEEDBLAS} | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ "" = "$*" ]; then
-  TESTS=$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null)
+  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null)"
 else
-  TESTS=$*
+  TESTS="$*"
 fi
+
 if [ "${TESTS}" ] && [ "$(${GREP} 'BLAS=0' "${HERE}/../.state" 2>/dev/null)" ]; then
   TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
 fi
@@ -57,25 +58,32 @@ echo "============="
 NTEST=1
 NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
-  NAME=$(basename "${TEST}" .c)
+  NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/')
   echo -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
-    cd "${HERE}"
-    ERROR=$({
-    if [ "$(${LDD} "${HERE}/${NAME}${EXE}" 2>/dev/null | ${GREP} libiomp5\.)" ]; then
-      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
-        DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
-        KMP_AFFINITY=scatter,granularity=fine,1 \
-        MIC_KMP_AFFINITY=scatter,granularity=fine \
-        MIC_ENV_PREFIX=MIC \
-        OFFLOAD_INIT=on_start \
-      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
+    cd "${HERE}" || exit 1
+    if [ -e "${HERE}/${NAME}.sh" ]; then
+      RESULT=0
+    elif [ -e "${HERE}/${NAME}${EXE}" ]; then
+      ERROR=$({ \
+        if [ "$(${LDD} "${HERE}/${NAME}${EXE}" 2>/dev/null | ${GREP} libiomp5\.)" ]; then \
+          ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+            DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
+            KMP_AFFINITY=scatter,granularity=fine,1 \
+            MIC_KMP_AFFINITY=scatter,granularity=fine \
+            MIC_ENV_PREFIX=MIC \
+            OFFLOAD_INIT=on_start \
+          ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}; \
+        else \
+          ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
+            DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
+            OMP_PROC_BIND=TRUE \
+          ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}; \
+        fi >/dev/null; } 2>&1)
     else
-      ${ENV} LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HERE}/../lib" \
-        DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${HERE}/../lib" \
-        OMP_PROC_BIND=TRUE \
-      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
-    fi >/dev/null; } 2>&1)
+      ERROR="Test is missing"
+      RESULT=1
+    fi
     RESULT=$?
   else
     ERROR="Test is disabled"
