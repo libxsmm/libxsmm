@@ -65,9 +65,9 @@ int main(int argc, char* argv[])
   int i;
 
   if (8 < argc) nrepeat = atoi(argv[8]);
-  a = (double*)malloc(lda * n * nrepeatof(double));
-  x = (double*)malloc(incx * n * nrepeatof(double));
-  y = (double*)malloc(incy * m * nrepeatof(double));
+  a = (double*)malloc(lda * n * sizeof(double));
+  x = (double*)malloc(incx * n * sizeof(double));
+  y = (double*)malloc(incy * m * sizeof(double));
   printf("dgemv('%c', %i/*m*/, %i/*n*/,\n"
          "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
          "                  %p/*x*/, %i/*incx*/,\n"

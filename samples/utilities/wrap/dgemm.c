@@ -66,9 +66,9 @@ int main(int argc, char* argv[])
   int i;
 
   if (9 < argc) nrepeat = atoi(argv[9]);
-  a = (double*)malloc(lda * k * nrepeatof(double));
-  b = (double*)malloc(ldb * n * nrepeatof(double));
-  c = (double*)malloc(ldc * n * nrepeatof(double));
+  a = (double*)malloc(lda * k * sizeof(double));
+  b = (double*)malloc(ldb * n * sizeof(double));
+  c = (double*)malloc(ldc * n * sizeof(double));
   printf("dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
          "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
          "                  %p/*b*/, %i/*ldb*/,\n"
