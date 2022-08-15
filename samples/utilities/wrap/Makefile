@@ -18,6 +18,11 @@ BLAS_STATIC = 0
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
+ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
+  EXTDEP := $(LIBNAME)ext.$(SLIBEXT)
+  LIBDEP := $(LIBNAME).$(SLIBEXT)
+endif
+
 # necessary include directories
 IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
