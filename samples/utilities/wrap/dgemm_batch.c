@@ -30,10 +30,12 @@
 #endif
 
 /** Function prototype for DGEMM_BATCH. */
-void dgemm_batch_(
-  const char transa_array[], const char transb_array[], const BLASINT_TYPE m_array[], const BLASINT_TYPE n_array[], const BLASINT_TYPE k_array[],
-  const double alpha_array[], const double* a_array[], const BLASINT_TYPE lda_array[], const double* b_array[], const BLASINT_TYPE ldb_array[],
-  const double beta_array[], double* c_array[], const BLASINT_TYPE ldc_array[], const BLASINT_TYPE* group_count, const BLASINT_TYPE group_nrepeat[]);
+void dgemm_batch_(const char /*transa_array*/[], const char /*transb_array*/[],
+  const BLASINT_TYPE /*m_array*/[], const BLASINT_TYPE /*n_array*/[], const BLASINT_TYPE /*k_array*/[],
+  const double /*alpha_array*/[], const double* /*a_array*/[], const BLASINT_TYPE /*lda_array*/[],
+                                  const double* /*b_array*/[], const BLASINT_TYPE /*ldb_array*/[],
+  const double  /*beta_array*/[],       double* /*c_array*/[], const BLASINT_TYPE /*ldc_array*/[],
+  const BLASINT_TYPE* /*group_count*/, const BLASINT_TYPE /*group_size*/[]);
 
 
 void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale);
@@ -82,8 +84,8 @@ int main(int argc, char* argv[])
   if (10 < argc) nrepeat = atoi(argv[10]);
   printf("dgemm_batch('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
          "            %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-         "                         %p/*b*/, %i/*ldb*/,\n"
-         "            %g/*beta*/, %p/*c*/, %i/*ldc*/,\n"
+         "                        %p/*b*/, %i/*ldb*/,\n"
+         "            %g/*beta*/,  %p/*c*/, %i/*ldc*/,\n"
          "            %i/*group_count*/, %i/*batchsize*/)\n",
     transa, transb, m, n, k, alpha, (const void*)a, lda,
                                     (const void*)b, ldb,
