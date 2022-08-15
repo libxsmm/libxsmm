@@ -147,19 +147,19 @@ else
 endif
 
 .PHONY: test
-test: wrap-test.sh $(XFILES)
-	@wrap-test.sh dgemm_batch $(shell echo $$(($(TESTSIZE) * 100)))
-	@wrap-test.sh dgemm_batch 35 16 20 35 35 16 1024  1 0.0
-	@wrap-test.sh dgemm_batch 20 20 32 24 32 24 2000  1 0.0
-	@wrap-test.sh dgemm_batch 24 23 21 32 32 32  999 -1 0.5
-	@wrap-test.sh dgemm $(shell echo $$(($(TESTSIZE) * 1000)))
-	@wrap-test.sh dgemm 350  16  20 350  35 350  1 0.0
-	@wrap-test.sh dgemm 200 200 200 256 256 256  1 0.0
-	@wrap-test.sh dgemm  24  23  21  32  32  32 -1 0.5
-	@wrap-test.sh dgemv $(shell echo $$(($(TESTSIZE) * 1000)))
-	@wrap-test.sh dgemv 350  20 350 1 1 1 0
-	@wrap-test.sh dgemv 200 200 256 1 1 1 0
-	@wrap-test.sh dgemv  24  21  32 2 2 1 1
+test: $(ROOTDIR)/wrap-test.sh $(XFILES)
+	@$(ROOTDIR)/wrap-test.sh dgemm_batch $(shell echo $$(($(TESTSIZE) * 100)))
+	@$(ROOTDIR)/wrap-test.sh dgemm_batch 35 16 20 35 35 16 1024  1 0.0
+	@$(ROOTDIR)/wrap-test.sh dgemm_batch 20 20 32 24 32 24 2000  1 0.0
+	@$(ROOTDIR)/wrap-test.sh dgemm_batch 24 23 21 32 32 32  999 -1 0.5
+	@$(ROOTDIR)/wrap-test.sh dgemm $(shell echo $$(($(TESTSIZE) * 1000)))
+	@$(ROOTDIR)/wrap-test.sh dgemm 350  16  20 350  35 350  1 0.0
+	@$(ROOTDIR)/wrap-test.sh dgemm 200 200 200 256 256 256  1 0.0
+	@$(ROOTDIR)/wrap-test.sh dgemm  24  23  21  32  32  32 -1 0.5
+	@$(ROOTDIR)/wrap-test.sh dgemv $(shell echo $$(($(TESTSIZE) * 1000)))
+	@$(ROOTDIR)/wrap-test.sh dgemv 350  20 350 1 1 1 0
+	@$(ROOTDIR)/wrap-test.sh dgemv 200 200 256 1 1 1 0
+	@$(ROOTDIR)/wrap-test.sh dgemv  24  21  32 2 2 1 1
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
