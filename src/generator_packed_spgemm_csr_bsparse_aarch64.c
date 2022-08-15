@@ -44,15 +44,27 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      l_simd_packed_width = 8;
-    } else {
+    if( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+        l_simd_packed_width = 2;
+      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+        l_simd_packed_width = 4;
+      } else {
+        l_simd_packed_width = 8;
+      }
+    } else { /* asimd */
       l_simd_packed_width = 2;
     }
   } else {
-    if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      l_simd_packed_width = 16;
-    } else {
+    if( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+        l_simd_packed_width = 4;
+      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+        l_simd_packed_width = 8;
+      } else {
+        l_simd_packed_width = 16;
+      }
+    } else { /* asimd */
       l_simd_packed_width = 4;
     }
   }
@@ -162,7 +174,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
   }
 
   /* set P0 in case of SVE */
-  if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
                                                   -1,
@@ -194,7 +206,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
       unsigned int l_n_blocking = l_col_reg_block[l_packed_count][l_n_count];
 
       for ( l_n_processed = l_n_done; l_n_processed < l_n_done + l_col_reg_range[l_packed_count][l_n_count]; l_n_processed += l_n_blocking ) {
-        if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+        if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
           libxsmm_generator_packed_spgemm_csr_bsparse_aarch64_kloop_sve( io_generated_code,
                                                                          &l_loop_label_tracker,
                                                                          &l_gp_reg_mapping,
