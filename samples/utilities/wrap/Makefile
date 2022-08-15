@@ -28,8 +28,10 @@ else
   DEPSTATIC = 0
 endif
 
-ifeq (Darwin,$(UNAME))
+ifneq (Darwin,$(UNAME))
   XWRAP ?= $(if $(filter-out 0,$(NOBLAS)),0,1)
+else
+  XWRAP ?= 0
   ifneq (0,$(XWRAP))
     $(info ==========================================================)
     $(info The static link-time wrapper is not supported under macOS!)
@@ -64,6 +66,7 @@ FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := \
+  $(OUTDIR)/dgemm_batch-blas $(OUTDIR)/dgemm_batch-wrap \
   $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap \
   $(OUTDIR)/dgemv-blas $(OUTDIR)/dgemv-wrap
 
@@ -75,13 +78,22 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (0,$(XWRAP))
   ifneq (2,$(XWRAP))
+    WRAP_GEMM_BATCH = -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_
     WRAP_GEMM = -Wl,--wrap=dgemm_,--wrap=sgemm_
     WRAP_GEMV = -Wl,--wrap=dgemv_,--wrap=sgemv_
   else
+    WRAP_GEMM_BATCH = -Wl,--wrap=dgemm_batch_
     WRAP_GEMM = -Wl,--wrap=dgemm_
     WRAP_GEMV = -Wl,--wrap=dgemv_
   endif
   DFLAGS += -DWRAP
+endif
+
+ifeq (0,$(NOBLAS))
+$(OUTDIR)/dgemm_batch-blas: $(BLDDIR)/dgemm_batch-c.o $(OUTDIR)/.make
+	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+.PHONY: $(OUTDIR)/dgemm_batch-blas
 endif
 
 ifeq (0,$(NOBLAS))
@@ -96,6 +108,20 @@ $(OUTDIR)/dgemv-blas: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(OUTDIR)/dgemv-blas
+endif
+
+ifneq (0,$(XWRAP))
+$(OUTDIR)/dgemm_batch-wrap: $(BLDDIR)/dgemm_batch-c.o $(OUTDIR)/.make
+ifneq (0,$(OMP))
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
+else ifneq (,$(strip $(OMPLIB)))
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH) \
+		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
+else # should not happen
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
+endif
+else
+.PHONY: $(OUTDIR)/dgemm_batch-wrap
 endif
 
 ifneq (0,$(XWRAP))
