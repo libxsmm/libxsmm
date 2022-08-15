@@ -2215,7 +2215,7 @@ ifneq (0,$(MKL))
     endif
     endif
   else # static
-    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
+    BLAS_LDFLAGS := $(call abslibrpath,$(MKLROOT)/lib/$(MKL_ARCH)) $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_THREADS).$(SLIBEXT) \
