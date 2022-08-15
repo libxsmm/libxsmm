@@ -61,13 +61,14 @@ int main(int argc, char* argv[])
   const double alpha = (6 < argc ? atof(argv[6]) : (ALPHA));
   const double beta = (7 < argc ? atof(argv[7]) : (BETA));
   const char trans = 'N';
-  double *a = NULL, *x = NULL, *y = NULL;
+  const BLASINT_TYPE na = lda * n, nx = incx * n, ny = incy * m;
+  double *const a = (double*)malloc(sizeof(double) * na);
+  double *const x = (double*)malloc(sizeof(double) * nx);
+  double *const y = (double*)malloc(sizeof(double) * ny);
   int i;
 
+  assert(NULL != a && NULL != x && NULL != y);
   if (8 < argc) nrepeat = atoi(argv[8]);
-  a = (double*)malloc(lda * n * sizeof(double));
-  x = (double*)malloc(incx * n * sizeof(double));
-  y = (double*)malloc(incy * m * sizeof(double));
   printf("dgemv('%c', %i/*m*/, %i/*n*/,\n"
          "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
          "                  %p/*x*/, %i/*incx*/,\n"
@@ -76,7 +77,6 @@ int main(int argc, char* argv[])
                         (const void*)x, incx,
                   beta, (const void*)y, incy);
 
-  assert(NULL != a && NULL != x && NULL != y);
   init(42, a, m, n, lda, 1.0);
   init(24, x, n, 1, incx, 1.0);
   init( 0, y, m, 1, incy, 1.0);

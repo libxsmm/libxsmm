@@ -62,13 +62,14 @@ int main(int argc, char* argv[])
   const double alpha = (7 < argc ? atof(argv[7]) : (ALPHA));
   const double beta = (8 < argc ? atof(argv[8]) : (BETA));
   const char transa = 'N', transb = 'N';
-  double *a = NULL, *b = NULL, *c = NULL;
+  const BLASINT_TYPE na = lda * k, nb = ldb * n, nc = ldc * n;
+  double *const a = (double*)malloc(sizeof(double) * na);
+  double *const b = (double*)malloc(sizeof(double) * nb);
+  double *const c = (double*)malloc(sizeof(double) * nc);
   int i;
 
+  assert(NULL != a && NULL != b && NULL != c);
   if (9 < argc) nrepeat = atoi(argv[9]);
-  a = (double*)malloc(lda * k * sizeof(double));
-  b = (double*)malloc(ldb * n * sizeof(double));
-  c = (double*)malloc(ldc * n * sizeof(double));
   printf("dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
          "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
          "                  %p/*b*/, %i/*ldb*/,\n"
@@ -77,7 +78,6 @@ int main(int argc, char* argv[])
                                     (const void*)b, ldb,
                               beta, (const void*)c, ldc);
 
-  assert(NULL != a && NULL != b && NULL != c);
   init(42, a, m, k, lda, 1.0);
   init(24, b, k, n, ldb, 1.0);
   init( 0, c, m, n, ldc, 1.0);
