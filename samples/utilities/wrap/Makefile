@@ -9,10 +9,10 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
-BLAS = 2
 OMP = 1
 SYM = 1
 
+BLAS = $(if $(filter-out 0,$(OMP)),2,1)
 BLAS_STATIC = 0
 
 # include common Makefile artifacts
@@ -29,7 +29,12 @@ else
 endif
 
 ifeq (Darwin,$(UNAME))
-  XWRAP ?= 0
+  XWRAP ?= $(if $(filter-out 0,$(NOBLAS)),0,1)
+  ifneq (0,$(XWRAP))
+    $(info ==========================================================)
+    $(info The static link-time wrapper is not supported under macOS!)
+    $(info ==========================================================)
+  endif
 endif
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
@@ -82,13 +87,6 @@ endif
 ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-ifeq (Darwin,$(UNAME))
-ifneq (0,$(XWRAP))
-	$(info ================================================================================)
-	$(info The static link-time wrapper mechanism is not supported under macOS!)
-	$(info ================================================================================)
-endif
-endif
 else
 .PHONY: $(OUTDIR)/dgemm-blas
 endif
@@ -96,13 +94,6 @@ endif
 ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemv-blas: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-ifeq (Darwin,$(UNAME))
-ifneq (0,$(XWRAP))
-	$(info ================================================================================)
-	$(info The static link-time wrapper mechanism is not supported under macOS!)
-	$(info ================================================================================)
-endif
-endif
 else
 .PHONY: $(OUTDIR)/dgemv-blas
 endif
@@ -188,4 +179,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-
