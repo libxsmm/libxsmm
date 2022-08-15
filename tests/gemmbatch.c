@@ -48,7 +48,7 @@ LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
 #endif
 
 #define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
-#define EPSILON_double 1e-15
+#define EPSILON_double 1e-12
 #define EPSILON_float 1e-6
 
 

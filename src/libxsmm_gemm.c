@@ -29,9 +29,9 @@
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
-/* 0: disabled, 1: "always", 2: beta=0 */
+/* 0: disabled, 1: "always", 2 (or negative): beta=0 */
 #if !defined(LIBXSMM_GEMM_NTS)
-# define LIBXSMM_GEMM_NTS 0
+# define LIBXSMM_GEMM_NTS -1
 #endif
 #if !defined(LIBXSMM_GEMM_FASTPATH) && defined(NDEBUG) && 1
 # define LIBXSMM_GEMM_FASTPATH
@@ -1267,19 +1267,21 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
     int result = EXIT_SUCCESS;
     LIBXSMM_INIT
     if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, otypesize)) { /* check if an SMM is suitable */
-      const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
       double dalpha = LIBXSMM_ALPHA, dbeta = LIBXSMM_BETA;
       result = libxsmm_dvalue(oprec, alpha, &dalpha);
       if (EXIT_SUCCESS == result) result = libxsmm_dvalue(oprec, beta, &dbeta);
       if (EXIT_SUCCESS == result) {
+        const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS) |
+          (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
         if (LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta)) {
           const libxsmm_bitfield prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
           const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(m, n, k,
             NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
             NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
             NULL != ldc ? *ldc : m, iprec, iprec, oprec, oprec);
-          const libxsmm_bitfield flags = libxsmm_gemm_batch_flags(gemm_flags |
-            (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0), &shape, c);
+          const libxsmm_bitfield flags = (0 != index_stride
+            ? libxsmm_gemm_batch_flags(gemm_flags, &shape, c)
+            : gemm_flags);
           libxsmm_xmmfunction kernel /*= { NULL }*/;
           kernel.gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
           if (NULL != kernel.ptr_const) {

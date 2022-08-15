@@ -424,16 +424,16 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
         const libxsmm_blasint ilda = (NULL != lda ? lda[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? im : ik));
         const libxsmm_blasint ildb = (NULL != ldb ? ldb[i] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? ik : in));
         const libxsmm_blasint ildc = (NULL != ldc ? ldc[i] : im);
-        libxsmm_bitfield flags = 0;
+        libxsmm_bitfield flags = gemm_flags;
         if (LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, otypesize)) {
           double dalpha = LIBXSMM_ALPHA, dbeta = LIBXSMM_BETA;
           if  (EXIT_SUCCESS == libxsmm_dvalue(oprec, ialpha, &dalpha)
             && EXIT_SUCCESS == libxsmm_dvalue(oprec, ibeta, &dbeta)
-            && LIBXSMM_GEMM_NO_BYPASS(gemm_flags, dalpha, dbeta))
+            && LIBXSMM_GEMM_NO_BYPASS(flags, dalpha, dbeta))
           {
             const libxsmm_gemm_shape shape = libxsmm_create_gemm_shape(im, in, ik, ilda, ildb, ildc, iprec, iprec, oprec, oprec);
-            flags = libxsmm_gemm_batch_flags(gemm_flags
-              | (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0), &shape, c);
+            flags |= (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
+            if (0 != index_stride) flags = libxsmm_gemm_batch_flags(flags, &shape, c);
             kernel.gemm = libxsmm_dispatch_gemm_v2(shape, flags, prefetch);
           }
           else kernel.ptr_const = NULL;
