@@ -29,6 +29,10 @@
 #if !defined(LIBXSMM_GEMM_TASKGRAIN)
 # define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
+/* 0: disabled, 1: "always", 2: beta=0 */
+#if !defined(LIBXSMM_GEMM_NTS)
+# define LIBXSMM_GEMM_NTS 0
+#endif
 #if !defined(LIBXSMM_GEMM_FASTPATH) && defined(NDEBUG) && 1
 # define LIBXSMM_GEMM_FASTPATH
 #endif
@@ -1175,8 +1179,12 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c)
 {
   libxsmm_bitfield result = (libxsmm_bitfield)gemm_flags;
+#if defined(LIBXSMM_GEMM_NTS) && (0 != LIBXSMM_GEMM_NTS)
   LIBXSMM_ASSERT(NULL != gemm_shape);
-  if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & result)) {
+# if (2 == LIBXSMM_GEMM_NTS || 0 > LIBXSMM_GEMM_NTS)
+  if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & result))
+# endif
+  {
     const uintptr_t vw = (size_t)libxsmm_cpuid_vlen(libxsmm_target_archid);
     if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)) {
       const unsigned char otypesize = libxsmm_typesize(gemm_shape->out_type);
@@ -1185,6 +1193,9 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libx
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(gemm_shape); LIBXSMM_UNUSED(c);
+#endif
   return result;
 }
 
