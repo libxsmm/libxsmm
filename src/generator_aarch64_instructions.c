@@ -1180,7 +1180,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-    } else {
+    } else if( (l_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1) == LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1 ){
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
@@ -1221,7 +1221,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       if(l_index >= 32 && i_type == LIBXSMM_AARCH64_SVE_TYPE_D) {
         code[code_head] |= (1 << 22);
       }
-    }else if(l_is_int_imm){
+    }else if ( l_is_int_imm ){
       code[code_head] = (code[code_head] & 0xffffe01f) | (unsigned int)(i_index << 5);
     } else {
       if ( l_has_two_sources ){
