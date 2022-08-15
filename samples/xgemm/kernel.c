@@ -1420,7 +1420,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
+  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -1438,7 +1438,7 @@ void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PRECISION: SP, DP, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
+  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -1689,11 +1689,11 @@ int main(int argc, char* argv []) {
   l_gemm_def.unary_postop  = l_unary_postop;
 
   /* setting precision in GEMM struct */
-  if ( (strcmp(l_precision, "DP") == 0) ) {
+  if ( (strcmp(l_precision, "F64") == 0) ) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_F64;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F64;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_F64;
-  } else if ( (strcmp(l_precision, "SP") == 0) ) {
+  } else if ( (strcmp(l_precision, "F32") == 0) ) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_F32;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
