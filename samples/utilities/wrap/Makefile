@@ -28,11 +28,8 @@ else
   DEPSTATIC = 0
 endif
 
-XWRAP ?= 0
-ifneq (Darwin,$(UNAME))
-ifneq (0,$(DEPSTATIC))
-  XWRAP = $(GEMM)
-endif
+ifeq (Darwin,$(UNAME))
+  XWRAP ?= 0
 endif
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
@@ -111,7 +108,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 else ifneq (,$(strip $(OMPLIB)))
@@ -125,7 +122,7 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
 else ifneq (,$(strip $(OMPLIB)))
