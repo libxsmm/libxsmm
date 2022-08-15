@@ -21,12 +21,12 @@ WC=$(command -v wc)
 #Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
 
 # list of tests that produce "application must be linked against LAPACK/BLAS" in case of BLAS=0
-TESTS_NEEDBLAS="gemm.c"
+TESTS_NEEDBLAS="gemm.c wrap.sh"
 # grep pattern based on TESTS_NEEDBLAS
 TESTS_NEEDBLAS_GREP=$(echo ${TESTS_NEEDBLAS} | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ "" = "$*" ]; then
-  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null)"
+  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) wrap.sh"
 else
   TESTS="$*"
 fi

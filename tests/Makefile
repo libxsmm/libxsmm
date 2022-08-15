@@ -61,6 +61,7 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
 
 .PHONY: all
 all: $(XFILES)
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -69,7 +70,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 tests: test
 
 .PHONY: test
-test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
+test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 	@$(OUTDIR)/test.sh $(TEST)
 
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
@@ -151,6 +152,7 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 
 .PHONY: clean
 clean:
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
@@ -164,6 +166,7 @@ endif
 
 .PHONY: realclean
 realclean: clean
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
