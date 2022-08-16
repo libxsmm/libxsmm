@@ -29,6 +29,9 @@
 #   if defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2)
 #     define GEMM_BATCH LIBXSMM_TPREFIX(TYPE, gemm_batch)
 #   endif
+#   if 0/*TODO*/
+#     define GEMM_BATCH_STRIDED LIBXSMM_TPREFIX(TYPE, gemm_batch_strided)
+#   endif
 # else
 LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
 # endif
@@ -41,7 +44,7 @@ LIBXSMM_BLAS_SYMBOL_DECL(TYPE, gemm)
 # define FPRINTF(STREAM, ...) do {} while(0)
 #endif
 
-#if defined(_OPENMP)
+#if defined(_OPENMP) && 1
 # define USEOMP(FUNCTION) LIBXSMM_USEOMP(FUNCTION)
 #else
 # define USEOMP(FUNCTION) (FUNCTION)
@@ -220,6 +223,50 @@ int main(int argc, char* argv[])
         }
       }
     }
+
+#if defined(GEMM_BATCH_STRIDED)
+    if (EXIT_SUCCESS == result) {
+      USEOMP(libxsmm_gemm_strided)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, a, &lda, &na, b, &ldb, &nb, &beta, c, &ldc, &nc,
+        0/*index_base*/, size);
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, a + i * na, &lda, b + i * nb, &ldb,
+          &beta, d + i * nc, &ldc);
+      }
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+
+    if (EXIT_SUCCESS == result) {
+      libxsmm_gemm_strided(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, a, &lda, &na, b, &ldb, &nb, &beta, c, &ldc, &nc,
+        0/*index_base*/, size);
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, a + i * na, &lda, b + i * nb, &ldb,
+          &beta, d + i * nc, &ldc);
+      }
+      libxsmm_matdiff_reduce(&diff, &di);
+      result = libxsmm_matdiff(&di, oprec, m, n, d, c, &ldc, &ldc);
+      if (EXIT_SUCCESS == result) {
+        FPRINTF(stderr, "Test error (line #%i): %f", __LINE__, di.linf_abs);
+        if (EPSILON(TYPE) >= libxsmm_matdiff_epsilon(&di)) FPRINTF(stderr, "\n");
+        else {
+          FPRINTF(stderr, " (%f != %f)\n", di.v_ref, di.v_tst);
+          result = EXIT_FAILURE;
+        }
+      }
+    }
+#endif
 
 #if defined(GEMM_BATCH)
     if (EXIT_SUCCESS == result) {
