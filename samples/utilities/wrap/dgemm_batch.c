@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
@@ -104,17 +107,26 @@ int main(int argc, char* argv[])
     }
   }
 
+  { /* Call DGEMM_BATCH */
 #if defined(GEMM_BATCH)
-  for (i = 0; i < nrepeat; ++i) {
-    dgemm_batch_(&transa, &transb, &m, &n, &k,
-      &alpha, pa, &lda, pb, &ldb,
-      &beta,  pc, &ldc,
-      &group_count, &batchsize);
-  }
-  printf("Called %i times.\n", nrepeat);
+# if defined(_OPENMP)
+    const double start = omp_get_wtime();
+# endif
+    for (i = 0; i < nrepeat; ++i) {
+      dgemm_batch_(&transa, &transb, &m, &n, &k,
+        &alpha, pa, &lda, pb, &ldb,
+        &beta,  pc, &ldc,
+        &group_count, &batchsize);
+    }
+# if defined(_OPENMP)
+    printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
+# else
+    printf("Called %i times.\n", nrepeat);
+# endif
 #else
-  printf("Called 0 times.\n");
+    printf("Called 0 times.\n");
 #endif
+  }
 
   free(pa);
   free(pb);
@@ -125,4 +137,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-

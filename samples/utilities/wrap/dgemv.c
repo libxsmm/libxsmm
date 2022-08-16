@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 
 #if !defined(BLASINT_TYPE)
 # define BLASINT_TYPE int
@@ -81,10 +84,19 @@ int main(int argc, char* argv[])
   init(24, x, n, 1, incx, 1.0);
   init( 0, y, m, 1, incy, 1.0);
 
-  for (i = 0; i < nrepeat; ++i) {
-    dgemv_(&trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
+  { /* Call DGEMM */
+# if defined(_OPENMP)
+    const double start = omp_get_wtime();
+# endif
+    for (i = 0; i < nrepeat; ++i) {
+      dgemv_(&trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
+    }
+# if defined(_OPENMP)
+    printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
+# else
+    printf("Called %i times.\n", nrepeat);
+# endif
   }
-  printf("Called %i times.\n", nrepeat);
 
   free(a);
   free(x);
@@ -92,4 +104,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-
