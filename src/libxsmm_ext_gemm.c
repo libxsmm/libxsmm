@@ -124,7 +124,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_st
   LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+    if (*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, transa, transb,
         *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
         -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
@@ -155,7 +155,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_st
   LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+    if (*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, transa, transb,
         *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
         -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
@@ -182,7 +182,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
   LIBXSMM_ASSERT(NULL != group_count && NULL != group_size);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+    if (1 == *group_count && *group_size <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_groups(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
@@ -215,7 +215,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(
   LIBXSMM_ASSERT(NULL != group_count && NULL != group_size);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+    if (1 == *group_count && *group_size <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_groups(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
