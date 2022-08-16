@@ -651,6 +651,12 @@ void libxsmm_generator_cvtbf8ps_avx512( libxsmm_generated_code* io_generated_cod
                                         const unsigned int      o_vec_reg );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_cvtbf8bf16_avx512( libxsmm_generated_code* io_generated_code,
+                                         const char              i_vname,
+                                         const unsigned int      i_vec_reg,
+                                         const unsigned int      o_vec_reg );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_vcvtneps2bf8_avx512_prep_stack( libxsmm_generated_code* io_generated_code,
                                                        const unsigned int      io_gp_reg );
 
