@@ -419,7 +419,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
 /* define integer instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_SUB_V          0x2521c062
+#define LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I        0x2521c062
 /* table access instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBL            0x05203003 /* src0[src1], out of bounds -> zero, not vector length agnostic */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBX            0x05202c03 /* src0[src1], out of bounds -> merge, not vector length agnostic */

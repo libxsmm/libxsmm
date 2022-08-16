@@ -1082,7 +1082,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_is_type_specific = i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_AND_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
-  unsigned char l_is_int_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_SUB_V;
+  unsigned char l_is_int_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I;
   unsigned int l_vec_instr = i_vec_instr;
 
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
@@ -1136,7 +1136,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L:
     case LIBXSMM_AARCH64_INSTR_SVE_TBL:
     case LIBXSMM_AARCH64_INSTR_SVE_TBX:
-    case LIBXSMM_AARCH64_INSTR_SVE_SUB_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
@@ -1221,7 +1221,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       if(l_index >= 32 && i_type == LIBXSMM_AARCH64_SVE_TYPE_D) {
         code[code_head] |= (1 << 22);
       }
-    }else if ( l_is_int_imm ){
+    }else if ( l_is_int_imm ) {
       code[code_head] = (code[code_head] & 0xffffe01f) | (unsigned int)(i_index << 5);
     } else {
       if ( l_has_two_sources ){
