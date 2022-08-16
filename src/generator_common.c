@@ -54,18 +54,17 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* some safety checks */
   if (current_code != NULL) {
     l_length_1 = io_generated_code->code_size;
-  } else {
-    /* nothing to do */
-    l_length_1 = 0;
   }
   if (i_code_to_append != NULL) {
-    l_length_2 = i_append_length;
+    if (*i_code_to_append != '\0') {
+      l_length_2 = i_append_length;
+    }
   } else {
     fprintf(stderr, "LIBXSMM WARNING: libxsmm_append_code_as_string was called with an empty string");
   }
 
   /* allocate new string */
-  l_new_string = (char*) malloc( (l_length_1+l_length_2+1)*sizeof(char) );
+  l_new_string = (char*)malloc(sizeof(char) * (l_length_1 + l_length_2 + 1) );
   if (l_new_string == NULL) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ALLOC );
     return;
@@ -74,7 +73,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* copy old content */
   if (l_length_1 > 0) {
     /* @TODO using memcpy instead? */
-    libxsmm_strncpy( l_new_string, current_code, (unsigned int)(l_length_1+l_length_2), (unsigned int)l_length_1 );
+    libxsmm_strncpy(l_new_string, current_code, (unsigned int)(l_length_1 + l_length_2), (unsigned int)l_length_1);
   } else {
     l_new_string[0] = '\0';
   }
@@ -86,13 +85,14 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   }
 
   /* free old memory and overwrite pointer */
-  if (l_length_1 > 0)
+  if (l_length_1 > 0) {
     free(current_code);
+  }
 
   io_generated_code->generated_code = (void*)l_new_string;
 
   /* update counters */
-  io_generated_code->code_size = (unsigned int)(l_length_1+l_length_2);
+  io_generated_code->code_size = (unsigned int)(l_length_1 + l_length_2);
   io_generated_code->buffer_size = (io_generated_code->code_size) + 1;
 }
 
