@@ -1187,7 +1187,7 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(int gemm_flags, const libx
   {
     const uintptr_t vw = (size_t)libxsmm_cpuid_vlen(libxsmm_target_archid);
     if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)) {
-      const unsigned char otypesize = libxsmm_typesize(gemm_shape->out_type);
+      const int otypesize = libxsmm_typesize(gemm_shape->out_type);
       if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, vw)) { /* aligned C-matrices? */
         result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
       }

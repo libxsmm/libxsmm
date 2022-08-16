@@ -1609,12 +1609,15 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 #endif
 #if defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_FORCE)
     if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
       if (0 < jit) {
         target_archid = LIBXSMM_AARCH64_V81 + jit;
       }
-      else if (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
-            || arch == libxsmm_stristr(arch, "arm_v81")
-            || arch == libxsmm_stristr(arch, "aarch64"))
+      else
+# endif
+      if  (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
+        || arch == libxsmm_stristr(arch, "arm_v81")
+        || arch == libxsmm_stristr(arch, "aarch64"))
       {
         target_archid = LIBXSMM_AARCH64_V81;
       }
