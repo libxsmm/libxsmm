@@ -118,13 +118,13 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch_st
   const libxsmm_blasint* batchsize)
 {
   LIBXSMM_ASSERT(NULL != transa && NULL != transb && NULL != m && NULL != n && NULL != k);
-  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize);
+  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize && 0 <= *batchsize);
   LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
   LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
   LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
+    if ((unsigned int)*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, transa, transb,
         *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
         -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
@@ -149,13 +149,13 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch_st
   const libxsmm_blasint* batchsize)
 {
   LIBXSMM_ASSERT(NULL != transa && NULL != transb && NULL != m && NULL != n && NULL != k);
-  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize);
+  LIBXSMM_ASSERT(NULL != alpha && NULL != beta && NULL != batchsize && 0 <= *batchsize);
   LIBXSMM_ASSERT(NULL != a && NULL != lda && NULL != stride_a);
   LIBXSMM_ASSERT(NULL != b && NULL != ldb && NULL != stride_b);
   LIBXSMM_ASSERT(NULL != c && NULL != ldc && NULL != stride_c);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
+    if ((unsigned int)*batchsize <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_batch_task(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, transa, transb,
         *m, *n, *k, alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
         -1/*index_stride*/, 0/*index_base*/, *batchsize, 0/*tid*/, 1/*ntasks*/);
@@ -179,10 +179,10 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(
 {
   LIBXSMM_ASSERT(NULL != lda_array && NULL != ldb_array && NULL != ldc_array && NULL != m_array && NULL != n_array && NULL != k_array);
   LIBXSMM_ASSERT(NULL != transa_array && NULL != transb_array && NULL != alpha_array && NULL != beta_array);
-  LIBXSMM_ASSERT(NULL != group_count && NULL != group_size);
+  LIBXSMM_ASSERT(NULL != group_count && 0 <= *group_count && NULL != group_size);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (1 == *group_count && *group_size <= libxsmm_gemm_taskgrain) { /* sequential */
+    if (1 == *group_count && (unsigned int)*group_size <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_groups(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
@@ -212,10 +212,10 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(
 {
   LIBXSMM_ASSERT(NULL != lda_array && NULL != ldb_array && NULL != ldc_array && NULL != m_array && NULL != n_array && NULL != k_array);
   LIBXSMM_ASSERT(NULL != transa_array && NULL != transb_array && NULL != alpha_array && NULL != beta_array);
-  LIBXSMM_ASSERT(NULL != group_count && NULL != group_size);
+  LIBXSMM_ASSERT(NULL != group_count && 0 <= *group_count && NULL != group_size);
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_wrap) {
-    if (1 == *group_count && *group_size <= libxsmm_gemm_taskgrain) { /* sequential */
+    if (1 == *group_count && (unsigned int)*group_size <= libxsmm_gemm_taskgrain) { /* sequential */
       libxsmm_gemm_groups(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32,
         transa_array, transb_array, m_array, n_array, k_array,
         alpha_array, (const void**)a_array, lda_array, (const void**)b_array, ldb_array,
