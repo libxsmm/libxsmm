@@ -15,7 +15,7 @@
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #endif
-#if defined(__INTEL_MKL__) && (110003 <= (10000*__INTEL_MKL__+__INTEL_MKL_UPDATE__))
+#if defined(__INTEL_MKL__) && (110300 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__))
 # define GEMM_BATCH
 #endif
 
