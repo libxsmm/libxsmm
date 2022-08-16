@@ -26,7 +26,7 @@
 #if !defined(GEMM)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 #   include <mkl.h>
-#   if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(11, 3, 0) <= LIBXSMM_MKL_VERSION3)
+#   if defined(LIBXSMM_MKL_VERSION2) && (LIBXSMM_VERSION2(11, 3) <= LIBXSMM_MKL_VERSION2)
 #     define GEMM_BATCH LIBXSMM_TPREFIX(TYPE, gemm_batch)
 #   endif
 # else
