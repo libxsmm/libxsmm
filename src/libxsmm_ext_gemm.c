@@ -390,9 +390,10 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void __wrap_sgemm_batch(
 
 LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc, libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint* stride_a, const libxsmm_blasint* stride_b, const libxsmm_blasint* stride_c,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+  const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  libxsmm_blasint index_stride, libxsmm_blasint index_base,
   const libxsmm_blasint* batchsize, libxsmm_blasint group_count)
 {
 #if defined(LIBXSMM_BATCH_CHECK)
@@ -551,14 +552,14 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
 
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc, libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  libxsmm_blasint batchsize)
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+  const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_stride, libxsmm_blasint index_base, libxsmm_blasint batchsize)
 {
   internal_gemm_batch_omp(iprec, oprec, transa, transb, &m, &n, &k,
-    alpha, a, lda, b, ldb, beta, c, ldc, index_base, index_stride,
-    stride_a, stride_b, stride_c, &batchsize, 1);
+    alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+    index_stride, index_base, &batchsize, 1/*group_count*/);
 }
 
 
@@ -570,8 +571,8 @@ LIBXSMM_APIEXT void libxsmm_gemm_strided_omp(libxsmm_datatype iprec, libxsmm_dat
   libxsmm_blasint index_base, libxsmm_blasint batchsize)
 {
   internal_gemm_batch_omp(iprec, oprec, transa, transb, &m, &n, &k,
-    alpha, a, lda, b, ldb, beta, c, ldc, index_base, -1/*index_stride*/,
-    stride_a, stride_b, stride_c, &batchsize, 1/*group_count*/);
+    alpha, a, lda, stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
+    -1/*index_stride*/, index_base, &batchsize, 1/*group_count*/);
 }
 
 
@@ -585,8 +586,8 @@ LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
 {
   if (NULL != group_count) {
     internal_gemm_batch_omp(iprec, oprec, transa_array, transb_array, m_array, n_array, k_array,
-      alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
-      0/*index_base*/, 0/*index_stride*/, NULL/*stride_a*/, NULL/*stride_b*/, NULL/*stride_c*/,
+      alpha_array, a_array, lda_array, NULL/*stride_a*/, b_array, ldb_array, NULL/*stride_b*/,
+      beta_array, c_array, ldc_array, NULL/*stride_c*/, 0/*index_stride*/, 0/*index_base*/,
       group_size, *group_count);
   }
 }
@@ -610,8 +611,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_gemm_batch_omp)(const libxsmm_dataty
 {
   LIBXSMM_ASSERT(NULL != iprec && NULL != oprec && NULL != m && NULL != n && NULL != k);
   LIBXSMM_ASSERT(NULL != index_base && NULL != index_stride && NULL != batchsize);
-  libxsmm_gemm_batch_omp(*iprec, *oprec, transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
-    *index_base, *index_stride, stride_a, stride_b, stride_c, *batchsize);
+  libxsmm_gemm_batch_omp(*iprec, *oprec, transa, transb, *m, *n, *k,
+    alpha, a, lda, stride_a, b, ldb, stride_b,
+    beta, c, ldc, stride_c, *index_stride, *index_base, *batchsize);
 }
 
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/

@@ -158,9 +158,8 @@ int main(int argc, char* argv[])
 
     if (EXIT_SUCCESS == result) {
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
-        0/*index_base*/, sizeof(libxsmm_blasint)/*index_stride*/,
-        ia, ib, ic, size);
+        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
           &alpha, a + ia[i], &lda, b + ib[i], &ldb,
@@ -183,9 +182,8 @@ int main(int argc, char* argv[])
 #     pragma omp single nowait
 #endif
       USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
-        0/*index_base*/, sizeof(libxsmm_blasint)/*index_stride*/,
-        ia, ib, ic, size);
+        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
           &alpha, a + ia[i], &lda, b + ib[i], &ldb,
@@ -204,9 +202,8 @@ int main(int argc, char* argv[])
 
     if (EXIT_SUCCESS == result) {
       libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
-        &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
-        0/*index_base*/, sizeof(libxsmm_blasint)/*index_stride*/,
-        ia, ib, ic, size);
+        &alpha, a, &lda, ia, b, &ldb, ib, &beta, c, &ldc, ic,
+        sizeof(libxsmm_blasint)/*index_stride*/, 0/*index_base*/, size);
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
           &alpha, a + ia[i], &lda, b + ib[i], &ldb,
@@ -314,9 +311,9 @@ int main(int argc, char* argv[])
       for (i = 0; i < size; ++i) { /* use pointers instead of indexes */
         pa[i] = a + ia[i]; pb[i] = b + ib[i]; pc[i] = c + ic[i]; pd[i] = d + ic[i];
       }
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec,
-        &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
-        0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
       GEMM_BATCH(&transa, &transb, &m, &n, &k,
         &alpha, pa, &lda, pb, &ldb,
         &beta, pd, &ldc, &group_count, &size);
@@ -338,9 +335,9 @@ int main(int argc, char* argv[])
 #     pragma omp parallel
 #     pragma omp single nowait
 #endif
-      USEOMP(libxsmm_gemm_batch)(iprec, oprec,
-        &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
-        0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
+      USEOMP(libxsmm_gemm_batch)(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
       GEMM_BATCH(&transa, &transb, &m, &n, &k,
         &alpha, pa, &lda, pb, &ldb,
         &beta, pd, &ldc, &group_count, &size);
@@ -358,9 +355,9 @@ int main(int argc, char* argv[])
 
     if (EXIT_SUCCESS == result) {
       const libxsmm_blasint group_count = 1, ptrsize = sizeof(void*);
-      libxsmm_gemm_batch(iprec, oprec,
-        &transa, &transb, m, n, k, &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc,
-        0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, size);
+      libxsmm_gemm_batch(iprec, oprec, &transa, &transb, m, n, k,
+        &alpha, pa, &lda, &ptrsize, pb, &ldb, &ptrsize,
+        &beta, pc, &ldc, &ptrsize, 0/*index_stride*/, 0/*index_base*/, size);
       GEMM_BATCH(&transa, &transb, &m, &n, &k,
         &alpha, pa, &lda, pb, &ldb,
         &beta, pd, &ldc, &group_count, &size);

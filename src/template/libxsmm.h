@@ -198,21 +198,19 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
 /** Process a series of SMMs (batch). See also libxsmm_gemm_batch_task. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-                     const void* b, const libxsmm_blasint* ldb,
-  const void* beta,        void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_stride, libxsmm_blasint index_base,
   libxsmm_blasint batchsize);
 
 /** Process a series of SMMs (batch) with OpenMP (libxsmmext). See also libxsmm_gemm_batch_task. */
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-                     const void* b, const libxsmm_blasint* ldb,
-  const void* beta,        void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_stride, libxsmm_blasint index_base,
   libxsmm_blasint batchsize);
 
 /** Process a series of SMMs (batch) like gemm_batch_strided (LAPACK/BLAS). */
