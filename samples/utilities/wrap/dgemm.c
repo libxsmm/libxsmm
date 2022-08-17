@@ -15,6 +15,9 @@
 # include <omp.h>
 #endif
 
+#if !defined(GEMM)
+# define GEMM dgemm_
+#endif
 #if !defined(BLASINT_TYPE)
 # define BLASINT_TYPE int
 #endif
@@ -26,7 +29,7 @@
 #endif
 
 /** Function prototype for DGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-void dgemm_(const char*, const char*, const BLASINT_TYPE*, const BLASINT_TYPE*, const BLASINT_TYPE*,
+void GEMM(const char*, const char*, const BLASINT_TYPE*, const BLASINT_TYPE*, const BLASINT_TYPE*,
   const double*, const double*, const BLASINT_TYPE*, const double*, const BLASINT_TYPE*,
   const double*, double*, const BLASINT_TYPE*);
 
@@ -69,28 +72,30 @@ int main(int argc, char* argv[])
   double *const a = (double*)malloc(sizeof(double) * na);
   double *const b = (double*)malloc(sizeof(double) * nb);
   double *const c = (double*)malloc(sizeof(double) * nc);
+  const double scale = 1.0;
   int i;
 
   assert(NULL != a && NULL != b && NULL != c);
   if (9 < argc) nrepeat = atoi(argv[9]);
-  printf("dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-         "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-         "                  %p/*b*/, %i/*ldb*/,\n"
-         "       %g/*beta*/, %p/*c*/, %i/*ldc*/)\n",
+  printf(
+    "dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
+    "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
+    "                  %p/*b*/, %i/*ldb*/,\n"
+    "       %g/*beta*/, %p/*c*/, %i/*ldc*/)\n",
     transa, transb, m, n, k, alpha, (const void*)a, lda,
                                     (const void*)b, ldb,
                               beta, (const void*)c, ldc);
 
-  init(42, a, m, k, lda, 1.0);
-  init(24, b, k, n, ldb, 1.0);
-  init( 0, c, m, n, ldc, 1.0);
+  init(42, a, m, k, lda, scale);
+  init(24, b, k, n, ldb, scale);
+  init( 0, c, m, n, ldc, scale);
 
   { /* Call DGEMM */
 # if defined(_OPENMP)
     const double start = omp_get_wtime();
 # endif
     for (i = 0; i < nrepeat; ++i) {
-      dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+      GEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     }
 # if defined(_OPENMP)
     printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);

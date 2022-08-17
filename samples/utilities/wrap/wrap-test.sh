@@ -35,9 +35,8 @@ fi
 
 if [ -e "${HERE}/${TEST}-blas" ]; then
   NAME=$(echo ${TEST} | ${TR} [[:lower:]] [[:upper:]])
-  echo "==================================="
-  echo "Running ${NAME} (ORIGINAL BLAS)"
-  echo "==================================="
+  echo "-----------------------------------"
+  echo "${NAME} (ORIGINAL BLAS)"
   { time "${HERE}/${TEST}-blas.sh" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
@@ -50,10 +49,8 @@ if [ -e "${HERE}/${TEST}-blas" ]; then
   echo
 
   if [ -e "${DEPDIR}/lib/libxsmmext.${LIBEXT}" ]; then
-    echo
-    echo "==================================="
-    echo "Running ${NAME} (LD_PRELOAD)"
-    echo "==================================="
+    echo "-----------------------------------"
+    echo "${NAME} (LD_PRELOAD)"
     { time \
       LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
       DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
@@ -73,10 +70,8 @@ fi
 if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
    [ "" = "$(${GREP} 'BLAS=0' .state)" ];
 then
-  echo
-  echo "==================================="
-  echo "Running ${NAME} (STATIC WRAP)"
-  echo "==================================="
+  echo "-----------------------------------"
+  echo "${NAME} (STATIC WRAP)"
   { time "${HERE}/${TEST}-wrap.sh" "$@" 2>"${TMPF}"; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
@@ -90,4 +85,3 @@ then
 fi
 
 ${RM} -f "${TMPF}"
-
