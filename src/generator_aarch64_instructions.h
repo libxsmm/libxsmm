@@ -334,6 +334,10 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2        0x0e003013
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3        0x0e005013
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4        0x0e007013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BFMMLA_V     0x6e40ec13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V      0x4e80a413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V      0x6e80a413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V     0x4e80ac13
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
@@ -368,7 +372,7 @@
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED  0x80
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED     0x40
-#define LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE 0x20
+#define LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST    0x20
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0       0x02 /* currently set for all instructions, so maybe could be replaced/removed */
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1       0x01
 /* define unpredicated SVE instructions */
@@ -385,6 +389,11 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001803 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V       0x6460e403
+#define LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V        0x64a0e403
+#define LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V        0x45009803
+#define LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V        0x45c09803
+#define LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V       0x45809803
 
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
 

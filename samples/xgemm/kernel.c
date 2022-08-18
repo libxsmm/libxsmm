@@ -17,6 +17,8 @@
 # if defined(__APPLE__) && defined(__arm64__)
 #include <pthread.h>
 # endif
+/* TODO (MMLA): remove once MMLA-conversion routines are done */
+#include <arm_bf16.h>
 
 #define OP_NONE         0
 #define COLBIAS_ADD     1
@@ -502,6 +504,62 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
   }
 }
 
+/* TODO (MMLA): clean up */
+void convert_a_to_bfmmla( uint64_t           i_m,
+                          uint64_t           i_n,
+                          uint64_t           i_ld,
+                          bfloat16_t const * i_a_col_major,
+                          bfloat16_t       * o_a_bfmmla ) {
+  uint64_t l_id = 0;
+
+  for( uint64_t l_n = 0; l_n < i_n; l_n+=4 ) {
+    for( uint64_t l_m = 0; l_m < i_m; l_m+=2 ) {
+      o_a_bfmmla[ l_id+0 ] = i_a_col_major[ (l_n+0)*i_ld + (l_m+0) ];
+      o_a_bfmmla[ l_id+1 ] = i_a_col_major[ (l_n+1)*i_ld + (l_m+0) ];
+      o_a_bfmmla[ l_id+2 ] = i_a_col_major[ (l_n+2)*i_ld + (l_m+0) ];
+      o_a_bfmmla[ l_id+3 ] = i_a_col_major[ (l_n+3)*i_ld + (l_m+0) ];
+
+      o_a_bfmmla[ l_id+4 ] = i_a_col_major[ (l_n+0)*i_ld + (l_m+1) ];
+      o_a_bfmmla[ l_id+5 ] = i_a_col_major[ (l_n+1)*i_ld + (l_m+1) ];
+      o_a_bfmmla[ l_id+6 ] = i_a_col_major[ (l_n+2)*i_ld + (l_m+1) ];
+      o_a_bfmmla[ l_id+7 ] = i_a_col_major[ (l_n+3)*i_ld + (l_m+1) ];
+      l_id += 8;
+    }
+  }
+}
+
+/* TODO (MMLA): clean up */
+void convert_a_to_i8mmla( uint64_t         i_m,
+                          uint64_t         i_n,
+                          uint64_t         i_ld,
+                          int8_t   const * i_a_col_major,
+                          int8_t         * o_a_i8mmla ) {
+  uint64_t l_id = 0;
+
+  for( uint64_t l_n = 0; l_n < i_n; l_n+=8 ) {
+    for( uint64_t l_m = 0; l_m < i_m; l_m+=2 ) {
+      o_a_i8mmla[ l_id+ 0 ] = i_a_col_major[ (l_n+0)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 1 ] = i_a_col_major[ (l_n+1)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 2 ] = i_a_col_major[ (l_n+2)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 3 ] = i_a_col_major[ (l_n+3)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 4 ] = i_a_col_major[ (l_n+4)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 5 ] = i_a_col_major[ (l_n+5)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 6 ] = i_a_col_major[ (l_n+6)*i_ld + (l_m+0) ];
+      o_a_i8mmla[ l_id+ 7 ] = i_a_col_major[ (l_n+7)*i_ld + (l_m+0) ];
+
+      o_a_i8mmla[ l_id+ 8 ] = i_a_col_major[ (l_n+0)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+ 9 ] = i_a_col_major[ (l_n+1)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+10 ] = i_a_col_major[ (l_n+2)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+11 ] = i_a_col_major[ (l_n+3)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+12 ] = i_a_col_major[ (l_n+4)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+13 ] = i_a_col_major[ (l_n+5)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+14 ] = i_a_col_major[ (l_n+6)*i_ld + (l_m+1) ];
+      o_a_i8mmla[ l_id+15 ] = i_a_col_major[ (l_n+7)*i_ld + (l_m+1) ];
+      l_id += 16;
+    }
+  }
+}
+
 void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void* c ) {
   libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
   libxsmm_blasint lda = i_gemm_def->lda;
@@ -607,11 +665,35 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
               (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32)  &&
               (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 0) ) {
+    char* c_a = (char*)a;
+    char* c_b = (char*)b;
+    int*  i_c = (int*)c;
+    int l_k_block = 1; /* TODO (MMLA): find portable way for k blocking */
+
+    for (l_j = 0; l_j < n; l_j++) {
+      for (l_i = 0; l_i < m; l_i++) {
+        if ( i_gemm_def->beta == 0 ) {
+          i_c[(l_j * ldc) + l_i] = 0;
+        }
+        for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
+          for (l_s = 0; l_s < (k / l_k_block); l_s++) {
+            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+              i_c[(l_j * ldc) + l_i] += c_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2] *
+                                        c_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+            }
+          }
+        }
+      }
+    }
+  } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32)  &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     unsigned char* c_a = (unsigned char*)a;
     char*          c_b = (char*)b;
     int*           i_c = (int*)c;
-    int l_k_block = 4;
+    int l_k_block = 1; /* TODO (MMLA): find portable way for k blocking */
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -635,7 +717,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
-    int l_k_block = 4;
+    int l_k_block = 1; /* TODO (MMLA): find portable way for k blocking */
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -1704,7 +1786,7 @@ int main(int argc, char* argv []) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
-    l_gemm_def.vnni_a = 1;
+    /* l_gemm_def.vnni_a = 1; */ /* TODO (MMLA): find portable way for which supports VNNI and MMLA */
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
     l_gemm_def.unsigned_a = 1;
@@ -1712,10 +1794,16 @@ int main(int argc, char* argv []) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
-    l_gemm_def.vnni_a = 1;
+    /* l_gemm_def.vnni_a = 1; */ /* TODO (MMLA): find portable way for which supports VNNI and MMLA */
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
     l_gemm_def.unsigned_b = 1;
+  } else if (strcmp(l_precision, "SSI8I32") == 0) {
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.trans_a = 0;
+    l_gemm_def.trans_b = 0;
   } else if (strcmp(l_precision, "USI8F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
@@ -1850,7 +1938,8 @@ int main(int argc, char* argv []) {
 #   pragma omp parallel reduction(+:l_runtime_libxsmm)
 #endif
     {
-      char *l_a, *l_b, *l_c, *l_c_perf, *l_c_gold;
+      /* TODO (MMLA): find a good integration of A in MMLA format */
+      char *l_a, *l_a_mmla, *l_b, *l_c, *l_c_perf, *l_c_gold;
       char *l_colbias = NULL, *l_relu_bitmask = NULL, *l_relu_bitmask_gold = NULL;
       fusion_args fusion_arguments;
       fusion_args ref_fusion_arguments;
@@ -1860,8 +1949,10 @@ int main(int argc, char* argv []) {
 
       if (l_gemm_def.trans_a == 0) {
         l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+        l_a_mmla = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64); /* TODO (MMLA): find a good integration of A in MMLA format */
       } else {
         l_a      = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_m * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
+        l_a_mmla = (char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_m * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64); /* TODO (MMLA): find a good integration of A in MMLA format */
       }
       if (l_gemm_def.trans_b == 0) {
         l_b      = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * (size_t)l_br * LIBXSMM_TYPESIZE(l_gemm_def.in_type), 64);
@@ -1936,8 +2027,26 @@ int main(int argc, char* argv []) {
         }
       }
 
+      /* TODO (MMLA): clean up MMLA integration */
+      if( strcmp(l_precision, "BF16F32_FLAT") == 0 ) {
+        convert_a_to_bfmmla( l_m,
+                             l_k,
+                             l_lda,
+                             (bfloat16_t *) l_a,
+                             (bfloat16_t *) l_a_mmla );
+      }
+      else {
+        convert_a_to_i8mmla( l_m,
+                             l_k,
+                             l_lda,
+                             (int8_t *) l_a,
+                             (int8_t *) l_a_mmla );
+      }
+
       /* run LIBXSMM solution */
-      l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
+      /* TODO (MMLA): integrate properly */
+      //l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
+      l_runtime_libxsmm = jit_matmul( &l_gemm_def, l_a_mmla, l_b, l_c, l_c_perf, l_reps, l_file_input, &fusion_arguments );
 
       /* run compare */
 #if defined(_OPENMP) && defined(LIBXSMM_PARALLEL_KERNEL_TEST)
