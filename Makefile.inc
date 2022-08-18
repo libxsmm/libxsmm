@@ -1025,10 +1025,10 @@ LIBDEP := $(LIBNAME).$(LIBEXT)
 MAINLIB := $(call abslib,$(LIBDEP))
 
 EXTDEP := $(LIBDEP) $(LIBNAME)ext.$(LIBEXT)
-EXTLIB := $(MAINLIB) $(call abslib,$(EXTDEP))
+EXTLIB := $(call abslib,$(LIBNAME)ext.$(LIBEXT)) $(MAINLIB)
 
 FORTDEP := $(EXTDEP) $(LIBNAME)f.$(LIBEXT)
-FORTLIB := $(call abslib,$(FORTDEP)) $(EXTLIB)
+FORTLIB := $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(EXTLIB)
 
 # provides libxsmmnoblas to satisfy BLAS symbols
 NOBLASDEP := $(LIBNAME)noblas.$(LIBEXT)
