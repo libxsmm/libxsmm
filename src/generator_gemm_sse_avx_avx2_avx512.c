@@ -311,7 +311,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   libxsmm_gemm_descriptor *l_xgemm_desc = (libxsmm_gemm_descriptor*) &l_xgemm_desc_mod;
-  const char *const env_bf8_gemm_via_stack_alloc_tensors = getenv("BF8_GEMM_VIA_STACK");
+  const char *const env_bf8_gemm_via_stack_alloc_tensors = getenv("LIBXSMM_BF8_GEMM_VIA_STACK");
   int bf8_gemm_via_stack_alloc_tensors = 0;
 
   /* initialize n-blocking */

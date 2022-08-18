@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export BF8_GEMM_VIA_STACK=1
+export LIBXSMM_BF8_GEMM_VIA_STACK=1
 
 if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
   exit 0;
