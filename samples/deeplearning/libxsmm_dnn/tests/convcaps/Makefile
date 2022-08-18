@@ -54,8 +54,8 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/layer_example: $(OUTDIR)/.make $(BLDDIR)/layer_example-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/layer_example: $(OUTDIR)/.make $(BLDDIR)/layer_example-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc ./../../include/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -87,4 +87,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

@@ -1024,20 +1024,24 @@ endif
 LIBDEP := $(LIBNAME).$(LIBEXT)
 MAINLIB := $(call abslib,$(LIBDEP))
 
-FORTDEP := $(LIBNAME)f.$(LIBEXT)
-FORTLIB := $(call abslib,$(FORTDEP))
+EXTDEP := $(LIBDEP) $(LIBNAME)ext.$(LIBEXT)
+EXTLIB := $(call abslib,$(LIBNAME)ext.$(LIBEXT)) $(MAINLIB)
 
-EXTDEP := $(LIBNAME)ext.$(LIBEXT)
-EXTLIB := $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
+FORTDEP := $(EXTDEP) $(LIBNAME)f.$(LIBEXT)
+FORTLIB := $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(EXTLIB)
 
 # provides libxsmmnoblas to satisfy BLAS symbols
 NOBLASDEP := $(LIBNAME)noblas.$(LIBEXT)
-NOBLASLIB := $(XLIB_BEGIN) $(call abslib,$(NOBLASDEP)) $(XLIB_END)
+NOBLASLIB := $(call abslib,$(NOBLASDEP))
 
 ifeq (0,$(BLAS))
-  MAINLIB := $(MAINLIB) $(NOBLASLIB)
-  #EXTLIB := $(EXTLIB) $(NOBLASLIB)
+  FORTDEP := $(FORTDEP) $(NOBLASDEP)
+  EXTDEP := $(EXTDEP) $(NOBLASDEP)
   LIBDEP := $(LIBDEP) $(NOBLASDEP)
+
+  FORTLIB := $(FORTLIB) $(NOBLASLIB)
+  EXTLIB := $(EXTLIB) $(NOBLASLIB)
+  MAINLIB := $(MAINLIB) $(NOBLASLIB)
 endif
 
 ifneq (Darwin,$(UNAME))

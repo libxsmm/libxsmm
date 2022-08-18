@@ -60,7 +60,7 @@ else
   QKMALLOC ?= 0
 endif
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP)
 ifneq (0,$(QKMALLOC))
 	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lqkmalloc
 else
@@ -109,4 +109,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

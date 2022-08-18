@@ -87,4 +87,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

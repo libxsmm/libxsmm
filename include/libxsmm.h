@@ -158,6 +158,19 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
+/** Helper for tuning the given gemm_flags for batches of SMMs (NTS-hint). */
+LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
+  int gemm_flags, const libxsmm_gemm_shape* gemm_shape, const void* c,
+  /**
+   * If the returned value is larger than zero, the vector-length (in Bytes)
+   * is larger than C's elementwidth and it can be used to check against a
+   * stride of subsequent C-addresses, i.e., there is sufficient alignment
+   * if 0 == LIBXSMM_MOD2(stride_in_byte, *vlen) and the tuned flag
+   * can be adopted.
+   * The vlen argument can be NULL if no further check is desired.
+   */
+  int* vlen);
+
 /**
  * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
  * The kind of matrix operands (a, b, c) depend on index_stride.
@@ -192,6 +205,8 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
    * then the internal synchronization is omitted.
    */
   libxsmm_blasint batchsize,
+  /** If non-zero, indexes (or matrix addresses) are checked upfront (entire batch). */
+  int batchcheck,
   /** Task-ID (TID), and number of tasks. */
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
@@ -202,7 +217,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype opr
                      const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
   const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   libxsmm_blasint index_stride, libxsmm_blasint index_base,
-  libxsmm_blasint batchsize);
+  libxsmm_blasint batchsize, int batchcheck);
 
 /** Process a series of SMMs (batch) with OpenMP (libxsmmext). See also libxsmm_gemm_batch_task. */
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
@@ -211,7 +226,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datat
                      const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
   const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
   libxsmm_blasint index_stride, libxsmm_blasint index_base,
-  libxsmm_blasint batchsize);
+  libxsmm_blasint batchsize, int batchcheck);
 
 /** Process a series of SMMs (batch) like gemm_batch_strided (LAPACK/BLAS). */
 LIBXSMM_API void libxsmm_gemm_strided(libxsmm_datatype iprec, libxsmm_datatype oprec,
@@ -239,7 +254,7 @@ LIBXSMM_API void libxsmm_gemm_groups(
   const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
                            const void* b_array[], const libxsmm_blasint ldb_array[],
   const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+  const libxsmm_blasint ngroups, const libxsmm_blasint batchsize[], int batchcheck);
 
 /**
  * Process a series of SMMs (batch) like gemm_batch (LAPACK/BLAS) with OpenMP (libxsmmext).
@@ -251,7 +266,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
   const void* alpha_array, const void* a_array[], const libxsmm_blasint lda_array[],
                            const void* b_array[], const libxsmm_blasint ldb_array[],
   const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+  const libxsmm_blasint ngroups, const libxsmm_blasint batchsize[], int batchcheck);
 
 /** Code generation routine for matrix-eltwise using a descriptor. */
 LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw( const libxsmm_meltw_descriptor* descriptor );

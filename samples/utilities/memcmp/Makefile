@@ -56,8 +56,8 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
 ifneq (0,$(shell echo "$$((3>$(XSMM_GCC) || 40600<=$(FC_VERSION_NUM)))"))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP)
-	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(EXTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP)
+	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
@@ -110,4 +110,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-
