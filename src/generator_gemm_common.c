@@ -1437,6 +1437,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
+      /* We overwrite in order to support F32BF8 kernels (currently used internally for BF8 emulation via stack allocated arrays) */
       if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 1;
       }
@@ -1669,6 +1670,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
+      /* We overwrite in order to support F32BF8 kernels (currently used internally for BF8 emulation via stack allocated arrays) */
       if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
         io_micro_kernel_config->datatype_size_out = 1;
       }
