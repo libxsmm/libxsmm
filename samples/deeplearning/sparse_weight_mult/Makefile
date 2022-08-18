@@ -53,23 +53,23 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/sparse_weight_B_mult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_B_mult-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/sparse_weight_B_mult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/sparse_weight_B_mult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_B_mult-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/sparse_weight_B_mult-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/sparse_weight_A_mult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_A_mult-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/sparse_weight_A_mult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/sparse_weight_A_mult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_A_mult-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/sparse_weight_A_mult-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/parallel_sparse_weight_B_mult: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/parallel_sparse_weight_B_mult: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_mult-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/parallel_sparse_weight_B_conv: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/parallel_sparse_weight_B_conv: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_B_conv-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/sparse_weight_C_redmult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_C_redmult-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/sparse_weight_C_redmult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/sparse_weight_C_redmult: $(OUTDIR)/.make $(BLDDIR)/sparse_weight_C_redmult-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/sparse_weight_C_redmult-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/parallel_sparse_weight_C_redmult: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_C_redmult-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_C_redmult-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/parallel_sparse_weight_C_redmult: $(OUTDIR)/.make $(BLDDIR)/parallel_sparse_weight_C_redmult-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/parallel_sparse_weight_C_redmult-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -113,4 +113,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

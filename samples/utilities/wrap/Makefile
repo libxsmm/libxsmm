@@ -120,56 +120,56 @@ else
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm_batch_strided-wrap: $(BLDDIR)/dgemm_batch_strided-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemm_batch_strided-wrap: $(BLDDIR)/dgemm_batch_strided-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED) \
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm_batch_strided-wrap
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm_batch-wrap: $(BLDDIR)/dgemm_batch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemm_batch-wrap: $(BLDDIR)/dgemm_batch-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH) \
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm_batch-wrap
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM) \
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
 
 ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV) \
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
+	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
 endif
 else
 .PHONY: $(OUTDIR)/dgemv-wrap
