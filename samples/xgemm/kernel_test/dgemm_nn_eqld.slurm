@@ -31,20 +31,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 DP nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 DP nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 F64 nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 F64 nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 DP addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 F64 addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 DP offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 F64 offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 DP strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 F64 strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 DP addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 F64 addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 DP offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 F64 offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 DP strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 F64 strdbr 5 1 1 1
 
 
 rm ${TESTFILE1}

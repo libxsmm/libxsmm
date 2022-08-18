@@ -73,6 +73,7 @@
 /** Unfortunately calculation of INTEL_MKL_VERSION is not stable over time. */
 #if defined(__INTEL_MKL__) && defined(__INTEL_MKL_MINOR__) && defined(__INTEL_MKL_UPDATE__)
 # define LIBXSMM_MKL_VERSION3 LIBXSMM_VERSION3(__INTEL_MKL__, __INTEL_MKL_MINOR__, __INTEL_MKL_UPDATE__)
+# define LIBXSMM_MKL_VERSION2 LIBXSMM_VERSION2(__INTEL_MKL__, __INTEL_MKL_MINOR__)
 #endif
 
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
@@ -469,7 +470,7 @@
   else { /* shuffle based initialization */ \
     const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
     const TYPE libxsmm_matinit_maxval2_ = (TYPE)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2); /* non-zero */ \
-    const TYPE libxsmm_matinit_inv_ = (TYPE)((SCALE) / libxsmm_matinit_maxval2_); \
+    const TYPE libxsmm_matinit_inv_ = ((TYPE)(SCALE)) / libxsmm_matinit_maxval2_; \
     const size_t libxsmm_matinit_shuffle_ = libxsmm_shuffle(libxsmm_matinit_maxval_); \
     OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
     for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
@@ -567,22 +568,11 @@ LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void);
 LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
 LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC);
 
-/**
- * General dense matrix multiplication, which re-exposes LAPACK/BLAS
- * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
- * when supplying NULL-arguments in certain places.
- */
-LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_datatype iprec, libxsmm_datatype oprec,
-  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
-
 #define libxsmm_blas_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_blas_xgemm(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
+  libxsmm_blas_gemm(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define libxsmm_blas_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  libxsmm_blas_xgemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
+  libxsmm_blas_gemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */

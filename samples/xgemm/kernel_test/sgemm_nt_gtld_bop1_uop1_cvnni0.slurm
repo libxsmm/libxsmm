@@ -38,7 +38,7 @@ f2.close()
 END
 
 
-PREC="SP"
+PREC="F32"
 TRA=0
 TRB=1
 BINARY_POSTOP=1

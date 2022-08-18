@@ -159,27 +159,36 @@ script:
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test-wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
+        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test &&
     eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test-wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 &&
+        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test &&
     eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 test-wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 &&
+        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 test &&
     eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
-    make -e ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 JITDUMP=1 test-cpp &&
-    make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 test-cpp &&
-    make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 test-cpp
+    cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
+    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 JITDUMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
+    cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
+    make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
+    cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
+    make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ "" = "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh

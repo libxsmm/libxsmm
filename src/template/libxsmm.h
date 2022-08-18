@@ -159,7 +159,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
 /**
- * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
+ * Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
  * The kind of matrix operands (a, b, c) depend on index_stride.
  */
 LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatype oprec,
@@ -188,34 +188,51 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
    */
   libxsmm_blasint index_base,
   /**
-   * Number of matrix multiplications. If the size is given as a negative value,
+   * Number of SMMs. If the size is given as a negative value,
    * then the internal synchronization is omitted.
    */
   libxsmm_blasint batchsize,
   /** Task-ID (TID), and number of tasks. */
   /*unsigned*/int tid, /*unsigned*/int ntasks);
 
-/** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_task. */
+/** Process a series of SMMs (batch). See also libxsmm_gemm_batch_task. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-                     const void* b, const libxsmm_blasint* ldb,
-  const void* beta,        void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_stride, libxsmm_blasint index_base,
   libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_gemm_batch_task. */
+/** Process a series of SMMs (batch) with OpenMP (libxsmmext). See also libxsmm_gemm_batch_task. */
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-                     const void* b, const libxsmm_blasint* ldb,
-  const void* beta,        void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint stride_a[],
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint stride_b[],
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint stride_c[],
+  libxsmm_blasint index_stride, libxsmm_blasint index_base,
   libxsmm_blasint batchsize);
 
-/** Process groups of homogeneous batches. */
+/** Process a series of SMMs (batch) like gemm_batch_strided (LAPACK/BLAS). */
+LIBXSMM_API void libxsmm_gemm_strided(libxsmm_datatype iprec, libxsmm_datatype oprec,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  libxsmm_blasint index_base, libxsmm_blasint batchsize);
+
+/** Process a series of SMMs (batch) like gemm_batch_strided (LAPACK/BLAS) with OpenMP (libxsmmext). */
+LIBXSMM_APIEXT void libxsmm_gemm_strided_omp(libxsmm_datatype iprec, libxsmm_datatype oprec,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const libxsmm_blasint* stride_a,
+                     const void* b, const libxsmm_blasint* ldb, const libxsmm_blasint* stride_b,
+  const void* beta,        void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* stride_c,
+  libxsmm_blasint index_base, libxsmm_blasint batchsize);
+
+/**
+ * Process a series of SMMs (batch) like gemm_batch (LAPACK/BLAS).
+ * The arrays of matrices consist of consecutive data-pointers.
+ */
 LIBXSMM_API void libxsmm_gemm_groups(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -224,7 +241,10 @@ LIBXSMM_API void libxsmm_gemm_groups(
   const void* beta_array,        void* c_array[], const libxsmm_blasint ldc_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 
-/** Process groups of homogeneous batches with OpenMP (libxsmmext). */
+/**
+ * Process a series of SMMs (batch) like gemm_batch (LAPACK/BLAS) with OpenMP (libxsmmext).
+ * The arrays of matrices consist of consecutive data-pointers.
+ */
 LIBXSMM_APIEXT void libxsmm_gemm_groups_omp(
   libxsmm_datatype iprec, libxsmm_datatype oprec, const char transa_array[], const char transb_array[],
   const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
@@ -381,6 +401,18 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
+
+/**
+ * General dense matrix multiplication, which re-exposes LAPACK/BLAS
+ * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
+ * when supplying NULL-arguments in certain places.
+ */
+LIBXSMM_API void libxsmm_blas_gemm(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
 
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 $MNK_INTERFACE_LIST

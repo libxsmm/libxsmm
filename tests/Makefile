@@ -61,6 +61,7 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
 
 .PHONY: all
 all: $(XFILES)
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -69,7 +70,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 tests: test
 
 .PHONY: test
-test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
+test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 	@$(OUTDIR)/test.sh $(TEST)
 
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
@@ -128,7 +129,7 @@ $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(NOBLASDEP)
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $(SRCDIR)/headeronly_aux.cpp -o $(BLDDIR)/headeronly_aux-cpp.o
 	$(XLD) -o $@ $(BLDDIR)/headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o \
 		$(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(NOBLASLIB))
-	@rm -f headeronly_aux.cpp
+	@-rm -f headeronly_aux.cpp
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h
@@ -151,26 +152,28 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 
 .PHONY: clean
 clean:
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
-	@rm -rf $(BLDDIR)
+	@-rm -rf $(BLDDIR)
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
-	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
+	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@rm -f .make .state
+	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
-	@rm -rf $(OUTDIR)
+	@-rm -rf $(OUTDIR)
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@rm -f $(XFILES) $(MODULES)
+	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@-rm -f $(XFILES) $(MODULES)
 endif
 

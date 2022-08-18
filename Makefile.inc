@@ -946,8 +946,11 @@ absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), 
 
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
+else
+  abslibpath_force = $(strip $(call abslibrpath,$1))
 endif
 abslibpath ?= $(call absliblpath,$1)
+abslibpath_force ?= $(NULL)
 
 libpath = $(call qapath,$(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
   | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
@@ -2203,6 +2206,7 @@ ifneq (0,$(MKL))
   else
     BLAS_IFLAGS += -I$(call qdir,$(BLAS_INCFILE))
   endif
+  BLAS_LDFLAGS += $(call abslibpath_force,$(MKLROOT)/lib/$(MKL_ARCH))
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
       $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(ILIBEXT)) \
@@ -2456,10 +2460,9 @@ PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
 %/.make:
-	@mkdir -p $(call qbname,$@)
-	@touch $@
+	@mkdir -p $(call qdir,$@) && touch $@
 
 .make:
-	@touch $@
+	@-touch $@
 
 .DEFAULT_GOAL := $(NULL)

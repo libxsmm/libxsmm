@@ -437,7 +437,7 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch_omp.
+          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
           !> index_stride==0: stride_* are each scalar strides used
           !>                  to walk the corresponding a, b, or c
@@ -466,7 +466,7 @@
           PURE SUBROUTINE libxsmm_gemm_batch_task(                      &
      &    iprec, oprec, transa, transb, m, n, k,                        &
      &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
-     &    beta, c, ldc, stride_c, index_stride, index_base,             &
+     &    beta,  c, ldc, stride_c, index_stride, index_base,            &
      &    batchsize, tid, ntasks)                                       &
      &    BIND(C, NAME="libxsmm_gemm_batch_task_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
@@ -503,10 +503,10 @@
           !> ARRAY        :: a, b, c
           !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
           !> INTEGER(4|8) :: index_stride, index_base, batchsize
-          PURE SUBROUTINE libxsmm_gemm_batch(iprec, oprec,              &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
-     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
-     &    batchsize)                                                    &
+          PURE SUBROUTINE libxsmm_gemm_batch(                           &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
+     &    beta,  c, ldc, stride_c, index_stride, index_base, batchsize) &
      &    BIND(C, NAME="libxsmm_gemm_batch_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
@@ -532,10 +532,10 @@
           !> ARRAY        :: a, b, c
           !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
           !> INTEGER(4|8) :: index_stride, index_base, batchsize
-          PURE SUBROUTINE libxsmm_gemm_batch_omp(iprec, oprec,          &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
-     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
-     &    batchsize)                                                    &
+          PURE SUBROUTINE libxsmm_gemm_batch_omp(                       &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
+     &    beta,  c, ldc, stride_c, index_stride, index_base, batchsize) &
      &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
