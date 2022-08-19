@@ -96,7 +96,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
       io_micro_kernel_config->vmul_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_E_V;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      io_micro_kernel_config->vector_length = 8;
+      io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 4;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
@@ -120,7 +120,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
       io_micro_kernel_config->vmul_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
     } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
-      io_micro_kernel_config->vector_length = 16;
+      io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 1;
       io_micro_kernel_config->datatype_size_out = 4;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
