@@ -53,6 +53,9 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in );
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len);
 LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, unsigned int length);
 LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length);
+/** HF8<->FP32 conversion functions */
+LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int len);
+LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, unsigned int length);
 
 #endif /*LIBXSMM_LPFLT_QUANT_H*/
 
