@@ -175,9 +175,9 @@ script:
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi;
     source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "clang" = "${CC}" ]; then echo "0"; fi) &&
-    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 &&
         cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 GEMM=2 STATIC=0 BLAS=2 test &&
+        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test &&
     eval ${RUNXCOV} &&
     if [ "" != "${UPLOAD_ENABLED}" ] && [ "0" != "$((1<UPLOAD_ENABLED))" ]; then eval ${UPLOAD}; fi
 

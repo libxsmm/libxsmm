@@ -28,7 +28,7 @@ IFLAGS += -I$(call quote,$(INCDIR))
 IFLAGS += -I$(call quote,$(DEPDIR)/include)
 
 ifneq (Darwin,$(UNAME))
-  XWRAP ?= $(if $(filter-out 0,$(NOBLAS)),0,1)
+  XWRAP ?= $(if $(filter-out 0,$(NOBLAS)),0,2)
 else
   XWRAP ?= 0
   ifneq (0,$(XWRAP))
@@ -36,6 +36,11 @@ else
     $(info The static link-time wrapper is not supported under macOS!)
     $(info ==========================================================)
   endif
+endif
+ifneq (0,$(XWRAP))
+ifneq (,$(PREC))
+  XWRAP := $(PREC)
+endif
 endif
 
 OUTNAME := $(shell basename "$(ROOTDIR)")
@@ -77,16 +82,25 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (0,$(XWRAP))
+  MKL_VERSION_NUM := $(call version,$(call prepget,$(SRCDIR)/dgemm_batch_strided.c,__INTEL_MKL__,__INTEL_MKL_MINOR__,__INTEL_MKL_UPDATE__))
   ifneq (2,$(XWRAP))
-    WRAP_GEMM_BATCH_STRIDED = -Wl,--wrap=dgemm_batch_strided_,--wrap=sgemm_batch_strided_
-    WRAP_GEMM_BATCH = -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_
-    WRAP_GEMM = -Wl,--wrap=dgemm_,--wrap=sgemm_
-    WRAP_GEMV = -Wl,--wrap=dgemv_,--wrap=sgemv_
+    ifneq (0,$(shell echo "$$((20200002<=$(MKL_VERSION_NUM)))"))
+      WRAP_GEMM_BATCH_STRIDED := -Wl,--wrap=dgemm_batch_strided_,--wrap=sgemm_batch_strided_
+    endif
+    ifneq (0,$(shell echo "$$((110300<=$(MKL_VERSION_NUM)))"))
+      WRAP_GEMM_BATCH := -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_
+    endif
+    WRAP_GEMM := -Wl,--wrap=dgemm_,--wrap=sgemm_
+    WRAP_GEMV := -Wl,--wrap=dgemv_,--wrap=sgemv_
   else
-    WRAP_GEMM_BATCH_STRIDED = -Wl,--wrap=dgemm_batch_strided_
-    WRAP_GEMM_BATCH = -Wl,--wrap=dgemm_batch_
-    WRAP_GEMM = -Wl,--wrap=dgemm_
-    WRAP_GEMV = -Wl,--wrap=dgemv_
+    ifneq (0,$(shell echo "$$((20200002<=$(MKL_VERSION_NUM)))"))
+      WRAP_GEMM_BATCH_STRIDED := -Wl,--wrap=dgemm_batch_strided_
+    endif
+    ifneq (0,$(shell echo "$$((110300<=$(MKL_VERSION_NUM)))"))
+      WRAP_GEMM_BATCH := -Wl,--wrap=dgemm_batch_
+    endif
+    WRAP_GEMM := -Wl,--wrap=dgemm_
+    WRAP_GEMV := -Wl,--wrap=dgemv_
   endif
   DFLAGS += -DWRAP
 endif
@@ -119,7 +133,7 @@ else
 .PHONY: $(OUTDIR)/dgemv-blas
 endif
 
-ifneq (0,$(XWRAP))
+ifneq (,$(WRAP_GEMM_BATCH_STRIDED))
 $(OUTDIR)/dgemm_batch_strided-wrap: $(BLDDIR)/dgemm_batch_strided-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH_STRIDED)
@@ -133,7 +147,7 @@ else
 .PHONY: $(OUTDIR)/dgemm_batch_strided-wrap
 endif
 
-ifneq (0,$(XWRAP))
+ifneq (,$(WRAP_GEMM_BATCH))
 $(OUTDIR)/dgemm_batch-wrap: $(BLDDIR)/dgemm_batch-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM_BATCH)
@@ -147,7 +161,7 @@ else
 .PHONY: $(OUTDIR)/dgemm_batch-wrap
 endif
 
-ifneq (0,$(XWRAP))
+ifneq (,$(WRAP_GEMM))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
@@ -161,7 +175,7 @@ else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
 
-ifneq (0,$(XWRAP))
+ifneq (,$(WRAP_GEMV))
 $(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP)
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
