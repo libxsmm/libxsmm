@@ -542,7 +542,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
     unsigned int f32_bias = 127;
     unsigned int f8_bias = 7;
 
-    hybrid_in.f = in;
+    hybrid_in.f = in[i];
     /* DAZ */
     hybrid_in.u = ( (hybrid_in.u & 0x7f800000) == 0x0 ) ? ( hybrid_in.u & 0x80000000 ) : ( hybrid_in.u & 0xffffffff );
     s = ( hybrid_in.u & 0x80000000 ) >> 24;
