@@ -77,6 +77,7 @@ int main(int argc, char* argv[])
 
   assert(NULL != a && NULL != b && NULL != c);
   if (9 < argc) nrepeat = atoi(argv[9]);
+
   printf(
     "dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
     "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"

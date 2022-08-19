@@ -15,7 +15,7 @@
 # include <omp.h>
 #endif
 
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && 0
 # include <mkl.h>
 #endif
 #if defined(__INTEL_MKL__) && (110300 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__))
@@ -85,7 +85,12 @@ int main(int argc, char* argv[])
   int i;
 
   assert(NULL != a && NULL != b && NULL != c && NULL != pa && NULL != pb && NULL != pc);
+#if defined(GEMM_BATCH)
   if (10 < argc) nrepeat = atoi(argv[10]);
+#else
+  nrepeat = 0;
+#endif
+
   printf(
     "dgemm_batch('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
     "            %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
@@ -120,13 +125,11 @@ int main(int argc, char* argv[])
         &beta,  pc, &ldc,
         &group_count, &batchsize);
     }
-# if defined(_OPENMP)
+#endif
+#if defined(GEMM_BATCH) && defined(_OPENMP)
     printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
-# else
-    printf("Called %i times.\n", nrepeat);
-# endif
 #else
-    printf("Called 0 times.\n");
+    printf("Called %i times.\n", nrepeat);
 #endif
   }
 
