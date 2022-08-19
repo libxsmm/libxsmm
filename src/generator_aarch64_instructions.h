@@ -402,6 +402,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O        0x05204c03 /* unzip  odd elements from two predicates */
 #define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H        0x05204403 /* zip two predicates, store high bits */
 #define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L        0x05204003 /* zip two predicates, store  low bits */
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP1_V         0x05206803
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP2_V         0x05206c03
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V         0x05206003
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V         0x05206403
 
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
