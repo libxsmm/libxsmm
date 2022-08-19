@@ -77,7 +77,7 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
-ifneq (,$(wildcard $(EXTDEP)))
+ifneq ($(words $(EXTDEP)),$(words $(wildcard $(EXTDEP))))
 $(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
 		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
@@ -89,7 +89,7 @@ endef
 
 define DEFINE_LINK_FC_RULE
 ifneq (,$(strip $(FC)))
-ifneq (,$(wildcard $(FORTDEP)))
+ifneq ($(words $(FORTDEP)),$(words $(wildcard $(FORTDEP))))
 $(1): $(2) $(FTNOBJS) $(FORTDEP) $(dir $(1))/.make
 	$(FC) $(SLDFLAGS) -o $(1) $(2) $(FORTLIB) \
 		$(FCMTFLAGS) $(call cleanld,$(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS))
