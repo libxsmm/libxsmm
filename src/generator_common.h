@@ -1574,8 +1574,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int use_fp32bf16_cvt_replacement;
   unsigned int dcvt_mask_aux0;
   unsigned int dcvt_mask_aux1;
+  unsigned int dcvt_mask_aux2;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int dcvt_zmm_aux2;
+  unsigned int dcvt_zmm_aux3;
   unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;

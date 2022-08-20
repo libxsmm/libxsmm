@@ -236,12 +236,31 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         }
       }
     }
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_HF8) && (dtype_out == LIBXSMM_DATATYPE_HF8) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        const libxsmm_hfloat8* hf_in = (const libxsmm_hfloat8*)in;
+        libxsmm_hfloat8* hf_out = (libxsmm_hfloat8*)out;
+        float in_value, out_value;
+        libxsmm_convert_hf8_f32( &(hf_in[(j*ldi) + i]), &in_value, 1 );
+        out_value = fp32_unary_compute(in_value, op);
+        libxsmm_rne_convert_fp32_hf8(&out_value, &(hf_out[(j*ldo) + i]), 1);
+      }
+    }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_BF8) && (dtype_out == LIBXSMM_DATATYPE_BF8) && (dtype_comp == LIBXSMM_DATATYPE_BF8) && (op == COPY_OP) ) {
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         const libxsmm_bfloat8* bf_in = (const libxsmm_bfloat8*)in;
         libxsmm_bfloat8* bf_out = (libxsmm_bfloat8*)out;
         bf_out[(j*ldo) + i] = bf_in[(j*ldi) + i];
+      }
+    }
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_HF8) && (dtype_out == LIBXSMM_DATATYPE_HF8) && (dtype_comp == LIBXSMM_DATATYPE_HF8) && (op == COPY_OP) ) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        const libxsmm_hfloat8* hf_in = (const libxsmm_hfloat8*)in;
+        libxsmm_hfloat8* hf_out = (libxsmm_hfloat8*)out;
+        hf_out[(j*ldo) + i] = hf_in[(j*ldi) + i];
       }
     }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
@@ -268,6 +287,16 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         }
       }
     }
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_HF8) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        const float* f_in = (const float*)in;
+        libxsmm_hfloat8* hf_out = (libxsmm_hfloat8*)out;
+        float out_value;
+        out_value = fp32_unary_compute(f_in[(j*ldi) + i], op);
+        libxsmm_rne_convert_fp32_hf8(&out_value, &(hf_out[(j*ldo) + i]), 1);
+      }
+    }
   } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
@@ -285,6 +314,16 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         float* f_out = (float*)out;
         float in_value;
         libxsmm_convert_bf8_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
+        f_out[(j*ldo) + i] = fp32_unary_compute(in_value, op);
+      }
+    }
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_HF8) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        const libxsmm_hfloat8* hf_in = (const libxsmm_hfloat8*)in;
+        float* f_out = (float*)out;
+        float in_value;
+        libxsmm_convert_hf8_f32( &(hf_in[(j*ldi) + i]), &in_value, 1 );
         f_out[(j*ldo) + i] = fp32_unary_compute(in_value, op);
       }
     }
@@ -517,12 +556,22 @@ int main( int argc, char* argv[] ) {
     } else {
       ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, rnd_mode );
     }
+  } else if ( op == COPY_OP && dtype_in == 5 && dtype_out == 5 && (dtype_comp == 4 || dtype_comp == 5) ) {
+    printf("Testing unary HF8 HF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    if ( dtype_comp == 4 ) {
+      ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_F32, rnd_mode );
+    } else {
+      ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_HF8, rnd_mode );
+    }
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 2 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary F32 BF16 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
+  } else if ( op == COPY_OP && dtype_in == 4 && dtype_out == 5 && dtype_comp == 4 ) {
+    printf("Testing unary F32 HF8 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( op == COPY_OP && dtype_in == 2 && dtype_out == 4 && (dtype_comp == 4 || dtype_comp == 2) ) {
     printf("Testing unary BF16 F32 copy - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
@@ -535,21 +584,30 @@ int main( int argc, char* argv[] ) {
   } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary BF8 BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
+  } else if ( valid_op > 0 && dtype_in == 5 && dtype_out == 5 && dtype_comp == 4 ) {
+    printf("Testing unary HF8 HF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
     printf("Testing unary F32 BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, rnd_mode );
+  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 5 && dtype_comp == 4 ) {
+    printf("Testing unary F32 HF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary BF16 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 4 && dtype_comp == 4 ) {
     printf("Testing unary BF8 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
     ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
+  } else if ( valid_op > 0 && dtype_in == 5 && dtype_out == 4 && dtype_comp == 4 ) {
+    printf("Testing unary HF8 F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", opname, M, N, ldi, ldo);
+    ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_HF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, rnd_mode );
   } else {
     printf("  %s, Op: %d, prec_in: %d, compute_prec: %d, prec_out: %d, rnd_mode : %d\n", argv[0], valid_op, dtype_in, dtype_comp, dtype_out, rnd_mode);
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 5/4/2/1] [compute_prec: 5/4/2] [prec_out: 5/4/2/1] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
     exit(-1);
   }
 
