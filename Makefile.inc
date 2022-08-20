@@ -21,7 +21,12 @@ endif
 ifeq (,$(MAKE_VERSION_PATCH))
 MAKE_VERSION_PATCH := 0
 endif
-MAKE_VERSION_INT := $(shell echo "$$(($(MAKE_VERSION_MAJOR)*10000+$(MAKE_VERSION_MINOR)*100+$(MAKE_VERSION_PATCH)))")
+# calculate version number given by up to three components
+version = $(shell echo "$$(( \
+  $(if $1,$(word 1,$1)*10000,0) + \
+  $(if $2,$2*100,$(if $(word 2,$1),$(word 2,$1)*100,0)) + \
+  $(if $3,$3,$(if $(word 3,$1),$(word 3,$1),0))))")
+MAKE_VERSION_INT := $(call version,$(MAKE_VERSION_MAJOR),$(MAKE_VERSION_MINOR),$(MAKE_VERSION_PATCH))
 
 # Automatically disable parallel builds
 # depending on the version of GNU Make.
@@ -302,14 +307,14 @@ uniqadd = $(if $($2),$(filter-out $($2),$($1)) $(if $3,$3,$($2)),$(filter-out $2
 uniqmov = $(if $(filter $($2),$($1)),$(call uniqadd,$1,$2,$3),$($1))
 
 ctest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-  echo "int main(void) { return 0; }" > $${INFILE} && if [ "$3" ]; \
+  echo "int main(void) { return 0; }" >$${INFILE} && if [ "$3" ]; \
   then $(firstword $1) $2 -c $${INFILE}   -o $${INFILE}.o >/dev/null && if [ "$(strip $3)" ]; then \
        $(firstword $1) $3    $${INFILE}.o -o $${INFILE}.x >/dev/null; fi; \
   else $(firstword $1) $2    $${INFILE}   -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
   rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.c.* 2>/dev/null),$(NULL),$(strip $2 $3)))
 # INFILE cannot use leading dot when used with certain F-compiler
 ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
-  printf "      PROGRAM test\n      END PROGRAM\n" > $${INFILE} && if [ "$3" ]; \
+  printf "      PROGRAM test\n      END PROGRAM\n" >$${INFILE} && if [ "$3" ]; \
   then $(firstword $1) $2 -c $${INFILE}   -o $${INFILE}.o >/dev/null && if [ "$(strip $3)" ]; then \
        $(firstword $1) $3    $${INFILE}.o -o $${INFILE}.x >/dev/null; fi; \
   else $(firstword $1) $2    $${INFILE}   -o $${INFILE}.x >/dev/null; fi 2>&1 || echo "FAILED"; \
@@ -317,6 +322,11 @@ ftest = $(if $1,$(if $(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f) && \
 
 ldclib = $(if $1,$(call ctest,$1 $2,-l$(strip $3)))
 ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
+
+# extract from source file (1st arg) the value of the preprocessor definition (2nd arg)
+preppat = $(if $1$2,s/[[:space:]]*$(CHAR_HASH)[[:space:]]*define[[:space:]][[:space:]]*$(if $(wildcard $1),$2,$1)[[:space:]][[:space:]]*\(..*\)[[:space:]]*/\1/p)
+prepget = $(shell $(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) $(if $(wildcard $1),-c $1,- </dev/null) -dM -E 2>/dev/null \
+          | sed -n "$(call preppat,$1,$2);$(call preppat,$1,$3);$(call preppat,$1,$4)")
 
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
@@ -445,9 +455,9 @@ CXX_VERSION_MAJOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f1)
 CXX_VERSION_MINOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f2)
 CXX_VERSION_PATCH := $(shell echo "$(CXX_VERSION)" | cut -d. -f3)
 ifeq (3,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR) $(CXX_VERSION_PATCH)))
-  CXX_VERSION_NUM := $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100+$(CXX_VERSION_PATCH)))")
+  CXX_VERSION_NUM := $(call version,$(CXX_VERSION_MAJOR),$(CXX_VERSION_MINOR),$(CXX_VERSION_PATCH))
 else ifeq (2,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR)))
-  CXX_VERSION_NUM := $(shell echo "$$(($(CXX_VERSION_MAJOR)*10000+$(CXX_VERSION_MINOR)*100))")
+  CXX_VERSION_NUM := $(call version,$(CXX_VERSION_MAJOR),$(CXX_VERSION_MINOR))
   CXX_VERSION_PATCH := 0
 else
   CXX_VERSION := $(NULL)
@@ -462,9 +472,9 @@ CC_VERSION_MAJOR := $(shell echo "$(CC_VERSION)" | cut -d. -f1)
 CC_VERSION_MINOR := $(shell echo "$(CC_VERSION)" | cut -d. -f2)
 CC_VERSION_PATCH := $(shell echo "$(CC_VERSION)" | cut -d. -f3)
 ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
-  CC_VERSION_NUM := $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100+$(CC_VERSION_PATCH)))")
+  CC_VERSION_NUM := $(call version,$(CC_VERSION_MAJOR),$(CC_VERSION_MINOR),$(CC_VERSION_PATCH))
 else ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
-  CC_VERSION_NUM := $(shell echo "$$(($(CC_VERSION_MAJOR)*10000+$(CC_VERSION_MINOR)*100))")
+  CC_VERSION_NUM := $(call version,$(CC_VERSION_MAJOR),$(CC_VERSION_MINOR))
   CC_VERSION_PATCH := 0
 else
   CC_VERSION := $(NULL)
@@ -508,9 +518,9 @@ ifneq (,$(strip $(FC)))
   FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
   FC_VERSION_PATCH := $(shell echo "$(FC_VERSION)" | cut -d. -f3)
   ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-    FC_VERSION_NUM := $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+    FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR),$(FC_VERSION_PATCH))
   else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-    FC_VERSION_NUM := $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+    FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR))
     FC_VERSION_PATCH := 0
   else
     FC_VERSION := $(NULL)
@@ -528,9 +538,9 @@ ifneq (,$(strip $(FC)))
         FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
         FC_VERSION_PATCH := $(shell echo "$(FC_VERSION)" | cut -d. -f3)
         ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-          FC_VERSION_NUM := $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+          FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR),$(FC_VERSION_PATCH))
         else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-          FC_VERSION_NUM := $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+          FC_VERSION_NUM := $(call version,$(FC_VERSION_MAJOR),$(FC_VERSION_MINOR))
           FC_VERSION_PATCH := 0
         else
           FC_VERSION_NUM := 0
@@ -683,9 +693,9 @@ ifeq (MINGW64,$(MSYSTEM))
   MINGW := 64
 else ifeq (MINGW32,$(MSYSTEM))
   MINGW := 32
-else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW64__"; echo "$$?"))
+else ifneq (,$(call prepget,__MINGW64__))
   MINGW := 64
-else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW32__"; echo "$$?"))
+else ifneq (,$(call prepget,__MINGW32__))
   MINGW := 32
 endif
 endif
@@ -713,7 +723,7 @@ BLAS_STATIC ?= $(DEPSTATIC)
 override PGI := 0
 ifeq (0,$(XSMM_GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
-ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
+ifneq (,$(call prepget,__clang__))
   CLANG := 1
 else
   override PGI := $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
@@ -738,9 +748,9 @@ else ifeq (0,$(CLANG))
   endif
 endif
 ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
-  GCC_VERSION_NUM := $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100+$(GCC_VERSION_PATCH)))")
+  GCC_VERSION_NUM := $(call version,$(GCC_VERSION_MAJOR),$(GCC_VERSION_MINOR),$(GCC_VERSION_PATCH))
 else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
-  GCC_VERSION_NUM := $(shell echo "$$(($(GCC_VERSION_MAJOR)*10000+$(GCC_VERSION_MINOR)*100))")
+  GCC_VERSION_NUM := $(call version,$(GCC_VERSION_MAJOR),$(GCC_VERSION_MINOR))
   GCC_VERSION_PATCH := 0
 else
   GCC_VERSION := $(NULL)
@@ -1599,7 +1609,7 @@ else # GCC assumed
   ifeq (0,$(CRAY))
   ifeq (,$(OMPLIBFILE))
   ifneq (,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-      printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" > $${INFILE} && \
+      printf "$(CHAR_HASH)include <omp.h>\nint main(void) { return omp_get_max_threads(); }\n" >$${INFILE} && \
       $(LD) $(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) -l$(OMPRT) $${INFILE} -o $${INFILE}.x 2>/dev/null >/dev/null && echo "OK"; \
       rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
     CLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))
@@ -2040,7 +2050,7 @@ else ifneq (0,$(PGI))
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-    printf "$(CHAR_HASH)include <features.h>\n$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)\n0\n$(CHAR_HASH)endif\n" > $${INFILE} && \
+    printf "$(CHAR_HASH)include <features.h>\n$(CHAR_HASH)if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)\n0\n$(CHAR_HASH)endif\n" >$${INFILE} && \
     if [ "$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   GLIBC := 1
@@ -2056,7 +2066,7 @@ endif
 
 ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c) && \
-    printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" > $${INFILE} && \
+    printf "$(CHAR_HASH)if defined(_OPENMP)\n$(CHAR_HASH) include <omp.h>\nint main() { return 0; }\n$(CHAR_HASH)endif\n" >$${INFILE} && \
     if [ "$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1 || echo 'x')" ]; then echo "1"; else echo "0"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
   OMPFLAG := $(OMPFLAG_FORCE)

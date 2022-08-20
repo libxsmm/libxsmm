@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 
   assert(NULL != a && NULL != x && NULL != y);
   if (8 < argc) nrepeat = atoi(argv[8]);
+
   printf(
     "dgemv('%c', %i/*m*/, %i/*n*/,\n"
     "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
