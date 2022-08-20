@@ -54,10 +54,10 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/libxsmm_dnn.so: $(OUTDIR)/.make $(COBJCTS) $(LIBDEP) $(EXTDEP)
-	$(LD) -shared -o $@ $(COBJCTS) $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/libxsmm_dnn.so: $(OUTDIR)/.make $(COBJCTS) $(LIBDEP)
+	$(LD) -shared -o $@ $(COBJCTS) $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/libxsmm_dnn.a: $(OUTDIR)/.make $(COBJCTS) $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/libxsmm_dnn.a: $(OUTDIR)/.make $(COBJCTS) $(LIBDEP)
 	$(AR) -rs $@ $(COBJCTS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
@@ -90,4 +90,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

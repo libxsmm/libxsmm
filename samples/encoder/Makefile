@@ -55,14 +55,14 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/encoder_x86: $(OUTDIR)/.make $(BLDDIR)/encoder_x86-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/encoder_x86-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/encoder_x86: $(OUTDIR)/.make $(BLDDIR)/encoder_x86-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/encoder_x86-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/encoder_aarch64: $(OUTDIR)/.make $(BLDDIR)/encoder_aarch64-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/encoder_aarch64-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/encoder_aarch64: $(OUTDIR)/.make $(BLDDIR)/encoder_aarch64-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/encoder_aarch64-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/jit_bigsur_test: $(OUTDIR)/.make $(BLDDIR)/jit_bigsur_test-c.o $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(BLDDIR)/jit_bigsur_test-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/jit_bigsur_test: $(OUTDIR)/.make $(BLDDIR)/jit_bigsur_test-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/jit_bigsur_test-c.o $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -94,4 +94,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

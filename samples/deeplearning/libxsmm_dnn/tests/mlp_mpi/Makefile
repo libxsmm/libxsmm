@@ -68,11 +68,11 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(DNNLIB): $(HEADERS2) $(SOURCES2)
 	$(MAKE) -j8 -C $(DEP2DIR)
 
-$(OUTDIR)/mlp_mpi_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mpi_example_f32-c.o $(LIBDEP) $(EXTDEP) $(DNNLIB)
-	$(LD) -o $@ $(BLDDIR)/mlp_mpi_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/mlp_mpi_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mpi_example_f32-c.o $(LIBDEP) $(DNNLIB)
+	$(LD) -o $@ $(BLDDIR)/mlp_mpi_example_f32-c.o $(call cleanld,$(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
-$(OUTDIR)/mlp_mpi_ovlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mpi_ovlp_example_f32-c.o $(LIBDEP) $(EXTDEP) $(DNNLIB)
-	$(LD) -o $@ $(BLDDIR)/mlp_mpi_ovlp_example_f32-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/mlp_mpi_ovlp_example_f32: $(OUTDIR)/.make $(BLDDIR)/mlp_mpi_ovlp_example_f32-c.o $(LIBDEP) $(DNNLIB)
+	$(LD) -o $@ $(BLDDIR)/mlp_mpi_ovlp_example_f32-c.o $(call cleanld,$(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -104,4 +104,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

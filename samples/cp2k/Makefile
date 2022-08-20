@@ -59,11 +59,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME)-dbcsr: $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME)-dbcsr: $(OUTDIR)/.make $(OBJECTS) $(LIBDEP)
 	$(XLD) -o $@ $(BLDDIR)/$(OUTNAME)-dbcsr-cpp.o \
 		$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/$(OUTNAME)-collocate: $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
+$(OUTDIR)/$(OUTNAME)-collocate: $(OUTDIR)/.make $(OBJECTS) $(LIBDEP)
 	$(XLD) -o $@ $(BLDDIR)/$(OUTNAME)-collocate-cc.o $(BLDDIR)/rt_graph-cc.o \
 		$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 

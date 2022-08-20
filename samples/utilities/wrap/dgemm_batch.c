@@ -15,11 +15,11 @@
 # include <omp.h>
 #endif
 
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && 0
 # include <mkl.h>
 #endif
 #if defined(__INTEL_MKL__) && (110300 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__))
-# define GEMM_BATCH
+# define GEMM_BATCH dgemm_batch_
 #endif
 
 #if !defined(BLASINT_TYPE)
@@ -33,7 +33,7 @@
 #endif
 
 /** Function prototype for DGEMM_BATCH. */
-void dgemm_batch_(const char /*transa_array*/[], const char /*transb_array*/[],
+void GEMM_BATCH(const char /*transa_array*/[], const char /*transb_array*/[],
   const BLASINT_TYPE /*m_array*/[], const BLASINT_TYPE /*n_array*/[], const BLASINT_TYPE /*k_array*/[],
   const double /*alpha_array*/[], const double* /*a_array*/[], const BLASINT_TYPE /*lda_array*/[],
                                   const double* /*b_array*/[], const BLASINT_TYPE /*ldb_array*/[],
@@ -81,15 +81,22 @@ int main(int argc, char* argv[])
   double *const a = (double*)malloc(sizeof(double) * na * batchsize);
   double *const b = (double*)malloc(sizeof(double) * nb * batchsize);
   double *const c = (double*)malloc(sizeof(double) * nc * batchsize);
+  const double scale = 1.0 / batchsize;
   int i;
 
   assert(NULL != a && NULL != b && NULL != c && NULL != pa && NULL != pb && NULL != pc);
+#if defined(GEMM_BATCH)
   if (10 < argc) nrepeat = atoi(argv[10]);
-  printf("dgemm_batch('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-         "            %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-         "                        %p/*b*/, %i/*ldb*/,\n"
-         "            %g/*beta*/,  %p/*c*/, %i/*ldc*/,\n"
-         "            %i/*group_count*/, %i/*batchsize*/)\n",
+#else
+  nrepeat = 0;
+#endif
+
+  printf(
+    "dgemm_batch('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
+    "            %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
+    "                        %p/*b*/, %i/*ldb*/,\n"
+    "            %g/*beta*/,  %p/*c*/, %i/*ldc*/,\n"
+    "            %i/*group_count*/, %i/*batchsize*/)\n",
     transa, transb, m, n, k, alpha, (const void*)a, lda,
                                     (const void*)b, ldb,
                               beta, (const void*)c, ldc,
@@ -100,10 +107,10 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < batchsize; ++i) { /* use pointers instead of indexes */
     pa[i] = a + i * na; pb[i] = b + i * nb; pc[i] = c + i * nc;
-    init(42 + i, a + i * na, m, k, lda, 1.0);
-    init(24 + i, b + i * nb, k, n, ldb, 1.0);
+    init(42 + i, a + i * na, m, k, lda, scale);
+    init(24 + i, b + i * nb, k, n, ldb, scale);
     if (0 != beta) { /* no need to initialize for beta=0 */
-      init(0, c + i * nc, m, n, ldc, 1.0);
+      init(0, c + i * nc, m, n, ldc, scale);
     }
   }
 
@@ -113,18 +120,16 @@ int main(int argc, char* argv[])
     const double start = omp_get_wtime();
 # endif
     for (i = 0; i < nrepeat; ++i) {
-      dgemm_batch_(&transa, &transb, &m, &n, &k,
+      GEMM_BATCH(&transa, &transb, &m, &n, &k,
         &alpha, pa, &lda, pb, &ldb,
         &beta,  pc, &ldc,
         &group_count, &batchsize);
     }
-# if defined(_OPENMP)
+#endif
+#if defined(GEMM_BATCH) && defined(_OPENMP)
     printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
-# else
-    printf("Called %i times.\n", nrepeat);
-# endif
 #else
-    printf("Called 0 times.\n");
+    printf("Called %i times.\n", nrepeat);
 #endif
   }
 

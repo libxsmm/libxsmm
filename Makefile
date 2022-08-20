@@ -1640,7 +1640,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
 	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
 	@echo >>$@
-	@echo "Requires: libxsmm" >>$@
+	@echo "Requires: libxsmmext" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
 

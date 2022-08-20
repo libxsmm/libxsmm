@@ -116,6 +116,8 @@ libxsmm_gemm_groups
 libxsmm_gemm_groups_omp
 libxsmm_gemm_print
 libxsmm_gemm_print2
+libxsmm_gemm_strided
+libxsmm_gemm_strided_omp
 libxsmm_gemm_xprint
 libxsmm_generator_gemm_directasm
 libxsmm_generator_gemm_inlineasm

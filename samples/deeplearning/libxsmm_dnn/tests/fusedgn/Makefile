@@ -68,8 +68,8 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(DNNLIB): $(HEADERS2) $(SOURCES2)
 	$(MAKE) -j8 -C $(DEP2DIR)
 
-$(OUTDIR)/layer_example: $(OUTDIR)/.make $(BLDDIR)/layer_example-c.o $(LIBDEP) $(EXTDEP) $(DNNLIB)
-	$(LD) -o $@ $(BLDDIR)/layer_example-c.o $(call cleanld,$(EXTLIB) $(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
+$(OUTDIR)/layer_example: $(OUTDIR)/.make $(BLDDIR)/layer_example-c.o $(LIBDEP) $(DNNLIB)
+	$(LD) -o $@ $(BLDDIR)/layer_example-c.o $(call cleanld,$(MAINLIB) $(DNNLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc $(INCDIR)/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -101,4 +101,3 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-

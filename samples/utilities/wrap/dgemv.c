@@ -15,6 +15,9 @@
 # include <omp.h>
 #endif
 
+#if !defined(GEMV)
+# define GEMV dgemv_
+#endif
 #if !defined(BLASINT_TYPE)
 # define BLASINT_TYPE int
 #endif
@@ -26,7 +29,7 @@
 #endif
 
 /** Function prototype for DGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-void dgemv_(const char*, const BLASINT_TYPE*, const BLASINT_TYPE*,
+void GEMV(const char*, const BLASINT_TYPE*, const BLASINT_TYPE*,
   const double*, const double*, const BLASINT_TYPE*, const double*, const BLASINT_TYPE*,
   const double*, double*, const BLASINT_TYPE*);
 
@@ -68,28 +71,31 @@ int main(int argc, char* argv[])
   double *const a = (double*)malloc(sizeof(double) * na);
   double *const x = (double*)malloc(sizeof(double) * nx);
   double *const y = (double*)malloc(sizeof(double) * ny);
+  const double scale = 1.0;
   int i;
 
   assert(NULL != a && NULL != x && NULL != y);
   if (8 < argc) nrepeat = atoi(argv[8]);
-  printf("dgemv('%c', %i/*m*/, %i/*n*/,\n"
-         "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-         "                  %p/*x*/, %i/*incx*/,\n"
-         "       %g/*beta*/, %p/*y*/, %i/*incy*/)\n",
+
+  printf(
+    "dgemv('%c', %i/*m*/, %i/*n*/,\n"
+    "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
+    "                  %p/*x*/, %i/*incx*/,\n"
+    "       %g/*beta*/, %p/*y*/, %i/*incy*/)\n",
     trans, m, n, alpha, (const void*)a, lda,
                         (const void*)x, incx,
                   beta, (const void*)y, incy);
 
-  init(42, a, m, n, lda, 1.0);
-  init(24, x, n, 1, incx, 1.0);
-  init( 0, y, m, 1, incy, 1.0);
+  init(42, a, m, n, lda, scale);
+  init(24, x, n, 1, incx, scale);
+  init( 0, y, m, 1, incy, scale);
 
   { /* Call DGEMM */
 # if defined(_OPENMP)
     const double start = omp_get_wtime();
 # endif
     for (i = 0; i < nrepeat; ++i) {
-      dgemv_(&trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
+      GEMV(&trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
     }
 # if defined(_OPENMP)
     printf("Called %i times (%f s).\n", nrepeat, omp_get_wtime() - start);
