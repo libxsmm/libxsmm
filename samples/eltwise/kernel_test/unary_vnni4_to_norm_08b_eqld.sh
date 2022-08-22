@@ -30,7 +30,8 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDO}
-  ./eltwise_unary_transform N 1 ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_transform N BF8 ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_transform N I8 ${M} ${N} ${LDI} ${LDI}
 done
 
 rm ${TESTFILE1}
