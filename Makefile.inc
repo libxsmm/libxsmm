@@ -1506,7 +1506,7 @@ else # GCC assumed
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
-          ifneq (0,$(shell echo "$$((0==$(CLANG)||140000>$(CC_VERSION_NUM)))"))
+          ifneq (0,$(shell echo "$$((0==$(CLANG)||130000>$(CC_VERSION_NUM)))"))
             CSTD := -std=c89
           else
             CSTD := -std=c99
