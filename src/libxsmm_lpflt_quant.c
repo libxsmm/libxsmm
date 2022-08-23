@@ -532,6 +532,7 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
   }
 }
 
+#if 0
 LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int length) {
   unsigned int i = 0;
   for ( i = 0; i < length; ++i ) {
@@ -595,6 +596,79 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
     out[i] = res;
   }
 }
+#else
+libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) {
+  unsigned int f16_bias = 15;
+  unsigned int f8_bias = 7;
+  libxsmm_hfloat8 res = 0;
+  unsigned short s, e, m, e_f16, m_f16;
+  unsigned int fixup;
+  libxsmm_float16 in = inp;
+
+  /* DAZ */
+  in = ( (in & 0x7c00) == 0x0 ) ? ( in & 0x8000 ) : ( in & 0xffff );
+
+  s = ( in & 0x8000 ) >> 8;
+  e_f16 = ( in & 0x7c00 ) >> 10;
+  m_f16 = ( in & 0x03ff );
+
+  /* special value --> make it NaN */
+  if ( e_f16 == 0x1f ) {
+    e = 0xf;
+    m = 0x7;
+  /* overflow --> make it NaN */
+  } else if ( (e_f16 > (f16_bias - f8_bias + 15)) ||
+              ((e_f16 == (f16_bias - f8_bias + 15)) && ( m_f16 > 0x0300))) {
+    e = 0xf;
+    m = 0x7;
+  /* smaller than denormal f8 + eps */
+  } else if ( e_f16 < f16_bias - f8_bias - 3 ) {
+    e = 0x0;
+    m = 0x0;
+  /* denormal */
+  } else if ( e_f16 <= f16_bias - f8_bias ) {
+    /* RNE */
+    /* denormalized mantissa */
+    m = m_f16 | 0x0400;
+    /* addtionally subnormal shift */
+    m = m >> ((f16_bias - f8_bias) + 1 - e_f16);
+    /* preserve sticky bit (some sticky bits are lost when denormalizing) */
+    m |= (((m_f16 & 0x007f) + 0x007f) >> 7);
+    /* RNE Round */
+    fixup = (m >> 7) & 0x1;
+    m = m + 0x003f + fixup;
+    m = m >> 7;
+    e = 0x0;
+  /* normal */
+  } else {
+    /* RNE round */
+    fixup = (m_f16 >> 7) & 0x1;
+    in = in + 0x003f + fixup;
+    e = ( in & 0x7c00 ) >> 10;
+    m = ( in & 0x03ff );
+    e -= (f16_bias - f8_bias);
+    m = m >> 7;
+  }
+
+  /* set result to 0 */
+  res = 0x0;
+  /* set exp and mant */
+  res |= e << 3;
+  res |= m;
+  /* sign it */
+  res |= s;
+
+  return res;
+}
+
+LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* out, unsigned int length) {
+  unsigned int i = 0;
+  for ( i = 0; i < length; ++i ) {
+    libxsmm_float16 itm = libxsmm_convert_f32_to_f16(in[i]) ;
+    out[i] = libxsmm_rne_convert_fp16_hf8(itm);
+  }
+}
+#endif
 
 LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length) {
   unsigned int i = 0;

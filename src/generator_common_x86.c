@@ -2555,11 +2555,59 @@ void libxsmm_generator_cvtbf8bf16_avx512( libxsmm_generated_code* io_generated_c
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vcvthf82ps_avx512_prep_stack ( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_prep_stack ( libxsmm_generated_code* io_generated_code,
                                                         const unsigned int      io_gp_reg ) {
   unsigned int LUT_array[16] = { 0x00000000, 0x3b000000, 0x3b800000, 0x3bc00000, 0x3c000000, 0x3c200000, 0x3c400000, 0x3c600000,
                                  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
   unsigned int i;
+
+  /* push denorm_exp_offs on the stack --> rsp + 200 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00080008);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push denorm mant offs on the stack --> rsp + 192 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x003f003f);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push 16-bit 1 on the stack --> rsp + 184 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00010001);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push sticky offs on the stack --> rsp + 176 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x007f007f);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push denorm_mant on the stack --> rsp + 168 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x04000400);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push varsfift_offs on the stack --> rsp + 160 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00000009);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push lt_denorm_exp on the stack --> rsp + 152 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00000005);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push overflow_mant on the stack --> rsp + 144 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x03000300);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push mant_mask_f16 on the stack --> rsp + 136 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x03ff03ff);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push overflow_exp on the stack --> rsp + 128 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00160016);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push signmask_f16 on the stack --> rsp + 120 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x80008000);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
+
+  /* push infmask_f16 on the stack --> rsp + 112 */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x7c007c00);
+  libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push expmask on the stack --> rsp + 104 */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00000078);
@@ -2601,7 +2649,129 @@ void libxsmm_generator_vcvthf82ps_avx512_prep_stack ( libxsmm_generated_code* io
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vcvthf82ps_avx512_preppedstack( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_code* io_generated_code,
+                                                          const char              i_vname,
+                                                          const unsigned int      i_vec_reg,
+                                                          const unsigned int      o_vec_reg,
+                                                          const unsigned int      io_vec_tmp_0,
+                                                          const unsigned int      io_vec_tmp_1,
+                                                          const unsigned int      io_vec_tmp_2,
+                                                          const unsigned int      io_vec_tmp_3,
+                                                          const unsigned int      io_mask_0,
+                                                          const unsigned int      io_mask_1,
+                                                          const unsigned int      io_mask_2 ) {
+  char i_vname2 = (i_vname == 'z')?'y':'x';
+  libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
+                                                          i_vec_reg, i_vec_reg, 0,
+                                                          (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1,
+                                                          (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1,
+                                                          0x00 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, 1,
+                                                i_vec_reg, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, 1,
+                                                io_vec_tmp_0, io_mask_0 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 120, 1,
+                                                i_vec_reg, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, i_vname2, i_vec_reg, io_vec_tmp_1 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                          LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 120, 1,
+                                                          i_vec_reg, io_vec_tmp_1, io_mask_0, 0, 0);
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_0, o_vec_reg, 8 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, 1,
+                                                io_vec_tmp_1, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, 1,
+                                                io_vec_tmp_0, io_mask_0 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_0, io_vec_tmp_0, 10 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPCMPGTW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 128, 1,
+                                                io_vec_tmp_0, io_mask_1 );
+  libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORW, io_mask_1, io_mask_0, io_mask_0, 0);
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 128, 1,
+                                                io_vec_tmp_0, io_mask_1 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 136, 1,
+                                                io_vec_tmp_1, io_vec_tmp_2 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPCMPGTW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 144, 1,
+                                                io_vec_tmp_2, io_mask_2 );
+  libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KANDW, io_mask_1, io_mask_2, io_mask_1, 0);
+  libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORW, io_mask_1, io_mask_0, io_mask_0, 0);
+  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname2,
+                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 152, 1,
+                                                     io_vec_tmp_0, io_mask_1, 1 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname2,
+                                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 160, 1,
+                                                     io_vec_tmp_0, io_mask_2, 1 );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 160, i_vname2, io_vec_tmp_3, 0, 1, 0 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBW, i_vname2, io_vec_tmp_3, io_vec_tmp_0, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 168, 1,
+                                                io_vec_tmp_2, io_vec_tmp_3 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSRLVW, i_vname2, io_vec_tmp_3, io_vec_tmp_0, io_vec_tmp_3 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 176, 1,
+                                                io_vec_tmp_2, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 176, 1,
+                                                io_vec_tmp_0, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_0, io_vec_tmp_0, 7 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname2, io_vec_tmp_3, io_vec_tmp_0, io_vec_tmp_3 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_3, io_vec_tmp_0, 7 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 184, 1,
+                                                io_vec_tmp_0, io_vec_tmp_0 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_vname2, io_vec_tmp_3, io_vec_tmp_0, io_vec_tmp_3 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 192, 1,
+                                                io_vec_tmp_3, io_vec_tmp_3 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_3, io_vec_tmp_3, 7 );
+
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_2, io_vec_tmp_2, 7 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 184, 1,
+                                                io_vec_tmp_2, io_vec_tmp_2 );
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_vname2, io_vec_tmp_2, io_vec_tmp_1, io_vec_tmp_2 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 192, 1,
+                                                io_vec_tmp_2, io_vec_tmp_2 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 112, 1,
+                                                io_vec_tmp_2, io_vec_tmp_1 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_1, io_vec_tmp_1, 10 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBW, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 200, 1,
+                                                io_vec_tmp_1, io_vec_tmp_1 );
+  libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
+                                                LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 136, 1,
+                                                io_vec_tmp_2, io_vec_tmp_2 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
+                                                 io_vec_tmp_2, io_vec_tmp_2, 7 );
+  libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLW_I, i_vname2,
+                                                 io_vec_tmp_1, io_vec_tmp_1, 3 );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, i_vname2, io_vec_tmp_1, io_mask_1, 0, 0 );
+  libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
+                                    LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 80, i_vname2, io_vec_tmp_1, io_mask_0, 0, 0 );
+  libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code,  LIBXSMM_X86_INSTR_VMOVDQU16, i_vname2, io_vec_tmp_3, io_vec_tmp_1, io_mask_2, 0);
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname2, io_vec_tmp_1, o_vec_reg, o_vec_reg );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvthf8_to_f32_avx512_preppedstack( libxsmm_generated_code* io_generated_code,
                                                           const char              i_vname,
                                                           const unsigned int      i_vec_reg,
                                                           const unsigned int      o_vec_reg,
@@ -2660,9 +2830,9 @@ void libxsmm_generator_vcvthf82ps_avx512_preppedstack( libxsmm_generated_code* i
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_vcvthf82ps_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
+void vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg ) {
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 112);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 208);
 }
 
 LIBXSMM_API_INTERN
