@@ -605,9 +605,6 @@ libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) {
   unsigned int fixup;
   libxsmm_float16 in = inp;
 
-  /* DAZ */
-  in = ( (in & 0x7c00) == 0x0 ) ? ( in & 0x8000 ) : ( in & 0xffff );
-
   s = ( in & 0x8000 ) >> 8;
   e_f16 = ( in & 0x7c00 ) >> 10;
   m_f16 = ( in & 0x03ff );
