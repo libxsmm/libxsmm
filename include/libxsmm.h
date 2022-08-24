@@ -66,6 +66,11 @@ LIBXSMM_API int libxsmm_get_target_archid(void);
 LIBXSMM_API void libxsmm_set_target_archid(int id);
 
 /**
+ * get typename string
+ */
+LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype);
+
+/**
  * Returns the name of the target architecture as determined by the CPUID flags, as set by the
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */

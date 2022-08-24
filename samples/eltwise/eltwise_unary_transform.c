@@ -1269,41 +1269,15 @@ int main( int argc, char* argv[] ) {
   ldi   = atoi(argv[5]);
   ldo   = atoi(argv[6]);
 
-  if ( (strcmp(dt, "F64") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_F64;
-  } else if ( (strcmp(dt, "I64") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I64;
-  } else if ( (strcmp(dt, "F32") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_F32;
-  } else if ( (strcmp(dt, "I32") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I32;
-  } else if ( (strcmp(dt, "F16") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_F16;
-  } else if ( (strcmp(dt, "BF16") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_BF16;
-  } else if ( (strcmp(dt, "I16") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I16;
-  } else if ( (strcmp(dt, "BF8") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_BF8;
-  } else if ( (strcmp(dt, "I8") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I8;
-  } else {
+  dtype = char_to_libxsmm_datatype( dt );
+  if ( dtype == LIBXSMM_DATATYPE_UNSUPPORTED ) {
     printf(" Error! Usage: %s [T/V/R/X/Y/Z] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
-  if ( op == 'T' && ( dtype == LIBXSMM_DATATYPE_F64 || dtype == LIBXSMM_DATATYPE_I64 ) ) {
-    printf("Testing 64bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i \n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_F64 );
-  } else if ( op == 'T' && ( dtype == LIBXSMM_DATATYPE_F32 || dtype == LIBXSMM_DATATYPE_I32 ) ) {
-    printf("Testing 32bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'T' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
-    printf("Testing 16bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16 );
-  } else if ( op == 'T' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {
-    printf("Testing 08bit Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_normal_to_normalT( M, N, ldi, ldo, LIBXSMM_DATATYPE_I8 );
+  if ( op == 'T' ) {
+    printf("Testing %s Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i \n", libxsmm_get_typename(dtype), M, N, ldi, ldo);
+    ret = test_normal_to_normalT( M, N, ldi, ldo, dtype );
   } else if ( op == 'R' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
     printf("Testing 16bit VNNI2 to VNNI2 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni2_to_vnni2T_16bit( M, N, ldi, ldo );
