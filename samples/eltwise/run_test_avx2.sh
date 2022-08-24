@@ -17,8 +17,8 @@ cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/binary_sub_32b_gtld.sh
 ./kernel_test/unary_copy_32b_eqld.sh
 ./kernel_test/unary_copy_32b_gtld.sh
-./kernel_test/unary_dropout_32b_eqld.sh 33
-./kernel_test/unary_dropout_32b_gtld.sh 33
+./kernel_test/unary_dropout_eqld.sh 33
+./kernel_test/unary_dropout_gtld.sh 33
 ./kernel_test/unary_exp_32b_eqld.sh
 ./kernel_test/unary_exp_32b_gtld.sh
 ./kernel_test/unary_gelu_32b_eqld.sh
