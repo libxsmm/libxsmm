@@ -277,16 +277,16 @@ ifneq (0,$(SPACES))
     else cd "$${VAR}" 2>/dev/null && pwd -P; fi; fi))
   qndir = $(call quote,$(shell export "VAR=$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi))
-  qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null)/)
+  qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null | sed "s/\/\(\"*\)$$/\1/"))
 else
-  quote = $(strip $(subst "",$(NULL),$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qapath = $(abspath $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qndir =  $(notdir  $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir =   $(dir     $(call quote,   $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  quote = $(strip        $(subst "",$(NULL),$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qapath = $(abspath     $(call quote,      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qndir =  $(notdir      $(call quote,      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
+  qdir =   $(shell echo "$(dir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))" | sed "s/\/\(\"*\)$$/\1/")
 endif
 qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qxdir =   $(shell if [ -d "$1" ]; then echo "$1"; else echo "$(call qdir,$1)"; fi)
+qxdir =   $(shell if [ -d "$1" ]; then echo "$1" | sed "s/\/\(\"*\)$$/\1/"; else echo "$(call qdir,$1)"; fi)
 qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
 
 # absolute directory paths
