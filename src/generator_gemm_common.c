@@ -521,7 +521,7 @@ void libxsmm_generator_gemm_add_colbias_to_2D_block( libxsmm_generated_code*    
   }
 
   if (colbias_precision == LIBXSMM_DATATYPE_HF8) {
-    vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
+    libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
   }
   libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
 }
@@ -2666,7 +2666,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       }
 
       if ( (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) || (i_micro_kernel_config->fused_h8colbias == 1)) {
-        vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
+        libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
       }
 
       /* Check if we have to add bias  */
@@ -3204,7 +3204,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       libxsmm_generator_vcvtneps2bf8_avx512_clean_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
     } else if (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
-      vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
+      libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( io_generated_code,  i_gp_reg_mapping->gp_reg_help_2);
     }
   } else if ( ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX2) && (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT) ) &&
               ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {

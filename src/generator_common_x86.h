@@ -677,7 +677,7 @@ void libxsmm_generator_vcvthf8_to_f32_avx512_preppedstack( libxsmm_generated_cod
                                                           const unsigned int      io_mask_1 );
 
 LIBXSMM_API_INTERN
-void vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg );
 
 LIBXSMM_API_INTERN

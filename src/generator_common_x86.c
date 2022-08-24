@@ -2860,7 +2860,7 @@ void libxsmm_generator_vcvthf8_to_f32_avx512_preppedstack( libxsmm_generated_cod
 }
 
 LIBXSMM_API_INTERN
-void vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
+void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg ) {
   LIBXSMM_UNUSED(io_gp_reg);
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 208);
