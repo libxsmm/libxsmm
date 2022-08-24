@@ -935,10 +935,8 @@ ifneq (Darwin,$(UNAME))
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
-  ifneq (0,$(ASNEEDED))
-    XLIB_BEGIN := $(call linkopt,--as-needed)
-    XLIB_END := $(call linkopt,--no-as-needed)
-  endif
+  XLIB_BEGIN_FORCE := $(call linkopt,--as-needed)
+  XLIB_END_FORCE := $(call linkopt,--no-as-needed)
 else # OSX
   ifneq (ld,$(call qndir,$(LD)))
     XLNKOPT := -Xlinker
@@ -948,8 +946,10 @@ else # OSX
   abslibrpath = $(strip $(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
     $(call linkopt,-rpath,$(call qxdir,$(call qapath,$1)))))
 endif
-XLIB_BEGIN ?= $(NULL)
-XLIB_END ?= $(NULL)
+ifneq (0,$(ASNEEDED))
+  XLIB_BEGIN ?= $(XLIB_BEGIN_FORCE)
+  XLIB_END ?= $(XLIB_END_FORCE)
+endif
 
 absliblpath = $(strip $(if $1,$(if $(findstring .$(ILIBEXT),$1)$(wildcard $1/), \
   -L$(call qxdir,$(call qapath,$1)))))
@@ -2285,9 +2285,6 @@ else ifneq (0,$(BLAS)) # generic
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
     ifeq (0,$(PGI))
       OPENBLAS := $(if $(BLASLIBFILE),1,0)
-    #else ifeq (Darwin,$(UNAME)) # Apple
-      #OPENBLAS := 0
-      #BLASREF := 0
     else # PGI
       OPENBLAS := 0
     endif
@@ -2310,8 +2307,8 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
     ifneq (,$(BLASLIBFILE))
-      ifeq (0,$(BLAS_STATIC)) # shared
-        BLAS_LDFLAGS += $(call abslib,$(BLASLIBFILE))
+      ifeq (0,$(BLAS_STATIC)) # shared (END/BEGIN not BEGIN/END)
+        BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call abslib,$(BLASLIBFILE)) $(XLIB_BEGIN_FORCE)
       else # static
         BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
@@ -2327,18 +2324,11 @@ else ifneq (0,$(BLAS)) # generic
       #EXCLUDE_VALUE += -framework Accelerate
       BLAS_LDFLAGS += -framework Accelerate
       BLAS_FLAGS += -D__CBLAS
-    else # fallback
-      BLAS_LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),blas)
+    else # fallback (END/BEGIN not BEGIN/END)
+      BLAS_LDFLAGS += $(XLIB_END_FORCE) $(call ldclib,$(LD),$(SLDFLAGS),blas) $(XLIB_BEGIN_FORCE)
       BLASREF ?= 1
     endif
     BLASREF ?= 0
-    #ifneq (0,$(BLASREF)) # BLAS (reference)
-    #ifeq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
-    #ifneq (0,$(PGI))
-      #BLAS_FLAGS += -D__CBLAS
-    #endif
-    #endif
-    #endif
     ifneq (,$(filter-out 0,$(OPENBLAS) $(BLASREF))) # OpenBLAS or RefBLAS
     ifeq (0,$(OMP)) # Fortran compiler cannot link OpenMP runtime
       ifeq (,$(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
