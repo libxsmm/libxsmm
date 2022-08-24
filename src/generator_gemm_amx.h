@@ -14,21 +14,22 @@
 
 #include "generator_common.h"
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_bf8_ABC_tensors_to_stack_for_amx(  libxsmm_generated_code*        io_generated_code,
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_ABC_tensors_to_stack_for_amx(  libxsmm_generated_code*        io_generated_code,
                                                                                         libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                         libxsmm_gp_reg_mapping*        i_gp_reg_mapping,
                                                                                         libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                                         libxsmm_gemm_descriptor*       i_xgemm_desc,
-                                                                                        const libxsmm_gemm_descriptor* i_xgemm_desc_orig );
+                                                                                        const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
+                                                                                        libxsmm_datatype               i_in_dtype );
 
-
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_bf8_eltwise_fusion(   libxsmm_generated_code*        io_generated_code,
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_emit_f8_eltwise_fusion(   libxsmm_generated_code*        io_generated_code,
                                                                           libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                           libxsmm_micro_kernel_config*   i_micro_kernel_config,
                                                                           libxsmm_gemm_descriptor*       i_xgemm_desc,
                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc_orig,
                                                                           unsigned int                   i_defer_c_vnni_format,
-                                                                          unsigned int                   i_defer_relu_bitmask_compute );
+                                                                          unsigned int                   i_defer_relu_bitmask_compute,
+                                                                          libxsmm_datatype               i_dtype );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_reduceloop_amx( libxsmm_generated_code*             io_generated_code,

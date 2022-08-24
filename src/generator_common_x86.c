@@ -2560,7 +2560,6 @@ void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_prep_stack ( libxsmm_generated
   unsigned int LUT_array[16] = { 0x00000000, 0x3b000000, 0x3b800000, 0x3bc00000, 0x3c000000, 0x3c200000, 0x3c400000, 0x3c600000,
                                  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000 };
   unsigned int i;
-
   /* push denorm_exp_offs on the stack --> rsp + 200 */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00080008);
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
@@ -2863,6 +2862,7 @@ void libxsmm_generator_vcvthf8_to_f32_avx512_preppedstack( libxsmm_generated_cod
 LIBXSMM_API_INTERN
 void vcvt_hf8_tofrom_f32_avx512_clean_stack( libxsmm_generated_code* io_generated_code,
                                                          const unsigned int      io_gp_reg ) {
+  LIBXSMM_UNUSED(io_gp_reg);
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RSP, 208);
 }
 

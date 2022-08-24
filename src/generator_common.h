@@ -1362,6 +1362,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
   unsigned int fused_b8colbias;
+  unsigned int fused_h8colbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
@@ -1444,6 +1445,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary fields for LP emulations */
   unsigned int bf8_gemm_via_stack_alloc_tensors;
+  unsigned int hf8_gemm_via_stack_alloc_tensors;
 
 } libxsmm_micro_kernel_config;
 
