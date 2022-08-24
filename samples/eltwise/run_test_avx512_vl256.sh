@@ -61,10 +61,8 @@ cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_rcp_sqrt_32b_gtld.sh
 ./kernel_test/unary_rcp_sqrt_mixed_eqld.sh
 ./kernel_test/unary_rcp_sqrt_mixed_gtld.sh
-./kernel_test/unary_relu_32b_eqld.sh
-./kernel_test/unary_relu_32b_gtld.sh
-./kernel_test/unary_relu_mixed_eqld.sh
-./kernel_test/unary_relu_mixed_gtld.sh
+./kernel_test/unary_relu_eqld.sh
+./kernel_test/unary_relu_gtld.sh
 ./kernel_test/unary_replicate_col_var_32b_eqld.sh
 ./kernel_test/unary_replicate_col_var_32b_gtld.sh
 ./kernel_test/unary_replicate_col_var_mixed_eqld.sh

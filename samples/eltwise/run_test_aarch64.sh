@@ -40,8 +40,8 @@ cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_rcp_32b_gtld.sh
 ./kernel_test/unary_rcp_sqrt_32b_eqld.sh
 ./kernel_test/unary_rcp_sqrt_32b_gtld.sh
-./kernel_test/unary_relu_32b_eqld.sh
-./kernel_test/unary_relu_32b_gtld.sh
+./kernel_test/unary_relu_eqld.sh
+./kernel_test/unary_relu_gtld.sh
 ./kernel_test/unary_dropout_32b_eqld.sh 33
 ./kernel_test/unary_dropout_32b_gtld.sh 33
 ./kernel_test/binary_add_32b_eqld.sh
