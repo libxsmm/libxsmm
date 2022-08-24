@@ -15,6 +15,8 @@
 #include <math.h>
 #include <float.h>
 
+#include "eltwise_common.h"
+
 int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   char *char_data;
@@ -409,8 +411,11 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype_one;
-  libxsmm_blasint dtype_two;
+  char* dt_in = NULL;
+  char* dt_out = NULL;
+  libxsmm_datatype dtype_in;
+  libxsmm_datatype dtype_out;
+  /*libxsmm_datatype dtype_comp = LIBXSMM_DATATYPE_F32;*/
   libxsmm_blasint M;
   libxsmm_blasint N;
   libxsmm_blasint ldi;
@@ -418,28 +423,31 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_FAILURE;
 
   if ( argc != 7 ) {
-    printf(" Error! Usage: %s [8/4/2/1] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
-  dtype_one = atoi(argv[1]);
-  dtype_two = atoi(argv[2]);
+  dt_in     = argv[1];
+  dt_out    = argv[2];
   M         = atoi(argv[3]);
   N         = atoi(argv[4]);
   ldi       = atoi(argv[5]);
   ldo       = atoi(argv[6]);
 
-  if ( dtype_one == 4 && dtype_two == 1 ) {
+  dtype_in  = char_to_libxsmm_datatype( dt_in );
+  dtype_out = char_to_libxsmm_datatype( dt_out );
+
+  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I8) ) {
     printf("Testing FP32 <-> int8 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int8_to_float( M, N, ldi, ldo );
-  } else if ( dtype_one == 4 && dtype_two == 2 ) {
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I16) ) {
     printf("Testing FP32 <-> int16 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int16_to_float( M, N, ldi, ldo );
-  } else if ( dtype_one == 4 && dtype_two == 4 ) {
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I32) ) {
     printf("Testing FP32 <-> int32 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int32_to_float( M, N, ldi, ldo );
   } else {
-    printf(" Not implemented case! Usage: %s [8/4/2/1] [8/4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Not implemented case! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
