@@ -105,9 +105,12 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
           const float* f_in2 = (const float*)in2;
           in2_value = f_in2[(j*ldi2) + i];
-        } else {
+        } else if (dtype_in1 == LIBXSMM_DATATYPE_BF16) {
           const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
           libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+        } else if (dtype_in1 == LIBXSMM_DATATYPE_BF8) {
+          const libxsmm_bfloat8* bf_in2 = (const libxsmm_bfloat8*)in2;
+          libxsmm_convert_bf8_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
         }
         f_out[(j*ldo) + i] = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, f_out[(j*ldo) + i], op);
       }
