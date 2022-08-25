@@ -46,16 +46,16 @@ cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_relu_gtld.sh
 ./kernel_test/unary_dropout_eqld.sh 65
 ./kernel_test/unary_dropout_gtld.sh 65
-./kernel_test/binary_add_32b_eqld.sh
-./kernel_test/binary_add_32b_gtld.sh
-./kernel_test/binary_mul_32b_eqld.sh
-./kernel_test/binary_mul_32b_gtld.sh
-./kernel_test/binary_sub_32b_eqld.sh
-./kernel_test/binary_sub_32b_gtld.sh
-./kernel_test/binary_div_32b_eqld.sh
-./kernel_test/binary_div_32b_gtld.sh
-./kernel_test/binary_muladd_32b_gtld.sh
-./kernel_test/binary_muladd_32b_eqld.sh
+./kernel_test/binary_add_eqld.sh
+./kernel_test/binary_add_gtld.sh
+./kernel_test/binary_mul_eqld.sh
+./kernel_test/binary_mul_gtld.sh
+./kernel_test/binary_sub_eqld.sh
+./kernel_test/binary_sub_gtld.sh
+./kernel_test/binary_div_eqld.sh
+./kernel_test/binary_div_gtld.sh
+./kernel_test/binary_muladd_gtld.sh
+./kernel_test/binary_muladd_eqld.sh
 ./kernel_test/unary_gelu_eqld.sh
 ./kernel_test/unary_gelu_gtld.sh
 ./kernel_test/unary_gelu_inv_eqld.sh

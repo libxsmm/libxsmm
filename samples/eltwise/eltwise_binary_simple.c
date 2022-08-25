@@ -355,10 +355,14 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype_in;
-  libxsmm_blasint dtype_in1;
-  libxsmm_blasint dtype_out;
-  libxsmm_blasint dtype_comp;
+  char* dt_in0;
+  char* dt_in1;
+  char* dt_out;
+  char* dt_comp;
+  libxsmm_datatype dtype_in0;
+  libxsmm_datatype dtype_in1;
+  libxsmm_datatype dtype_out;
+  libxsmm_datatype dtype_comp;
   libxsmm_blasint op;
   libxsmm_blasint use_bcast;
   libxsmm_blasint M;
@@ -367,24 +371,28 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
   char opname[256];
-  char in1_dt_name[256];
   int res = EXIT_FAILURE;
 
   if ( argc != 11 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: 4/2] [prec_in1: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   op         = atoi(argv[1]);
   use_bcast  = atoi(argv[2]);
-  dtype_in   = atoi(argv[3]);
-  dtype_in1  = atoi(argv[4]);
-  dtype_comp = atoi(argv[5]);
-  dtype_out  = atoi(argv[6]);
+  dt_in0     = argv[3];
+  dt_in1     = argv[4];
+  dt_comp    = argv[5];
+  dt_out     = argv[6];
   M          = atoi(argv[7]);
   N          = atoi(argv[8]);
   ldi        = atoi(argv[9]);
   ldo        = atoi(argv[10]);
+
+  dtype_in0  = char_to_libxsmm_datatype( dt_in0 );
+  dtype_in1  = char_to_libxsmm_datatype( dt_in1 );
+  dtype_out  = char_to_libxsmm_datatype( dt_out );
+  dtype_comp = char_to_libxsmm_datatype( dt_comp );
 
   set_opname(op, opname);
 
@@ -411,37 +419,33 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-  if (dtype_in1 == 4) {
-    sprintf(in1_dt_name, "F32");
-  } else if (dtype_in1 == 2) {
-    sprintf(in1_dt_name, "BF16");
+  if ( valid_op > 0 ) {
+    if ( ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* BF16 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* BF8 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+      printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
+        libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
+      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
+    } else {
+      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      exit(-1);
+    }
   } else {
-    sprintf(in1_dt_name, "BF8");
-  }
-
-  if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary (BF16, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (BF16, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
-    printf("Testing binary (BF8, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (BF8, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6]] [prec_in: 4/2/1] compute_prec: 4 [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 

@@ -5,26 +5,16 @@ EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 export LIBXSMM_TARGET=avx512_vl256_clx
 cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
-./kernel_test/binary_add_32b_eqld.sh
-./kernel_test/binary_add_32b_gtld.sh
-./kernel_test/binary_add_mixed_eqld.sh
-./kernel_test/binary_add_mixed_gtld.sh
-./kernel_test/binary_div_32b_eqld.sh
-./kernel_test/binary_div_32b_gtld.sh
-./kernel_test/binary_div_mixed_eqld.sh
-./kernel_test/binary_div_mixed_gtld.sh
-./kernel_test/binary_mul_32b_eqld.sh
-./kernel_test/binary_mul_32b_gtld.sh
-./kernel_test/binary_muladd_32b_eqld.sh
-./kernel_test/binary_muladd_32b_gtld.sh
-./kernel_test/binary_muladd_mixed_eqld.sh
-./kernel_test/binary_muladd_mixed_gtld.sh
-./kernel_test/binary_mul_mixed_eqld.sh
-./kernel_test/binary_mul_mixed_gtld.sh
-./kernel_test/binary_sub_32b_eqld.sh
-./kernel_test/binary_sub_32b_gtld.sh
-./kernel_test/binary_sub_mixed_eqld.sh
-./kernel_test/binary_sub_mixed_gtld.sh
+./kernel_test/binary_add_eqld.sh
+./kernel_test/binary_add_gtld.sh
+./kernel_test/binary_div_eqld.sh
+./kernel_test/binary_div_gtld.sh
+./kernel_test/binary_mul_eqld.sh
+./kernel_test/binary_mul_gtld.sh
+./kernel_test/binary_muladd_eqld.sh
+./kernel_test/binary_muladd_gtld.sh
+./kernel_test/binary_sub_eqld.sh
+./kernel_test/binary_sub_gtld.sh
 ./kernel_test/unary_copy_eqld.sh
 ./kernel_test/unary_copy_gtld.sh
 ./kernel_test/unary_dropout_eqld.sh
