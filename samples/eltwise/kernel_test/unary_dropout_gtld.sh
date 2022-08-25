@@ -50,7 +50,7 @@ do
   N=`echo ${i} | awk -F"_" '{print $2}'`
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
-  echo ${M} ${N} ${LDI} ${LDI}
+  echo ${M} ${N} 100 100
   for PREC in ${PREC_LIST}
   do
     PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
