@@ -111,6 +111,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_in0 == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_in0 = (const libxsmm_bfloat8*)in0;
           libxsmm_convert_bf8_f32( &(bf8_in0[(j*ldi0) + i]), &in0_value, 1 );
+        } else if ( dtype_in0 == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_in0 = (const libxsmm_hfloat8*)in0;
+          libxsmm_convert_hf8_f32( &(hf8_in0[(j*ldi0) + i]), &in0_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -124,6 +127,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_in1 == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_in1 = (const libxsmm_bfloat8*)in1;
           libxsmm_convert_bf8_f32( &(bf8_in1[(j*ldi0) + i]), &in1_value, 1 );
+        } else if ( dtype_in1 == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_in1 = (const libxsmm_hfloat8*)in1;
+          libxsmm_convert_hf8_f32( &(hf8_in1[(j*ldi0) + i]), &in1_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -137,6 +143,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_out = (const libxsmm_bfloat8*)out;
           libxsmm_convert_bf8_f32( &(bf8_out[(j*ldo) + i]), &out_value, 1 );
+        } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_out = (const libxsmm_hfloat8*)out;
+          libxsmm_convert_hf8_f32( &(hf8_out[(j*ldo) + i]), &out_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -152,6 +161,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
           libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+        } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
+          libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
+          libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1);
         } else {
           /* shouldn't happen */
         }
@@ -311,7 +323,7 @@ int main( int argc, char* argv[] ) {
   int res = EXIT_FAILURE;
 
   if ( argc != 11 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8/HF8] [prec_in1: F32/BF16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
@@ -373,16 +385,24 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
-         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* HF8 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
       printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
         libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
       res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
     } else {
-      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8/HF8] [prec_in1: F32/BF16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
       exit(-1);
     }
   } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8/HF8] [prec_in1: F32/BF16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
