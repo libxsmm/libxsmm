@@ -3061,7 +3061,6 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_mnblock_micro_kernel
                                                                                   const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_zmm = 0;
   unsigned int l_zmm_tmp = i_n_step/4;
-  unsigned int l_i = 0;
   unsigned int l_chunk = 0;
 
   /* load i_n_step registers */
@@ -3205,7 +3204,6 @@ void libxsmm_generator_transform_vnni4_to_vnni2_08bit_avx512_mnblock_micro_kerne
                                                                                   const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_zmm = 0;
   unsigned int l_zmm_tmp = i_n_step/4;
-  unsigned int l_i = 0;
   unsigned int l_chunk = 0;
 
   /* load i_n_step registers */
