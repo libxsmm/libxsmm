@@ -1637,7 +1637,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             ( (io_generated_code->arch < LIBXSMM_X86_AVX512) && !((i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr)) ) ? LIBXSMM_X86_INSTR_VMOVSD : vmove_instr_in2,
             i_gp_reg_mapping->gp_reg_in2,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
-            (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in,
+            (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in1,
             'x',
             i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr) ) ? 1 : 0,  ( (i_mask_last_m_chunk == 1) && ( _im == (i_m_blocking-1)) && (vmove_instr_in2 != vbcast_instr)) ? _i_mask_reg : 0, 0 );
 

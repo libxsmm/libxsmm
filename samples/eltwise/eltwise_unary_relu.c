@@ -538,8 +538,11 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype_in;
-  libxsmm_blasint dtype_out;
+  char* dt_in = NULL;
+  char* dt_out = NULL;
+  libxsmm_datatype dtype_in;
+  libxsmm_datatype dtype_out;
+  libxsmm_datatype dtype_comp = LIBXSMM_DATATYPE_F32;
   char op;
   char type;
   libxsmm_blasint bitm;
@@ -551,15 +554,15 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_FAILURE;
 
   if ( argc != 10 ) {
-    printf(" Error! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: 4/2/1] [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   type      = *(argv[1]);
   op        = *(argv[2]);
   bitm      = atoi(argv[3]);
-  dtype_in  = atoi(argv[4]);
-  dtype_out = atoi(argv[5]);
+  dt_in     = argv[4];
+  dt_out    = argv[5];
   M         = atoi(argv[6]);
   N         = atoi(argv[7]);
   ldi       = atoi(argv[8]);
@@ -569,7 +572,6 @@ int main( int argc, char* argv[] ) {
     printf("Backward needs masks!\n");
     return ret;
   }
-
 
   if ( type == 'D' ) {
     itype = 0;
@@ -590,50 +592,28 @@ int main( int argc, char* argv[] ) {
     printf("Testing ReLU ");
   }
 
-  if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
-    printf("F32 F32 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
-    printf("BF16 BF16 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
-    printf("F32 BF16 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
-    printf("BF16 F32 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 1  && dtype_out == 1 ) {
-    printf("BF8 BF8 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 4  && dtype_out == 1 ) {
-    printf("F32 BF8 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 1  && dtype_out == 4 ) {
-    printf("BF8 F32 forward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
-    printf("F32 F32 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
-    printf("BF16 BF16 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
-    printf("F32 BF16 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
-    printf("BF16 F32 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 1 && dtype_out == 1 ) {
-    printf("BF8 BF8 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 1 ) {
-    printf("F32 BF8 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 1 && dtype_out == 4 ) {
-    printf("BF8 F32 backward - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_relu_bwd( M, N, ldi, ldo, itype, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  dtype_in  = char_to_libxsmm_datatype( dt_in );
+  dtype_out = char_to_libxsmm_datatype( dt_out );
+
+  if ( ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) ) ) {
+    if (  op == 'F' ) {
+      printf("in: %s out: %s comp: %s forward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
+      ret = test_relu_fwd( bitm, M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
+    } else if (  op == 'B' ) {
+      printf("in: %s out: %s comp: %s backward - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
+      ret = test_relu_bwd( M, N, ldi, ldo, itype, dtype_in, dtype_out, dtype_comp );
+    } else {
+      printf(" Not implemented case! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      exit(-1);
+    }
   } else {
-    printf(" Not implemented case! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: 4/2/1] [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Not implemented case! Usage: %s [D/L/E] [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 

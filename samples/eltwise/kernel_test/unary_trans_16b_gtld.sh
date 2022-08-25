@@ -29,7 +29,9 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} 100 100
-  ./eltwise_unary_transform T 2 ${M} ${N} 100 100
+  ./eltwise_unary_transform T F16 ${M} ${N} 100 100
+  ./eltwise_unary_transform T BF16 ${M} ${N} 100 100
+  ./eltwise_unary_transform T I16 ${M} ${N} 100 100
 done
 
 rm ${TESTFILE1}

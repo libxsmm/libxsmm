@@ -15,6 +15,35 @@
 #include <math.h>
 #include <string.h>
 
+libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
+  libxsmm_datatype dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
+
+  if ( (strcmp(dt, "F64") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_F64;
+  } else if ( (strcmp(dt, "I64") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_I64;
+  } else if ( (strcmp(dt, "F32") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_F32;
+  } else if ( (strcmp(dt, "I32") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_I32;
+  } else if ( (strcmp(dt, "F16") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_F16;
+  } else if ( (strcmp(dt, "BF16") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_BF16;
+  } else if ( (strcmp(dt, "I16") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_I16;
+  } else if ( (strcmp(dt, "BF8") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_BF8;
+  } else if ( (strcmp(dt, "HF8") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_HF8;
+  } else if ( (strcmp(dt, "I8") == 0) ) {
+    dtype = LIBXSMM_DATATYPE_I8;
+  } else {
+    dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
+  }
+
+  return dtype;
+}
 
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint neg_values ) {
   double* d_data = (double*) data;
