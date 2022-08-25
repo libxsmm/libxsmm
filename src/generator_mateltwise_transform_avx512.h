@@ -339,7 +339,17 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_microkernel( libxs
                                                                            const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
-
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                  const unsigned int                      i_gp_reg_in,
+                                                                                  const unsigned int                      i_gp_reg_out,
+                                                                                  const unsigned int                      i_mask_reg_0,
+                                                                                  const unsigned int                      i_perm_1st_stage_reg,
+                                                                                  const unsigned int                      i_perm_2nd_stage_reg,
+                                                                                  const unsigned int                      i_m_step,
+                                                                                  const unsigned int                      i_n_step,
+                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                          libxsmm_loop_label_tracker*             io_loop_label_tracker,
@@ -349,9 +359,19 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_microkernel( libxsmm
                                                                          const unsigned int                      i_gp_reg_n_loop,
                                                                          const unsigned int                      i_gp_reg_mask,
                                                                          const unsigned int                      i_mask_reg_0,
-                                                                         const unsigned int                      i_mask_reg_1,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_vnni2_08bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                io_generated_code,
+                                                                                  const unsigned int                      i_gp_reg_in,
+                                                                                  const unsigned int                      i_gp_reg_out,
+                                                                                  const unsigned int                      i_mask_reg_0,
+                                                                                  const unsigned int                      i_perm_1st_stage_reg,
+                                                                                  const unsigned int                      i_m_step,
+                                                                                  const unsigned int                      i_n_step,
+                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni4_to_vnni2_08bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
@@ -362,9 +382,9 @@ void libxsmm_generator_transform_vnni4_to_vnni2_08bit_avx512_microkernel( libxsm
                                                                          const unsigned int                      i_gp_reg_n_loop,
                                                                          const unsigned int                      i_gp_reg_mask,
                                                                          const unsigned int                      i_mask_reg_0,
-                                                                         const unsigned int                      i_mask_reg_1,
                                                                          const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                          const libxsmm_meltw_descriptor*         i_mateltwise_desc);
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni4_08bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                 io_generated_code,
                                                                                   const unsigned int                      i_gp_reg_in,
