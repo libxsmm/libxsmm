@@ -336,6 +336,36 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
               ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
               l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
+      } else if (colbias_precision == LIBXSMM_DATATYPE_BF8) {
+        if (l_n == 0) {
+          /* load 16 bit values into xmm portion of the register */
+          if ( (i_micro_kernel_config->use_masking_a_c != 0) && ( l_m == (l_m_blocking - 1) ) ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VMOVDQU8,
+                i_gp_reg_mapping->gp_reg_help_2,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                l_m * (i_micro_kernel_config->vector_length),
+                ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+                l_vec_reg_acc_start + l_m, 2, 1, 0 );
+          } else {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_micro_kernel_config->instruction_set,
+                ( io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VMOVSD : i_micro_kernel_config->c_vmove_instruction,
+                i_gp_reg_mapping->gp_reg_help_2,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                l_m * (i_micro_kernel_config->vector_length),
+                'x',
+                l_vec_reg_acc_start + l_m, 0, 1, 0 );
+          }
+          /* up-convert bf8 to fp32 */
+          libxsmm_generator_cvtbf8ps_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+                                             l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m );
+        } else {
+          libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
+              ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+              l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+        }
       } else if (colbias_precision == LIBXSMM_DATATYPE_F32) {
         if (l_n == 0) {
           /* Load bias vector */
