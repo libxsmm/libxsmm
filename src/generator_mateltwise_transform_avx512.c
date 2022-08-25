@@ -3060,12 +3060,12 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_mnblock_micro_kernel
                                                                                   const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                                   const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_zmm = 0;
-  unsigned int l_zmm_tmp = i_n_step;
+  unsigned int l_zmm_tmp = i_n_step/4;
   unsigned int l_i = 0;
   unsigned int l_chunk = 0;
 
   /* load i_n_step registers */
-  for ( l_zmm = 0; l_zmm < i_n_step; l_zmm+=4 ) {
+  for ( l_zmm = 0; l_zmm < i_n_step/4; l_zmm++ ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVUPS,
                                       i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldi * 4 * i_micro_kernel_config->datatype_size_in,
                                       i_micro_kernel_config->vector_name, l_zmm, i_mask_reg_0, 1, 0 );
@@ -3076,8 +3076,7 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_mnblock_micro_kernel
                                    i_gp_reg_in, i_m_step * 4 * i_micro_kernel_config->datatype_size_in );
 
   /* create normal format from VNNI4 */
-  for ( l_zmm = 0; l_zmm < i_n_step; l_zmm+=4 ) {
-
+  for ( l_zmm = 0; l_zmm < i_n_step/4; l_zmm++) {
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSHUFB, i_micro_kernel_config->vector_name,
                                                             i_perm_1st_stage_reg, l_zmm, l_zmm, 0, 0, 0, 0 );
 
@@ -3088,14 +3087,14 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_mnblock_micro_kernel
     if ( i_m_step % 16 == 0 ) {
       for (l_chunk = 0; l_chunk < 4; l_chunk++) {
         libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8 ( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI32X4, i_micro_kernel_config->vector_name,
-            i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_chunk * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out, 0, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm, 0, 0, l_chunk );
+            i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_chunk + 4 * l_zmm) * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out, 0, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm, 0, 0, l_chunk );
       }
     } else {
       for (l_chunk = 0; l_chunk < 4; l_chunk++) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8 ( io_generated_code, LIBXSMM_X86_INSTR_VEXTRACTI32X4, i_micro_kernel_config->vector_name,
             l_zmm, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm_tmp + l_chunk, 0, 0, 0, l_chunk );
         libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VMOVDQU8,
-                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_chunk * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_chunk + 4 * l_zmm) * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
                                           'x', l_zmm_tmp + l_chunk, i_mask_reg_0, 0, 1 );
       }
     }
@@ -3138,6 +3137,10 @@ void libxsmm_generator_transform_vnni4_to_norm_08bit_avx512_microkernel( libxsmm
   if (i_mateltwise_desc->n % 4 != 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
+  }
+
+  while (i_mateltwise_desc->n % n_block != 0) {
+    n_block -= 4;
   }
 
   /* set masks */
