@@ -252,7 +252,6 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_asimd( libxsmm_ge
  * @param i_gp_reg_tmp1 second temp register
  * @param i_sve_type type of sve (B, H, S, D)
  * @param i_pred_reg predicate register
- * @param i_vectorlenght the sve vectorlength in byte
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*        io_generated_code,
@@ -271,8 +270,7 @@ void libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_aarch64_sve( libxsmm_gene
                                                                     const unsigned int             i_gp_reg_tmp,
                                                                     const unsigned int             i_gp_reg_tmp1,
                                                                     const libxsmm_aarch64_sve_type i_sve_type,
-                                                                    const unsigned char            i_pred_reg,
-                                                                    const unsigned int             i_vectorlength );
+                                                                    const unsigned char            i_pred_reg );
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
                                                        const unsigned int                             i_vec_x,
@@ -319,7 +317,6 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*  
  * @param i_vec_temp temp sve register
  * @param i_sve_type type of sve (B, H, S, D)
  * @param i_pred_reg predicate register
- * @param i_vectorlenght the sve vectorlength in byte
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*        io_generated_code,
@@ -344,8 +341,7 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_sve( libxsmm_generated_code*    
                                                      const unsigned int             i_vec_exp_mask,
                                                      const unsigned int             i_vec_temp,
                                                      const libxsmm_aarch64_sve_type i_sve_type,
-                                                     const unsigned char            i_pred_reg,
-                                                     const unsigned int             i_vectorlength );
+                                                     const unsigned char            i_pred_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
@@ -393,7 +389,6 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_cod
  * @param i_vec_temp temp sve register
  * @param i_sve_type type of sve (B, H, S, D)
  * @param i_pred_reg predicate register
- * @param i_vectorlenght the sve vectorlength in byte
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_generated_code*        io_generated_code,
@@ -418,8 +413,7 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_generated_code*
                                                          const unsigned int             i_vec_exp_mask,
                                                          const unsigned int             i_vec_temp,
                                                          const libxsmm_aarch64_sve_type i_sve_type,
-                                                         const unsigned char            i_pred_reg,
-                                                         const unsigned int             i_vectorlength );
+                                                         const unsigned char            i_pred_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
@@ -466,7 +460,6 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_asimd( libxsm
  * @param i_gp_reg_tmp1 second temp register
  * @param i_sve_type type of sve (B, H, S, D)
  * @param i_pred_reg predicate register
- * @param i_vectorlenght the sve vectorlength in byte
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_generated_code*        io_generated_code,
@@ -485,8 +478,7 @@ void libxsmm_generator_prepare_coeffs_gelu_inv_ps_minimax3_aarch64_sve( libxsmm_
                                                                         const unsigned int             i_gp_reg_tmp,
                                                                         const unsigned int             i_gp_reg_tmp1,
                                                                         const libxsmm_aarch64_sve_type i_sve_type,
-                                                                        const unsigned char            i_pred_reg,
-                                                                        const unsigned int             i_vectorlength );
+                                                                        const unsigned char            i_pred_reg );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_coeffs_exp_ps_3dts_aarch64_asimd( libxsmm_generated_code*                        io_generated_code,
@@ -799,7 +791,6 @@ void libxsmm_aarch64_instruction_sve_rep16bytes_const_to_vec( libxsmm_generated_
  * @param i_gp_reg_tmp1 second temp register
  * @param i_pred_tmp predicate temp register
  * @param imm64_array array containing data to load
- * @param i_start_index starting offset in the array
  * @param i_bytes number of bytes to load to the vector register, must be a multiple of 16
  */
 LIBXSMM_API_INTERN
@@ -809,7 +800,6 @@ void libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( libxsmm_generated_c
                                                              const unsigned int      i_gp_reg_tmp1,
                                                              const unsigned int      i_pred_tmp,
                                                              void*                   imm64_array,
-                                                             const unsigned int      i_start_index,
                                                              const unsigned int      i_bytes);
 
 
