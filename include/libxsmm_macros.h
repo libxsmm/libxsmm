@@ -857,11 +857,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # if defined(NDEBUG)
 #   define LIBXSMM_ASSERT(EXPR) LIBXSMM_ASSUME(EXPR)
 # else
-#   if defined(_MSC_VER)
-#     define LIBXSMM_ASSERT(EXPR) (assert(EXPR), EXPR)
-#   else
-#     define LIBXSMM_ASSERT(EXPR) assert(EXPR)
-#   endif
+#   define LIBXSMM_ASSERT(EXPR) assert(EXPR)
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT_MSG)

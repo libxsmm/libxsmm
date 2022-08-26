@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
-  const T alpha = 1, beta = 1;
+  const T alpha = ALPHA, beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = ((sizeof(T) * lda * k + PAD - 1) & ~(PAD - 1)) / sizeof(T);
   const size_t nb = ((sizeof(T) * ldb * n + PAD - 1) & ~(PAD - 1)) / sizeof(T);
@@ -193,4 +193,3 @@ int main(int argc, char* argv[])
   return EXIT_FAILURE;
 #endif
 }
-

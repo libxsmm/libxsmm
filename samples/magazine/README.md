@@ -10,7 +10,7 @@ The sample codes rely on the minimum programming language supported by the libra
 
 ## Results
 
-To reproduce or repeat the performance measurements on a system of choice, all matrix operands are streamed by default. The file [magazine.h](https://github.com/libxsmm/libxsmm/blob/master/samples/magazine/magazine.h) can be edited to reproduce the desired combination (STREAM_A, STREAM_B, and STREAM_C). Whether or not matrix operands are streamed is motivated in publication. To reduce dependency on the compiler's OpenMP implementation, the benchmarks run single-threaded by default (`make OMP=1` can parallelize the batch of matrix multiplications). The outer/batch-level parallelization is also disabled to avoid accounting for proper first-touch memory population on multi-socket systems (NUMA). For the latter, the init-function (located in magazine.h) is not parallelized for simplicity.
+To reproduce or repeat the performance measurements on a system of choice, all matrix operands are streamed by default. The file [magazine.h](https://github.com/libxsmm/libxsmm/blob/main/samples/magazine/magazine.h) can be edited to reproduce the desired combination (STREAM_A, STREAM_B, and STREAM_C). Whether or not matrix operands are streamed is motivated in publication. To reduce dependency on the compiler's OpenMP implementation, the benchmarks run single-threaded by default (`make OMP=1` can parallelize the batch of matrix multiplications). The outer/batch-level parallelization is also disabled to avoid accounting for proper first-touch memory population on multi-socket systems (NUMA). For the latter, the init-function (located in magazine.h) is not parallelized for simplicity.
 
 ```bash
 cd libxsmm; make
@@ -33,5 +33,5 @@ Please note that if multiple threads are enabled and used, an appropriate pin-st
 
 The plot script relies at least on Gnuplot. ImageMagick (mogrify) can be also useful if PNGs are created, e.g., `./benchmark-plot.sh xsmm png 0` (the last argument disables single-file charts in contrast to multi-page PDFs created by default, the option also disables chart titles).
 
-The set of kernels executed during the benchmark can be larger than the kernels presented by the plots: [benchmark.set](https://github.com/libxsmm/libxsmm/blob/master/samples/magazine/benchmark.set) selects the kernels independent of the kernels executed (union).
+The set of kernels executed during the benchmark can be larger than the kernels presented by the plots: [benchmark.set](https://github.com/libxsmm/libxsmm/blob/main/samples/magazine/benchmark.set) selects the kernels independent of the kernels executed (union).
 

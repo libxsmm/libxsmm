@@ -91,137 +91,74 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
 }
 
 
-void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldi2, const libxsmm_blasint ldo,
-                    const void *in, const void *in2, char *out, const unsigned int op,
-                    const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
+void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
+                    const void *in0, const void *in1, char *out, const unsigned int op,
+                    const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   size_t i,j;
 
-  if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const float* f_in = (const float*)in;
-    float* f_out = (float*)out;
-    float in2_value;
+  if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
+    float in1_value;
+    float in0_value;
+    float out_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
+        if ( dtype_in0 == LIBXSMM_DATATYPE_F32 ) {
+          const float* f_in0 = (const float*)in0;
+          in0_value = f_in0[(j*ldi0) + i];
+        } else if ( dtype_in0 == LIBXSMM_DATATYPE_BF16 ) {
+          const libxsmm_bfloat16* bf16_in0 = (const libxsmm_bfloat16*)in0;
+          libxsmm_convert_bf16_f32( &(bf16_in0[(j*ldi0) + i]), &in0_value, 1 );
+        } else if ( dtype_in0 == LIBXSMM_DATATYPE_BF8 ) {
+          const libxsmm_bfloat8* bf8_in0 = (const libxsmm_bfloat8*)in0;
+          libxsmm_convert_bf8_f32( &(bf8_in0[(j*ldi0) + i]), &in0_value, 1 );
         } else {
-          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
-          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+          /* shouldn't happen */
         }
-        f_out[(j*ldo) + i] = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, f_out[(j*ldo) + i], op);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const libxsmm_bfloat16* bf_in = (const libxsmm_bfloat16*)in;
-    libxsmm_bfloat16* bf_out = (libxsmm_bfloat16*)out;
-    float in_value, in2_value, out_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
+
+        if ( dtype_in1 == LIBXSMM_DATATYPE_F32 ) {
+          const float* f_in1 = (const float*)in1;
+          in1_value = f_in1[(j*ldi0) + i];
+        } else if ( dtype_in1 == LIBXSMM_DATATYPE_BF16 ) {
+          const libxsmm_bfloat16* bf16_in1 = (const libxsmm_bfloat16*)in1;
+          libxsmm_convert_bf16_f32( &(bf16_in1[(j*ldi0) + i]), &in1_value, 1 );
+        } else if ( dtype_in1 == LIBXSMM_DATATYPE_BF8 ) {
+          const libxsmm_bfloat8* bf8_in1 = (const libxsmm_bfloat8*)in1;
+          libxsmm_convert_bf8_f32( &(bf8_in1[(j*ldi0) + i]), &in1_value, 1 );
         } else {
-          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
-          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+          /* shouldn't happen */
         }
-        libxsmm_convert_bf16_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        libxsmm_convert_bf16_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
-        out_value = fp32_binary_compute(in_value, in2_value, out_value, op);
-        libxsmm_rne_convert_fp32_bf16(&out_value, &(bf_out[(j*ldo) + i]), 1);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const float* f_in = (const float*)in;
-    libxsmm_bfloat16* bf_out = (libxsmm_bfloat16*)out;
-    float out_value, in2_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
+
+        if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
+          const float* f_out = (const float*)out;
+          out_value = f_out[(j*ldo) + i];
+        } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
+          const libxsmm_bfloat16* bf16_out = (const libxsmm_bfloat16*)out;
+          libxsmm_convert_bf16_f32( &(bf16_out[(j*ldo) + i]), &out_value, 1 );
+        } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
+          const libxsmm_bfloat8* bf8_out = (const libxsmm_bfloat8*)out;
+          libxsmm_convert_bf8_f32( &(bf8_out[(j*ldo) + i]), &out_value, 1 );
         } else {
-          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
-          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+          /* shouldn't happen */
         }
-        libxsmm_convert_bf16_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
-        out_value = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, out_value, op);
-        libxsmm_rne_convert_fp32_bf16(&out_value, &(bf_out[(j*ldo) + i]), 1);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const libxsmm_bfloat16* bf_in = (const libxsmm_bfloat16*)in;
-    float* f_out = (float*)out;
-    float in_value, in2_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
+
+        out_value = fp32_binary_compute(in0_value, in1_value, out_value, op);
+
+        if ( dtype_out == LIBXSMM_DATATYPE_F32 ) {
+          float* f_out = (float*)out;
+          f_out[(j*ldo) + i] = out_value;
+        } else if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
+          libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
+          libxsmm_rne_convert_fp32_bf16(&out_value, &(bf16_out[(j*ldo) + i]), 1);
+        } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
+          libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
+          libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
         } else {
-          const libxsmm_bfloat16* bf_in2 = (const libxsmm_bfloat16*)in2;
-          libxsmm_convert_bf16_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
+          /* shouldn't happen */
         }
-        libxsmm_convert_bf16_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        f_out[(j*ldo) + i] = fp32_binary_compute(in_value, in2_value, f_out[(j*ldo) + i], op);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_BF8) && (dtype_out == LIBXSMM_DATATYPE_BF8) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const libxsmm_bfloat8* bf_in = (const libxsmm_bfloat8*)in;
-    libxsmm_bfloat8* bf_out = (libxsmm_bfloat8*)out;
-    float in_value, in2_value, out_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
-        } else {
-          const libxsmm_bfloat8* bf_in2 = (const libxsmm_bfloat8*)in2;
-          libxsmm_convert_bf8_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
-        }
-        libxsmm_convert_bf8_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        libxsmm_convert_bf8_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
-        out_value = fp32_binary_compute(in_value, in2_value, out_value, op);
-        libxsmm_rne_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_BF8) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const float* f_in = (const float*)in;
-    libxsmm_bfloat8* bf_out = (libxsmm_bfloat8*)out;
-    float out_value, in2_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
-        } else {
-          const libxsmm_bfloat8* bf_in2 = (const libxsmm_bfloat8*)in2;
-          libxsmm_convert_bf8_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
-        }
-        libxsmm_convert_bf8_f32( &(bf_out[(j*ldo) + i]), &out_value, 1 );
-        out_value = fp32_binary_compute(f_in[(j*ldi) + i], in2_value, out_value, op);
-        libxsmm_rne_convert_fp32_bf8(&out_value, &(bf_out[(j*ldo) + i]), 1);
-      }
-    }
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_BF8) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
-    const libxsmm_bfloat8* bf_in = (const libxsmm_bfloat8*)in;
-    float* f_out = (float*)out;
-    float in_value, in2_value;
-    for ( j = 0; j < N; ++j ) {
-      for ( i = 0; i < M; ++i ) {
-        if (dtype_in1 == LIBXSMM_DATATYPE_F32) {
-          const float* f_in2 = (const float*)in2;
-          in2_value = f_in2[(j*ldi2) + i];
-        } else {
-          const libxsmm_bfloat8* bf_in2 = (const libxsmm_bfloat8*)in2;
-          libxsmm_convert_bf8_f32( &(bf_in2[(j*ldi2) + i]), &in2_value, 1 );
-        }
-        libxsmm_convert_bf8_f32( &(bf_in[(j*ldi) + i]), &in_value, 1 );
-        f_out[(j*ldo) + i] = fp32_binary_compute(in_value, in2_value, f_out[(j*ldo) + i], op);
       }
     }
   } else {
-    /* should not happen */
+    /* shouodn't happen */
   }
 }
 
@@ -355,10 +292,14 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype_in;
-  libxsmm_blasint dtype_in1;
-  libxsmm_blasint dtype_out;
-  libxsmm_blasint dtype_comp;
+  char* dt_in0;
+  char* dt_in1;
+  char* dt_out;
+  char* dt_comp;
+  libxsmm_datatype dtype_in0;
+  libxsmm_datatype dtype_in1;
+  libxsmm_datatype dtype_out;
+  libxsmm_datatype dtype_comp;
   libxsmm_blasint op;
   libxsmm_blasint use_bcast;
   libxsmm_blasint M;
@@ -367,24 +308,28 @@ int main( int argc, char* argv[] ) {
   libxsmm_blasint ldo;
   libxsmm_blasint valid_op;
   char opname[256];
-  char in1_dt_name[256];
   int res = EXIT_FAILURE;
 
   if ( argc != 11 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: 4/2] [prec_in1: 4/2] [compute_prec: 4/2] [prec_out: 4/2] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   op         = atoi(argv[1]);
   use_bcast  = atoi(argv[2]);
-  dtype_in   = atoi(argv[3]);
-  dtype_in1  = atoi(argv[4]);
-  dtype_comp = atoi(argv[5]);
-  dtype_out  = atoi(argv[6]);
+  dt_in0     = argv[3];
+  dt_in1     = argv[4];
+  dt_comp    = argv[5];
+  dt_out     = argv[6];
   M          = atoi(argv[7]);
   N          = atoi(argv[8]);
   ldi        = atoi(argv[9]);
   ldo        = atoi(argv[10]);
+
+  dtype_in0  = char_to_libxsmm_datatype( dt_in0 );
+  dtype_in1  = char_to_libxsmm_datatype( dt_in1 );
+  dtype_out  = char_to_libxsmm_datatype( dt_out );
+  dtype_comp = char_to_libxsmm_datatype( dt_comp );
 
   set_opname(op, opname);
 
@@ -411,37 +356,33 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-  if (dtype_in1 == 4) {
-    sprintf(in1_dt_name, "F32");
-  } else if (dtype_in1 == 2) {
-    sprintf(in1_dt_name, "BF16");
+  if ( valid_op > 0 ) {
+    if ( ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* BF16 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF16) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* BF8 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+      printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
+        libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
+      res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
+    } else {
+      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      exit(-1);
+    }
   } else {
-    sprintf(in1_dt_name, "BF8");
-  }
-
-  if ( valid_op > 0 && dtype_in == 4 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary (BF16, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 2 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> BF16 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 2 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (BF16, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF16, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 1 && dtype_comp == 4 ) {
-    printf("Testing binary (BF8, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 4 && dtype_out == 1 && dtype_comp == 4 ) {
-    printf("Testing binary (F32, %s) -> BF8 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_F32, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32);
-  } else if ( valid_op > 0 && dtype_in == 1 && dtype_out == 4 && dtype_comp == 4 ) {
-    printf("Testing binary (BF8, %s) -> F32 %s - M=%i, N=%i, LDI=%i, LDO=%i\n", in1_dt_name, opname, M, N, ldi, ldo);
-    res = test_binary_op( M, N, ldi, ldo, op, use_bcast, LIBXSMM_DATATYPE_BF8, (dtype_in1 == 4) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
-  } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6]] [prec_in: 4/2/1] compute_prec: 4 [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/BF8] [prec_in1: F32/BF16/BF8] [compute_prec: F32] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 

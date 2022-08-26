@@ -7,7 +7,11 @@
 #include <chrono>
 #include <vector>
 #include <random>
-#include <libxsmm.h>
+#if !defined(USE_HEADER_ONLY)
+# include <libxsmm.h>
+#else
+# include <libxsmm_source.h>
+#endif
 #include "mdarray.hpp"
 #include "rt_graph.hpp"
 

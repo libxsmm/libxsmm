@@ -1419,6 +1419,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   /* Auxiliary data structure and fields when emulating AMX instructions */
   libxsmm_tile_config tile_config;
   unsigned int emulation_scratch_offset;
+  unsigned int gemm_scratch_ld;
   unsigned int lda_emu;
   unsigned int ldb_emu;
   unsigned int ldc_emu;
@@ -1439,6 +1440,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int k_amx_microkernel;
   unsigned int B_offs_trans;
   unsigned int stride_b_trans;
+
+  /* Auxiliary fields for LP emulations */
+  unsigned int bf8_gemm_via_stack_alloc_tensors;
 
 } libxsmm_micro_kernel_config;
 
@@ -1903,7 +1907,14 @@ typedef enum libxsmm_gemm_stack_var {
   LIBXSMM_GEMM_STACK_VAR_BRCOUNT              = 20,
   LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR        = 21,
   LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR        = 22,
-  LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR   = 23
+  LIBXSMM_GEMM_STACK_VAR_AVX2_LP_HELPER_PTR   = 23,
+  LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR            = 24,
+  LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR            = 25,
+  LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR     = 26,
+  LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR        = 27,
+  LIBXSMM_GEMM_STACK_VAR_C_SCRATCH_PTR        = 28,
+  LIBXSMM_GEMM_STACK_VAR_C_OUTPUT_PTR         = 29,
+  LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR     = 30
 } libxsmm_gemm_stack_var;
 
 #if 0

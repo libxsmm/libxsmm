@@ -25,7 +25,7 @@ if [ "${MKDIR}" ] && [ "${WGET}" ]; then
     for KIND in ${KINDS}; do
       mkdir ${KIND}; cd ${KIND}
       for FILE in ${FILES}; do
-        ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx
+        ${WGET} -N https://github.com/libxsmm/libxsmm/raw/main/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx
       done
       cd ..
     done

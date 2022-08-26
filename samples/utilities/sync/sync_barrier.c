@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   num_cores = 1;
 #endif
 
-  num_iterations = (1 < argc ? atoi(argv[3]) : 50000);
+  num_iterations = (3 < argc ? atoi(argv[3]) : 50000);
   assert(num_iterations > 0);
 
   /* create a new barrier */
