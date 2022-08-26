@@ -772,7 +772,7 @@ endif
 # Select x86 code path (if not selected otherwise)
 CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
-  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(UNAME) -m" ]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(MNAME)" ]; then \
     sysctl -a machdep.cpu.features \
       machdep.cpu.extfeatures \
       machdep.cpu.leaf7_features \
@@ -814,7 +814,7 @@ MIC ?= 0
 # Select aarch64 code path
 CPUFLAGS_AARCH64 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 Features /proc/cpuinfo | cut -d: -f2-; \
-  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(UNAME) -m" ]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(MNAME)" ]; then \
     sysctl -a hw.optional.neon | cut -d: -f2-; \
   fi))
 ASIMD ?= 1
@@ -1804,6 +1804,15 @@ endif
 ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
   CTARGET := $(NULL)
+  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
+    CTARGET := -march=native -mtune=native
+  else ifeq (Darwin,$(UNAME))
+    ifeq (arm64,$(MNAME))
+    ifneq (,$(call ctest,$(CC),-mcpu=apple-m1,$(NULL) $(NULL)))
+      CTARGET := -mcpu=apple-m1
+    endif
+    endif
+  endif
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
