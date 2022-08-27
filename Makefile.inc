@@ -1808,8 +1808,8 @@ ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
     CTARGET := -march=native -mtune=native
   else ifeq (Darwin,$(UNAME))
     ifeq (arm64,$(MNAME))
-    ifneq (,$(call ctest,$(CC),-mcpu=apple-m1,$(NULL) $(NULL)))
-      CTARGET := -mcpu=apple-m1
+    ifneq (,$(call ctest,$(CC),-target arm64-apple-macos -mcpu=apple-m1,$(NULL) $(NULL)))
+      CTARGET := -target arm64-apple-macos -mcpu=apple-m1
     endif
     endif
   endif
