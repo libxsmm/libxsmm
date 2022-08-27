@@ -1748,10 +1748,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
   unsigned int                      cvt_result_to_bf8;
+  unsigned int                      cvt_result_to_hf8;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
+  unsigned int                      dcvt_mask_aux2;
   unsigned int                      dcvt_zmm_aux0;
   unsigned int                      dcvt_zmm_aux1;
+  unsigned int                      dcvt_zmm_aux2;
+  unsigned int                      dcvt_zmm_aux3;
   unsigned int                      reduce_vreg;
   unsigned int                      n_avail_gpr;
   unsigned int                      gpr_pool[16];
