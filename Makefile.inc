@@ -2364,6 +2364,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
   endif
 endif
+ifneq (0,$(BLAS))
 ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
     ifneq (0,$(DEPSTATIC))
@@ -2386,6 +2387,7 @@ ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
     endif
   endif
+endif
 endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
