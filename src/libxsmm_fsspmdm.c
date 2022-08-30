@@ -372,11 +372,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse1;
     }
     else if (NULL != k_sparse1) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse1);
       libxsmm_free(fp);
-#endif
     }
 
     /* Sparse (wide) fastest */
@@ -387,11 +385,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse2;
     }
     else if (NULL != k_sparse2) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse2);
       libxsmm_free(fp);
-#endif
     }
 
     /* Sparse (widest) fastest */
@@ -402,11 +398,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse4;
     }
     else if (NULL != k_sparse4) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse4);
       libxsmm_free(fp);
-#endif
     }
 
     if (k_dense != new_handle->kernel) {
@@ -500,14 +494,12 @@ LIBXSMM_API void libxsmm_fsspmdm_destroy(libxsmm_fsspmdm* handle)
       libxsmm_free(handle->a_dense);
     }
     else {
-#if !defined(__APPLE__) && !defined(__arm64__)
       /* deallocate code known to be not registered; no index attached
          do not use libxsmm_release_kernel here! We also need to work
          around pointer-to-function to pointer-to-object conversion */
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &handle->kernel);
       libxsmm_free(fp);
-#endif
     }
     free(handle);
   }
