@@ -2597,7 +2597,7 @@ void libxsmm_generator_vcvt_hf8_tofrom_f32_avx512_prep_stack ( libxsmm_generated
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push overflow_exp on the stack --> rsp + 128 */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00160016);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, io_gp_reg, 0x00170017);
   libxsmm_x86_instruction_push_reg( io_generated_code, io_gp_reg );
 
   /* push signmask_f16 on the stack --> rsp + 120 */
