@@ -292,7 +292,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark dense */
     if (NULL != k_dense && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       for (i = 0; i < 250; ++i) {
         gemm_param.b.primary = aa_dense;
@@ -308,7 +310,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (regular) */
     if (NULL != k_sparse1 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
@@ -320,7 +324,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (wide) */
     if (NULL != k_sparse2 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
@@ -332,7 +338,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (widest) */
     if (NULL != k_sparse4 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -445,9 +453,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C)
 {
   libxsmm_gemm_param gemm_param;
-
   assert(NULL != handle);
+#if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
   if (NULL == handle->a_dense) {
     gemm_param.b.primary = (void*)B;
     gemm_param.c.primary = (void*)C;

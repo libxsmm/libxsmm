@@ -883,7 +883,9 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
   if (begin < end) {
     char *const a0 = (char*)a, *const b0 = (char*)b, *const c0 = (char*)c;
     libxsmm_gemm_param gemm_param;
-    memset(&gemm_param, 0, sizeof(gemm_param));
+#if defined(_DEBUG)
+    memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
     if ((libxsmm_blasint)sizeof(libxsmm_blasint) <= LIBXSMM_ABS(index_stride)) { /* stride arrays contain indexes */
       const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
