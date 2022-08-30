@@ -1528,8 +1528,8 @@ ifneq ($(PREFIX),$(ABSDIR))
 	fi
 	@echo
 	@echo "LIBXSMM installing utilities..."
-	@mkdir -p $(PREFIX)/$(POUTDIR)
-	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX)/$(POUTDIR) 2>/dev/null || true
+	@mkdir -p $(PREFIX)
+	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@mkdir -p $(PREFIX)/$(PBINDIR)
