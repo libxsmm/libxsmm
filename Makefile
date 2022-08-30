@@ -1532,6 +1532,7 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/.mktmp.sh $(PREFIX) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/.flock.sh $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.state.sh $(PREFIX) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@mkdir -p $(PREFIX)/$(PBINDIR)

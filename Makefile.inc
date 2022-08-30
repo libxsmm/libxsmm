@@ -2267,9 +2267,9 @@ else ifneq (0,$(BLAS)) # generic
       endif
     else # static
       ifeq (1,$(BLAS)) # sequential
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.$(SLIBEXT) $(BLAS_LDFLAGS)
       else # multi-threaded
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.$(SLIBEXT) $(BLAS_LDFLAGS)
       endif
     endif
   else ifeq (,$(strip $(BLASLIB)))
