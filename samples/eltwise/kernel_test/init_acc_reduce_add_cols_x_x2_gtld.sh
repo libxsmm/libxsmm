@@ -3,10 +3,10 @@
 PREC_LIST="F32";
 
 if [[ ${LIBXSMM_TARGET} == "clx" ]]; then
-    PREC_LIST="F32 BF16 BF8";
+    PREC_LIST="F32 BF16 BF8 HF8";
 fi
 if [[ ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
-    PREC_LIST="F32 BF16 BF8";
+    PREC_LIST="F32 BF16 BF8 HF8";
 fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
     exit 0;
