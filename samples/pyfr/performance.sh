@@ -9,7 +9,7 @@
 ###############################################################################
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
-BASE=$(echo "$0" | sed 's/\(.[^/]*\/\)*//' | sed -n 's/\(.*[^.]\)\..*/\1/p')
+BASE=$(echo "$0" | sed 's/\(.[^/]*\/\)*//' | sed 's/\(.*\)\..*/\1/')
 MATS=${HERE}/mats
 #
 # Build PyFR sample code with "make OMP=0".
@@ -38,7 +38,7 @@ POSTFX="-sp"
 PERF_B=1
 MATX=$(echo "${MATS}" | sed 's/\//\\\//g')
 for MTX in "${MATS}"/p*/{pri,hex}/m{3,6}"${POSTFX}".mtx; do
-  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed -n 's/\(.*[^.]\)\..*/\1/p' | sed "s/${POSTFX}$//")
+  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
   RESULT=$("${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" "${PERF_B}")
   SPARSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p")
   DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
@@ -49,7 +49,7 @@ done | tee -a "${BASE}.csv"
 PERF_B=0
 export FSSPMDM_NTS=0
 for MTX in "${MATS}"/p*/{pri,hex}/m{0,132,460}"${POSTFX}".mtx; do
-  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed -n 's/\(.*[^.]\)\..*/\1/p' | sed "s/${POSTFX}$//")
+  MAT=$(echo "${MTX}" | sed "s/^${MATX}\///" | sed 's/\(.*\)\..*/\1/' | sed "s/${POSTFX}$//")
   RESULT=$("${HERE}/pyfr_driver_asp_reg" "${MTX}" "${PERF_N}" "${PERF_R}" "${PERF_B}")
   SPARSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (sparse)/\1/p")
   DENSE=$(echo "${RESULT}" | sed -n "s/[[:space:]][[:space:]]*LIBXSMM GFLOPS : \(..*\) (dense)/\1/p")
