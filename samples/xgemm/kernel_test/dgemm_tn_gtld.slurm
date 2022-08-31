@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-TESTFILE1=$(mktemp -p .)
-TESTFILE2=$(mktemp -p .)
+TESTFILE1=$(mktemp)
+TESTFILE2=$(mktemp)
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
