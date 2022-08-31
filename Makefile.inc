@@ -772,7 +772,7 @@ endif
 # Select x86 code path (if not selected otherwise)
 CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
-  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(UNAME) -m" ]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(MNAME)" ]; then \
     sysctl -a machdep.cpu.features \
       machdep.cpu.extfeatures \
       machdep.cpu.leaf7_features \
@@ -814,7 +814,7 @@ MIC ?= 0
 # Select aarch64 code path
 CPUFLAGS_AARCH64 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 Features /proc/cpuinfo | cut -d: -f2-; \
-  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(UNAME) -m" ]; then \
+  elif [ "Darwin" = "$(UNAME)" ] && [ "arm64" = "$(MNAME)" ]; then \
     sysctl -a hw.optional.neon | cut -d: -f2-; \
   fi))
 ASIMD ?= 1
@@ -1804,6 +1804,15 @@ endif
 ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
   CTARGET := $(NULL)
+  ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
+    CTARGET := -march=native -mtune=native
+  else ifeq (Darwin,$(UNAME))
+    ifeq (arm64,$(MNAME))
+    ifneq (,$(call ctest,$(CC),-target arm64-apple-macos -mcpu=apple-m1,$(NULL) $(NULL)))
+      CTARGET := -target arm64-apple-macos -mcpu=apple-m1
+    endif
+    endif
+  endif
 endif
 # avoid unnecessary state
 ifeq ($(CTARGET),$(FTARGET))
@@ -2258,9 +2267,9 @@ else ifneq (0,$(BLAS)) # generic
       endif
     else # static
       ifeq (1,$(BLAS)) # sequential
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.$(SLIBEXT) $(BLAS_LDFLAGS)
       else # multi-threaded
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.$(SLIBEXT) $(BLAS_LDFLAGS)
       endif
     endif
   else ifeq (,$(strip $(BLASLIB)))
@@ -2355,6 +2364,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
   endif
 endif
+ifneq (0,$(BLAS))
 ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
     ifneq (0,$(DEPSTATIC))
@@ -2377,6 +2387,7 @@ ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
     endif
   endif
+endif
 endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))

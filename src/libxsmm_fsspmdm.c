@@ -32,7 +32,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   double* a_csr_values = NULL;
   void* aa_dense = NULL;
 
-  if (NULL == alpha || NULL == beta || NULL == a_dense) { /* basic checks */
+  if (NULL == a_dense) { /* basic checks */
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
@@ -65,7 +65,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   switch ((int)datatype) {
     case LIBXSMM_DATATYPE_F64: {
-      const double fbeta = *(const double*)beta;
+      const double fbeta = (NULL != beta ? (*(const double*)beta) : LIBXSMM_BETA);
       if (0 == (N % N_sparse1)
         && (LIBXSMM_FEQ(fbeta, 1) || LIBXSMM_FEQ(fbeta, 0))
         && lda >= K && ldc >= N && ldb >= N)
@@ -84,7 +84,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       else typesize = 0;
     } break;
     case LIBXSMM_DATATYPE_F32: {
-      const float fbeta = *(const float*)beta;
+      const float fbeta = (NULL != beta ? (*(const float*)beta) : LIBXSMM_BETA);
       if (0 == (N % N_sparse1)
         && (LIBXSMM_FEQ(fbeta, 1) || LIBXSMM_FEQ(fbeta, 0))
         && lda >= K && ldc >= N && ldb >= N)
@@ -175,13 +175,14 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   switch ((int)datatype) {
     case LIBXSMM_DATATYPE_F64: {
-      const double dalpha = *(const double*)alpha, *const A = (const double*)a_dense;
+      const double falpha = (NULL != alpha ? (*(const double*)alpha) : LIBXSMM_ALPHA);
+      const double *const A = (const double*)a_dense;
       assert(NULL == k_dense || NULL != aa_dense);
       /* Populate CSR structure, and copy A-matrix */
       for (i = 0, n = 0; i < M; ++i) {
         a_csr_rowptr[i] = n;
         for (j = 0; j < K; ++j) {
-          const double aij_alpha = dalpha * A[i*lda+j];
+          const double aij_alpha = falpha * A[i*lda+j];
           if (LIBXSMM_NEQ(aij_alpha, 0)) {
             assert(n < a_nnz);
             a_csr_values[n] = aij_alpha;
@@ -197,7 +198,8 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       a_csr_rowptr[M] = n;
     } break;
     case LIBXSMM_DATATYPE_F32: {
-      const float falpha = *(const float*)alpha, * const A = (const float*)a_dense;
+      const float falpha = (NULL != alpha ? (*(const float*)alpha) : LIBXSMM_ALPHA);
+      const float *const A = (const float*)a_dense;
       assert(NULL == k_dense || NULL != aa_dense);
       /* Populate CSR structure, and copy A-matrix */
       for (i = 0, n = 0; i < M; ++i) {
@@ -274,14 +276,16 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       if (NULL != B && NULL != C) {
         switch ((int)datatype) {
           case LIBXSMM_DATATYPE_F64: {
+            const double fbeta = (NULL != beta ? (*(const double*)beta) : LIBXSMM_BETA);
             LIBXSMM_MATINIT(double, 0/*seed*/, B, N, K, ldb, 1/*scale*/);
-            if (LIBXSMM_NEQ(*(const double*)beta, 0)) {
+            if (LIBXSMM_NEQ(fbeta, 0)) {
               LIBXSMM_MATINIT(double, 0/*seed*/, C, N, M, ldc, 1/*scale*/);
             }
           } break;
           case LIBXSMM_DATATYPE_F32: {
+            const float fbeta = (NULL != beta ? (*(const float*)beta) : LIBXSMM_BETA);
             LIBXSMM_MATINIT(float, 0/*seed*/, B, N, K, ldb, 1/*scale*/);
-            if (LIBXSMM_NEQ(*(const float*)beta, 0)) {
+            if (LIBXSMM_NEQ(fbeta, 0)) {
               LIBXSMM_MATINIT(float, 0/*seed*/, C, N, M, ldc, 1/*scale*/);
             }
           } break;
@@ -292,7 +296,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark dense */
     if (NULL != k_dense && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       for (i = 0; i < 250; ++i) {
         gemm_param.b.primary = aa_dense;
@@ -308,7 +314,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (regular) */
     if (NULL != k_sparse1 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
@@ -320,7 +328,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (wide) */
     if (NULL != k_sparse2 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = B;
       gemm_param.c.primary = C;
@@ -332,7 +342,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
     /* Benchmark sparse (widest) */
     if (NULL != k_sparse4 && NULL != B && NULL != C) {
+#if defined(_DEBUG)
       memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
       t = libxsmm_timer_tick();
       gemm_param.b.primary = (void*)B;
       gemm_param.c.primary = (void*)C;
@@ -360,11 +372,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse1;
     }
     else if (NULL != k_sparse1) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse1);
       libxsmm_free(fp);
-#endif
     }
 
     /* Sparse (wide) fastest */
@@ -375,11 +385,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse2;
     }
     else if (NULL != k_sparse2) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse2);
       libxsmm_free(fp);
-#endif
     }
 
     /* Sparse (widest) fastest */
@@ -390,11 +398,9 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
       new_handle->kernel = k_sparse4;
     }
     else if (NULL != k_sparse4) {
-#if !defined(__APPLE__) && !defined(__arm64__)
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &k_sparse4);
       libxsmm_free(fp);
-#endif
     }
 
     if (k_dense != new_handle->kernel) {
@@ -445,9 +451,10 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 LIBXSMM_API void libxsmm_fsspmdm_execute(const libxsmm_fsspmdm* handle, const void* B, void* C)
 {
   libxsmm_gemm_param gemm_param;
-
   assert(NULL != handle);
+#if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+#endif
   if (NULL == handle->a_dense) {
     gemm_param.b.primary = (void*)B;
     gemm_param.c.primary = (void*)C;
@@ -487,14 +494,12 @@ LIBXSMM_API void libxsmm_fsspmdm_destroy(libxsmm_fsspmdm* handle)
       libxsmm_free(handle->a_dense);
     }
     else {
-#if !defined(__APPLE__) && !defined(__arm64__)
       /* deallocate code known to be not registered; no index attached
          do not use libxsmm_release_kernel here! We also need to work
          around pointer-to-function to pointer-to-object conversion */
       void* fp = NULL;
       LIBXSMM_ASSIGN127(&fp, &handle->kernel);
       libxsmm_free(fp);
-#endif
     }
     free(handle);
   }
