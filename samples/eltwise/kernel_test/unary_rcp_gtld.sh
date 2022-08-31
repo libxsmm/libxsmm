@@ -15,7 +15,7 @@ if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
     exit 0;
 fi
 
-TESTFILE1=$(mktemp -p .)
+TESTFILE1=$(mktemp)
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
