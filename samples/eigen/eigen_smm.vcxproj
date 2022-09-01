@@ -31,7 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
-    <None Include="eigen_smm.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>eigen_smm</ProjectName>
