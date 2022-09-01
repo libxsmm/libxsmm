@@ -49,14 +49,22 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
-  tmp_vreg0 = l_vec_reg_acc_start - 1;
+  tmp_vreg0 = 0;
 
   if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
     /* We need 5 tmp vregs... If we don't have that many, store some in the stack and restore for processing  */
-    tmp_vreg1 = l_vec_reg_acc_start - 2;
-    tmp_vreg2 = l_vec_reg_acc_start - 3;
-    mask_helper0_vreg = l_vec_reg_acc_start - 4;
-    mask_helper1_vreg = l_vec_reg_acc_start - 5;
+    tmp_vreg1 = 1;
+    tmp_vreg2 = 2;
+    mask_helper0_vreg = 3;
+    mask_helper1_vreg = 4;
+
+    if (l_vec_reg_acc_start <= 4) {
+      /* Save the accumulators to scratch  */
+      libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
+      for (l_n = l_vec_reg_acc_start; l_n <= 4; l_n++) {
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_n*64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+      }
+    }
 
     /* Prepare mask helpers */
     /* load 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 into mask_helper0/1_vreg */
@@ -93,6 +101,16 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
       unsigned int l_mask_adv = 0;
       for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
         l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
+
+        /* Have to restore accumulator  */
+        if (l_vec_reg_acc_start <= 4) {
+          if (l_cur_vreg <= 4) {
+            libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
+            libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_cur_vreg*64, tmp_vreg0, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+            l_cur_vreg = tmp_vreg0;
+          }
+        }
+
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V,
                                                    l_cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, tmp_vreg0,
                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
@@ -104,6 +122,14 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
                                                      (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+    }
+
+    if (l_vec_reg_acc_start <= 4) {
+      /* Restore the accumulators from scratch  */
+      libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
+      for (l_n = l_vec_reg_acc_start; l_n <= 4; l_n++) {
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_n*64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+      }
     }
   }
 
@@ -124,7 +150,6 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
     }
   }
 }
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
