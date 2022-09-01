@@ -82,7 +82,6 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
           s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(libxsmm_rng_f64() * 20.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
           c_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) (libxsmm_rng_f64() * 20.0);
-        } else {
         }
       }
     }
@@ -116,7 +115,6 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
         s_data[(i*ld)+j] = s_data[i*ld];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[i*ld];
-      } else {
       }
     }
   }
@@ -139,7 +137,6 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
         s_data[(i*ld)+j] = s_data[j];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8)) {
         c_data[(i*ld)+j] = c_data[j];
-      } else {
       }
     }
   }
@@ -162,7 +159,6 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
         s_data[(i*ld)+j] = s_data[0];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[0];
-      } else {
       }
     }
   }
@@ -225,7 +221,6 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );
-  } else {
   }
 
   return l_diff;
@@ -236,18 +231,18 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
 #define MAX_BENCHMARK_ARCHITECTURES 2
 
 const char* getBenchmarkedArch(int index) {
-  if (index < 0 || index >= MAX_BENCHMARK_ARCHITECTURES) return 0;
   static const char* archs[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   int i;
+  if (index < 0 || index >= MAX_BENCHMARK_ARCHITECTURES) return 0;
   if (archs[0] == 0) {
+    /* find secondary/comparison architectures (currently only one) */
+    const char* arch1 = getenv("ARCH1");
     /* init all other architectures to zero, just in case */
     for (i = 1; i < MAX_BENCHMARK_ARCHITECTURES; i++) {
       archs[i] = NULL;
     }
     /* find main architecture */
     archs[0] = libxsmm_get_target_arch();
-    /* find secondary/comparison architectures (currently only one) */
-    const char* arch1 = getenv("ARCH1");
     if (arch1) {
       libxsmm_set_target_arch(arch1);
       archs[1] = libxsmm_get_target_arch();
@@ -257,12 +252,12 @@ const char* getBenchmarkedArch(int index) {
 }
 
 /* returns the target duration of every single benchmark run; if the duration is <= 0 or NaN, no benchmarks will be run */
-double getBenchmarkDuration(){
+double getBenchmarkDuration() {
   static double duration = -1;
   if (duration < 0) {
-    duration = 0.0;/* benchmarking is deactivated by default */
     const char* dur = getenv("BENCHMARK_DURATION");
-    if(dur){
+    duration = 0.0;/* benchmarking is deactivated by default */
+    if(dur) {
       duration = atof(dur);
     }
   }
@@ -272,7 +267,7 @@ double getBenchmarkDuration(){
 void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
                       libxsmm_meltw_unary_shape unary_shape,
                       libxsmm_meltw_unary_flags unary_flags,
-                      libxsmm_meltw_unary_param unary_param ){
+                      libxsmm_meltw_unary_param unary_param ) {
 
   libxsmm_meltwfunction_unary unary_kernel;
   double l_targetRuntimeSeconds = getBenchmarkDuration();
@@ -285,7 +280,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
   for (l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
-    if (l_targetRuntimeSeconds > 0){
+    if (l_targetRuntimeSeconds > 0) {
       l_arch = l_archNames[l_archIndex] = getBenchmarkedArch(l_archIndex);
       if (!l_arch) break;
       libxsmm_finalize();
@@ -317,8 +312,9 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
       printf("Iterations/s  : %.3f\n", l_performance[l_archIndex]);
       /* how often the kernel was run; could be interesting */
       printf("Runs          : %" PRIuPTR "\n", (uintptr_t)l_benchmarkRuns);
-      if (l_archIndex > 0) /* comparison with the first/main architecture */
+      if (l_archIndex > 0) { /* comparison with the first/main architecture */
         printf("Speedup       : %.6fx\n", l_performance[l_archIndex] / l_performance[0]);
+      }
       printf("\n");
     }
   } /* end of loop over architectures */
@@ -327,7 +323,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
 void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
                        libxsmm_meltw_binary_shape binary_shape,
                        libxsmm_meltw_binary_flags binary_flags,
-                       libxsmm_meltw_binary_param binary_param ){
+                       libxsmm_meltw_binary_param binary_param ) {
 
   libxsmm_meltwfunction_binary binary_kernel;
   double l_targetRuntimeSeconds = getBenchmarkDuration();
@@ -340,7 +336,7 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
   int l_archIndex = 0;
   libxsmm_timer_tickint l_startTime0, l_endTime0, l_startTime, l_endTime; /* loop over architectures */
   for (l_archIndex = 0; l_archIndex < MAX_BENCHMARK_ARCHITECTURES; l_archIndex++) {
-    if (l_targetRuntimeSeconds > 0){
+    if (l_targetRuntimeSeconds > 0) {
       l_arch = l_archNames[l_archIndex] = getBenchmarkedArch(l_archIndex);
       if (!l_arch) break;
       libxsmm_finalize();
@@ -372,8 +368,9 @@ void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
       printf("Iterations/s  : %.3f\n", l_performance[l_archIndex]);
       /* how often the kernel was run; could be interesting */
       printf("Runs          : %" PRIuPTR "\n", (uintptr_t)l_benchmarkRuns);
-      if (l_archIndex > 0) /* comparison with the first/main architecture */
+      if (l_archIndex > 0) { /* comparison with the first/main architecture */
         printf("Speedup       : %.6fx\n", l_performance[l_archIndex] / l_performance[0]);
+      }
       printf("\n");
     }
   } /* end of loop over architectures */

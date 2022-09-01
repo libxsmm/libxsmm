@@ -1808,8 +1808,8 @@ ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
     CTARGET := -march=native -mtune=native
   else ifeq (Darwin,$(UNAME))
     ifeq (arm64,$(MNAME))
-    ifneq (,$(call ctest,$(CC),-mcpu=apple-m1,$(NULL) $(NULL)))
-      CTARGET := -mcpu=apple-m1
+    ifneq (,$(call ctest,$(CC),-target arm64-apple-macos -mcpu=apple-m1,$(NULL) $(NULL)))
+      CTARGET := -target arm64-apple-macos -mcpu=apple-m1
     endif
     endif
   endif
@@ -2267,9 +2267,9 @@ else ifneq (0,$(BLAS)) # generic
       endif
     else # static
       ifeq (1,$(BLAS)) # sequential
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis.$(SLIBEXT) $(BLAS_LDFLAGS)
       else # multi-threaded
-        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.a $(BLAS_LDFLAGS)
+        BLAS_LDFLAGS := $(AOCL_ROOT)/lib/libblis-mt.$(SLIBEXT) $(BLAS_LDFLAGS)
       endif
     endif
   else ifeq (,$(strip $(BLASLIB)))
@@ -2364,6 +2364,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
   endif
 endif
+ifneq (0,$(BLAS))
 ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
   ifneq (,$(LIBGFORTRAN))
     ifneq (0,$(DEPSTATIC))
@@ -2386,6 +2387,7 @@ ifneq (,$(GFC)$(filter-out 0,$(XSMM_GCC)))
       BLAS_LDFLAGS += $(call abslibrpath,$(LIBM))
     endif
   endif
+endif
 endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))

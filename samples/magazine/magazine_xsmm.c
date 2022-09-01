@@ -72,7 +72,9 @@ int main(int argc, char* argv[])
     LIBXSMM_DATATYPE(TYPE));
   int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
+#   if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(gemm_param));
+#   endif
 #   if STREAM_A(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_AL2;
 #   endif

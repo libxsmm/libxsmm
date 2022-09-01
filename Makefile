@@ -1473,9 +1473,9 @@ endif
 .PHONY: install-minimal
 install-minimal: libxsmm
 ifneq ($(PREFIX),$(ABSDIR))
-	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR) $(PREFIX)/$(PSRCDIR)
 	@echo
 	@echo "LIBXSMM installing libraries..."
+	@mkdir -p $(PREFIX)/$(POUTDIR)
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
@@ -1527,15 +1527,25 @@ ifneq ($(PREFIX),$(ABSDIR))
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
 	fi
 	@echo
+	@echo "LIBXSMM installing utilities..."
+	@mkdir -p $(PREFIX)
+	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.mktmp.sh $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.flock.sh $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.state.sh $(PREFIX) 2>/dev/null || true
+	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
+	@mkdir -p $(PREFIX)/$(PBINDIR)
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing interface..."
+	@mkdir -p $(PREFIX)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
+	@mkdir -p $(PREFIX)/$(PSRCDIR)
 	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
 endif
 

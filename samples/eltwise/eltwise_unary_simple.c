@@ -361,9 +361,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   libxsmm_rng_set_seed(1);
 
-  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*LIBXSMM_MAX(M,ldi), 64 );
-  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                64 );
-  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo,                64 );
+  in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi, 64 );
+  out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
+  out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
   _in       = in;
 
   /* init in */
@@ -502,7 +502,7 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_FAILURE;
 
   if ( argc != 11 && argc != 10 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: 4/2/1] [compute_prec: 4/2] [prec_out: 4/2/1] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/BF8] [prec_comp: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo] [Opt: rnd_mode: 0/1]\n", argv[0] );
     exit(-1);
   }
 

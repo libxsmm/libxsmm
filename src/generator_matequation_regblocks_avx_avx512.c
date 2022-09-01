@@ -436,7 +436,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
   unsigned int cvt_vreg_aux0 = i_micro_kernel_config->dcvt_zmm_aux0, cvt_vreg_aux1 = i_micro_kernel_config->dcvt_zmm_aux1, cvt_mask_aux0 = i_micro_kernel_config->dcvt_mask_aux0, cvt_mask_aux1 = i_micro_kernel_config->dcvt_mask_aux1;
-  char vname = (LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : 'y';
+  char vname = (LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen == 64) ? 'z' : ((LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen == 32) ? 'y' : 'x');
   LIBXSMM_UNUSED(i_meqn_desc);
 
   if (i_arg_id < i_micro_kernel_config->n_avail_gpr) {

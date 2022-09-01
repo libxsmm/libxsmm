@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TESTFILE1=$(mktemp -p .)
+TESTFILE1=$(mktemp)
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)

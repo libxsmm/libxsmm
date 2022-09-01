@@ -19,7 +19,7 @@ SED=$(command -v sed)
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
 if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
-  NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/')
+  NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
   LG_DEFAULT="./${NAME}.log"
   QT_DEFAULT=0; SP_DEFAULT=2
@@ -116,15 +116,16 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   else
     LOG_OUTER=${LOG}
   fi
-  ${XARGS} </dev/stdin >"${LOG_OUTER}" -P${NP} -I%%% bash -c "set -eo pipefail; \
+  ${XARGS} </dev/stdin >"${LOG_OUTER}" -P${NP} -I{} bash -c "set -eo pipefail; \
+    _PEXEC_REPLSTRING=\$0; \
     _PEXEC_CMDPRETTY() { \
-      local _PEXEC_CMDPRETTY_HERE=\$(cd \"\$(dirname \"\$0\")\" && pwd -P | ${SED} 's/\//\\\\\//g'); \
+      local _PEXEC_CMDPRETTY_HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
       local _PEXEC_CMDPRETTY_PRE=\"\" _PEXEC_CMDPRETTY_CMD=\"\" _PEXEC_CMDPRETTY_ARGS=\"\"; \
       local _PEXEC_CMDPRETTY_INPUT=\"\$*\" _PEXEC_CMDPRETTY_WORDS=\"\"; \
       for WORD in \${_PEXEC_CMDPRETTY_INPUT}; do \
         local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" \
-        | ${SED} \"s/.*\${_PEXEC_CMDPRETTY_HERE}\///\" \
-        | ${SED} -n 's/\(.*[^.]\)\..*/\1/p'); \
+        | ${SED} \"s/\/\.\//\//;s/.*\${_PEXEC_CMDPRETTY_HERE}\///\" \
+        | ${SED} 's/\(.*\)\..*/\1/'); \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
           _PEXEC_CMDPRETTY_PRE=\${_PEXEC_CMDPRETTY_WORDS}; \
           _PEXEC_CMDPRETTY_CMD=\${_PEXEC_CMDPRETTY_WORD}; \
@@ -138,7 +139,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
       | if [ \"${CUT}\" ]; then cut -d_ -f\"${CUT}\"; else cat; fi; \
     }; \
-    _PEXEC_CMDLINE=\"%%%\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY %%%); \
+    _PEXEC_CMDLINE=\"\${_PEXEC_REPLSTRING}\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY \${_PEXEC_REPLSTRING}); \
     _PEXEC_TRAP_EXIT() { \
       local _PEXEC_TRAP_RESULT=\$?; \
       if [ \"0\" != \"\${_PEXEC_TRAP_RESULT}\" ]; then \
@@ -157,10 +158,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"\$(${FILE} -bL --mime \"\${_PEXEC_CMDLINE%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
-      source %%%; \
+      source \${_PEXEC_REPLSTRING}; \
     else \
-      %%%; \
-    fi >\"\${_PEXEC_LOG}\" 2>&1"
+      \${_PEXEC_REPLSTRING}; \
+    fi >\"\${_PEXEC_LOG}\" 2>&1" "{}"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
