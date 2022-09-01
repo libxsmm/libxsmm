@@ -30,7 +30,6 @@
     <ClCompile Include="cp2k-dbcsr.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cp2k-dbcsr.sh" />
     <None Include="cp2k-perf-jit.sh" />
     <None Include="cp2k-perf.plt" />
     <None Include="cp2k-plot.sh" />

@@ -1056,7 +1056,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1094,7 +1094,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1132,7 +1132,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1170,7 +1170,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1216,7 +1216,7 @@ endif
 	@echo "  NNVALUE=\$$(echo \$${RUN2} | cut -d_ -f2)" >>$@
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (MNK=\$${MVALUE}x\$${NVALUE}x\$${KVALUE} MNK2=\$${MMVALUE}x\$${NNVALUE}x\$${KKVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1574,14 +1574,11 @@ install-realall: install samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,specialized specialized.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,dispatched dispatched.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,inlined inlined.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,blas blas.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/dispatch/,dispatch dispatch.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
