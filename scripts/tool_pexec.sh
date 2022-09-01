@@ -32,6 +32,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
       echo "       -o|--log      [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
       echo "       -c|--cut      [PEXEC_CT]: cut name of each case (-f argument of cut)"
+      echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
       echo "       Environment [variables] will precede command line arguments."
@@ -49,6 +50,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       shift 2;;
     -c|--cut)
       CUT=$2
+      shift 2;;
+    -n|--nlimit)
+      NTH=$2
       shift 2;;
     -j|--nprocs)
       CONSUMED=$((CONSUMED|1))
@@ -74,7 +78,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   done
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
-  CUT=${PEXEC_CT:-${CUT}}; NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
+  CUT=${PEXEC_CT:-${CUT}}; NTH=${PEXEC_NT:-${NTH}};
+  NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
@@ -108,60 +113,79 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
   fi
   if [ "0" = "${QUIET}" ]; then
-    1>&2 echo "Execute with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
-    1>&2 echo
+    if [ "$(command -v tr)" ]; then
+      if [ "${BUILDKITE_LABEL}" ]; then
+        LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
+        | sed 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
+      else
+        LABEL="$(basename "$(pwd -P)" \
+        | tr "[:lower:]" "[:upper:]") "
+      fi
+    fi
+    1>&2 echo "Execute ${LABEL}with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
   if [[ ${LOG} != /dev/* ]]; then
     LOG_OUTER=/dev/stdout
   else
     LOG_OUTER=${LOG}
   fi
-  ${XARGS} </dev/stdin >"${LOG_OUTER}" -P${NP} -I{} bash -c "set -eo pipefail; \
-    _PEXEC_REPLSTRING=\$0; \
-    _PEXEC_CMDPRETTY() { \
-      local _PEXEC_CMDPRETTY_HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
-      local _PEXEC_CMDPRETTY_PRE=\"\" _PEXEC_CMDPRETTY_CMD=\"\" _PEXEC_CMDPRETTY_ARGS=\"\"; \
-      local _PEXEC_CMDPRETTY_INPUT=\"\$*\" _PEXEC_CMDPRETTY_WORDS=\"\"; \
-      for WORD in \${_PEXEC_CMDPRETTY_INPUT}; do \
-        local _PEXEC_CMDPRETTY_WORD=\$(echo \"\${WORD}\" \
-        | ${SED} \"s/\/\.\//\//;s/.*\${_PEXEC_CMDPRETTY_HERE}\///\" \
+  PEXEC_SCRIPT="set -eo pipefail; \
+    _PEXEC_MAKE_PRETTY() { \
+      local HERE PRE CMD ARGS WORDS INPUT=\$*; \
+      HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
+      for WORD in \${INPUT}; do \
+        local PRETTY; \
+        PRETTY=\$(echo \"\${WORD}\" \
+        | ${SED} \"s/\/\.\//\//;s/.*\${HERE}\///\" \
         | ${SED} 's/\(.*\)\..*/\1/'); \
         if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
-          _PEXEC_CMDPRETTY_PRE=\${_PEXEC_CMDPRETTY_WORDS}; \
-          _PEXEC_CMDPRETTY_CMD=\${_PEXEC_CMDPRETTY_WORD}; \
-          _PEXEC_CMDPRETTY_ARGS=\"\"; \
+          PRE=\${WORDS}; CMD=\${PRETTY}; ARGS=\"\"; \
           continue; \
         fi; \
-        _PEXEC_CMDPRETTY_WORDS=\"\${_PEXEC_CMDPRETTY_WORDS} \${_PEXEC_CMDPRETTY_WORD}\"; \
-        _PEXEC_CMDPRETTY_ARGS=\"\${_PEXEC_CMDPRETTY_ARGS} \${_PEXEC_CMDPRETTY_WORD}\"; \
+        WORDS=\"\${WORDS} \${PRETTY}\"; \
+        ARGS=\"\${ARGS} \${PRETTY}\"; \
       done; \
-      echo \"\${_PEXEC_CMDPRETTY_CMD}\${_PEXEC_CMDPRETTY_PRE}\${_PEXEC_CMDPRETTY_ARGS}\" \
+      echo \"\${CMD}\${PRE}\${ARGS}\" \
       | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
       | if [ \"${CUT}\" ]; then cut -d_ -f\"${CUT}\"; else cat; fi; \
     }; \
-    _PEXEC_CMDLINE=\"\${_PEXEC_REPLSTRING}\"; _PEXEC_BASENAME=\$(_PEXEC_CMDPRETTY \${_PEXEC_REPLSTRING}); \
+    _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \$0); \
     _PEXEC_TRAP_EXIT() { \
-      local _PEXEC_TRAP_RESULT=\$?; \
-      if [ \"0\" != \"\${_PEXEC_TRAP_RESULT}\" ]; then \
+      local RESULT=\$?; \
+      if [ \"0\" != \"\${RESULT}\" ]; then \
         local ERROR=\"ERROR\"; \
-        if [ \"139\" = \"\${_PEXEC_TRAP_RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
-        1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_BASENAME}\n\" \${_PEXEC_TRAP_RESULT}; \
+        if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
+        1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; \
         exit 1; \
       elif [ \"0\" = \"${QUIET}\" ]; then \
-        1>&2 echo \" -> VALID[000]: \${_PEXEC_BASENAME}\"; \
+        1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; \
       fi; \
     }; \
     if [[ ${LOG} != /dev/* ]]; then \
-      _PEXEC_LOG=\$(echo \"${LOG}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_BASENAME}\2/p\"); \
+      _PEXEC_LOG=\$(echo \"${LOG}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_PRETTY}\2/p\"); \
     else \
       _PEXEC_LOG=/dev/stdout; \
     fi; \
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
-    if [ \"\$(${FILE} -bL --mime \"\${_PEXEC_CMDLINE%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
-      source \${_PEXEC_REPLSTRING}; \
+    if [ \"\$(${FILE} -bL --mime \"\${0%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
+      source \$0; \
     else \
-      \${_PEXEC_REPLSTRING}; \
-    fi >\"\${_PEXEC_LOG}\" 2>&1" "{}"
+      \$0; \
+    fi >\"\${_PEXEC_LOG}\" 2>&1"
+  COUNTER=0
+  while read -r LINE; do
+    if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
+      COUNTER=$((COUNTER+1))
+      INPUT="${INPUT}\n${LINE}"
+    elif [ ! "${BACKUP}" ]; then
+      ATLEAST=${LINE}
+    fi
+  done
+  if [ ! "${ATLEAST}" ] || [ "0" != "${COUNTER}" ]; then
+    echo -e "${INPUT}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
+  else
+    echo -e "${ATLEAST}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
+  fi
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
