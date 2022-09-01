@@ -8,8 +8,5 @@ else
   NUMBER=9999
 fi
 
-cp binary_add_eqld.sh binary_${NAME}_eqld.sh
-cp binary_add_gtld.sh binary_${NAME}_gtld.sh
-
-sed "s/BINARY_OP=1/BINARY_OP=${NUMBER}/g" -i binary_${NAME}_eqld.sh
-sed "s/BINARY_OP=1/BINARY_OP=${NUMBER}/g" -i binary_${NAME}_gtld.sh
+sed "s/BINARY_OP=1/BINARY_OP=${NUMBER}/g" binary_add_eqld.sh >binary_${NAME}_eqld.sh
+sed "s/BINARY_OP=1/BINARY_OP=${NUMBER}/g" binary_add_gtld.sh >binary_${NAME}_gtld.sh

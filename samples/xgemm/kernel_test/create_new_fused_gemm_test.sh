@@ -71,13 +71,13 @@ for BINARY_POSTOP in 0 1; do
               TPLNAME=$TPLNAME"_tpl"
 
               #echo "Copying "$TPLNAME" to "$OUTNAME
-              cp ${TPLNAME} ${OUTNAME}
-              sed "s/PREC=\"SP\"/PREC=\"${PREC}\"/g" -i ${OUTNAME}
-              sed "s/TRA=0/TRA=${TRA}/g" -i ${OUTNAME}
-              sed "s/TRB=0/TRB=${TRB}/g" -i ${OUTNAME}
-              sed "s/BINARY_POSTOP=0/BINARY_POSTOP=${BINARY_POSTOP}/g" -i ${OUTNAME}
-              sed "s/UNARY_POSTOP=0/UNARY_POSTOP=${UNARY_POSTOP}/g" -i ${OUTNAME}
-              sed "s/CVNNI=0/CVNNI=${CVNNI}/g" -i ${OUTNAME}
+              sed "s/PREC=\"SP\"/PREC=\"${PREC}\"/g" ${TPLNAME} \
+              | sed "s/TRA=0/TRA=${TRA}/g" \
+              | sed "s/TRB=0/TRB=${TRB}/g" \
+              | sed "s/BINARY_POSTOP=0/BINARY_POSTOP=${BINARY_POSTOP}/g" \
+              | sed "s/UNARY_POSTOP=0/UNARY_POSTOP=${UNARY_POSTOP}/g" \
+              | sed "s/CVNNI=0/CVNNI=${CVNNI}/g" \
+              >${OUTNAME}
 
             done
           done

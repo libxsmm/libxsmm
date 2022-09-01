@@ -327,12 +327,13 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
             ABSDIR=${ABSDIR}/..
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd $(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/") && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
-          DIRSED=$(echo "${ABSDIR}" | ${SED} "${DIRPAT}")
+          DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \

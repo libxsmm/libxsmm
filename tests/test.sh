@@ -58,7 +58,7 @@ echo "============="
 NTEST=1
 NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
-  NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*[^.]\)\..*/\1/')
+  NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   echo -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}" || exit 1
