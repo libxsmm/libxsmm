@@ -429,6 +429,24 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
   return res;
 }
 
+LIBXSMM_API void libxsmm_rne_convert_fp32_f16(const float* in, libxsmm_float16* out, unsigned int len) {
+  unsigned int i = 0;
+
+  /* truncate buffer to bf16 */
+  for ( i = 0; i < len; ++i ) {
+    out[i] = libxsmm_convert_f32_to_f16( in[i] );
+  }
+}
+
+LIBXSMM_API void libxsmm_convert_f16_f32(const libxsmm_float16* in, float* out, unsigned int length) {
+  unsigned int i = 0;
+
+  /* up-convert is super simple */
+  for ( i = 0; i < length; ++i ) {
+    out[i] = libxsmm_convert_f16_to_f32( in [i] );
+  }
+}
+
 #if 0
 /* this code attempts to convert in one step from fp32 to bf8 just using
  * integer code, however it doesn't hand RNE in all case correctly */
