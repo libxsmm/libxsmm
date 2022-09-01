@@ -16,6 +16,95 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
+                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_data_size  ){
+  unsigned int l_vec_reg_acc_start;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* VLEN per l_m interations */
+  unsigned int l_m_blocks[3];  /* 0: 128bit, 1: 64bit, 2: 32bit */
+  unsigned int l_m_total_blocks;
+  unsigned int l_cur_vreg = 0;
+  unsigned int l_zero_vreg;
+
+  /* deriving register blocking from kernel config */
+  l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
+  l_m_blocks[1] = (i_m_blocking%i_vec_length)/(i_vec_length/2);  /* number of  64 bit stores */
+  l_m_blocks[2] = (i_m_blocking%i_vec_length)%(i_vec_length/2);  /* number of  32 but stores */
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1] + l_m_blocks[2];
+
+  /* start register of accumulator */
+  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_zero_vreg = l_vec_reg_acc_start - 1;
+
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_zero_vreg, l_zero_vreg, 0, l_zero_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+  /* Apply RELU */
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+      l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    }
+    for ( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
+      l_cur_vreg = l_vec_reg_acc_start + l_m + l_m_blocks[0] + (l_m_total_blocks * l_n);
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S );
+    }
+    for ( l_m = 0; l_m < l_m_blocks[2]; l_m++ ) {
+      l_cur_vreg = l_vec_reg_acc_start + l_m + l_m_blocks[0] + l_m_blocks[1] + (l_m_total_blocks * l_n);
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    }
+  }
+}
+
+#if 0
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_relu_bitmask_fusion_2dregblock_aarch64_asimd() {
+
+  unsigned int
+
+}
+#endif
+
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
+                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_data_size  ) {
+  if (io_micro_kernel_config->fused_relu_nobitmask > 0) {
+    libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd( io_generated_code, io_micro_kernel_config, i_gp_reg_scratch, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
+  }
+
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
+                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_data_size  ) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+    libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd( io_generated_code, io_micro_kernel_config, i_gp_reg_scratch, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    /* TODO */
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var_aarch64( libxsmm_generated_code*             io_generated_code,
                                                       libxsmm_gemm_stack_var              stack_var,
                                                       unsigned int                        i_gp_reg ) {

@@ -16,6 +16,15 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
+                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_data_size  );
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var_aarch64( libxsmm_generated_code*             io_generated_code,
                                                       libxsmm_gemm_stack_var              stack_var,
                                                       unsigned int                        i_gp_reg );
