@@ -988,7 +988,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         }
 
         /* Apply potential fusion to 2dregblock before storing it out */
-        libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.vector_length,
+        libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length,
             l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, l_micro_kernel_config.datatype_size_out  );
 
         /* store block of C */
@@ -1011,6 +1011,14 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
                                                        (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_out );
+        /* Adjust relu bitmask pointer  */
+        if ((l_micro_kernel_config.fused_relu == 1) && (l_micro_kernel_config.overwrite_C == 1) ) {
+          libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_1);
+          libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                         l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
+                                                         (unsigned long long)(l_m_blocking+7)/8);
+          libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
+        }
 
         /* advance A pointer */
         if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
@@ -1061,6 +1069,15 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                    l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
                                                    ((unsigned long long)l_n_blocking * l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out) -
                                                    ((unsigned long long)l_xgemm_desc_opa->m * l_micro_kernel_config.datatype_size_out) );
+
+    /* Adjust relu bitmask pointer  */
+    if ((l_micro_kernel_config.fused_relu == 1) && (l_micro_kernel_config.overwrite_C == 1) ) {
+      libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_1);
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1,
+                                                     ((unsigned long long)(l_n_blocking*i_xgemm_desc->ldcp)/8) - (((unsigned long long)(l_xgemm_desc_opa->m+7)/8)));
+      libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_1);
+    }
 
     if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0 ) {
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_mapping.gp_reg_help_3, 0 );

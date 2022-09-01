@@ -17,8 +17,10 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_gp_reg_scratch1,
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,

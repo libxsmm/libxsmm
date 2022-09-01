@@ -14,11 +14,14 @@
 #include "generator_gemm_common_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
+#include "generator_mateltwise_unary_binary_aarch64.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_gp_reg_scratch1,
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
@@ -33,7 +36,10 @@ void libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd
   unsigned int l_m_blocks[3];  /* 0: 128bit, 1: 64bit, 2: 32bit */
   unsigned int l_m_total_blocks;
   unsigned int l_cur_vreg = 0;
-  unsigned int l_zero_vreg;
+  unsigned int tmp_vreg0 = 0, tmp_vreg1 = 0, tmp_vreg2 = 0;
+  unsigned int mask_helper0_vreg = 0;
+  unsigned int mask_helper1_vreg = 0;
+  unsigned int gp_reg_relumask = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
@@ -43,62 +49,113 @@ void libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
-  l_zero_vreg = l_vec_reg_acc_start - 1;
+  tmp_vreg0 = l_vec_reg_acc_start - 1;
 
-  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, l_zero_vreg, l_zero_vreg, 0, l_zero_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+  if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
+    /* We need 5 tmp vregs... If we don't have that many, store some in the stack and restore for processing  */
+    tmp_vreg1 = l_vec_reg_acc_start - 2;
+    tmp_vreg2 = l_vec_reg_acc_start - 3;
+    mask_helper0_vreg = l_vec_reg_acc_start - 4;
+    mask_helper1_vreg = l_vec_reg_acc_start - 5;
+
+    /* Prepare mask helpers */
+    /* load 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 into mask_helper0/1_vreg */
+    /* stack pointer -= 32, so prepare to use 32 bytes = 8 floats of stack memory */
+    /* while LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF supports a signed offset, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF does not */
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
+                                                   LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch0, 0x200000001 ); /* int32 0x02, 0x01, little endian -> 0x01, 0x02 */
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch1, 0x800000004 ); /* int32 0x08, 0x04, little endian -> 0x04, 0x08 */
+    /* store a pair of fp registers to memory: 1,2,4,8 is being loaded into the stack memory */
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF,
+                                               LIBXSMM_AARCH64_GP_REG_XSP, 16,
+                                               i_gp_reg_scratch0, i_gp_reg_scratch1 );
+    /* now those 32 bytes are stored into mask_helper0_vreg */
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                            LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 16,
+                                            mask_helper0_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch0, 0x2000000010 ); /* int32 0x20, 0x10 */
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_scratch1, 0x8000000040 ); /* int32 0x80, 0x40 */
+    libxsmm_aarch64_instruction_alu_pair_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STP_I_OFF,
+                                               LIBXSMM_AARCH64_GP_REG_XSP, 0,
+                                               i_gp_reg_scratch0, i_gp_reg_scratch1 );
+    libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
+                                            LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
+                                            mask_helper1_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+    /* reset stack pointer to its original position */
+    libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                   LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 32, 0 );
+
+    gp_reg_relumask = i_gp_reg_scratch0;
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relumask);
+
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      unsigned int l_mask_adv = 0;
+      for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
+        l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
+        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V,
+                                                   l_cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, tmp_vreg0,
+                                                   LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+        libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_asimd( io_generated_code, l_m, l_m_total_blocks,
+            LIBXSMM_CAST_UCHAR(mask_helper0_vreg),  LIBXSMM_CAST_UCHAR(mask_helper1_vreg),
+            LIBXSMM_CAST_UCHAR(tmp_vreg0), LIBXSMM_CAST_UCHAR(tmp_vreg1), LIBXSMM_CAST_UCHAR(tmp_vreg2),
+            LIBXSMM_CAST_UCHAR(gp_reg_relumask), &l_mask_adv );
+      }
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
+                                                     (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+    }
+  }
+
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, tmp_vreg0, tmp_vreg0, 0, tmp_vreg0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
   /* Apply RELU */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
       l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, tmp_vreg0, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
     }
     for ( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
       l_cur_vreg = l_vec_reg_acc_start + l_m + l_m_blocks[0] + (l_m_total_blocks * l_n);
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, tmp_vreg0, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2S );
     }
     for ( l_m = 0; l_m < l_m_blocks[2]; l_m++ ) {
       l_cur_vreg = l_vec_reg_acc_start + l_m + l_m_blocks[0] + l_m_blocks[1] + (l_m_total_blocks * l_n);
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, l_zero_vreg, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V, l_cur_vreg, tmp_vreg0, 0, l_cur_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
     }
   }
 }
 
-#if 0
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_apply_relu_bitmask_fusion_2dregblock_aarch64_asimd() {
-
-  unsigned int
-
-}
-#endif
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_gp_reg_scratch1,
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
                                                               const unsigned int              i_data_size  ) {
-  if (io_micro_kernel_config->fused_relu_nobitmask > 0) {
-    libxsmm_generator_gemm_apply_relu_nobitmask_fusion_2dregblock_aarch64_asimd( io_generated_code, io_micro_kernel_config, i_gp_reg_scratch, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
+  if ((io_micro_kernel_config->fused_relu_nobitmask > 0) || (io_micro_kernel_config->fused_relu > 0)) {
+    libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd( io_generated_code, i_xgemm_desc, io_micro_kernel_config, i_gp_reg_scratch0, i_gp_reg_scratch1, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
   }
 
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                              const unsigned int              i_gp_reg_scratch,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_gp_reg_scratch1,
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
                                                               const unsigned int              i_data_size  ) {
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
-    libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd( io_generated_code, io_micro_kernel_config, i_gp_reg_scratch, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
+    libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd( io_generated_code, i_xgemm_desc, io_micro_kernel_config, i_gp_reg_scratch0, i_gp_reg_scratch1, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* TODO */
   }
