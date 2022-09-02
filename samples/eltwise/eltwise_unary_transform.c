@@ -1180,6 +1180,7 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   return ret;
 }
 
+LIBXSMM_INLINE
 int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned char *in;
   unsigned char *out, *out_gold;

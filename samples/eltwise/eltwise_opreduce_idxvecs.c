@@ -199,10 +199,10 @@ int main(int argc, char* argv[])
   }
 
   if (op_order == OPORDER_VECIN_VECIDX) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX);
     sprintf(opordername, "VECIN_VECIDX");
   } else if (op_order == OPORDER_VECIDX_VECIN) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN);
     sprintf(opordername, "VECIDX_VECIN");
   } else {
     printf("ERROR: Invalid OP_ORDER requested!!!\n");
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
   if (scale_op_res == NO_SCALE_OP_RESULT) {
     sprintf(scaleopresname, "NO");
   } else if (scale_op_res == SCALE_OP_RESULT) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT);
     sprintf(scaleopresname, "YES");
   } else {
     printf("ERROR: Scale OP result should be 0 or 1!!!\n");
@@ -220,16 +220,16 @@ int main(int argc, char* argv[])
   }
 
   if (redop == REDOP_NONE) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE);
     sprintf(redopname, "NONE");
   } else if (redop == REDOP_SUM) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM);
     sprintf(redopname, "SUM");
   } else if (redop == REDOP_MAX) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX);
     sprintf(redopname, "MAX");
   } else if (redop == REDOP_MIN) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN);
     sprintf(redopname, "MIN");
   } else {
     printf("ERROR: Invalid REDOP requested!!!\n");
@@ -239,22 +239,22 @@ int main(int argc, char* argv[])
   if (op != OP_COPY) {
     if (use_regular_vecin == 0) {
       if (use_implicit_idx > 0) {
-        opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC);
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC);
       } else {
-        opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC);
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC);
       }
     }
   }
 
   if (argop_vec_0 == 1) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0);
   }
   if (argop_vec_1 == 1) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1);
   }
 
   if ((op == OP_COPY) && (use_implicit_idx > 0)) {
-    opredop_flags = (libxsmm_meltw_opreduce_vecs_flags)(opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX);
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX);
   }
 
   if (use_bf16 == 0) {

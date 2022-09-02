@@ -313,11 +313,11 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   libxsmm_meltw_unary_type unary_type;
 
   if ( M > ldi ) {
-    fprintf( stderr, "test_relu_fwd %i %i %i: ldi needs to be equal to or bigger than M\n", dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_relu_fwd %i %i %i: ldi needs to be equal to or bigger than M\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_relu_fwd %i %i %i: ldo needs to be equal to or bigger than N\n", dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_relu_fwd %i %i %i: ldo needs to be equal to or bigger than N\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
 
@@ -386,12 +386,12 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
       for ( i = 0; i < N; ++i ) {
         for ( j = 0; j < LIBXSMM_UPDIV(M, 8); ++j ) {
           if ( mask_gold[(i*mask_ld)+j] != mask[(i*mask_ld)+j] ) {
-            printf("error at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+            printf("error at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
             s = 1;
           }
 #if 0
         else {
-          printf("correct at possition i=%i, j=%i, %u, %u\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
+          printf("correct at possition i=%i, j=%i, %i, %i\n", i, j*8, mask[(i*mask_ld)+j], mask_gold[(i*mask_ld)+j]);
         }
 #endif
         }
@@ -414,9 +414,9 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS unary relu fwd %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("SUCCESS unary relu fwd %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   } else {
-    printf("FAILURE unary relu fwd %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("FAILURE unary relu fwd %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   }
 
   return ret;
@@ -442,11 +442,11 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltw_unary_type unary_type;
 
   if ( M > ldi ) {
-    fprintf( stderr, "test_relu_bwd %i %i %i: ldi needs to be equal to or bigger than M\n", dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_relu_bwd %i %i %i: ldi needs to be equal to or bigger than M\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_relu_bwd %i %i %i: ldo needs to be equal to or bigger than N\n", dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_relu_bwd %i %i %i: ldo needs to be equal to or bigger than N\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
 
@@ -533,9 +533,9 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_free( mask_gold );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS unary relu bwd %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("SUCCESS unary relu bwd %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   } else {
-    printf("FAILURE unary relu bwd %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("FAILURE unary relu bwd %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   }
 
   return ret;

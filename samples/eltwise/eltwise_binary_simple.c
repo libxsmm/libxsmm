@@ -188,7 +188,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
 
@@ -289,9 +289,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   libxsmm_free( in2 );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
+    printf("SUCCESS binary simple %i %i %i %i\n", (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
   } else {
-    printf("FAILURE binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
+    printf("FAILURE binary simple %i %i %i %i\n", (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
   }
 
   return ret;
