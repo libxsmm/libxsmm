@@ -54,8 +54,9 @@ void libxsmm_generator_matequation_create_binary_descriptor(libxsmm_descriptor_b
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*   io_generated_code, libxsmm_matrix_eqn_elem *cur_op, libxsmm_gemm_descriptor **out_desc ) {
-  libxsmm_descriptor_blob blob;
+void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* io_generated_code, const libxsmm_matrix_eqn_elem *cur_op,
+  libxsmm_descriptor_blob* blob, libxsmm_gemm_descriptor **out_desc)
+{
   libxsmm_gemm_descriptor *desc = NULL;
   int  gemm_flags = LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
   libxsmm_gemm_batch_reduce_config br_config;
@@ -187,7 +188,7 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code*  
   }
 
   LIBXSMM_UNUSED( b_in_type );
-  desc = libxsmm_gemm_descriptor_dinit2(&blob, a_in_type, cur_op->tmp.dtype,
+  desc = libxsmm_gemm_descriptor_dinit2(blob, a_in_type, cur_op->tmp.dtype,
     m, n, k, lda, ldb, ldc,
     LIBXSMM_ALPHA, !((gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
     gemm_flags, 0);
@@ -576,7 +577,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
       libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
       /* Setup GEMM descriptor and register mapping  */
-      libxsmm_generator_matequation_gemm_set_descriptor( io_generated_code, cur_op, &desc);
+      libxsmm_generator_matequation_gemm_set_descriptor( io_generated_code, cur_op, &blob, &desc);
 
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->le, temp_reg, 0);
       libxsmm_generator_matequation_set_input_in_stack_param_struct( io_generated_code, i_micro_kernel_config, i_gp_reg_mapping, cur_op->ri, temp_reg, 1);

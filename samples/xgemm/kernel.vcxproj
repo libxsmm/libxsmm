@@ -30,7 +30,6 @@
     <ClCompile Include="kernel.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="kernel.sh" />
     <None Include="kernel_appsizes.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />

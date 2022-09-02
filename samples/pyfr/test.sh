@@ -17,4 +17,4 @@ export TEST_N=${TEST_N:-48000}
 
 for MTX in "${HERE}"/mats/p*/*/*-sp.mtx; do
   echo "${HERE}/pyfr_driver_asp_reg ${MTX} ${TEST_N} 10"
-done | ${EXEC} -c 2-4 "$@"
+done | ${EXEC} -c 6-8 "$@"

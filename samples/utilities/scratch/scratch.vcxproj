@@ -30,7 +30,6 @@
     <ClCompile Include="scratch.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="scratch.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />
   </ItemGroup>

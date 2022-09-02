@@ -3,7 +3,7 @@ site_author: Hans Pabst
 copyright: Copyright (c) 2009-2022, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
 site_description: Library targeting Intel Architecture for specialized dense and sparse matrix operations, and deep learning primitives.
 repo_url: https://github.com/libxsmm/libxsmm/
-edit_uri: edit/master/documentation
+edit_uri: edit/main/documentation
 site_url: https://libxsmm.readthedocs.io/
 docs_dir: documentation
 
@@ -26,7 +26,7 @@ nav:
 - Q&A: libxsmm_qna.md
 - LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
-  - "DNN: Deep Neural Networks": libxsmm_dl.md
+  - "DNN: Deep Neural Networks": https://libxsmm.readthedocs.io/#deep-learning
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
@@ -35,16 +35,15 @@ nav:
   - Collection: libxsmm_samples.md
 - Machine Learning (ML):
   - PlaidML tensor compiler: https://github.com/plaidml/plaidml
-  - Intel Extension for PyTorch: https://github.com/intel/intel-extension-for-pytorch
-  - TensorFlow: tensorflow.md
+  - Extension for PyTorch: https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/conv1dopti_layer
 - Scientific (HPC):
   - CP2K: cp2k.md
   - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
   - SpECTRE: https://sxs-collaboration.github.io/spectre/installation.html
   - libCEED: https://ceed.exascaleproject.org/ceed-code/
   - Fastor: https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend
-  - EDGE: http://usr.dial3343.org/en/master/chapters/install/edge.html#libxsmm
-  - PyFR: http://pyfr.org/user_guide.php
+  - EDGE: https://usr.dial3343.org/en/master/chapters/install/edge.html#edge
+  - PyFR: https://pyfr.readthedocs.io/en/latest/performance_tuning.html#libxsmm
 - About:
   - Contributing: CONTRIBUTING.md
   - License: LICENSE.md

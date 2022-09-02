@@ -3,6 +3,7 @@
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 EXEC=${HERE}/../../scripts/tool_pexec.sh
 
+export LIBXSMM_TARGET=clx
 cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_0_argopmode_0_16b.sh
 ./kernel_test/opreduce_op_add_redop_add_oporder_0_regvecin_0_implicitidx_0_argopmode_0_32b.sh

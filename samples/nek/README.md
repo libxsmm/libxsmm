@@ -2,7 +2,7 @@
 
 This directory contains kernels taken from Nek{Box,5000}. They aim to represent most of the matrix-matrix workloads.
 
-Please note that the [mxm_std.f](https://github.com/libxsmm/libxsmm/blob/master/samples/nek/mxm_std.f) source code is protected by an (US) GOVERNMENT LICENSE, and under the copyright of the University of Chicago.
+Please note that the [mxm_std.f](https://github.com/libxsmm/libxsmm/blob/main/samples/nek/mxm_std.f) source code is protected by an (US) GOVERNMENT LICENSE, and under the copyright of the University of Chicago.
 
 ## stpm
 

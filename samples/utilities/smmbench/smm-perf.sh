@@ -36,17 +36,17 @@ for RUN in ${RUNS} ; do
 
   >&2 echo "Test ${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})"
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/blas.sh        ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-blas.txt
-  echo                                                                                                    >> smm-blas.txt
+  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/blas        ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-blas.txt
+  echo                                                                                                 >> smm-blas.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/specialized.sh ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-specialized.txt
-  echo                                                                                                    >> smm-specialized.txt
+  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/specialized ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-specialized.txt
+  echo                                                                                                 >> smm-specialized.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/dispatched.sh  $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-dispatched.txt
-  echo                                                                                                    >> smm-dispatched.txt
+  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/dispatched  $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-dispatched.txt
+  echo                                                                                                 >> smm-dispatched.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/inlined.sh     $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-inlined.txt
-  echo                                                                                                    >> smm-inlined.txt
+  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/inlined     $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-inlined.txt
+  echo                                                                                                 >> smm-inlined.txt
 
   NRUN=$((NRUN + 1))
 done

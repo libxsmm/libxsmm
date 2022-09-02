@@ -57,6 +57,11 @@
 # else
 #   define LIBXSMM_MAP_SHARED 0
 # endif
+# if defined(MAP_JIT)
+#   define LIBXSMM_MAP_JIT MAP_JIT
+# else
+#   define LIBXSMM_MAP_JIT 0
+# endif
 LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_THROW;
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 #endif
@@ -1632,7 +1637,7 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
     i = mkstemp(filename);
     if (0 <= i) {
       if (0 == unlink(filename) && 0 == ftruncate(i, size) /*&& 0 == chmod(filename, S_IRWXU)*/) {
-        const int mflags = (flags | LIBXSMM_MAP_SHARED);
+        const int mflags = (flags | LIBXSMM_MAP_SHARED | LIBXSMM_MAP_JIT);
         void *const xmap = mmap(*rx, size, PROT_READ | PROT_EXEC, mflags, i, 0/*offset*/);
         if (MAP_FAILED != xmap) {
           LIBXSMM_ASSERT(NULL != xmap);
@@ -1871,6 +1876,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
           | (((0 != (LIBXSMM_MALLOC_FLAG_PLOCK & flags) || 0 == (LIBXSMM_MALLOC_FLAG_X & flags))
             && (internal_malloc_plocked + size) < limit_plocked) ? MAP_LOCKED : 0)
 # endif
+          | (0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? LIBXSMM_MAP_JIT : 0)
         ; /* mflags */
 # if defined(MAP_POPULATE)
         { static int prefault = 0;
@@ -1993,6 +1999,11 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
         }
         if (MAP_FAILED != buffer && NULL != buffer) {
           internal_xmalloc_mhint(buffer, alloc_size);
+# if defined(__APPLE__) && defined(__arm64__)
+          if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) {
+            pthread_jit_write_protect_np(0/*false*/);
+          }
+# endif
         }
 #endif /* !defined(_WIN32) */
       }
@@ -2319,6 +2330,11 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
               fprintf(stderr, "LIBXSMM WARNING: read-only request for JIT-buffer failed!\n");
             }
           }
+        }
+#endif
+#if defined(__APPLE__) && defined(__arm64__)
+        if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
+          pthread_jit_write_protect_np(1/*true*/);
         }
 #endif
       }

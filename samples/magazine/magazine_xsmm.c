@@ -36,9 +36,9 @@ int main(int argc, char* argv[])
   const char transa = 'n', transb = 'n';
   /* micro-kernels are limited to certain alpha- and beta-values */
 #if defined(AUTO)
-  const TYPE alpha = 1;
+  const TYPE alpha = ALPHA;
 #endif
-  const TYPE beta = 1;
+  const TYPE beta = BETA;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, PAD) / sizeof(TYPE);
   const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, PAD) / sizeof(TYPE);
@@ -58,12 +58,13 @@ int main(int argc, char* argv[])
   int i, j;
 
   /**
-   * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
-   * are only for "entertainment". The C++ interface on the other hand provides overloaded functions
-   * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
+   * LIBXSMM's C interface really is type-generic, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE).
+   * The C++ interface is type-specific and provides overloaded functions and helpers for type-generic
+   * programming (e.g., libxsmm_mmfunction<T>).
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
+    | (LIBXSMM_NEQ(0, beta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
   libxsmm_xmmfunction kernel = { NULL };
 # if !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(m, n, k, lda, ldb, ldc,
@@ -71,7 +72,9 @@ int main(int argc, char* argv[])
     LIBXSMM_DATATYPE(TYPE));
   int prefetch = LIBXSMM_PREFETCH_NONE;
   libxsmm_gemm_param gemm_param;
+#   if defined(_DEBUG)
   memset(&gemm_param, 0, sizeof(gemm_param));
+#   endif
 #   if STREAM_A(1)
   prefetch |= LIBXSMM_GEMM_PREFETCH_AL2;
 #   endif
@@ -132,19 +135,19 @@ int main(int argc, char* argv[])
 #if defined(AUTO)
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
-         &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
+         &beta, c + STREAM_C(j * nc), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       gemm_param.a.primary    = a + STREAM_A(j * na);
       gemm_param.a.quaternary = a + STREAM_A(p * na);
       gemm_param.b.primary    = b + STREAM_B(j * nb);
       gemm_param.b.quaternary = b + STREAM_B(p * nb);
-      gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
-      gemm_param.c.quaternary = c + STREAM_C(SYNC(p, nc, size));
+      gemm_param.c.primary    = c + STREAM_C(j * nc);
+      gemm_param.c.quaternary = c + STREAM_C(p * nc);
       kernel.gemm(&gemm_param);
 #else
       kernel.LIBXSMM_TPREFIX(TYPE,mm)(
         a + STREAM_A(j * na), b + STREAM_B(j * nb),
-        c + STREAM_C(SYNC(j, nc, size)));
+        c + STREAM_C(j * nc));
 #endif
     }
   }
@@ -156,19 +159,19 @@ int main(int argc, char* argv[])
 #if defined(AUTO)
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
     &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
-     &beta, c + STREAM_C(SYNC(j, nc, size)), &ldc);
+     &beta, c + STREAM_C(j * nc), &ldc);
 #elif !defined(NOPREFETCH) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
   gemm_param.a.primary    = a + STREAM_A(j * na);
   gemm_param.a.quaternary = gemm_param.a.primary;
   gemm_param.b.primary    = b + STREAM_B(j * nb);
   gemm_param.b.quaternary = gemm_param.b.primary;
-  gemm_param.c.primary    = c + STREAM_C(SYNC(j, nc, size));
+  gemm_param.c.primary    = c + STREAM_C(j * nc);
   gemm_param.c.quaternary = gemm_param.c.primary;
   kernel.gemm(&gemm_param);
 #else
   kernel.LIBXSMM_TPREFIX(TYPE,mm)(
     a + STREAM_A(j * na), b + STREAM_B(j * nb),
-    c + STREAM_C(SYNC(j, nc, size)));
+    c + STREAM_C(j * nc));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
@@ -197,4 +200,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-
