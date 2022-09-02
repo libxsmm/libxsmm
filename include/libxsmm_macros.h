@@ -547,6 +547,7 @@
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
 #define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
+#define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
@@ -1001,7 +1002,18 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
   && !defined(_WIN32) /* error including dfp754.h */
 #   include <mathimf.h>
 # endif
+# if defined(__STRICT_ANSI__)
+#   define LIBXSMM_STRICT_ANSI __STRICT_ANSI__
+#   undef __STRICT_ANSI__
+# endif
 # include <math.h>
+# if defined(LIBXSMM_STRICT_ANSI)
+#   define __STRICT_ANSI__ LIBXSMM_STRICT_ANSI
+#   undef LIBXSMM_STRICT_ANSI
+# endif
+#endif
+#if !defined(M_PI)
+# define M_PI 3.14159265358979323846
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
