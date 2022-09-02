@@ -2,7 +2,7 @@
 
 ### Target Architecture<a name="getting-and-setting-the-target-architecture"></a>
 
-This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance if a lower set of instruction set extensions is requested, which can be still useful for studying the performance impact of different instruction set extensions.  
+This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance if a lower set of instruction set extensions is requested, which can be still useful for studying the performance impact of different instruction set extensions.  
 **Note**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
 
 ```C
@@ -41,7 +41,7 @@ void libxsmm_set_verbosity(int level);
 
 ### Timer Facility
 
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/libxsmm/libxsmm/tree/master/samples) to measure the duration of executing a region of the code. The timer is based on a monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), which is not necessarily counting CPU cycles (reasons are out of scope in this context). However, `libxsmm_timer_ncycles` delivers raw clock ticks (RDTSC).
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/libxsmm/libxsmm/tree/main/samples) to measure the duration of executing a region of the code. The timer is based on a monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), which is not necessarily counting CPU cycles (reasons are out of scope in this context). However, `libxsmm_timer_ncycles` delivers raw clock ticks (RDTSC).
 
 ```C
 typedef unsigned long long libxsmm_timer_tickint;
@@ -63,7 +63,7 @@ void* libxsmm_xregister(const void* key, size_t key_size, size_t value_size, con
 void* libxsmm_xdispatch(const void* key, size_t key_size);
 ```
 
-The Fortran interface is designed to follow the same flow as the <span>C&#160;language</span>: <span>(1)&#160;</span>`libxsmm_xdispatch` is used to query the value, and <span>(2)&#160;if</span> the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similar to C (`memset`), structured key-data must be zero-filled (`libxsmm_xclear`) even when followed by an element-wise initialization. A key based on a contiguous array has no gaps by definition and it is enough to initialize the array elements. A [Fortran example](https://github.com/libxsmm/libxsmm/blob/master/samples/utilities/dispatch/dispatch_udt.f) is given as part of the [Dispatch Microbenchmark](https://github.com/libxsmm/libxsmm/tree/master/samples/utilities/dispatch).
+The Fortran interface is designed to follow the same flow as the <span>C&#160;language</span>: <span>(1)&#160;</span>`libxsmm_xdispatch` is used to query the value, and <span>(2)&#160;if</span> the value is a NULL-pointer, it is registered per `libxsmm_xregister`. Similar to C (`memset`), structured key-data must be zero-filled (`libxsmm_xclear`) even when followed by an element-wise initialization. A key based on a contiguous array has no gaps by definition and it is enough to initialize the array elements. A [Fortran example](https://github.com/libxsmm/libxsmm/blob/main/samples/utilities/dispatch/dispatch_udt.f) is given as part of the [Dispatch Microbenchmark](https://github.com/libxsmm/libxsmm/tree/main/samples/utilities/dispatch).
 
 ```Fortran
 FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
@@ -84,7 +84,7 @@ END FUNCTION
 
 ### Memory Allocation
 
-The C interface ([libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
+The C interface ([libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **Note**: The function `libxsmm_free` must be used to deallocate buffers allocated by LIBXSMM's allocation functions.
 
 ```C
@@ -105,7 +105,7 @@ int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 ```
 
-The scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocator, a watermark for repeatedly allocated and deallocated buffers is established. The scratch memory domain is (arbitrarily) limited to <span>4&#160;GB</span> of memory which can be adjusted to a different number of Bytes (available per [libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_malloc.h), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", "g|G" units, unlimited per "-1").
+The scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocator, a watermark for repeatedly allocated and deallocated buffers is established. The scratch memory domain is (arbitrarily) limited to <span>4&#160;GB</span> of memory which can be adjusted to a different number of Bytes (available per [libxsmm_malloc.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_malloc.h), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", "g|G" units, unlimited per "-1").
 
 ```C
 void libxsmm_set_scratch_limit(size_t nbytes);
@@ -138,11 +138,11 @@ ElementNumberOfChannels = 1
 ElementDataFile = mhd_image.raw
 ```
 
-In the above case, a single channel (gray-scale) 202x134-image is described with pixel data stored separately (`mhd_image.raw`). Multi-channel images are expected to interleave the pixel data. The pixel type is per `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/libxsmm/libxsmm/blob/master/include/libxsmm_mhd.h#L38)).
+In the above case, a single channel (gray-scale) 202x134-image is described with pixel data stored separately (`mhd_image.raw`). Multi-channel images are expected to interleave the pixel data. The pixel type is per `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/libxsmm/libxsmm/blob/main/include/libxsmm_mhd.h#L38)).
 
 ### Thread Synchronization
 
-LIBXSMM comes with a number of light-weight abstraction layers (macro and API-based), which are distinct from the internal API (include files in [src](https://github.com/libxsmm/libxsmm/tree/master/src) directory) and that are exposed for general use (and hence part of the [include](https://github.com/libxsmm/libxsmm/tree/master/include) directory).
+LIBXSMM comes with a number of light-weight abstraction layers (macro and API-based), which are distinct from the internal API (include files in [src](https://github.com/libxsmm/libxsmm/tree/main/src) directory) and that are exposed for general use (and hence part of the [include](https://github.com/libxsmm/libxsmm/tree/main/include) directory).
 
 The synchronization layer is mainly based on macros: LIBXSMM_LOCK_\* provide spin-locks, mutexes, and reader-writer locks (LIBXSMM_LOCK_SPINLOCK, LIBXSMM_LOCK_MUTEX, and LIBXSMM_LOCK_RWLOCK respectively). Usually the spin-lock is also named LIBXSMM_LOCK_DEFAULT. The implementation is intentionally based on OS-native primitives unless LIBXSMM is reconfigured (per LIBXSMM_LOCK_SYSTEM) or built using `make OMP=1` (using OpenMP inside of the library is not recommended). The life-cycle of a lock looks like:
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TESTFILE1=$(mktemp -p .)
+TESTFILE1=$(mktemp)
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
@@ -29,7 +29,9 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} 100 100
-  ./eltwise_unary_transform R 2 ${M} ${N} 100 100
+  ./eltwise_unary_transform R F16 ${M} ${N} 100 100
+  ./eltwise_unary_transform R BF16 ${M} ${N} 100 100
+  ./eltwise_unary_transform R I16 ${M} ${N} 100 100
 done
 
 rm ${TESTFILE1}

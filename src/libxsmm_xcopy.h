@@ -64,6 +64,7 @@
   libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
   libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mzero_call_args_.out.primary = (DST); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
   (KERNEL).function(&libxsmm_mzero_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)
@@ -71,6 +72,7 @@
   libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
   libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mcopy_call_args_.out.primary = (DST); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
   (KERNEL).function(&libxsmm_mcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)
@@ -85,6 +87,7 @@
   libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
   libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_tcopy_call_args_.out.primary = (DST); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
   (KERNEL).function(&libxsmm_tcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)

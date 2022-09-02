@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD
+XFILES := $(OUTDIR)/equation_simple  $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
 
@@ -46,6 +46,9 @@ compile: $(OBJECTS)
 
 $(OUTDIR)/equation_simple: $(OUTDIR)/.make $(BLDDIR)/equation_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_simple_layernorm: $(OUTDIR)/.make $(BLDDIR)/equation_simple_layernorm-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_simple_layernorm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/equation_matmul: $(OUTDIR)/.make $(BLDDIR)/equation_matmul-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_matmul-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -69,24 +72,23 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
-	@rm -rf $(BLDDIR)
+	@-rm -rf $(BLDDIR)
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
-	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
+	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@rm -f .make .state
+	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
-	@rm -rf $(OUTDIR)
+	@-rm -rf $(OUTDIR)
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@rm -f $(XFILES) $(MODULES)
+	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@-rm -f $(XFILES) $(MODULES)
 endif
-

@@ -28,6 +28,11 @@
 # include <sys/platform/ppc.h>
 #endif
 
+#if !defined(LIBXSMM_TIMER_VERBOSE) && !defined(NDEBUG)
+# if !defined(LIBXSMM_PLATFORM_AARCH64) || !defined(__APPLE__)
+#   define LIBXSMM_TIMER_VERBOSE
+# endif
+#endif
 #if !defined(LIBXSMM_TIMER_TSC)
 # define LIBXSMM_TIMER_TSC
 #endif
@@ -138,7 +143,7 @@ LIBXSMM_API int libxsmm_get_timer_info(libxsmm_timer_info* info)
     result = EXIT_SUCCESS;
   }
   else {
-#if !defined(NDEBUG)
+#if defined(LIBXSMM_TIMER_VERBOSE)
     static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -209,7 +214,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* n
   {
     *ncycles = libxsmm_timer_ncycles(*tick0, *tick1);
   }
-#if !defined(NDEBUG)
+#if defined(LIBXSMM_TIMER_VERBOSE)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
@@ -219,4 +224,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* n
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
-

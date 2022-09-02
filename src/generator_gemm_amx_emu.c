@@ -792,19 +792,21 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
                 LIBXSMM_X86_INSTR_VMOVUPS,
                 gp_reg_gemm_scratch,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
-                ((i_n_offset+col) * i_xgemm_desc->ldc + i_m_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
+                ((i_n_offset+col) * i_micro_kernel_config->gemm_scratch_ld + i_m_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
                 i_micro_kernel_config->vector_name,
                 zmm_reg, 0, 1, 1 );
           }
           /* Move zmm registers stored in GEMM scratch to the proper tile */
+          i_micro_kernel_config->ldc_emu = (i_micro_kernel_config->gemm_scratch_ld * 4)/4;
           libxsmm_x86_instruction_tile_move_emu( io_generated_code,
               i_micro_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_TILELOADD,
               gp_reg_gemm_scratch,
               i_gp_reg_mapping->gp_reg_ldc,
               4,
-              (i_n_offset * i_xgemm_desc->ldc + i_m_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
+              (i_n_offset * i_micro_kernel_config->gemm_scratch_ld + i_m_offset) * 4 /*i_micro_kernel_config->datatype_size*/,
               acc_id, i_micro_kernel_config, 0);
+          i_micro_kernel_config->ldc_emu = (i_xgemm_desc->ldc * 4)/4;
           acc_id++;
           if (n_tiles == 1) {
             acc_id++;

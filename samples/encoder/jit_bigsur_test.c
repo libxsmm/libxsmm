@@ -152,4 +152,6 @@ int main( /*int argc, char* argv[]*/ ) {
     printf("%f ", data2[i]);
   }
   printf("\n\n");
+
+  return 0;
 }

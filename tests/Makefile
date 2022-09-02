@@ -61,6 +61,7 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
 
 .PHONY: all
 all: $(XFILES)
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -69,22 +70,18 @@ compile: $(OBJECTS) $(FTNOBJS)
 tests: test
 
 .PHONY: test
-test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
+test: $(OUTDIR)/.make $(OUTDIR)/test.sh all
 	@$(OUTDIR)/test.sh $(TEST)
 
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
 HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
-ifneq (,$(wildcard $(LIBDEP)))
-ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(LIBDEP) $(EXTDEP))
+ifneq ($(words $(EXTLIB)),$(words $(wildcard $(EXTLIB))))
+$(1): $(2) $(OBJECTX) $(dir $(1))/.make $(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASDEP),$(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB) $(MAINLIB)) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NOBLASLIB),$(EXTLIB)) \
 		$(call cleanld,$(LDFLAGS) $(CLDFLAGS))
-else
-.PHONY: $(1)
-endif
 else
 .PHONY: $(1)
 endif
@@ -92,18 +89,10 @@ endef
 
 define DEFINE_LINK_FC_RULE
 ifneq (,$(strip $(FC)))
-ifneq (,$(wildcard $(LIBDEP)))
-ifneq (,$(wildcard $(FORTDEP)))
-ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(MAINLIB) $(FORTLIB) $(EXTLIB) \
+ifneq ($(words $(FORTLIB)),$(words $(wildcard $(FORTLIB))))
+$(1): $(2) $(FTNOBJS) $(FORTDEP) $(dir $(1))/.make
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(FORTLIB) \
 		$(FCMTFLAGS) $(call cleanld,$(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS))
-else
-.PHONY: $(1)
-endif
-else
-.PHONY: $(1)
-endif
 else
 .PHONY: $(1)
 endif
@@ -128,7 +117,7 @@ $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(NOBLASDEP)
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $(SRCDIR)/headeronly_aux.cpp -o $(BLDDIR)/headeronly_aux-cpp.o
 	$(XLD) -o $@ $(BLDDIR)/headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o \
 		$(call cleanld,$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(NOBLASLIB))
-	@rm -f headeronly_aux.cpp
+	@-rm -f headeronly_aux.cpp
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h
@@ -151,26 +140,27 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 
 .PHONY: clean
 clean:
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
-	@rm -rf $(BLDDIR)
+	@-rm -rf $(BLDDIR)
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
-	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
+	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@rm -f .make .state
+	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
-	@rm -rf $(OUTDIR)
+	@-rm -rf $(OUTDIR)
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@rm -f $(XFILES) $(MODULES)
+	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@-rm -f $(XFILES) $(MODULES)
 endif
-

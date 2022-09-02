@@ -55,7 +55,7 @@ scripts: $(TSTDIR)/.create_new_opreduce_simple_test
 $(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple_test.sh Makefile
 	$(info Creating opreduce test scripts...)
 	@cd $(TSTDIR) && ./create_new_opreduce_simple_test.sh >/dev/null
-	@touch $@
+	@-touch $@
 
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/eltwise_unary_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -94,24 +94,24 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
-	@rm -rf $(BLDDIR)
+	@-rm -rf $(BLDDIR)
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
-	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
+	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@rm -f .make .state
+	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
-	@rm -rf $(OUTDIR)
+	@-rm -rf $(OUTDIR)
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@rm -f $(XFILES) $(MODULES)
+	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@-rm -f $(XFILES) $(MODULES)
 endif
-	@rm -f $(TSTDIR)/.create_new_opreduce_simple_test
+	@-rm -f $(TSTDIR)/.create_new_opreduce_simple_test
