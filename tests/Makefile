@@ -61,7 +61,8 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
 
 .PHONY: all
 all: $(XFILES)
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -140,7 +141,8 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 
 .PHONY: clean
 clean:
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
@@ -154,7 +156,8 @@ endif
 
 .PHONY: realclean
 realclean: clean
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)

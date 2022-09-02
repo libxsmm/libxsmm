@@ -998,33 +998,33 @@ DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 .PHONY: samples $(DIRS_SAMPLES)
 samples: $(DIRS_SAMPLES)
 $(DIRS_SAMPLES): lib_hst
-	@$(FLOCK) $@ "$(MAKE) DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $@ "$(MAKE)"
 
 .PHONY: cp2k cp2k_mic
 cp2k: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory"
 cp2k_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory KNC=1"
 
 .PHONY: nek nek_mic
 nek: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory"
 nek_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory KNC=1"
 
 .PHONY: smm smm_mic
 smm: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
 smm_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory KNC=1"
 
 # added for specfem sample
 # will need option: make MNK="5 25" ..
 .PHONY: specfem specfem_mic
 specfem: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
 specfem_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory KNC=1"
 
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
@@ -1242,11 +1242,11 @@ drytest: build-tests
 
 .PHONY: build-tests
 build-tests: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory"
 
 .PHONY: tests
 tests: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory test"
 
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
@@ -1267,13 +1267,13 @@ test-nek: \
 	$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt \
 	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
 $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory axhm"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory grad"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory rstr"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 endif
 
