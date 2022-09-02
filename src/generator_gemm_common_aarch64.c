@@ -157,11 +157,10 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
       libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P,
                                                cur_vreg, l_zero_vreg, 0, cur_vreg,
                                                l_pred_reg, l_sve_type );
-
-      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                     gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
-                                                     (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
     }
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
+                                                   (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
   }
 }
 
