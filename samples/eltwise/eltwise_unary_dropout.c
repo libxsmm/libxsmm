@@ -22,6 +22,7 @@
 
 #define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
 
+LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
   libxsmm_bfloat16_f32 bf16_hp /* = { 0 }*/;
   bf16_hp.i[1] = x;
@@ -29,6 +30,7 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_INLINE
 void lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int width ) {
   union { unsigned int i; float f; } rng_num = { 0 };
   const unsigned int state_ld = 16;
@@ -61,6 +63,7 @@ void lsfr_Xwide( unsigned int* rng_state, float* prng_out, const unsigned int wi
   }
 }
 
+LIBXSMM_INLINE
 void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out, unsigned char *dropout_mask, void* rng_state, const float p) {
   float vrng[16];
   unsigned int i;
@@ -87,6 +90,7 @@ void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out,
   }
 }
 
+LIBXSMM_INLINE
 void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint mask_ld,
                       const void *in, void *out, unsigned char *mask, void* rng_state, float p, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   size_t j;
@@ -162,6 +166,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
   }
 }
 
+LIBXSMM_INLINE
 void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint mask_ld,
                       const void *in, void *out, unsigned char *mask, float p, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
   size_t i, j;
@@ -243,6 +248,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
   }
 }
 
+LIBXSMM_INLINE
 int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                       const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
   char *in;
@@ -364,6 +370,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   return ret;
 }
 
+LIBXSMM_INLINE
 int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo,
                       const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
   char *in;

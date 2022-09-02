@@ -47,26 +47,32 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+LIBXSMM_INLINE
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
 
+LIBXSMM_INLINE
 float fsigmoid_inv(float x) {
   return fsigmoid(x) * (1.0f-fsigmoid(x));
 }
 
+LIBXSMM_INLINE
 float tanh_inv(float x) {
   return 1.0f-LIBXSMM_TANHF(x)*LIBXSMM_TANHF(x);
 }
 
+LIBXSMM_INLINE
 float gelu(float x) {
   return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
+LIBXSMM_INLINE
 float gelu_inv(float x) {
   return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*PI)) * LIBXSMM_EXPF(-0.5f*x*x) );
 }
 
+LIBXSMM_INLINE
 float fp32_unary_compute(float in, unsigned int op) {
   float res = 0;
 

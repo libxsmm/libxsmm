@@ -17,13 +17,14 @@
 
 #include "eltwise_common.h"
 
+LIBXSMM_INLINE
 int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   char *char_data;
   char *char_data_gold;
   float *f32_char_data;
   float *f32_char_data_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;
@@ -148,13 +149,14 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   return ret;
 }
 
+LIBXSMM_INLINE
 int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   short *short_data;
   short *short_data_gold;
   float *f32_short_data;
   float *f32_short_data_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;
@@ -279,13 +281,14 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   return ret;
 }
 
+LIBXSMM_INLINE
 int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   float *in;
   int *int_data;
   int *int_data_gold;
   float *f32_int_data;
   float *f32_int_data_gold;
-  unsigned int i, j;
+  libxsmm_blasint i, j;
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;

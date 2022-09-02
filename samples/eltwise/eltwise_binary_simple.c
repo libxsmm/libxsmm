@@ -31,6 +31,7 @@
 #define DIV_OP 4
 #define MULADD_OP 5
 
+LIBXSMM_INLINE
 float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   float res = out;
 
@@ -52,6 +53,7 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   return res;
 }
 
+LIBXSMM_INLINE
 void set_opname(unsigned int op, char *opname) {
   if ( op == ADD_OP ) {
     sprintf(opname, "add");
@@ -69,6 +71,7 @@ void set_opname(unsigned int op, char *opname) {
   }
 }
 
+LIBXSMM_INLINE
 void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   libxsmm_meltw_binary_type  binary_type;
 
@@ -90,7 +93,7 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   *type = binary_type;
 }
 
-
+LIBXSMM_INLINE
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
                     const void *in0, const void *in1, char *out, const unsigned int op,
                     const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
@@ -162,6 +165,7 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
   }
 }
 
+LIBXSMM_INLINE
 int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast,
                     const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
   char *in, *_in, *in2, *_in2;

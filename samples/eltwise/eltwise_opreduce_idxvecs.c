@@ -60,6 +60,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
   }
 }
 
+LIBXSMM_INLINE
 void shuffle_array(unsigned long long *array, int n) {
   if (n > 1)
   {
