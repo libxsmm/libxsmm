@@ -16,6 +16,18 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64(  libxsmm_generated_code*     io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                              const unsigned int              i_gp_reg_addr,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              libxsmm_datatype                colbias_precision,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_ld    );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
