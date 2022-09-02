@@ -97,12 +97,13 @@ LIBXSMM_INLINE
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
                     const void *in0, const void *in1, char *out, const unsigned int op,
                     const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t i,j;
+  libxsmm_blasint i,j;
+  LIBXSMM_UNUSED(ldi1);
 
   if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
-    float in1_value;
-    float in0_value;
-    float out_value;
+    float in1_value = 0;
+    float in0_value = 0;
+    float out_value = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in0 == LIBXSMM_DATATYPE_F32 ) {
@@ -171,6 +172,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
   int ret = EXIT_SUCCESS;
+  libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
@@ -182,7 +184,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   set_binarytype(op, &binary_type);
 
   if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
-    fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
@@ -229,7 +231,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   /* compute out_gold */
   binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   binary_param.in0.primary  = (void*)_in;
   binary_param.in1.primary  = (void*)_in2;
   binary_param.out.primary  = (void*)out;
@@ -255,7 +257,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     }
   }
 
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
+  binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);

@@ -164,7 +164,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
 LIBXSMM_INLINE
 void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out, float alpha, const void *out_fwd, const unsigned char *mask, const unsigned char type, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t i, j;
+  libxsmm_blasint i, j;
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
@@ -432,7 +432,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unsigned char *mask_gold;
   float alpha = 0.1f;
   int ret = EXIT_SUCCESS;
-  size_t i,j;
+  libxsmm_blasint i, j;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_matdiff_info norms_out;

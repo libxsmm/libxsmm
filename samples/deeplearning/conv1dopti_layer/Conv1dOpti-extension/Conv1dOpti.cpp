@@ -53,7 +53,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});                                           /* Weight tensor with permuted dimension (width, filters, channels) */
     libxsmm_bfloat16* flip_weight_a = (libxsmm_bfloat16*) flip_weight.data_ptr<at::BFloat16>();    /* Get BFloat16 data pointers for accessing the tensor */
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)*/
     libxsmm_blasint per_m = WW_t;
     libxsmm_blasint per_n = F_t*C_t;
@@ -239,7 +239,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
         }
     }
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
     libxsmm_blasint flip_m1 = WW_t;
     libxsmm_blasint flip_n1 = F_t*C_t;
@@ -566,7 +566,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto grad_edgevnni_backweight = grad.new_empty({N_t,F_t,edge_W_t});                              /* Short buffer for storing VNNI transform in edge case */
     libxsmm_bfloat16* grad_edgevnni = (libxsmm_bfloat16*) grad_edgevnni_backweight.data_ptr<at::BFloat16>();
 
-    /* use jited tranpose */
+    /* use jited transpose */
     unary_shape = libxsmm_create_meltw_unary_shape( short_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -652,7 +652,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     eltwise_kernel(&eltwise_params);
 
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
     libxsmm_blasint per_m1 = F_t;
     libxsmm_blasint per_n1 = C_t;
@@ -723,7 +723,7 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});        /* Array to store permuted weight tensor (width, filters, channels) */
     float* flip_weight_a = flip_weight.data_ptr<float>();
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)*/
 
     libxsmm_blasint per_m = WW_t;
@@ -870,7 +870,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
         }
     }
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
 
     libxsmm_blasint flip_m1 = WW_t;
@@ -1143,7 +1143,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto grad_edgetrans_tensor = grad.new_empty({N_t,F_t,edge_W_t});                /* Tensor for storing transposed short buffer in edge case */
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
-    /* use jited tranpose */
+    /* use jited transpose */
     unary_shape = libxsmm_create_meltw_unary_shape( short_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -1202,7 +1202,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     }
 
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
     libxsmm_blasint per_m1 = F_t;
     libxsmm_blasint per_n1 = C_t;

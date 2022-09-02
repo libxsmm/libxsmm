@@ -302,7 +302,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   } else {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS;
   }
-  unary_flags = (use_64bit_index == IDX_64BIT) ? (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES | unary_flags) : (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | unary_flags) ;
+  unary_flags = (libxsmm_meltw_unary_flags)(use_64bit_index == IDX_64BIT)
+    ? (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES | unary_flags)
+    : (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | unary_flags) ;
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
   unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
   l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
@@ -677,7 +679,7 @@ int main(int argc, char* argv[])
   free( unique_random_array );
 
   if (ret == EXIT_FAILURE) {
-    fprintf(stderr, "ERROR at test: M = %d, N = %d, ldi = %d, ldo = %d, gs = %d, rowcolsoffs = %d, 32b/16b = %d, idxtype = %d\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
+    fprintf(stderr, "ERROR at test: M = %u, N = %u, ldi = %i, ldo = %i, gs = %u, rowcolsoffs = %u, 32b/16b = %u, idxtype = %u\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
   }
 
   return ret;

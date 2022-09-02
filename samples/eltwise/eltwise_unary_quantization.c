@@ -28,6 +28,8 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;
+  libxsmm_meltwfunction_unary unary_kernel_dequant;
+  libxsmm_meltwfunction_unary unary_kernel_quant;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_shape unary_shape;
   int maxexp = 0;
@@ -86,7 +88,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)char_data;
-  libxsmm_meltwfunction_unary unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -101,7 +103,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_param.in.primary  = (void*)char_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_char_data;
-  libxsmm_meltwfunction_unary unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -160,6 +162,8 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;
+  libxsmm_meltwfunction_unary unary_kernel_dequant;
+  libxsmm_meltwfunction_unary unary_kernel_quant;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_shape unary_shape;
   int maxexp = 0;
@@ -218,7 +222,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)short_data;
-  libxsmm_meltwfunction_unary unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -233,7 +237,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)short_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_short_data;
-  libxsmm_meltwfunction_unary unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -292,6 +296,8 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unsigned int s;
   int ret = EXIT_SUCCESS;
   float max_value = FLT_MIN;
+  libxsmm_meltwfunction_unary unary_kernel_dequant;
+  libxsmm_meltwfunction_unary unary_kernel_quant;
   libxsmm_meltw_unary_param unary_param;
   libxsmm_meltw_unary_shape unary_shape;
   int maxexp = 0;
@@ -350,7 +356,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary  = (void*)&scf_quant;
   unary_param.out.primary = (void*)int_data;
-  libxsmm_meltwfunction_unary unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);
@@ -365,7 +371,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_param.in.primary  = (void*)int_data;
   unary_param.in.secondary  = (void*)&scf_dequant;
   unary_param.out.primary = (void*)f32_int_data;
-  libxsmm_meltwfunction_unary unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
     exit(-1);

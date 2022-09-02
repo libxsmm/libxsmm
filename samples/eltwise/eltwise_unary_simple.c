@@ -198,7 +198,7 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
 
 void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out,
                    const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_unary_flags flags) {
-  size_t i,j;
+  libxsmm_blasint i, j;
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
@@ -313,6 +313,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
+  double error_bound = 0.0;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
@@ -364,7 +365,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   /* compute out_gold */
   unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
@@ -381,7 +382,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-
 
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_shape.n = 0;
@@ -408,7 +408,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  double error_bound =0.0;
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     error_bound = 0.0027;
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||

@@ -93,7 +93,7 @@ void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out,
 LIBXSMM_INLINE
 void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint mask_ld,
                       const void *in, void *out, unsigned char *mask, void* rng_state, float p, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t j;
+  libxsmm_blasint j;
 
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
     const float* f_in = (const float*)in;
@@ -169,7 +169,7 @@ void dropout_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
 LIBXSMM_INLINE
 void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_blasint mask_ld,
                       const void *in, void *out, unsigned char *mask, float p, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t i, j;
+  libxsmm_blasint i, j;
   float pn = 1.0f - p;
   float pi = 1.0f/pn;
 
@@ -259,6 +259,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unsigned int s;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
@@ -298,14 +299,14 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   /* compute out_gold */
   dropout_fwd_gold( M, N, ldi, ldo, mask_ld, in, out_gold, mask_gold, rng_state_gold, p, dtype_in, dtype_out, dtype_comp );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.op.primary = (void*)&p;
   unary_param.op.secondary = (void*)rng_state;
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   unary_param.out.secondary = (bitm == 0) ? NULL : (void*)mask;
   unary_flags = (bitm == 0) ? LIBXSMM_MELTW_FLAG_UNARY_NONE : LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);
@@ -380,6 +381,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   libxsmm_blasint i;
   float p = 0.3f;
   int ret = EXIT_SUCCESS;
+  libxsmm_meltwfunction_unary unary_kernel;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
@@ -415,14 +417,14 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   /* compute out_gold */
   dropout_bwd_gold( M, N, ldi, ldo, mask_ld, in, out_gold, mask_gold, p, dtype_in, dtype_out, dtype_comp );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.op.primary = (void*)&p;
   unary_param.in.primary  = (void*)in;
   unary_param.in.secondary = (void*)mask;
   unary_param.out.primary = (void*)out;
 
   unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT;
-  libxsmm_meltwfunction_unary unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
     exit(-1);

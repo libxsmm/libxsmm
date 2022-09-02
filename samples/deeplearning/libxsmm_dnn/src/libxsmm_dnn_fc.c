@@ -1088,7 +1088,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       exit(-1);
     }
 
-    /* JITing the tranpose kernel */
+    /* JITing the transpose kernel */
     l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bc, ldaT, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.vnni_to_vnniT_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.vnni_to_vnniT_kernel == NULL ) {
@@ -1162,7 +1162,7 @@ LIBXSMM_API libxsmm_dnn_fc_bwd_config setup_libxsmm_dnn_fc_bwd(libxsmm_blasint N
       exit(-1);
     }
 
-    /* JITing the tranpose kernels */
+    /* JITing the transpose kernels */
     l_unary_shape = libxsmm_create_meltw_unary_shape( bk, bn, lda, lda, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
     res.norm_to_vnni_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2, l_unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     if ( res.norm_to_vnni_kernel == NULL ) {
@@ -2277,7 +2277,7 @@ LIBXSMM_API void libxsmm_dnn_fc_bwd_exec_bf16_vnni_format( libxsmm_dnn_fc_bwd_co
     }
 
     if (cfg.upd_2d_blocking == 0) {
-      /* Required upfront tranposes */
+      /* Required upfront transposes */
       for (mb1ifm1 = tr_inp_thr_begin; mb1ifm1 < tr_inp_thr_end; mb1ifm1++) {
         mb1 = mb1ifm1%nBlocksMB;
         ifm1 = mb1ifm1/nBlocksMB;
