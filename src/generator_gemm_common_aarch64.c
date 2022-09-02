@@ -135,7 +135,9 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
   l_zero_vreg = l_vec_reg_acc_start - 2;
 
   gp_reg_relumask = i_gp_reg_scratch0;
-  libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relumask);
+  if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relumask);
+  }
   libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch1 );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
                                            l_zero_vreg, l_zero_vreg, 0, l_zero_vreg,
@@ -158,9 +160,11 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
                                                cur_vreg, l_zero_vreg, 0, cur_vreg,
                                                l_pred_reg, l_sve_type );
     }
-    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
-                                                   (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+    if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
+                                                     (i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+    }
   }
 }
 
@@ -332,11 +336,9 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_sve(  libxsmm_genera
   if ((io_micro_kernel_config->fused_relu_nobitmask > 0) || (io_micro_kernel_config->fused_relu > 0)) {
     libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve( io_generated_code, i_xgemm_desc, io_micro_kernel_config, i_gp_reg_scratch0, i_gp_reg_scratch1, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
   }
-#if 0
   if (io_micro_kernel_config->fused_sigmoid > 0) {
     libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve( io_generated_code, i_xgemm_desc, io_micro_kernel_config, i_gp_reg_scratch0, i_gp_reg_scratch1, i_vec_length, i_vec_reg_count, i_m_blocking, i_n_blocking, i_data_size );
   }
-#endif
 }
 
 LIBXSMM_API_INTERN
