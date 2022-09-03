@@ -1089,8 +1089,16 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
       if (l_m_blocking == 15) { /* for 15 we would need 5 M registers 4-4-4-2-1 */
         l_m_blocking = 12;
       }
+      /* l_m_blocking should be multiple of 8 when fusing relu bitmask... writing relu mask at this granularity */
+      if (io_micro_kernel_config->fused_relu > 0) {
+        if (i_xgemm_desc->m % 16 == 15) {
+          l_m_blocking = 8;
+        }
+      }
     } else if ( i_current_m_blocking == 12 && i_xgemm_desc->m != 12 ) {
       l_m_blocking = i_xgemm_desc->m % 4;
+    } else if (i_current_m_blocking == 8 && i_xgemm_desc->m != 8) {
+      l_m_blocking = i_xgemm_desc->m % 8;
     } else {
       /* we are done with m_blocking */
     }
