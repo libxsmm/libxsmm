@@ -22,7 +22,7 @@ if [ "${GREP}" ] && [ "${CUT}" ] && [ "${TR}" ]; then
   ARCH=$(uname -m)
 
   # disable log files
-  #export PEXEC_LG=/dev/null
+  export PEXEC_LG=/dev/null
 
   if [ "x86_64" = "${ARCH}" ]; then
     if [ -e /proc/cpuinfo ]; then
@@ -36,15 +36,15 @@ if [ "${GREP}" ] && [ "${CUT}" ] && [ "${TR}" ]; then
       | ${TR} "[:upper:]." "[:lower:]_")
     fi
     if [ "$(echo "${CPUFLAGS}" | ${GREP} -w avx512f | ${GREP} -w avx512vl)" ]; then
-      ${HERE}/../samples/eltwise/run_test.sh -n 50
+      "${HERE}/../samples/eltwise/run_test.sh" -n 50
     elif [ "$(echo "${CPUFLAGS}" | ${GREP} -w avx2)" ]; then
-      ${HERE}/../samples/eltwise/run_test_avx2.sh -n 50
+      "${HERE}/../samples/eltwise/run_test_avx2.sh" -n 50
     elif [ "$(echo "${CPUFLAGS}" | ${GREP} -w sse4_2)" ]; then
-      ${HERE}/../samples/eltwise/run_test_sse42.sh -n 15
+      "${HERE}/../samples/eltwise/run_test_sse42.sh" -n 15
     fi
   elif [ "arm64" = "${ARCH}" ]; then
     export LIBXSMM_TARGET="arm_v82"
-    ${HERE}/../samples/eltwise/run_test_aarch64.sh -n 30
+    "${HERE}/../samples/eltwise/run_test_aarch64.sh" -n 30
   fi
 else
   >&2 echo "ERROR: missing prerequisites!"
