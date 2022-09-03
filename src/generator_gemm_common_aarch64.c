@@ -19,6 +19,87 @@
 #include "generator_mateltwise_aarch64_sve.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsmm_generated_code*         io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                              libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_gp_reg_scratch1,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_data_size  ) {
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_data_size));
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: #full vector stores, 1: #predicate stores (0 or 1) */
+  unsigned int l_m_total_blocks = 0;
+  unsigned int l_vec_reg_acc_start = 0;
+  unsigned int l_remainder_size = 0;
+  unsigned char l_pred_reg = 7;
+
+  unsigned int l_cur_vreg = 0;
+  unsigned int n_reserved_vregs = 18;
+  unsigned int l_vec_c0 = 0, l_vec_c1 = 1, l_vec_c2 = 2, l_vec_c3 = 3, l_vec_c1_d = 4, l_vec_c2_d = 5, l_vec_c3_d = 6, l_vec_hi_bound = 7, l_vec_lo_bound = 8, l_vec_ones = 9, l_vec_neg_ones = 10, l_vec_halves = 11, l_vec_tmp = 12, l_vec_x2 = 13, l_vec_nom = 14, l_vec_denom = 15, l_mask_hi = 16, l_mask_lo = 17;
+  unsigned int l_vec_x = 0;
+
+  l_m_blocks[0] = i_m_blocking / i_vec_length;
+  l_remainder_size = i_m_blocking % i_vec_length;
+  l_m_blocks[1] = (l_remainder_size > 0);
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+  /* start register of accumulator */
+  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+
+  libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, -1, i_gp_reg_scratch0);
+
+  /* Save the accumulators to scratch  */
+  if (l_vec_reg_acc_start < n_reserved_vregs) {
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
+    for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_n*64, l_n, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+    }
+  }
+
+  /* Prepare sigmoid vregs */
+  libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_aarch64_sve( io_generated_code, l_vec_c0, l_vec_c1,  l_vec_c2, l_vec_c3, l_vec_c1_d, l_vec_c2_d, l_vec_c3_d,
+      l_vec_hi_bound, l_vec_lo_bound,  l_vec_ones, l_vec_neg_ones, l_vec_halves, i_gp_reg_scratch0, l_sve_type, l_pred_reg  );
+
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    for ( l_m = 0; l_m < l_m_total_blocks; l_m++ ) {
+      l_cur_vreg = l_vec_reg_acc_start + l_m + (l_m_total_blocks * l_n);
+      /* Have to restore accumulator  */
+      if (l_vec_reg_acc_start < n_reserved_vregs) {
+        if (l_cur_vreg <= n_reserved_vregs) {
+          l_vec_x = n_reserved_vregs;
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_cur_vreg*64, l_vec_x, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+        } else {
+          l_vec_x = l_cur_vreg;
+        }
+      } else {
+        l_vec_x = l_cur_vreg;
+      }
+      libxsmm_generator_sigmoid_ps_rational_78_aarch64_sve(  io_generated_code, l_vec_x, l_vec_x2, l_vec_nom, l_vec_denom,l_mask_hi, l_mask_lo,
+          l_vec_c0, l_vec_c1, l_vec_c2, l_vec_c3, l_vec_c1_d, l_vec_c2_d, l_vec_c3_d, l_vec_hi_bound, l_vec_lo_bound, l_vec_ones, l_vec_neg_ones, l_vec_halves, l_vec_tmp, l_sve_type, l_pred_reg  );
+
+      if (l_vec_reg_acc_start < n_reserved_vregs) {
+        if (l_cur_vreg <= n_reserved_vregs) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_cur_vreg*64, l_vec_x, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+        }
+      }
+    }
+  }
+
+  if (l_vec_reg_acc_start < n_reserved_vregs) {
+    /* Restore the accumulators from scratch  */
+    for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
+      libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_n*64, l_n, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,
@@ -89,7 +170,6 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
 
   if (l_vec_reg_acc_start < n_reserved_vregs) {
     /* Restore the accumulators from scratch  */
-    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
     for (l_n = l_vec_reg_acc_start; l_n <= n_reserved_vregs; l_n++) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, l_n*64, l_n, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
     }
