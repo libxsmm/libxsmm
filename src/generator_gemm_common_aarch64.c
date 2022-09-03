@@ -272,12 +272,14 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
   unsigned int mask_helper0_vreg = 0;
   unsigned int mask_helper1_vreg = 0;
   unsigned int gp_reg_relumask = 0;
+  unsigned int l_combine_remainder_vregs = 0;
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
   l_m_blocks[1] = (i_m_blocking%i_vec_length)/(i_vec_length/2);  /* number of  64 bit stores */
   l_m_blocks[2] = (i_m_blocking%i_vec_length)%(i_vec_length/2);  /* number of  32 but stores */
   l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1] + l_m_blocks[2];
+  l_combine_remainder_vregs = ((l_m_blocks[1] > 0) && (l_m_blocks[2] > 0)) ? 1 : 0;
 
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
@@ -343,6 +345,25 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
           }
         }
 
+        /* Check if we have to combine remainder registers... */
+        if (l_m >= l_m_blocks[0]) {
+          if (l_combine_remainder_vregs > 0) {
+            unsigned int next_vreg = l_vec_reg_acc_start + l_m + 1 + (l_m_total_blocks * l_n);
+            /* Potentially have to restore next vreg */
+            if (l_vec_reg_acc_start <= 4) {
+              if (next_vreg <= 4) {
+                libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, i_gp_reg_scratch1);
+                libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF, i_gp_reg_scratch1, LIBXSMM_AARCH64_GP_REG_UNDEF, next_vreg*64, tmp_vreg1, LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
+                next_vreg = tmp_vreg1;
+              }
+            }
+            libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
+                                                        i_gp_reg_scratch1, next_vreg, 0, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+            libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                        i_gp_reg_scratch1, l_cur_vreg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+          }
+        }
+
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FCMGT_Z_V,
                                                    l_cur_vreg, LIBXSMM_AARCH64_ASIMD_REG_UNDEF, 0, tmp_vreg0,
                                                    LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
@@ -350,6 +371,14 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
             LIBXSMM_CAST_UCHAR(mask_helper0_vreg),  LIBXSMM_CAST_UCHAR(mask_helper1_vreg),
             LIBXSMM_CAST_UCHAR(tmp_vreg0), LIBXSMM_CAST_UCHAR(tmp_vreg1), LIBXSMM_CAST_UCHAR(tmp_vreg2),
             LIBXSMM_CAST_UCHAR(gp_reg_relumask), &l_mask_adv );
+
+
+        /* If we have combined remiander registers, skip last m iteration */
+        if (l_m >= l_m_blocks[0]) {
+          if (l_combine_remainder_vregs > 0) {
+            break;
+          }
+        }
       }
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,

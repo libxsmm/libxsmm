@@ -2041,13 +2041,6 @@ int main(int argc, char* argv []) {
           error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc, l_m, l_n );
         }
         if (l_unary_postop == RELU_BITMASK) {
-          unsigned char a = *((char*)l_relu_bitmask_gold);
-          unsigned char b = *((char*)l_relu_bitmask);
-          printf("Reference is %u and computed is %u\n", a, b);
-          int __i = 0;
-          for ( __i = 0; __i < 3; __i++) {
-            printf("Reference is %.5f and computed is %.5f\n", *((float*)l_c_gold+__i), *((float*)l_c+__i));
-          }
           error_bitmask = check_matrix( LIBXSMM_DATATYPE_I8, l_relu_bitmask_gold, l_relu_bitmask, l_gemm_def.uop_ld, (l_m+7)/8, l_n );
         }
       }
