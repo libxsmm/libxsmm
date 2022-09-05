@@ -43,7 +43,7 @@ if [ "${HERE}" ] && [ "${GREP}" ] && [ "${CUT}" ] && [ "${TR}" ]; then
       "${HERE}/../samples/eltwise/run_test_sse42.sh" -n 15
     fi
   elif [ "arm64" = "${ARCH}" ]; then
-    export LIBXSMM_TARGET="arm_v82"
+    #export LIBXSMM_TARGET="arm_v82"
     "${HERE}/../samples/eltwise/run_test_aarch64.sh" -n 30
   fi
 else
