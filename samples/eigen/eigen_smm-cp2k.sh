@@ -9,6 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+# shellcheck disable=SC2034
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
@@ -52,7 +53,7 @@ fi
 if [ "$1" ]; then
   NREPEAT=$1
 fi
-cat /dev/null > ${FILE}
+cat /dev/null >"${FILE}"
 
 NRUN=1
 NMAX=$(echo ${!RUNS} | wc -w | tr -d " ")
@@ -61,7 +62,7 @@ for RUN in ${!RUNS} ; do
   NVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f2)
   KVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f3)
   >&2 echo -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
-  ERROR=$({ ${HERE}/eigen_smm ${CASE} ${MVALUE} ${NVALUE} ${KVALUE} ${SIZE} ${NREPEAT} >> ${FILE}; } 2>&1)
+  ERROR=$({ "${HERE}/eigen_smm" "${CASE}" "${MVALUE}" "${NVALUE}" "${KVALUE}" "${SIZE}" "${NREPEAT}" >>"${FILE}"; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     echo "FAILED(${RESULT}) ${ERROR}"
@@ -69,7 +70,7 @@ for RUN in ${!RUNS} ; do
   else
     echo "OK ${ERROR}"
   fi
-  echo >> ${FILE}
+  echo >>"${FILE}"
   NRUN=$((NRUN+1))
 done
 
