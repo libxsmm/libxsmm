@@ -12,13 +12,13 @@
 # shellcheck disable=SC2143
 set -eo pipefail
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 GREP=$(command -v grep)
 CUT=$(command -v cut)
 TR=$(command -v tr)
 
-if [ "${GREP}" ] && [ "${CUT}" ] && [ "${TR}" ]; then
+if [ "${HERE}" ] && [ "${GREP}" ] && [ "${CUT}" ] && [ "${TR}" ]; then
   UNAME=$(if [ "$(command -v uname)" ]; then uname; fi)
-  HERE=$(cd "$(dirname "$0")" && pwd -P)
   ARCH=$(uname -m)
 
   # disable log files
