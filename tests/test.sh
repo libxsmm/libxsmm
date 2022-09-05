@@ -26,7 +26,7 @@ TESTS_NEEDBLAS="gemm.c wrap.sh"
 TESTS_NEEDBLAS_GREP=$(echo ${TESTS_NEEDBLAS} | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
-  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) wrap.sh eltwise.sh"
+  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) eltwise.sh fsspmdm.sh wrap.sh"
 else
   TESTS="$*"
 fi
