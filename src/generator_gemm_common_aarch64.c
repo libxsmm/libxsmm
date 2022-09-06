@@ -41,8 +41,8 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   unsigned char l_pred_reg = 7;
 
   unsigned int l_cur_vreg = 0;
-  unsigned int n_reserved_vregs = 18;
-  unsigned int l_vec_c0 = 0, l_vec_c1 = 1, l_vec_c2 = 2, l_vec_c3 = 3, l_vec_c1_d = 4, l_vec_c2_d = 5, l_vec_c3_d = 6, l_vec_hi_bound = 7, l_vec_lo_bound = 8, l_vec_ones = 9, l_vec_neg_ones = 10, l_vec_halves = 11, l_vec_tmp = 12, l_vec_x2 = 13, l_vec_nom = 14, l_vec_denom = 15, l_mask_hi = 16, l_mask_lo = 17;
+  unsigned int n_reserved_vregs = 16;
+  unsigned int l_vec_c0 = 0, l_vec_c1 = 1, l_vec_c2 = 2, l_vec_c3 = 3, l_vec_c1_d = 4, l_vec_c2_d = 5, l_vec_c3_d = 6, l_vec_hi_bound = 7, l_vec_lo_bound = 8, l_vec_ones = 9, l_vec_neg_ones = 10, l_vec_halves = 11, l_vec_tmp = 12, l_vec_x2 = 13, l_vec_nom = 14, l_vec_denom = 15, l_mask_hi = 6, l_mask_lo = 5;
   unsigned int l_vec_x = 0;
 
   l_m_blocks[0] = i_m_blocking / i_vec_length;
