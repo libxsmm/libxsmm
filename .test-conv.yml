@@ -1,5 +1,5 @@
 script:
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -12,7 +12,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -25,7 +25,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -38,7 +38,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -51,7 +51,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -64,7 +64,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -77,7 +77,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export CHECK=1 ITERS=1;
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
@@ -90,7 +90,7 @@ script:
       done
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     export CHECK=1 ITERS=1;
     for PAD in 0 1; do
@@ -100,7 +100,7 @@ script:
       ./run_convs.sh ${ITERS} -1 f32 U ${PAD} 0 64 64 4 ;
     done)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/conv && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/conv && make -e ${MAKEJ} &&
    (export OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     export CHECK=1 CHECK_SCALE=1 ITERS=1 MB=${OMP_NUM_THREADS};
     for KIND in F B U; do

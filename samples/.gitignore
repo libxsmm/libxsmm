@@ -1,9 +1,3 @@
-deeplearning/sparse_weight_mult/parallel_sparse_weight_B_mult
-deeplearning/sparse_weight_mult/parallel_sparse_weight_B_conv
-deeplearning/sparse_weight_mult/parallel_sparse_weight_C_redmult
-deeplearning/sparse_weight_mult/sparse_weight_A_mult
-deeplearning/sparse_weight_mult/sparse_weight_B_mult
-deeplearning/sparse_weight_mult/sparse_weight_C_redmult
 eltwise/eltwise_*
 equation/equation_*
 edge/asparse_packed_csr_*

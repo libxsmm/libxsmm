@@ -1,5 +1,5 @@
 script:
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/fc && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/fc && make -e ${MAKEJ} &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh f32 1 1024 A 0 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh f32 1 1024 A 1 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh f32 1 1024 A 2 32 32 32 ) &&
@@ -9,7 +9,7 @@ script:
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh f32 1 1024 A 2 64 64 64 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,FP32)"; ./run_fullyconnected.sh f32 1 1024 A 3 64 64 64 )
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/libxsmm_dnn/tests/fc && make -e ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/deeplearning/tests/fc && make -e ${MAKEJ} &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh bf16 1 1024 A 0 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh bf16 1 1024 A 1 32 32 32 ) &&
    (echo; echo "--- TEST FC (NCNC-KCCK,BF16)"; CHECK_SCALE=0.001 ./run_fullyconnected.sh bf16 1 1024 A 2 32 32 32 ) &&

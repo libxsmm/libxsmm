@@ -1,7 +1,7 @@
 site_name: LIBXSMM
 site_author: Hans Pabst
 copyright: Copyright (c) 2009-2022, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
-site_description: Library targeting Intel Architecture for specialized dense and sparse matrix operations, and deep learning primitives.
+site_description: Library for specialized dense and sparse matrix operations, and deep learning primitives.
 repo_url: https://github.com/libxsmm/libxsmm/
 edit_uri: edit/main/documentation
 site_url: https://libxsmm.readthedocs.io/
@@ -26,7 +26,7 @@ nav:
 - Q&A: libxsmm_qna.md
 - LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
-  - "DNN: Deep Neural Networks": https://libxsmm.readthedocs.io/#deep-learning
+  - "DNN: Deep Neural Networks": https://github.com/libxsmm/libxsmm_dnn
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
@@ -35,7 +35,7 @@ nav:
   - Collection: libxsmm_samples.md
 - Machine Learning (ML):
   - PlaidML tensor compiler: https://github.com/plaidml/plaidml
-  - Extension for PyTorch: https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/conv1dopti_layer
+  - Extension for PyTorch: https://github.com/libxsmm/libxsmm_dnn/tree/main/samples/conv1dopti_layer
 - Scientific (HPC):
   - CP2K: cp2k.md
   - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
