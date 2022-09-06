@@ -10,7 +10,6 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 #set -eo pipefail
-#set -e
 
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
@@ -31,7 +30,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       echo "Usage: ${NAME}.sh [options]"
       echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
       echo "       -o|--log      [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
-      echo "       -c|--cut      [PEXEC_CT]: cut name of each case (-f argument of cut)"
+      echo "       -c|--cut      [PEXEC_CT]: cut output of each case (-f argument of cut)"
+      echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
@@ -51,7 +51,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     -c|--cut)
       CUT=$2
       shift 2;;
-    -n|--nlimit)
+    -m|--min)
+      MIN=$2
+      shift 2;;
+    -n|--nth)
       NTH=$2
       shift 2;;
     -j|--nprocs)
@@ -78,8 +81,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   done
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
-  CUT=${PEXEC_CT:-${CUT}}; NTH=${PEXEC_NT:-${NTH}};
-  NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
+  CUT=${PEXEC_CT:-${CUT}}; NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
+  NTH=${PEXEC_NT:-${NTH}}; MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
@@ -111,18 +114,6 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   fi
   if [ "0" != "$((1!=NP))" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
-  fi
-  if [ "0" = "${QUIET}" ]; then
-    if [ "$(command -v tr)" ]; then
-      if [ "${BUILDKITE_LABEL}" ]; then
-        LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
-        | sed 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
-      else
-        LABEL="$(basename "$(pwd -P)" \
-        | tr "[:lower:]" "[:upper:]") "
-      fi
-    fi
-    1>&2 echo "Execute ${LABEL}with NPROCS=${NP} and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
   if [[ ${LOG} != /dev/* ]]; then
     LOG_OUTER=/dev/stdout
@@ -176,16 +167,29 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   while read -r LINE; do
     if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
       COUNTER=$((COUNTER+1))
-      INPUT="${INPUT}\n${LINE}"
-    elif [ ! "${BACKUP}" ]; then
-      ATLEAST=${LINE}
+      COUNTED="${COUNTED}"$'\n'"${LINE}"
+    elif [ "0" != "$((COUNTER<MIN))" ]; then
+      ATLEAST="${ATLEAST}"$'\n'"${LINE}"
     fi
   done
-  if [ ! "${ATLEAST}" ] || [ "0" != "${COUNTER}" ]; then
-    echo -e "${INPUT}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
-  else
-    echo -e "${ATLEAST}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
+  IFS=$'\n' && for LINE in ${ATLEAST}; do
+    if [ "0" != "$((MIN<=COUNTER))" ]; then break; fi
+    COUNTED="${COUNTED}"$'\n'"${LINE}"
+    COUNTER=$((COUNTER+1))
+  done
+  if [ "0" = "${QUIET}" ]; then
+    if [ "$(command -v tr)" ]; then
+      if [ "${BUILDKITE_LABEL}" ]; then
+        LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
+        | sed 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
+      else
+        LABEL="$(basename "$(pwd -P)" \
+        | tr "[:lower:]" "[:upper:]") "
+      fi
+    fi
+    1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
+  echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
