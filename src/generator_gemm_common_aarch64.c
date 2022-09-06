@@ -608,6 +608,185 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_generated_code*     io_generated_code,
+                                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                              const unsigned int              i_gp_reg_addr,
+                                                              const unsigned int              i_gp_reg_scratch0,
+                                                              const unsigned int              i_vec_length,
+                                                              const unsigned int              i_vec_reg_count,
+                                                              libxsmm_datatype                colbias_precision,
+                                                              const unsigned int              i_m_blocking,
+                                                              const unsigned int              i_n_blocking,
+                                                              const unsigned int              i_ld,
+                                                              const unsigned int              i_data_size) {
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+
+  unsigned int l_m_blocks[2] = { 0 }; /* 0: #full vector loads, 1: #predicate loads (0 or 1) */
+  unsigned int l_m_total_blocks = 0;
+  unsigned int l_m_bytes_full = 0;
+  unsigned int l_vec_reg_acc_start = 0;
+  unsigned int l_remainder_size = 0;
+  unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
+  unsigned int l_bias_tsize = (colbias_precision == LIBXSMM_DATATYPE_F32) ? 4 : 2;
+  unsigned int l_pred_reg = 7;
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_data_size));
+
+  l_m_blocks[0] = i_m_blocking / i_vec_length;
+  l_remainder_size = i_m_blocking % i_vec_length;
+  l_m_blocks[1] = (l_remainder_size > 0);
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
+  l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
+
+  /* start register of accumulator */
+  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+
+
+  libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch0 );
+  /* load C accumulator */
+  libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_bias);
+
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BETA_0) == 0) {
+    /* this is the jump size to be performed after a n-block is complete */
+    unsigned long long l_jump_block_n_last = 0;
+
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      /* this is the jump size to be performed after a m-block is complete */
+      unsigned long long l_jump_block_m_last = 0;
+
+      for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+        if (l_n == 0) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                l_gp_reg_bias,
+                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                0,
+                                                l_m,
+                                                LIBXSMM_AARCH64_SVE_REG_UNDEF );
+
+          if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+            libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                           LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                           l_gp_reg_bias,
+                                                           l_gp_reg_bias,
+                                                           i_vec_length * l_bias_tsize,
+                                                           0 );
+          }
+        }
+        libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                              i_gp_reg_addr,
+                                              LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                              0,
+                                              l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
+                                              LIBXSMM_AARCH64_SVE_REG_UNDEF );
+        if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+          libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                         LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                         i_gp_reg_addr,
+                                                         i_gp_reg_addr,
+                                                         i_vec_length * i_data_size,
+                                                         0 );
+        }
+        /* combine the m-jump with the n one*/
+        else {
+          l_jump_block_m_last = (unsigned long long)i_vec_length * i_data_size;
+        }
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
+            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_pred_reg, l_sve_type );
+      }
+
+      if( l_m_blocks[1] != 0 ) {
+        if (l_n == 0) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
+                                                l_gp_reg_bias,
+                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                0,
+                                                l_m_blocks[0],
+                                                LIBXSMM_AARCH64_SVE_REG_P1 );
+        }
+
+        libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
+                                              i_gp_reg_addr,
+                                              LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                              0,
+                                              l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
+                                              LIBXSMM_AARCH64_SVE_REG_P1 );
+
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
+            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_m_blocks[0], 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_pred_reg, l_sve_type );
+
+      }
+      l_jump_block_m_last += i_ld - l_m_bytes_full;
+
+      if( l_n != i_n_blocking - 1 ) {
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       i_gp_reg_addr,
+                                                       i_gp_reg_scratch0,
+                                                       i_gp_reg_addr,
+                                                       l_jump_block_m_last );
+      }
+      else {
+        l_jump_block_n_last = l_jump_block_m_last;
+      }
+    }
+
+    /* reset C-ptr to original address */
+    l_jump_block_n_last = i_ld * i_n_blocking - l_jump_block_n_last;
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                   LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                   i_gp_reg_addr,
+                                                   i_gp_reg_scratch0,
+                                                   i_gp_reg_addr,
+                                                   l_jump_block_n_last );
+  } else {
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+        if (l_n == 0) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                l_gp_reg_bias,
+                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                0,
+                                                l_m,
+                                                LIBXSMM_AARCH64_SVE_REG_UNDEF );
+
+          if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+            libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
+                                                           LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+                                                           l_gp_reg_bias,
+                                                           l_gp_reg_bias,
+                                                           i_vec_length * l_bias_tsize,
+                                                           0 );
+          }
+        }
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+            l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_pred_reg, l_sve_type );
+      }
+
+      if( l_m_blocks[1] != 0 ) {
+        if (l_n == 0) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
+                                                l_gp_reg_bias,
+                                                LIBXSMM_AARCH64_GP_REG_UNDEF,
+                                                0,
+                                                l_m_blocks[0],
+                                                LIBXSMM_AARCH64_SVE_REG_P1 );
+        }
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ORR_V,
+            l_m_blocks[0], l_m_blocks[0], 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_pred_reg, l_sve_type );
+      }
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64(  libxsmm_generated_code*     io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               const unsigned int              i_gp_reg_addr,
@@ -617,12 +796,13 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64(  libxsmm_genera
                                                               libxsmm_datatype                colbias_precision,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_ld    ) {
+                                                              const unsigned int              i_ld,
+                                                              const unsigned int              i_data_size ) {
 
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
     libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd( io_generated_code, i_xgemm_desc, i_gp_reg_addr, i_gp_reg_scratch0, i_vec_length, i_vec_reg_count, colbias_precision, i_m_blocking, i_n_blocking, i_ld );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
-    /* TODO */
+    libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve( io_generated_code, i_xgemm_desc, i_gp_reg_addr, i_gp_reg_scratch0, i_vec_length, i_vec_reg_count, colbias_precision, i_m_blocking, i_n_blocking, i_ld, i_data_size );
   }
 }
 
