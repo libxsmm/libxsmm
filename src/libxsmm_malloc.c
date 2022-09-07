@@ -62,8 +62,8 @@
 # else
 #   define LIBXSMM_MAP_JIT 0
 # endif
-LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_THROW;
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_NOEXCEPT;
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
 #endif
 #if !defined(LIBXSMM_MALLOC_FINAL)
 # define LIBXSMM_MALLOC_FINAL 3

@@ -105,7 +105,7 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 # endif
 # endif
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
