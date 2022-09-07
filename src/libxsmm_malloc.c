@@ -63,7 +63,11 @@
 #   define LIBXSMM_MAP_JIT 0
 # endif
 LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_NOEXCEPT;
+# if !defined(__cplusplus) || (__cplusplus <= 199711L)
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
+# else
+LIBXSMM_EXTERN int mkstemp(char*);
+# endif
 #endif
 #if !defined(LIBXSMM_MALLOC_FINAL)
 # define LIBXSMM_MALLOC_FINAL 3

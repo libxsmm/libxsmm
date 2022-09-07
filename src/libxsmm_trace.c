@@ -65,29 +65,29 @@ LIBXSMM_APIVAR_DEFINE(void* internal_trace_symbols[LIBXSMM_NTHREADS_MAX]);
 LIBXSMM_API_INLINE void internal_delete(void* value)
 {
   int fd;
-# if !(defined(__APPLE__) && defined(__MACH__))
+#   if !(defined(__APPLE__) && defined(__MACH__))
   LIBXSMM_ASSERT(NULL != value);
-# endif
+#   endif
   fd = *((int*)value);
-# if defined(NDEBUG)
+#   if defined(NDEBUG)
   munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
-# else /* library code is expected to be mute */
+#   else /* library code is expected to be mute */
   if (0 != munmap(value, LIBXSMM_TRACE_SYMBOLSIZE)) {
     const int error = errno;
     fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i at %p)\n",
       strerror(error), error, value);
   }
-# endif
+#   endif
   if (0 <= fd) {
     close(fd);
   }
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#   if !defined(NDEBUG) /* library code is expected to be mute */
   else {
     fprintf(stderr, "LIBXSMM ERROR: invalid file descriptor (%i)\n", fd);
   }
-# endif
+#   endif
 }
-# if defined(__APPLE__) && defined(__MACH__)
+#   if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
 LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 {
@@ -99,13 +99,17 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
   fst.fst_bytesalloc = 0;
   return fcntl(fd, F_PREALLOCATE, &fst);
 }
-# elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
-       (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+#   elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
+         (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
+#   endif
 # endif
-# endif
+# if !defined(__cplusplus) || (__cplusplus <= 199711L)
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
+# else
+LIBXSMM_EXTERN int mkstemp(char*);
+# endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
