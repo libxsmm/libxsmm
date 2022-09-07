@@ -396,6 +396,7 @@
 
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P      0x658aa082 /* Floating-point down convert to BFloat16 format (predicated) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, a/b, vectors, predicated, src0 == dst */
