@@ -425,7 +425,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       error_bound = 0.007;
     }
   } else {
-    error_bound = 0.000014;
+    error_bound = 0.00001;
   }
 
   if ( norms_out.normf_rel > error_bound ) {
