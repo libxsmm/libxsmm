@@ -175,7 +175,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unsigned int record_idx, unsigned long long *argop_off, unsigned int *argop_off_i32, unsigned int reduce_on_outputs ) {
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_blasint ld_in = _ld_in;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;

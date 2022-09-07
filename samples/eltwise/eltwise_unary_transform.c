@@ -123,7 +123,7 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -233,7 +233,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -346,7 +346,7 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape */= { 0 }/*;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -449,7 +449,7 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -549,7 +549,7 @@ int test_vnni4_to_norm_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -638,7 +638,7 @@ int test_vnni4_to_vnni2_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -730,7 +730,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -822,7 +822,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -915,7 +915,7 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1007,7 +1007,7 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1099,7 +1099,7 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1192,7 +1192,7 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {

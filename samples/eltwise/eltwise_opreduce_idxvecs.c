@@ -85,10 +85,10 @@ int main(int argc, char* argv[])
   unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
   unsigned int  *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
   unsigned int  *cols_ind_array_i32, *cols_ind_array2_i32;
-  libxsmm_meltw_opreduce_vecs_idx_param     params = { 0 };
-  libxsmm_meltw_opreduce_vecs_flags         opredop_flags;
-  libxsmm_meltwfunction_opreduce_vecs_idx   kernel;
-  libxsmm_matdiff_info                      norms_elts, diff;
+  libxsmm_meltw_opreduce_vecs_idx_param params /*= { 0 }*/;
+  libxsmm_meltw_opreduce_vecs_flags opredop_flags;
+  libxsmm_meltwfunction_opreduce_vecs_idx kernel;
+  libxsmm_matdiff_info norms_elts, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   char opname[50];
