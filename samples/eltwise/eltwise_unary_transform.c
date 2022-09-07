@@ -346,7 +346,7 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape /*= { 0 }/*;
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
