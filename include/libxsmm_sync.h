@@ -476,7 +476,7 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
-      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
+      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_NOEXCEPT;
 #     else
       LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
