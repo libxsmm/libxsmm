@@ -164,13 +164,13 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
-                    --unbuffered ${TESTSCRIPT}"
+                    --unbuffered ${TESTSCRIPT} ${@:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
-    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT}"
+    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${@:2}"
   else # avoid temporary script in case of non-batch execution
     if [ ! "${MAKEJ}" ]; then
       MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
@@ -343,17 +343,17 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
-              echo -n "${TOOL_COMMAND} ${RUNREM} ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
+              echo -n "${TOOL_COMMAND} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
               TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "${DIRPAT}") "
               if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "${DIRPAT}")"
               fi
               ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" "${RUNFILE}"
-              echo -n "${RUNREM}" >>"${TESTSCRIPT}"
+              echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
             fi
           else
-            echo -n "${RUNREM}" >>"${TESTSCRIPT}"
+            echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
