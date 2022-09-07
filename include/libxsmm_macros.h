@@ -594,7 +594,7 @@
 # define LIBXSMM_LOGF(A) logf(A)
 #else
 # if !defined(_WIN32)
-LIBXSMM_EXTERN double erf(double) LIBXSMM_THROW;
+LIBXSMM_EXTERN double erf(double) LIBXSMM_NOEXCEPT;
 # endif
 # define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
