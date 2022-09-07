@@ -17,6 +17,44 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg) {
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(4) );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 16, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(4) );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64_sve( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg) {
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, i_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP_V_E, i_vec_inout, i_vec_inout, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(2) );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+    /* TODO  */
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, i_vec_inout, i_pred_reg );
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg) {
+  if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
+    /* TODO  */
+  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+    libxsmm_generator_vcvt_f32bf16_aarch64_sve( io_generated_code, i_vec_inout, i_pred_reg );
+  }
+}
+
 /** Executes the asimd compute instruction <instr> twice. The register i_vec_inout is set as src0,src1 and dst; the element size is 4S */
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,

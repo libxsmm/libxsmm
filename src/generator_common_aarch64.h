@@ -25,6 +25,16 @@
  * @param i_gp_reg_scratch general purpose scratch register.
  **/
 LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
                                                    unsigned int            i_p_reg,
                                                             int            i_n_bits,

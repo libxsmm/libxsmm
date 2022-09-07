@@ -389,7 +389,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_TRN2_V         0x05207403 /* Interleave odd elements from two vectors */
 #define LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V      0x05323802 /* Unsigned unpack and extend low-half of vector */
 #define LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V      0x05333802 /* Unsigned unpack and extend high-half of vector */
-
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP_V_E        0x05206803 /* unzip even elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP_V_O        0x05206c03 /* unzip  odd elements from two vectors */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
 
 /* zip & unzip (instructions exist for predicates (P) and vectors (V)) */
