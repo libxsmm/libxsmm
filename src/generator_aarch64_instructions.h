@@ -385,6 +385,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001803 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN1_V         0x05207003 /* Interleave even elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN2_V         0x05207403 /* Interleave odd elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V      0x05323802 /* Unsigned unpack and extend low-half of vector */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V      0x05333802 /* Unsigned unpack and extend high-half of vector */
 
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
 
