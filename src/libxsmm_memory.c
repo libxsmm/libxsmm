@@ -35,6 +35,24 @@ LIBXSMM_APIVAR_DEFINE(int (*internal_memcmp_function)(const void*, const void*, 
 #endif
 
 
+LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
+{
+  const int minalign = libxsmm_cpuid_vlen(libxsmm_target_archid);
+  const uintptr_t address = (uintptr_t)ptr;
+  int ptr_is_aligned;
+  LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
+  if (NULL == alignment) {
+    ptr_is_aligned = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
+}
+  else {
+    const unsigned int nbits = LIBXSMM_INTRINSICS_BITSCANFWD64(address);
+    *alignment = (32 > nbits ? (1 << nbits) : INT_MAX);
+    ptr_is_aligned = (minalign <= *alignment);
+  }
+  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, (size_t)minalign));
+}
+
+
 LIBXSMM_API_INLINE
 unsigned char internal_diff_sw(const void* a, const void* b, unsigned char size)
 {
@@ -486,21 +504,48 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
 }
 
 
-LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment)
+#if !defined(__linux__) && defined(__APPLE__)
+LIBXSMM_EXTERN char*** _NSGetArgv(void);
+LIBXSMM_EXTERN int* _NSGetArgc(void);
+#endif
+
+
+LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
 {
-  const int minalign = libxsmm_cpuid_vlen(libxsmm_target_archid);
-  const uintptr_t address = (uintptr_t)ptr;
-  int ptr_is_aligned;
-  LIBXSMM_ASSERT(LIBXSMM_ISPOT(minalign));
-  if (NULL == alignment) {
-    ptr_is_aligned = !LIBXSMM_MOD2(address, (uintptr_t)minalign);
+  int result = 0;
+#if defined(__linux__)
+  FILE* const cmdline = fopen("/proc/self/cmdline", "r");
+  if (NULL != cmdline) {
+    char c;
+    if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
+      result += fprintf(stream, "%s", prefix);
+      do {
+        result += (int)fwrite('\0' != c ? &c : " ", 1, 1, stream);
+      } while (1 == fread(&c, 1, 1, cmdline));
+    }
   }
-  else {
-    const unsigned int nbits = LIBXSMM_INTRINSICS_BITSCANFWD64(address);
-    *alignment = (32 > nbits ? (1 << nbits) : INT_MAX);
-    ptr_is_aligned = (minalign <= *alignment);
+#else
+  char** argv = NULL;
+  int argc = 0;
+# if defined(_WIN32)
+  argv = __argv;
+  argc = __argc;
+# elif defined(__APPLE__)
+  argv = (NULL != _NSGetArgv() ? *_NSGetArgv() : NULL);
+  argc = (NULL != _NSGetArgc() ? *_NSGetArgc() : 0);
+# endif
+  if (0 < argc) {
+    int i = 1;
+    const char* cmd = strrchr(argv[0], '/');
+    if (NULL == cmd) cmd = strrchr(argv[0], '\\');
+    result += fprintf(stream, "%s%s", prefix, cmd + 1);
+    for (; i < argc; ++i) result += fprintf(stream, " %s", argv[i]);
   }
-  return ptr_is_aligned && (NULL == inc || !LIBXSMM_MOD2(*inc, (size_t)minalign));
+#endif
+  if (0 < result) {
+    result += fprintf(stream, "%s", postfix);
+  }
+  return result;
 }
 
 
@@ -590,4 +635,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, 
 }
 
 #endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
-

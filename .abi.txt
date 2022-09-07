@@ -245,6 +245,7 @@ libxsmm_pfree
 libxsmm_pmalloc
 libxsmm_pmalloc_init
 libxsmm_primes_u32
+libxsmm_print_cmdline
 libxsmm_product_limit
 libxsmm_ptr_b0
 libxsmm_ptr_b1
