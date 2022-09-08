@@ -1,4 +1,0 @@
-[submodule "samples/deeplearning"]
-	path = samples/deeplearning
-	url = https://github.com/libxsmm/libxsmm_dnn.git
-	branch = main
