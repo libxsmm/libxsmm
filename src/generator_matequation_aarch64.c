@@ -667,6 +667,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
     return;
   }
 
+#if 0
   /* Check if equation is purely F32 */
   libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
   if ( !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
@@ -674,6 +675,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
+#endif
 
   /* Some basic initialization of the config kernel */
   libxsmm_generator_matequation_aarch64_init_micro_kernel_config(io_generated_code, &l_kernel_config);
