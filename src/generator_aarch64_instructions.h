@@ -352,6 +352,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF   0xe590e086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF     0xe4a0e086
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF   0xe510e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF    0x84408086 /* load 1 byte,  broadcast to all active elements; set inactive to zero */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF    0x84c0a086 /* load 2 bytes, broadcast to all active elements; set inactive to zero */

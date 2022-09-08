@@ -898,6 +898,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR:

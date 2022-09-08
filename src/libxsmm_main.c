@@ -1798,6 +1798,10 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
   }
 }
 
+LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
+{
+  return libxsmm_typename( datatype );
+}
 
 LIBXSMM_API_INLINE void internal_get_typesize_string(char buffer[4], int buffer_size, size_t typesize)
 {
