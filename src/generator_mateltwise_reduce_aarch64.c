@@ -611,7 +611,6 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
       }
     }
 
-
     if (n_trips >= 1) {
       if (n_trips > 1) {
         libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_trips);
@@ -635,7 +634,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
                                                        tmp_vreg,
                                                        start_vreg_sum + im + _in * m_unroll_factor, 0,
                                                        start_vreg_sum + im + _in * m_unroll_factor,
-                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
+                                                       pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
                                                          tmp_vreg,
@@ -686,7 +685,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
                                                        tmp_vreg,
                                                        start_vreg_sum + im + _in * m_unroll_factor, 0,
                                                        start_vreg_sum + im + _in * m_unroll_factor,
-                                                       mask_count2 ? pred_reg_mask : pred_reg_all, sve_type );
+                                                       pred_reg_all, sve_type );
             } else {
               libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
                                                          tmp_vreg,
