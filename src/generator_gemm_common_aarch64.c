@@ -45,6 +45,9 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   unsigned int l_vec_c0 = 0, l_vec_c1 = 1, l_vec_c2 = 2, l_vec_c3 = 3, l_vec_c1_d = 4, l_vec_c2_d = 5, l_vec_c3_d = 6, l_vec_hi_bound = 7, l_vec_lo_bound = 8, l_vec_ones = 9, l_vec_neg_ones = 10, l_vec_halves = 11, l_vec_tmp = 12, l_vec_x2 = 13, l_vec_nom = 14, l_vec_denom = 15, l_mask_hi = 6, l_mask_lo = 5;
   unsigned int l_vec_x = 0;
 
+  LIBXSMM_UNUSED( i_xgemm_desc );
+  LIBXSMM_UNUSED( io_micro_kernel_config );
+
   l_m_blocks[0] = i_m_blocking / i_vec_length;
   l_remainder_size = i_m_blocking % i_vec_length;
   l_m_blocks[1] = (l_remainder_size > 0);
@@ -127,6 +130,11 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
   unsigned int n_reserved_vregs = 18;
   unsigned int l_vec_c0 = 0, l_vec_c1 = 1, l_vec_c2 = 2, l_vec_c3 = 3, l_vec_c1_d = 4, l_vec_c2_d = 5, l_vec_c3_d = 6, l_vec_hi_bound = 7, l_vec_lo_bound = 8, l_vec_ones = 9, l_vec_neg_ones = 10, l_vec_halves = 11, l_vec_tmp = 12, l_vec_x2 = 13, l_vec_nom = 14, l_vec_denom = 15, l_mask_hi = 16, l_mask_lo = 17;
   unsigned int l_vec_x = 0;
+
+  LIBXSMM_UNUSED( i_xgemm_desc );
+  LIBXSMM_UNUSED( io_micro_kernel_config );
+  LIBXSMM_UNUSED( i_data_size );
+
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
   l_m_blocks[1] = (i_m_blocking%i_vec_length)/(i_vec_length/2);  /* number of  64 bit stores */
@@ -281,6 +289,8 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
   unsigned int mask_helper1_vreg = 0;
   unsigned int gp_reg_relumask = 0;
   unsigned int l_combine_remainder_vregs = 0;
+
+  LIBXSMM_UNUSED( i_data_size );
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */
@@ -479,6 +489,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
   unsigned int l_m_total_blocks;
   unsigned int l_m_bytes = 0;
   unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
+
+  LIBXSMM_UNUSED( colbias_precision );
 
   /* deriving register blocking from kernel config */
   l_m_blocks[0] =  i_m_blocking/i_vec_length;                    /* number of 128 bit stores */

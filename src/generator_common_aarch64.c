@@ -21,6 +21,7 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
     const unsigned int i_vec_inout,
     const unsigned int i_pred_reg) {
+  LIBXSMM_UNUSED( i_pred_reg );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 0, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(4) );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V, i_vec_inout, LIBXSMM_AARCH64_SVE_REG_UNDEF, 16, i_vec_inout, 0, libxsmm_generator_aarch64_get_sve_type(4) );
 }
