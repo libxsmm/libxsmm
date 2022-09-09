@@ -660,7 +660,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   /* TODO: Now using only strategy with tmp scratch blocks on aarch64 */
   unsigned int strategy = JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS;
   unsigned int eqn_tree_id = 0;
-  unsigned int all_nodes_f32 = 1;
+  /*unsigned int all_nodes_f32 = 1;*/
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
