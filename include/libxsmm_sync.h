@@ -469,14 +469,14 @@ typedef enum libxsmm_atomic_kind {
 #   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
       && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
-      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_NOEXCEPT;
+      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_THROW;
 #     else
       LIBXSMM_EXTERN int sched_yield(void);
 #     endif
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
 #     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
-      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_NOEXCEPT;
+      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_THROW;
 #     else
       LIBXSMM_EXTERN void pthread_yield(void);
 #     endif
@@ -711,8 +711,8 @@ typedef enum libxsmm_atomic_kind {
 # if !defined(__CYGWIN__)
 #   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
 #   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-    LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_NOEXCEPT;
-    LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_NOEXCEPT;
+    LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_THROW;
+    LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_THROW;
 # else /* Only available with __CYGWIN__ *and* C++0x. */
 #   define LIBXSMM_FLOCK(FILE)
 #   define LIBXSMM_FUNLOCK(FILE)
