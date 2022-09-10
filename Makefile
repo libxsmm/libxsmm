@@ -985,9 +985,8 @@ endif
 
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
 DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
-	| grep -v /deeplearning/samples/embbag_distri/ \
-	| grep -v /deeplearning/samples/sparse_adagrad_fused/ \
-	| grep -v /edge/repro/ \
+	| grep -v /deeplearning/embbag_distri/ \
+	| grep -v /deeplearning/sparse_adagrad_fused/ \
 	| grep -v /encoder/ \
 	$(NULL)))
 
@@ -1336,12 +1335,12 @@ $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.m
 		-o $(call qndir,$@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(UTLDIR)/*/README.md
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(UTLDIR)/*/README.md
 	@cd $(ROOTDIR)
 	@if [ "$$(command -v git)" ] && [ "$$(git ls-files version.txt)" ]; then \
-		git ls-files $(SPLDIR)/*/README.md $(UTLDIR)/*/README.md | xargs -I {} cat {}; \
+		git ls-files $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(UTLDIR)/*/README.md | xargs -I {} cat {}; \
 	else \
-		cat $(SPLDIR)/*/README.md $(UTLDIR)/*/README.md; \
+		cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md $(UTLDIR)/*/README.md; \
 	fi \
 	| sed \
 		-e 's/^#/##/' \

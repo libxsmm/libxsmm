@@ -48,7 +48,7 @@ Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.
 Please have a look at [https://github.com/libxsmm/libxsmm/tree/main/include](https://github.com/libxsmm/libxsmm/tree/main/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
 * MM: [Matrix Multiplication](#matrix-multiplication)
-* DNN: [Deep Neural Networks](https://github.com/libxsmm/libxsmm_dnn)
+* DNN: [Deep Neural Networks](#deep-neural-networks)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
@@ -75,7 +75,7 @@ The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm_dnn/tree/main/tests). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm_dnn/tree/main/samples).
+The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm_dnn/tree/main/tests).
 
 ### Service Functions
 

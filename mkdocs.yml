@@ -26,7 +26,7 @@ nav:
 - Q&A: libxsmm_qna.md
 - LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
-  - "DNN: Deep Neural Networks": https://github.com/libxsmm/libxsmm_dnn
+  - "DNN: Deep Neural Networks": https://libxsmm.readthedocs.io/#deep-learning
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
@@ -35,7 +35,7 @@ nav:
   - Collection: libxsmm_samples.md
 - Machine Learning (ML):
   - PlaidML tensor compiler: https://github.com/plaidml/plaidml
-  - Extension for PyTorch: https://github.com/libxsmm/libxsmm_dnn/tree/main/samples/conv1dopti_layer
+  - Extension for PyTorch: https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/conv1dopti_layer
 - Scientific (HPC):
   - CP2K: cp2k.md
   - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
