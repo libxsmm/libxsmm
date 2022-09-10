@@ -977,11 +977,13 @@ void libxsmm_set_handle_error(int enable)
   if (0 == enable) { /* disable */
     const int error_suppression_level = LIBXSMM_ATOMIC_ADD_FETCH(
       &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED);
+    LIBXSMM_UNUSED_NDEBUG(error_suppression_level);
     LIBXSMM_ASSERT(1 <= error_suppression_level);
   }
   else { /* enable */
     const int error_suppression_level = LIBXSMM_ATOMIC_SUB_FETCH(
       &internal_error_suppression_level, 1, LIBXSMM_ATOMIC_RELAXED);
+    LIBXSMM_UNUSED_NDEBUG(error_suppression_level);
     LIBXSMM_ASSERT(0 <= error_suppression_level);
   }
 }
