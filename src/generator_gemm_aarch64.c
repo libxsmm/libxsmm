@@ -986,6 +986,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   unsigned int l_n_count    = 0;          /* array counter for blocking arrays */
   unsigned int l_n_done     = 0;           /* progress tracker */
   unsigned int l_n_done_old = 0;
+  unsigned int a_vnni_factor  = 1;
 
   /* Local variables used for A transpose case */
   libxsmm_descriptor_blob           l_blob_opa;
@@ -1009,6 +1010,12 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   if(    LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )
       || LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_use_mmla = 1;
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      a_vnni_factor = 4;
+    }
+    if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      a_vnni_factor = 8;
+    }
   }
 
   /* define gp register mapping */
@@ -1467,7 +1474,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                         (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_in );
+                                                         (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_in*a_vnni_factor );
 
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_R, l_gp_reg_mapping.gp_reg_help_4, l_gp_reg_mapping.gp_reg_help_3, 0,
                                                 l_gp_reg_mapping.gp_reg_a );
@@ -1484,7 +1491,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
           /* TODO (MMLA): do this properly; right now jumps according to A matrix in MMLA format */
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                         (unsigned long long)l_m_blocking*8 );
+                                                         (unsigned long long)l_m_blocking*l_micro_kernel_config.datatype_size_in*a_vnni_factor );
         }
 
         /* close M loop */
@@ -1526,7 +1533,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     /* TODO (MMLA): hardcoded MMLA fix */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    l_gp_reg_mapping.gp_reg_a, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a,
-                                                   (unsigned long long)l_xgemm_desc_opa->m*8 );
+                                                   (unsigned long long)l_xgemm_desc_opa->m*l_micro_kernel_config.datatype_size_in*a_vnni_factor );
 
     /* advance B pointer */
     if ( (l_xgemm_desc_opa->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
