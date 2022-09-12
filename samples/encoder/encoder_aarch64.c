@@ -549,7 +549,7 @@ int main( /*int argc, char* argv[]*/ ) {
   /* test SVE compute insturctions */
   test_sve_compute( "sve_comp_FMLA_V_P", &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P, 1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
-  // TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions)
+  /* TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions) */
   test_sve_compute( "sve_comp_BFMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V, 0 );
   test_sve_compute( "sve_comp_FMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V, 0 );
   test_sve_compute( "sve_comp_SMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V, 0 );
