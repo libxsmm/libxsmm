@@ -18,7 +18,7 @@
 #include <pthread.h>
 # endif
 /* TODO (MMLA): remove once MMLA-conversion routines are done */
-#include <arm_bf16.h>
+//#include <arm_bf16.h>
 
 #define OP_NONE         0
 #define COLBIAS_ADD     1
@@ -508,8 +508,8 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
 void convert_a_to_bfmmla( uint64_t           i_m,
                           uint64_t           i_n,
                           uint64_t           i_ld,
-                          bfloat16_t const * i_a_col_major,
-                          bfloat16_t       * o_a_bfmmla ) {
+                          libxsmm_bfloat16 const * i_a_col_major,
+                          libxsmm_bfloat16       * o_a_bfmmla ) {
   uint64_t l_id = 0;
 
   for( uint64_t l_n = 0; l_n < i_n; l_n+=4 ) {
@@ -2032,8 +2032,8 @@ int main(int argc, char* argv []) {
         convert_a_to_bfmmla( l_m,
                              l_k,
                              l_lda,
-                             (bfloat16_t *) l_a,
-                             (bfloat16_t *) l_a_mmla );
+                             (libxsmm_bfloat16 *) l_a,
+                             (libxsmm_bfloat16 *) l_a_mmla );
       }
       else {
         convert_a_to_i8mmla( l_m,
