@@ -416,28 +416,6 @@
 # endif
 #endif /*LIBXSMM_RESTRICT*/
 
-#if defined(__THROW) && defined(__cplusplus)
-# define LIBXSMM_THROW __THROW
-#endif
-#if !defined(LIBXSMM_THROW)
-# define LIBXSMM_THROW
-#endif
-#if defined(__GNUC__) && LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && \
-  !defined(__clang__) && !defined(__PGI) && !defined(__INTEL_COMPILER) && !defined(_CRAYC)
-# define LIBXSMM_NOTHROW LIBXSMM_THROW
-#else
-# define LIBXSMM_NOTHROW
-#endif
-#if defined(__cplusplus)
-# if (__cplusplus > 199711L)
-#   define LIBXSMM_NOEXCEPT noexcept
-# else
-#   define LIBXSMM_NOEXCEPT throw()
-# endif
-#else
-# define LIBXSMM_NOEXCEPT LIBXSMM_NOTHROW
-#endif
-
 #if !defined(LIBXSMM_PRAGMA)
 # if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
@@ -593,9 +571,6 @@
 # define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# if !defined(_WIN32)
-LIBXSMM_EXTERN double erf(double) LIBXSMM_NOEXCEPT;
-# endif
 # define LIBXSMM_POWF(A, B) ((float)pow((float)(A), (float)(B)))
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((float)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
@@ -921,8 +896,20 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #include <float.h>
 #include <stdio.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
+#if defined(__THROW)
+# define LIBXSMM_NOTHROW __THROW
+#endif
+#if defined(__cplusplus)
+# if (199711L < __cplusplus)
+#   define LIBXSMM_NOEXCEPT noexcept
+# else
+#   define LIBXSMM_NOEXCEPT throw()
+# endif
+#else
+# define LIBXSMM_NOEXCEPT
+#endif
+#if !defined(LIBXSMM_NOTHROW)
+# define LIBXSMM_NOTHROW
 #endif
 
 #if !defined(FLT_MAX)
@@ -951,6 +938,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_PUTENV(A) _putenv(A)
 #else
 # define LIBXSMM_PUTENV(A) putenv(A)
+# define LIBXSMM_MKTEMP(A) mkstemp(A)
+# if !defined(_GNU_SOURCE) || (defined(__cplusplus) && 199711L > __cplusplus)
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+# else
+LIBXSMM_EXTERN int mkstemp(char*);
+# endif
 #endif
 
 /* block must be after including above header files */
@@ -982,9 +975,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if defined(LIBXSMM_GLIBC_FPTYPES)
 # if defined(__cplusplus)
 #   undef __USE_MISC
@@ -1000,6 +990,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
+
 #if !defined(LIBXSMM_NO_LIBM)
 # if (defined(LIBXSMM_INTEL_COMPILER) && (1800 <= LIBXSMM_INTEL_COMPILER)) \
   && !defined(_WIN32) /* error including dfp754.h */
@@ -1014,10 +1005,14 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define __STRICT_ANSI__ LIBXSMM_STRICT_ANSI
 #   undef LIBXSMM_STRICT_ANSI
 # endif
+# if (!defined(__STDC_VERSION__) || (199901L/*C99*/ > __STDC_VERSION__)) && !defined(_WIN32)
+LIBXSMM_EXTERN double erf(double) LIBXSMM_NOTHROW;
+# endif
 #endif
 #if !defined(M_PI)
 # define M_PI 3.14159265358979323846
 #endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

@@ -105,11 +105,6 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 #   endif
 # endif
-# if !defined(__cplusplus) || (__cplusplus <= 199711L)
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
-# else
-LIBXSMM_EXTERN int mkstemp(char*);
-# endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -415,7 +410,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         else {
           char filename[] = "/tmp/.libxsmm_map." LIBXSMM_MKTEMP_PATTERN;
           /* coverity[secure_temp] */
-          fd = mkstemp(filename);
+          fd = LIBXSMM_MKTEMP(filename);
           if (0 <= fd) {
             if (0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
               char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);

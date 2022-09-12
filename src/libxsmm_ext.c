@@ -272,4 +272,3 @@ void sgemm_batch(const char transa_array[], const char transb_array[],
 
 #endif
 #endif /*defined(LIBXSMM_BUILD)*/
-

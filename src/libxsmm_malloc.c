@@ -62,13 +62,7 @@
 # else
 #   define LIBXSMM_MAP_JIT 0
 # endif
-# if !defined(__cplusplus) || (__cplusplus <= 199711L)
-LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_NOEXCEPT;
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOEXCEPT;
-# else
-LIBXSMM_EXTERN int ftruncate(int, off_t);
-LIBXSMM_EXTERN int mkstemp(char*);
-# endif
+LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_NOTHROW;
 #endif
 #if !defined(LIBXSMM_MALLOC_FINAL)
 # define LIBXSMM_MALLOC_FINAL 3
@@ -986,7 +980,7 @@ LIBXSMM_API void __wrap_free(void* ptr)
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_MOD))
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_NOEXCEPT;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_NOTHROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
@@ -998,7 +992,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_
   return result;
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t /*size*/) LIBXSMM_NOEXCEPT;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t /*size*/) LIBXSMM_NOTHROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
@@ -1011,7 +1005,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t 
 }
 
 #if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t /*num*/, size_t /*size*/) LIBXSMM_NOEXCEPT;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t /*num*/, size_t /*size*/) LIBXSMM_NOTHROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t num, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
@@ -1028,7 +1022,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t 
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/) LIBXSMM_NOEXCEPT;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/) LIBXSMM_NOTHROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
@@ -1041,7 +1035,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM
 }
 #endif
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/) LIBXSMM_NOEXCEPT;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/) LIBXSMM_NOTHROW;
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr) LIBXSMM_NOEXCEPT
 {
   INTERNAL_FREE_HOOK(ptr, NULL/*caller*/);
@@ -1639,7 +1633,7 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
   }
   if (0 <= i && i < (int)sizeof(filename)) {
     /* coverity[secure_temp] */
-    i = mkstemp(filename);
+    i = LIBXSMM_MKTEMP(filename);
     if (0 <= i) {
       if (0 == unlink(filename) && 0 == ftruncate(i, size) /*&& 0 == chmod(filename, S_IRWXU)*/) {
         const int mflags = (flags | LIBXSMM_MAP_SHARED | LIBXSMM_MAP_JIT);

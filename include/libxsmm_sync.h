@@ -468,19 +468,13 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_SYNC_YIELD pthread_yield_np()
 #   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
       && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
-#     if (defined(__USE_GNU) || !defined(__BSD_VISIBLE)) && \
-        (!defined(__cplusplus) || (__cplusplus <= 199711L))
-      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_NOEXCEPT;
-#     else
-      LIBXSMM_EXTERN int sched_yield(void);
-#     endif
+      LIBXSMM_EXTERN int sched_yield(void) LIBXSMM_NOTHROW;
 #     define LIBXSMM_SYNC_YIELD sched_yield()
 #   else
-#     if (defined(__USE_GNU) || !defined(__BSD_VISIBLE)) && \
-        (!defined(__cplusplus) || (__cplusplus <= 199711L))
-      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_NOEXCEPT;
+#     if defined(__USE_GNU) || !defined(__BSD_VISIBLE)
+      LIBXSMM_EXTERN int pthread_yield(void) LIBXSMM_NOTHROW;
 #     else
-      LIBXSMM_EXTERN void pthread_yield(void);
+      LIBXSMM_EXTERN void pthread_yield(void) LIBXSMM_NOTHROW;
 #     endif
 #     define LIBXSMM_SYNC_YIELD pthread_yield()
 #   endif
@@ -713,13 +707,8 @@ typedef enum libxsmm_atomic_kind {
 # if !defined(__CYGWIN__)
 #   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
 #   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-#   if !defined(__cplusplus) || (__cplusplus <= 199711L)
-LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_NOEXCEPT;
-LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_NOEXCEPT;
-#   else
-LIBXSMM_EXTERN void flockfile(FILE*);
-LIBXSMM_EXTERN void funlockfile(FILE*);
-#   endif
+LIBXSMM_EXTERN void flockfile(FILE*) LIBXSMM_NOTHROW;
+LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_NOTHROW;
 # else /* Only available with __CYGWIN__ *and* C++0x. */
 #   define LIBXSMM_FLOCK(FILE)
 #   define LIBXSMM_FUNLOCK(FILE)
