@@ -344,10 +344,23 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
     max_n_blocking--;
   }
 
-  /* TODO (MMLA): hardcoded fix for limited MMLA kernels */
-  max_n_blocking = 6;
+  if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
+    max_n_blocking = 6;
+    if (i_xgemm_desc->n < 6) {
+      o_n_N[0] = i_xgemm_desc->n;
+      o_n_n[0] = i_xgemm_desc->n;
+      o_n_N[1] = 0;
+      o_n_n[1] = 0;
+    } else {
+      o_n_N[0] = i_xgemm_desc->n - i_xgemm_desc->n % max_n_blocking;
+      o_n_n[0] = max_n_blocking;
+      o_n_N[1] = i_xgemm_desc->n % max_n_blocking;
+      o_n_n[1] = i_xgemm_desc->n % max_n_blocking;
+    }
+  } else {
+    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, max_n_blocking, &(o_n_N[0]), &(o_n_n[0]), &(o_n_N[1]), &(o_n_n[1]) );
+  }
 
-  libxsmm_compute_equalized_blocking( i_xgemm_desc->n, max_n_blocking, &(o_n_N[0]), &(o_n_n[0]), &(o_n_N[1]), &(o_n_n[1]) );
 }
 
 LIBXSMM_API_INTERN

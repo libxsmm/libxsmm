@@ -386,7 +386,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_cod
   l_m_bytes = l_m_blocks[0]*16 +  l_m_blocks[1]*8;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks)*/;
 
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
@@ -667,7 +667,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
 
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
@@ -855,7 +855,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( libxsmm_generated_co
   l_m_bytes = l_m_blocks[0]*16 +  l_m_blocks[1]*8;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
 
   /* temporary vector registers used to zip values before storing */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
@@ -987,7 +987,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
+  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
 
   /* temporary vector registers used to zip values to before storing */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
