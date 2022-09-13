@@ -640,17 +640,19 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   unsigned int l_vec_reg_tmp[2];
   /* register blocking counter in n */
   unsigned int l_n = 0;
+  unsigned int l_n_blocks = i_n_blocking / 2;
+
   /* register blocking counter in m */
   unsigned int l_m = 0;
   unsigned int l_m_blocks[2] = {0, 0}; /* 0: #full vector loads, 1: #predicated loads (0 or 1) */
   unsigned int l_m_total_blocks = 0;
   unsigned int l_m_bytes_full = 0;
   unsigned int l_remainder_size = 0;
-
-
   /* derive zip instructions */
   unsigned int l_instr_zip[2] = { LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V };
   unsigned int l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_D;
+  /* vector registers holding C's values */
+  unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
   /* TODO (MMLA): implement */
   /* if( i_zip_row_major ) {
@@ -667,7 +669,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
+  l_vec_reg_acc_start = l_vr_c[0];/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
 
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
@@ -675,7 +677,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
 
   /* load C accumulator */
   if( i_zero == 0 ) {
-    for( l_n = 0; l_n < i_n_blocking; l_n+=2 ) {
+    for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
       /* second address register for loads */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -722,7 +724,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
                                                  l_vec_reg_tmp[0],
                                                  l_vec_reg_tmp[1],
                                                  0,
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n),
+                                                 l_vr_c[8*l_n + 2*l_m],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  l_type_zip );
 
@@ -731,7 +733,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
                                                  l_vec_reg_tmp[0],
                                                  l_vec_reg_tmp[1],
                                                  0,
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n) + 1,
+                                                 l_vr_c[8*l_n + 2*l_m] + 1,
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  l_type_zip );
       }
@@ -960,6 +962,8 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   unsigned int l_vec_reg_tmp[2];
   /* register blocking counter in n */
   unsigned int l_n = 0;
+  unsigned int l_n_blocks = i_n_blocking / 2;
+
   /* register blocking counter in m */
   unsigned int l_m = 0;
   unsigned int l_m_blocks[2] = {0, 0}; /* 0: #full vector loads, 1: #predicated loads (0 or 1) */
@@ -971,6 +975,8 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   /* derive zip instructions */
   unsigned int l_instr_zip[2] = { LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, LIBXSMM_AARCH64_INSTR_SVE_UZP2_V };
   unsigned int l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_D;
+  unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
 
   /* TODO (MMLA): implement */
   /* if( i_zip_row_major ) {
@@ -987,7 +993,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
 
   /* start register of accumulator */
-  l_vec_reg_acc_start = 8;/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
+  l_vec_reg_acc_start = l_vr_c[0];/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
 
   /* temporary vector registers used to zip values to before storing */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
@@ -995,7 +1001,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
 
   /* load C accumulator */
   if( i_zero == 0 ) {
-    for( l_n = 0; l_n < i_n_blocking; l_n+=2 ) {
+    for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
       /* second address register for loads */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1008,8 +1014,8 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
         /* zip data to target vector registers */
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  l_instr_zip[0],
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n),
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n) + 1,
+                                                 l_vr_c[8*l_n + 2*l_m],
+                                                 l_vr_c[8*l_n + 2*l_m] + 1,
                                                  0,
                                                  l_vec_reg_tmp[0],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
@@ -1017,8 +1023,8 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
 
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  l_instr_zip[1],
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n),
-                                                 l_vec_reg_acc_start + l_m*2 + (l_m_total_blocks * l_n) + 1,
+                                                 l_vr_c[8*l_n + 2*l_m],
+                                                 l_vr_c[8*l_n + 2*l_m]+ 1,
                                                  0,
                                                  l_vec_reg_tmp[1],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
