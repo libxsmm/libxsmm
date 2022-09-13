@@ -193,7 +193,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   # control log
   echo && echo "^^^ +++"
   while [ "${TEST}" ] || TEST=$(eval " \
-    ${SED} -n '/^ *script: *$/,\$p' ${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
+    ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} 's/^ *- *//;s/^  *//' | tr '\n' ' ' | \
     ${SED} 's/  *$//'") && [ "${TEST}" ];
