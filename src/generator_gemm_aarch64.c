@@ -796,20 +796,20 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
     for( l_m = 0; l_m < l_m_blocks; l_m++ ) {
       // load A
       libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                            LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                             i_gp_reg_mapping->gp_reg_a,
                                             0,
                                             0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
                                             l_vr_a[0],
-                                            LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                            l_pr_all );
 
       libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                            LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                             i_gp_reg_mapping->gp_reg_a,
                                             0,
                                             1, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
                                             l_vr_a[1],
-                                            LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                            l_pr_all );
 
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_ADD_I,
