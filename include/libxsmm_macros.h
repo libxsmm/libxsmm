@@ -896,6 +896,9 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #include <float.h>
 #include <stdio.h>
 
+#if !defined(__leaf__)
+# define __leaf__
+#endif
 #if defined(__THROW)
 # define LIBXSMM_NOTHROW __THROW
 #endif
