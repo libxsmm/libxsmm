@@ -29,7 +29,7 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 source "${HERE}/../.env/buildkite.env" ""
 #source "${HERE}/../.env/travis.env" ""
 
-MKTEMP=${REPOROOT}/.mktmp.sh
+MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
@@ -145,6 +145,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     LIMITRUN=$((LIMIT<LIMITRUN?LIMIT:LIMITRUN))
   fi
 
+  CPUINFO=${HERE}/tool_cpuinfo.sh
   # eventually cleanup run-script of terminated/previous sessions
   rm -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
@@ -164,16 +165,16 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
-                    --unbuffered ${TESTSCRIPT} ${@:2}"
+                    --unbuffered ${TESTSCRIPT} ${*:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
-    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${@:2}"
+    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${*:2}"
   else # avoid temporary script in case of non-batch execution
     if [ ! "${MAKEJ}" ]; then
-      MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
+      MAKEJ="-j $(eval "${CPUINFO}" -nc)"
       export MAKEJ
     fi
     SHOW_PARTITION=0
@@ -297,7 +298,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOREMOTE}/scripts/tool_cpuinfo.sh -nc)\"; fi" >>"${TESTSCRIPT}"
+        REMINFO=$(echo "${CPUINFO}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REMINFO} -nc)\"; fi" >>"${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
@@ -308,13 +310,14 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >>"${TESTSCRIPT}"
         fi
         # setup environment on a per-test basis
-        ENVREMOTE=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ -e \"${ENVREMOTE}\" ]; then" >>"${TESTSCRIPT}"
+        ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+          echo "  eval ${ENVRST} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
           echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
         else
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\"" >>"${TESTSCRIPT}"
+          echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
         fi
         echo "fi" >>"${TESTSCRIPT}"
         if [ -e "${CONFIGFILE}" ]; then
