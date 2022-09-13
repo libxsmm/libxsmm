@@ -706,8 +706,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
         else {
           l_jump_block_m_last = (unsigned long long)i_vec_length * i_data_size;
         }
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
-            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_pred_reg, l_sve_type );
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, 0, l_sve_type );
       }
 
       if( l_m_blocks[1] != 0 ) {
@@ -729,8 +729,8 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                               l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0],
                                               LIBXSMM_AARCH64_SVE_REG_P1 );
 
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ADD_V,
-            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_m_blocks[0], 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_pred_reg, l_sve_type );
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
+            l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], l_m_blocks[0], 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m_blocks[0], 0, l_sve_type );
 
       }
       l_jump_block_m_last += i_ld - l_m_bytes_full;
