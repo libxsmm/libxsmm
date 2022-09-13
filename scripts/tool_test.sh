@@ -344,11 +344,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
             "${SLURMFILE}" >"${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run"
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
-              echo -n "${TOOL_COMMAND} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
+              echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
-              TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "${DIRPAT}") "
+              TOOL_COMMAND_SED1="$(echo "${CMDREM}" | ${SED} "${DIRPAT}") "
               if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "${DIRPAT}")"
               fi
