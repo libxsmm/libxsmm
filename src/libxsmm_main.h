@@ -308,7 +308,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
   libxsmm_meltwfunction_unary function;
-  const void* ptr;
+  const void *ptr_const, *ptr;
 } libxsmm_xcopykernel;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
@@ -374,7 +374,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   union {
-    const void* ptr; /* raw content */
+    const void *ptr_const, *ptr; /* raw content */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_pspgemm_csr_descriptor* pspgemm_csr;
     const libxsmm_pspgemm_csc_descriptor* pspgemm_csc;

@@ -346,6 +346,10 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, temp_reg );
   libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
 
+  if ((i_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (i_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 24, temp_reg );
+    libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+  }
 #if 0
   /* Store the out ptr in stack  */i
   if (i_strategy == JIT_STRATEGY_HYBRID) {
@@ -660,13 +664,14 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   /* TODO: Now using only strategy with tmp scratch blocks on aarch64 */
   unsigned int strategy = JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS;
   unsigned int eqn_tree_id = 0;
-  unsigned int all_nodes_f32 = 1;
+  /*unsigned int all_nodes_f32 = 1;*/
 
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
 
+#if 0
   /* Check if equation is purely F32 */
   libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
   if ( !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
@@ -674,6 +679,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
+#endif
 
   /* Some basic initialization of the config kernel */
   libxsmm_generator_matequation_aarch64_init_micro_kernel_config(io_generated_code, &l_kernel_config);

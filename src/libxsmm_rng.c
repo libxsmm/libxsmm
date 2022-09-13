@@ -208,9 +208,7 @@ LIBXSMM_API unsigned int libxsmm_rng_get_extstate_size(void)
 
 LIBXSMM_API void libxsmm_rng_destroy_extstate(unsigned int* stateptr)
 {
-  if ( stateptr != NULL ) {
-    libxsmm_free( stateptr );
-  }
+  libxsmm_free(stateptr);
 }
 
 

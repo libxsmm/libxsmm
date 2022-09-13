@@ -19,13 +19,6 @@
 #define HWCK 4
 #define  LIBXSMM_DNN_CONV_SETUP_USE_NTS
 
-#define LIBXSMM_BLOCK64
-#if defined LIBXSMM_BLOCK64
-# define LIBXSMM_BLOCK_SIZE 64
-#else
-# define LIBXSMM_BLOCK_SIZE 32
-#endif
-
 /***********************************************************/
 /* Helper functions for convolutions' general param setup */
 /**********************************************************/
@@ -42,16 +35,9 @@ LIBXSMM_API_INLINE void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, 
   LIBXSMM_INIT
 
   /* C */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid >= LIBXSMM_X86_AVX512_VL256_CPX)
-          || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
-        ){
-    tmp_max_c_block = LIBXSMM_BLOCK_SIZE;
-  } else if ( /*((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||*/
-       (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
-    tmp_max_c_block = 32;
-  } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
-    tmp_max_c_block = 16;
-  }
+  /* Recommended values for bc (tmp_max_c_block):
+     For AVX512_VL256: 64, for AVX512_SPR & BF16) or ( < AVX512): 32, for AARCH64_V81: 16
+  */
   if ( C <= tmp_max_c_block ) {
     ifmblock = C;
   } else if (C % tmp_max_c_block == 0) {
@@ -63,16 +49,9 @@ LIBXSMM_API_INLINE void  libxsmm_dnn_conv_get_feature_map_blocks( int C, int K, 
   }
 
   /* K */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256_CLX) || (libxsmm_target_archid >= LIBXSMM_X86_AVX512_VL256_CPX)
-        || (libxsmm_target_archid == LIBXSMM_X86_AVX512_VL256)
-      ){
-    tmp_max_k_block = LIBXSMM_BLOCK_SIZE;
-  } else if ( /*((libxsmm_target_archid >= LIBXSMM_X86_AVX512_SPR) && (datatype_in == LIBXSMM_DATATYPE_BF16)) ||*/
-       (libxsmm_target_archid < LIBXSMM_X86_AVX512 ) ) {
-    tmp_max_k_block = 32;
-  } else if ( libxsmm_target_archid == LIBXSMM_AARCH64_V81 ) {
-    tmp_max_k_block = 16;
-  }
+  /* Recommended values for bk (tmp_max_k_block):
+     For AVX512_VL256: 64, for AVX512_SPR & BF16) or ( < AVX512): 32, for AARCH64_V81: 16
+  */
   if ( K <= tmp_max_k_block ) {
     ofmblock = K;
   } else if (K % tmp_max_k_block == 0) {

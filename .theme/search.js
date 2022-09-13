@@ -8,7 +8,7 @@
   /**
    * Please see: https://github.com/rtfd/readthedocs.org/issues/1088
    * This implementation is based on:
-   * - https://github.com/gluster/glusterdocs/blob/master/js/fix-docs.js
+   * - https://github.com/gluster/glusterdocs/blob/master/js/fix-docs.js (outdated URL)
    * - https://github.com/commercialhaskell/stack/blob/master/doc/js/searchhack.js
    */
   function fixSearch() {

@@ -17,7 +17,7 @@ TEST_SU2_3F="1008_15_75 75_15_756 147_15_75 48_15_35 184_15_35 35_15_138 75_15_1
 TEST=${TEST_EDGE}$
 
 # select precision
-PREC=DP
+PREC=F64
 if [ $# -eq 1 ]
 then
   PREC=$1

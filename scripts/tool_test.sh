@@ -9,14 +9,13 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2129,SC2155,SC2164,SC2178,SC2206,SC2207
+# shellcheck disable=SC1090,SC2129,SC2207
 set -o pipefail
 
 DIFF=$(command -v diff)
 # flush asynchronous NFS mount
 SYNC=$(command -v sync)
 GREP=$(command -v grep)
-WGET=$(command -v wget)
 SED=$(command -v gsed)
 GIT=$(command -v git)
 
@@ -43,11 +42,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
   elif [ ! "${LAUNCH_CMD}" ]; then
-    #if [ "${WGET}" ] && [ "${ORGANIZATION}" ] && [ "${PIPELINE}" ] && [ "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
-    #  REVSTART=$(${WGET} -qO- \
-    #  "https://api.buildkite.com/v2/organizations/${ORGANIZATION}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN}" \
-    #  | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
-    #fi
     if [ ! "${REVSTART}" ]; then
       REVSTART="HEAD^"
     fi
@@ -60,16 +54,16 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
 
   # set the case number
   if [ "$1" ] && [ -e "$1" ]; then
-    export TESTSETFILE=$1
-    export TESTID=$(basename ${TESTSETFILE%.*})
-    export TESTSET=${TESTID}
+    TESTID=$(basename "${TESTSETFILE%.*}")
+    export TESTSETFILE=$1 TESTSET=${TESTID}
   else # case number given
     if [ "$1" ] && [ "0" != "$1" ]; then
-      export TESTID=$1
+      TESTID=$1
     else
-      export TESTID=1
+      TESTID=1
     fi
   fi
+  export TESTID
 
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
   if [ ! "${TRAVIS_BUILD_DIR}" ]; then
@@ -77,10 +71,11 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
   if [ ! "${TRAVIS_OS_NAME}" ]; then
     if [ "${LAUNCH_CMD}" ]; then
-      export TRAVIS_OS_NAME=$(${LAUNCH_CMD} "uname")
+      TRAVIS_OS_NAME=$(${LAUNCH_CMD} "uname")
     else
-      export TRAVIS_OS_NAME=$(uname)
+      TRAVIS_OS_NAME=$(uname)
     fi
+    export TRAVIS_OS_NAME
   fi
   if [ ! "${HOSTNAME}" ]; then
     HOSTNAME=$(hostname -s 2>/dev/null)
@@ -96,9 +91,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
   if [ "random" = "${PARTITION}" ]; then
     if [ "random" != "${PARTITIONS}" ]; then
-      PARTITIONS=(${PARTITIONS})
-      NPARTITIONS=${#PARTITIONS[@]}
-      PARTITIONS=${PARTITIONS[RANDOM%NPARTITIONS]}
+      read -ra ARRAY <<<"${PARTITIONS}"
+      NPARTITIONS=${#ARRAY[@]}
+      PARTITIONS=${ARRAY[RANDOM%NPARTITIONS]}
     else
       PARTITIONS=none
     fi
@@ -155,7 +150,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" | tr -s [[:punct:][:space:]] - | ${SED} "s/^-//;s/-$//")
+      LABEL=$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - | ${SED} "s/^-//;s/-$//")
     fi
     if [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
@@ -178,7 +173,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     LAUNCH="${LAUNCH_CMD} ${REMSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ ! "${MAKEJ}" ]; then
-      export MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
+      MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
+      export MAKEJ
     fi
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
@@ -207,10 +203,10 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     else # dummy
       SLURMDIR=$0
     fi
-    for SLURMFILE in $(ls -1 "${SLURMDIR}"); do
+    for SLURMFILE in "${SLURMDIR}"/*; do
     if [[ (-d ${SLURMDIR}) && (! "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
-      TESTID=$(basename ${SLURMFILE%.*})
+      TESTID=$(basename "${SLURMFILE%.*}")
     elif [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
@@ -284,8 +280,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
       HEADER=$(echo "${HEADER}" \
         | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
-        | tr [[:lower:]] [[:upper:]] | tr -s " " "/")
-      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr [[:upper:]] [[:lower:]])" ]; then
+        | tr "[:lower:]" "[:upper:]" | tr -s " " "/")
+      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr "[:upper:]" "[:lower:]")" ]; then
         if [ "${HEADER}" ]; then
           echo "+++ TEST ${TESTID} (${HEADER})"
         else
@@ -330,13 +326,14 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           if [ ! -e "${ABSDIR}/Makefile" ] && [ -d "${ABSDIR}" ] && [ -e "${ABSDIR}/../Makefile" ]; then
             ABSDIR=${ABSDIR}/..
           fi
-          ABSDIR=$(cd "${ABSDIR}"; pwd -P)
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd $(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/") && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          ABSDIR=$(cd "${ABSDIR}" && pwd -P)
+          ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
-          DIRSED=$(echo "${ABSDIR}" | ${SED} "${DIRPAT}")
+          DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \

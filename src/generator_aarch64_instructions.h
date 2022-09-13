@@ -356,6 +356,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF   0xe590e086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF     0xe4a0e086
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF   0xe510e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF    0x84408086 /* load 1 byte,  broadcast to all active elements; set inactive to zero */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF    0x84c0a086 /* load 2 bytes, broadcast to all active elements; set inactive to zero */
@@ -394,7 +395,10 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V        0x45009803
 #define LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V        0x45c09803
 #define LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V       0x45809803
-
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN1_V         0x05207003 /* Interleave even elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN2_V         0x05207403 /* Interleave odd elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V      0x05323802 /* Unsigned unpack and extend low-half of vector */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V      0x05333802 /* Unsigned unpack and extend high-half of vector */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
 
 /* zip & unzip (instructions exist for predicates (P) and vectors (V)) */
@@ -409,6 +413,7 @@
 
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P      0x658aa082 /* Floating-point down convert to BFloat16 format (predicated) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, a/b, vectors, predicated, src0 == dst */
