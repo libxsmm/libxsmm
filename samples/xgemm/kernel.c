@@ -960,6 +960,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
 
   /* Perform binary postop if requested */
   if (i_gemm_def->binary_postop == COLBIAS_ADD) {
+    int init_beta_zero = 0;
     if (i_gemm_def->unary_postop == RELU_BITMASK) {
       int i = 0, j = 0;
       char *l_c_tmp = (char*)libxsmm_aligned_malloc((size_t)i_gemm_def->ldc * (size_t)i_gemm_def->n * LIBXSMM_TYPESIZE(i_gemm_def->out_type), 64);
@@ -968,6 +969,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       if (i_gemm_def->beta == 0) {
         init_zero_matrix( i_gemm_def->out_type, l_c_tmp, 1, i_gemm_def->ldc, i_gemm_def->n );
         i_gemm_def->beta = 1.0;
+        init_beta_zero = 1;
       }
       /* Run matmul */
       ref_matmul( i_gemm_def, l_a, l_b, l_c_tmp );
@@ -1017,7 +1019,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
       }
     }
 
-    if (i_gemm_def->beta == 0) {
+    if (i_gemm_def->beta == 0 || init_beta_zero > 0) {
       init_zero_matrix( i_gemm_def->out_type, l_c_gold, 1, i_gemm_def->ldc, i_gemm_def->n );
       i_gemm_def->beta = 1.0;
     }

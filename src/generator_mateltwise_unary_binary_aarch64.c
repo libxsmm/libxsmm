@@ -1782,7 +1782,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
 
 #if defined(SVE_MASKS_HAVE_PADDING) || defined(SVE_SLOW_COPY)
   /* increment gp_reg_relumask by <l_data_length> */
-  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                  i_gp_reg_mask, i_gp_reg_scratch, i_gp_reg_mask, l_data_length );
   io_mask_adv[0] += l_data_length; /* we wrote <l_data_length> bytes */
 #endif
