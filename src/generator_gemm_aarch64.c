@@ -1434,10 +1434,6 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
           }
         }
 
-        /* Apply potential fusion to 2dregblock before storing it out */
-        libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length,
-            l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, l_micro_kernel_config.datatype_size_out  );
-
         /* store block of C */
         if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
           /* TODO: MMLA */
@@ -1447,6 +1443,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                                    l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
                                                                    l_mmla_zip_row_major );
           } else {
+            /* Apply potential fusion to 2dregblock before storing it out */
+            libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length,
+                l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, l_micro_kernel_config.datatype_size_out  );
             libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                               l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                               l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
@@ -1461,6 +1460,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                                  (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags),
                                                                  l_mmla_zip_row_major );
           } else {
+            /* Apply potential fusion to 2dregblock before storing it out */
+            libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length,
+                l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, l_micro_kernel_config.datatype_size_out  );
             libxsmm_generator_store_2dregblock_aarch64_sve( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                             l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                             l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
