@@ -3268,7 +3268,29 @@ LIBXSMM_API libxsmm_meltwfunction_opreduce_vecs_idx libxsmm_dispatch_meltw_opred
   libxsmm_descriptor_blob blob;
   libxsmm_blasint idx_dtype_size = libxsmm_typesize(idx_type);
   unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
-  unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
+  unsigned int vec0_bcast = flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_0;
+  unsigned int vec1_bcast = flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_BCAST_VEC_1;
+  if ( bcast_param >= 4096 ) {
+    fprintf(stderr, "ERROR! bcast_param = %d, only values < 4096 are supported\n", bcast_param);
+    return NULL;
+  }
+  unsigned short bcast_param_with_bcast_flag = (bcast_param & 0xfff);
+  if ( bcast_param_with_bcast_flag == 0 ) {
+    if ( vec0_bcast || vec1_bcast ) {
+      fprintf(stderr, "ERROR! bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n", bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
+      return NULL;
+    }
+  } else {
+    if (( vec0_bcast == 0 ) && ( vec1_bcast == 0 )) {
+      fprintf(stderr, "ERROR! bcast_param_with_bcast_flag = %d, but vec0_bcast = %d, vec1_bcast = %d\n", bcast_param_with_bcast_flag, vec0_bcast, vec1_bcast);
+      return NULL;
+    }
+    if ( vec0_bcast )
+      bcast_param_with_bcast_flag = (1 << 12) + bcast_param_with_bcast_flag;
+    if ( vec1_bcast )
+      bcast_param_with_bcast_flag = (1 << 13) + bcast_param_with_bcast_flag;
+  }
+  unsigned short bcast_shifted_params = (unsigned short) (bcast_param_with_bcast_flag << 2);
   unsigned short combined_params = argidx_params | bcast_shifted_params;
   const libxsmm_meltw_descriptor *const desc = libxsmm_meltw_descriptor_init(&blob,
     in_type, out_type, m, idx_dtype_size, (ldi == NULL) ? m : *ldi, (ldo == NULL) ? m : *ldo,
