@@ -868,11 +868,15 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && *MSG)
 # endif
 #endif
-#if !defined(LIBXSMM_EXPECT_ELIDE)
-# define LIBXSMM_EXPECT_ELIDE(EXPR) do { \
-    /*const*/ int libxsmm_expect_elide_ = (EXPR); \
-    LIBXSMM_UNUSED(libxsmm_expect_elide_); \
+
+#if !defined(LIBXSMM_ELIDE_RESULT)
+# define LIBXSMM_ELIDE_RESULT(TYPE, EXPR) do { \
+    /*const*/ TYPE libxsmm_elide_result_ = (EXPR); \
+    LIBXSMM_UNUSED(libxsmm_elide_result_); \
   } while(0)
+#endif
+#if !defined(LIBXSMM_EXPECT_ELIDE)
+# define LIBXSMM_EXPECT_ELIDE(EXPR) LIBXSMM_ELIDE_RESULT(int, EXPR)
 #endif
 #if defined(NDEBUG)
 # define LIBXSMM_EXPECT LIBXSMM_EXPECT_ELIDE

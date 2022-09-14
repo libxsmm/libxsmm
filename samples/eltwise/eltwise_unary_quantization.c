@@ -57,7 +57,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
-  LIBXSMM_FREXPF(max_value, &maxexp);
+  LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   maxexp -= 6;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
@@ -191,7 +191,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
-  LIBXSMM_FREXPF(max_value, &maxexp);
+  LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   maxexp -= 14;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
@@ -325,7 +325,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
 
   /* compute scaling factor */
   /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
-  LIBXSMM_FREXPF(max_value, &maxexp);
+  LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
   maxexp -= 30;
   scf_quant = libxsmm_sexp2_i8i(-maxexp);
 
