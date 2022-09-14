@@ -16,6 +16,9 @@
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
+#include "generator_mateltwise_unary_binary_aarch64.h"
+#include "generator_mateltwise_aarch64_sve.h"
+#include "generator_gemm_common_aarch64.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
@@ -1024,6 +1027,9 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                           const unsigned int      i_gp_reg_addr,
                                                           const unsigned int      i_gp_reg_scratch,
+                                                          const unsigned int      i_gp_reg_scratch1,
+                                                          const unsigned int      i_gp_reg_scratch2,
+                                                          const unsigned int      i_gp_reg_scratch3,
                                                           const unsigned int      i_vec_length,
                                                           const unsigned int      i_vec_reg_count,
                                                           const unsigned int      i_m_blocking,
@@ -1050,6 +1056,17 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
   unsigned int l_is_output_bf16 = ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ? 1 : 0;
   unsigned int l_output_bf16_mask = LIBXSMM_AARCH64_SVE_REG_P2;
+  unsigned int l_m_total_blocks = 0;
+  unsigned char l_pred_reg = 0;
+  unsigned char l_blend_reg = 6;
+  unsigned char l_tmp_pred_reg0 = 5;
+  unsigned char l_tmp_pred_reg1 = 4;
+  unsigned char l_tmp_pred_reg0_2 = 7;
+  unsigned char l_tmp_pred_reg1_2 = 3;
+  unsigned int l_tmp_vreg = 0;
+  unsigned int l_zero_vreg = 0;
+  unsigned int gp_reg_relumask = i_gp_reg_scratch2, gp_reg_relumask2 = i_gp_reg_scratch3;
+  libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(sizeof(float)));
 
   /* TODO (MMLA): implement */
   /* if( i_zip_row_major ) {
@@ -1063,6 +1080,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   l_remainder_size = i_m_blocking % i_vec_length;
   l_m_blocks[1] = (l_remainder_size > 0);
   l_m_bytes_full = l_m_blocks[0] * i_vec_length * i_data_size;
+  l_m_total_blocks = l_m_blocks[0] + l_m_blocks[1];
 
   /* start register of accumulator */
   l_vec_reg_acc_start = l_vr_c[0];/*i_vec_reg_count - (i_n_blocking * l_m_total_blocks);*/
@@ -1070,16 +1088,39 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   /* temporary vector registers used to zip values to before storing */
   l_vec_reg_tmp[0] = l_vec_reg_acc_start - 2;
   l_vec_reg_tmp[1] = l_vec_reg_acc_start - 1;
+  l_tmp_vreg = l_vec_reg_acc_start - 3;
+  l_zero_vreg = l_vec_reg_acc_start - 4;
+
+  if ((i_micro_kernel_config->fused_relu > 0) || (i_micro_kernel_config->fused_relu_nobitmask > 0))  {
+    libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+                                           l_zero_vreg, l_zero_vreg, 0, l_zero_vreg,
+                                           l_pred_reg, l_sve_type );
+  }
+  if (i_micro_kernel_config->fused_relu > 0) {
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relumask);
+  }
 
   /* load C accumulator */
   for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
-    /* second address register for loads */
+    /* this is the jump size to be performed after a m-block is complete */
+    unsigned int l_mask_adv = 0;
+    unsigned int l_mask_adv2 = 0;
+
+    /* second address register for stores */
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                    i_gp_reg_addr,
                                                    i_gp_reg_scratch,
                                                    i_gp_reg_scratch,
                                                    i_ld );
+    if (i_micro_kernel_config->fused_relu > 0) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                     LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     gp_reg_relumask,
+                                                     gp_reg_relumask2,
+                                                     gp_reg_relumask2,
+                                                     i_xgemm_desc->ldcp/8 );
+    }
 
     for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
       /* zip data to target vector registers */
@@ -1100,6 +1141,21 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                l_vec_reg_tmp[1],
                                                LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                l_type_zip );
+
+      if (i_micro_kernel_config->fused_relu > 0) {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V, l_vec_reg_tmp[0], LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,
+            l_blend_reg, l_pred_reg, l_sve_type );
+        libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_m_blocking, l_m, l_m_total_blocks,
+            LIBXSMM_CAST_UCHAR(l_tmp_vreg),  LIBXSMM_CAST_UCHAR(gp_reg_relumask),
+            l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1, LIBXSMM_CAST_UCHAR(i_gp_reg_scratch1), &l_mask_adv );
+
+      }
+
+      if ((i_micro_kernel_config->fused_relu > 0) || (i_micro_kernel_config->fused_relu_nobitmask > 0))  {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P,
+                                                 l_vec_reg_tmp[0], l_zero_vreg, 0, l_vec_reg_tmp[0],
+                                                 l_pred_reg, l_sve_type );
+      }
 
       /* store first part */
       if (l_is_output_bf16 == 0) {
@@ -1127,6 +1183,22 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                      i_gp_reg_addr,
                                                      i_vec_length * i_data_size,
                                                      0 );
+
+      if (i_micro_kernel_config->fused_relu > 0) {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V, l_vec_reg_tmp[1], LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,
+            l_blend_reg, l_pred_reg, l_sve_type );
+        libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_m_blocking, l_m, l_m_total_blocks,
+            LIBXSMM_CAST_UCHAR(l_tmp_vreg),  LIBXSMM_CAST_UCHAR(gp_reg_relumask2),
+            l_blend_reg, l_tmp_pred_reg0_2, l_tmp_pred_reg1_2, LIBXSMM_CAST_UCHAR(i_gp_reg_scratch1), &l_mask_adv2 );
+
+      }
+
+      if ((i_micro_kernel_config->fused_relu > 0) || (i_micro_kernel_config->fused_relu_nobitmask > 0))  {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P,
+                                                 l_vec_reg_tmp[1], l_zero_vreg, 0, l_vec_reg_tmp[1],
+                                                 l_pred_reg, l_sve_type );
+      }
+
       /* store second part */
       if (l_is_output_bf16 == 0) {
         libxsmm_aarch64_instruction_sve_move( io_generated_code,
@@ -1164,6 +1236,12 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                    i_gp_reg_scratch,
                                                    i_gp_reg_addr,
                                                    2ull*i_ld-l_m_bytes_full );
+
+    if (i_micro_kernel_config->fused_relu > 0) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
+                                                     ( 2ull * i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+    }
   }
   /* reset address register */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,

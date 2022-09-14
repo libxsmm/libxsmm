@@ -1469,7 +1469,8 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
               libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config,
                   l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, sizeof(float), l_use_mmla );
             }
-            libxsmm_generator_store_2dregblock_mmla_aarch64_sve( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+            libxsmm_generator_store_2dregblock_mmla_aarch64_sve( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c,
+                                                                 l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_help_3,
                                                                  l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                                  l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
                                                                  l_micro_kernel_config.datatype_size_out,
