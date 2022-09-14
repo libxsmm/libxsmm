@@ -1122,7 +1122,13 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size_in = 2;
-      io_micro_kernel_config->datatype_size_out = 4;
+      if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+        io_micro_kernel_config->datatype_size_out = 4;
+      } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+        io_micro_kernel_config->datatype_size_out = 2;
+      } else {
+        /* Should not happen */
+      }
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
@@ -1146,8 +1152,6 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     } else {
       /* should not happend */
     }
-
-
   } else if ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) {
     io_micro_kernel_config->instruction_set = i_arch;
     io_micro_kernel_config->vector_reg_count = 32;
@@ -1180,7 +1184,13 @@ void libxsmm_generator_gemm_init_micro_kernel_config_aarch64( libxsmm_micro_kern
     } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) { /* TODO (MMLA): do a proper integration; right now just assumes A in MMLA format, rest col-major */
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size_in = 2;
-      io_micro_kernel_config->datatype_size_out = 4;
+      if ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+        io_micro_kernel_config->datatype_size_out = 4;
+      } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+        io_micro_kernel_config->datatype_size_out = 2;
+      } else {
+        /* Should not happen */
+      }
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_AARCH64_INSTR_UNDEF;
@@ -1332,7 +1342,7 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
                                                                const unsigned int             i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
 
-  if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
+  if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 16) {
       l_m_blocking = i_xgemm_desc->m % 16;
@@ -1358,7 +1368,7 @@ unsigned int libxsmm_generator_gemm_aarch64_update_m_blocking( libxsmm_micro_ker
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
+  } else if ( ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) && (( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) || ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) )) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32 out kernel with the same logic */
     if (i_current_m_blocking == 32 ) {
       l_m_blocking = i_xgemm_desc->m % 32;
