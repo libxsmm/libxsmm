@@ -393,7 +393,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
     return;
   }
 
-  // load B
+  /* load B */
   for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
     libxsmm_aarch64_instruction_asimd_move( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF,
@@ -450,7 +450,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
 
   for( l_k = 0; l_k < l_k_blocks; l_k++ ) {
     for( l_m = 0; l_m < l_m_blocks; l_m++ ) {
-      // load A
+      /* load A */
       libxsmm_aarch64_instruction_asimd_pair_move( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_ASIMD_LDP_I_POST,
                                                    i_gp_reg_mapping->gp_reg_a,
@@ -459,7 +459,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
                                                    l_vr_a[1],
                                                    LIBXSMM_AARCH64_ASIMD_WIDTH_Q );
 
-      // MMLA compute
+      /* MMLA compute */
       for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
         libxsmm_aarch64_instruction_asimd_compute( io_generated_code,
                                                    l_instr_mmla,
@@ -698,7 +698,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
     return;
   }
 
-  // load B
+  /* load B */
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                  LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                  i_gp_reg_mapping->gp_reg_b,
@@ -794,7 +794,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
 
   for( l_k = 0; l_k < l_k_blocks; l_k++ ) {
     for( l_m = 0; l_m < l_m_blocks; l_m++ ) {
-      // load A
+      /* load A */
       libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
                                             i_gp_reg_mapping->gp_reg_a,
@@ -818,7 +818,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                      l_a_stride,
                                                      0 );
 
-      // MMLA compute
+      /* MMLA compute */
       for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  l_instr_mmla ,
@@ -1464,6 +1464,11 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
                     (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
           if( l_use_mmla ) {
+            /* Apply sigmoid fusion at FP32 registers */
+            if (l_micro_kernel_config.fused_sigmoid > 0) {
+              libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config,
+                  l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, sizeof(float), l_use_mmla );
+            }
             libxsmm_generator_store_2dregblock_mmla_aarch64_sve( io_generated_code, &l_micro_kernel_config, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                                  l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                                  l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
