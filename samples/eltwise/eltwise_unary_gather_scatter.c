@@ -287,6 +287,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   libxsmm_datatype dtype = (use_16bit_dtype == DTYPE_32BIT) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16;
   libxsmm_blasint m_kernel = 0, n_kernel = 0;
 
+  memset(&l_unary_param, 0, sizeof(l_unary_param));
+
   if (use_gather_or_scatter == GATHER) {
     m_kernel = out_m;
     n_kernel = out_n;

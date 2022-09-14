@@ -181,6 +181,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2 /*= { 0 }*/;
+
+  memset(&unary_param, 0, sizeof(unary_param));
+  memset(&params2, 0, sizeof(params2));
+
   if (reduce_rows == 1) {
     unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS);
   } else {
