@@ -567,6 +567,94 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_mbit_scalar_aarch64_asimd_micro
   }
 }
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                        libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                        const unsigned int                      i_gp_reg_in,
+                                                                                        const unsigned int                      i_gp_reg_out,
+                                                                                        const unsigned int                      i_gp_reg_m_loop,
+                                                                                        const unsigned int                      i_gp_reg_n_loop,
+                                                                                        const unsigned int                      i_gp_reg_scratch,
+                                                                                        const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                        const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  unsigned int l_ldi = i_mateltwise_desc->ldi*4;
+  unsigned int l_ldo = i_mateltwise_desc->ldo*4;
+  libxsmm_aarch64_asimd_width l_load_instr_width;
+  libxsmm_aarch64_asimd_width l_store_instr_width;
+  unsigned int l_m = 0, l_n = 0;
+
+  /* select load and store instructions */
+  if ( i_micro_kernel_config->datatype_size_in == 8 ) {
+    l_load_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+    l_store_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+  } else if ( i_micro_kernel_config->datatype_size_in == 4 ) {
+    l_load_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_S;
+    l_store_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_S;
+  } else if ( i_micro_kernel_config->datatype_size_in == 2 ) {
+    l_load_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_H;
+    l_store_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_H;
+  } else if ( i_micro_kernel_config->datatype_size_in == 1 ) {
+    l_load_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_B;
+    l_store_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_B;
+  } else {
+    /* should not happen */
+    l_load_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_B;
+    l_store_instr_width = LIBXSMM_AARCH64_ASIMD_WIDTH_B;
+  }
+
+  if ( (i_mateltwise_desc->m % 4 == 0) && (i_mateltwise_desc->n % 4 == 0) ) {
+    /* n loop header */
+    libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, i_mateltwise_desc->n );
+
+    /* m loop header */
+    libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, i_mateltwise_desc->m );
+
+    /* actual transpose */
+    for (l_m = 0; l_m < 4; l_m++) {
+      for (l_n = 0; l_n < 4; l_n++) {
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
+                                                i_gp_reg_in, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->datatype_size_in, l_m * 4 + l_n, l_load_instr_width );
+      }
+    }
+
+    for (l_n = 0; l_n < 4; l_n++) {
+      for (l_m = 0; l_m < 4; l_m++) {
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
+                                                i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, i_micro_kernel_config->datatype_size_out, l_m * 4 + l_n, l_store_instr_width );
+      }
+    }
+
+
+    /* advance output pointer */
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                   i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out,
+                                                   (i_micro_kernel_config->datatype_size_out * l_ldo) - (i_micro_kernel_config->datatype_size_out * 16) );
+
+    /* close m loop */
+    libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, 4 );
+
+    /* advance input pointer if need be */
+    if (l_ldi * i_micro_kernel_config->datatype_size_in > i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m * 4) {
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                     i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in,
+                                                     (l_ldi * i_micro_kernel_config->datatype_size_in) - (i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m * 4) );
+    }
+
+
+    /* advance output pointer */
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
+                                                   i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out,
+                                                   ( i_micro_kernel_config->datatype_size_out * l_ldo * i_mateltwise_desc->m/4 ) - (i_micro_kernel_config->datatype_size_out * 16) );
+
+    /* close n loop */
+    libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, 4 );
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+}
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_padnm_mod2_mbit_scalar_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                                         libxsmm_loop_label_tracker*             io_loop_label_tracker,
@@ -902,6 +990,21 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_aarch64_asimd_microkernel
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                  libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                                  const unsigned int                      i_gp_reg_in,
+                                                                                  const unsigned int                      i_gp_reg_out,
+                                                                                  const unsigned int                      i_gp_reg_m_loop,
+                                                                                  const unsigned int                      i_gp_reg_n_loop,
+                                                                                  const unsigned int                      i_gp_reg_scratch,
+                                                                                  const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                  const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  libxsmm_generator_transform_vnni4_to_vnni4t_mbit_scalar_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                                   i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop,
+                                                                                   i_gp_reg_scratch, i_micro_kernel_config, i_mateltwise_desc );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_padnm_mod2_16bit_aarch64_asimd_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                                   libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                                   const unsigned int                      i_gp_reg_in,
@@ -1011,6 +1114,11 @@ void libxsmm_generator_transform_aarch64_asimd_microkernel( libxsmm_generated_co
                                                                                  i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc );
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T) {
       libxsmm_generator_transform_vnni2_to_vnni2t_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                                   i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
+                                                                                   i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
+                                                                                   i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc );
+    }  else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T) {
+      libxsmm_generator_transform_vnni4_to_vnni4t_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker,
                                                                                    i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                    i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
                                                                                    i_gp_reg_mapping->gp_reg_scratch_0, i_micro_kernel_config, i_mateltwise_desc );
