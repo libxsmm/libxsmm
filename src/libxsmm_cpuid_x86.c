@@ -231,8 +231,12 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
           fprintf(stderr, "LIBXSMM WARNING: %soptimized non-JIT code paths are limited to \"%s\"!\n", compiler_support, name);
         }
 # endif
-# if defined(__OPTIMIZE__) && !defined(NDEBUG) && !defined(LIBXSMM_BUILD) /* warning limited to header-only */
+# if defined(__OPTIMIZE__) && !defined(NDEBUG)
+#   if defined(_DEBUG)
+        fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains extra debug code!\n");
+#   elif !defined(LIBXSMM_BUILD) /* warning limited to header-only */
         fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
+#   endif
 # endif
 # if !defined(__APPLE__) || !defined(__MACH__) /* permitted features */
         if (0 == has_context) {
