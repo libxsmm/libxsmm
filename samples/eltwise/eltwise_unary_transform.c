@@ -616,11 +616,13 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   /* compare result */
   s = 0;
-  for ( i = 0; i < Nn; ++i ) {
-    for ( j = 0; j < M; ++j ) {
-      if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
-        s = 1;
+  for ( j = 0; j < Nn/4; ++j ) {
+    for ( i = 0; i < M; ++i ) {
+      for (j2 = 0; j2 < 4; ++j2){
+        if ( out_gold[(j*ldo*4)+(i*4)+j2] != out[(j*ldo*4)+(i*4)+j2] ) {
+          printf("error at position OUT[%i][%i][%i]: %i %i\n", j, i, j2, out_gold[(j*ldo*4)+(i*4)+j2], out[(j*ldo*4)+(i*4)+j2]);
+          s = 1;
+        }
       }
     }
   }
