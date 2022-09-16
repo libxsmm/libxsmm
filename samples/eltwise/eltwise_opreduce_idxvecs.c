@@ -421,24 +421,24 @@ int main(int argc, char* argv[])
         ref_result[_i] += op_res;
       } else if (redop == REDOP_MIN) {
         if (argop_vec_0 > 0) {
-          if (op_res <= ref_result[_i]) {
+          if (op_res < ref_result[_i]) {
             ref_argop_off_vec_0[_i] = j;
           }
         }
         if (argop_vec_1 > 0) {
-          if (op_res <= ref_result[_i]) {
+          if (op_res < ref_result[_i]) {
             ref_argop_off_vec_1[_i] = _j;
           }
         }
         ref_result[_i] = LIBXSMM_MIN(ref_result[_i], op_res);
       } else if (redop == REDOP_MAX) {
         if (argop_vec_0 > 0) {
-          if (op_res >= ref_result[_i]) {
+          if (op_res > ref_result[_i]) {
             ref_argop_off_vec_0[_i] = j;
           }
         }
         if (argop_vec_1 > 0) {
-          if (op_res >= ref_result[_i]) {
+          if (op_res > ref_result[_i]) {
             ref_argop_off_vec_1[_i] = _j;
           }
         }
