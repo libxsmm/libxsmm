@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <cstdint>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -70,12 +71,20 @@ void init_random(size_t sz, T *buf, T low, T high)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
+#ifdef __INTEL_COMPILER
     return _mm_malloc(sz, align);
+#else
+    return aligned_alloc(align, sz);
+#endif
 }
 
 inline void my_free(void *p)
 {
+#ifdef __INTEL_COMPILER
     _mm_free(p);
+#else
+    free(p);
+#endif
 }
 
 #endif /*_UTILS_H_*/

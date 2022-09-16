@@ -5,7 +5,7 @@ USE_CCL=0
 USE_FP16=0
 VERIFY_CORRECTNESS=1
 COUNT_UNIQUE=1
-USE_LIBXSMM_JIT = 1
+USE_LIBXSMM_JIT=1
 
 ifeq ($(USE_CCL),1)
 override USE_MPI=0
@@ -17,7 +17,8 @@ CCL_FLAGS=
 endif
 
 ifeq ($(USE_LIBXSMM_JIT),1)
-CCL_FLAGS += -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread  -I../../../include ../../../lib/libxsmmnoblas.a  ../../../lib/libxsmm.a
+#CCL_FLAGS += -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread  -I../../../include ../../../lib/libxsmmnoblas.a  ../../../lib/libxsmm.a
+CCL_FLAGS += -I../../../include ../../../lib/libxsmmnoblas.a  ../../../lib/libxsmm.a -ldl
 endif
 #deflist +=
 
@@ -34,17 +35,17 @@ yesnolist += USE_LIBXSMM_JIT
 DEFS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
 DEFS += $(strip $(foreach var, $(deflist), $(if $($(var)), -D$(var)=$($(var)))))
 
-CC=icc
+CXX=g++
 
 ifeq ($(USE_MPI),1)
-CC=mpiicc
+CXX=mpicxx
 endif
 
 
 all: main
 
 main: main.cpp utils.cpp utils.h rtm.h EmbeddingBag.h dist.h
-	$(CC) -o main -g -O2 -xCOMMON-AVX512 -stdc++11 $(DEFS) utils.cpp main.cpp -qopenmp $(CCL_FLAGS)
+	$(CXX) -o main -g -O2 -mavx512f -mrtm -std=c++11 $(DEFS) utils.cpp main.cpp -fopenmp $(CCL_FLAGS)
 
 clean:
 	rm -f main
