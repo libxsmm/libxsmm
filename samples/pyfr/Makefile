@@ -63,7 +63,7 @@ ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@-rm -f $(OBJECTS) $(OBJECTX) fit.log *.dat
+	@-rm -f $(OBJECTS) $(OBJECTX) *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@-rm -f .make .state

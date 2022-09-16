@@ -53,6 +53,12 @@
 
 
 /**
+ * Check if pointer is SIMD-aligned and optionally consider the next access (increment in Bytes).
+ * Optionally calculates the alignment of the given pointer in Bytes.
+ */
+LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment);
+
+/**
  * Calculates if there is a difference between two (short) buffers.
  * Returns zero if there is no difference; otherwise non-zero.
  */
@@ -78,10 +84,10 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);
 LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
 
 /**
- * Check if pointer is SIMD-aligned and optionally consider the next access (increment in Bytes).
- * Optionally calculates the alignment of the given pointer in Bytes.
+ * Print the command line arguments of the current process, and get the number of written
+ * characters including the prefix, the postfix, but not the terminating NULL character.
+ * If zero is returned, nothing was printed (no prefix, no postfix).
  */
-LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignment);
+LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
 
 #endif /*LIBXSMM_MEMORY_H*/
-

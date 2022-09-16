@@ -773,11 +773,12 @@ endif
 CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
   elif [ "Darwin" = "$(UNAME)" ] && [ "x86_64" = "$(MNAME)" ]; then \
-    sysctl -a machdep.cpu.features \
-      machdep.cpu.extfeatures \
+    sysctl -a \
       machdep.cpu.leaf7_features \
+      machdep.cpu.extfeatures \
+      machdep.cpu.features \
     | cut -d: -f2- | tr -s "\n" " " \
-    | tr [:upper:] [:lower:]; \
+    | tr "[:upper:]." "[:lower:]_"; \
   fi))
 SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX

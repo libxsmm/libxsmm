@@ -175,20 +175,20 @@
 #endif
 
 #if defined(NOTHROW)
-# define LIBXSMM_BLAS_NOTHROW NOTHROW
+# define LIBXSMM_BLAS_NOEXCEPT_AUX NOTHROW
 #else
-# define LIBXSMM_BLAS_NOTHROW LIBXSMM_NOEXCEPT
+# define LIBXSMM_BLAS_NOEXCEPT_AUX LIBXSMM_NOEXCEPT
 #endif
 #define LIBXSMM_BLAS_NOEXCEPT(KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_NOEXCEPT_, KIND)
 #if defined(LIBXSMM_MKL_VERSION3) && (LIBXSMM_VERSION3(2020, 0, 2) <= LIBXSMM_MKL_VERSION3)
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided LIBXSMM_BLAS_NOTHROW
-# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOTHROW
+# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided LIBXSMM_BLAS_NOEXCEPT_AUX
+# define LIBXSMM_BLAS_NOEXCEPT_gemm_batch LIBXSMM_BLAS_NOEXCEPT_AUX
 #else
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch_strided
 # define LIBXSMM_BLAS_NOEXCEPT_gemm_batch
 #endif
-#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOTHROW
-#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOTHROW
+#define LIBXSMM_BLAS_NOEXCEPT_gemm LIBXSMM_BLAS_NOEXCEPT_AUX
+#define LIBXSMM_BLAS_NOEXCEPT_gemv LIBXSMM_BLAS_NOEXCEPT_AUX
 
 #define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch_strided(CONST_STAR, STAR, TYPE) char CONST_STAR /*transa*/, char CONST_STAR /*transb*/, \
   libxsmm_blasint CONST_STAR /*m*/, libxsmm_blasint CONST_STAR /*n*/, libxsmm_blasint CONST_STAR /*k*/, \
@@ -469,7 +469,7 @@
   } \
   else { /* shuffle based initialization */ \
     const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
-    const TYPE libxsmm_matinit_maxval2_ = (TYPE)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2); /* non-zero */ \
+    const TYPE libxsmm_matinit_maxval2_ = (TYPE)((unsigned int)LIBXSMM_UPDIV(libxsmm_matinit_maxval_, 2)); /* non-zero */ \
     const TYPE libxsmm_matinit_inv_ = ((TYPE)(SCALE)) / libxsmm_matinit_maxval2_; \
     const size_t libxsmm_matinit_shuffle_ = libxsmm_shuffle(libxsmm_matinit_maxval_); \
     OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
@@ -583,4 +583,3 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
 LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
 #endif /*LIBXSMM_FRONTEND_H*/
-

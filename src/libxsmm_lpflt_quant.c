@@ -161,8 +161,9 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
   if ( round_mode == LIBXSMM_QUANT_FPHW_ROUND ) {
     const float max_value = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;
+    float scfq;
     /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
-    float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
+    LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
     maxexp -= (15/*LIBXSMM_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 

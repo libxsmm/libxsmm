@@ -15,6 +15,7 @@
 #include <math.h>
 #include <string.h>
 
+LIBXSMM_INLINE
 libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
   libxsmm_datatype dtype = LIBXSMM_DATATYPE_UNSUPPORTED;
 
@@ -43,6 +44,7 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
   return dtype;
 }
 
+LIBXSMM_INLINE
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint neg_values ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -80,16 +82,19 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
   }
 }
 
+LIBXSMM_INLINE
 void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0x0, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
+LIBXSMM_INLINE
 void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0xdeadbeef, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
+LIBXSMM_INLINE
 void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -112,6 +117,7 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
   }
 }
 
+LIBXSMM_INLINE
 void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -134,6 +140,7 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
   }
 }
 
+LIBXSMM_INLINE
 void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -156,6 +163,7 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
   }
 }
 
+LIBXSMM_INLINE
 libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
 
@@ -214,6 +222,7 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
 /* how many architectures will be tested at max; more archs would need to be implemented in getBenchmarkedArch() */
 #define MAX_BENCHMARK_ARCHITECTURES 2
 
+LIBXSMM_INLINE
 const char* getBenchmarkedArch(int index) {
   static const char* archs[MAX_BENCHMARK_ARCHITECTURES] = { NULL };
   int i;
@@ -236,6 +245,7 @@ const char* getBenchmarkedArch(int index) {
 }
 
 /* returns the target duration of every single benchmark run; if the duration is <= 0 or NaN, no benchmarks will be run */
+LIBXSMM_INLINE
 double getBenchmarkDuration() {
   static double duration = -1;
   if (duration < 0) {
@@ -248,6 +258,7 @@ double getBenchmarkDuration() {
   return duration;
 }
 
+LIBXSMM_INLINE
 void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
                       libxsmm_meltw_unary_shape unary_shape,
                       libxsmm_meltw_unary_flags unary_flags,
@@ -304,6 +315,7 @@ void benchmark_unary( libxsmm_meltw_unary_type  unary_type,
   } /* end of loop over architectures */
 }
 
+LIBXSMM_INLINE
 void benchmark_binary( libxsmm_meltw_binary_type  binary_type,
                        libxsmm_meltw_binary_shape binary_shape,
                        libxsmm_meltw_binary_flags binary_flags,
