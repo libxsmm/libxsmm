@@ -17,6 +17,35 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_mateltwise_aarch64_sve.h"
+#include "generator_mateltwise_transform_aarch64_asimd.h"
+#include "generator_mateltwise_aarch64.h"
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated_code*            io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc) {
+  if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+    libxsmm_descriptor_blob blob;
+    const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
+      LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, i_xgemm_desc->m, i_xgemm_desc->n,
+      i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0,
+      (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4, LIBXSMM_MELTW_OPERATION_UNARY);
+    libxsmm_mateltwise_kernel_config l_trans_config;
+    unsigned int l_gp_reg_in = i_gp_reg_mapping->gp_reg_help_1;
+    libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, trans_desc);
+
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C, i_gp_reg_mapping->gp_reg_c);
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, l_gp_reg_in);
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, l_gp_reg_in, i_gp_reg_mapping->gp_reg_help_2, l_gp_reg_in, 32LL * 64LL );
+    libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+                                                                               i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3, i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+  } else {
+    /* Should not happen  */
+  }
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsmm_generated_code*         io_generated_code,
@@ -983,7 +1012,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_aarch64( libxsmm_
     gemm_scratch_size = 32 * 64;
   }
   if (i_micro_kernel_config->vnni_format_C > 0) {
-    gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->ldc * 4;
+    gemm_scratch_size = 32 * 64 + i_xgemm_desc->n * i_xgemm_desc->m * 4;
   }
 
   scratch_pad_size  = (gemm_scratch_size % 64 == 0) ? 0 : ((gemm_scratch_size + 63)/64) * 64 - gemm_scratch_size;

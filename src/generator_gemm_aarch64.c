@@ -990,7 +990,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
   /* Local variables used for A transpose case */
   libxsmm_descriptor_blob           l_blob_opa;
-  const libxsmm_gemm_descriptor *   l_xgemm_desc_opa;
+  libxsmm_gemm_descriptor*          l_xgemm_desc_opa;
   libxsmm_descriptor_blob           l_meltw_blob;
   libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
   libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
@@ -1087,7 +1087,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       return;
     }
   } else {
-    l_xgemm_desc_opa = i_xgemm_desc;
+    l_xgemm_desc_opa = (libxsmm_gemm_descriptor*) i_xgemm_desc;
   }
 
   /* implementing load from struct */
@@ -1141,6 +1141,14 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   /* setting up the stack frame */
   libxsmm_generator_gemm_setup_stack_frame_aarch64( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config);
   gemm_stack_frame_is_set = 1;
+
+  /* In this case we store C to scratch  */
+  if (l_micro_kernel_config.vnni_format_C > 0) {
+    libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c);
+    libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, l_gp_reg_mapping.gp_reg_help_1);
+    libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c, 32LL * 64LL );
+    l_xgemm_desc_opa->ldc = i_xgemm_desc->m;
+  }
 
   if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
@@ -1643,14 +1651,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                 l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
   }
 
-  /* FIXME: Will this condition ever be true for aarch? Guess not */
-  /*
-  if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI & l_xgemm_desc_opa->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) ||
-       (l_micro_kernel_config.vnni_format_C > 0) ) {
-    libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, l_xgemm_desc_opa, i_gp_reg_mapping, &l_micro_kernel_config );
-  }
-  else {
-  */
+
   /* cleaning up the stack memory for the transpose */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) {
     if ( !gemm_stack_frame_is_set ) {
@@ -1658,10 +1659,12 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_X29, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
     }
   }
-  /*
-  }
-  */
 
+  /* In this case we vnni-format C from scratch  */
+  if (l_micro_kernel_config.vnni_format_C > 0) {
+    l_xgemm_desc_opa->ldc = i_xgemm_desc->ldc;
+    libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa);
+  }
   libxsmm_generator_gemm_destroy_stack_frame_aarch64( io_generated_code );
 
   /* close asm */

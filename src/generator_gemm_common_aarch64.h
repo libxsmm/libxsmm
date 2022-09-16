@@ -16,6 +16,13 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated_code*            io_generated_code,
+    libxsmm_loop_label_tracker*        io_loop_label_tracker,
+    const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+    const libxsmm_micro_kernel_config* i_micro_kernel_config,
+    const libxsmm_gemm_descriptor*     i_xgemm_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsmm_generated_code*         io_generated_code,
                                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                               libxsmm_micro_kernel_config*    io_micro_kernel_config,

@@ -568,6 +568,20 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
       }
     }
     libxsmm_free(tmp_c);
+  } else if (i_gemm_def->out_type == LIBXSMM_DATATYPE_BF16) {
+    libxsmm_bfloat16* h_c   = (libxsmm_bfloat16*)l_c_gold;
+    libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
+    /* Copy to tmp_c */
+    memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat16));
+    /* convert to vnni  */
+    for (l_i = 0; l_i < n/4; l_i++) {
+      for (l_j = 0; l_j < m; l_j++) {
+        for (l_i2 = 0; l_i2 < 4; l_i2++) {
+          h_c[(l_i*ldc*4)+(l_j*4)+l_i2] = tmp_c[(((l_i*4)+l_i2)*ldc)+l_j];
+        }
+      }
+    }
+    libxsmm_free(tmp_c);
   } else {
     /* Should not come here  */
   }
@@ -2048,7 +2062,13 @@ int main(int argc, char* argv []) {
         }
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            convert_output_to_vnni2(&l_gemm_def, l_c_gold);
+            int arch_cpuid = libxsmm_cpuid();
+            /* For arm archs interprete the vnni format differently */
+            if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
+              convert_output_to_vnni4(&l_gemm_def, l_c_gold);
+            } else {
+              convert_output_to_vnni2(&l_gemm_def, l_c_gold);
+            }
           } else {
             convert_output_to_vnni4(&l_gemm_def, l_c_gold);
           }
@@ -2065,7 +2085,13 @@ int main(int argc, char* argv []) {
       {
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );
+            int arch_cpuid = libxsmm_cpuid();
+            /* For arm archs interprete the vnni format differently */
+            if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
+              error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
+            } else {
+              error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );
+            }
           } else {
             error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
           }
