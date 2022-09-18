@@ -366,10 +366,10 @@ typedef unsigned char libxsmm_descriptor_kind;
 
 /** All descriptor types, which are valid for code-registration. */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
-  char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
-  libxsmm_descriptor_kind kind; /* kind: must be the first member */
+  unsigned char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
+  libxsmm_descriptor_kind kind; /* kind: must be the first member after "data" entry (above) */
   LIBXSMM_REGDESC(LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
-  LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; char desc[1]; } user;
+  LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; unsigned char size; unsigned char desc[1]; } user;
 } libxsmm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
