@@ -13,7 +13,7 @@
 
 #include <libxsmm_macros.h>
 
-#if (defined(__TRACE) || defined(LIBXSMM_BUILD) || !defined(_WIN32))
+#if defined(__TRACE) && defined(LIBXSMM_BUILD)
 # define LIBXSMM_TRACE
 #endif
 #if !defined(LIBXSMM_TRACE_CALLERID_MAXDEPTH)
