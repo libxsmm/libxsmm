@@ -946,10 +946,10 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_PUTENV(A) putenv(A)
 # define LIBXSMM_MKTEMP(A) mkstemp(A)
-# if !defined(_GNU_SOURCE) || (defined(__GNUC__) && LIBXSMM_VERSION2(4, 3) > LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
-# else
+# if defined(__clang__) || !defined(__GNUC__) || (defined(__GNUC__) && LIBXSMM_VERSION2(4, 3) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
 LIBXSMM_EXTERN int mkstemp(char*);
+# else
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 # endif
 #endif
 
