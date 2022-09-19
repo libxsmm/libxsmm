@@ -63,11 +63,12 @@ LIBXSMM_INLINE unsigned int ref_ilog2_u32(unsigned int u32)
 }
 
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char* argv[])
 {
   const unsigned long long scale64 = ((unsigned long long)-1) / (RAND_MAX) - 1;
   const unsigned int scale32 = ((unsigned int)-1) / (RAND_MAX) - 1;
   int warn_dsqrt = 0, warn_ssqrt = 0, i, j;
+  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
 
   for (i = 0; i < 256; ++i) {
     const float a = libxsmm_sexp2_u8((unsigned char)i);
