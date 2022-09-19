@@ -1450,9 +1450,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)
-{
-  /* does nothing else but sinking given arguments */
+LIBXSMM_API void libxsmm_sink(const void* arg, ...)
+{ /* does nothing else but sinking given arguments */
+  LIBXSMM_UNUSED(arg);
 }
 
 

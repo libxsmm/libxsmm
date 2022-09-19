@@ -312,7 +312,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
 } libxsmm_xcopykernel;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
-  void (*ptr_fn)(LIBXSMM_VARIADIC);
+  /*void (*ptr_fn)(const void*, ...);*/
   const void* ptr_const;
   void* ptr;
   uintptr_t uval;
