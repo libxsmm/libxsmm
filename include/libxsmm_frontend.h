@@ -13,6 +13,10 @@
 
 #include "libxsmm_typedefs.h"
 
+#if !defined(LIBXSMM_DESCRIPTION)
+# define LIBXSMM_DESCRIPTION "Library for specialized dense and sparse matrix operations, and deep learning primitives."
+#endif
+
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
 #if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
 #if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
