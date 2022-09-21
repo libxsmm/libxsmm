@@ -153,6 +153,7 @@ libxsmm_get_target_arch
 libxsmm_get_target_archid
 libxsmm_get_tid
 libxsmm_get_timer_info
+libxsmm_get_typename
 libxsmm_get_verbosity
 libxsmm_hash
 libxsmm_hash_char
@@ -244,6 +245,7 @@ libxsmm_pfree
 libxsmm_pmalloc
 libxsmm_pmalloc_init
 libxsmm_primes_u32
+libxsmm_print_cmdline
 libxsmm_product_limit
 libxsmm_ptr_b0
 libxsmm_ptr_b1

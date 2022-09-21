@@ -19,17 +19,22 @@ KINDS="hex pri quad tet tri"
 FILES="m0-de m0-sp m132-de m132-sp m3-de m3-sp m460-de m460-sp m6-de m6-sp"
 
 if [ "${MKDIR}" ] && [ "${WGET}" ]; then
-  ${MKDIR} -p ${HERE}/mats; cd ${HERE}/mats
+  ${MKDIR} -p "${HERE}/mats"
+  cd "${HERE}/mats" || exit 1
   for DATA in ${DATASET}; do
-    mkdir ${DATA}; cd ${DATA}
+    mkdir "${DATA}"
+    cd "${DATA}" || exit 1
     for KIND in ${KINDS}; do
-      mkdir ${KIND}; cd ${KIND}
+      mkdir "${KIND}"
+      cd "${KIND}" || exit 1
       for FILE in ${FILES}; do
-        ${WGET} -N https://github.com/libxsmm/libxsmm/raw/main/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx
+        ${WGET} -N "https://github.com/libxsmm/libxsmm/raw/main/samples/pyfr/mats/${DATA}/${KIND}/${FILE}.mtx"
       done
       cd ..
     done
     cd ..
   done
+else
+  >&2 echo "ERROR: missing prerequisites!"
+  exit 1
 fi
-

@@ -46,6 +46,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   { /* Compute the vector/chunk sizes */
     const int vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
     const int vl = LIBXSMM_UPDIV(vlen, typesize);
+    LIBXSMM_ASSERT(0 < vl);
     N_sparse1 = N_dense = vl;
     /* Dense NEON benefits from larger sizes */
     if (libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
@@ -259,7 +260,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   /* We have at least one kernel */
   if (0 < nkerns) {
-    const char* const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
+    const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
     const int fsspmdm_hint = (NULL == env_fsspmdm_hint ? 0 : atoi(env_fsspmdm_hint));
     void *B = NULL, *C = NULL;
     double dt_dense = (NULL != k_dense) ? 1e5 : 1e6;

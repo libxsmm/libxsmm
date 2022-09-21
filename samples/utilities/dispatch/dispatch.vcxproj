@@ -30,7 +30,6 @@
     <ClCompile Include="dispatch.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="dispatch.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />
   </ItemGroup>

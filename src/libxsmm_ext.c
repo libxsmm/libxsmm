@@ -156,10 +156,10 @@ LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_ATTRIBUTE_COMMON unsigned int libxsmm_intrinsi
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_ATTRIBUTE_COMMON unsigned int libxsmm_intrinsics_mm512_rng_state2[16]);
 LIBXSMM_APIVAR_PUBLIC_DEF(LIBXSMM_ATTRIBUTE_COMMON unsigned int libxsmm_intrinsics_mm512_rng_state3[16]);
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_noblas_sink(LIBXSMM_VARIADIC);
-LIBXSMM_API_INTERN void internal_noblas_sink(LIBXSMM_VARIADIC)
-{
-  /* does nothing else but sinking given arguments */
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE void internal_noblas_sink(const void* /*arg*/, ...);
+LIBXSMM_API_INTERN void internal_noblas_sink(const void* arg, ...)
+{ /* does nothing else but sinking given arguments */
+  LIBXSMM_UNUSED(arg);
 }
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_NO_TRACE libxsmm_sink_function internal_noblas_error(const char* /*symbol*/);
@@ -272,4 +272,3 @@ void sgemm_batch(const char transa_array[], const char transb_array[],
 
 #endif
 #endif /*defined(LIBXSMM_BUILD)*/
-

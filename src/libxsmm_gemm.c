@@ -448,7 +448,7 @@ LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_gemm_init()
+LIBXSMM_API_INTERN void libxsmm_gemm_init(void)
 {
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr = { 0 };
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);

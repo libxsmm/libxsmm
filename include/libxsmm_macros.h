@@ -84,8 +84,8 @@
 # endif
 #endif
 
-#define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
-#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY2(SYMBOL)
+#define LIBXSMM_STRINGIFY_AUX(SYMBOL) #SYMBOL
+#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY_AUX(SYMBOL)
 #define LIBXSMM_TOSTRING(SYMBOL) LIBXSMM_STRINGIFY(SYMBOL)
 #define LIBXSMM_CONCATENATE2(A, B) A##B
 #define LIBXSMM_CONCATENATE3(A, B, C) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(A, B), C)
@@ -126,21 +126,21 @@
   LIBXSMM_VERSION_CHECK(>=, MAJOR, MINOR, UPDATE, PATCH)
 
 /** Evaluates to true if the value falls into the interval [LO, HI]. */
-#define LIBXSMM_IS_INTEGER(VALUE, LO, HI) ( \
-  ((0 ^ (VALUE)) == (LO) || (0 ^ (VALUE)) > (LO)) && \
-  ((0 ^ (VALUE)) == (HI) || (0 ^ (VALUE)) < (HI)))
+#define LIBXSMM_IS_INTEGER(TYPE, VALUE, LO, HI) ( \
+  ((LO) == (TYPE)(VALUE) || (LO) < (TYPE)(VALUE)) && (unsigned long long)(VALUE) <= (HI) && \
+  ((0 <= (double)(VALUE) || (0 > (LO) && 0 < (HI)))))
 /** LIBXSMM_IS_TYPE: check value against type-range of TYPE. */
-#define LIBXSMM_IS_ULLONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, ULLONG_MAX)
-#define LIBXSMM_IS_LLONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, LLONG_MIN, LLONG_MAX)
-#define LIBXSMM_IS_ULONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, ULONG_MAX)
-#define LIBXSMM_IS_LONG(VALUE) LIBXSMM_IS_INTEGER(VALUE, LONG_MIN, LONG_MAX)
-#define LIBXSMM_IS_USHORT(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, USHRT_MAX)
-#define LIBXSMM_IS_SHORT(VALUE) LIBXSMM_IS_INTEGER(VALUE, SHRT_MIN, SHRT_MAX)
-#define LIBXSMM_IS_UCHAR(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, UCHAR_MAX)
-#define LIBXSMM_IS_ICHAR(VALUE) LIBXSMM_IS_INTEGER(VALUE, SCHAR_MIN, SCHAR_MAX)
-#define LIBXSMM_IS_CHAR(VALUE) LIBXSMM_IS_INTEGER(VALUE, CHAR_MIN, CHAR_MAX)
-#define LIBXSMM_IS_UINT(VALUE) LIBXSMM_IS_INTEGER(VALUE, 0, UINT_MAX)
-#define LIBXSMM_IS_INT(VALUE) LIBXSMM_IS_INTEGER(VALUE, INT_MIN, INT_MAX)
+#define LIBXSMM_IS_ULLONG(VALUE) LIBXSMM_IS_INTEGER(unsigned long long, VALUE, 0, ULLONG_MAX)
+#define LIBXSMM_IS_LLONG(VALUE) LIBXSMM_IS_INTEGER(/*signed*/long long, VALUE, LLONG_MIN, LLONG_MAX)
+#define LIBXSMM_IS_ULONG(VALUE) LIBXSMM_IS_INTEGER(unsigned long, VALUE, 0, ULONG_MAX)
+#define LIBXSMM_IS_LONG(VALUE) LIBXSMM_IS_INTEGER(/*signed*/long, VALUE, LONG_MIN, LONG_MAX)
+#define LIBXSMM_IS_USHORT(VALUE) LIBXSMM_IS_INTEGER(unsigned short, VALUE, 0, USHRT_MAX)
+#define LIBXSMM_IS_SHORT(VALUE) LIBXSMM_IS_INTEGER(/*signed*/short, VALUE, SHRT_MIN, SHRT_MAX)
+#define LIBXSMM_IS_UCHAR(VALUE) LIBXSMM_IS_INTEGER(unsigned char, VALUE, 0, UCHAR_MAX)
+#define LIBXSMM_IS_ICHAR(VALUE) LIBXSMM_IS_INTEGER(signed char, VALUE, SCHAR_MIN, SCHAR_MAX)
+#define LIBXSMM_IS_CHAR(VALUE) LIBXSMM_IS_INTEGER(char, VALUE, CHAR_MIN, CHAR_MAX)
+#define LIBXSMM_IS_UINT(VALUE) LIBXSMM_IS_INTEGER(unsigned int, VALUE, 0, UINT_MAX)
+#define LIBXSMM_IS_INT(VALUE) LIBXSMM_IS_INTEGER(/*signed*/int, VALUE, INT_MIN, INT_MAX)
 
 /**
  * LIBXSMM_CAST: Perform type-cast with following two advantages:
@@ -422,7 +422,7 @@
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
-#endif /*LIBXSMM_PRAGMA*/
+#endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
@@ -496,6 +496,25 @@
 # endif
 #endif
 
+#if !defined(__INTEL_COMPILER)
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
+#endif
+
 #if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
@@ -547,6 +566,7 @@
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
 #define LIBXSMM_NEARBYINTX(TYPE, A) ((TYPE)((long long)(LIBXSMM_ROUNDX(TYPE,((double)(A)/2.0))*2)))
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
+#define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
@@ -867,11 +887,15 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && *MSG)
 # endif
 #endif
-#if !defined(LIBXSMM_EXPECT_ELIDE)
-# define LIBXSMM_EXPECT_ELIDE(EXPR) do { \
-    /*const*/ int libxsmm_expect_elide_ = (EXPR); \
-    LIBXSMM_UNUSED(libxsmm_expect_elide_); \
+
+#if !defined(LIBXSMM_ELIDE_RESULT)
+# define LIBXSMM_ELIDE_RESULT(TYPE, EXPR) do { \
+    /*const*/ TYPE libxsmm_elide_result_ = (EXPR); \
+    LIBXSMM_UNUSED(libxsmm_elide_result_); \
   } while(0)
+#endif
+#if !defined(LIBXSMM_EXPECT_ELIDE)
+# define LIBXSMM_EXPECT_ELIDE(EXPR) LIBXSMM_ELIDE_RESULT(int, EXPR)
 #endif
 #if defined(NDEBUG)
 # define LIBXSMM_EXPECT LIBXSMM_EXPECT_ELIDE
@@ -895,8 +919,23 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #include <float.h>
 #include <stdio.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
+#if !defined(__leaf__)
+# define __leaf__
+#endif
+#if defined(__THROW)
+# define LIBXSMM_NOTHROW __THROW
+#endif
+#if defined(__cplusplus)
+# if (199711L < __cplusplus)
+#   define LIBXSMM_NOEXCEPT noexcept
+# else
+#   define LIBXSMM_NOEXCEPT throw()
+# endif
+#else
+# define LIBXSMM_NOEXCEPT
+#endif
+#if !defined(LIBXSMM_NOTHROW)
+# define LIBXSMM_NOTHROW
 #endif
 
 #if !defined(FLT_MAX)
@@ -921,32 +960,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
 
-#if defined(__THROW) && defined(__cplusplus)
-# define LIBXSMM_THROW __THROW
-#endif
-#if !defined(LIBXSMM_THROW)
-# define LIBXSMM_THROW
-#endif
-#if defined(__GNUC__) && LIBXSMM_VERSION2(4, 2) == LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__) && \
-  !defined(__clang__) && !defined(__PGI) && !defined(__INTEL_COMPILER) && !defined(_CRAYC)
-# define LIBXSMM_NOTHROW LIBXSMM_THROW
-#else
-# define LIBXSMM_NOTHROW
-#endif
-#if defined(__cplusplus)
-# if (__cplusplus > 199711L)
-#   define LIBXSMM_NOEXCEPT noexcept
-# else
-#   define LIBXSMM_NOEXCEPT throw()
-# endif
-#else
-# define LIBXSMM_NOEXCEPT LIBXSMM_NOTHROW
-#endif
-
 #if defined(_WIN32)
 # define LIBXSMM_PUTENV(A) _putenv(A)
 #else
 # define LIBXSMM_PUTENV(A) putenv(A)
+# define LIBXSMM_MKTEMP(A) mkstemp(A)
+# if defined(__clang__) || !defined(__GNUC__) || (defined(__GNUC__) && LIBXSMM_VERSION2(4, 3) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
+LIBXSMM_EXTERN int mkstemp(char*);
+# else
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+# endif
 #endif
 
 /* block must be after including above header files */
@@ -978,9 +1001,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # endif
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if defined(LIBXSMM_GLIBC_FPTYPES)
 # if defined(__cplusplus)
 #   undef __USE_MISC
@@ -996,13 +1016,29 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
+
 #if !defined(LIBXSMM_NO_LIBM)
 # if (defined(LIBXSMM_INTEL_COMPILER) && (1800 <= LIBXSMM_INTEL_COMPILER)) \
   && !defined(_WIN32) /* error including dfp754.h */
 #   include <mathimf.h>
 # endif
+# if defined(__STRICT_ANSI__)
+#   define LIBXSMM_STRICT_ANSI __STRICT_ANSI__
+#   undef __STRICT_ANSI__
+# endif
 # include <math.h>
+# if defined(LIBXSMM_STRICT_ANSI)
+#   define __STRICT_ANSI__ LIBXSMM_STRICT_ANSI
+#   undef LIBXSMM_STRICT_ANSI
+# endif
+# if (!defined(__STDC_VERSION__) || (199901L/*C99*/ > __STDC_VERSION__)) && !defined(_WIN32)
+LIBXSMM_EXTERN double erf(double) LIBXSMM_NOTHROW;
+# endif
 #endif
+#if !defined(M_PI)
+# define M_PI 3.14159265358979323846
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

@@ -31,6 +31,7 @@
 #define DIV_OP 4
 #define MULADD_OP 5
 
+LIBXSMM_INLINE
 float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   float res = out;
 
@@ -52,6 +53,7 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   return res;
 }
 
+LIBXSMM_INLINE
 void set_opname(unsigned int op, char *opname) {
   if ( op == ADD_OP ) {
     sprintf(opname, "add");
@@ -69,6 +71,7 @@ void set_opname(unsigned int op, char *opname) {
   }
 }
 
+LIBXSMM_INLINE
 void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   libxsmm_meltw_binary_type  binary_type;
 
@@ -90,16 +93,17 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
   *type = binary_type;
 }
 
-
+LIBXSMM_INLINE
 void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi0, const libxsmm_blasint ldi1, const libxsmm_blasint ldo,
                     const void *in0, const void *in1, char *out, const unsigned int op,
                     const libxsmm_datatype dtype_in0, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp) {
-  size_t i,j;
+  libxsmm_blasint i,j;
+  LIBXSMM_UNUSED(ldi1);
 
   if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
-    float in1_value;
-    float in0_value;
-    float out_value;
+    float in1_value = 0;
+    float in0_value = 0;
+    float out_value = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in0 == LIBXSMM_DATATYPE_F32 ) {
@@ -174,11 +178,13 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
   }
 }
 
+LIBXSMM_INLINE
 int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast,
                     const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_in1, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp ) {
   char *in, *_in, *in2, *_in2;
   char *out, *out_gold;
   int ret = EXIT_SUCCESS;
+  libxsmm_meltwfunction_binary binary_kernel;
   libxsmm_meltw_binary_param binary_param /*= { 0 }*/;
   libxsmm_meltw_binary_flags binary_flags;
   libxsmm_meltw_binary_shape binary_shape = libxsmm_create_meltw_binary_shape( M, N, ldi, ldi, ldo, dtype_in, dtype_in1, dtype_out, dtype_comp );
@@ -190,11 +196,11 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   set_binarytype(op, &binary_type);
 
   if ( M > ldi && !(use_bcast == ROW_BCAST_IN0 || use_bcast == SCALAR_BCAST_IN0 || use_bcast == ROW_BCAST_IN1 || use_bcast == SCALAR_BCAST_IN1) ) {
-    fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldi needs to be equal to or bigger than M\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, dtype_in, dtype_in1, dtype_out, dtype_comp);
+    fprintf( stderr, "test_binary_%s %i %i %i %i: ldo needs to be equal to or bigger than N\n", opname, (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
 
@@ -237,7 +243,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   /* compute out_gold */
   binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   binary_param.in0.primary  = (void*)_in;
   binary_param.in1.primary  = (void*)_in2;
   binary_param.out.primary  = (void*)out;
@@ -263,7 +269,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
     }
   }
 
-  libxsmm_meltwfunction_binary binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
+  binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
     exit(-1);
@@ -295,9 +301,9 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   libxsmm_free( in2 );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
+    printf("SUCCESS binary simple %i %i %i %i\n", (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
   } else {
-    printf("FAILURE binary simple %i %i %i %i\n", dtype_in, dtype_in1, dtype_out, dtype_comp);
+    printf("FAILURE binary simple %i %i %i %i\n", (int)dtype_in, (int)dtype_in1, (int)dtype_out, (int)dtype_comp);
   }
 
   return ret;

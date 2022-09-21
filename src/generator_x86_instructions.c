@@ -1882,10 +1882,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_reg_number_dst = 0;
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 1;
-    } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
+    }
+    else if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256 ) {
+      l_encoder_arch = 1;
     }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
@@ -2166,10 +2167,11 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     unsigned int l_reg_number_dst = i_reg_number_dst;
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 1;
-    } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
+    }
+    else if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256 ) {
+      l_encoder_arch = 1;
     }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
@@ -2497,7 +2499,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                         i_vector_name, i_vec_reg_number_0, 0, (i_is_store != 0) ? 0 : 1, i_is_store );
     }
-  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) /*&& (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256)*/) {
     if ( i_use_masking != 0 ) {
       libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_vmove_instr,
                                              i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
