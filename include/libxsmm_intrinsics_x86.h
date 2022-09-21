@@ -323,7 +323,9 @@
 /** Include basic x86 intrinsics such as __rdtsc. */
 #if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_DEBUG)
   LIBXSMM_PRAGMA_DIAG_PUSH()
-  LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
+# if defined(__GNUC__) && !defined(__clang__)
+    LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
+# endif
 # if defined(_WIN32)
 #   include <intrin.h>
 # elif defined(LIBXSMM_INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)
