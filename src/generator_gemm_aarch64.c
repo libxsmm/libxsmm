@@ -831,7 +831,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                  0,
                                                  l_vr_c[8*l_n + 2*l_m],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                                 0 );
+                                                 (libxsmm_aarch64_sve_type)0 );
 
         libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                  l_instr_mmla ,
@@ -840,7 +840,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                  0,
                                                  l_vr_c[8*l_n + 2*l_m + 1],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                                 0 );
+                                                 (libxsmm_aarch64_sve_type)0 );
       }
     }
     if( i_m_blocking != i_xgemm_desc->lda ) {
