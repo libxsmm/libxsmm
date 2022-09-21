@@ -279,7 +279,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
-  void* result;
+  void* result = NULL;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
   result = _mm_malloc(size, alignment);
@@ -291,10 +291,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
-#elif defined(NDEBUG)
-  LIBXSMM_EXPECT(0 == posix_memalign(&result, alignment, size));
 #else
-  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
+  LIBXSMM_EXPECT(0 == posix_memalign(&result, alignment, size) || NULL == result);
 #endif
   return result;
 }
@@ -302,7 +300,7 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
 {
-  void* result;
+  void* result = NULL;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != libxsmm_malloc_fn.memalign.ptr) {
     result = libxsmm_malloc_fn.memalign.ptr(alignment, size);
