@@ -1355,10 +1355,16 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
     case LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF:
     case LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST:
     case LIBXSMM_AARCH64_INSTR_GP_LDR_I_PRE:
+    case LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_GP_LDRH_I_POST:
+    case LIBXSMM_AARCH64_INSTR_GP_LDRH_I_PRE:
     case LIBXSMM_AARCH64_INSTR_GP_STR_R:
     case LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF:
     case LIBXSMM_AARCH64_INSTR_GP_STR_I_POST:
     case LIBXSMM_AARCH64_INSTR_GP_STR_I_PRE:
+    case LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_GP_STRH_I_POST:
+    case LIBXSMM_AARCH64_INSTR_GP_STRH_I_PRE:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: unexpected instruction number: %u\n", i_move_instr);

@@ -184,9 +184,10 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
     }
     return;
   } else {/* ASIMD with 1-4 fp32 elements */
-
     unsigned int l_gpload_instr  = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST;
     unsigned int l_gpstore_instr = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STR_I_POST;
+    unsigned int l_gploadh_instr = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_POST;
+    unsigned int l_gpstoreh_instr= (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_POST;
     unsigned int l_vload_instr   = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST;
     unsigned int l_vstore_instr  = (  i_adv_gpr == 0 ) ? LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_OFF : LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST;
     unsigned int l_vmove_instr   = ( i_is_store == 0 ) ? l_vload_instr : l_vstore_instr;
@@ -194,44 +195,149 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
     switch(i_masked_elems){
       case 1: {
         const unsigned char l_offset = LIBXSMM_CAST_UCHAR(i_adv_gpr == 0 ? 0 : i_datatype_size);
+        libxsmm_aarch64_asimd_width l_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : ( (i_datatype_size == 2) ? LIBXSMM_AARCH64_ASIMD_WIDTH_H: LIBXSMM_AARCH64_ASIMD_WIDTH_D);
+
         if ( i_is_store == 0 ) {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         }
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
                                                 i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                                (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+                                                l_move_asimd_width );
         break;
       }
       case 2: {
-        unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : 8;
+        unsigned char l_offset = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size * 2;
+        libxsmm_aarch64_asimd_width l_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : ( (i_datatype_size == 2) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S: LIBXSMM_AARCH64_ASIMD_WIDTH_Q);
         if ( i_is_store == 0 ) {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         }
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
                                                 i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+                                                l_move_asimd_width );
         break;
       }
       case 3: {
-        unsigned char l_offset  = ( i_adv_gpr == 0 ) ? 0 : 8;
-        unsigned char l_offset2 = ( i_adv_gpr == 0 ) ? 8 : 4;
+        unsigned char l_offset  = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size * 2;
+        unsigned char l_offset2 = ( i_adv_gpr == 0 ) ? i_datatype_size * 2 : i_datatype_size;
+        libxsmm_aarch64_asimd_width l_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_D : ( (i_datatype_size == 2) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S: LIBXSMM_AARCH64_ASIMD_WIDTH_Q);
         if ( i_is_store == 0 ) {
           libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
         }
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
                                                 i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
-                                                LIBXSMM_AARCH64_ASIMD_WIDTH_D );
+                                                l_move_asimd_width );
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, (i_datatype_size == 4) ? l_gpload_instr : l_gploadh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 2, (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H);
+        } else {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
+                                                      i_gp_reg_scratch, i_vec_reg, 2, (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H );
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, (i_datatype_size == 4) ? l_gpstore_instr : l_gpstoreh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+        }
+        break;
+      }
+      case 4: {
+        const unsigned char l_offset = LIBXSMM_CAST_UCHAR(i_adv_gpr == 0 ? 0 : i_datatype_size * 4);
+        libxsmm_aarch64_asimd_width l_move_asimd_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+        }
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
+                                                l_move_asimd_width );
+        break;
+      }
+      case 5: {
+        unsigned char l_offset  = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size * 4;
+        unsigned char l_offset2 = ( i_adv_gpr == 0 ) ? i_datatype_size * 4 : i_datatype_size;
+        libxsmm_aarch64_asimd_width l_move_asimd_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+        }
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
+                                                l_move_asimd_width );
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gploadh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 4, LIBXSMM_AARCH64_ASIMD_WIDTH_H);
+        } else {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
+                                                      i_gp_reg_scratch, i_vec_reg, 4, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpstoreh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+        }
+        break;
+      }
+      case 6: {
+        unsigned char l_offset  = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size * 4;
+        unsigned char l_offset2 = ( i_adv_gpr == 0 ) ? i_datatype_size * 4 : i_datatype_size * 2;
+        libxsmm_aarch64_asimd_width l_move_asimd_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+        }
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
+                                                l_move_asimd_width );
         if ( i_is_store == 0 ) {
           libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpload_instr,
                                                 i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
                                                 0x1f & i_gp_reg_scratch );
           libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
-                                                      i_gp_reg_scratch, i_vec_reg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+                                                      i_gp_reg_scratch, i_vec_reg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S);
         } else {
           libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
                                                       i_gp_reg_scratch, i_vec_reg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
           libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpstore_instr,
                                                 i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+        }
+        break;
+      }
+      case 7: {
+        unsigned char l_offset  = ( i_adv_gpr == 0 ) ? 0 : i_datatype_size * 4;
+        unsigned char l_offset2 = ( i_adv_gpr == 0 ) ? i_datatype_size * 4 : i_datatype_size * 2;
+        unsigned char l_offset3 = ( i_adv_gpr == 0 ) ? i_datatype_size * 6 : i_datatype_size;
+        libxsmm_aarch64_asimd_width l_move_asimd_width = LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_EOR_V, i_vec_reg, i_vec_reg, 0, i_vec_reg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
+        }
+        libxsmm_aarch64_instruction_asimd_move( io_generated_code, l_vmove_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset, i_vec_reg,
+                                                l_move_asimd_width );
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpload_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S);
+        } else {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
+                                                      i_gp_reg_scratch, i_vec_reg, 2, LIBXSMM_AARCH64_ASIMD_WIDTH_S );
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpstore_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset2,
+                                                0x1f & i_gp_reg_scratch );
+        }
+        if ( i_is_store == 0 ) {
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gploadh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset3,
+                                                0x1f & i_gp_reg_scratch );
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V,
+                                                      i_gp_reg_scratch, i_vec_reg, 6, LIBXSMM_AARCH64_ASIMD_WIDTH_H);
+        } else {
+          libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G,
+                                                      i_gp_reg_scratch, i_vec_reg, 6, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
+          libxsmm_aarch64_instruction_alu_move( io_generated_code, l_gpstoreh_instr,
+                                                i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, l_offset3,
                                                 0x1f & i_gp_reg_scratch );
         }
         break;
