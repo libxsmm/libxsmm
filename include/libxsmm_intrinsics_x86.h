@@ -231,12 +231,7 @@
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_TARGET_ARCH
 #   endif
 #   if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_DEBUG)
-      LIBXSMM_PRAGMA_DIAG_PUSH()
-#     if defined(__GNUC__) && !defined(__clang__)
-      LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
-#     endif
 #     include <immintrin.h>
-      LIBXSMM_PRAGMA_DIAG_POP()
 #   endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
 #   if !defined(LIBXSMM_INTRINSICS)
 #     if (LIBXSMM_MAX_STATIC_TARGET_ARCH > LIBXSMM_STATIC_TARGET_ARCH)
@@ -322,10 +317,6 @@
 
 /** Include basic x86 intrinsics such as __rdtsc. */
 #if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_DEBUG)
-  LIBXSMM_PRAGMA_DIAG_PUSH()
-# if defined(__GNUC__) && !defined(__clang__)
-    LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
-# endif
 # if defined(_WIN32)
 #   include <intrin.h>
 # elif defined(LIBXSMM_INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)
@@ -337,7 +328,6 @@
 # if defined(__SSE3__)
 #   include <pmmintrin.h>
 # endif
-  LIBXSMM_PRAGMA_DIAG_POP()
 #endif
 
 #if !defined(LIBXSMM_INTRINSICS_NONE)

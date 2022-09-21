@@ -2315,6 +2315,10 @@ LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, signed
 }
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+LIBXSMM_PRAGMA_DIAG_PUSH()
+LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
+#endif
 LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* desc, size_t desc_size, size_t user_size)
 {
   libxsmm_code_pointer flux_entry = { 0 };
@@ -2543,6 +2547,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #endif
   return flux_entry;
 }
+#if defined(__GNUC__) && !defined(__clang__)
+LIBXSMM_PRAGMA_DIAG_POP()
+#endif
 
 
 LIBXSMM_API_INTERN const libxsmm_kernel_xinfo* libxsmm_get_kernel_xinfo(libxsmm_code_pointer code,
