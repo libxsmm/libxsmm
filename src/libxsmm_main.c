@@ -316,7 +316,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
-  void* result;
+  void* result = NULL;
 #if defined(LIBXSMM_MALLOC_HOOK_ALIGN)
   result = __real_memalign(libxsmm_alignment(size, 0/*auto*/), size);
 #else
