@@ -317,6 +317,10 @@ void libxsmm_generator_transform_norm_to_vnni4_aarch64_sve_microkernel_block( li
   libxsmm_aarch64_sve_type l_sve_type2 = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(2));
   unsigned int l_n = 0;
 
+  LIBXSMM_UNUSED( io_loop_label_tracker );
+  LIBXSMM_UNUSED( i_gp_reg_m_loop );
+  LIBXSMM_UNUSED( i_gp_reg_n_loop );
+
   if (i_m_remainder == 0) {
     for (l_n = 0; l_n < 4 - i_n_padding_vregs; l_n++) {
       libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,

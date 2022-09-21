@@ -524,6 +524,11 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_cod
   /* derive zip instructions */
   unsigned int l_instr_zip[2] = { LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2 };
   unsigned int l_type_zip = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
+
+  LIBXSMM_UNUSED( i_micro_kernel_config );
+  LIBXSMM_UNUSED( i_xgemm_desc );
+  LIBXSMM_UNUSED( i_vec_reg_count );
+
   if( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP1;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP2;
@@ -825,6 +830,9 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   unsigned int l_bias_tsize = (i_micro_kernel_config->fused_bcolbias > 0) ? 2 : 4;
   unsigned int l_gp_reg_bias = i_gp_reg_scratch1;
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(sizeof(float)));
+
+  LIBXSMM_UNUSED( i_vec_reg_count );
+  LIBXSMM_UNUSED( i_zip_row_major );
 
   /* TODO (MMLA): implement */
   /* if( i_zip_row_major ) {
@@ -1148,6 +1156,11 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( libxsmm_generated_co
   /* derive zip instructions */
   unsigned int l_instr_zip[2] = { LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2 };
   unsigned int l_type_zip = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
+
+  LIBXSMM_UNUSED( i_micro_kernel_config );
+  LIBXSMM_UNUSED( i_xgemm_desc );
+  LIBXSMM_UNUSED( i_vec_reg_count );
+
   if( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP1;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP2;
@@ -1277,6 +1290,10 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   unsigned int l_zero_vreg = 0;
   unsigned int gp_reg_relumask = i_gp_reg_scratch2, gp_reg_relumask2 = i_gp_reg_scratch3;
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(sizeof(float)));
+
+  LIBXSMM_UNUSED( i_vec_reg_count );
+  LIBXSMM_UNUSED( i_zero );
+  LIBXSMM_UNUSED( i_zip_row_major );
 
   /* TODO (MMLA): implement */
   /* if( i_zip_row_major ) {

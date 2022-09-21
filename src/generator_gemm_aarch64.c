@@ -367,14 +367,15 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
   /* vector registers holding C's values */
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
-  l_m_blocks = i_m_blocking / 4;
-  l_n_blocks = i_n_blocking / 2;
-
   /* flips the src registers in the MMLA instructions; require for signed-unsigned / unsigned-signed i8 switch */
   char l_flip_mmla_src = 0;
 
   /* select instructions */
   unsigned int l_instr_mmla = 0;
+
+  l_m_blocks = i_m_blocking / 4;
+  l_n_blocks = i_n_blocking / 2;
+
   if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_ASIMD_BFMMLA_V;
   } else if( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
@@ -673,14 +674,15 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   /* vector registers holding C's values */
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
-  l_m_blocks = i_m_blocking / 8;
-  l_n_blocks = i_n_blocking / 2;
-
   /* flips the src registers in the MMLA instructions; require for signed-unsigned / unsigned-signed i8 switch */
   char l_flip_mmla_src = 0;
 
   /* select instructions */
   unsigned int l_instr_mmla = 0;
+
+  l_m_blocks = i_m_blocking / 8;
+  l_n_blocks = i_n_blocking / 2;
+
   if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V;
   } else if( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
@@ -866,7 +868,8 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   unsigned int l_k_threshold = 23;
   unsigned int l_k_stride = 1;
   char l_use_mmla = 0;
-
+  void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,
+                                   const unsigned int, const unsigned int );
   /* TODO (MMLA) */
   /* enable MMLA settings for supported datatypes */
   if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
@@ -879,9 +882,6 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
     l_k_blocking = 16;
     l_k_stride = 16;
   }
-
-  void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, const libxsmm_gemm_descriptor*,
-                                   const unsigned int, const unsigned int );
 
   /* select micro kernel based on aarch64 variant */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
