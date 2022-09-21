@@ -1292,13 +1292,13 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
   unsigned int i = 0;
   libxsmm_mateltwise_kernel_config *meltw_config;
   libxsmm_datatype eqn_root_dtype = LIBXSMM_DATATYPE_F32;
+  unsigned int has_hf8_input = 0;
 
   libxsmm_mark_reserved_zmms( io_generated_code, i_micro_kernel_config, eqn->eqn_root);
   i_micro_kernel_config->meltw_kernel_config.reserved_zmms = 0;
   i_micro_kernel_config->meltw_kernel_config.reserved_mask_regs = 1;
   meltw_config = (libxsmm_mateltwise_kernel_config*) &(i_micro_kernel_config->meltw_kernel_config);
 
-  unsigned int has_hf8_input = 0;
   libxsmm_generator_has_hf8_input(eqn->eqn_root, &has_hf8_input);
 
   /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
