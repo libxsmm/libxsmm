@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   typedef struct key_type { int x, y, z; } key_type;
-  const int small_key = 0;
   key_type key[] = {
     { 0, 0, 0 },
     { 0, 0, 1 },
@@ -26,7 +25,6 @@ int main(int argc, char* argv[])
     { 1, 1, 0 },
     { 1, 1, 1 }
   };
-  const char string[] = "payload";
   /*const*/ char* value[] = {
     "hello", "world", "libxsmm",
     "hello world", "hello libxsmm",
@@ -34,7 +32,8 @@ int main(int argc, char* argv[])
   };
   const size_t key_size = sizeof(*key);
 #if (0 != LIBXSMM_JIT) /* unused variable warning */
-  const int n = (int)sizeof(key) / (int)key_size;
+  const int small_key = 0, n = (int)sizeof(key) / (int)key_size;
+  const char string[] = "payload";
   int i;
 #endif
   LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
@@ -133,4 +132,3 @@ int main(int argc, char* argv[])
 #endif
   return result;
 }
-
