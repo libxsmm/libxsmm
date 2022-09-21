@@ -270,6 +270,7 @@
 # define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#   define LIBXSMM_PRAGMA2(DIRECTIVE, STRING) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE) " \"" STRING "\"")
 #   define LIBXSMM_CALLER __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
@@ -419,10 +420,16 @@
 #if !defined(LIBXSMM_PRAGMA)
 # if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
+#   if !defined(LIBXSMM_PRAGMA2)
+#     define LIBXSMM_PRAGMA2(DIRECTIVE, STRING) __pragma(LIBXSMM_EXPAND(DIRECTIVE) STRING)
+#   endif
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
-#endif /*LIBXSMM_PRAGMA*/
+#endif
+#if !defined(LIBXSMM_PRAGMA2)
+# define LIBXSMM_PRAGMA2(DIRECTIVE, STRING)
+#endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
@@ -500,11 +507,13 @@
 # if defined(__clang__)
 #   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
 #   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA2(clang diagnostic ignored, DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
 # elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
 #   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
 #   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA2(GCC diagnostic ignored, DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
 # else
 #   define LIBXSMM_PRAGMA_DIAG_PUSH()
 #   define LIBXSMM_PRAGMA_DIAG_POP()

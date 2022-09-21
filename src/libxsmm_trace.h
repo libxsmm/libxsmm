@@ -42,16 +42,17 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN)
-  LIBXSMM_PRAGMA_DIAG_PUSH()
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && defined(LIBXSMM_PRAGMA_DIAG)
 # if defined(__clang__)
-    LIBXSMM_PRAGMA_DIAG_OFF("-Wunknown-warning-option")
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wunknown-warning-option"
 #   if LIBXSMM_VERSION2(9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
-      LIBXSMM_PRAGMA_DIAG_OFF("-Wframe-address")
+#     pragma clang diagnostic ignored "-Wframe-address"
 #   endif
-# elif defined(__GNUC__) /* no version-check */
-    LIBXSMM_PRAGMA_DIAG_OFF("-Wframe-address")
-    LIBXSMM_PRAGMA_DIAG_OFF("-Wpragmas")
+# elif defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wpragmas"
+#   pragma GCC diagnostic ignored "-Wframe-address"
 # endif
 #endif
 LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
@@ -82,8 +83,12 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
     }
   }
 }
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN)
-  LIBXSMM_PRAGMA_DIAG_POP()
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && defined(LIBXSMM_PRAGMA_DIAG)
+# if defined(__clang__)
+#   pragma clang diagnostic pop
+# elif defined(__GNUC__)
+#   pragma GCC diagnostic pop
+# endif
 #endif
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
