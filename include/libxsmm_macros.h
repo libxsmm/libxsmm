@@ -507,11 +507,12 @@
 #   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
 #   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
 #   define LIBXSMM_PRAGMA_DIAG
-# else
-#   define LIBXSMM_PRAGMA_DIAG_PUSH()
-#   define LIBXSMM_PRAGMA_DIAG_POP()
-#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
 # endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)

@@ -232,7 +232,9 @@
 #   endif
 #   if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_DEBUG)
       LIBXSMM_PRAGMA_DIAG_PUSH()
+#     if defined(__GNUC__) && !defined(__clang__)
       LIBXSMM_PRAGMA_DIAG_OFF("-Wmaybe-uninitialized")
+#     endif
 #     include <immintrin.h>
       LIBXSMM_PRAGMA_DIAG_POP()
 #   endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
