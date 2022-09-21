@@ -2504,14 +2504,14 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
   if( op == LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT ){
     /* two temporary registers are required, 3 in total: original, guess, guess squared */
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
-    i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 1;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
   if(op == LIBXSMM_MELTW_TYPE_UNARY_SQRT){
     if(l_is_sve){
       i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
-      i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms + 1;
+      i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 1;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
     }
   }

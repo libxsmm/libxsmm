@@ -279,7 +279,7 @@ LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_nosync);
 
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size)
 {
-  void* result;
+  void* result = NULL;
   LIBXSMM_ASSERT(LIBXSMM_ISPOT(alignment));
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
   result = _mm_malloc(size, alignment);
@@ -291,10 +291,8 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 #elif (defined(_WIN32) || defined(__CYGWIN__))
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
-#elif defined(NDEBUG)
-  LIBXSMM_EXPECT(0 == posix_memalign(&result, alignment, size));
 #else
-  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
+  LIBXSMM_EXPECT(0 == posix_memalign(&result, alignment, size) || NULL == result);
 #endif
   return result;
 }
@@ -302,7 +300,7 @@ LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
 {
-  void* result;
+  void* result = NULL;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != libxsmm_malloc_fn.memalign.ptr) {
     result = libxsmm_malloc_fn.memalign.ptr(alignment, size);
@@ -316,7 +314,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
-  void* result;
+  void* result = NULL;
 #if defined(LIBXSMM_MALLOC_HOOK_ALIGN)
   result = __real_memalign(libxsmm_alignment(size, 0/*auto*/), size);
 #else
@@ -1457,9 +1455,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)
-{
-  /* does nothing else but sinking given arguments */
+LIBXSMM_API void libxsmm_sink(const void* arg, ...)
+{ /* does nothing else but sinking given arguments */
+  LIBXSMM_UNUSED(arg);
 }
 
 
@@ -2863,20 +2861,22 @@ LIBXSMM_API void* libxsmm_get_registry_next(const void* regentry, const void** k
 LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
   size_t value_size, const void* value_init)
 {
+  libxsmm_descriptor wrap /*= { 0 }*/;
+  const size_t key_size_reg = wrap.user.desc - (unsigned char*)&wrap.user.size + key_size;
   static int error_once = 0;
   void* result;
   LIBXSMM_INIT /* verbosity */
-  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size) {
-    libxsmm_descriptor wrap /*= { 0 }*/;
+  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size_reg) {
     void* dst;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, key_size);
+    LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+    wrap.user.size = LIBXSMM_CAST_UCHAR(key_size);
+    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size_reg
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
-    dst = internal_find_code(&wrap, key_size, value_size).ptr;
+    dst = internal_find_code(&wrap, key_size_reg, value_size).ptr;
     if (NULL != dst) {
       size_t size;
       if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(dst, &size, NULL/*flags*/, NULL/*extra*/)
@@ -2887,7 +2887,7 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
       }
       else {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          /*&& 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)*/)
         {
           fprintf(stderr, "LIBXSMM ERROR: value too large for previously registered key!\n");
         }
@@ -2916,21 +2916,23 @@ LIBXSMM_API void* libxsmm_xregister(const void* key, size_t key_size,
 
 LIBXSMM_API void* libxsmm_xdispatch(const void* key, size_t key_size)
 {
+  libxsmm_descriptor wrap /*= { 0 }*/;
+  const size_t key_size_reg = wrap.user.desc - (unsigned char*)&wrap.user.size + key_size;
   void* result;
   LIBXSMM_INIT /* verbosity */
 #if !defined(NDEBUG)
-  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size)
+  if (NULL != key && 0 < key_size && LIBXSMM_DESCRIPTOR_MAXSIZE >= key_size_reg)
 #endif
   {
-    libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, key_size);
+    LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_MEMCPY127(wrap.user.desc, key, key_size);
-    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size
+    wrap.user.size = LIBXSMM_CAST_UCHAR(key_size);
+    wrap.kind = (libxsmm_descriptor_kind)(LIBXSMM_DESCRIPTOR_SIGSIZE >= key_size_reg
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_USER)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_USER));
-    result = internal_find_code(&wrap, key_size, 0/*user_size*/).ptr;
+    result = internal_find_code(&wrap, key_size_reg, 0/*user_size*/).ptr;
   }
 #if !defined(NDEBUG)
   else {
@@ -3038,7 +3040,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   {
     libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
+    LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
     /* @TODO fix this code for the 3 kernel types we have
@@ -3303,7 +3305,7 @@ LIBXSMM_API libxsmm_xmeltwfunction libxsmm_dispatch_meltw(const libxsmm_meltw_de
   if (NULL != descriptor) {
     libxsmm_descriptor wrap /*= { 0 }*/;
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-    LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
+    LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_ASSIGN127(&wrap.meltw.desc, descriptor);
     wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MELTW);
@@ -3448,7 +3450,7 @@ LIBXSMM_API libxsmm_matrix_eqn_function libxsmm_dispatch_matrix_eqn_desc( const 
     /* check if equation is ready for JIT */
     if (0 == libxsmm_matrix_eqn_is_ready_for_jit( descriptor->eqn_idx)) {
 #if defined(LIBXSMM_UNPACKED) /* CCE/Classic */
-      LIBXSMM_MEMSET127(&wrap, 0, sizeof(*descriptor));
+      LIBXSMM_MEMZERO127(&wrap);
 #endif
       LIBXSMM_ASSIGN127(&wrap.meqn.desc, descriptor);
       wrap.kind = LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MEQN);

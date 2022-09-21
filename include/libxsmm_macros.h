@@ -84,8 +84,8 @@
 # endif
 #endif
 
-#define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
-#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY2(SYMBOL)
+#define LIBXSMM_STRINGIFY_AUX(SYMBOL) #SYMBOL
+#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY_AUX(SYMBOL)
 #define LIBXSMM_TOSTRING(SYMBOL) LIBXSMM_STRINGIFY(SYMBOL)
 #define LIBXSMM_CONCATENATE2(A, B) A##B
 #define LIBXSMM_CONCATENATE3(A, B, C) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(A, B), C)
@@ -422,7 +422,7 @@
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
-#endif /*LIBXSMM_PRAGMA*/
+#endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
@@ -494,6 +494,25 @@
 # else
 #   define LIBXSMM_PRAGMA_UNROLL_N(N)
 # endif
+#endif
+
+#if !defined(__INTEL_COMPILER)
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -946,10 +965,10 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_PUTENV(A) putenv(A)
 # define LIBXSMM_MKTEMP(A) mkstemp(A)
-# if !defined(_GNU_SOURCE) || (defined(__cplusplus) && 199711L > __cplusplus)
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
-# else
+# if defined(__clang__) || !defined(__GNUC__) || (defined(__GNUC__) && LIBXSMM_VERSION2(4, 3) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
 LIBXSMM_EXTERN int mkstemp(char*);
+# else
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 # endif
 #endif
 

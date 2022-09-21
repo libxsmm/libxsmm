@@ -246,7 +246,7 @@ const char* getBenchmarkedArch(int index) {
 
 /* returns the target duration of every single benchmark run; if the duration is <= 0 or NaN, no benchmarks will be run */
 LIBXSMM_INLINE
-double getBenchmarkDuration() {
+double getBenchmarkDuration(void) {
   static double duration = -1;
   if (duration < 0) {
     const char* dur = getenv("BENCHMARK_DURATION");

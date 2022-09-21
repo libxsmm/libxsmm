@@ -180,7 +180,7 @@ PYMOD ?= 0
 
 # Static or shared binary
 ifneq (0,$(PYMOD))
-  # req. for Python module
+  override PEDANTIC := 0
   override STATIC := 0
 else
   STATIC ?= 0
