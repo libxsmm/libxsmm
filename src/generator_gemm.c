@@ -214,12 +214,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* TODO (MMLA): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
     /* TODO (MMLA): adjust checks for future SVE kernels */
     if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
-      if ( (l_xgemm_desc_mod.m % 4 != 0) || (l_xgemm_desc_mod.k % 8 != 0) ) {
+      if ( (l_xgemm_desc_mod.m % 4 != 0) || (l_xgemm_desc_mod.k % 4 != 0) ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
     } else if( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
-      if ( (l_xgemm_desc_mod.m % 4 != 0) || (l_xgemm_desc_mod.k % 16 != 0) ) {
+      if ( (l_xgemm_desc_mod.m % 4 != 0) || (l_xgemm_desc_mod.k % 8 != 0) ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
