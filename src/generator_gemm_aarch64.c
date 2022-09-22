@@ -646,6 +646,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                           const unsigned int                 i_m_blocking,
                                                           const unsigned int                 i_n_blocking ) {
   unsigned int l_m_blocks = 0;
+  unsigned int l_m_blocks_remainder = 0;
+  unsigned int l_m_remainder = 0;
   unsigned int l_n_blocks = 0;
   unsigned int l_k_blocks = 2;
   unsigned int l_n = 0;
@@ -661,6 +663,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
 
   /* predicate register which is true in all relevant bits */
   unsigned int l_pr_all = 0;
+  unsigned int l_pr_masked_a = 3;
 
   /* vector registers holding B's values in MMLA form */
   unsigned int l_vr_b[6] = {0, 1, 2, 3, 4, 5};
@@ -684,6 +687,8 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
 
   l_m_blocks = i_m_blocking / 8;
   l_n_blocks = i_n_blocking / 2;
+  l_m_blocks_remainder = (i_m_blocking % 8 == 0) ? 0 : 1;
+  l_m_remainder = i_m_blocking % 8;
 
   if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     l_instr_mmla = LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V;
@@ -814,30 +819,65 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   }
 
   for( l_k = 0; l_k < l_k_blocks; l_k++ ) {
-    for( l_m = 0; l_m < l_m_blocks; l_m++ ) {
+    for( l_m = 0; l_m < l_m_blocks + l_m_blocks_remainder; l_m++ ) {
       /* load A */
-      libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
-                                            i_gp_reg_mapping->gp_reg_a,
-                                            0,
-                                            0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
-                                            l_vr_a[0],
-                                            l_pr_all );
+      if ((l_m <= l_m_blocks - 1) && (l_m_blocks > 0)) {
+        libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                              i_gp_reg_mapping->gp_reg_a,
+                                              0,
+                                              0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
+                                              l_vr_a[0],
+                                              l_pr_all );
 
-      libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
-                                            i_gp_reg_mapping->gp_reg_a,
-                                            0,
-                                            1, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
-                                            l_vr_a[1],
-                                            l_pr_all );
+        libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                              i_gp_reg_mapping->gp_reg_a,
+                                              0,
+                                              1, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
+                                              l_vr_a[1],
+                                              l_pr_all );
 
-      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
-                                                     LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                     i_gp_reg_mapping->gp_reg_a,
-                                                     i_gp_reg_mapping->gp_reg_help_0,
-                                                     i_gp_reg_mapping->gp_reg_a,
-                                                     l_a_stride );
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       i_gp_reg_mapping->gp_reg_a,
+                                                       i_gp_reg_mapping->gp_reg_help_0,
+                                                       i_gp_reg_mapping->gp_reg_a,
+                                                       l_a_stride );
+      } else {
+        if (l_m_remainder >= 4) {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                                i_gp_reg_mapping->gp_reg_a,
+                                                0,
+                                                0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
+                                                l_vr_a[0],
+                                                l_pr_all );
+          if (l_m_remainder > 4) {
+            libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                  LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                                  i_gp_reg_mapping->gp_reg_a,
+                                                  0,
+                                                  1, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
+                                                  l_vr_a[1],
+                                                  l_pr_masked_a );
+          }
+        } else {
+          libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
+                                                i_gp_reg_mapping->gp_reg_a,
+                                                0,
+                                                0, /* TODO (MMLA): defaults to mul vl offset, function encoding? */
+                                                l_vr_a[0],
+                                                l_pr_masked_a );
+        }
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
+                                                       LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                       i_gp_reg_mapping->gp_reg_a,
+                                                       i_gp_reg_mapping->gp_reg_help_0,
+                                                       i_gp_reg_mapping->gp_reg_a,
+                                                       l_m_remainder * 8 );
+      }
 
       /* MMLA compute */
       for( l_n = 0; l_n < l_n_blocks; l_n++ ) {
@@ -849,15 +889,16 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                  l_vr_c[8*l_n + 2*l_m],
                                                  LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                  (libxsmm_aarch64_sve_type)0 );
-
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code,
-                                                 l_instr_mmla ,
-                                                 (l_flip_mmla_src == 0 ) ? l_vr_b[2*l_n+l_k] : l_vr_a[1],
-                                                 (l_flip_mmla_src == 0 ) ? l_vr_a[1]         : l_vr_b[2*l_n+l_k],
-                                                 0,
-                                                 l_vr_c[8*l_n + 2*l_m + 1],
-                                                 LIBXSMM_AARCH64_SVE_REG_UNDEF,
-                                                 (libxsmm_aarch64_sve_type)0 );
+        if (((l_m <= l_m_blocks - 1) && (l_m_blocks > 0))  || (l_m_remainder > 4)) {
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code,
+                                                   l_instr_mmla ,
+                                                   (l_flip_mmla_src == 0 ) ? l_vr_b[2*l_n+l_k] : l_vr_a[1],
+                                                   (l_flip_mmla_src == 0 ) ? l_vr_a[1]         : l_vr_b[2*l_n+l_k],
+                                                   0,
+                                                   l_vr_c[8*l_n + 2*l_m + 1],
+                                                   LIBXSMM_AARCH64_SVE_REG_UNDEF,
+                                                   (libxsmm_aarch64_sve_type)0 );
+        }
       }
     }
     if( i_m_blocking != i_xgemm_desc->lda ) {
@@ -1204,14 +1245,22 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                   l_gp_reg_mapping.gp_reg_help_0 );
 
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
-      l_nnz_bits = (l_xgemm_desc_opa->m%l_micro_kernel_config.vector_length) * l_micro_kernel_config.datatype_size_in;
-      if (l_nnz_bits == 0 ) {
-        l_nnz_bits = l_micro_kernel_config.vector_length * l_micro_kernel_config.datatype_size_in;
-      }
+      l_nnz_bits = l_micro_kernel_config.vector_length * l_micro_kernel_config.datatype_size_out;
       libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                     LIBXSMM_AARCH64_SVE_REG_P2,
                                                     l_nnz_bits,
                                                     l_gp_reg_mapping.gp_reg_help_0 );
+    }
+
+    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      /* For A we load in chunks of 8 bytes since A in VNNI4 */
+      l_nnz_bits = (l_xgemm_desc_opa->m%4) * 8;
+      if (l_nnz_bits > 0) {
+        libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                      LIBXSMM_AARCH64_SVE_REG_P3,
+                                                      l_nnz_bits,
+                                                      l_gp_reg_mapping.gp_reg_help_0 );
+      }
     }
   }
 
