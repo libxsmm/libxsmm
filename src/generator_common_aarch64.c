@@ -2477,7 +2477,7 @@ void libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( libxsmm_generated_c
                                                               const unsigned int      i_bytes) {
   /* fills an SVE register with i_bytes of data, which later will be used using indexed access */
   if( !( i_bytes % 16 == 0) ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_SIZE );
     return;
   }
 
