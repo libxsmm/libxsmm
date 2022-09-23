@@ -373,6 +373,10 @@ void libxsmm_generator_gemm_aarch64_microkernel_asimd_mmla( libxsmm_generated_co
   /* select instructions */
   unsigned int l_instr_mmla = 0;
 
+  for (l_n = 0; l_n < 6; l_n++) {
+    l_vr_b[l_n] = l_n;
+  }
+
   l_m_blocks = i_m_blocking / 4;
   l_n_blocks = i_n_blocking / 2;
 
@@ -684,6 +688,10 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   unsigned int l_instr_mmla = 0;
 
   unsigned int l_k_blocking = 0;
+
+  for (l_n = 0; l_n < 6; l_n++) {
+    l_vr_b[l_n] = l_n;
+  }
 
   l_m_blocks = i_m_blocking / 8;
   l_n_blocks = i_n_blocking / 2;
