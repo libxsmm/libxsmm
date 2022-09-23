@@ -1459,12 +1459,12 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                      i_vec_length * i_data_size,
                                                      0 );
     }
-    for( l_m = 0; l_m < l_m_blocks[1]; l_m++ ) {
+    for( l_m = l_m_blocks[0]; l_m < l_m_blocks[0] + l_m_blocks[1]; l_m++ ) {
       /* zip data to target vector registers */
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                l_instr_zip[0],
-                                               l_vr_c[8*l_n + 2*l_m_blocks[0]],
-                                               l_vr_c[8*l_n + 2*l_m_blocks[0] + 1],
+                                               l_vr_c[8*l_n + 2*l_m],
+                                               l_vr_c[8*l_n + 2*l_m + 1],
                                                0,
                                                l_vec_reg_tmp[0],
                                                LIBXSMM_AARCH64_SVE_REG_UNDEF,
@@ -1472,12 +1472,27 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
 
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                l_instr_zip[1],
-                                               l_vr_c[8*l_n + 2*l_m_blocks[0]],
-                                               l_vr_c[8*l_n + 2*l_m_blocks[0] + 1],
+                                               l_vr_c[8*l_n + 2*l_m],
+                                               l_vr_c[8*l_n + 2*l_m + 1],
                                                0,
                                                l_vec_reg_tmp[1],
                                                LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                l_type_zip );
+
+      if (i_micro_kernel_config->fused_relu > 0) {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V, l_vec_reg_tmp[0], LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,
+            l_blend_reg, l_pred_reg, l_sve_type );
+        libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_m_blocking, l_m, l_m_total_blocks,
+            LIBXSMM_CAST_UCHAR(l_tmp_vreg),  LIBXSMM_CAST_UCHAR(gp_reg_relumask),
+            l_blend_reg, l_tmp_pred_reg0, l_tmp_pred_reg1, LIBXSMM_CAST_UCHAR(i_gp_reg_scratch1), &l_mask_adv );
+
+      }
+
+      if ((i_micro_kernel_config->fused_relu > 0) || (i_micro_kernel_config->fused_relu_nobitmask > 0))  {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P,
+                                                 l_vec_reg_tmp[0], l_zero_vreg, 0, l_vec_reg_tmp[0],
+                                                 l_pred_reg, l_sve_type );
+      }
 
       /* store first part */
       if (l_is_output_bf16 == 0) {
@@ -1505,6 +1520,22 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
                                                      i_gp_reg_addr,
                                                      (i_m_blocking % i_vec_length) * i_data_size,
                                                      0 );
+
+
+      if (i_micro_kernel_config->fused_relu > 0) {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V, l_vec_reg_tmp[1], LIBXSMM_AARCH64_SVE_REG_UNDEF, 0,
+            l_blend_reg, l_pred_reg, l_sve_type );
+        libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( io_generated_code, i_m_blocking, l_m, l_m_total_blocks,
+            LIBXSMM_CAST_UCHAR(l_tmp_vreg),  LIBXSMM_CAST_UCHAR(gp_reg_relumask2),
+            l_blend_reg, l_tmp_pred_reg0_2, l_tmp_pred_reg1_2, LIBXSMM_CAST_UCHAR(i_gp_reg_scratch1), &l_mask_adv2 );
+
+      }
+
+      if ((i_micro_kernel_config->fused_relu > 0) || (i_micro_kernel_config->fused_relu_nobitmask > 0))  {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P,
+                                                 l_vec_reg_tmp[1], l_zero_vreg, 0, l_vec_reg_tmp[1],
+                                                 l_pred_reg, l_sve_type );
+      }
 
 
       /* store second part */
