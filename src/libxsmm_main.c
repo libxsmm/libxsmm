@@ -1393,17 +1393,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             }
           }
           if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* check for allocated/generated JIT-code */
-# if defined(__APPLE__) && defined(__arm64__)
-# else
             void* buffer = NULL;
             size_t size = 0;
-# endif
 #if defined(LIBXSMM_HASH_COLLISION)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-# if defined(__APPLE__) && defined(__arm64__)
-            ++internal_registry_nleaks;
-#else
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
               if (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)
                 /* dump user-data just like JIT'ted code */
@@ -1433,7 +1427,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               internal_registry_nbytes += LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), LIBXSMM_PAGE_MINSIZE);
             }
             else ++internal_registry_nleaks;
-#endif
           }
         }
       }
@@ -1546,26 +1539,15 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   const int cpuid = libxsmm_cpuid();
-  int target_archid;
+  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
     && arch != libxsmm_stristr(arch, "cpuid")
     && arch != libxsmm_stristr(arch, "auto"))
   {
-#if defined(LIBXSMM_PLATFORM_X86)
     const int jit = atoi(arch);
-#endif
-    if (0 == strcmp("0", arch)) {
-#if defined(LIBXSMM_PLATFORM_X86)
-      target_archid = LIBXSMM_X86_GENERIC;
-#elif defined(LIBXSMM_PLATFORM_AARCH64)
-      target_archid = LIBXSMM_AARCH64_V81;
-#else
-      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
-#endif
-    }
-#if defined(LIBXSMM_PLATFORM_X86)
-    else if (0 < jit) {
+#if defined(LIBXSMM_PLATFORM_X86) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
     else if (arch == libxsmm_stristr(arch, "avx512_vl256_cpx")) {
@@ -1621,18 +1603,30 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     {
       target_archid = LIBXSMM_X86_GENERIC;
     }
-#elif defined(LIBXSMM_PLATFORM_AARCH64)
-    else if (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
-          || arch == libxsmm_stristr(arch, "arm_v81")
-          || arch == libxsmm_stristr(arch, "aarch64"))
-    {
-      target_archid = LIBXSMM_AARCH64_V81;
-    }
-    else if (arch == libxsmm_stristr(arch, "arm_v82")) {
-      target_archid = LIBXSMM_AARCH64_V82;
-    }
-    else if (arch == libxsmm_stristr(arch, "appl_m1")) {
-      target_archid = LIBXSMM_AARCH64_APPL_M1;
+#endif
+#if defined(LIBXSMM_PLATFORM_AARCH64) || defined(LIBXSMM_PLATFORM_FORCE)
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+# if !defined(LIBXSMM_PLATFORM_FORCE)
+      if (0 < jit) {
+        target_archid = LIBXSMM_AARCH64_V81 + jit;
+      }
+      else
+# endif
+      if  (arch == libxsmm_stristr(arch, "arm") || arch == libxsmm_stristr(arch, "arm64")
+        || arch == libxsmm_stristr(arch, "arm_v81")
+        || arch == libxsmm_stristr(arch, "aarch64"))
+      {
+        target_archid = LIBXSMM_AARCH64_V81;
+      }
+      else if (arch == libxsmm_stristr(arch, "arm_v82")) {
+        target_archid = LIBXSMM_AARCH64_V82;
+      }
+      else if (arch == libxsmm_stristr(arch, "a64fx")) {
+        target_archid = LIBXSMM_AARCH64_A64FX;
+      }
+      else if (arch == libxsmm_stristr(arch, "appl_m1")) {
+        target_archid = LIBXSMM_AARCH64_APPL_M1;
+      }
     }
     else if (arch == libxsmm_stristr(arch, "sve128")) {
       target_archid = LIBXSMM_AARCH64_SVE128;
@@ -1650,21 +1644,24 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_AARCH64_A64FX;
     }
 #endif
-    else if (arch == libxsmm_stristr(arch, "generic")) {
+    if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid) {
+      if (0 == strcmp("0", arch) || arch == libxsmm_stristr(arch, "generic")) {
 #if defined(LIBXSMM_PLATFORM_X86)
-      target_archid = LIBXSMM_X86_GENERIC;
+        target_archid = LIBXSMM_X86_GENERIC;
 #elif defined(LIBXSMM_PLATFORM_AARCH64)
-      target_archid = LIBXSMM_AARCH64_V81;
+        target_archid = LIBXSMM_AARCH64_V81;
 #else
-      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+        target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 #endif
+      }
+      else if (arch == libxsmm_stristr(arch, "none")) {
+        target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+      }
+      else {
+        target_archid = cpuid;
+      }
     }
-    else if (arch == libxsmm_stristr(arch, "none")) {
-      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
-    }
-    else {
-      target_archid = cpuid;
-    }
+
   }
   else {
     target_archid = cpuid;
@@ -1735,7 +1732,8 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue)
 {
   int result = EXIT_SUCCESS;
-  if (NULL != value && NULL != dvalue) {
+  LIBXSMM_ASSERT(NULL != dvalue);
+  if (NULL != value) {
     switch ((int)datatype) {
       case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double   *)value); break;
       case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float    *)value); break;
@@ -1745,9 +1743,6 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
       case LIBXSMM_DATATYPE_I8:  *dvalue = (double)(*(const char     *)value); break;
       default: result = EXIT_FAILURE;
     }
-  }
-  else {
-    result = EXIT_FAILURE;
   }
   return result;
 }
@@ -2265,38 +2260,19 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     /* no error raised */)
   {
     char* code_buffer = NULL;
-# if defined(__APPLE__) && defined(__arm64__)
-# else
     void* code_buffer_ptr = &code_buffer;
-# endif
     const size_t code_size = (size_t)generated_code.code_size;
     const size_t data_size = generated_code.data_size;
     const size_t total_size = code_size + data_size;
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     /* attempt to create executable buffer */
-# if defined(__APPLE__) && defined(__arm64__)
-    /* TODO: proper buffer x-allocation provides kernel info, etc. */
-    code_buffer = (char*)mmap(0, total_size, PROT_WRITE | PROT_EXEC | PROT_READ,
-      MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
-    result = ((0 <= (long long)code_buffer) ? EXIT_SUCCESS : EXIT_FAILURE);
-# else
     result = libxsmm_xmalloc((void**)code_buffer_ptr, total_size, 0/*auto*/,
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
       LIBXSMM_MALLOC_FLAG_RWX, &extra, sizeof(extra));
-# endif
     if (EXIT_SUCCESS == result) { /* check for success */
       LIBXSMM_ASSERT(NULL != code_buffer);
-# if defined(__APPLE__) && defined(__arm64__)
-      pthread_jit_write_protect_np(0/*false*/);
-# endif
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code_buffer, generated_code.generated_code, total_size);
-# if defined(__APPLE__) && defined(__arm64__)
-      code->ptr = code_buffer; /* commit buffer */
-      LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
-      pthread_jit_write_protect_np(1/*true*/);
-      sys_icache_invalidate(code_buffer, total_size);
-# else
       /* attribute and protect code-buffer by setting only necessary flags */
       result = libxsmm_malloc_attrib((void**)code_buffer_ptr,
         LIBXSMM_MALLOC_FLAG_X, jit_name, &data_size);
@@ -2309,7 +2285,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (EXIT_SUCCESS == result) { /* check for success */
         code->ptr = code_buffer; /* commit buffer */
         LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
-#   if defined(__aarch64__)
+#   if defined(__APPLE__) && defined(__arm64__)
+        sys_icache_invalidate(code_buffer, total_size);
+#   elif defined(__aarch64__)
 #     if defined(__clang__)
         __clear_cache(code_buffer, code_buffer + total_size);
 #     else
@@ -2320,7 +2298,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       else { /* release buffer */
         libxsmm_xfree(code_buffer, 0/*no check*/);
       }
-# endif
     }
   }
   else if (request->kind == LIBXSMM_BUILD_KIND_USER && NULL != request->descriptor.ptr) { /* user-data */
@@ -2666,19 +2643,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   int result;
   code.xgemm = kernel;
   if (NULL != info) {
-#if defined(__APPLE__) && defined(__arm64__)
-    /* TODO: proper buffer x-allocation provides kernel info, etc. */
-    if (libxsmm_verbosity < 0) {
-      fprintf(stderr, "LIBXSMM WARNING: libxsmm_get_mmkernel_info is not implemented on MacOS aarch64!\n");
-    }
-    info->iprecision = LIBXSMM_DATATYPE_F32;
-    info->oprecision = LIBXSMM_DATATYPE_F32;
-    info->prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-    info->flags = LIBXSMM_GEMM_FLAG_NONE;
-    info->lda = info->ldb = info->ldc = 1;
-    info->m = info->n = info->k = 1;
-    result = EXIT_SUCCESS;
-#else
     const libxsmm_descriptor* desc;
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
@@ -2708,7 +2672,6 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
       }
       result = EXIT_FAILURE;
     }
-#endif
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2948,6 +2911,12 @@ LIBXSMM_API void libxsmm_xrelease(const void* key, size_t key_size)
 }
 
 
+LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
+{
+  return libxsmm_typename( datatype );
+}
+
+
 LIBXSMM_API libxsmm_gemm_shape libxsmm_create_gemm_shape( const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k,
                                                           const libxsmm_blasint lda, const libxsmm_blasint ldb, const libxsmm_blasint ldc,
                                                           const libxsmm_datatype a_in_type, const libxsmm_datatype b_in_type, const libxsmm_datatype out_type, const libxsmm_datatype comp_type )
@@ -3075,7 +3044,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */
@@ -3104,7 +3073,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* set BRGEMM option */
@@ -3157,7 +3126,7 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI;
 
   /* set BRGEMM option */
@@ -3486,7 +3455,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */
@@ -3529,7 +3498,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */
@@ -3568,7 +3537,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */
@@ -3604,7 +3573,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */
@@ -3644,7 +3613,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsm
     return NULL;
   }
 
-  /* use the XGEMM ABI which utiliztes an arg struct */
+  /* use the XGEMM ABI which utilizes an arg struct */
   l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
 
   /* build descriptor */

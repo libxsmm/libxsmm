@@ -207,9 +207,9 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch_task
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xhash
@@ -441,30 +441,43 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
-          !> Process a series of MMs (batch). See also libxsmm_gemm_batch_omp.
+          !> Process a series of SMMs (batch). See also libxsmm_gemm_batch/omp.
           !> The kind of matrix operands (a, b, c) depend on index_stride:
-          !> index_stride==0: pointers to pointers of elements, e.g.,
-          !> double** for the C matrices.
-          !> index_stride!=0: pointer to elements, e.g.,
-          !> const double* for the A and B matrices.
+          !> index_stride==0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being an array of pointers
+          !>                  to the respective matrices.
+          !> index_stride!=0: stride_* are each scalar strides used
+          !>                  to walk the corresponding a, b, or c
+          !>                  with each being a pointer to the
+          !>                  respective matrix-data.
+          !>                  The index_stride is not used otherwise.
+          !> index_stride is non-zero but smaller than libxsmm_blasint:
+          !>                 stride_* are indexes determining the start
+          !>                 of the corresponding a, b, or c
+          !>                 with each being a pointer to the
+          !>                 respective matrix-data.
+          !>                 The index_stride is used to walk stride_*.
           !> Implicit FORTRAN 77 interface:
           !> INTEGER(4)   :: iprec, oprec
+          !> CHAR         :: transa, transb
+          !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
           !> REAL(4|8)    :: alpha, beta
           !> ARRAY        :: a, b, c
           !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
-          !> INTEGER(4|8) :: index_base, index_stride, batchsize
-          !> INTEGER(4)   :: tid, nthreads
-          !> Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_mmbatch(iprec, oprec, transa, transb, &
-     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize,        &
-     &    tid, nthreads)                                                &
-     &    BIND(C, NAME="libxsmm_mmbatch_")
+          !> INTEGER(4|8) :: index_stride, index_base, batchsize
+          !> INTEGER(4)   :: batchcheck, tid, ntasks
+          PURE SUBROUTINE libxsmm_xgemm_batch_task(                     &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
+     &    beta,  c, ldc, stride_c, index_stride, index_base,            &
+     &    batchsize, batchcheck, tid, ntasks)                           &
+     &    BIND(C, NAME="libxsmm_gemm_batch_task_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
-            !> Determines index-base (usually 0, 1 for one-based indexes).
+            !> Determines index-base (1 for one-based indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             !> Stride (measured in Bytes) used to walk stride_*.
-            !> In Fortran: index_stride!=0.
+            !> In Fortran (usually): index_stride!=0.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             !> Number of SMMs. If the size is given as a negative value,
             !> then internal synchronization is omitted.
@@ -479,23 +492,26 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
-            !> Thread-ID (TID), and number of threads.
-            INTEGER(C_INT), INTENT(IN) :: tid, nthreads
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec, batchcheck
+            !> Task-ID (TID), and number of tasks.
+            INTEGER(C_INT), INTENT(IN) :: tid, ntasks
           END SUBROUTINE
 
-          !> Process a series of SMMs (batch). See also libxsmm_mmbatch.
+          !> Process a series of SMMs (batch).
+          !> See also libxsmm_xgemm_batch_task.
           !> Implicit FORTRAN 77 interface:
-          !> INTEGER(4)   :: iprec, oprec
+          !> INTEGER(4)   :: iprec, oprec, batchcheck
+          !> CHAR         :: transa, transb
+          !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
           !> REAL(4|8)    :: alpha, beta
           !> ARRAY        :: a, b, c
           !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
-          !> INTEGER(4|8) :: index_base, index_stride, batchsize
-          !> Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_gemm_batch(iprec, oprec,              &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
-     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
-     &    batchsize)                                                    &
+          !> INTEGER(4|8) :: index_stride, index_base, batchsize
+          PURE SUBROUTINE libxsmm_xgemm_batch(                          &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
+     &    beta,  c, ldc, stride_c, index_stride, index_base,            &
+     &    batchsize, batchcheck)                                        &
      &    BIND(C, NAME="libxsmm_gemm_batch_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
@@ -509,21 +525,23 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec, batchcheck
           END SUBROUTINE
 
           !> Process a series of SMMs (batch) with OpenMP (libxsmmext).
           !> Implicit FORTRAN 77 interface:
-          !> INTEGER(4)   :: iprec, oprec
+          !> INTEGER(4)   :: iprec, oprec, batchcheck
+          !> CHAR         :: transa, transb
+          !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
           !> REAL(4|8)    :: alpha, beta
           !> ARRAY        :: a, b, c
           !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
-          !> INTEGER(4|8) :: index_base, index_stride, batchsize
-          !> Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_gemm_batch_omp(iprec, oprec,          &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
-     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
-     &    batchsize)                                                    &
+          !> INTEGER(4|8) :: index_stride, index_base, batchsize
+          PURE SUBROUTINE libxsmm_xgemm_batch_omp(                      &
+     &    iprec, oprec, transa, transb, m, n, k,                        &
+     &    alpha, a, lda, stride_a, b, ldb, stride_b,                    &
+     &    beta,  c, ldc, stride_c, index_stride, index_base,            &
+     &    batchsize, batchcheck)                                        &
      &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
             IMPORT :: C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
@@ -537,7 +555,7 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec, batchcheck
           END SUBROUTINE
 
           !> Reduces input into output such that the difference is maintained
@@ -1742,6 +1760,79 @@
           REAL(C_FLOAT), INTENT(IN),  TARGET ::  input(ldi,*)
           CALL libxsmm_xotrans(C_LOC(output), C_LOC(input),             &
      &      4, m, n, ldi, ldo)
+        END SUBROUTINE
+
+        !> Process a series of SMMs (batch).
+        !> See also libxsmm_xgemm_batch_task.
+        !> Implicit FORTRAN 77 interface:
+        !> INTEGER(4)   :: iprec, oprec, batchcheck
+        !> CHAR         :: transa, transb
+        !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+        !> REAL(4|8)    :: alpha, beta
+        !> ARRAY        :: a, b, c
+        !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
+        !> INTEGER(4|8) :: index_stride, index_base, batchsize
+        PURE SUBROUTINE libxsmm_gemm_batch(                             &
+     &  iprec, oprec, transa, transb, m, n, k,                          &
+     &  alpha, a, lda, stride_a, b, ldb, stride_b,                      &
+     &  beta,  c, ldc, stride_c, index_stride, index_base,              &
+     &  batchsize, batchcheck)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+          INTEGER(C_INT), INTENT(IN), OPTIONAL      :: batchcheck
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          CHARACTER(C_CHAR),  INTENT(IN) :: transa, transb
+          TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+          INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+          CALL libxsmm_xgemm_batch(                                     &
+     &  iprec, oprec, transa, transb, m, n, k,                          &
+     &  alpha, a, lda, stride_a, b, ldb, stride_b,                      &
+     &  beta,  c, ldc, stride_c, index_stride, index_base,              &
+     &  batchsize, batchcheck)
+        END SUBROUTINE
+
+        !> Process a series of SMMs (batch) with OpenMP (libxsmmext).
+        !> Implicit FORTRAN 77 interface:
+        !> INTEGER(4)   :: iprec, oprec, batchcheck
+        !> CHAR         :: transa, transb
+        !> INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+        !> REAL(4|8)    :: alpha, beta
+        !> ARRAY        :: a, b, c
+        !> ARRAY/VALUE  :: stride_a, stride_b, stride_c
+        !> INTEGER(4|8) :: index_stride, index_base, batchsize
+        PURE SUBROUTINE libxsmm_gemm_batch_omp(                         &
+     &  iprec, oprec, transa, transb, m, n, k,                          &
+     &  alpha, a, lda, stride_a, b, ldb, stride_b,                      &
+     &  beta,  c, ldc, stride_c, index_stride, index_base,              &
+     &  batchsize, batchcheck)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+          INTEGER(C_INT), INTENT(IN), OPTIONAL      :: batchcheck
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          CHARACTER(C_CHAR),  INTENT(IN) :: transa, transb
+          TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+          TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+          INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+          CALL libxsmm_xgemm_batch_omp(                                 &
+     &  iprec, oprec, transa, transb, m, n, k,                          &
+     &  alpha, a, lda, stride_a, b, ldb, stride_b,                      &
+     &  beta,  c, ldc, stride_c, index_stride, index_base,              &
+     &  batchsize, batchcheck)
         END SUBROUTINE
 
         !> Returns the difference between two timer ticks (cycles).

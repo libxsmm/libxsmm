@@ -82,17 +82,15 @@ do
 
               echo $NAME
 
-              cp opreduce_template.sh $NAME
-              sed "s/OP=0/OP=${op}/g" -i $NAME
-              sed "s/OPRED=1/OPRED=${redop}/g" -i $NAME
-              sed "s/OPORDER=1/OPORDER=${oporder}/g" -i $NAME
-              sed "s/REGVECIN=1/REGVECIN=${regvecin}/g" -i $NAME
-              sed "s/IMPLICITIDX=1/IMPLICITIDX=${implicitidx}/g" -i $NAME
-              sed "s/OPARG=0/OPARG=${argopmode}/g" -i $NAME
-              sed "s/USE_BF16=0/USE_BF16=${usebf16}/g" -i $NAME
-              sed "s/CHECK_SCALE_SIZE=1\.0/CHECK_SCALE_SIZE=${SCALE_SIZE}/g" -i $NAME
-
-
+              sed "s/OP=0/OP=${op}/g" opreduce_template.sh \
+              | sed "s/OPRED=1/OPRED=${redop}/g" \
+              | sed "s/OPORDER=1/OPORDER=${oporder}/g" \
+              | sed "s/REGVECIN=1/REGVECIN=${regvecin}/g" \
+              | sed "s/IMPLICITIDX=1/IMPLICITIDX=${implicitidx}/g" \
+              | sed "s/OPARG=0/OPARG=${argopmode}/g" \
+              | sed "s/USE_BF16=0/USE_BF16=${usebf16}/g" \
+              | sed "s/CHECK_SCALE_SIZE=1\.0/CHECK_SCALE_SIZE=${SCALE_SIZE}/g" \
+              >$NAME
 
               # these loops inside each script
               #for idxtype in 0 1

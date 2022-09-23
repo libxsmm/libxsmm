@@ -17,7 +17,7 @@ KINDS="bound neigh orient sides size"
 
 for DATA in ${DATASET} ; do
   for KIND in ${KINDS} ; do
-    ${WGET} -N https://github.com/libxsmm/libxsmm/raw/master/samples/seissol/${DATA}.nc.${KIND}
+    ${WGET} -N https://github.com/libxsmm/libxsmm/raw/main/samples/seissol/${DATA}.nc.${KIND}
   done
 done
 

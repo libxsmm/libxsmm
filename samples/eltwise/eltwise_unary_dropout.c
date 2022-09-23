@@ -455,8 +455,11 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
 }
 
 int main( int argc, char* argv[] ) {
-  libxsmm_blasint dtype_in;
-  libxsmm_blasint dtype_out;
+  char* dt_in = NULL;
+  char* dt_out = NULL;
+  libxsmm_datatype dtype_in;
+  libxsmm_datatype dtype_out;
+  libxsmm_datatype dtype_comp = LIBXSMM_DATATYPE_F32;
   char op;
   libxsmm_blasint bitm;
   libxsmm_blasint M;
@@ -466,14 +469,14 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_FAILURE;
 
   if ( argc != 9 ) {
-    printf(" Error! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2/1] [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
   op        = *(argv[1]);
   bitm      = atoi(argv[2]);
-  dtype_in  = atoi(argv[3]);
-  dtype_out = atoi(argv[4]);
+  dt_in     = argv[3];
+  dt_out    = argv[4];
   M         = atoi(argv[5]);
   N         = atoi(argv[6]);
   ldi       = atoi(argv[7]);
@@ -484,50 +487,28 @@ int main( int argc, char* argv[] ) {
     return ret;
   }
 
-  if ( op == 'F' && dtype_in == 4 && dtype_out == 4  ) {
-    printf("Testing F32 F32 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 4  && dtype_out == 2 ) {
-    printf("Testing F32 BF16 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 2  && dtype_out == 4 ) {
-    printf("Testing BF16 F32 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 1  && dtype_out == 1 ) {
-    printf("Testing BF8 BF8 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 4  && dtype_out == 1 ) {
-    printf("Testing F32 BF8 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'F' && dtype_in == 1  && dtype_out == 4 ) {
-    printf("Testing BF8 F32 forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_fwd( bitm, M, N, ldi, ldo, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 4 ) {
-    printf("Testing F32 F32 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 2 ) {
-    printf("Testing BF16 BF16 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 2 ) {
-    printf("Testing F32 BF16 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 2 && dtype_out == 4 ) {
-    printf("Testing BF16 F32 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 1 && dtype_out == 1 ) {
-    printf("Testing BF8 BF8 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 4 && dtype_out == 1 ) {
-    printf("Testing F32 BF8 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32 );
-  } else if ( op == 'B' && dtype_in == 1 && dtype_out == 4 ) {
-    printf("Testing BF8 F32 backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
-    ret = test_dropout_bwd( M, N, ldi, ldo, LIBXSMM_DATATYPE_BF8, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+  dtype_in  = char_to_libxsmm_datatype( dt_in );
+  dtype_out = char_to_libxsmm_datatype( dt_out );
+
+  if ( ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
+       ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) ) ) {
+    if (  op == 'F' ) {
+      printf("in: %s out: %s comp: %s forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
+      ret = test_dropout_fwd( bitm, M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+    } else if (  op == 'B' ) {
+      printf("in: %s out: %s comp: %s backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
+      ret = test_dropout_bwd( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+    } else {
+      printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      exit(-1);
+    }
   } else {
-    printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: 4/2/1] [prec_out: 4/2/1] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/BF8] [prec_out: F32/BF16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
