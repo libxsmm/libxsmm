@@ -1075,6 +1075,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   unsigned int l_n_done     = 0;           /* progress tracker */
   unsigned int l_n_done_old = 0;
   unsigned int a_vnni_factor  = 1;
+  unsigned int l_ldc_saved = 0;
 
   /* Local variables used for A transpose case */
   libxsmm_descriptor_blob           l_blob_opa;
@@ -1235,6 +1236,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c);
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, l_gp_reg_mapping.gp_reg_help_1);
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c, 32LL * 64LL );
+    l_ldc_saved = i_xgemm_desc->ldc;
     l_xgemm_desc_opa->ldc = i_xgemm_desc->m;
   }
 
@@ -1772,7 +1774,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
   /* In this case we vnni-format C from scratch  */
   if (l_micro_kernel_config.vnni_format_C > 0) {
-    l_xgemm_desc_opa->ldc = i_xgemm_desc->ldc;
+    l_xgemm_desc_opa->ldc = l_ldc_saved;
     libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa);
   }
   libxsmm_generator_gemm_destroy_stack_frame_aarch64( io_generated_code );
