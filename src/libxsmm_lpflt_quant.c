@@ -598,7 +598,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
   }
 }
 #else
-libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) {
+LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) {
   unsigned int f16_bias = 15;
   unsigned int f8_bias = 7;
   libxsmm_hfloat8 res = 0;
