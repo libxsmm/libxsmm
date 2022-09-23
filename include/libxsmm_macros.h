@@ -828,8 +828,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE) && defined(LIBXSMM_BUILD)
-# define _GNU_SOURCE
+#if defined(LIBXSMM_BUILD)
+# if !defined(_DEFAULT_SOURCE)
+#   define _DEFAULT_SOURCE
+# endif
+# if !defined(_XOPEN_SOURCE)
+#   define _XOPEN_SOURCE
+# endif
+# if !defined(_GNU_SOURCE)
+#   define _GNU_SOURCE
+# endif
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
 # define __STDC_FORMAT_MACROS
@@ -970,6 +978,7 @@ LIBXSMM_EXTERN int mkstemp(char*);
 # else
 LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 # endif
+LIBXSMM_EXTERN int putenv(char*) LIBXSMM_NOTHROW;
 #endif
 
 /* block must be after including above header files */

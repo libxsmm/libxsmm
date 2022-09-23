@@ -1185,8 +1185,8 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++11
   endif
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,11074,11076,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,11074,11076,13003
   ifneq (0,$(UNUSED))
     CXXFLAGS += -Wno-unused-function
     CFLAGS += -Wno-unused-function
@@ -1458,7 +1458,8 @@ else # GCC assumed
     CXXFLAGS += -Wall
     CFLAGS += -Wall
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
-    CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
+    CPEDANTIC += -pedantic -Wextra -Wstrict-prototypes \
+                 -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \

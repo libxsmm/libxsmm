@@ -465,6 +465,8 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_TLS_SETVALUE(KEY, PTR) pthread_setspecific(KEY, PTR)
 #   define LIBXSMM_TLS_GETVALUE(KEY) pthread_getspecific(KEY)
 #   if defined(__APPLE__) && defined(__MACH__)
+      LIBXSMM_EXTERN void pthread_jit_write_protect_np(int) LIBXSMM_NOTHROW;
+      LIBXSMM_EXTERN void pthread_yield_np(void) LIBXSMM_NOTHROW;
 #     define LIBXSMM_SYNC_YIELD pthread_yield_np()
 #   elif defined(_POSIX_PRIORITY_SCHEDULING) || (defined(__GLIBC__) && defined(__GLIBC_MINOR__) \
       && LIBXSMM_VERSION2(2, 34) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__))
