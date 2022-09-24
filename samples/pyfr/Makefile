@@ -38,13 +38,16 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
+XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg $(OUTDIR)/gimmik
 
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS)
+
+$(OUTDIR)/gimmik: $(BLDDIR)/gimmik-c.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_driver_asp_reg: $(BLDDIR)/$(OUTNAME)_driver_asp_reg-c.o $(OUTDIR)/.make $(LIBDEP)
 	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
