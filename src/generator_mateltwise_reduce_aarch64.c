@@ -860,6 +860,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   unsigned int l_masked_elements = 0;
   unsigned int l_is_inp_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
   unsigned int l_is_out_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ? 1 : 0;
+  unsigned int reduce_on_output_instr = 0;
 
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
@@ -890,6 +891,12 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
     printf("Only supported reduction OPs are ADD and MAX for this reduce kernel\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
+  }
+
+  if ( flag_reduce_op_add > 0 ) {
+    reduce_on_output_instr =LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V;
+  } else {
+    reduce_on_output_instr =LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
   }
 
   if ((compute_squared_vals_reduce > 0) && (flag_reduce_op_add == 0)) {
@@ -1097,8 +1104,8 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
             0, cur_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
         libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, cur_vreg, 0);
       }
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
-        cur_vreg, reg_sum, 0, reg_sum, asimd_type );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
+        cur_vreg, reg_sum, 0, reg_sum, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
     }
     if (l_is_out_bf16 == 0) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
@@ -1132,8 +1139,8 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
             0, cur_vreg, LIBXSMM_AARCH64_ASIMD_WIDTH_H );
         libxsmm_generator_vcvt_bf16f32_aarch64( io_generated_code, cur_vreg, 0);
       }
-      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_instr,
-        cur_vreg, reg_sum_squared, 0, reg_sum_squared, asimd_type );
+      libxsmm_aarch64_instruction_asimd_compute( io_generated_code, reduce_on_output_instr,
+        cur_vreg, reg_sum_squared, 0, reg_sum_squared, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
     }
     if (l_is_out_bf16 == 0) {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
