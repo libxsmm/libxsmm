@@ -694,7 +694,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
   }
 
   l_m_blocks = i_m_blocking / 8;
-  l_n_blocks = i_n_blocking / 2;
+  l_n_blocks = (i_n_blocking + 1) / 2;
   l_m_blocks_remainder = (i_m_blocking % 8 == 0) ? 0 : 1;
   l_m_remainder = i_m_blocking % 8;
 
@@ -754,13 +754,18 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                    i_gp_reg_mapping->gp_reg_b,
                                                    l_b_stride);
 
-    libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                          LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
-                                          i_gp_reg_mapping->gp_reg_b,
-                                          0,
-                                          0,
-                                          l_vr_zip[1],
-                                          l_pr_all );
+    if ((i_n_blocking % 2 == 1) && (l_n == l_n_blocks-1)) {
+      libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+          l_vr_zip[1], l_vr_zip[1], 0, l_vr_zip[1], 0, LIBXSMM_AARCH64_SVE_TYPE_S );
+    } else {
+      libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                            LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
+                                            i_gp_reg_mapping->gp_reg_b,
+                                            0,
+                                            0,
+                                            l_vr_zip[1],
+                                            l_pr_all );
+    }
     if( l_n+1 != l_n_blocks ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -800,13 +805,19 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_mmla( libxsmm_generated_code
                                                      i_gp_reg_mapping->gp_reg_help_0,
                                                      l_gpr_b_k,
                                                      l_b_stride );
-      libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                            LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
-                                            l_gpr_b_k,
-                                            0,
-                                            0,
-                                            l_vr_zip[1],
-                                            l_pr_all );
+
+      if ((i_n_blocking % 2 == 1) && (l_n == l_n_blocks-1)) {
+        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
+            l_vr_zip[1], l_vr_zip[1], 0, l_vr_zip[1], 0, LIBXSMM_AARCH64_SVE_TYPE_S );
+      } else {
+        libxsmm_aarch64_instruction_sve_move( io_generated_code,
+                                              LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,
+                                              l_gpr_b_k,
+                                              0,
+                                              0,
+                                              l_vr_zip[1],
+                                              l_pr_all );
+      }
       if( l_n+1 != l_n_blocks ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_ADD,
