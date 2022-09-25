@@ -1,6 +1,7 @@
 #include "gimmik.h"
 
 #define NREPS 200000
+#define SEP ';'
 
 struct gmm
 {
@@ -76,8 +77,9 @@ int main(int argc, char* argv[])
         {"p6/pri/m460", gimmik_p6_pri_m460, 0, 588, 196, 12096},
         {"p6/pri/m132", gimmik_p6_pri_m132, 0, 196, 588, 12096},
     };
-    LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
+    const int nreps = (1 < argc ? atoi(argv[1]) : (NREPS));
 
+    /*printf("MATRIX%cGFLOPS%cMEMBW\n", SEP, SEP);*/
     for (int i = 0; i < sizeof(mats) / sizeof(mats[0]); i++)
     {
         libxsmm_timer_tickint begin, end;
@@ -92,15 +94,16 @@ int main(int argc, char* argv[])
         mats[i].fn(b, c);
 
         begin = libxsmm_timer_tick();
-        for (int j = 0; j < NREPS; j++)
+        for (int j = 0; j < nreps; j++) {
             mats[i].fn(b, c);
+        }
         end = libxsmm_timer_tick();
 
         double dt = libxsmm_timer_duration(begin, end);
-        double gflops = NREPS*2*N*(double) mats[i].nnz / dt / 1e9;
-        double gbytes = NREPS*(bsz + (1 + mats[i].beta)*csz) / dt / pow(1024, 3);
+        double gflops = nreps*2*N*(double) mats[i].nnz / dt / 1e9;
+        double gbytes = nreps*(bsz + (1 + mats[i].beta)*csz) / dt / pow(1024, 3);
 
-        printf("%s,%f,%f\n", mats[i].name, gflops, gbytes);
+        printf("%s%c%f%c%f\n", mats[i].name, SEP, gflops, SEP, gbytes);
 
         libxsmm_free(b);
         libxsmm_free(c);
