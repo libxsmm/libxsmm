@@ -9,9 +9,10 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
-BLAS = 2
+BLAS = 1
+SIMD = 1
 SYM = 1
-OMP = 1
+OMP = 0
 
 # explore AVX/ARCH=native
 SSE = 0
