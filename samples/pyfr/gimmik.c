@@ -78,15 +78,16 @@ int main(int argc, char* argv[])
         {"p6/pri/m132", gimmik_p6_pri_m132, 0, 196, 588, 12096},
     };
     const int nreps = (1 < argc ? atoi(argv[1]) : (NREPS));
+    int i;
 
-    /*printf("MATRIX%cGFLOPS%cMEMBW\n", SEP, SEP);*/
-    for (int i = 0; i < sizeof(mats) / sizeof(mats[0]); i++)
+    for (i = 0; i < ((int)sizeof(mats) / (int)sizeof(mats[0])); ++i)
     {
         libxsmm_timer_tickint begin, end;
-        size_t bsz = LDB*mats[i].k*sizeof(double);
-        size_t csz = LDC*mats[i].m*sizeof(double);
+        size_t bsz = sizeof(double)*LDB*mats[i].k;
+        size_t csz = sizeof(double)*LDC*mats[i].m;
         double *b = libxsmm_aligned_malloc(bsz, 64);
         double *c = libxsmm_aligned_malloc(csz, 64);
+        int j;
 
         memset(b, 0, bsz);
         memset(c, 0, csz);
@@ -94,16 +95,17 @@ int main(int argc, char* argv[])
         mats[i].fn(b, c);
 
         begin = libxsmm_timer_tick();
-        for (int j = 0; j < nreps; j++) {
+        for (j = 0; j < nreps; ++j) {
             mats[i].fn(b, c);
         }
         end = libxsmm_timer_tick();
 
-        double dt = libxsmm_timer_duration(begin, end);
-        double gflops = nreps*2*N*(double) mats[i].nnz / dt / 1e9;
-        double gbytes = nreps*(bsz + (1 + mats[i].beta)*csz) / dt / pow(1024, 3);
-
-        printf("%s%c%f%c%f\n", mats[i].name, SEP, gflops, SEP, gbytes);
+        { /* output performance record in CSV format */
+          const double dt = libxsmm_timer_duration(begin, end), invdt = 1.0 / dt;
+          const double gflops = (size_t)nreps*2*N*(double)mats[i].nnz * invdt / 1e9;
+          const double gbytes = (size_t)nreps*(bsz + ((size_t)1 + mats[i].beta)*csz) * invdt / pow(1024, 3);
+          printf("%s%c%f%c%f\n", mats[i].name, SEP, gflops, SEP, gbytes);
+        }
 
         libxsmm_free(b);
         libxsmm_free(c);
