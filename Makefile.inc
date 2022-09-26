@@ -161,6 +161,10 @@ OPTFLAGS ?= -O$(patsubst O%,%,$(OPT))
 # Kind of Clang-analysis (thread, address, ...)
 SANITIZE ?= $(NULL)
 
+# VMAX=0 (default): Prefer default vector size
+# VMAX=1: Prefer widest vector size (VLEN=MAX)
+VMAX ?= 0
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -1321,6 +1325,9 @@ ifneq (0,$(INTEL))
           CTARGET := -xMIC-AVX512
         else
           CTARGET := -xCORE-AVX512
+          ifneq (0,$(VMAX))
+            CTARGET += -qopt-zmm-usage=high
+          endif
         endif
         ifneq (,$(filter-out 0,$(VNNI)))
           CTARGET += $(call ctest,$(CC),-mavx512vnni)
@@ -1347,6 +1354,11 @@ ifneq (0,$(INTEL))
         endif
       else ifneq (0,$(AVX))
         CTARGET := -xHost
+        ifneq (0,$(VMAX))
+        ifeq (1,$(words $(filter avx512vl,$(CPUFLAGS_X86))))
+          CTARGET += -qopt-zmm-usage=high
+        endif
+        endif
       endif
     endif
     endif
@@ -1727,6 +1739,9 @@ ifeq (undefined,$(origin TARGET))
           CTARGET += $(call ctest,$(CC),-mavx512vnni -mavx512bf16)
         endif
       endif
+      ifneq (0,$(VMAX))
+        CTARGET += -mprefer-vector-width=512
+      endif
     endif
     endif
     endif
@@ -1737,12 +1752,18 @@ ifeq (undefined,$(origin TARGET))
       else
         CTARGET ?= -mavx2 -mfma
       endif
+      ifneq (0,$(VMAX))
+        CTARGET += -mprefer-vector-width=256
+      endif
     endif
     endif
     ifeq (,$(CTARGET)) # fallback to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
       ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||40400<=$(GCC_VERSION_NUM)||0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -mavx
+        ifneq (0,$(VMAX))
+          CTARGET += -mprefer-vector-width=256
+        endif
       endif
     endif
     endif
@@ -1789,6 +1810,15 @@ ifeq (undefined,$(origin TARGET))
       # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
       CTARGET := -march=native -mtune=native
+      ifneq (0,$(VMAX))
+        ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=512
+        else ifeq (1,$(words $(filter avx2,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=256
+        else ifeq (1,$(words $(filter avx,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=256
+        endif
+      endif
     endif
   endif # CTARGET
   endif # DBG

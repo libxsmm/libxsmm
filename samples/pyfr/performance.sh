@@ -26,7 +26,7 @@ if [[ ! -e "${HERE}/pyfr_driver_asp_reg" || ! -e "${HERE}/gimmik" || ("$(command
   && ("$(ldd "${HERE}/pyfr_driver_asp_reg" | sed -n '/omp/p')" || \
       "$(ldd "${HERE}/gimmik" | sed -n '/omp/p')")) ]];
 then
-  echo "Please build the PyFR sample code with \"make OMP=0 BLAS=1\"!"
+  echo "Please build the PyFR sample code with \"make OMP=0 BLAS=1 VMAX=1\"!"
   if [ ! -e "${HERE}/pyfr_driver_asp_reg" ] || [ ! -e "${HERE}/gimmik" ]; then exit 1; fi
   if [ "0" != "$((0<WAIT))" ] && [ "$(command -v sleep)" ]; then
     echo
