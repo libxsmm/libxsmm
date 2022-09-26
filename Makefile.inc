@@ -385,7 +385,9 @@ else
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null; echo "$$?"))
     CC := gcc
   endif
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+  ifeq (Cray,$(shell $(CC) --version 2>&1 | head -n1 | cut -d' ' -f1))
+    COMPILER_VERSION_FLAG ?= --version 2>&1
+  else ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
@@ -842,16 +844,16 @@ else
   ifeq (0,$(CLANG))
     COMPATIBLE := 1
   endif
-  ifneq (0,$(COMPATIBLE))
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
-    SUITE := Cray Compiler
-    LDFLAGS += -hsystem_alloc
-    CRAY ?= 1
-    # prevent codegen issues
-    ifeq (0,$(OPT))
-      override OPT := 1
+  ifeq (Cray,$(shell $(CC) $(COMPILER_VERSION_FLAG) | head -n1 | cut -d' ' -f1))
+    ifneq (0,$(COMPATIBLE))
+      SUITE := Cray Compiler
+      LDFLAGS += -hsystem_alloc
+      # prevent codegen issues
+      ifeq (0,$(OPT))
+        override OPT := 1
+      endif
     endif
-  endif
+    CRAY ?= 1
   endif
 endif
 SUITE ?= Compiler
@@ -1802,6 +1804,8 @@ ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   FTARGET := $(CTARGET)
 else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
+else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
+  override CTARGET := $(NULL)
 endif
 ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
@@ -1938,7 +1942,7 @@ ifeq (0,$(COMPATIBLE))
         FCFLAGS += -funroll-loops
       endif
     endif
-    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
+    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX) $(CRAY)))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize
       FCFLAGS += -ftree-vectorize
@@ -1981,7 +1985,7 @@ ifeq (0,$(COMPATIBLE))
       LDFLAGS := $(XLNKOPT)-z,relro,-z,now $(LDFLAGS)
     endif
     endif
-    ifeq (0,$(PGI))
+    ifeq (,$(filter-out 0,$(PGI) $(CRAY)))
     ifneq (0,$(OPT))
       CXXFLAGS += -fdata-sections -ffunction-sections
       CFLAGS += -fdata-sections -ffunction-sections
