@@ -206,8 +206,9 @@ script:
     fi;
     if [ ! "${COVERITY_TMPDIR}" ]; then COVERITY_TMPDIR=cov-int; fi;
     ${COVERITY_SCAN_BINDIR}/cov-build --dir ${COVERITY_TMPDIR} make -e ${MAKEJ} &&
-        tar cvfz -C $(dirname "${COVERITY_TMPDIR}") --transform "s/^$(basename ${COVERITY_TMPDIR})/cov-int/" \
-            cov-int.tgz $(basename ${COVERITY_TMPDIR}) &&
+        tar cvfz cov-int.tgz -C $(dirname "${COVERITY_TMPDIR}")
+            --transform "s/^$(basename ${COVERITY_TMPDIR})/cov-int/"
+        $(basename ${COVERITY_TMPDIR}) &&
     curl https://scan.coverity.com/builds?project=hfp-libxsmm --form
       token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER} --form
       file=@cov-int.tgz --form version="$(git describe --tags)" --form
