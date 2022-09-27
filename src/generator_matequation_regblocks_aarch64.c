@@ -1024,11 +1024,6 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
     case LIBXSMM_MELTW_TYPE_TERNARY_MULADD: {
       ternary_op_instr =  l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V;
     } break;
-#if 0
-    case LIBXSMM_MELTW_TYPE_TERNARY_NMULADD: {
-      ternary_op_instr = LIBXSMM_X86_INSTR_VFNMADD213PS;
-    } break;
-#endif
     default:;
   }
   for (in = 0; in < i_n_blocking; in++) {
@@ -1036,10 +1031,20 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
       left_vreg = i_left_start_vreg + in * i_m_blocking + im;
       right_vreg = i_right_start_vreg + in * i_m_blocking + im;
       dst_vreg = i_dst_start_vreg + in * i_m_blocking + im;
-      if( l_is_sve ){
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+      if (i_op_type == LIBXSMM_MELTW_TYPE_TERNARY_NMULADD) {
+        if( l_is_sve ){
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, left_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, l_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FMUL_V, left_vreg, dst_vreg, 0, dst_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_FSUB_V, right_vreg, dst_vreg, 0, dst_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+        }
       } else {
-        libxsmm_aarch64_instruction_asimd_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+        if( l_is_sve ){
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, l_pred_reg, libxsmm_generator_aarch64_get_sve_type(4) );
+        } else {
+          libxsmm_aarch64_instruction_asimd_compute( io_generated_code, ternary_op_instr, left_vreg, right_vreg, 0, dst_vreg, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
+        }
       }
     }
   }
