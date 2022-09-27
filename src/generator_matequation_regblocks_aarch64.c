@@ -1022,7 +1022,7 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
 
   switch ((int)i_op_type) {
     case LIBXSMM_MELTW_TYPE_TERNARY_MULADD: {
-      ternary_op_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
+      ternary_op_instr =  l_is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMLA_V;
     } break;
 #if 0
     case LIBXSMM_MELTW_TYPE_TERNARY_NMULADD: {
