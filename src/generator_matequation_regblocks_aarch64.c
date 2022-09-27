@@ -330,8 +330,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block_aarch64( libxsmm_generate
   libxsmm_matrix_eqn_arg_v2  *arg_info = i_micro_kernel_config->arg_info;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   unsigned int input_reg = 0;
-  unsigned int l_ld_bytes = arg_info[i_arg_id].ld * arg_info[i_arg_id].dtype;
-  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? arg_info[i_arg_id].dtype * i_vlen * i_m_blocking : arg_info[i_arg_id].dtype * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
+  unsigned int l_ld_bytes = arg_info[i_arg_id].ld * LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype);
+  unsigned int l_m_adjust = ( i_mask_last_m_chunk == 0 ) ? LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * i_vlen * i_m_blocking : LIBXSMM_TYPESIZE(arg_info[i_arg_id].dtype) * ( (i_vlen * (i_m_blocking-1)) + i_mask_last_m_chunk );
   unsigned int offset = 0;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(4);

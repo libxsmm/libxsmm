@@ -230,7 +230,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
                                               libxsmm_matrix_eqn*                                 i_eqn,
                                               unsigned int                                        i_strategy ) {
 
-  unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
+  unsigned int temp_reg = i_gp_reg_mapping->temp_reg3;
   unsigned int allocate_scratch = 1;
 
   LIBXSMM_UNUSED(i_mateqn_desc);
@@ -387,7 +387,11 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   /* TODO: Use number of tree nodes as max size */
   unsigned int max_queue_size = 256;
   /* TODO: Now using only strategy with tmp scratch blocks on aarch64 */
-  unsigned int strategy = JIT_STRATEGY_HYBRID  /*JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS*/;
+#if 1
+  unsigned int strategy = JIT_STRATEGY_HYBRID;
+#else
+  unsigned int strategy = JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS;
+#endif
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X6;
   unsigned int all_nodes_f32 = 1;
