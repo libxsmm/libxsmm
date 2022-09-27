@@ -605,8 +605,6 @@ int main( int argc, char* argv[] ) {
 
   printf("Speedup is %.5g\n", l_total/l_total2);
 
-  return 0;
-
   if (datatype_mode == 0 || datatype_mode == 1) {
     /* Now we test a gather-reduce equation */
     create_unique_random_array(unique_random_array, large_N);

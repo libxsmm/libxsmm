@@ -1085,11 +1085,11 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
 
   /* Headers of microkernel loops */
   if (n_assm_trips > 1) {
-    libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_unroll_factor);
+    libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_trips);
   }
 
   if (m_assm_trips > 1) {
-    libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_unroll_factor);
+    libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips);
   }
 
   /* Traverse equation tree based on optimal execution plan and emit code  */
@@ -1182,14 +1182,14 @@ void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*   
   if (m_assm_trips > 1) {
     libxsmm_generator_mateqn_adjust_args_addr_aarch64(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, LIBXSMM_AARCH64_INSTR_GP_META_ADD, m_unroll_factor * i_vlen_in , M_ADJUSTMENT, i_micro_kernel_config->arg_info);
 
-    libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips);
+    libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_unroll_factor);
 
     libxsmm_generator_mateqn_adjust_args_addr_aarch64(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, LIBXSMM_AARCH64_INSTR_GP_META_SUB, m_unroll_factor * i_vlen_in * m_assm_trips, M_ADJUSTMENT, i_micro_kernel_config->arg_info);
   }
 
   if (n_assm_trips > 1) {
     libxsmm_generator_mateqn_adjust_args_addr_aarch64(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, LIBXSMM_AARCH64_INSTR_GP_META_ADD, n_unroll_factor, N_ADJUSTMENT, i_micro_kernel_config->arg_info);
-    libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_trips);
+    libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n_unroll_factor);
     if (skip_n_loop_reg_cleanup == 0) {
       libxsmm_generator_mateqn_adjust_args_addr_aarch64(io_generated_code, i_meqn_desc, i_gp_reg_mapping, i_micro_kernel_config, LIBXSMM_AARCH64_INSTR_GP_META_SUB, n_unroll_factor * n_assm_trips, N_ADJUSTMENT, i_micro_kernel_config->arg_info);
     }
