@@ -48,6 +48,7 @@ void libxsmm_configure_mateqn_microkernel_loops_aarch64( libxsmm_generated_code*
 
 LIBXSMM_API_INTERN
 void libxsmm_meqn_setup_input_output_masks_aarch64( libxsmm_generated_code*                 io_generated_code,
+                                                 libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
                                                  libxsmm_matequation_kernel_config*      i_micro_kernel_config,
                                                  const libxsmm_meqn_descriptor*          i_meqn_desc,
                                                  unsigned int                            i_tmp_reg,

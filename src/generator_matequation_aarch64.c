@@ -18,6 +18,7 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
+#include "generator_matequation_regblocks_aarch64.h"
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_aarch64_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
@@ -270,9 +271,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
 
   if (allocate_scratch > 0) {
     unsigned int scratch_size = 0;
-#if 0
     unsigned int addr_scratch_size = 0;
-#endif
     /* Now align RSP to 64 byte boundary  */
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
     /* reg-reg instruction */
@@ -390,7 +389,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
   /* TODO: Now using only strategy with tmp scratch blocks on aarch64 */
   unsigned int strategy = JIT_STRATEGY_HYBRID  /*JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS*/;
   unsigned int eqn_tree_id = 0;
-  unsigned int temp_reg = LIBXSMM_X86_GP_REG_X26;
+  unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X6;
   unsigned int all_nodes_f32 = 1;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_matrix_eqn_fusion_knobs fusion_knobs;
