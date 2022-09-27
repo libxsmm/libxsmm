@@ -271,8 +271,8 @@ void libxsmm_meqn_setup_input_output_masks_aarch64( libxsmm_generated_code*     
   LIBXSMM_UNUSED(i_meqn_desc);
   LIBXSMM_UNUSED(i_tmp_reg);
 
-  use_m_input_masking   = (i_m % i_vlen_in == 0 ) ? 0 : 1;
-  use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
+  use_m_input_masking   = i_m % i_vlen_in;
+  use_m_output_masking  = i_m % i_vlen_out;
 
   if ( l_is_sve ) {
     /* BF16 mask for full vload  */
