@@ -415,19 +415,19 @@ unsigned int init_data_structures(unsigned int i_cells) {
 
     real* tmp_pointer = m_globalPointer;
     // stiffness for time integration
-    for( unsigned int l_transposedStiffnessMatrix = 0; l_transposedStiffnessMatrix < 3; l_transposedStiffnessMatrix++ ) {
+    for ( unsigned int l_transposedStiffnessMatrix = 0; l_transposedStiffnessMatrix < 3; l_transposedStiffnessMatrix++ ) {
       m_globalData->stiffnessMatricesTransposed[l_transposedStiffnessMatrix] = tmp_pointer;
       tmp_pointer += seissol::kernels::getNumberOfAlignedBasisFunctions( CONVERGENCE_ORDER-1 ) * NUMBER_OF_BASIS_FUNCTIONS;
     }
 
     // stiffness for volume integration
-    for( unsigned int l_stiffnessMatrix = 0; l_stiffnessMatrix < 3; l_stiffnessMatrix++ ) {
+    for ( unsigned int l_stiffnessMatrix = 0; l_stiffnessMatrix < 3; l_stiffnessMatrix++ ) {
       m_globalData->stiffnessMatrices[l_stiffnessMatrix] = tmp_pointer;
       tmp_pointer += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * seissol::kernels::getNumberOfBasisFunctions( CONVERGENCE_ORDER-1 );
     }
 
     // flux matrices for boundary integration
-    for( unsigned int l_fluxMatrix = 0; l_fluxMatrix < 52; l_fluxMatrix++ ) {
+    for ( unsigned int l_fluxMatrix = 0; l_fluxMatrix < 52; l_fluxMatrix++ ) {
       m_globalData->fluxMatrices[l_fluxMatrix] = tmp_pointer;
       tmp_pointer += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * NUMBER_OF_BASIS_FUNCTIONS;
     }

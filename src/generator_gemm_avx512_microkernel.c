@@ -37,7 +37,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
     return;
   }
 
-  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch < LIBXSMM_X86_AVX512 ){
+  if ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 && io_generated_code->arch < LIBXSMM_X86_AVX512 ) {
       if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
         return;
@@ -650,7 +650,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
   }
 
   if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256
-       || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX){
+       || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) {
       if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
         return;
@@ -1113,7 +1113,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nof
   }
 
   if ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX ||io_generated_code->arch == LIBXSMM_X86_AVX512_VL256
-       || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX){
+       || io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) {
       if ( ((l_m_blocking*i_n_blocking) + i_n_blocking + 1) > 32 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
         return;
@@ -1386,7 +1386,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   if ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
          ((io_generated_code->arch == LIBXSMM_X86_AVX512_VL256) ||(io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX)
           || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX))
-      ){
+      ) {
     short l_all_ones[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1};
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (const unsigned char *)l_all_ones,
@@ -1601,9 +1601,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
             /* should not happen */
           }
         } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-          if( (io_generated_code->arch < LIBXSMM_X86_AVX512_CLX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CLX)
+          if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_CLX) && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CLX)
               && (io_generated_code->arch != LIBXSMM_X86_AVX512_VL256_CPX)
-            ){
+            ) {
             /* let's broadcast B into zmm3 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               io_generated_code->arch,

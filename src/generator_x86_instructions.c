@@ -4515,7 +4515,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
                                        unsigned int                i_reg,
                                        unsigned int                i_off,
-                                       libxsmm_const_data_tracker* io_const_data ){
+                                       libxsmm_const_data_tracker* io_const_data ) {
   if ( io_generated_code->code_type > 1 ) {
     unsigned char* l_buf = (unsigned char*) io_generated_code->generated_code;
     unsigned int l_cs = io_generated_code->code_size;

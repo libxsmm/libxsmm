@@ -307,7 +307,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
       return;
     }
 #if 0
-    else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
+    else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS) {
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
       addr_scratch_size = n_args * 8;

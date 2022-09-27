@@ -151,16 +151,16 @@ public:
     T(*__restrict weight)[E] = (T(*)[E])weight_;
     T(*__restrict grads)[E] = (T(*)[E])grads_;
     int _ld = E;
-    if(use_lock_free) {
+    if (use_lock_free) {
       /*printf("Using lock free update\n");*/
       int max_thr = omp_get_max_threads();
-      if(M < max_thr) max_thr = M;
+      if (M < max_thr) max_thr = M;
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        for(long i = 0; i < NS; i++) {
+        for (long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind % max_thr == tid) {
+          if (ind % max_thr == tid) {
             libxsmm_meltw_binary_param binary_param;
             binary_param.in0.primary  = (void*)&lr;
             binary_param.in1.primary  = (void*)&grads[i][0];
@@ -196,15 +196,15 @@ public:
 
     int use_lock_free = use_rtm == 0 ? 1: 0;
 
-    if(use_lock_free) {
+    if (use_lock_free) {
       int max_thr = omp_get_max_threads();
-      if(M < max_thr) max_thr = M;
+      if (M < max_thr) max_thr = M;
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        for(long i = 0; i < NS; i++) {
+        for (long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind % max_thr == tid) {
+          if (ind % max_thr == tid) {
 #pragma omp simd
             for (long v = 0; v < E; v++)
               weight[ind][v] += lr * grads[i][v];

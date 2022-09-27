@@ -45,7 +45,7 @@ void libxsmm_generator_gemm_footer_decompress_loop_amx( libxsmm_generated_code* 
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3){
+void libxsmm_generator_gemm_amx_fill_array_4_entries(int *array, int v0, int v1, int v2, int v3) {
   array[0] = v0;
   array[1] = v1;
   array[2] = v2;

@@ -646,7 +646,7 @@ LIBXSMM_API_INTERN void internal_dump(FILE* ostream, int urgent)
             LIBXSMM_EXPECT(EXIT_SUCCESS == sleep(seconds));
 #endif
           }
-          else for(;;) LIBXSMM_SYNC_YIELD;
+          else for (;;) LIBXSMM_SYNC_YIELD;
         }
       }
       if (NULL != file) {

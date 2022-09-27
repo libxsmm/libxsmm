@@ -933,7 +933,7 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
     if (i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
       if (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
         i_micro_kernel_config->has_colbias_act_fused = 1;
-        if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0){
+        if ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) {
           i_micro_kernel_config->fused_relu = 1;
         } else {
           i_micro_kernel_config->fused_relu_nobitmask = 1;
@@ -977,7 +977,7 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
     }
 
     if (i_xgemm_desc->eltw_ap_op == LIBXSMM_MELTW_OPERATION_UNARY) {
-      if ((i_xgemm_desc->internal_flags_2 & 0x1) > 0){
+      if ((i_xgemm_desc->internal_flags_2 & 0x1) > 0) {
         if (i_xgemm_desc->eltw_ap_param == LIBXSMM_MELTW_TYPE_UNARY_DECOMPRESS_SPARSE_FACTOR_1) {
           i_micro_kernel_config->decompress_A = 1;
           i_micro_kernel_config->sparsity_factor_A = 1;
@@ -1007,7 +1007,7 @@ void libxsmm_generator_gemm_setup_fusion_microkernel_properties_v2(const libxsmm
 
     if (i_xgemm_desc->eltw_bp_op == LIBXSMM_MELTW_OPERATION_UNARY) {
       if (i_xgemm_desc->eltw_bp_param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
-        if ((i_xgemm_desc->internal_flags_2 & 0x2) > 0){
+        if ((i_xgemm_desc->internal_flags_2 & 0x2) > 0) {
           i_micro_kernel_config->norm_to_normT_B_ext_buf = 1;
           i_micro_kernel_config->stride_b_trans = i_xgemm_desc->ldbp;
         }

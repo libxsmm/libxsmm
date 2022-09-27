@@ -41,7 +41,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
   unsigned int downconvert_input_f32bf8 = 0;
   unsigned int downconvert_input_f32f16 = 0;
 
-  if (io_generated_code->arch < LIBXSMM_X86_AVX512){
+  if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
     if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
       vname_in = 'x';
       upconvert_input_bf16f32 = 1;
@@ -70,7 +70,7 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
       vname_out = 'x';
       downconvert_input_f32bf8 = 1;
     }
-  } else{
+  } else {
     if ((LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) && (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ))) {
       vname_in = 'y';
       upconvert_input_bf16f32 = 1;
