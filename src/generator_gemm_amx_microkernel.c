@@ -360,6 +360,7 @@ void libxsmm_generator_gemm_amx_paired_tilestore( libxsmm_generated_code*       
                                                       gp_reg_gemm_scratch,
                                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                       col * i_micro_kernel_config->gemm_scratch_ld * 4 /*i_micro_kernel_config->datatype_size*/, 0,
+                                                      /* coverity[copy_paste_error] */
                                                       reg_0,
                                                       reg_1);
       } else {

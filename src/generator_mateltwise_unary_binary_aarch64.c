@@ -596,7 +596,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
-                                                 (unsigned long long)((unsigned long long)(l_ld_bytes*i_n_blocking)) );
+                                                 (unsigned long long)l_ld_bytes*i_n_blocking );
 }
 
 LIBXSMM_API_INTERN
@@ -2115,16 +2115,16 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
     if (bcast_row == 1) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                     (unsigned long long)((unsigned long long)( i_mateltwise_desc->ldi2 * i_micro_kernel_config->datatype_size_in)) );
+                                                     (unsigned long long)i_mateltwise_desc->ldi2 * i_micro_kernel_config->datatype_size_in );
     }
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                 (unsigned long long)((unsigned long long)(offset2)) );
+                                                 (unsigned long long)offset2 );
   if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_MULADD) {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
-                                                   (unsigned long long)((unsigned long long)(offset)) );
+                                                   (unsigned long long)offset );
   }
 }
 

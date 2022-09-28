@@ -1369,7 +1369,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
     if (is_sve) libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, pred_reg_mask, 4 * mask_count, i_gp_reg_mapping->gp_reg_scratch_0);
   }
   /* todo sve: why is the default for mask_argidx64 == 2 ? */
-  assert(0 != vlen);
+  assert(0 != (vlen/2));
   if ((idx_tsize == 8) && (m % (vlen/2) != 0) && ((record_argop_off_vec0 > 0) || (record_argop_off_vec1 > 0))) {
     mask_argidx64 = m % (vlen/2);
   }
