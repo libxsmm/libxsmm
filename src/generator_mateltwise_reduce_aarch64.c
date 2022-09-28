@@ -2369,7 +2369,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( libxsmm_generate
         /* Adjusting Input ptrs */
         if ((aux == 16) || (aux == 24) || (aux == 56)) {
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-              temp_gpr, scratch_gpr, temp_gpr, (unsigned long long)((unsigned long long)(i_mateltwise_desc_copy.m/bcast_param) *(unsigned long long)i_micro_kernel_config->datatype_size_in));
+              temp_gpr, scratch_gpr, temp_gpr, (((unsigned long long)i_mateltwise_desc_copy.m/bcast_param) *(unsigned long long)i_micro_kernel_config->datatype_size_in));
           libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, aux, temp_gpr );
         }
 
