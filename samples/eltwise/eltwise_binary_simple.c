@@ -31,6 +31,54 @@
 #define DIV_OP 4
 #define MULADD_OP 5
 
+
+LIBXSMM_INLINE
+void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N ) {
+  float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in2_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in_use;
+  float *in2_use;
+  libxsmm_blasint i, j;
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+    in_use = in_f;
+  } else {
+    in_use = (float*)in;
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in2, in2_f, N*ldi );
+    in2_use = in2_f;
+  } else {
+    in2_use = (float*)in2;
+  }
+
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < ldi; i++) {
+      if (in2_use[j*ldi+i] == 0.0f) {
+        in2_use[j*ldi+i] = 1.0;
+      }
+      in_use[j*ldi+i] = 2.0 * in2_use[j*ldi+i];
+      if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.0) {
+        in_use[j*ldi+i] = 400.0;
+        in2_use[j*ldi+i] = 200.0;
+      }
+    }
+  }
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in_use, (libxsmm_hfloat8*)in, N*ldi );
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in2_use, (libxsmm_hfloat8*)in2, N*ldi );
+  }
+
+  libxsmm_free(in_f);
+  libxsmm_free(in2_f);
+}
+
 LIBXSMM_INLINE
 float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   float res = out;
@@ -218,6 +266,10 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   init_random_matrix( dtype_in1,  in2,      1, ldi, N, 0 );
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
+
+  if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8))) {
+    adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N  );
+  }
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
