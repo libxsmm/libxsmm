@@ -158,7 +158,7 @@ void libxsmm_generator_meltw_setup_stack_frame( libxsmm_generated_code*         
     unsigned int scratch_size = ( (i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS) > 0) ? 128 : 1024;
 
     /* make scratch size multiple of 64b */
-    scratch_size = (scratch_size % 64 == 0) ? scratch_size : ((scratch_size + 63)/64) * 64;
+    scratch_size = LIBXSMM_UP(scratch_size, 64);
 
     /* Now align RSP to 64 byte boundary  */
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, i_micro_kernel_config->alu_mov_instruction, temp_reg, 0xFFFFFFFFFFFFFFC0 );

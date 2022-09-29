@@ -267,7 +267,7 @@ double getBenchmarkDuration(void) {
   if (duration < 0) {
     const char* dur = getenv("BENCHMARK_DURATION");
     duration = 0.0;/* benchmarking is deactivated by default */
-    if(dur) {
+    if (dur) {
       duration = atof(dur);
     }
   }

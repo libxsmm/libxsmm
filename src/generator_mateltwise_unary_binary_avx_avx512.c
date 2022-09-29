@@ -1359,7 +1359,7 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
         } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV ) {
           /* Blend output result with zero reg based on relu mask */
           libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, l_vblend_instr, i_micro_kernel_config->vector_name, cur_vreg, i_micro_kernel_config->zero_vreg, cur_vreg, cur_mask_reg, 0 );
-        } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ){
+        } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                     LIBXSMM_X86_INSTR_VADDPS,
                                                     i_micro_kernel_config->vector_name,
@@ -1796,11 +1796,11 @@ void libxsmm_setup_input_output_masks( libxsmm_generated_code*                 i
       libxsmm_datatype fake_dt = LIBXSMM_DATATYPE_UNSUPPORTED;
       if (i_vlen_in == 32) {
         fake_dt = LIBXSMM_DATATYPE_I8;
-      } else if(i_vlen_in == 16) {
+      } else if (i_vlen_in == 16) {
         fake_dt = LIBXSMM_DATATYPE_I16;
-      } else if(i_vlen_in == 8) {
+      } else if (i_vlen_in == 8) {
         fake_dt = LIBXSMM_DATATYPE_I32;
-      } else if(i_vlen_in == 4) {
+      } else if (i_vlen_in == 4) {
         fake_dt = LIBXSMM_DATATYPE_I64;
       } else {
         /* shouldn't happen */
@@ -1991,7 +1991,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
     /*tmp change */
-    if ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)){
+    if ((io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && ((flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)) {
       i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
       i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
       if ((op == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV) || (op == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV)) {

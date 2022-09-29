@@ -302,7 +302,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
       if (libxsmm_verbosity < 0) {
         fprintf( stderr, "JITing Matrix Equation with STACK-ALLOCATED TEMPS (n_tmp = %d , stack_scratch_size = %.5g KB)\n", n_tmp, (1.0*scratch_size)/1024.0 );
       }
-    } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
+    } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS) {
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       i_micro_kernel_config->n_args = n_args;
       addr_scratch_size = n_args * 8;
@@ -494,13 +494,13 @@ int libxsmm_generator_matequation_is_eqn_node_breaking_point(libxsmm_matrix_eqn_
   if ((node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (node->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_ADD) && (fusion_knobs->may_fuse_xgemm > 0)) {
     if (libxsmm_generator_matequation_is_xgemm_node(node->le) > 0) {
       if (libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(node->le) > 0) {
-        if ((node->info.b_op.flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0){
+        if ((node->info.b_op.flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_1) > 0) {
           result = 1;
         }
       }
     } else if (libxsmm_generator_matequation_is_xgemm_node(node->ri) > 0) {
       if (libxsmm_generator_matequation_is_xgemm_node_supporting_fusion(node->ri) > 0) {
-        if ((node->info.b_op.flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0){
+        if ((node->info.b_op.flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_COL_IN_0) > 0) {
           result = 1;
         }
       }
@@ -620,7 +620,7 @@ LIBXSMM_API_INTERN int libxsmm_generator_matequation_is_ternary_bcast_arg_an_inp
 LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_fusion_pattern_with_ancestors(libxsmm_matrix_eqn_elem *xgemm_node) {
   libxsmm_matrix_eqn_fusion_pattern_type result = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
-  if(xgemm_node->up != NULL) {
+  if (xgemm_node->up != NULL) {
     if (xgemm_node->up->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {
       libxsmm_matrix_eqn_elem     *sibling_node = NULL;
       libxsmm_bitfield bcast_flag = LIBXSMM_MELTW_FLAG_BINARY_NONE;
@@ -635,7 +635,7 @@ libxsmm_matrix_eqn_fusion_pattern_type libxsmm_generator_matequation_find_xgemm_
           (sibling_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) &&
           ((xgemm_node->up->info.b_op.flags & bcast_flag) == bcast_flag)) {
         /* For sure have add  colbias node above */
-        if(xgemm_node->up->up != NULL) {
+        if (xgemm_node->up->up != NULL) {
           if ((xgemm_node->up->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
               ((xgemm_node->up->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) ||
                (xgemm_node->up->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SIGMOID)) ) {

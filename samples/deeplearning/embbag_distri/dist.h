@@ -108,7 +108,7 @@ void dist_barrier()
 void dist_alltoall(int count, float* sendbuf, float*recvbuf)
 {
 #pragma omp parallel for
-  for(int i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
   {
       recvbuf[i] = sendbuf[i];
   }

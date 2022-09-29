@@ -17,7 +17,7 @@
 #include "eltwise_common.h"
 
 LIBXSMM_INLINE
-void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ){
+void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
   size_t i, j;
 
   if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
@@ -150,7 +150,7 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < N/2; ++j ) {
     for ( i = 0; i < ldi ; ++i ) {
-      for( j2 = 0; j2 < 2; ++j2 ) {
+      for ( j2 = 0; j2 < 2; ++j2 ) {
         in_vnni[(j*ldi*2)+(i*2)+j2] = in[(((j*2)+j2)*ldi)+i];
       }
     }
@@ -175,7 +175,7 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < M/2; ++j ) {
     for ( i = 0; i < N ; ++i ) {
-      for( j2 = 0; j2 < 2; ++j2 ) {
+      for ( j2 = 0; j2 < 2; ++j2 ) {
         out_vnni[(j*ldo*2)+(i*2)+j2] = out_gold[(((j*2)+j2)*ldo)+i];
       }
     }
@@ -260,7 +260,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < N/4; ++j ) {
     for ( i = 0; i < ldi ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         in_vnni[(j*ldi*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
       }
     }
@@ -285,7 +285,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < M/4; ++j ) {
     for ( i = 0; i < N ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         out_vnni[(j*ldo*4)+(i*4)+j2] = out_gold[(((j*4)+j2)*ldo)+i];
       }
     }
@@ -385,7 +385,7 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* to vnni */
   for ( j = 0; j < Nn/2; ++j ) {
     for ( i = 0; i < M ; ++i ) {
-      for( j2 = 0; j2 < 2; ++j2 ) {
+      for ( j2 = 0; j2 < 2; ++j2 ) {
         out_gold[(j*ldo*2)+(i*2)+j2] = in[(((j*2)+j2)*ldi)+i];
       }
     }
@@ -488,7 +488,7 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* to vnni */
   for ( j = 0; j < Nn/4; ++j ) {
     for ( i = 0; i < M ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         out_gold[(j*ldo*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
       }
     }
