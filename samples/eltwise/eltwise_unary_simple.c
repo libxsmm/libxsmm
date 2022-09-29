@@ -50,14 +50,22 @@ LIBXSMM_INLINE
 void adjust_input_for_hf8_rcp_family( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
   float test_vals[20] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0 };
   float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in_use;
   libxsmm_blasint i, j;
-  libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+    in_use = in_f;
+  } else {
+    in_use = (float*)in;
+  }
   for (j = 0; j < N; j++) {
     for (i = 0; i < ldi; i++) {
-      in_f[j*ldi+i] = test_vals[(j*ldi+i)%20];
+      in_use[j*ldi+i] = test_vals[(j*ldi+i)%20];
     }
   }
-  libxsmm_rne_convert_fp32_hf8( in_f, (libxsmm_hfloat8*)in, N*ldi );
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in_f, (libxsmm_hfloat8*)in, N*ldi );
+  }
   libxsmm_free(in_f);
 }
 
@@ -396,7 +404,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 
-  if (((op == RCP_OP) || (op == RCP_SQRT_OP)) && (dtype_in == LIBXSMM_DATATYPE_HF8)) {
+  if (((op == RCP_OP) || (op == RCP_SQRT_OP)) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8) )) {
     adjust_input_for_hf8_rcp_family( dtype_in, in, ldi, N  );
   }
 

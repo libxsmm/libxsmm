@@ -267,7 +267,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 
-  if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8))) {
+  if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
     adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N  );
   }
 
