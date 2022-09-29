@@ -33,7 +33,7 @@
 
 
 LIBXSMM_INLINE
-void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N ) {
+void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
   float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
   float *in2_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
   float *in_use;
@@ -63,6 +63,9 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
       if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.0) {
         in_use[j*ldi+i] = 400.0;
         in2_use[j*ldi+i] = 200.0;
+      }
+      if (use_bcast > 0) {
+        in2_use[j*ldi+i] = 1.0;
       }
     }
   }
@@ -268,7 +271,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 
   if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
-    adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N  );
+    adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
   }
 
   if (use_bcast != NO_BCAST) {
