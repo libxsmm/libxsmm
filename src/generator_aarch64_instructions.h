@@ -380,6 +380,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED  0x80
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED     0x40
 #define LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST    0x20
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM        0x04
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0       0x02 /* currently set for all instructions, so maybe could be replaced/removed */
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1       0x01
 /* define unpredicated SVE instructions */
@@ -387,8 +388,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ADD_V          0x04200003 /* integer add, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c02 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
-#define LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V        0x04209402 /* logical shift right by immediate, unpredicated (predicated exists as well) */
+#define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c06 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
+#define LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V        0x04209406 /* logical shift right by immediate, unpredicated (predicated exists as well) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000003 /* add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000403 /* subtract, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000803 /* multiply, vectors, unpredicated */
@@ -426,7 +427,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188086 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P      0x65002082 /* reduce all active elements into a scalar (add), and place result into asimd register, vectors, predicated */
@@ -443,7 +444,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
 /* define integer instructions */
-#define LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I        0x2521c062
+#define LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I        0x2521c026 /* integer sub with immediate, src0 = dest*/
 /* table access instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBL            0x05203003 /* src0[src1], out of bounds -> zero, not vector length agnostic */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBX            0x05202c03 /* src0[src1], out of bounds -> merge, not vector length agnostic */
