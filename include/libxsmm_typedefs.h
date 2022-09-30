@@ -80,7 +80,9 @@
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
 #define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
-#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) ? ((unsigned char)(INP)) : ((unsigned char)((INP) | ((OUT) << 4))))
+#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) \
+  ? ((unsigned char)((INP))) \
+  : ((unsigned char)((INP) | ((unsigned char)((OUT) << 4)))))
 #define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
