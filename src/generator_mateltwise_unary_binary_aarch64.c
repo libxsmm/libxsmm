@@ -299,7 +299,7 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
         unsigned int m_achieved_unroll_factor = 0;
         unsigned int max_m_achieved_unroll_factor = 0;
         unsigned int im = 0;
-        for (im = m_chunk_remainder; im < m_chunks; im++) {
+        for (im = m_chunk_remainder; im < LIBXSMM_MIN(m_chunks, available_vregs); im++) {
           m_achieved_unroll_factor = available_vregs;
           while ((m_chunks - im) % m_achieved_unroll_factor != 0) {
             m_achieved_unroll_factor--;
@@ -323,7 +323,7 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
           unsigned int m_achieved_unroll_factor = 0;
           unsigned int max_m_achieved_unroll_factor = 0;
           unsigned int im = 0;
-          for (im = 1; im < m_chunks; im++) {
+          for (im = 1; im < LIBXSMM_MIN(m_chunks, available_vregs); im++) {
             m_achieved_unroll_factor = available_vregs;
             while ((m_chunks - im) % m_achieved_unroll_factor != 0) {
               m_achieved_unroll_factor--;
