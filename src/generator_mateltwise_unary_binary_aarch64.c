@@ -291,12 +291,50 @@ void libxsmm_generator_configure_aarch64_M_N_blocking( libxsmm_generated_code*  
   } else {
     /* If there is remainder we make sure we can fully unroll the kernel with masks */
     if (m_chunks > (m_chunk_boundary/2)) {
-      *m_blocking = (m_chunks - m_chunk_remainder) * vlen;
+      if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (vlen == 4) ) {
+        *m_blocking = (m_chunks - m_chunk_remainder) * vlen;
+      } else {
+        /* Find m_blocking that allows maximum unrolling in the "full vlen" kernel" */
+        unsigned int res_m_blocking = 0;
+        unsigned int m_achieved_unroll_factor = 0;
+        unsigned int max_m_achieved_unroll_factor = 0;
+        unsigned int im = 0;
+        for (im = m_chunk_remainder; im < m_chunks; im++) {
+          m_achieved_unroll_factor = available_vregs;
+          while ((m_chunks - im) % m_achieved_unroll_factor != 0) {
+            m_achieved_unroll_factor--;
+          }
+          if (m_achieved_unroll_factor > max_m_achieved_unroll_factor) {
+            max_m_achieved_unroll_factor = m_achieved_unroll_factor;
+            res_m_blocking = (m_chunks - im) * vlen;
+          }
+        }
+        *m_blocking = res_m_blocking;
+      }
     } else {
       if (available_vregs * vlen >= m) {
         *m_blocking = m;
       } else {
-        *m_blocking = (m_chunks - 1) * vlen;
+        if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (vlen == 4) ) {
+          *m_blocking = (m_chunks - 1) * vlen;
+        } else {
+          /* Find m_blocking that allows maximum unrolling in the "full vlen" kernel" */
+          unsigned int res_m_blocking = 0;
+          unsigned int m_achieved_unroll_factor = 0;
+          unsigned int max_m_achieved_unroll_factor = 0;
+          unsigned int im = 0;
+          for (im = 1; im < m_chunks; im++) {
+            m_achieved_unroll_factor = available_vregs;
+            while ((m_chunks - im) % m_achieved_unroll_factor != 0) {
+              m_achieved_unroll_factor--;
+            }
+            if (m_achieved_unroll_factor > max_m_achieved_unroll_factor) {
+              max_m_achieved_unroll_factor = m_achieved_unroll_factor;
+              res_m_blocking = (m_chunks - im) * vlen;
+            }
+          }
+          *m_blocking = res_m_blocking;
+        }
       }
     }
   }
