@@ -83,14 +83,14 @@ inline void iadd_split_bf16(libxsmm_bfloat16 *inout_hi, libxsmm_bfloat16 *inout_
   int state_mask = ((1 << 16) - 1);
   __m512i vMask = _mm512_set1_epi32(state_mask);
   int i = 0;
-  for(; i < len - 15; i += 16) {
+  for (; i < len - 15; i += 16) {
     __m512 y1 = convert_split_bf16_to_fp32(_mm256_loadu_si256((__m256i*)(inout_hi+i)), _mm256_loadu_si256((__m256i*)(inout_lo+i)));
     __m512 y2 = convert_bf16_to_fp32(_mm256_loadu_si256((__m256i*)(in+i)));
     y1 = _mm512_fmadd_ps(vAlpha, y2, y1);
     _mm256_storeu_si256((__m256i*)(inout_hi+i), convert_fp32_to_bf16(y1));
     _mm256_storeu_si256((__m256i*)(inout_lo+i), _mm512_cvtepi32_epi16(_mm512_and_si512(_mm512_castps_si512(y1), vMask)));
   }
-  if(i < len) {
+  if (i < len) {
     int rem = len - i;
     __mmask16 mask = (1 << rem) - 1;
     __m512 y1 = convert_split_bf16_to_fp32(_mm256_maskz_loadu_epi16(mask, inout_hi+i), _mm256_maskz_loadu_epi16(mask, inout_lo+i));

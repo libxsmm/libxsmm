@@ -82,7 +82,7 @@ then
                  [ "" = "$(echo "${SYMBOL}" | ${SED} -n "/^iJIT_/p")" ];
             then
               >&2 echo "Error: non-conforming function name"
-              echo "${LIB} -> ${SYMBOL}"
+              echo "${LIB} ->${SYMBOL}"
               exit 1
             fi
           fi

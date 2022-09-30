@@ -69,7 +69,7 @@ void libxsmm_generator_mateltwise_aarch64_update_micro_kernel_config_vectorlengt
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
-    if( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ){
+    if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
       io_micro_kernel_config->vmove_instruction_in = LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       io_micro_kernel_config->vmove_instruction_out = LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF;
     }

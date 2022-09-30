@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Narendra Chaudhary, Dhiraj Kalamkar (Intel Corp.)
@@ -22,14 +22,14 @@
 /* #include <torch/csrc/autograd/record_function.h> */
 #include <ATen/record_function.h>
 
-#define PCL_ASSERT(cond, x...) do { if(!(cond)) { printf(x); fflush(stdout); exit(1); } } while(0)
+#define PCL_ASSERT(cond, x...) do { if (!(cond)) { printf(x); fflush(stdout); exit(1); } } while(0)
 
 #define XS_TILE_FORWARD 64
 #define XS_TILE_DBACKWARD 64
 #define XS_TILE_WBACKWARD 64                /* 256 for peak performance */
 
 
-at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation){
+at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation) {
 
     /* RECORD_FUNCTION("Conv1dOpti_forward_bf16", std::vector<c10::IValue>({input, weight}));        // For recording time */
 
@@ -53,7 +53,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});                                           /* Weight tensor with permuted dimension (width, filters, channels) */
     libxsmm_bfloat16* flip_weight_a = (libxsmm_bfloat16*) flip_weight.data_ptr<at::BFloat16>();    /* Get BFloat16 data pointers for accessing the tensor */
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)*/
     libxsmm_blasint per_m = WW_t;
     libxsmm_blasint per_n = F_t*C_t;
@@ -151,13 +151,13 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
 
     /* Main compute loop */
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {                                                      /* Loop for batches */
+    for (int n = 0; n < N_t; n++) {                                                      /* Loop for batches */
         int last_block = 0;
         libxsmm_meltw_unary_param copy_params_main, copy_params_edge;                  /* Copy parameter variable for holding the pointer */
         libxsmm_meltw_unary_param trans_param_main, trans_param_edge;
         libxsmm_gemm_param gemm_param_main, gemm_param_edge;
 
-        for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {        /* width blocking loop (Main case) */
+        for (int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {        /* width blocking loop (Main case) */
 
             copy_params_main.out.primary = &Y_a[n*F_t*W_t + wb];                       /* Initialization of output array */
             copy_kernel_forward_main_bf16(&copy_params_main);
@@ -177,7 +177,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
             last_block = wb;                                                           /* Store value for last block */
         }
 
-        if (W_t % XS_TILE_FORWARD != 0){                                               /* Edge case */
+        if (W_t % XS_TILE_FORWARD != 0) {                                               /* Edge case */
 
             copy_params_edge.out.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];                 /* Initialization of output array */
             copy_kernel_forward_edge_bf16(&copy_params_edge);
@@ -199,7 +199,7 @@ at::Tensor Conv1dOpti_forward_bf16_libxsmm(at::Tensor& input, at::Tensor& weight
     return Y;              /* Return output tensor */
 }
 
-std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& weight, int dilation){
+std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& weight, int dilation) {
 
     /* RECORD_FUNCTION("Conv1dOpti_backward_bf16", std::vector<c10::IValue>({grad, input, weight}));        // For recording time */
 
@@ -233,13 +233,13 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_bfloat16* weight_buffer_a = (libxsmm_bfloat16*) weight_buffer.data_ptr<at::BFloat16>();
 
     #pragma omp parallel for
-    for(int i = 0; i < F_t*C_t; i++){
-        for(int kw = 0; kw < WW_t; kw++){                                   /* reverse copy */
+    for (int i = 0; i < F_t*C_t; i++) {
+        for (int kw = 0; kw < WW_t; kw++) {                                   /* reverse copy */
             flip_weight_a[i*WW_t + kw] = weight_a[i*WW_t + WW_t - kw - 1];
         }
     }
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
     libxsmm_blasint flip_m1 = WW_t;
     libxsmm_blasint flip_n1 = F_t*C_t;
@@ -273,7 +273,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     /* Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t) */
     #pragma omp parallel for
-    for(int kw = 0; kw < WW_t; kw++){                                     /* permute last two dimensions */
+    for (int kw = 0; kw < WW_t; kw++) {                                     /* permute last two dimensions */
         libxsmm_meltw_unary_param trans_param_flip_2;
         trans_param_flip_2.in.primary  = &weight_buffer_a[kw*C_t*F_t];
         trans_param_flip_2.out.primary = &flip_weight_a[kw*C_t*F_t];
@@ -302,7 +302,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     libxsmm_blasint ldi_virtual = W_t;
     libxsmm_blasint ldo_virtual = 2*pad_tile_multiple;
 
-    if (ldi_virtual < virtual_m1){                                          /* corner case when width's are very small */
+    if (ldi_virtual < virtual_m1) {                                          /* corner case when width's are very small */
         virtual_m1 = ldi_virtual;
         unary_shape = libxsmm_create_meltw_unary_shape( ldo_virtual, virtual_n, ldo_virtual, ldo_virtual, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16 );
         libxsmm_meltwfunction_unary all_zero_backdata_bf16 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
@@ -311,7 +311,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             exit(-1);
         }
         #pragma omp parallel for
-        for(int n = 0; n < N_t; n++){
+        for (int n = 0; n < N_t; n++) {
             libxsmm_meltw_unary_param all_zero_params;
             all_zero_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];     /* Initialize the entire array when widths are small */
             all_zero_backdata_bf16(&all_zero_params);
@@ -329,7 +329,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     }
 
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++){                         /* Loops for storing the edge portion of gradinant array into grad_a_shortpad */
+    for (int n = 0; n < N_t; n++) {                         /* Loops for storing the edge portion of gradinant array into grad_a_shortpad */
 
         libxsmm_meltw_unary_param vcopy_params;           /* Copy parameter variable for holding the pointer */
         libxsmm_meltw_unary_param vcopy_params_zero;
@@ -352,23 +352,23 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 /*
 #else
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++){                   // loop to store the edges for gradiant array into grad_a_shortpad buffer
-        for(int filter=0; filter < F_t; filter++){
-            for(int w = 0; w < pad_tile_multiple; w++){
+    for (int n = 0; n < N_t; n++) {                   // loop to store the edges for gradiant array into grad_a_shortpad buffer
+        for (int filter=0; filter < F_t; filter++) {
+            for (int w = 0; w < pad_tile_multiple; w++) {
                 // initialize start of array
-                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)){
+                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)) {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w] = grad_a[n*F_t*W_t + filter*W_t + w - (WW_t - 1)*dial];
                 }
-                else{
+                else {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w] = 0.0f;
                 }
             }
-            for(int w = Wpad_t - pad_tile_multiple; w < Wpad_t ; w++){
+            for (int w = Wpad_t - pad_tile_multiple; w < Wpad_t ; w++) {
                 // initialize end of array
-                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)){
+                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)) {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w - Wpad_t + 2*pad_tile_multiple] = grad_a[n*F_t*W_t + filter*W_t + w - (WW_t - 1)*dial];
                 }
-                else{
+                else {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w - Wpad_t + 2*pad_tile_multiple] = 0.0f;
                 }
             }
@@ -451,19 +451,19 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     /* Main backward data pass loop */
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         int last_block=0;
 
         libxsmm_meltw_unary_param copy_params_main, copy_params_edge;                 /* Copy parameter variable for holding the pointer */
         libxsmm_meltw_unary_param trans_param_1, trans_param_2;
         libxsmm_gemm_param gemm_param_main, gemm_param_edge;
 
-        for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
+        for (int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
             copy_params_main.out.primary = &d_input_a[n*C_t*Win_t + wb];             /* Initialization */
             copy_kernel_main_bf16(&copy_params_main);
 
-            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){
+            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD) {
                 /* Normal case (Take VNNI transform of a portion of grad_a array ) */
 
                 /* VNNI transform */
@@ -478,7 +478,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
                 gemm_param_main.op.tertiary = &l_br;
                 backdata_shortkernel_main( &gemm_param_main );
             }
-            else if (wb < (WW_t-1)*dial){
+            else if (wb < (WW_t-1)*dial) {
                 /* Right side case (Take VNNI transform of grad_a_shortpad array) */
 
                 /* VNNI transform */
@@ -493,7 +493,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
                 gemm_param_main.op.tertiary = &l_br;
                 backdata_shortkernel_main( &gemm_param_main );
             }
-            else{
+            else {
                 /* Left side case (Take VNNI transform of grad_a_shortpad array) */
 
                 /* VNNI transform */
@@ -511,7 +511,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             last_block = wb;
         }
 
-        if (Win_t % XS_TILE_DBACKWARD != 0){                                /* Edge case */
+        if (Win_t % XS_TILE_DBACKWARD != 0) {                                /* Edge case */
 
             /* Right side case (Take VNNI transform of grad_a_shortpad array) */
 
@@ -539,7 +539,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     float* flip_d_weight_a = (float*) libxsmm_aligned_malloc( F_t*C_t*WW_t*sizeof(float), 64 );             /* Array for permuted weight gradiant */
 
-    for(int w = 0; w < F_t*C_t*WW_t; w++){          /* Initialize array */
+    for (int w = 0; w < F_t*C_t*WW_t; w++) {          /* Initialize array */
         flip_d_weight_a[w] = 0.0f;
     }
 
@@ -566,7 +566,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     auto grad_edgevnni_backweight = grad.new_empty({N_t,F_t,edge_W_t});                              /* Short buffer for storing VNNI transform in edge case */
     libxsmm_bfloat16* grad_edgevnni = (libxsmm_bfloat16*) grad_edgevnni_backweight.data_ptr<at::BFloat16>();
 
-    /* use jited tranpose */
+    /* use jited transpose */
     unary_shape = libxsmm_create_meltw_unary_shape( short_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t/2, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -594,19 +594,19 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     /* Main compute loop for backward weight pass */
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         int last_block = 0;
         libxsmm_meltw_unary_param trans_param_short, trans_param_edge;
         libxsmm_gemm_param gemm_param_main, gemm_param_edge;
 
-        for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {            /* Main Case */
+        for (int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {            /* Main Case */
 
             /* Take transpose assumping FP32 (This will do both transpose and VNNI transform for BF16) */
             trans_param_short.in.primary  = &grad_a[n*F_t*W_t + wb];
             trans_param_short.out.primary = &grad_shortvnni[n*F_t*short_W_t];
             trans_shortkernel_grad( &trans_param_short );
 
-            for(int kw = 0; kw < WW_t; kw++) {
+            for (int kw = 0; kw < WW_t; kw++) {
                 gemm_param_main.a.primary = &grad_shortvnni[n*F_t*short_W_t];
                 gemm_param_main.b.primary = &input_a[n*C_t*Win_t + wb + kw*dial];
                 gemm_param_main.c.primary = &flip_d_weight_a[kw*C_t*F_t];
@@ -615,13 +615,13 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
             last_block = wb;
         }
 
-        if (W_t % XS_TILE_WBACKWARD != 0){              /* Edge Case */
+        if (W_t % XS_TILE_WBACKWARD != 0) {              /* Edge Case */
 
             trans_param_edge.in.primary  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
             trans_param_edge.out.primary = &grad_edgevnni[n*F_t*edge_W_t];
             trans_edgekernel_grad( &trans_param_edge );
 
-            for(int kw = 0; kw < WW_t; kw++) {
+            for (int kw = 0; kw < WW_t; kw++) {
                 gemm_param_edge.a.primary = &grad_edgevnni[n*F_t*edge_W_t];
                 gemm_param_edge.b.primary = &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial];
                 gemm_param_edge.c.primary = &flip_d_weight_a[kw*F_t*C_t];
@@ -652,7 +652,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     eltwise_kernel(&eltwise_params);
 
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
     libxsmm_blasint per_m1 = F_t;
     libxsmm_blasint per_n1 = C_t;
@@ -668,7 +668,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 
     /* Convert (WW_t, C_t, F_t) -----> (WW_t, F_t, C_t) */
     #pragma omp parallel for
-    for(int kw = 0; kw < WW_t; kw++){                   /* permute last two dimensions */
+    for (int kw = 0; kw < WW_t; kw++) {                   /* permute last two dimensions */
         libxsmm_meltw_unary_param trans_param_permute_1;
         trans_param_permute_1.in.primary  = &flip_d_weight_bf16[kw*C_t*F_t];
         trans_param_permute_1.out.primary = &flip_weight_a[kw*C_t*F_t];
@@ -699,7 +699,7 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
 }
 
 
-at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation){
+at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int dilation) {
 
     /* RECORD_FUNCTION("Conv1dOpti_forward_libxsmm", std::vector<c10::IValue>({input, weight}));    // For recording time   */
 
@@ -723,7 +723,7 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
     auto flip_weight = weight.new_empty({WW_t,F_t,C_t});        /* Array to store permuted weight tensor (width, filters, channels) */
     float* flip_weight_a = flip_weight.data_ptr<float>();
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, F_t, C_t)*/
 
     libxsmm_blasint per_m = WW_t;
@@ -794,12 +794,12 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
 
     /* Main compute loop */
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {                               /* Loop for batches */
+    for (int n = 0; n < N_t; n++) {                               /* Loop for batches */
         int last_block = 0;
         libxsmm_meltw_unary_param zero_param_main, zero_param_edge;
         libxsmm_gemm_param gemm_param_main, gemm_param_edge;
 
-        for(int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    /* width blocking loop (Main case) */
+        for (int wb = 0; wb < W_t - XS_TILE_FORWARD + 1; wb += XS_TILE_FORWARD) {    /* width blocking loop (Main case) */
 
             zero_param_main.out.primary = &Y_a[n*F_t*W_t + wb];       /* Initialization */
             zero_kernel_main( &zero_param_main );
@@ -813,7 +813,7 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
             last_block = wb;
         }
 
-        if (W_t % XS_TILE_FORWARD != 0){                        /* Edge Case */
+        if (W_t % XS_TILE_FORWARD != 0) {                        /* Edge Case */
 
             zero_param_edge.out.primary = &Y_a[n*F_t*W_t + last_block + XS_TILE_FORWARD];     /* Initialization */
             zero_kernel_edge( &zero_param_edge );
@@ -830,7 +830,7 @@ at::Tensor Conv1dOpti_forward_libxsmm(at::Tensor& input, at::Tensor& weight, int
 }
 
 std::tuple<at::Tensor, at::Tensor>
-Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& weight, int dilation){
+Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& weight, int dilation) {
 
     /* RECORD_FUNCTION("Conv1dOpti_backward_libxsmm", std::vector<c10::IValue>({grad, input, weight})); */
 
@@ -864,13 +864,13 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     float* weight_buffer_a = weight_buffer.data_ptr<float>();
 
     #pragma omp parallel for
-    for(int i = 0; i < F_t*C_t; i++){
-        for(int kw = 0; kw < WW_t; kw++){                                   /* reverse copy */
+    for (int i = 0; i < F_t*C_t; i++) {
+        for (int kw = 0; kw < WW_t; kw++) {                                   /* reverse copy */
             flip_weight_a[i*WW_t + kw] = weight_a[i*WW_t + WW_t - kw - 1];
         }
     }
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall convert (F_t, C_t, WW_t) -----> (WW_t, C_t, F_t)*/
 
     libxsmm_blasint flip_m1 = WW_t;
@@ -905,7 +905,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* Convert (WW_t, F_t, C_t) -----> (F_t, C_t, WW_t) */
     #pragma omp parallel for
-    for(int kw = 0; kw < WW_t; kw++){                          /* permute last two dimensions */
+    for (int kw = 0; kw < WW_t; kw++) {                          /* permute last two dimensions */
         libxsmm_meltw_unary_param trans_unary_param_flip_2;
         trans_unary_param_flip_2.in.primary  = &weight_buffer_a[kw*C_t*F_t];
         trans_unary_param_flip_2.out.primary = &flip_weight_a[kw*C_t*F_t];
@@ -964,7 +964,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     libxsmm_blasint ldi_virtual = W_t;
     libxsmm_blasint ldo_virtual = 2*pad_tile_multiple;
 
-    if (ldi_virtual < virtual_m1){                                          /* corner case when width's are very small */
+    if (ldi_virtual < virtual_m1) {                                          /* corner case when width's are very small */
         virtual_m1 = ldi_virtual;
         unary_shape = libxsmm_create_meltw_unary_shape( ldo_virtual, virtual_n, ldo_virtual, ldo_virtual, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
         libxsmm_meltwfunction_unary all_zero_backdata = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_XOR, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
@@ -973,7 +973,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             exit(-1);
         }
         #pragma omp parallel for
-        for(int n = 0; n < N_t; n++){
+        for (int n = 0; n < N_t; n++) {
             libxsmm_meltw_unary_param all_zero_params;
             all_zero_params.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];     /* Initialize the entire array when widths are small */
             all_zero_backdata(&all_zero_params);
@@ -992,7 +992,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* Loops for storing the edge portion of gradinant array into grad_a_shortpad */
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++){
+    for (int n = 0; n < N_t; n++) {
         libxsmm_meltw_unary_param vcopy_params, vcopy_params_zero;                                                  /* Copy parameter variable for holding the pointer */
 
         vcopy_params_zero.out.primary = &grad_a_shortpad[n*F_t*ldo_virtual];                                        /* copy zeros */
@@ -1014,23 +1014,23 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 #else
 
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++){                       // Loops for storing the edge portion of gradinant array into grad_a_shortpad
-        for(int filter=0; filter < F_t; filter++){
-            for(int w = 0; w < pad_tile_multiple; w++){
+    for (int n = 0; n < N_t; n++) {                       // Loops for storing the edge portion of gradinant array into grad_a_shortpad
+        for (int filter=0; filter < F_t; filter++) {
+            for (int w = 0; w < pad_tile_multiple; w++) {
                 // initialize start of array
-                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)){
+                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)) {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w] = grad_a[n*F_t*W_t + filter*W_t + w - (WW_t - 1)*dial];
                 }
-                else{
+                else {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w] = 0.0f;
                 }
             }
-            for(int w = Wpad_t - pad_tile_multiple; w < Wpad_t ; w++){
+            for (int w = Wpad_t - pad_tile_multiple; w < Wpad_t ; w++) {
                 // initialize end of array
-                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)){
+                if (w >= ((WW_t - 1)*dial) && w < (W_t + (WW_t - 1)*dial)) {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w - Wpad_t + 2*pad_tile_multiple] = grad_a[n*F_t*W_t + filter*W_t + w - (WW_t - 1)*dial];
                 }
-                else{
+                else {
                     grad_a_shortpad[n*F_t*2*pad_tile_multiple + filter*2*pad_tile_multiple + w - Wpad_t + 2*pad_tile_multiple] = 0.0f;
                 }
             }
@@ -1058,32 +1058,32 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* Main compute kernel */
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         int last_block=0;
 
         libxsmm_meltw_unary_param copy_params_main, copy_params_edge;
         libxsmm_gemm_param gemm_param_main, gemm_param_lr, gemm_param_edge;
 
-        for(int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
+        for (int wb = 0; wb < Win_t - XS_TILE_DBACKWARD + 1; wb += XS_TILE_DBACKWARD) {
 
             copy_params_main.out.primary = &d_input_a[n*C_t*Win_t + wb];                      /* Initialization */
             copy_kernel_main(&copy_params_main);
 
-            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD){       /* Main case */
+            if (wb >= (WW_t-1)*dial && wb < Win_t - (WW_t-1)*dial - XS_TILE_DBACKWARD) {       /* Main case */
                 gemm_param_main.a.primary = &grad_a[n*F_t*W_t + 0*W_t + wb - (WW_t-1)*dial];
                 gemm_param_main.b.primary = &flip_weight_a[0];
                 gemm_param_main.c.primary = &d_input_a[n*C_t*Win_t + wb];
                 gemm_param_main.op.tertiary = &l_br;
                 backdata_kernel_main( &gemm_param_main );
             }
-            else if (wb < (WW_t-1)*dial){                                                      /* Right side case */
+            else if (wb < (WW_t-1)*dial) {                                                      /* Right side case */
                 gemm_param_lr.a.primary = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb];
                 gemm_param_lr.b.primary = &flip_weight_a[0];
                 gemm_param_lr.c.primary = &d_input_a[n*C_t*Win_t + wb];
                 gemm_param_lr.op.tertiary = &l_br;
                 backdata_kernel_lr( &gemm_param_lr );
             }
-            else{                                                                              /* left side case */
+            else {                                                                              /* left side case */
                 gemm_param_lr.a.primary = &grad_a_shortpad[n*F_t*2*pad_tile_multiple + wb - Wpad_t + 2*pad_tile_multiple];
                 gemm_param_lr.b.primary = &flip_weight_a[0];
                 gemm_param_lr.c.primary = &d_input_a[n*C_t*Win_t + wb];
@@ -1094,7 +1094,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             last_block = wb;                                                                    /* store position for last block */
         }
 
-        if (Win_t % XS_TILE_DBACKWARD != 0){                                                    /* Edge case */
+        if (Win_t % XS_TILE_DBACKWARD != 0) {                                                    /* Edge case */
 
             copy_params_edge.out.primary = &d_input_a[n*C_t*Win_t + last_block + XS_TILE_DBACKWARD];            /* Initialization */
             copy_kernel_edge(&copy_params_edge);
@@ -1114,7 +1114,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto flip_d_weight = weight.new_empty({WW_t,C_t,F_t});                  /* Tensor for storing permuted weight gradiant */
     float* flip_d_weight_a = flip_d_weight.data_ptr<float>();
 
-    for(int w = 0; w < F_t*C_t*WW_t; w++){
+    for (int w = 0; w < F_t*C_t*WW_t; w++) {
         flip_d_weight_a[w] = 0.0f;
     }
 
@@ -1143,7 +1143,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     auto grad_edgetrans_tensor = grad.new_empty({N_t,F_t,edge_W_t});                /* Tensor for storing transposed short buffer in edge case */
     float* grad_edgetrans = grad_edgetrans_tensor.data_ptr<float>();
 
-    /* use jited tranpose */
+    /* use jited transpose */
     unary_shape = libxsmm_create_meltw_unary_shape( short_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltwfunction_unary trans_shortkernel_grad = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     unary_shape = libxsmm_create_meltw_unary_shape( edge_W_t, N_g, M_g, N_g, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
@@ -1166,18 +1166,18 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* Main compute loop for backward weight */
     #pragma omp parallel for reduction(+: flip_d_weight_a[:F_t*C_t*WW_t])                /* Distribute the weight array */
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         int last_block = 0;
         libxsmm_meltw_unary_param trans_param_short, trans_param_edge;                   /* Pointer to hold trans short and edge */
         libxsmm_gemm_param gemm_param_main, gemm_param_edge;
 
-        for(int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {     /* Normal case */
+        for (int wb = 0; wb < W_t - XS_TILE_WBACKWARD + 1; wb += XS_TILE_WBACKWARD) {     /* Normal case */
 
             trans_param_short.in.primary  = &grad_a[n*F_t*W_t + wb];
             trans_param_short.out.primary = &grad_shorttrans[n*F_t*short_W_t];
             trans_shortkernel_grad( &trans_param_short );
 
-            for(int kw = 0; kw < WW_t; kw++) {
+            for (int kw = 0; kw < WW_t; kw++) {
                 gemm_param_main.a.primary = &grad_shorttrans[n*F_t*short_W_t];
                 gemm_param_main.b.primary = &input_a[n*C_t*Win_t + wb + kw*dial];
                 gemm_param_main.c.primary = &flip_d_weight_a[kw*C_t*F_t];
@@ -1186,13 +1186,13 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
             last_block = wb;
         }
 
-        if (W_t % XS_TILE_WBACKWARD != 0){
+        if (W_t % XS_TILE_WBACKWARD != 0) {
 
             trans_param_edge.in.primary  = &grad_a[n*F_t*W_t + last_block + XS_TILE_WBACKWARD];
             trans_param_edge.out.primary = &grad_edgetrans[n*F_t*edge_W_t];
             trans_edgekernel_grad( &trans_param_edge );
 
-            for(int kw = 0; kw < WW_t; kw++) {
+            for (int kw = 0; kw < WW_t; kw++) {
                 gemm_param_edge.a.primary = &grad_edgetrans[n*F_t*edge_W_t];
                 gemm_param_edge.b.primary = &input_a[n*C_t*Win_t + (last_block + XS_TILE_WBACKWARD) + kw*dial];
                 gemm_param_edge.c.primary = &flip_d_weight_a[kw*F_t*C_t];
@@ -1202,7 +1202,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
     }
 
 
-    /* jited tranpose to permute the array dimensions
+    /* jited transpose to permute the array dimensions
         Overall Convert (WW_t, C_t, F_t) -----> (F_t, C_t, WW_t)*/
     libxsmm_blasint per_m1 = F_t;
     libxsmm_blasint per_n1 = C_t;
@@ -1218,7 +1218,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 
     /* Convert (WW_t, C_t, F_t) -----> (WW_t, F_t, C_t) */
     #pragma omp parallel for
-    for(int kw = 0; kw < WW_t; kw++){                           /* permute last two dimensions */
+    for (int kw = 0; kw < WW_t; kw++) {                           /* permute last two dimensions */
         libxsmm_meltw_unary_param trans_param_permute_1;
         trans_param_permute_1.in.primary  = &flip_d_weight_a[kw*C_t*F_t];
         trans_param_permute_1.out.primary = &flip_weight_a[kw*C_t*F_t];
@@ -1249,7 +1249,7 @@ Conv1dOpti_backward_libxsmm(at::Tensor& grad, at::Tensor& input, at::Tensor& wei
 }
 
 
-std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
+std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input) {
 
     /* RECORD_FUNCTION("ReLU_forward_bf16", std::vector<c10::IValue>({input}));           // For recording time */
 
@@ -1272,7 +1272,7 @@ std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
     libxsmm_meltwfunction_unary relu_fwd_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU, unary_shape, unary_flags );
 
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         libxsmm_meltw_unary_param relu_params;
         relu_params.in.primary   = &input_a[n*C_t*W_t];
         relu_params.out.primary  = &input_a[n*C_t*W_t];
@@ -1283,7 +1283,7 @@ std::tuple<at::Tensor, at::Tensor> relu_forward_bf16(at::Tensor& input){
     return {input, mask};
 }
 
-at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& mask){
+at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& mask) {
 
     /* RECORD_FUNCTION("ReLU_backward_bf16", std::vector<c10::IValue>({grad, output}));        // For recording time */
 
@@ -1305,7 +1305,7 @@ at::Tensor relu_backward_bf16(at::Tensor& grad, at::Tensor& mask){
     libxsmm_meltwfunction_unary relu_bwd_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_RELU_INV, unary_shape, unary_flags );
 
     #pragma omp parallel for
-    for(int n = 0; n < N_t; n++) {
+    for (int n = 0; n < N_t; n++) {
         libxsmm_meltw_unary_param relu_params;
         relu_params.in.primary   = &grad_a[n*C_t*W_t];
         relu_params.out.primary  = &grad_a[n*C_t*W_t];

@@ -28,26 +28,25 @@ cat /dev/null > smm-inlined.txt
 cat /dev/null > smm-specialized.txt
 
 NRUN=1
-NMAX=$(echo ${RUNS} | wc -w | tr -d " ")
+NMAX=$(echo "${RUNS}" | wc -w | tr -d " ")
 for RUN in ${RUNS} ; do
-  MVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f1)
-  NVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f2)
-  KVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f3)
+  MVALUE=$(echo "${RUN}" | cut --output-delimiter=' ' -d_ -f1)
+  NVALUE=$(echo "${RUN}" | cut --output-delimiter=' ' -d_ -f2)
+  KVALUE=$(echo "${RUN}" | cut --output-delimiter=' ' -d_ -f3)
 
   >&2 echo "Test ${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})"
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/blas.sh        ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-blas.txt
-  echo                                                                                                    >> smm-blas.txt
+  env LD_LIBRARY_PATH=".:${LD_LIBRARY_PATH}" "${HERE}/blas"        "${CASE}" "${MVALUE}" "${NVALUE}" "${KVALUE}"     >>smm-blas.txt
+  echo                                                                                                             >>smm-blas.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/specialized.sh ${CASE} ${MVALUE} ${NVALUE} ${KVALUE}     >> smm-specialized.txt
-  echo                                                                                                    >> smm-specialized.txt
+  env LD_LIBRARY_PATH=".:${LD_LIBRARY_PATH}" "${HERE}/specialized" "${CASE}" "${MVALUE}" "${NVALUE}" "${KVALUE}"     >>smm-specialized.txt
+  echo                                                                                                             >>smm-specialized.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/dispatched.sh  $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-dispatched.txt
-  echo                                                                                                    >> smm-dispatched.txt
+  env LD_LIBRARY_PATH=".:${LD_LIBRARY_PATH}" "${HERE}/dispatched"  "$((CASE/2))" "${MVALUE}" "${NVALUE}" "${KVALUE}" >>smm-dispatched.txt
+  echo                                                                                                             >>smm-dispatched.txt
 
-  env LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ${HERE}/inlined.sh     $((CASE/2)) ${MVALUE} ${NVALUE} ${KVALUE} >> smm-inlined.txt
-  echo                                                                                                    >> smm-inlined.txt
+  env LD_LIBRARY_PATH=".:${LD_LIBRARY_PATH}" "${HERE}/inlined"     "$((CASE/2))" "${MVALUE}" "${NVALUE}" "${KVALUE}" >>smm-inlined.txt
+  echo                                                                                                             >>smm-inlined.txt
 
   NRUN=$((NRUN + 1))
 done
-

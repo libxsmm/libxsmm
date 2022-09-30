@@ -20,7 +20,7 @@ seissol_flops flops_ader_actual(unsigned int i_timesteps) {
   ret.d_hardwareFlops = 0.0;
 
   // iterate over cells
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
     // get flops
     m_timeKernel.flopsAder( l_nonZeroFlops, l_hardwareFlops );
@@ -40,7 +40,7 @@ seissol_flops flops_vol_actual(unsigned int i_timesteps) {
   ret.d_hardwareFlops = 0.0;
 
   // iterate over cells
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
     // get flops
     m_volumeKernel.flopsIntegral( l_nonZeroFlops, l_hardwareFlops );
@@ -60,7 +60,7 @@ seissol_flops flops_bndlocal_actual(unsigned int i_timesteps) {
   ret.d_hardwareFlops = 0.0;
 
   // iterate over cells
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
     // get flops
     m_boundaryKernel.flopsLocalIntegral( m_cellInformation[l_cell].faceTypes, l_nonZeroFlops, l_hardwareFlops );
@@ -80,7 +80,7 @@ seissol_flops flops_bndneigh_actual(unsigned int i_timesteps) {
   ret.d_hardwareFlops = 0.0;
 
   // iterate over cells
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
     // get flops
     m_boundaryKernel.flopsNeighborsIntegral( m_cellInformation[l_cell].faceTypes, m_cellInformation[l_cell].faceRelations, l_nonZeroFlops, l_hardwareFlops );

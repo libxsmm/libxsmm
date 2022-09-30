@@ -168,7 +168,7 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
-#if defined(LIBXSMM_UNPACKED)
+#if defined(LIBXSMM_UNPACKED) || !defined(NDEBUG)
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #else
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE, FLAGS) \
@@ -312,7 +312,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
 } libxsmm_xcopykernel;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
-  void (*ptr_fn)(LIBXSMM_VARIADIC);
+  /*void (*ptr_fn)(const void*, ...);*/
   const void* ptr_const;
   void* ptr;
   uintptr_t uval;
@@ -366,10 +366,10 @@ typedef unsigned char libxsmm_descriptor_kind;
 
 /** All descriptor types, which are valid for code-registration. */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
-  char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
-  libxsmm_descriptor_kind kind; /* kind: must be the first member */
+  unsigned char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
+  libxsmm_descriptor_kind kind; /* kind: must be the first member after "data" entry (above) */
   LIBXSMM_REGDESC(LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
-  LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; char desc[1]; } user;
+  LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; unsigned char size; unsigned char desc[1]; } user;
 } libxsmm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {

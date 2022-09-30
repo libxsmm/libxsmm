@@ -31,7 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
-    <None Include="eigen_tensor.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>eigen_tensor</ProjectName>

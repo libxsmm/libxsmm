@@ -53,7 +53,7 @@ template<typename T>
 void init_zero(size_t sz, T *buf)
 {
 #pragma omp parallel for
-  for(size_t i = 0; i < sz; i++)
+  for (size_t i = 0; i < sz; i++)
     buf[i] = (T)0;
 }
 
@@ -62,7 +62,7 @@ void init_random(size_t sz, T *buf, T low = -0.1, T high = 0.1)
 {
   T range = high - low;
 #pragma omp parallel for schedule(static)
-  for(size_t i = 0; i < sz; i++) {
+  for (size_t i = 0; i < sz; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
     buf[i] = randval * range - low;
@@ -73,7 +73,7 @@ double get_checksum(FTyp *buf, size_t sz)
 {
   double sum = 0.0;
 #pragma omp parallel for reduction(+:sum)
-  for(size_t i = 0; i < sz; i++) {
+  for (size_t i = 0; i < sz; i++) {
     sum += buf[i];
   }
   return sum;
@@ -86,7 +86,7 @@ inline void *my_malloc(size_t sz, size_t align)
 
 inline void my_free(void *p)
 {
-    if(!p) return;
+    if (!p) return;
     _mm_free(p);
 }
 
@@ -236,7 +236,7 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
 
   auto t0 = get_time();
 #pragma omp parallel for
-  for(int i = 0; i < N; i++) {
+  for (int i = 0; i < N; i++) {
     int start = eio->offsets[i];
     int end = eio->offsets[i+1];
     for (int j = start; j < end; j++) {
@@ -271,7 +271,7 @@ void sparse_transpose_radix(EmbeddingInOut *eio)
   }
 
   num_uniq[0] += 1;
-  for(int i = 1; i < max_thds; i++)
+  for (int i = 1; i < max_thds; i++)
     num_uniq[i] += num_uniq[i-1];
   int U = num_uniq[max_thds-1];
   t1 = get_time();
@@ -377,7 +377,7 @@ void allocate_buffers_and_generte_rnd_input(long N, long P, double alpha, Embedd
   init_random(N * E, eio->gradout, -0.01f, 0.01f);
 
   eio->offsets[0] = 0;
-  for(int i = 1; i <= N; i++) {
+  for (int i = 1; i <= N; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
     int cp = (int)(randval * P * 2);
@@ -455,7 +455,7 @@ double alpha = 0.0;
 #define my_printf(fmt, args...) printf(fmt, args)
 
 int main(int argc, char * argv[]) {
-  if(argc > 1 && strncmp(argv[1], "-h", 3) == 0) {
+  if (argc > 1 && strncmp(argv[1], "-h", 3) == 0) {
     printf("Usage: %s iters N E M S P alpha \n", argv[0]);
     printf("iters: Number of iterations (= %d)\n", iters);
     printf("N: Minibatch (= %d)\n", N);
@@ -469,13 +469,13 @@ int main(int argc, char * argv[]) {
 
   {
     int i = 1;
-    if(argc > i) iters = atoi(argv[i++]);
-    if(argc > i) N = atoi(argv[i++]);
-    if(argc > i) E = atoi(argv[i++]);
-    if(argc > i) M = atoi(argv[i++]);
-    if(argc > i) S = atoi(argv[i++]);
-    if(argc > i) P = atoi(argv[i++]);
-    if(argc > i) alpha = atof(argv[i++]);
+    if (argc > i) iters = atoi(argv[i++]);
+    if (argc > i) N = atoi(argv[i++]);
+    if (argc > i) E = atoi(argv[i++]);
+    if (argc > i) M = atoi(argv[i++]);
+    if (argc > i) S = atoi(argv[i++]);
+    if (argc > i) P = atoi(argv[i++]);
+    if (argc > i) alpha = atof(argv[i++]);
   }
 
   printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %f\n", iters, N, E, M, S, P, alpha);
@@ -505,11 +505,11 @@ int main(int argc, char * argv[]) {
   size_t tNS = 0;
   size_t tU = 0;
 
-  for(int i = 0; i < LS; i++)
+  for (int i = 0; i < LS; i++)
   {
     eb[i] = new EmbeddingBag(M, E);
     eb[i]->init();
-    for(int j = 0; j < iters; j++)
+    for (int j = 0; j < iters; j++)
     {
       eio[j][i] = new EmbeddingInOut();
       auto t0 = get_time();
@@ -524,9 +524,9 @@ int main(int argc, char * argv[]) {
   }
   int warmup = (iters > 2 ? 2 : iters);
 
-  for(int i = 0; i < warmup; i++) {
+  for (int i = 0; i < warmup; i++) {
     double t0 = get_time();
-    for(int s = 0; s < LS; s++) {
+    for (int s = 0; s < LS; s++) {
       eb[s]->fused_backward_update_adagrad(eio[i][s]->U, eio[i][s]->NS, N, eio[i][s]->mb_offsets, eio[i][s]->mb_indices, eio[i][s]->wt_indices, eio[i][s]->gradout, -0.1, 1.0e-6);
     }
     double t1 = get_time();
@@ -541,9 +541,9 @@ int main(int argc, char * argv[]) {
   double t0 = get_time();
   double bwdupdTime = 0.0;
 
-  for(int i = 0; i < iters; i++) {
+  for (int i = 0; i < iters; i++) {
     double t0 = get_time();
-    for(int s = 0; s < LS; s++) {
+    for (int s = 0; s < LS; s++) {
       //printf("Gradout checksum = %g\n", get_checksum(eio[i][s]->gradout, N*E));
       eb[s]->fused_backward_update_adagrad(eio[i][s]->U, eio[i][s]->NS, N, eio[i][s]->mb_offsets, eio[i][s]->mb_indices, eio[i][s]->wt_indices, eio[i][s]->gradout, -0.1, 1.0e-6);
     }
@@ -558,7 +558,7 @@ int main(int argc, char * argv[]) {
   divi_skx_uc_ctrs( &s, iters );
 #endif
 #ifdef VERIFY_CORRECTNESS
-  for(int s = 0; s < LS; s++) {
+  for (int s = 0; s < LS; s++) {
     double psum = get_checksum(eb[s]->weight_, (size_t)M*E);
     //my_printf("PSUM %d: %g\n", s, psum);
     checksum += psum;
@@ -599,9 +599,9 @@ int main(int argc, char * argv[]) {
   printf("Checksum = %g\n", checksum);
 #endif
 
-  for(int i = 0; i < LS; i++)
+  for (int i = 0; i < LS; i++)
   {
-    for(int j = 0; j < iters; j++)
+    for (int j = 0; j < iters; j++)
     {
       free_buffers(eio[j][i]);
       delete eio[j][i];

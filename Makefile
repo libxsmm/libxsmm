@@ -919,10 +919,25 @@ endif
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.pc
+ifneq (,$(filter-out Darwin,$(UNAME))$(filter-out 0,$(STATIC))$(filter-out 0,$(LNKSOFT)))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
+else
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.$(LIBEXT)
+endif
 ifeq (0,$(STATIC))
+ifneq (Darwin,$(UNAME))
 	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
+		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+else ifneq (0,$(LNKSOFT)) # macOS
+	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
+		$(call cleanld,$(LDFLAGS) $(FLDFLAGS)) $(call linkopt,-U,_libxsmm_gemm_batch_omp_)
+else # macOS
+	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmmext.$(ILIBEXT)) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
+		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
+endif
 else # static
 	@-rm -f $@
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
@@ -986,45 +1001,40 @@ endif
 # use dir not qdir to avoid quotes; also $(ROOTDIR)/$(SPLDIR) is relative
 DIRS_SAMPLES := $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/embbag_distri/ \
-	| grep -v /deeplearning/sparse_training/fairseq/docs/ \
 	| grep -v /deeplearning/sparse_adagrad_fused/ \
-	| grep -v /deeplearning/tvm_cnnlayer/ \
-	| grep -v /deeplearning/tf_lstm_ops/ \
-	| grep -v /deeplearning/gxm/ \
-	| grep -v /edge/repro/ \
 	| grep -v /encoder/ \
 	$(NULL)))
 
 .PHONY: samples $(DIRS_SAMPLES)
 samples: $(DIRS_SAMPLES)
 $(DIRS_SAMPLES): lib_hst
-	@$(FLOCK) $@ "$(MAKE) DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $@ "$(MAKE)"
 
 .PHONY: cp2k cp2k_mic
 cp2k: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory"
 cp2k_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory KNC=1"
 
 .PHONY: nek nek_mic
 nek: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory"
 nek_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory KNC=1"
 
 .PHONY: smm smm_mic
 smm: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory"
 smm_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(UTLDIR)/smmbench "$(MAKE) --no-print-directory KNC=1"
 
 # added for specfem sample
 # will need option: make MNK="5 25" ..
 .PHONY: specfem specfem_mic
 specfem: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory"
 specfem_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory KNC=1"
 
 $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/usr/bin/env sh" >$@
@@ -1056,7 +1066,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k-dbcsr \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1094,7 +1104,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1132,7 +1142,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1170,7 +1180,7 @@ endif
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >>$@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1216,7 +1226,7 @@ endif
 	@echo "  NNVALUE=\$$(echo \$${RUN2} | cut -d_ -f2)" >>$@
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | cut -d_ -f3)" >>$@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (MNK=\$${MVALUE}x\$${NVALUE}x\$${KVALUE} MNK2=\$${MMVALUE}x\$${NNVALUE}x\$${KKVALUE})... \"" >>$@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >>\$${FILE}; } 2>&1)" >>$@
 	@echo "  RESULT=\$$?" >>$@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >>$@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >>$@
@@ -1242,11 +1252,11 @@ drytest: build-tests
 
 .PHONY: build-tests
 build-tests: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory"
 
 .PHONY: tests
 tests: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory test"
 
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
@@ -1267,13 +1277,13 @@ test-nek: \
 	$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt \
 	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
 $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory axhm"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory grad"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory rstr"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(call qndir,$@) $(shell echo $$(($(TESTSIZE)*-128)))"
 endif
 
@@ -1574,14 +1584,11 @@ install-realall: install samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,specialized specialized.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,dispatched dispatched.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,inlined inlined.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/smmbench/,blas blas.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(UTLDIR)/dispatch/,dispatch dispatch.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
@@ -1620,7 +1627,7 @@ ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" >$@
-	@echo "Description: Matrix operations and deep learning primitives" >>$@
+	@echo "Description: Specialized tensor operations" >>$@
 	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
 	@echo "Version: $(VERSION_STRING)" >>$@
 	@echo >>$@
@@ -1745,7 +1752,7 @@ deb:
 		echo "Section: libs" >>control; \
 		echo "Architecture: amd64" >>control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >>control; \
-		echo "Description: Matrix operations and deep learning primitives" >>control; \
+		echo "Description: Specialized tensor operations" >>control; \
 		wget -T $(TIMEOUT) -qO- "https://api.github.com/repos/libxsmm/libxsmm/" \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >>control; \

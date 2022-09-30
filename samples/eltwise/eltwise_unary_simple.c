@@ -16,7 +16,6 @@
 #include <math.h>
 #include "eltwise_common.h"
 
-#define PI 3.14159265358979323846
 #define EPS 1.19209290e-03F
 
 #define RND_RNE 0
@@ -47,26 +46,32 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
+LIBXSMM_INLINE
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
 
+LIBXSMM_INLINE
 float fsigmoid_inv(float x) {
   return fsigmoid(x) * (1.0f-fsigmoid(x));
 }
 
+LIBXSMM_INLINE
 float tanh_inv(float x) {
   return 1.0f-LIBXSMM_TANHF(x)*LIBXSMM_TANHF(x);
 }
 
+LIBXSMM_INLINE
 float gelu(float x) {
   return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
+LIBXSMM_INLINE
 float gelu_inv(float x) {
-  return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*PI)) * LIBXSMM_EXPF(-0.5f*x*x) );
+  return (0.5f + 0.5f * LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + x/(LIBXSMM_SQRTF(2.0f*M_PI)) * LIBXSMM_EXPF(-0.5f*x*x) );
 }
 
+LIBXSMM_INLINE
 float fp32_unary_compute(float in, unsigned int op) {
   float res = 0;
 
@@ -108,6 +113,7 @@ float fp32_unary_compute(float in, unsigned int op) {
   return res;
 }
 
+LIBXSMM_INLINE
 void set_opname(unsigned int op, char *opname) {
   if ( op == COPY_OP ) {
     sprintf(opname, "copy");
@@ -147,6 +153,7 @@ void set_opname(unsigned int op, char *opname) {
   }
 }
 
+LIBXSMM_INLINE
 void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
   libxsmm_meltw_unary_type  unary_type;
 
@@ -190,9 +197,10 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
   *type = unary_type;
 }
 
+LIBXSMM_INLINE
 void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const void *in, void *out,
                    const unsigned int op, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, libxsmm_meltw_unary_flags flags) {
-  size_t i,j;
+  libxsmm_blasint i, j;
 
   if ( ( ((dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16)) ||
          ((dtype_in == LIBXSMM_DATATYPE_F16 ) && (dtype_out == LIBXSMM_DATATYPE_F16 ) && (dtype_comp == LIBXSMM_DATATYPE_F16 ))    ) && (op == COPY_OP) ) {
@@ -260,6 +268,7 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 }
 
+LIBXSMM_INLINE
 int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
   char *out, *out_gold;
@@ -274,16 +283,17 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_meltwfunction_unary unary_kernel;
   char opname[256];
   unsigned long long _N = N;
+  double error_bound = 0.0;
 
   set_opname(op, opname);
   set_unarytype(op, &unary_type);
 
   if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
-    fprintf( stderr, "test_unary_%s %i %i %i: ldi needs to be equal to or bigger than M\n", opname, dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_unary_%s %i %i %i: ldi needs to be equal to or bigger than M\n", opname, (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
   if (M > ldo ) {
-    fprintf( stderr, "test_unary_%s %i %i %i: ldo needs to be equal to or bigger than N\n", opname, dtype_in, dtype_out, dtype_comp);
+    fprintf( stderr, "test_unary_%s %i %i %i: ldo needs to be equal to or bigger than N\n", opname, (int)dtype_in, (int)dtype_out, (int)dtype_comp);
     exit(-1);
   }
 
@@ -325,7 +335,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   /* compute out_gold */
   unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
 
-  /* use jited tranpose */
+  /* use jited transpose */
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
@@ -342,7 +352,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
     }
   }
-
 
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_shape.n = 0;
@@ -369,7 +378,6 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
-  double error_bound =0.0;
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     error_bound = 0.0027;
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
@@ -401,9 +409,9 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_free( in );
 
   if ( ret == EXIT_SUCCESS ) {
-    printf("SUCCESS unary simple %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("SUCCESS unary simple %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   } else {
-    printf("FAILURE unary simple %i %i %i\n", dtype_in, dtype_out, dtype_comp);
+    printf("FAILURE unary simple %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
   }
 
   return ret;
@@ -457,7 +465,7 @@ int main( int argc, char* argv[] ) {
                op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR) ? 1 : 0;
 
   if ((rnd_mode == RND_STOCHASTIC && dtype_out != LIBXSMM_DATATYPE_BF8) || (rnd_mode > RND_STOCHASTIC)) {
-    printf(" Error! rnd_mode = %d is not supported with the selected output precision, prec_out : %d\n", rnd_mode, dtype_out );
+    printf(" Error! rnd_mode = %u is not supported with the selected output precision, prec_out : %i\n", rnd_mode, (int)dtype_out );
     exit(-1);
   }
 
@@ -494,7 +502,7 @@ int main( int argc, char* argv[] ) {
       printf("Testing in:%s out:%s comp:%s unary copy - M=%i, N=%i, LDI=%i, LDO=%i\n",  libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo);
       ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, dtype_in, dtype_out, dtype_comp, rnd_mode );
     } else {
-      printf("  %s, Op: %d, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %d\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
+      printf("  %s, Op: %i, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %u\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
       printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/F16/BF8] [prec_comp: F32/BF16/F16/BF8] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
       exit(-1);
     }
@@ -512,12 +520,12 @@ int main( int argc, char* argv[] ) {
       printf("Testing in:%s out:%s comp:%s unary %s - M=%i, N=%i, LDI=%i, LDO=%i\n",  libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
       ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, dtype_in, dtype_out, dtype_comp, rnd_mode );
     } else {
-      printf("  %s, Op: %d, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %d\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
+      printf("  %s, Op: %i, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %u\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
       printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/F16/BF8] [prec_comp: F32/BF16/F16/BF8] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
       exit(-1);
     }
   } else {
-    printf("  %s, Op: %d, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %d\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
+    printf("  %s, Op: %i, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %u\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
     printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/F16/BF8] [prec_comp: F32/BF16/F16/BF8] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
     exit(-1);
   }

@@ -1429,14 +1429,15 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
 
   /* 2 B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char)((i_vec_reg_number_dst < 32) ? tbl_evex_RRp[i_vec_reg_number_dst] : tbl_evex_RRp[0]);
+  assert(i_vec_reg_number_src < 32 && i_vec_reg_number_dst < 32);
+  code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_dst];
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vvvv[i_vec_reg_number_src] : tbl_evex_vvvv[0]);
+  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_src];
   /* incase of gather scatter the V' field is used to extend the idx field for SIB to 32 registers */
   if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
     code[p2   ] |= (unsigned char)((l_reg_idx < 16 ) ? tbl_evex_vp[l_reg_idx] : tbl_evex_vp[0]);
   } else {
-    code[p2   ] |= (unsigned char)((i_vec_reg_number_src < 32) ? tbl_evex_vp[i_vec_reg_number_src] : tbl_evex_vp[0]);
+    code[p2   ] |= (unsigned char)tbl_evex_vp[i_vec_reg_number_src];
   }
   /* VL: 128bit,256bit,512bit */
   code[p2   ] |= (unsigned char)tbl_vl[l_vl_idx];
@@ -1562,12 +1563,13 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
 
   /* B) filling the missing prefix bits based on table look ups */
   /* R and R' */
-  code[p0   ] |= (unsigned char)((i_vec_reg_number_2 < 32) ? tbl_evex_RRp[i_vec_reg_number_2] : tbl_evex_RRp[0]);
+  assert(i_vec_reg_number_0 < 32 && i_vec_reg_number_1 < 32 && i_vec_reg_number_2 < 32);
+  code[p0   ] |= (unsigned char)tbl_evex_RRp[i_vec_reg_number_2];
   /* B and X */
-  code[p0   ] |= (unsigned char)((i_vec_reg_number_0 < 32) ?  tbl_evex_BX[i_vec_reg_number_0] :  tbl_evex_BX[0]);
+  code[p0   ] |= (unsigned char)tbl_evex_BX[i_vec_reg_number_0];
   /* vvvv and V' */
-  code[p1   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ? tbl_evex_vvvv[i_vec_reg_number_1] : tbl_evex_vvvv[0]);
-  code[p2   ] |= (unsigned char)((i_vec_reg_number_1 < 32) ?   tbl_evex_vp[i_vec_reg_number_1] :   tbl_evex_vp[0]);
+  code[p1   ] |= (unsigned char)tbl_evex_vvvv[i_vec_reg_number_1];
+  code[p2   ] |= (unsigned char)tbl_evex_vp[i_vec_reg_number_1];
   /* VL: 128bit,256bit,512bit or sae control */
   code[p2   ] |= (unsigned char)((i_sae_cntl == 0) ? tbl_vl[l_vl_idx] : (0x60 & (i_sae_cntl << 4)));
   /* masking */
@@ -1881,10 +1883,11 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     unsigned int l_reg_number_dst = 0;
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 1;
-    } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
+    }
+    else if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256 ) {
+      l_encoder_arch = 1;
     }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
@@ -2165,10 +2168,11 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     unsigned int l_reg_number_dst = i_reg_number_dst;
 
     /* determine encoder */
-    if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
-      l_encoder_arch = 1;
-    } else if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
+    if ( io_generated_code->arch < LIBXSMM_X86_AVX ) {
       l_encoder_arch = 0;
+    }
+    else if ( io_generated_code->arch < LIBXSMM_X86_AVX512_VL256 ) {
+      l_encoder_arch = 1;
     }
     if ( (l_encoder_arch == 2) && ((l_encoder_instr == 3) || (l_encoder_instr == 0)) ) {
       l_encoder = 2;
@@ -2496,7 +2500,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                         i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
                                         i_vector_name, i_vec_reg_number_0, 0, (i_is_store != 0) ? 0 : 1, i_is_store );
     }
-  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) ) {
+  } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX) /*&& (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256)*/) {
     if ( i_use_masking != 0 ) {
       libxsmm_x86_instruction_vec_mask_move( io_generated_code, i_vmove_instr,
                                              i_gp_reg_base, i_reg_idx, i_scale, i_displacement,
@@ -4513,7 +4517,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_code,
                                        unsigned int                i_reg,
                                        unsigned int                i_off,
-                                       libxsmm_const_data_tracker* io_const_data ){
+                                       libxsmm_const_data_tracker* io_const_data ) {
   if ( io_generated_code->code_type > 1 ) {
     unsigned char* l_buf = (unsigned char*) io_generated_code->generated_code;
     unsigned int l_cs = io_generated_code->code_size;

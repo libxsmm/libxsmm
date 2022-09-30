@@ -30,7 +30,6 @@
     <ClCompile Include="rng.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="rng.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />
   </ItemGroup>

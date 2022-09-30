@@ -65,6 +65,7 @@ typedef struct fusion_args {
 
 
 #if 0
+LIBXSMM_INLINE
 float ftanh_rational_78(float x) {
 #if 0
   float x2, nom, denom, result;
@@ -126,6 +127,7 @@ float fsigmoid(float x) {
 #endif
 }
 #else
+LIBXSMM_INLINE
 float fsigmoid(float x) {
   libxsmm_meltw_unary_shape unary_shape     = libxsmm_create_meltw_unary_shape( 1, 1, 1, 1, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
   libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
@@ -138,6 +140,7 @@ float fsigmoid(float x) {
 }
 #endif
 
+LIBXSMM_INLINE
 void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, float *in, float *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
@@ -161,6 +164,7 @@ void relu_f32_f32_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
   }
 }
 
+LIBXSMM_INLINE
 void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
@@ -197,6 +201,7 @@ void relu_bf16_bf16_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint l
   }
 }
 
+LIBXSMM_INLINE
 void relu_bf8_bf8_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, libxsmm_blasint ldo_mask, libxsmm_bfloat8 *in, libxsmm_bfloat8 *out, float alpha, unsigned char *out_mask, unsigned char type, libxsmm_blasint use_bitmask) {
   libxsmm_blasint i, j;
   if ( (type != 2) && (use_bitmask > 0)) {
@@ -235,6 +240,7 @@ void relu_bf8_bf8_gold(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi
   }
 }
 
+LIBXSMM_INLINE
 void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbias) {
   const libxsmm_blasint ldc = i_gemm_def->ldc;
   const libxsmm_blasint m = i_gemm_def->m;
@@ -288,6 +294,7 @@ void apply_colbias_add(const gemm_def *i_gemm_def, void *l_c_gold, void *l_colbi
   }
 }
 
+LIBXSMM_INLINE
 void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask_gold, libxsmm_blasint use_bitmask) {
   unsigned int ldc = i_gemm_def->ldc;
   unsigned int m = i_gemm_def->m;
@@ -304,6 +311,7 @@ void apply_relu(const gemm_def *i_gemm_def, void *l_c_gold, void *l_relu_bitmask
   }
 }
 
+LIBXSMM_INLINE
 void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
   const libxsmm_blasint ldc = i_gemm_def->ldc;
   const libxsmm_blasint m = i_gemm_def->m;
@@ -345,6 +353,7 @@ void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
   }
 }
 
+LIBXSMM_INLINE
 double get_random_posneg_p5_num() {
   double tmp = libxsmm_rng_f64()-0.5;
 
@@ -375,6 +384,7 @@ double get_random_posneg_p5_num() {
   return tmp;
 }
 
+LIBXSMM_INLINE
 double get_random_pos_p5_num() {
   double tmp = libxsmm_rng_f64();
 
@@ -405,6 +415,7 @@ double get_random_pos_p5_num() {
   return tmp;
 }
 
+LIBXSMM_INLINE
 void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint cols_rows ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -470,6 +481,7 @@ void negate_random_cols_rows ( const libxsmm_datatype dtype, void* data, const l
   }
 }
 
+LIBXSMM_INLINE
 void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n, const libxsmm_blasint pos_val_only ) {
   double* d_data = (double*) data;
   float* f_data = (float*) data;
@@ -513,16 +525,19 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
   }
 }
 
+LIBXSMM_INLINE
 void init_zero_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0x0, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
+LIBXSMM_INLINE
 void init_garbage_matrix( const libxsmm_datatype dtype, void* data, const libxsmm_blasint br, const libxsmm_blasint ld, const libxsmm_blasint n ) {
   char* l_data = (char*) data;
   memset( l_data, 0xdeadbeef, (size_t)br*ld*n*LIBXSMM_TYPESIZE(dtype) );
 }
 
+LIBXSMM_INLINE
 void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
   libxsmm_blasint l_i, l_j, l_i2;
   libxsmm_blasint ldc = i_gemm_def->ldc;
@@ -548,6 +563,7 @@ void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
   }
 }
 
+LIBXSMM_INLINE
 void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
   libxsmm_blasint l_i, l_j, l_i2;
   libxsmm_blasint ldc = i_gemm_def->ldc;
@@ -573,6 +589,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
   }
 }
 
+LIBXSMM_INLINE
 void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void* c ) {
   libxsmm_blasint l_r, l_j, l_i, l_s, l_k2;
   libxsmm_blasint lda = i_gemm_def->lda;
@@ -924,6 +941,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
   }
 }
 
+LIBXSMM_INLINE
 void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_gold, fusion_args *ref_fusion_arguments ) {
   gemm_def l_gemm_def = *i_gemm_def_in;
   gemm_def *i_gemm_def = &l_gemm_def;
@@ -1047,6 +1065,7 @@ void ref_fused_matmul( gemm_def* i_gemm_def_in, void* l_a, void* l_b, void* l_c_
   }
 }
 
+LIBXSMM_INLINE
 double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const void* data, const libxsmm_blasint ld, const libxsmm_blasint m, const libxsmm_blasint n ) {
   libxsmm_matdiff_info l_diff;
   double error = 0.0;
@@ -1155,6 +1174,7 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
   return error;
 }
 
+LIBXSMM_INLINE
 double jit_matmul( const gemm_def*    i_gemm_def,
                    const void*        i_a,
                    const void*        i_b,
@@ -1473,6 +1493,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   return l_runtime;
 }
 
+LIBXSMM_INLINE
 void print_help(void) {
   printf("\n\n");
   printf("1. Usage (dense*dense=dense, correctness and performance):\n");

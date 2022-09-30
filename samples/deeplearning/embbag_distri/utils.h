@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <cstdint>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -38,7 +39,7 @@ static double get_time() {
   clock_gettime(CLOCK_REALTIME, &tp);
   /*clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);*/
 
-  if(!init_done) {
+  if (!init_done) {
     init_done = true;
     stp = tp;
   }
@@ -52,7 +53,7 @@ template<typename T>
 void init_zero(size_t sz, T *buf)
 {
 #pragma omp parallel for
-  for(size_t i = 0; i < sz; i++)
+  for (size_t i = 0; i < sz; i++)
     buf[i] = (T)0;
 }
 
@@ -61,7 +62,7 @@ void init_random(size_t sz, T *buf, T low, T high)
 {
   T range = high - low;
 #pragma omp parallel for schedule(static)
-  for(size_t i = 0; i < sz; i++) {
+  for (size_t i = 0; i < sz; i++) {
     double randval;
     drand48_r(&rand_buf, &randval);
     buf[i] = randval * range - low;
@@ -70,12 +71,20 @@ void init_random(size_t sz, T *buf, T low, T high)
 
 inline void *my_malloc(size_t sz, size_t align)
 {
+#ifdef __INTEL_COMPILER
     return _mm_malloc(sz, align);
+#else
+    return aligned_alloc(align, sz);
+#endif
 }
 
 inline void my_free(void *p)
 {
+#ifdef __INTEL_COMPILER
     _mm_free(p);
+#else
+    free(p);
+#endif
 }
 
 #endif /*_UTILS_H_*/

@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
   {
     const double scale = 1.0 / size;
     libxsmm_matdiff_info diff, di;
-    libxsmm_blasint i;
+    libxsmm_blasint i = 0;
 #if defined(PRINT)
     libxsmm_timer_tickint start;
     double d1, d2;

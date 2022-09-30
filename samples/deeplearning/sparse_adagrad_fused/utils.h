@@ -33,7 +33,7 @@ static double get_time() {
   clock_gettime(CLOCK_REALTIME, &tp);
   /*clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);*/
 
-  if(!init_done) {
+  if (!init_done) {
     init_done = true;
     stp = tp;
   }

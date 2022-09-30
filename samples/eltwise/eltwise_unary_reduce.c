@@ -175,20 +175,24 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   unsigned int record_idx, unsigned long long *argop_off, unsigned int *argop_off_i32, unsigned int reduce_on_outputs ) {
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
   libxsmm_meltw_unary_type  unary_type = LIBXSMM_MELTW_TYPE_UNARY_NONE;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_blasint ld_in = _ld_in;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltwfunction_unary kernel2 = NULL;
   libxsmm_meltw_unary_param params2 /*= { 0 }*/;
+
+  memset(&unary_param, 0, sizeof(unary_param));
+  memset(&params2, 0, sizeof(params2));
+
   if (reduce_rows == 1) {
-    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+    unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS);
   } else {
-    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+    unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
   }
 
   if (reduce_on_outputs > 0) {
-    unary_flags |= LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC;
+    unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC);
   }
 
   if (reduce_op == 0) {
@@ -233,9 +237,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     if (reduce_op == 0) {
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
     } else {
-      unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
+      unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
       if (record_idx > 0) {
-        unary_flags = unary_flags | LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP;
+        unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_RECORD_ARGOP);
         if (idx_type == 0) {
           params2.out.secondary = argop_off;
         } else {
@@ -330,7 +334,7 @@ int main(int argc, char* argv[])
   if ( argc > 12 ) record_idx = atoi(argv[12]);
   if ( argc > 13 ) reduce_on_outputs = atoi(argv[13]);
 
-  printf("CL is: %d %d %d %d %d %d %d %s %llu %d %d %d %d\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
+  printf("CL is: %u %u %i %u %u %u %u %s %llu %u %u %u %u\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);

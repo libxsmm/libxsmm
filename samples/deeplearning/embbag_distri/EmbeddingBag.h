@@ -21,12 +21,12 @@ public:
   EmbeddingBagImpl(long M, long E) : M(M), E(E)
   {
 #ifdef USE_LIBXSMM_JIT
+    _ld = E;
     libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape( E, 0, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltw_unary_shape unary_shape_f16 = libxsmm_create_meltw_unary_shape( E, 0, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     libxsmm_meltw_binary_shape binary_shape_f32 = libxsmm_create_meltw_binary_shape( E, 1, _ld, _ld, _ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 
-    _ld = E;
     if (sizeof(T) == 4) {
       kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape_f32, (sizeof(long) == 8) ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES );
     } else {
@@ -34,6 +34,8 @@ public:
     }
     kernel1 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR, unary_shape_f32, LIBXSMM_MELTW_FLAG_UNARY_NONE );
     kernel2 = libxsmm_dispatch_meltw_binary_v2( LIBXSMM_MELTW_TYPE_BINARY_MULADD, binary_shape_f32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0 );
+#else
+    weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 #endif
 
   }
@@ -52,8 +54,8 @@ public:
 #ifdef USE_LIBXSMM_JIT
   void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
-    T(*__restrict weight)[E] = (T(*)[*])weight_;
-    T(*__restrict output)[E] = (T(*)[*])output_;
+    T(*__restrict weight)[E] = (T(*)[E])weight_;
+    T(*__restrict output)[E] = (T(*)[E])output_;
 
     #pragma omp parallel for
     for (int n = 0; n < N; n++)
@@ -73,8 +75,8 @@ public:
 #else
   void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
   {
-    T(*__restrict weight)[E] = (T(*)[*])weight_;
-    T(*__restrict output)[E] = (T(*)[*])output_;
+    T(*__restrict weight)[E] = (T(*)[E])weight_;
+    T(*__restrict output)[E] = (T(*)[E])output_;
 
 #pragma omp parallel for
     for (long n = 0; n < N; n++)
@@ -100,8 +102,8 @@ public:
 #ifdef USE_LIBXSMM_JIT
   void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
-    T(*__restrict gradout)[E] = (T(*)[*])gradout_;
-    T(*__restrict values)[E] = (T(*)[*])values_;
+    T(*__restrict gradout)[E] = (T(*)[E])gradout_;
+    T(*__restrict values)[E] = (T(*)[E])values_;
     int _ld = E;
 #pragma omp parallel for
     for (long n = 0; n < N; n++)
@@ -121,8 +123,8 @@ public:
 #else
   void backward(long N, long NS, const T *gradout_, const long *offsets, const long *indices, T *values_)
   {
-    T(*__restrict gradout)[E] = (T(*)[*])gradout_;
-    T(*__restrict values)[E] = (T(*)[*])values_;
+    T(*__restrict gradout)[E] = (T(*)[E])gradout_;
+    T(*__restrict values)[E] = (T(*)[E])values_;
 
 #pragma omp parallel for
     for (long n = 0; n < N; n++)
@@ -146,19 +148,19 @@ public:
   void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
     int use_lock_free = use_rtm == 0 ? 1: 0;
-    T(*__restrict weight)[E] = (T(*)[*])weight_;
-    T(*__restrict grads)[E] = (T(*)[*])grads_;
+    T(*__restrict weight)[E] = (T(*)[E])weight_;
+    T(*__restrict grads)[E] = (T(*)[E])grads_;
     int _ld = E;
-    if(use_lock_free) {
+    if (use_lock_free) {
       /*printf("Using lock free update\n");*/
       int max_thr = omp_get_max_threads();
-      if(M < max_thr) max_thr = M;
+      if (M < max_thr) max_thr = M;
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        for(long i = 0; i < NS; i++) {
+        for (long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind % max_thr == tid) {
+          if (ind % max_thr == tid) {
             libxsmm_meltw_binary_param binary_param;
             binary_param.in0.primary  = (void*)&lr;
             binary_param.in1.primary  = (void*)&grads[i][0];
@@ -189,20 +191,20 @@ public:
 #else
   void update(long NS, const T *grads_, const long *indices, float lr, long M, int use_rtm)
   {
-    T(*__restrict weight)[E] = (T(*)[*])weight_;
-    T(*__restrict grads)[E] = (T(*)[*])grads_;
+    T(*__restrict weight)[E] = (T(*)[E])weight_;
+    T(*__restrict grads)[E] = (T(*)[E])grads_;
 
     int use_lock_free = use_rtm == 0 ? 1: 0;
 
-    if(use_lock_free) {
+    if (use_lock_free) {
       int max_thr = omp_get_max_threads();
-      if(M < max_thr) max_thr = M;
+      if (M < max_thr) max_thr = M;
 #pragma omp parallel num_threads(max_thr)
       {
         int tid = omp_get_thread_num();
-        for(long i = 0; i < NS; i++) {
+        for (long i = 0; i < NS; i++) {
           auto ind = indices[i];
-          if(ind % max_thr == tid) {
+          if (ind % max_thr == tid) {
 #pragma omp simd
             for (long v = 0; v < E; v++)
               weight[ind][v] += lr * grads[i][v];
