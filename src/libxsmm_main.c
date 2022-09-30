@@ -93,6 +93,9 @@ LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_NOTHROW;
 #if 1 /* beneficial when registry approaches capacity (collisions) */
 # define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
 #endif
+#if !defined(LIBXSMM_COLLISION_COUNT_STATIC) && 0
+# define LIBXSMM_COLLISION_COUNT_STATIC
+#endif
 
 /** Helper macro determining the default prefetch strategy which is used for statically generated kernels. */
 #if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */ || (defined(_WIN32) || defined(__CYGWIN__))
@@ -2406,9 +2409,11 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #else
             mode = 2; /* enter code generation */
 #endif
+#if defined(LIBXSMM_COLLISION_COUNT_STATIC)
             if (LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) {
               internal_update_mmstatistic(&desc->gemm.desc, 0, 1/*collision*/, 0, 0);
             }
+#endif
           }
           LIBXSMM_ASSERT(0 != diff); /* continue */
         }
@@ -2459,6 +2464,11 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
                   internal_registry[i0] = fix_entry;
 #   endif
                 }
+#   if !defined(LIBXSMM_COLLISION_COUNT_STATIC)
+                if (LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind)) {
+                  internal_update_mmstatistic(&desc->gemm.desc, 0, 1/*collision*/, 0, 0);
+                }
+#   endif
               }
 # endif
             }
