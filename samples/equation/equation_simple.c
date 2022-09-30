@@ -170,7 +170,11 @@ void eqn0_bf16f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
       Arg2 = bf16_hp.f;
       bf16_hp.i[1] = bf16_arg3[(i*ld)+j];
       Arg3 = bf16_hp.f;
+#if 0
       out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+#else
+      out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * ((Arg2*Arg2) + Arg3);
+#endif
     }
   }
 }
@@ -185,7 +189,11 @@ void eqn0_f32bf16(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, floa
       Arg1 = arg1[(i*ld)+j];
       Arg2 = arg2[(i*ld)+j];
       Arg3 = arg3[(i*ld)+j];
+#if 0
       res = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
+#else
+      res = (Arg0 + 1.0f + Arg1) * ((Arg2*Arg2) + Arg3);
+#endif
       libxsmm_rne_convert_fp32_bf16( &res, &bf16_out[(i*ld)+j], 1 );
     }
   }
@@ -469,9 +477,9 @@ int main( int argc, char* argv[] ) {
   }
   if ( out_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.output.primary = eqn_out;
-  } else if ( in_dt == LIBXSMM_DATATYPE_BF16  ) {
+  } else if ( out_dt == LIBXSMM_DATATYPE_BF16  ) {
     eqn_param.output.primary  = bf16_eqn_out;
-  } else if ( in_dt == LIBXSMM_DATATYPE_BF8  ) {
+  } else if ( out_dt == LIBXSMM_DATATYPE_BF8  ) {
     eqn_param.output.primary  = bf8_eqn_out;
   }
   func0(&eqn_param);

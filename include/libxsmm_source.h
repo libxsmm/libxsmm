@@ -67,6 +67,7 @@
 #include "../src/generator_matequation.c"
 #include "../src/generator_matequation_aarch64.c"
 #include "../src/generator_matequation_avx_avx512.c"
+#include "../src/generator_matequation_regblocks_aarch64.c"
 #include "../src/generator_matequation_regblocks_avx_avx512.c"
 #include "../src/generator_matequation_scratch_aarch64.c"
 #include "../src/generator_matequation_scratch_avx_avx512.c"

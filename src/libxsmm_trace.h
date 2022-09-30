@@ -13,7 +13,7 @@
 
 #include <libxsmm_macros.h>
 
-#if (defined(__TRACE) || defined(LIBXSMM_BUILD) || !defined(_WIN32))
+#if defined(__TRACE) && defined(LIBXSMM_BUILD)
 # define LIBXSMM_TRACE
 #endif
 #if !defined(LIBXSMM_TRACE_CALLERID_MAXDEPTH)
@@ -42,18 +42,15 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && defined(LIBXSMM_PRAGMA_DIAG)
 # if defined(__clang__)
 #   pragma clang diagnostic push
-# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
-#   pragma GCC diagnostic push
-# endif
-# if defined(__clang__)
 #   pragma clang diagnostic ignored "-Wunknown-warning-option"
 #   if LIBXSMM_VERSION2(9, 0) <= LIBXSMM_VERSION2(__clang_major__, __clang_minor__)
 #     pragma clang diagnostic ignored "-Wframe-address"
 #   endif
-# elif defined(__GNUC__) /* no version-check */
+# elif defined(__GNUC__)
+#   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wpragmas"
 #   pragma GCC diagnostic ignored "-Wframe-address"
 # endif
@@ -86,10 +83,10 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
     }
   }
 }
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && defined(LIBXSMM_PRAGMA_DIAG)
 # if defined(__clang__)
 #   pragma clang diagnostic pop
-# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+# elif defined(__GNUC__)
 #   pragma GCC diagnostic pop
 # endif
 #endif
@@ -121,4 +118,3 @@ LIBXSMM_API void libxsmm_trace(FILE* stream,
   const int* filter_maxnsyms);
 
 #endif /*LIBXSMM_TRACE_H*/
-

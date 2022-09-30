@@ -24,10 +24,6 @@ scripts/tool_gitauthors.sh export-ignore
 scripts/tool_gitaddforks.sh export-ignore
 scripts/libxsmm_version.sh  export-ignore
 scripts/tool_envrestore.sh export-ignore
-samples/deeplearning/sparse_training/dlrm/roc/tmp1 export-ignore
-samples/deeplearning/mlpdriver/mnist_data export-ignore
-samples/deeplearning/gxm/model_zoo export-ignore
-samples/xgemm/kernel_test* export-ignore
 samples/seissol/*.orient export-ignore
 samples/seissol/*.bound export-ignore
 samples/seissol/*.neigh export-ignore
@@ -35,5 +31,4 @@ samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
 samples/edge/repro export-ignore
 samples/edge/mats export-ignore
-samples/pyfr/mats export-ignore
 version.txt merge=ours

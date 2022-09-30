@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   double *const b = (double*)malloc(sizeof(double) * nb * batchsize);
   double *const c = (double*)malloc(sizeof(double) * nc * batchsize);
   const double scale = 1.0 / batchsize;
-  int i;
+  int i = 0;
 
   assert(NULL != a && NULL != b && NULL != c && NULL != pa && NULL != pb && NULL != pc);
 #if defined(GEMM_BATCH)

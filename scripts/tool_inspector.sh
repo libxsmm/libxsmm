@@ -48,7 +48,7 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
     RESULT=$?
 
     if [ "0" = "${RESULT}" ]; then
-      ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
+      ${TOOL} -report problems -r ${DIR}/${ID} >${DIR}/${RPTNAME}.txt
       RESULT2=$?
 
       if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then

@@ -17,23 +17,20 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if defined(_OPENMP)
-# if !defined(__INTEL_COMPILER)
+# if defined(LIBXSMM_PRAGMA_DIAG)
 #   if defined(__clang__)
 #     pragma clang diagnostic push
-#   elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
-#     pragma GCC diagnostic push
-#   endif
-#   if defined(__clang__)
 #     pragma clang diagnostic ignored "-Wpedantic"
-#   elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   elif defined(__GNUC__)
+#     pragma GCC diagnostic push
 #     pragma GCC diagnostic ignored "-Wpedantic"
 #   endif
 # endif
 # include <omp.h>
-# if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER)
+# if defined(LIBXSMM_PRAGMA_DIAG)
 #   if defined(__clang__)
 #     pragma clang diagnostic pop
-#   elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   elif defined(__GNUC__)
 #     pragma GCC diagnostic pop
 #   endif
 # endif
@@ -43,4 +40,3 @@
 #endif
 
 #endif /*LIBXSMM_EXT_H*/
-

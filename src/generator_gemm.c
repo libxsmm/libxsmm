@@ -206,6 +206,36 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_vector_length = 16;
   } else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE512 || io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) && LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 8;
+  } else if ( ( io_generated_code->arch >= LIBXSMM_AARCH64_V81    )  &&
+              ( io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) &&
+              (    ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )
+                || ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) ) {
+    /* TODO (MMLA): add flags and check on MMLA-formated A/B */
+    /* TODO (MMLA): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
+    /* TODO (MMLA): adjust checks for future SVE kernels */
+    if( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+      if (l_xgemm_desc_mod.k % 4 != 0) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
+    } else if( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+      if (l_xgemm_desc_mod.k % 8 != 0)  {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
+    }
+    /* ASIMD + MMLA */
+    if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+      l_vector_length = 4;
+    }
+    /* SVE256 + MMLA */
+    else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
+      l_vector_length = 8;
+    }
+    else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
@@ -285,6 +315,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* check for VNNI flag being set in case of low precision GEMM */
+  /* TODO (MMLA): adjust for aarch64 using i8-MMLA instructions
   if ( ( LIBXSMM_DATATYPE_I16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
        ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
     if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 ) {
@@ -302,6 +333,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       return;
     }
   }
+  */
 
   /* right now we only support eltwise fusion on SPR and BF16 */
   /* TODO: EVANGELOS -- AMMEND  */

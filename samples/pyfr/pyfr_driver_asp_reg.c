@@ -10,7 +10,10 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#define REALTYPE double
+#if !defined(REALTYPE)
+# define REALTYPE double
+#endif
+
 #define EPSILON(T) LIBXSMM_CONCATENATE(EPSILON_, T)
 #define EPSILON_double 1e-8
 #define EPSILON_float 1e-4

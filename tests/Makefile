@@ -59,9 +59,14 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
            $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX) \
            $(FXXSRCX) $(F77SRCX) $(F90SRCX))))
 
+REALTYPE_INDEX := $(shell bash -c 'echo "$$((RANDOM%2+1))"' 2>/dev/null)
+REALTYPE := $(word $(if $(REALTYPE_INDEX),$(REALTYPE_INDEX),1),double float)
+
 .PHONY: all
 all: $(XFILES)
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -140,21 +145,25 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 
 .PHONY: clean
 clean:
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) clean"
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
+	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) realclean"
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)

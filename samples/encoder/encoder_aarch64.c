@@ -527,6 +527,10 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_TBX_2",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2,     0, 0 );
   test_asimd_compute( "asimd_comp_TBX_3",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3,     0, 0 );
   test_asimd_compute( "asimd_comp_TBX_4",     &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4,     0, 0 );
+  test_asimd_compute( "asimd_comp_BFMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BFMMLA_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_SMMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V,   0, 0 );
+  test_asimd_compute( "asimd_comp_UMMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V,   0, 0 );
+  test_asimd_compute( "asimd_comp_USMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V,  0, 0 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
@@ -534,22 +538,35 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_move( "sve_mov_LDR_Z_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF, 128 );
   test_sve_move( "sve_mov_STR_P_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_STR_P_I_OFF, 128 );
   test_sve_move( "sve_mov_STR_Z_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF, 128 );
-  test_sve_move( "sve_mov_LD1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR, 0 );
-  test_sve_move( "sve_mov_LD1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF, 7 );
-  test_sve_move( "sve_mov_LD1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR, 0 );
-  test_sve_move( "sve_mov_LD1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF, 7 );
-  test_sve_move( "sve_mov_ST1D_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR, 0 );
-  test_sve_move( "sve_mov_ST1D_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF, 7 );
-  test_sve_move( "sve_mov_ST1W_SR", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR, 0 );
-  test_sve_move( "sve_mov_ST1W_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF, 7 );
-  test_sve_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF, 64 );
-  test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF, 64 );
+  test_sve_move( "sve_mov_LD1D_SR",     &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR,       0 );
+  test_sve_move( "sve_mov_LD1D_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,    7 );
+  test_sve_move( "sve_mov_LD1W_SR",     &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR,       0 );
+  test_sve_move( "sve_mov_LD1W_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,    7 );
+  test_sve_move( "sve_mov_ST1D_SR",     &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR,       0 );
+  test_sve_move( "sve_mov_ST1D_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1D_I_OFF,    7 );
+  test_sve_move( "sve_mov_ST1W_SR",     &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR,       0 );
+  test_sve_move( "sve_mov_ST1W_I_OFF",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,    7 );
+  test_sve_move( "sve_mov_LD1RD_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF,  64 );
+  test_sve_move( "sve_mov_LD1RW_I_OFF", &mycode, LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF,  64 );
 
   /* test SVE compute insturctions */
+  test_sve_compute( "sve_comp_FMLA_V_P", &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P, 1 );
+  test_sve_compute( "sve_comp_TRN1_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN1_V,   0 );
+  test_sve_compute( "sve_comp_TRN2_V",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_TRN2_V,   0 );
+  test_sve_compute( "sve_comp_BFCVT_V_P",&mycode, LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P,   1 );
+  test_sve_compute( "sve_comp_UUNPKLO_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V,   0 );
+  test_sve_compute( "sve_comp_UUNPKHI_V",&mycode, LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V,   0 );
   test_sve_compute( "sve_comp_FMLA_V_P",   &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,   1 );
   test_sve_compute( "sve_comp_EOR_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,    0 );
+  /* TODO (MMLA): Fix SVE tests which set size specifiers (not relevant for MMLA-instructions) */
+  test_sve_compute( "sve_comp_BFMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V, 0 );
+  test_sve_compute( "sve_comp_FMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V, 0 );
+  test_sve_compute( "sve_comp_SMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V, 0 );
+  test_sve_compute( "sve_comp_UMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V, 0 );
+  test_sve_compute( "sve_comp_USMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V, 0 );
   test_sve_compute( "sve_comp_SUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I,    0 );
-  test_sve_pcompute( "sve_pcomp_PTRUE",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );
+
+  test_sve_pcompute( "sve_pcomp_PTRUE",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );
   mycode.arch = LIBXSMM_AARCH64_V81;
 
   /* testing asimd ldr/str instructions */

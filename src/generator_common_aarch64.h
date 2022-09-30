@@ -25,6 +25,16 @@
  * @param i_gp_reg_scratch general purpose scratch register.
  **/
 LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_generated_code,
                                                    unsigned int            i_p_reg,
                                                             int            i_n_bits,
@@ -109,6 +119,20 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      i_zero );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                           const unsigned int      i_gp_reg_addr,
+                                                           const unsigned int      i_gp_reg_scratch,
+                                                           const unsigned int      i_vec_length,
+                                                           const unsigned int      i_vec_reg_count,
+                                                           const unsigned int      i_m_blocking,
+                                                           const unsigned int      i_n_blocking,
+                                                           const unsigned int      i_ld,
+                                                           const unsigned int      i_zero,
+                                                           const unsigned char     i_zip_row_major );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_generated_code,
                                                     const unsigned int      i_gp_reg_addr,
                                                     const unsigned int      i_gp_reg_scratch,
@@ -121,6 +145,22 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
                                                     const unsigned int      i_zero );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code* io_generated_code,
+                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                         const unsigned int      i_gp_reg_addr,
+                                                         const unsigned int      i_gp_reg_scratch,
+                                                         const unsigned int      i_gp_reg_scratch1,
+                                                         const unsigned int      i_vec_length,
+                                                         const unsigned int      i_vec_reg_count,
+                                                         const unsigned int      i_m_blocking,
+                                                         const unsigned int      i_n_blocking,
+                                                         const unsigned int      i_ld,
+                                                         const unsigned int      i_data_size,
+                                                         const unsigned int      i_zero,
+                                                         const unsigned char     i_zip_row_major );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* io_generated_code,
                                                        const unsigned int      i_gp_reg_addr,
                                                        const unsigned int      i_gp_reg_scratch_a,
@@ -129,6 +169,37 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
                                                        const unsigned int      i_m_blocking,
                                                        const unsigned int      i_n_blocking,
                                                        const unsigned int      i_ld );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( libxsmm_generated_code* io_generated_code,
+                                                            const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                            const unsigned int      i_gp_reg_addr,
+                                                            const unsigned int      i_gp_reg_scratch,
+                                                            const unsigned int      i_vec_length,
+                                                            const unsigned int      i_vec_reg_count,
+                                                            const unsigned int      i_m_blocking,
+                                                            const unsigned int      i_n_blocking,
+                                                            const unsigned int      i_ld,
+                                                            const unsigned char     i_zip_row_major );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code* io_generated_code,
+                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                          const unsigned int      i_gp_reg_addr,
+                                                          const unsigned int      i_gp_reg_scratch,
+                                                          const unsigned int      i_gp_reg_scratch1,
+                                                          const unsigned int      i_gp_reg_scratch2,
+                                                          const unsigned int      i_gp_reg_scratch3,
+                                                          const unsigned int      i_vec_length,
+                                                          const unsigned int      i_vec_reg_count,
+                                                          const unsigned int      i_m_blocking,
+                                                          const unsigned int      i_n_blocking,
+                                                          const unsigned int      i_ld,
+                                                          const unsigned int      i_data_size,
+                                                          const unsigned int      i_zero,
+                                                          const unsigned char     i_zip_row_major );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_generated_code,
