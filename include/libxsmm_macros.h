@@ -142,10 +142,12 @@
 #define LIBXSMM_IS_UINT(VALUE) LIBXSMM_IS_INTEGER(unsigned int, VALUE, 0, UINT_MAX)
 #define LIBXSMM_IS_INT(VALUE) LIBXSMM_IS_INTEGER(/*signed*/int, VALUE, INT_MIN, INT_MAX)
 
-#if !defined(LIBXSMM_CAST_CHECK) && !defined(__COVERITY__) && 0
-# define LIBXSMM_CAST_CHECK LIBXSMM_ASSERT_MSG
-#else
-# define LIBXSMM_CAST_CHECK(A, B) 1
+#if !defined(LIBXSMM_CAST_CHECK)
+# if !defined(__COVERITY__) && 1
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(EXPR, MSG)
+# else
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(1, MSG)
+# endif
 #endif
 
 /**
