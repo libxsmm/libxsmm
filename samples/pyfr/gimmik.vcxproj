@@ -27,11 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gimmik.h" />
     <ClCompile Include="gimmik.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="gimmik.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>gimmik</ProjectName>
