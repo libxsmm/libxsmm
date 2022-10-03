@@ -759,9 +759,10 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
                                                      cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V, /* apply the improvement on tmp, and write result into cur */
                                                      cur_vreg, tmp_vreg, 0, cur_vreg, l_pred_reg, l_sve_type);
-            /* Newton iteration: guess *= (3-guess*guess*x)/2, because of above chosen/constant num_iterations coverity[dead_error_line] */
+            /* coverity[dead_error_line] */
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V,
                                                     cur_vreg, cur_vreg, 0, num_iterations > 0 ? tmp_guess : cur_vreg, l_pred_reg, l_sve_type);
+            /* Newton iteration: guess *= (3-guess*guess*x)/2 */
             for (i=0;i<num_iterations;i++) {
               unsigned char dst_reg = LIBXSMM_CAST_UCHAR(i == (num_iterations-1) ? cur_vreg : tmp_guess); /* improve the guess; then save it */
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FMUL_V,
