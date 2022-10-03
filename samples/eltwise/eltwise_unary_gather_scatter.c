@@ -3,7 +3,7 @@
 * This file is part of the LIBXSMM library.                                   *
 *                                                                             *
 * For information on the license, see the LICENSE file.                       *
-* Further information: https://github.com/hfp/libxsmm/                        *
+* Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
@@ -25,6 +25,7 @@
 #define SCATTER 1
 #define EXPANSION_FACTOR 4
 
+LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {
   if (n > 1)
   {
@@ -75,14 +76,14 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
       if (use_gather_or_scatter == GATHER) {
         if (use_rows_cols_offs == COLS) {
           for (ind = 0; ind < out_n; ind++) {
-            j = ind_array_64bit[ind];
+            j = (libxsmm_blasint)ind_array_64bit[ind];
             for (i = 0; i < out_m; i++) {
               sout[i + ind * out_ld] = sinp[i + j * inp_ld];
             }
           }
         } else if (use_rows_cols_offs == ROWS) {
           for (ind = 0; ind < out_m; ind++) {
-            i = ind_array_64bit[ind];
+            i = (libxsmm_blasint)ind_array_64bit[ind];
             for (j = 0; j < out_n; j++) {
               sout[ind + j * out_ld] = sinp[i + j * inp_ld];
             }
@@ -90,7 +91,7 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
         } else {
           for (ind2 = 0; ind2 < out_n; ind2++) {
             for (ind = 0; ind < out_m; ind++) {
-              i = ind_array_64bit[ind + ind2 * out_m];
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * out_m];
               sout[ind + ind2 * out_ld] = sinp[i];
             }
           }
@@ -98,14 +99,14 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
       } else {
         if (use_rows_cols_offs == COLS) {
           for (ind = 0; ind < inp_n; ind++) {
-            j = ind_array_64bit[ind];
+            j = (libxsmm_blasint)ind_array_64bit[ind];
             for (i = 0; i < out_m; i++) {
               sout[i + j * out_ld] = sinp[i + ind * inp_ld];
             }
           }
         } else if (use_rows_cols_offs == ROWS) {
           for (ind = 0; ind < inp_m; ind++) {
-            i = ind_array_64bit[ind];
+            i = (libxsmm_blasint)ind_array_64bit[ind];
             for (j = 0; j < inp_n; j++) {
               sout[i + j * out_ld] = sinp[ind + j * inp_ld];
             }
@@ -113,7 +114,7 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
         } else  {
           for (ind2 = 0; ind2 < inp_n; ind2++) {
             for (ind = 0; ind < inp_m; ind++) {
-              i = ind_array_64bit[ind + ind2 * inp_m];
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * inp_m];
               sout[i] = sinp[ind + ind2 * inp_ld ];
             }
           }
@@ -173,14 +174,14 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
       if (use_gather_or_scatter == GATHER) {
         if (use_rows_cols_offs == COLS) {
           for (ind = 0; ind < out_n; ind++) {
-            j = ind_array_64bit[ind];
+            j = (libxsmm_blasint)ind_array_64bit[ind];
             for (i = 0; i < out_m; i++) {
               bout[i + ind * out_ld] = binp[i + j * inp_ld];
             }
           }
         } else if (use_rows_cols_offs == ROWS) {
           for (ind = 0; ind < out_m; ind++) {
-            i = ind_array_64bit[ind];
+            i = (libxsmm_blasint)ind_array_64bit[ind];
             for (j = 0; j < out_n; j++) {
               bout[ind + j * out_ld] = binp[i + j * inp_ld];
             }
@@ -188,7 +189,7 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
         } else {
           for (ind2 = 0; ind2 < out_n; ind2++) {
             for (ind = 0; ind < out_m; ind++) {
-              i = ind_array_64bit[ind + ind2 * out_m];
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * out_m];
               bout[ind + ind2 * out_ld] = binp[i];
             }
           }
@@ -196,14 +197,14 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
       } else {
         if (use_rows_cols_offs == COLS) {
           for (ind = 0; ind < inp_n; ind++) {
-            j = ind_array_64bit[ind];
+            j = (libxsmm_blasint)ind_array_64bit[ind];
             for (i = 0; i < out_m; i++) {
               bout[i + j * out_ld] = binp[i + ind * inp_ld];
             }
           }
         } else if (use_rows_cols_offs == ROWS) {
           for (ind = 0; ind < inp_m; ind++) {
-            i = ind_array_64bit[ind];
+            i = (libxsmm_blasint)ind_array_64bit[ind];
             for (j = 0; j < inp_n; j++) {
               bout[i + j * out_ld] = binp[ind + j * inp_ld];
             }
@@ -211,7 +212,7 @@ void reference_gather_scatter(float *sinp, float *sout, libxsmm_bfloat16 *binp, 
         } else  {
           for (ind2 = 0; ind2 < inp_n; ind2++) {
             for (ind = 0; ind < inp_m; ind++) {
-              i = ind_array_64bit[ind + ind2 * inp_m];
+              i = (libxsmm_blasint)ind_array_64bit[ind + ind2 * inp_m];
               bout[i] = binp[ind + ind2 * inp_ld ];
             }
           }
@@ -286,6 +287,8 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   libxsmm_datatype dtype = (use_16bit_dtype == DTYPE_32BIT) ? LIBXSMM_DATATYPE_F32 : LIBXSMM_DATATYPE_BF16;
   libxsmm_blasint m_kernel = 0, n_kernel = 0;
 
+  memset(&l_unary_param, 0, sizeof(l_unary_param));
+
   if (use_gather_or_scatter == GATHER) {
     m_kernel = out_m;
     n_kernel = out_n;
@@ -301,7 +304,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   } else {
     unary_flags = LIBXSMM_MELTW_FLAG_UNARY_GS_OFFS;
   }
-  unary_flags = (use_64bit_index == IDX_64BIT) ? (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES | unary_flags) : (LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES | unary_flags) ;
+  unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, use_64bit_index == IDX_64BIT
+    ? LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES
+    : LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES);
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
   unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
   l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
@@ -327,6 +332,9 @@ int compare_results(float *sout, float *sout_ref, libxsmm_bfloat16 *bout, libxsm
   libxsmm_matdiff_info norms_elts, diff;
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
+
+  LIBXSMM_UNUSED(out_m); LIBXSMM_UNUSED(inp_ld);
+  LIBXSMM_UNUSED(inp_m); LIBXSMM_UNUSED(inp_n);
 
   if (use_16bit_dtype == DTYPE_32BIT) {
     if (use_64bit_index == IDX_64BIT) {
@@ -511,6 +519,7 @@ int main(int argc, char* argv[])
       out_ld = ld_out;
       ind_array_64bit = (unsigned long long*)  libxsmm_aligned_malloc( out_n * sizeof(unsigned long long), 2097152);
       ind_array_32bit = (unsigned int*)  libxsmm_aligned_malloc( out_n * sizeof(unsigned int), 2097152);
+      assert(NULL != unique_random_array);
       create_unique_random_array(unique_random_array, inp_n);
       for (i = 0; i < out_n; i++) {
         ind_array_64bit[i] = (unsigned long long) unique_random_array[i];
@@ -672,9 +681,8 @@ int main(int argc, char* argv[])
   free( unique_random_array );
 
   if (ret == EXIT_FAILURE) {
-    fprintf(stderr, "ERROR at test: M = %d, N = %d, ldi = %d, ldo = %d, gs = %d, rowcolsoffs = %d, 32b/16b = %d, idxtype = %d\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
+    fprintf(stderr, "ERROR at test: M = %u, N = %u, ldi = %i, ldo = %i, gs = %u, rowcolsoffs = %u, 32b/16b = %u, idxtype = %u\n", m, n, ld_in, ld_out, use_gather_or_scatter, use_rows_cols_offs, use_16bit_dtype, use_64bit_index );
   }
 
   return ret;
 }
-

@@ -9,9 +9,10 @@ CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 
-BLAS = 2
+BLAS = 1
+SIMD = 1
 SYM = 1
-OMP = 1
+OMP = 0
 
 # explore AVX/ARCH=native
 SSE = 0
@@ -38,13 +39,16 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
+XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg $(OUTDIR)/gimmik
 
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS)
+
+$(OUTDIR)/gimmik: $(BLDDIR)/gimmik-c.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
 
 $(OUTDIR)/$(OUTNAME)_driver_asp_reg: $(BLDDIR)/$(OUTNAME)_driver_asp_reg-c.o $(OUTDIR)/.make $(LIBDEP)
 	$(LD) -o $@ $< $(call cleanld,$(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS))
@@ -63,7 +67,7 @@ ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@-rm -f $(OBJECTS) $(OBJECTX) fit.log *.dat
+	@-rm -f $(OBJECTS) $(OBJECTX) *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@-rm -f .make .state

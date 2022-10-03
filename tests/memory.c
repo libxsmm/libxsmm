@@ -11,13 +11,14 @@
 #include <libxsmm_source.h>
 
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char* argv[])
 {
   char item[LIBXSMM_DESCRIPTOR_MAXSIZE];
   const libxsmm_blasint isize = sizeof(item);
   const libxsmm_blasint size = 1000, ntests = 1000;
   char *const data = (char*)malloc((size_t)isize * size);
   libxsmm_blasint i, j, k, s;
+  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
 
   if (NULL != libxsmm_stristr("ends with b", "Begins with b")) return EXIT_FAILURE;
   if (NULL == libxsmm_stristr("in between of", "BeTwEEn")) return EXIT_FAILURE;

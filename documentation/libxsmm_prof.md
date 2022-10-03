@@ -34,7 +34,7 @@ The `:4=exclusive` is related to Intel MPI or mpirun's gtool arguments and unrel
 
 ![The shown "function name" (`libxsmm_knl_dnn_23x23x23_23_23_23_a1_b1_p6::mxm`) encodes an <span>Intel&#160;AVX-512</span> ("knl") double-precision kernel ("d") for small dense matrix multiplication, which performs no transposes ("nn"). The name further encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0, and some prefetch strategy ("p6").](libxsmm_prof-vtune.png)
 
-An application that cannot rely on LIBXSMM's build system can apply `-DLIBXSMM_VTUNE=2` during compilation, and link against `${VTUNE_AMPLIFIER_XE_2017_DIR}/lib64/libjitprofiling.a`. For example, TensorFlow with LIBXSMM and <span>Intel&#160;VTune&#160;Profiler</span> may use this way to gain insight into LIBXSMM's JIT-code (see [here](tensorflow.md#performance-profiling)).
+An application that cannot rely on LIBXSMM's build system can apply `-DLIBXSMM_VTUNE=2` during compilation, and link against `${VTUNE_AMPLIFIER_XE_2017_DIR}/lib64/libjitprofiling.a`.
 
 ### <span>Linux&#160;perf</span>
 

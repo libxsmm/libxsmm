@@ -23,10 +23,10 @@ WC=$(command -v wc)
 # list of tests that produce "application must be linked against LAPACK/BLAS" in case of BLAS=0
 TESTS_NEEDBLAS="gemm.c wrap.sh"
 # grep pattern based on TESTS_NEEDBLAS
-TESTS_NEEDBLAS_GREP=$(echo ${TESTS_NEEDBLAS} | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
+TESTS_NEEDBLAS_GREP=$(echo "${TESTS_NEEDBLAS}" | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
-if [ "" = "$*" ]; then
-  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) wrap.sh"
+if [ ! "$*" ]; then
+  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) eltwise.sh fsspmdm.sh wrap.sh"
 else
   TESTS="$*"
 fi
@@ -59,7 +59,7 @@ NTEST=1
 NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
   NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
-  echo -n "${NTEST} of ${NMAX} (${NAME})... "
+  printf "%02d of %02d (${NAME})... " "${NTEST}" "${NMAX}"
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}" || exit 1
     if [ -e "${HERE}/${NAME}.sh" ]; then

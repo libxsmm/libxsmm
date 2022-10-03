@@ -21,13 +21,14 @@
 #define VLA_IKJ_INDX(DIM, ARRAY, I0, I1, I2, S1, S2) LIBXSMM_VLA_ACCESS(DIM, ARRAY, I0, I2, I1, S2, S1)
 
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char* argv[])
 {
   int ni = 9, nj = 7, nk = 3, i, j, k, linear = 0, result = EXIT_SUCCESS;
   ELEM_TYPE *const input = (ELEM_TYPE*)malloc(sizeof(ELEM_TYPE) * ni * nj * nk);
   LIBXSMM_VLA_DECL(1, const ELEM_TYPE, in1, input);
   VLA_IJK_DECL(3, const ELEM_TYPE, jk3, input, nj, nk);
   VLA_IKJ_DECL(3, const ELEM_TYPE, kj3, input, nj, nk);
+  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
 
   LIBXSMM_ASSERT(NULL != input);
   for (i = 0; i < (ni * nj * nk); ++i) input[i] = (ELEM_TYPE)i;
