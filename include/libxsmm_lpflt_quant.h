@@ -55,4 +55,3 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
 LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int length);
 
 #endif /*LIBXSMM_LPFLT_QUANT_H*/
-
