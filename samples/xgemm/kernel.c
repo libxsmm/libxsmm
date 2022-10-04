@@ -1075,16 +1075,6 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
-#if 0
-    libxsmm_blasint l_i, l_j;
-    float* f_data =      (float*)data;
-    float* f_data_gold = (float*)data_gold;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        printf("gold: %f, computed: %f\n", f_data_gold[(l_j * ld) + l_i], f_data[(l_j * ld) + l_i] );
-      }
-    }
-#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
@@ -1107,56 +1097,14 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold_f, data_f, &ld, &ld);
     error = l_diff.normf_rel;
 
-#if 0
-    libxsmm_blasint l_i, l_j;
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        printf("gold: %f, computed: %f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i] );
-      }
-    }
-#endif
-
     free( data_f );
     free( data_gold_f ) ;
   } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    libxsmm_blasint l_i, l_j;
-    double* data_gold_f = (double*)malloc( sizeof(double) * ld * n );
-    double* data_f      = (double*)malloc( sizeof(double)* ld * n );
-    int* l_data = (int*)data;
-    int* l_data_gold = (int*)data_gold;
-
-    assert(NULL != data_gold_f && NULL != data_f);
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        data_gold_f[(l_j * ld) + l_i] = (double)l_data_gold[(l_j * ld) + l_i];
-        data_f[(l_j * ld) + l_i]      = (double)l_data[(l_j * ld) + l_i];
-      }
-    }
-
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
-
-    free( data_f );
-    free( data_gold_f );
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
-    libxsmm_blasint l_i, l_j;
-    double* data_gold_f = (double*)malloc( sizeof(double) * ld * n );
-    double* data_f      = (double*)malloc( sizeof(double) * ld * n );
-    unsigned char* l_data      = (unsigned char*)data;
-    unsigned char* l_data_gold = (unsigned char*)data_gold;
-    assert(NULL != data_gold_f && NULL != data_f);
-    for (l_i = 0; l_i < m; l_i++) {
-      for (l_j = 0; l_j < n; l_j++) {
-        data_gold_f[(l_j * ld) + l_i] = (double)l_data_gold[(l_j * ld) + l_i];
-        data_f[(l_j * ld) + l_i]      = (double)l_data[(l_j * ld) + l_i];
-      }
-    }
-
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold_f, data_f, &ld, &ld);
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
-
-    free( data_f );
-    free( data_gold_f );
   } else {
     error = 100.0;
   }
@@ -1717,7 +1665,7 @@ int main(int argc, char* argv []) {
 
 #ifndef  USE_GEMM_EXT_FRONTEND
   if (l_binary_postop != 0 || l_unary_postop != 0) {
-    printf("ERROR: Requested GEMM fusion but the EXT_FRONTEND is NOT used,,. Exiting...\n");
+    printf("ERROR: Requested GEMM fusion but the EXT_FRONTEND is NOT used. Exiting...\n");
     return EXIT_FAILURE;
   }
 #endif
