@@ -1356,8 +1356,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (NULL != code.ptr_const) {
+          const libxsmm_descriptor_kind kind = LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind);
           /* check if the registered entity is a GEMM kernel */
-          switch (LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)) {
+          switch (kind) {
             case LIBXSMM_KERNEL_KIND_MATMUL: {
               const libxsmm_gemm_descriptor *const desc = &registry_keys[i].entry.gemm.desc;
               if (1 < desc->m && 1 < desc->n) {
@@ -1377,7 +1378,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             case LIBXSMM_KERNEL_KIND_USER: {
               ++internal_statistic_num_user;
             } break;
-            default: if (LIBXSMM_KERNEL_UNREGISTERED <= LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)) {
+            default: if (LIBXSMM_KERNEL_UNREGISTERED <= kind) {
               ++errors;
             }
             else {
@@ -1401,10 +1402,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
-              if (LIBXSMM_KERNEL_KIND_USER == LIBXSMM_DESCRIPTOR_KIND(registry_keys[i].entry.kind)
-                /* dump user-data just like JIT'ted code */
-                && 0 > libxsmm_verbosity)
-              {
+              if (LIBXSMM_KERNEL_KIND_USER == kind && 0 > libxsmm_verbosity) { /* dump user-data just like JIT'ted code */
                 char name[16] = "";
                 int nchar;
 #if defined(LIBXSMM_REGUSER_HASH)
@@ -2451,7 +2449,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               if (2 < mode) { /* arrived from collision state; now mark as collision */
                 libxsmm_code_pointer fix_entry;
 #   if (1 < INTERNAL_REGLOCK_MAXN)
-                fix_entry.ptr = LIBXSMM_ATOMIC_LOAD(&internal_registry[i0].ptr, LIBXSMM_ATOMIC_RELAXED);
+                fix_entry.ptr = (void*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(
+                  &internal_registry[i0].ptr, LIBXSMM_ATOMIC_RELAXED);
 #   else
                 fix_entry = internal_registry[i0];
 #   endif
@@ -2459,7 +2458,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
                 if (0 == (LIBXSMM_HASH_COLLISION & fix_entry.uval)) {
                   fix_entry.uval |= LIBXSMM_HASH_COLLISION; /* mark current entry as collision */
 #   if (1 < INTERNAL_REGLOCK_MAXN)
-                  LIBXSMM_ATOMIC_STORE(&internal_registry[i0].ptr, fix_entry.ptr, LIBXSMM_ATOMIC_RELAXED);
+                  LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i0].ptr,
+                    fix_entry.ptr, LIBXSMM_ATOMIC_RELAXED);
 #   else
                   internal_registry[i0] = fix_entry;
 #   endif
