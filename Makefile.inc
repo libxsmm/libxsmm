@@ -1472,8 +1472,7 @@ else # GCC assumed
     CXXFLAGS += -Wall
     CFLAGS += -Wall
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
-    CPEDANTIC += -pedantic -Wextra -Wstrict-prototypes \
-                 -Wno-variadic-macros
+    CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
@@ -1490,9 +1489,9 @@ else # GCC assumed
     ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION_NUM)))"))
       FWARNEXTRA := -Wuse-without-only -Wc-binding-type \
-                   -Wrealloc-lhs -Wrealloc-lhs-all \
-                   -Wreal-q-constant -Wconversion-extra \
-                   -Wline-truncation
+                    -Wrealloc-lhs -Wrealloc-lhs-all \
+                    -Wreal-q-constant -Wconversion-extra \
+                    -Wline-truncation
     endif
     endif
     ifneq (0,$(UNUSED))
@@ -1516,10 +1515,10 @@ else # GCC assumed
       endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
-      CFLAGS += $(CSTD) $(CPEDANTIC)
+      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
       FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
-    else ifneq (0,$(PEDANTIC))
+    else ifneq (0,$(PEDANTIC)) # 2<=PEDANTIC
       ifneq (Darwin,$(UNAME))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
           ifneq (0,$(shell echo "$$((0==$(CLANG)||130000>$(CC_VERSION_NUM)))"))
@@ -1543,7 +1542,7 @@ else # GCC assumed
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
       #CXXFLAGS += -Wno-missing-field-initializers #-Wzero-as-null-pointer-constant
-      CFLAGS += $(CSTD) $(CPEDANTIC)
+      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers

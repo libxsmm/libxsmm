@@ -167,8 +167,6 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
   unsigned int start_vreg_sum = 0;
   unsigned int start_vreg_sum2 = 0;
   unsigned int reduce_instr = 0;
-  unsigned int vmove_instruction_in = i_micro_kernel_config->vmove_instruction_in;
-  unsigned int vmove_instruction_out = i_micro_kernel_config->vmove_instruction_out;
 
   unsigned int vlen = libxsmm_cpuid_vlen32(i_micro_kernel_config->instruction_set);
   unsigned int tmp_vreg = 31;
@@ -198,8 +196,6 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
   unsigned char pred_reg_all = 0;/* set by caller */
   unsigned char pred_reg_mask = 1;
 
-  LIBXSMM_UNUSED(vmove_instruction_in);
-  LIBXSMM_UNUSED(vmove_instruction_out);
   /* Some rudimentary checking of M, N and LDs*/
   if ( i_mateltwise_desc->m > i_mateltwise_desc->ldi ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );

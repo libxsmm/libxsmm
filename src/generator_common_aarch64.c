@@ -444,7 +444,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
     }
 
     /* reset C-ptr to original address */
-    l_jump_block_n_last = i_ld * i_n_blocking - l_jump_block_n_last;
+    l_jump_block_n_last = (unsigned long long)i_ld * i_n_blocking - l_jump_block_n_last;
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_addr,
@@ -621,7 +621,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
   }
 
   /* reset C-ptr to original address */
-  l_jump_block_n_last = i_ld * i_n_blocking - l_jump_block_n_last;
+  l_jump_block_n_last = (unsigned long long)i_ld * i_n_blocking - l_jump_block_n_last;
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                   LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                   i_gp_reg_addr,

@@ -142,22 +142,30 @@
 #define LIBXSMM_IS_UINT(VALUE) LIBXSMM_IS_INTEGER(unsigned int, VALUE, 0, UINT_MAX)
 #define LIBXSMM_IS_INT(VALUE) LIBXSMM_IS_INTEGER(/*signed*/int, VALUE, INT_MIN, INT_MAX)
 
+#if !defined(LIBXSMM_CAST_CHECK)
+# if !defined(__COVERITY__) && 1
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(EXPR, MSG)
+# else
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(1, MSG)
+# endif
+#endif
+
 /**
  * LIBXSMM_CAST: Perform type-cast with following two advantages:
  *               (1) Make it easy to locate/find the type-cast.
  *               (2) Range-check to ensure fitting into type.
  */
-#define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ULLONG(VALUE), "Value cannot be represented as ULLONG"), VALUE))
-#define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_LLONG(VALUE), "Value cannot be represented as LLONG"), VALUE))
-#define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ULONG(VALUE), "Value cannot be represented as ULONG"), VALUE))
-#define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_LONG(VALUE), "Value cannot be represented as LONG"), VALUE))
-#define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_USHORT(VALUE), "Value cannot be represented as USHORT"), VALUE))
-#define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_SHORT(VALUE), "Value cannot be represented as SHORT"), VALUE))
-#define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_UCHAR(VALUE), "Value cannot be represented as UCHAR"), VALUE))
-#define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ICHAR(VALUE), "Value cannot be represented as ICHAR"), VALUE))
-#define LIBXSMM_CAST_CHAR(VALUE) ((char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_CHAR(VALUE), "Value cannot be represented as CHAR"), VALUE))
-#define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_UINT(VALUE), "Value cannot be represented as UINT"), VALUE))
-#define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_INT(VALUE), "Value cannot be represented as INT"), VALUE))
+#define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ULLONG(VALUE), "Value cannot be represented as ULLONG"), VALUE))
+#define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_LLONG(VALUE), "Value cannot be represented as LLONG"), VALUE))
+#define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ULONG(VALUE), "Value cannot be represented as ULONG"), VALUE))
+#define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_LONG(VALUE), "Value cannot be represented as LONG"), VALUE))
+#define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_USHORT(VALUE), "Value cannot be represented as USHORT"), VALUE))
+#define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_SHORT(VALUE), "Value cannot be represented as SHORT"), VALUE))
+#define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_UCHAR(VALUE), "Value cannot be represented as UCHAR"), VALUE))
+#define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ICHAR(VALUE), "Value cannot be represented as ICHAR"), VALUE))
+#define LIBXSMM_CAST_CHAR(VALUE) ((char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_CHAR(VALUE), "Value cannot be represented as CHAR"), VALUE))
+#define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_UINT(VALUE), "Value cannot be represented as UINT"), VALUE))
+#define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_INT(VALUE), "Value cannot be represented as INT"), VALUE))
 
 #if (0 != LIBXSMM_ILP64)
 # define LIBXSMM_IS_BLASINT(VALUE) LIBXSMM_IS_LLONG(VALUE)
