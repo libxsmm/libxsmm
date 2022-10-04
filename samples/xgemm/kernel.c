@@ -354,7 +354,7 @@ void apply_sigmoid(const gemm_def *i_gemm_def, void *l_c_gold) {
 }
 
 LIBXSMM_INLINE
-double get_random_posneg_p5_num() {
+double get_random_posneg_p5_num(void) {
   double tmp = libxsmm_rng_f64()-0.5;
 
   if ( tmp < -0.4 ) {
@@ -385,7 +385,7 @@ double get_random_posneg_p5_num() {
 }
 
 LIBXSMM_INLINE
-double get_random_pos_p5_num() {
+double get_random_pos_p5_num(void) {
   double tmp = libxsmm_rng_f64();
 
   if ( tmp < 0.1 ) {
