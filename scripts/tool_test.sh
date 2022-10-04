@@ -38,6 +38,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
 
+  # ensure proper permissions
+  umask 007
+
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
     LIMIT=0
@@ -161,13 +164,11 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
-    umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT} ${*:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
-    umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
@@ -447,4 +448,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
 
   exit "${RESULT}"
+else
+  >&2 echo "ERROR: missing prerequisites!"
+  exit 1
 fi

@@ -21,8 +21,8 @@ for (i = 0; i < nn; ++i) {
   double v0, v1;
 
   for (j = 0; j < mm; ++j) {
-    const double ti = (NULL != real_tst ? real_tst[i*ldt+j] : 0);
-    const double ri = real_ref[i*ldr+j];
+    const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i*ldt+j]) : 0);
+    const double ri = LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_ref[i*ldr+j]);
     const double ta = LIBXSMM_ABS(ti);
     const double ra = LIBXSMM_ABS(ri);
 
@@ -137,7 +137,8 @@ if (0 == result_nan) {
     double normri = 0, normti = 0, norm1 = 0;
 
     for (i = 0; i < nn; ++i) {
-      const double ri = real_ref[i*ldr + j], ti = (NULL != real_tst ? real_tst[i*ldt + j] : 0);
+      const double ri = LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_ref[i*ldr+j]);
+      const double ti = (NULL != real_tst ? LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(real_tst[i*ldt+j]) : 0);
       const double di = (NULL != real_tst ? LIBXSMM_DELTA(ri, ti) : 0);
       const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
