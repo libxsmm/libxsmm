@@ -2830,7 +2830,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
   if (m_trips_loop > 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 40, i_gp_reg_mapping->gp_reg_ind_base );
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, i_gp_reg_mapping->gp_reg_in_base,
-      i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in_base, i_micro_kernel_config->datatype_size_in * vlen * (unsigned long long)m_unroll_factor );
+      i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in_base,(unsigned long long)i_micro_kernel_config->datatype_size_in * (unsigned long long)vlen * (unsigned long long)m_unroll_factor );
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1);
   }
 
@@ -2841,7 +2841,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
     if (m_trips_loop == 1) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
         i_gp_reg_mapping->gp_reg_in_base, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in_base,
-        i_micro_kernel_config->datatype_size_in * vlen * (unsigned long long)m_unroll_factor );
+        (unsigned long long)i_micro_kernel_config->datatype_size_in *(unsigned long long)vlen * (unsigned long long)m_unroll_factor );
     }
 
     /* Perform the reductions for all columns */

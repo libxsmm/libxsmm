@@ -578,7 +578,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                    i_gp_reg_mapping->gp_reg_a,
                                                    i_gp_reg_mapping->gp_reg_help_0,
                                                    i_gp_reg_mapping->gp_reg_a,
-                                                   l_remainder_size * i_micro_kernel_config->datatype_size_in );
+                                                   (unsigned long long)l_remainder_size * i_micro_kernel_config->datatype_size_in );
   }
 
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
