@@ -251,21 +251,24 @@ void test_sve_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
   unsigned char t;
   unsigned char w;
   unsigned char p;
-
+  unsigned int imm;
+  unsigned char has_imm = (instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM ) == LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM ;
   reset_code_buffer( mycode, test_name );
 
   for (d = 0; d < 32; ++d ) {
     for (s = 0; s < 32; ++s ) {
       for (t = 0; t < 32; ++t ) {
         for (w = 0; w < 3; ++w ) {
-          if( (instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE  ){
-            d = s;
-          }
-          if ( has_pred == 0 ) {
-            libxsmm_aarch64_instruction_sve_compute( mycode, instr, s, t, 0, d, 0, tuple[w] );
-          } else {
-            for (p = 0; p < 8; ++p) {
-              libxsmm_aarch64_instruction_sve_compute( mycode, instr, s, t, 0, d, p, tuple[w] );
+          for (imm = 0; imm <= has_imm * 255; imm++) {
+            if( (instr & LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST ) == LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST  ){
+              d = s;
+            }
+            if ( has_pred == 0 ) {
+              libxsmm_aarch64_instruction_sve_compute( mycode, instr, s, t, imm, d, 0, tuple[w] );
+            } else {
+              for (p = 0; p < 8; ++p) {
+                libxsmm_aarch64_instruction_sve_compute( mycode, instr, s, t, imm, d, p, tuple[w] );
+              }
             }
           }
         }

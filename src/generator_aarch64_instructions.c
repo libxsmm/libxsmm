@@ -1092,7 +1092,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                      && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
-  unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM);
+  unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM) == LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM;
   unsigned int l_vec_instr = i_vec_instr;
 
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
@@ -1204,7 +1204,10 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-    } else if( l_has_two_sources ){
+    } else if ( l_has_two_sources ||
+              (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P) ){
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
