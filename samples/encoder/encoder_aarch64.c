@@ -258,6 +258,9 @@ void test_sve_compute( char* test_name, libxsmm_generated_code* mycode, unsigned
     for (s = 0; s < 32; ++s ) {
       for (t = 0; t < 32; ++t ) {
         for (w = 0; w < 3; ++w ) {
+          if( (instr & LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE) == LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE  ){
+            d = s;
+          }
           if ( has_pred == 0 ) {
             libxsmm_aarch64_instruction_sve_compute( mycode, instr, s, t, 0, d, 0, tuple[w] );
           } else {
@@ -561,6 +564,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_SMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V, 0 );
   test_sve_compute( "sve_comp_UMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V, 0 );
   test_sve_compute( "sve_comp_USMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V, 0 );
+  test_sve_compute( "sve_comp_SUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I,    0 );
 
   test_sve_pcompute( "sve_pcomp_PTRUE",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );
   mycode.arch = LIBXSMM_AARCH64_V81;

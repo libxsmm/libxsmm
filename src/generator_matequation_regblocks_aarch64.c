@@ -870,9 +870,13 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
             i_micro_kernel_config->vec_shifter,
             i_micro_kernel_config->vec_halves,
             i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c01,
             i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c11,
             i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c21,
             i_micro_kernel_config->vec_tmp0, /* expmask */
+            i_micro_kernel_config->vec_tmp1,
             l_sve_type, l_pred_reg );
         } else {
           libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( io_generated_code,
@@ -911,9 +915,13 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
             i_micro_kernel_config->vec_shifter,
             i_micro_kernel_config->vec_halves,
             i_micro_kernel_config->vec_c0,
+            i_micro_kernel_config->vec_c01,
             i_micro_kernel_config->vec_c1,
+            i_micro_kernel_config->vec_c11,
             i_micro_kernel_config->vec_c2,
+            i_micro_kernel_config->vec_c21,
             i_micro_kernel_config->vec_tmp0, /* expmask */
+            i_micro_kernel_config->vec_tmp1,
             l_sve_type, l_pred_reg );
         } else {
           libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( io_generated_code,

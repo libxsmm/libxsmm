@@ -1087,10 +1087,12 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   unsigned char l_is_type_specific =    i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_EOR_V
                                      && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_ORR_V
                                      && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_AND_V
-                                     && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V;
+                                     && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V
+                                     && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V
+                                     && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
   unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
-
+  unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM);
   unsigned int l_vec_instr = i_vec_instr;
 
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
@@ -1153,6 +1155,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V:
     case LIBXSMM_AARCH64_INSTR_SVE_TBL:
     case LIBXSMM_AARCH64_INSTR_SVE_TBX:
+    case LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I:
     case LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V:
@@ -1201,7 +1204,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         exit(-1);
       }
-    } else {
+    } else if( l_has_two_sources ){
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
@@ -1257,10 +1260,13 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
           code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_1) << 16);
         }
       }
-      if ( l_is_type_specific ) {
-        /* setting type */
-        code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
+      else if( l_has_immediate ){
+        code[code_head] = (code[code_head] & 0xffffe01f) | (unsigned int)(i_index << 5);
       }
+    }
+    if ( l_is_type_specific ) {
+      /* setting type */
+      code[code_head] |= (unsigned int)((0x3 & i_type) << 22);
     }
     if( l_is_predicated ) {
       /* setting p reg */
