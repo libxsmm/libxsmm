@@ -41,8 +41,12 @@
 #define LIBXSMM_X86_ALLFEAT           1999
 #define LIBXSMM_AARCH64_V81           2001 /* Baseline */
 #define LIBXSMM_AARCH64_V82           2002 /* A64FX minus SVE */
-#define LIBXSMM_AARCH64_A64FX         2100 /* SVE */
-#define LIBXSMM_AARCH64_APPL_M1       2200 /* Apple M1 */
+#define LIBXSMM_AARCH64_APPL_M1       2101 /* Apple M1 */
+#define LIBXSMM_AARCH64_SVE128        2201 /* SVE 128 */
+#define LIBXSMM_AARCH64_SVE256        2301 /* SVE 256 */
+#define LIBXSMM_AARCH64_NEOV1         2302 /* Neoverse V1, Graviton 3 */
+#define LIBXSMM_AARCH64_SVE512        2401 /* SVE 512 */
+#define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 
 #if defined(LIBXSMM_PLATFORM_X86)
