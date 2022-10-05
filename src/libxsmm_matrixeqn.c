@@ -95,7 +95,7 @@ LIBXSMM_API_INTERN libxsmm_blasint libxsmm_matrix_eqn_can_overwrite_unary_input(
   if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY) {
     result = 0;
   }
-  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
+  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_HF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(cur_node->info.u_op.type) > 0) {
@@ -110,7 +110,7 @@ LIBXSMM_API_INTERN libxsmm_blasint libxsmm_matrix_eqn_can_overwrite_binary_input
   if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
     result = 0;
   }
-  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
+  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_HF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_HF8) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   return result;

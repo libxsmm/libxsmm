@@ -31,6 +31,57 @@
 #define DIV_OP 4
 #define MULADD_OP 5
 
+
+LIBXSMM_INLINE
+void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
+  float *in_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in2_f  = (float*) libxsmm_aligned_malloc(sizeof(float)*N*ldi, 64);
+  float *in_use;
+  float *in2_use;
+  libxsmm_blasint i, j;
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in, in_f, N*ldi );
+    in_use = in_f;
+  } else {
+    in_use = (float*)in;
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)in2, in2_f, N*ldi );
+    in2_use = in2_f;
+  } else {
+    in2_use = (float*)in2;
+  }
+
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < ldi; i++) {
+      if (in2_use[j*ldi+i] == 0.0f) {
+        in2_use[j*ldi+i] = 1.0;
+      }
+      in_use[j*ldi+i] = 2.0 * in2_use[j*ldi+i];
+      if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.0) {
+        in_use[j*ldi+i] = 400.0;
+        in2_use[j*ldi+i] = 200.0;
+      }
+      if (use_bcast > 0) {
+        in2_use[j*ldi+i] = 1.0;
+      }
+    }
+  }
+
+  if (dtype_in == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in_use, (libxsmm_hfloat8*)in, N*ldi );
+  }
+
+  if (dtype_in1 == LIBXSMM_DATATYPE_HF8) {
+    libxsmm_rne_convert_fp32_hf8( in2_use, (libxsmm_hfloat8*)in2, N*ldi );
+  }
+
+  libxsmm_free(in_f);
+  libxsmm_free(in2_f);
+}
+
 LIBXSMM_INLINE
 float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
   float res = out;
@@ -118,6 +169,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_in0 == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_in0 = (const libxsmm_bfloat8*)in0;
           libxsmm_convert_bf8_f32( &(bf8_in0[(j*ldi0) + i]), &in0_value, 1 );
+        } else if ( dtype_in0 == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_in0 = (const libxsmm_hfloat8*)in0;
+          libxsmm_convert_hf8_f32( &(hf8_in0[(j*ldi0) + i]), &in0_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -134,6 +188,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_in1 == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_in1 = (const libxsmm_bfloat8*)in1;
           libxsmm_convert_bf8_f32( &(bf8_in1[(j*ldi1) + i]), &in1_value, 1 );
+        } else if ( dtype_in1 == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_in1 = (const libxsmm_hfloat8*)in1;
+          libxsmm_convert_hf8_f32( &(hf8_in1[(j*ldi1) + i]), &in1_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -150,6 +207,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           const libxsmm_bfloat8* bf8_out = (const libxsmm_bfloat8*)out;
           libxsmm_convert_bf8_f32( &(bf8_out[(j*ldo) + i]), &out_value, 1 );
+        } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
+          const libxsmm_hfloat8* hf8_out = (const libxsmm_hfloat8*)out;
+          libxsmm_convert_hf8_f32( &(hf8_out[(j*ldo) + i]), &out_value, 1 );
         } else {
           /* shouldn't happen */
         }
@@ -168,6 +228,9 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else if ( dtype_out == LIBXSMM_DATATYPE_BF8 ) {
           libxsmm_bfloat8* bf8_out = (libxsmm_bfloat8*)out;
           libxsmm_rne_convert_fp32_bf8(&out_value, &(bf8_out[(j*ldo) + i]), 1);
+        } else if ( dtype_out == LIBXSMM_DATATYPE_HF8 ) {
+          libxsmm_hfloat8* hf8_out = (libxsmm_hfloat8*)out;
+          libxsmm_rne_convert_fp32_hf8(&out_value, &(hf8_out[(j*ldo) + i]), 1);
         } else {
           /* shouldn't happen */
         }
@@ -218,6 +281,10 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   init_random_matrix( dtype_in1,  in2,      1, ldi, N, 0 );
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
+
+  if ((op == DIV_OP) && ((dtype_in == LIBXSMM_DATATYPE_HF8) || (dtype_in1 == LIBXSMM_DATATYPE_HF8) || (dtype_out == LIBXSMM_DATATYPE_HF8))) {
+    adjust_inputs_for_hf8_div( dtype_in, in, dtype_in1,  in2, ldi, N, use_bcast  );
+  }
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
@@ -329,7 +396,7 @@ int main( int argc, char* argv[] ) {
   int res = EXIT_FAILURE;
 
   if ( argc != 11 ) {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8] [prec_in1: F32/BF16/F16/BF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
@@ -399,16 +466,24 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
-         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+         ( (dtype_in0 == LIBXSMM_DATATYPE_BF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF8 ) && (dtype_out == LIBXSMM_DATATYPE_BF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         /* HF8 */
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_HF8 ) && (dtype_in1 == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
       printf("Testing binary (in0:%s in1:%s out:%s comp:%s) %s - M=%i, N=%i, LDI=%i, LDO=%i\n",
         libxsmm_get_typename(dtype_in0), libxsmm_get_typename(dtype_in1), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), opname, M, N, ldi, ldo);
       res = test_binary_op( M, N, ldi, ldo, op, use_bcast, dtype_in0, dtype_in1, dtype_out, dtype_comp);
     } else {
-      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8] [prec_in1: F32/BF16/F16/BF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
       exit(-1);
     }
   } else {
-    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8] [prec_in1: F32/BF16/F16/BF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3/4/5/6] [prec_in0: F32/BF16/F16/BF8/HF8] [prec_in1: F32/BF16/F16/BF8/HF8] [compute_prec: F32] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
