@@ -367,7 +367,7 @@ unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_d
     return  LIBXSMM_X86_INSTR_VMOVUPD;
   } else if ( (LIBXSMM_DATATYPE_F32 == dtype) || (LIBXSMM_DATATYPE_I32 == dtype) ) {
     return LIBXSMM_X86_INSTR_VMOVUPS;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) ) {
+  } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) || (LIBXSMM_DATATYPE_F16 == dtype) ) {
     return LIBXSMM_X86_INSTR_VMOVDQU16;
   } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
     return LIBXSMM_X86_INSTR_VMOVDQU16;
@@ -384,7 +384,7 @@ unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_
     return  LIBXSMM_X86_INSTR_VPBROADCASTQ;
   } else if ( (LIBXSMM_DATATYPE_F32 == dtype) || (LIBXSMM_DATATYPE_I32 == dtype)) {
     return LIBXSMM_X86_INSTR_VBROADCASTSS;
-  } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype)) {
+  } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) || (LIBXSMM_DATATYPE_F16 == dtype) ) {
     return LIBXSMM_X86_INSTR_VPBROADCASTW;
   } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
     return LIBXSMM_X86_INSTR_VPBROADCASTW;
@@ -460,6 +460,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
 
           if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
             libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+          }else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_F16 ) {
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, 'z', cur_vreg, cur_vreg );
           } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF8 ) {
             libxsmm_generator_cvtbf8ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
           }
@@ -479,6 +481,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
           cur_vreg, 0, 0, 0 );
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_F16 ) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, 'z', cur_vreg, cur_vreg );
       } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF8 ) {
         libxsmm_generator_cvtbf8ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
       }
@@ -502,6 +506,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
 
       if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+      } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_F16 ) {
+        libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, 'z', cur_vreg, cur_vreg );
       } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF8 ) {
         libxsmm_generator_cvtbf8ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
       }
@@ -526,6 +532,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
         cur_vreg, 0, 0, 0 );
     if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF16 ) {
       libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
+    } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_F16 ) {
+      libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTPH2PS, 'z', cur_vreg, cur_vreg );
     } else if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_BF8 ) {
       libxsmm_generator_cvtbf8ps_avx512( io_generated_code, 'z', cur_vreg, cur_vreg );
     }
@@ -569,6 +577,10 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', cur_vreg, cur_vreg );
         }
+      }
+      if (i_micro_kernel_config->cvt_result_to_f16 == 1) {
+        libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, 'z', cur_vreg, cur_vreg, 0,
+                                                                (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
       }
       if (i_micro_kernel_config->cvt_result_to_bf8 == 1) {
         libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, 'z', cur_vreg, cur_vreg,
@@ -653,6 +665,10 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_c
     } else {
       libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VCVTNEPS2BF16, 'z', i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg );
     }
+  }
+  if (i_micro_kernel_config->cvt_result_to_f16 == 1) {
+    libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, 'z', i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg, 0,
+                                                            (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
   }
   if (i_micro_kernel_config->cvt_result_to_bf8 == 1) {
     libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, 'z', i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg,
@@ -1331,6 +1347,12 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
     i_micro_kernel_config->use_fp32bf16_cvt_replacement = 0;
   }
 
+  if ((eqn_root_dtype == LIBXSMM_DATATYPE_F32) && (LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_F16)) {
+    i_micro_kernel_config->cvt_result_to_f16 = 1;
+  } else {
+    i_micro_kernel_config->cvt_result_to_f16 = 0;
+  }
+
   if ((eqn_root_dtype == LIBXSMM_DATATYPE_F32) && (LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_BF8)) {
     i_micro_kernel_config->cvt_result_to_bf8 = 1;
     libxsmm_generator_vcvtneps2bf8_avx512_prep_stack( io_generated_code, i_gp_reg_mapping->temp_reg );
@@ -1340,6 +1362,8 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
     i_micro_kernel_config->dcvt_zmm_aux0 = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->dcvt_zmm_aux1 = i_micro_kernel_config->reserved_zmms + 1;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
+  } else {
+    i_micro_kernel_config->cvt_result_to_bf8 = 0;
   }
 }
 
