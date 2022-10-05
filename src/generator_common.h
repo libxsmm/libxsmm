@@ -470,6 +470,7 @@
 #define LIBXSMM_X86_INSTR_VPADDSW          0x300516ed
 #define LIBXSMM_X86_INSTR_VPADDSB          0x300516ec
 #define LIBXSMM_X86_INSTR_VPSUBD           0x300516fa
+#define LIBXSMM_X86_INSTR_VPSUBW           0x300516f9
 #define LIBXSMM_X86_INSTR_VPMAXSD          0x3005263d
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
@@ -1361,6 +1362,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
   unsigned int fused_b8colbias;
+  unsigned int fused_h8colbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
@@ -1443,6 +1445,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary fields for LP emulations */
   unsigned int bf8_gemm_via_stack_alloc_tensors;
+  unsigned int hf8_gemm_via_stack_alloc_tensors;
 
 } libxsmm_micro_kernel_config;
 
@@ -1577,8 +1580,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int use_fp32bf16_cvt_replacement;
   unsigned int dcvt_mask_aux0;
   unsigned int dcvt_mask_aux1;
+  unsigned int dcvt_mask_aux2;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int dcvt_zmm_aux2;
+  unsigned int dcvt_zmm_aux3;
   unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
@@ -1741,11 +1747,16 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      cvt_result_to_f16;
   unsigned int                      cvt_result_to_bf8;
+  unsigned int                      cvt_result_to_hf8;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
+  unsigned int                      dcvt_mask_aux2;
   unsigned int                      dcvt_zmm_aux0;
   unsigned int                      dcvt_zmm_aux1;
+  unsigned int                      dcvt_zmm_aux2;
+  unsigned int                      dcvt_zmm_aux3;
   unsigned int                      reduce_vreg;
   unsigned int                      n_avail_gpr;
   unsigned int                      gpr_pool[16];
