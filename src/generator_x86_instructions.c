@@ -438,6 +438,7 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VPADDSW:
     case LIBXSMM_X86_INSTR_VPADDSB:
     case LIBXSMM_X86_INSTR_VPSUBD:
+    case LIBXSMM_X86_INSTR_VPSUBW:
     case LIBXSMM_X86_INSTR_VPMAXSD:
     case LIBXSMM_X86_INSTR_VPMAXSW:
     case LIBXSMM_X86_INSTR_VPMINSD:

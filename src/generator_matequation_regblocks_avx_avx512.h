@@ -16,7 +16,10 @@
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_get_start_of_register_block(libxsmm_matequation_kernel_config *i_micro_kernel_config, unsigned int i_reg_block_id);
 
-  LIBXSMM_API_INTERN
+LIBXSMM_API_INTERN
+void libxsmm_generator_has_hf8_input( libxsmm_matrix_eqn_elem *cur_node, unsigned int *found_hf8_input  );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
