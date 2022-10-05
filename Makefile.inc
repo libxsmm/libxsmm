@@ -1191,15 +1191,15 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++11
   endif
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,11074,11076,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,11074,11076,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
   ifneq (0,$(UNUSED))
     CXXFLAGS += -Wno-unused-function
     CFLAGS += -Wno-unused-function
   endif
   ifeq (,$(strip $(GFC)))
     ifneq (ld,$(call qndir,$(LD)))
-      LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+      LDFLAGS += -diag-disable 1879,3415,10006,10010,10411,10441
     endif
     FCFLAGS += -diag-disable 10006,10010,10411,13003
     ifneq (0,$(THREADS))
@@ -1836,7 +1836,7 @@ else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
 else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
   override CTARGET := $(NULL)
 endif
-ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
+ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
   CTARGET := $(NULL)
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
