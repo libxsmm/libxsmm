@@ -27,7 +27,7 @@ void computeAderIntegration() {
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeAder(              m_timeStepWidthSimulation,
                                            l_globalData->stiffnessMatricesTransposed,
                                            m_cells->dofs[l_cell],
@@ -54,7 +54,7 @@ void computeVolumeIntegration() {
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_volumeKernel.computeIntegral(        l_globalData->stiffnessMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].starMatrices,
@@ -79,7 +79,7 @@ void computeLocalBoundaryIntegration() {
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_boundaryKernel.computeLocalIntegral( m_cellInformation[l_cell].faceTypes,
                                            l_globalData->fluxMatrices,
                                            m_cells->buffers[l_cell],
@@ -111,7 +111,7 @@ void computeLocalIntegration() {
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
-  for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
                                            l_globalData->stiffnessMatricesTransposed,
                                            m_cells->dofs[l_cell],
@@ -165,7 +165,7 @@ void computeNeighboringIntegration() {
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
-  for( int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
+  for ( int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeIntegrals(             m_cellInformation[l_cell].ltsSetup,
                                                m_cellInformation[l_cell].faceTypes,
                                                m_cellInformation[l_cell].currentTime,

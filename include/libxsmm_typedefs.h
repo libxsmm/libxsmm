@@ -80,13 +80,16 @@
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
 #define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
-#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) ? (INP) : ((INP) | ((OUT) << 4)))
+#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) \
+  ? ((unsigned char)((INP))) \
+  : ((unsigned char)((INP) | ((unsigned char)((OUT) << 4)))))
 #define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_DATATYPE_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct a type-id from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
+#define LIBXSMM_DATATYPE2(ITYPE, OTYPE) (libxsmm_datatype)LIBXSMM_GETENUM( \
+  LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
 
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #if !defined(LIBXSMM_DESCRIPTOR_MAXSIZE)

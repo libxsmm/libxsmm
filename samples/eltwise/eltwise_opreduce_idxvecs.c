@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
 
-  if(argc == 1){
+  if (argc == 1) {
     /* probably help is wanted */
     printf(" Error! Usage: %s [M=64] [N=64] [N_COLS_IDX=32] [LD_IN=64] [OP=0] [OP_ORDER=0] [SCALE_OP_RES=0] [REDOP=0] [REG_VECIN=0] [IMPLICIT_IDX=0] [ARGOP_MODE=0] [IDX_MODE=0] [ITERS=10000] [BF16=0] [BCAST_FACTOR=0]\n", argv[0] );
     exit(-1);

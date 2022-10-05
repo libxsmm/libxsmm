@@ -38,7 +38,7 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
   if (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
     unsigned int cur_pos = *arg_id;
-    if (cur_node->info.arg.in_pos >= 0){
+    if (cur_node->info.arg.in_pos >= 0) {
       if (cur_pos < i_micro_kernel_config->n_avail_gpr) {
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
@@ -314,7 +314,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
       libxsmm_datatype fake_dt;
       if (i_vlen_in == 64) {
         fake_dt = LIBXSMM_DATATYPE_I8;
-      } else if(i_vlen_in == 32) {
+      } else if (i_vlen_in == 32) {
         fake_dt = LIBXSMM_DATATYPE_BF16;
       } else {
         fake_dt = LIBXSMM_DATATYPE_F32;
@@ -337,7 +337,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
         libxsmm_datatype fake_dt;
         if (i_vlen_out == 64) {
           fake_dt = LIBXSMM_DATATYPE_I8;
-        } else if(i_vlen_out == 32) {
+        } else if (i_vlen_out == 32) {
           fake_dt = LIBXSMM_DATATYPE_BF16;
         } else {
           fake_dt = LIBXSMM_DATATYPE_F32;
@@ -1286,7 +1286,7 @@ void libxsmm_configure_reserved_zmms_and_masks(libxsmm_generated_code* io_genera
         /* Configure Reduce-to-scalar output_mask */
         if (i_vlen_out == 64) {
           fake_dt = LIBXSMM_DATATYPE_I8;
-        } else if(i_vlen_out == 32) {
+        } else if (i_vlen_out == 32) {
           fake_dt = LIBXSMM_DATATYPE_BF16;
         } else {
           fake_dt = LIBXSMM_DATATYPE_F32;

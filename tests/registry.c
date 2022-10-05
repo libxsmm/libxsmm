@@ -129,6 +129,12 @@ int main(int argc, char* argv[])
     }
     else result = EXIT_FAILURE;
   }
+  if (EXIT_SUCCESS == result) {
+    const void* regentry = libxsmm_get_registry_begin(LIBXSMM_KERNEL_KIND_USER, NULL);
+    for (; NULL != regentry; regentry = libxsmm_get_registry_next(regentry, NULL)) {
+      libxsmm_release_kernel(regentry);
+    }
+  }
 #endif
   return result;
 }

@@ -529,16 +529,16 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   l_b_stride *= i_micro_kernel_config->datatype_size_in;
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
-    if( i_n_blocking == 1 ) {
+    if ( i_n_blocking == 1 ) {
       l_b_next_k = 1;
       l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
     }
-    else{
+    else {
       l_b_next_k = ( (i_n_blocking - 1) * i_xgemm_desc->ldb - 1);
       l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_SUB;
     }
   }
-  else{
+  else {
     l_b_next_k = i_xgemm_desc->ldb - (i_n_blocking - 1);
     l_b_next_k_inst = LIBXSMM_AARCH64_INSTR_GP_META_ADD;
   }
@@ -548,7 +548,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* full vector loads on a */
-  for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+  for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
     libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                           LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
                                           i_gp_reg_mapping->gp_reg_a,
@@ -564,7 +564,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                    0 );
   }
   /* remainder load on a */
-  if( l_m_blocks[1] > 0) {
+  if ( l_m_blocks[1] > 0) {
     libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                           (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF :
                                                                                            LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
@@ -591,7 +591,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                           0,
                                           0,
                                           0 );
-    if( l_n != i_n_blocking - 1 ) {
+    if ( l_n != i_n_blocking - 1 ) {
       /* move on to next entry of B */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -621,7 +621,7 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
                                                LIBXSMM_AARCH64_SVE_REG_P0,
                                                (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_SVE_TYPE_S : LIBXSMM_AARCH64_SVE_TYPE_D );
     }
-    if( l_m_blocks[1] > 0 ) {
+    if ( l_m_blocks[1] > 0 ) {
       libxsmm_aarch64_instruction_sve_compute( io_generated_code,
                                                LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P,
                                                1 + l_m_blocks[0],
@@ -1251,8 +1251,8 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     l_xgemm_desc_opa->ldc = i_xgemm_desc->m;
   }
 
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
-      (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     int l_nnz_bits = l_xgemm_desc_opa->m%l_micro_kernel_config.vector_length;
     l_nnz_bits *= l_micro_kernel_config.datatype_size_out;
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,

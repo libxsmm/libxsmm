@@ -30,6 +30,16 @@
   (0 >= (DENREF) ? (FALLBACK) : ((NOMINATOR) / LIBXSMM_MATDIFF_DIV_DEN(DENREF)))
 
 
+LIBXSMM_API_INLINE double internal_matdiff_convert_bf16(libxsmm_bfloat16 in) {
+  float result; libxsmm_convert_bf16_f32(&in, &result, 1); return result;
+}
+
+
+LIBXSMM_API_INLINE double internal_matdiff_convert_bf8(libxsmm_bfloat8 in) {
+  float result; libxsmm_convert_bf8_f32(&in, &result, 1); return result;
+}
+
+
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
@@ -45,30 +55,68 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     libxsmm_matdiff_clear(info);
     inf = info->min_ref;
     switch ((int)datatype) {
-      case LIBXSMM_DATATYPE_F64: {
-#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
+    case LIBXSMM_DATATYPE_I64: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE long long
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-      } break;
-      case LIBXSMM_DATATYPE_F32: {
-#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
-#       include "template/libxsmm_matdiff.h"
-#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-      } break;
-      case LIBXSMM_DATATYPE_I32: {
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+    } break;
+    case LIBXSMM_DATATYPE_I32: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-      } break;
-      case LIBXSMM_DATATYPE_I16: {
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+    } break;
+    case LIBXSMM_DATATYPE_I16: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-      } break;
-      case LIBXSMM_DATATYPE_I8: {
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+    } break;
+    case LIBXSMM_DATATYPE_I8: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+    } break;
+    case LIBXSMM_DATATYPE_F64: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) (VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_F32: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) (VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_F16: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) libxsmm_convert_f16_to_f32(VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_float16
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_BF16: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) internal_matdiff_convert_bf16(VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_bfloat16
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
+      } break;
+      case LIBXSMM_DATATYPE_BF8: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) internal_matdiff_convert_bf16(VALUE)
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE libxsmm_bfloat8
+#       include "template/libxsmm_matdiff.h"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
       } break;
       default: {
         static int error_once = 0;

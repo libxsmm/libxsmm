@@ -62,7 +62,7 @@ unsigned char internal_diff_sw(const void* a, const void* b, unsigned char size)
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   LIBXSMM_PRAGMA_UNROLL/*_N(2)*/
-  for (i = 0; i < (size & 0xF0); i += 16) {
+  for (i = 0; i < (unsigned char)(size & (unsigned char)0xF0); i += 16) {
     LIBXSMM_DIFF_16_DECL(aa);
     LIBXSMM_DIFF_16_LOAD(aa, a8 + i);
     if (LIBXSMM_DIFF_16(aa, b8 + i, 0/*dummy*/)) return 1;
@@ -80,7 +80,7 @@ unsigned char internal_diff_sse(const void* a, const void* b, unsigned char size
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   LIBXSMM_PRAGMA_UNROLL/*_N(2)*/
-  for (i = 0; i < (size & 0xF0); i += 16) {
+  for (i = 0; i < (unsigned char)(size & (unsigned char)0xF0); i += 16) {
     LIBXSMM_DIFF_SSE_DECL(aa);
     LIBXSMM_DIFF_SSE_LOAD(aa, a8 + i);
     if (LIBXSMM_DIFF_SSE(aa, b8 + i, 0/*dummy*/)) return 1;
@@ -100,7 +100,7 @@ unsigned char internal_diff_avx2(const void* a, const void* b, unsigned char siz
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   LIBXSMM_PRAGMA_UNROLL/*_N(2)*/
-  for (i = 0; i < (size & 0xE0); i += 32) {
+  for (i = 0; i < (unsigned char)(size & (unsigned char)0xE0); i += 32) {
     LIBXSMM_DIFF_AVX2_DECL(aa);
     LIBXSMM_DIFF_AVX2_LOAD(aa, a8 + i);
     if (LIBXSMM_DIFF_AVX2(aa, b8 + i, 0/*dummy*/)) return 1;
@@ -120,7 +120,7 @@ unsigned char internal_diff_avx512(const void* a, const void* b, unsigned char s
   const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
   unsigned char i;
   LIBXSMM_PRAGMA_UNROLL/*_N(2)*/
-  for (i = 0; i < (size & 0xC0); i += 64) {
+  for (i = 0; i < (unsigned char)(size & (unsigned char)0xC0); i += 64) {
     LIBXSMM_DIFF_AVX512_DECL(aa);
     LIBXSMM_DIFF_AVX512_LOAD(aa, a8 + i);
     if (LIBXSMM_DIFF_AVX512(aa, b8 + i, 0/*dummy*/)) return 1;

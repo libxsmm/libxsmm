@@ -144,7 +144,7 @@ void libxsmm_x86_instruction_unified_vec_move( libxsmm_generated_code* io_genera
   } else {
     unsigned int vmove_instr = i_vmove_instr;
 
-    if (io_generated_code->arch <= LIBXSMM_X86_AVX2_ADL){
+    if (io_generated_code->arch <= LIBXSMM_X86_AVX2_ADL) {
       if (i_use_masking > 0) {
         if (i_is_store > 0 ) {
           vmove_instr = LIBXSMM_X86_INSTR_VMASKMOVPS_ST;

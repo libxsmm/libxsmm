@@ -161,6 +161,10 @@ OPTFLAGS ?= -O$(patsubst O%,%,$(OPT))
 # Kind of Clang-analysis (thread, address, ...)
 SANITIZE ?= $(NULL)
 
+# VMAX=0 (default): Prefer default vector size
+# VMAX=1: Prefer widest vector size (VLEN=MAX)
+VMAX ?= 0
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -385,7 +389,9 @@ else
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null; echo "$$?"))
     CC := gcc
   endif
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+  ifeq (Cray,$(shell $(CC) --version 2>&1 | head -n1 | cut -d' ' -f1))
+    COMPILER_VERSION_FLAG ?= --version 2>&1
+  else ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
@@ -842,16 +848,16 @@ else
   ifeq (0,$(CLANG))
     COMPATIBLE := 1
   endif
-  ifneq (0,$(COMPATIBLE))
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
-    SUITE := Cray Compiler
-    LDFLAGS += -hsystem_alloc
-    CRAY ?= 1
-    # prevent codegen issues
-    ifeq (0,$(OPT))
-      override OPT := 1
+  ifeq (Cray,$(shell $(CC) $(COMPILER_VERSION_FLAG) | head -n1 | cut -d' ' -f1))
+    ifneq (0,$(COMPATIBLE))
+      SUITE := Cray Compiler
+      LDFLAGS += -hsystem_alloc
+      # prevent codegen issues
+      ifeq (0,$(OPT))
+        override OPT := 1
+      endif
     endif
-  endif
+    CRAY ?= 1
   endif
 endif
 SUITE ?= Compiler
@@ -1185,15 +1191,15 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++11
   endif
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
   ifneq (0,$(UNUSED))
     CXXFLAGS += -Wno-unused-function
     CFLAGS += -Wno-unused-function
   endif
   ifeq (,$(strip $(GFC)))
     ifneq (ld,$(call qndir,$(LD)))
-      LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+      LDFLAGS += -diag-disable 1879,3415,10006,10010,10411,10441
     endif
     FCFLAGS += -diag-disable 10006,10010,10411,13003
     ifneq (0,$(THREADS))
@@ -1319,6 +1325,9 @@ ifneq (0,$(INTEL))
           CTARGET := -xMIC-AVX512
         else
           CTARGET := -xCORE-AVX512
+          ifneq (0,$(VMAX))
+            CTARGET += -qopt-zmm-usage=high
+          endif
         endif
         ifneq (,$(filter-out 0,$(VNNI)))
           CTARGET += $(call ctest,$(CC),-mavx512vnni)
@@ -1345,6 +1354,11 @@ ifneq (0,$(INTEL))
         endif
       else ifneq (0,$(AVX))
         CTARGET := -xHost
+        ifneq (0,$(VMAX))
+        ifeq (1,$(words $(filter avx512vl,$(CPUFLAGS_X86))))
+          CTARGET += -qopt-zmm-usage=high
+        endif
+        endif
       endif
     endif
     endif
@@ -1475,9 +1489,9 @@ else # GCC assumed
     ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION_NUM)))"))
       FWARNEXTRA := -Wuse-without-only -Wc-binding-type \
-                   -Wrealloc-lhs -Wrealloc-lhs-all \
-                   -Wreal-q-constant -Wconversion-extra \
-                   -Wline-truncation
+                    -Wrealloc-lhs -Wrealloc-lhs-all \
+                    -Wreal-q-constant -Wconversion-extra \
+                    -Wline-truncation
     endif
     endif
     ifneq (0,$(UNUSED))
@@ -1501,10 +1515,10 @@ else # GCC assumed
       endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
-      CFLAGS += $(CSTD) $(CPEDANTIC)
+      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
       FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
-    else ifneq (0,$(PEDANTIC))
+    else ifneq (0,$(PEDANTIC)) # 2<=PEDANTIC
       ifneq (Darwin,$(UNAME))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
           ifneq (0,$(shell echo "$$((0==$(CLANG)||130000>$(CC_VERSION_NUM)))"))
@@ -1528,7 +1542,7 @@ else # GCC assumed
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
       #CXXFLAGS += -Wno-missing-field-initializers #-Wzero-as-null-pointer-constant
-      CFLAGS += $(CSTD) $(CPEDANTIC)
+      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
@@ -1724,6 +1738,9 @@ ifeq (undefined,$(origin TARGET))
           CTARGET += $(call ctest,$(CC),-mavx512vnni -mavx512bf16)
         endif
       endif
+      ifneq (0,$(VMAX))
+        CTARGET += -mprefer-vector-width=512
+      endif
     endif
     endif
     endif
@@ -1734,12 +1751,18 @@ ifeq (undefined,$(origin TARGET))
       else
         CTARGET ?= -mavx2 -mfma
       endif
+      ifneq (0,$(VMAX))
+        CTARGET += -mprefer-vector-width=256
+      endif
     endif
     endif
     ifeq (,$(CTARGET)) # fallback to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
       ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||40400<=$(GCC_VERSION_NUM)||0==$(CC_VERSION_NUM)))"))
         CTARGET ?= -mavx
+        ifneq (0,$(VMAX))
+          CTARGET += -mprefer-vector-width=256
+        endif
       endif
     endif
     endif
@@ -1786,6 +1809,15 @@ ifeq (undefined,$(origin TARGET))
       # stop here as SSE=2 is implicitly present (64-bit ABI)
     else ifneq (0,$(AVX))
       CTARGET := -march=native -mtune=native
+      ifneq (0,$(VMAX))
+        ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=512
+        else ifeq (1,$(words $(filter avx2,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=256
+        else ifeq (1,$(words $(filter avx,$(CPUFLAGS_X86))))
+          CTARGET += -mprefer-vector-width=256
+        endif
+      endif
     endif
   endif # CTARGET
   endif # DBG
@@ -1801,8 +1833,10 @@ ifneq (,$(call ftest,$(FC),$(CTARGET),$(NULL) $(NULL)))
   FTARGET := $(CTARGET)
 else ifneq (,$(call ftest,$(FC),$(patsubst -m%,-x%,$(CTARGET)),$(NULL) $(NULL)))
   FTARGET := $(patsubst -m%,-x%,$(CTARGET))
+else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
+  override CTARGET := $(NULL)
 endif
-ifeq (,$(call ctest,$(CC),$(CTARGET),$(NULL) $(NULL)))
+ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
   # revoke target flags
   CTARGET := $(NULL)
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
@@ -1937,7 +1971,7 @@ ifeq (0,$(COMPATIBLE))
         FCFLAGS += -funroll-loops
       endif
     endif
-    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX)))
+    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX) $(CRAY)))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize
       FCFLAGS += -ftree-vectorize
@@ -1980,7 +2014,7 @@ ifeq (0,$(COMPATIBLE))
       LDFLAGS := $(XLNKOPT)-z,relro,-z,now $(LDFLAGS)
     endif
     endif
-    ifeq (0,$(PGI))
+    ifeq (,$(filter-out 0,$(PGI) $(CRAY)))
     ifneq (0,$(OPT))
       CXXFLAGS += -fdata-sections -ffunction-sections
       CFLAGS += -fdata-sections -ffunction-sections

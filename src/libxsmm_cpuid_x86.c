@@ -49,7 +49,7 @@
         __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
         : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
         : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
-      ); LIBXSMM_UNUSED(EDX)
+      ); if (0 == (EDX)) LIBXSMM_UNUSED(EDX)
 #   endif
 # else /* legacy Cray Compiler */
 #   define LIBXSMM_XGETBV(XCR, EAX, EDX) (EAX) = (EDX) = 0
