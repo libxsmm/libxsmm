@@ -25,7 +25,7 @@ void relu_fwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_blasint i, j;
 
   if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
-    float in_value, out_value;
+    float in_value = 0, out_value = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {
@@ -88,7 +88,7 @@ void relu_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_blasint i, j;
 
   if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
-    float in_value, out_value, out_fwd_value;
+    float in_value = 0, out_value = 0, out_fwd_value = 0;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {

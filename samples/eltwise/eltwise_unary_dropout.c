@@ -154,7 +154,7 @@ void dropout_bwd_gold(const libxsmm_blasint M, const libxsmm_blasint N, const li
   float pi = 1.0f/pn;
 
   if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
-    float in_value, out_value;
+    float in_value = 0, out_value;
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {
