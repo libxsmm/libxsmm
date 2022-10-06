@@ -130,17 +130,6 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
                                                  unsigned int                            i_dst_reg_block_id,
                                                  unsigned int                            i_m_blocking,
                                                  unsigned int                            i_n_blocking );
-LIBXSMM_API_INTERN
-void libxsmm_generator_mateqn_2d_microkernel_arch64( libxsmm_generated_code*                    io_generated_code,
-                                                 libxsmm_loop_label_tracker*             io_loop_label_tracker,
-                                                 libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
-                                                 libxsmm_matequation_kernel_config*      i_micro_kernel_config,
-                                                 const libxsmm_meqn_descriptor*          i_meqn_desc,
-                                                 libxsmm_matrix_eqn                      *i_eqn,
-                                                 unsigned int                            i_m,
-                                                 unsigned int                            i_n,
-                                                 unsigned int                            skip_n_loop_reg_cleanup );
-
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_configure_M_N_blocking_aarch64( libxsmm_generated_code*                    io_generated_code,
