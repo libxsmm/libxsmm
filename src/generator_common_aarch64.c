@@ -464,12 +464,12 @@ void libxsmm_generator_load_2dregblock_aarch64_asimd( libxsmm_generated_code* io
       if ( i_ld-l_m_bytes > 0 ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                       (unsigned long long)((unsigned long long)(i_ld-l_m_bytes)) );
+                                                       ((unsigned long long)i_ld - l_m_bytes) );
       }
     }
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                   (unsigned long long)((unsigned long long)i_ld*i_n_blocking) );
+                                                   (unsigned long long)i_ld*i_n_blocking );
   } else {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
@@ -1292,12 +1292,12 @@ void libxsmm_generator_store_2dregblock_aarch64_asimd( libxsmm_generated_code* i
     if ( i_ld-l_m_bytes > 0 ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                     (unsigned long long)((unsigned long long)(i_ld-l_m_bytes)) );
+                                                     ((unsigned long long)i_ld - l_m_bytes) );
     }
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_addr, i_gp_reg_scratch, i_gp_reg_addr,
-                                                 (unsigned long long)((unsigned long long)i_ld*i_n_blocking) );
+                                                 (unsigned long long)i_ld*i_n_blocking );
 }
 
 LIBXSMM_API_INTERN

@@ -517,10 +517,10 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_sve( libxsmm_
   /* reset A pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a,
-                                                 (unsigned long long)((unsigned long long)i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in) );
+                                                 (unsigned long long)i_xgemm_desc->k*i_micro_kernel_config->datatype_size_in );
 
   /* reset B pointer */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
-                                                 (unsigned long long)((unsigned long long)i_xgemm_desc->k * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in) );
+                                                 (unsigned long long)i_xgemm_desc->k * i_xgemm_desc->ldb * i_packed_width * i_micro_kernel_config->datatype_size_in );
 }
