@@ -498,7 +498,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
           const int ntasks = (int)LIBXSMM_UPDIV(asize, libxsmm_gemm_taskgrain);
           const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
           if (1 < nthreads && 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & flags)) {
-            int tid;
+            int tid = 0;
             LIBXSMM_OMP_VAR(tid);
             if (0 == outerpar) { /* enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)
