@@ -12,14 +12,8 @@
 #include <libxsmm_fsspmdm.h>
 #include "generator_common.h"
 
-
-
-LIBXSMM_API_INTERN
-void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
-                                int i_fp64,
-                                int* o_sparse,
-                                int* o_dense);
-LIBXSMM_API_INTERN
+#if 0
+LIBXSMM_API_INLINE
 void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
                                 int i_fp64,
                                 int* o_sparse,
@@ -43,7 +37,7 @@ void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
     }
   }
 }
-
+#endif
 
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
