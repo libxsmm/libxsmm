@@ -285,6 +285,9 @@
     <ClInclude Include="..\src\template\libxsmm_matdiff.h">
       <Filter>src\template</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_matequation_regblocks_aarch64.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -547,6 +550,9 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_lpflt_quant.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matequation_regblocks_aarch64.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
