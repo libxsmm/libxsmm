@@ -351,6 +351,15 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : (( i_micro_kernel_config->datatype_size_in == 2 ) ? LIBXSMM_X86_INSTR_VPBROADCASTW : LIBXSMM_X86_INSTR_VPBROADCASTB);
 
+  if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
+       ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0))) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_mask_last_m_chunk > 0) {
+        i_mask_reg = i_mateltwise_desc->m % i_vlen;
+      }
+    }
+  }
+
   /* In this case we do not have to load any data  */
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_XOR)) return;
 
@@ -610,6 +619,15 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
   unsigned int bcast_row = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0))) ? 1 : 0;
   unsigned int bcast_col = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
+
+  if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
+       ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT))) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_mask_last_m_chunk > 0) {
+        i_mask_reg = i_mateltwise_desc->m % i_vlen;
+      }
+    }
+  }
 
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
     for (in = 0; in < i_n_blocking; in++) {
@@ -1577,8 +1595,25 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
   unsigned int bcast_scalar = (((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1) > 0)) ? 1 : 0;
   unsigned int bcast_input = ( bcast_row == 1 || bcast_col == 1 || bcast_scalar == 1 ) ? 1 : 0;
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in1 == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : (( i_micro_kernel_config->datatype_size_in1 == 2 ) ? LIBXSMM_X86_INSTR_VPBROADCASTW : LIBXSMM_X86_INSTR_VPBROADCASTB);
+  unsigned int i_mask_reg_out = i_mask_reg;
 
-  LIBXSMM_UNUSED(i_vlen);
+  if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
+       ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT))) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_mask_last_m_chunk > 0) {
+        i_mask_reg_out = i_mateltwise_desc->m % i_vlen;
+      }
+    }
+  }
+
+  if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1)) ||
+       ( LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1))) {
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_mask_last_m_chunk > 0) {
+        i_mask_reg = i_mateltwise_desc->m % i_vlen;
+      }
+    }
+  }
 
   switch (i_mateltwise_desc->param) {
     case LIBXSMM_MELTW_TYPE_BINARY_ADD: {
@@ -1709,7 +1744,7 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (im * l_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
             (io_generated_code->arch > LIBXSMM_X86_AVX512) ? 'y' : 'x',
-            i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
+            i_micro_kernel_config->tmp_vreg2, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg_out : 0, 0 );
 
           libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg2, i_micro_kernel_config->tmp_vreg2 );
         } else if (LIBXSMM_DATATYPE_F16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
@@ -2200,7 +2235,9 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       reserved_zmms += 14;
-
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        reserved_zmms -= 2;
+      }
       i_micro_kernel_config->vec_c0_lo         = reserved_zmms - 1;
       i_micro_kernel_config->vec_c0_hi         = reserved_zmms - 2;
       i_micro_kernel_config->vec_c1_lo         = reserved_zmms - 3;
@@ -2215,6 +2252,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
       i_micro_kernel_config->vec_tmp5          = reserved_zmms - 12;
       i_micro_kernel_config->vec_tmp6          = reserved_zmms - 13;
       i_micro_kernel_config->vec_tmp7          = reserved_zmms - 14;
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        i_micro_kernel_config->vec_tmp6        = i_micro_kernel_config->dcvt_zmm_aux0;
+        i_micro_kernel_config->vec_tmp7        = i_micro_kernel_config->dcvt_zmm_aux1;
+      }
 
       if (op == LIBXSMM_MELTW_TYPE_UNARY_GELU ) {
         libxsmm_generator_prepare_coeffs_gelu_ps_minimax3_avx( io_generated_code,
@@ -2398,12 +2439,17 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     unsigned int reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs;
     reserved_zmms += 14;
     reserved_mask_regs += 2;
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        reserved_zmms -= 2;
+      }
+    }
 
     i_micro_kernel_config->mask_hi       = reserved_mask_regs - 1;
     i_micro_kernel_config->mask_lo       = reserved_mask_regs - 2;
     i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
-    i_micro_kernel_config->vec_nom       = reserved_zmms - 2;
-    i_micro_kernel_config->vec_denom     = reserved_zmms - 3;
+    i_micro_kernel_config->vec_ones      = reserved_zmms - 2;
+    i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 3;
     i_micro_kernel_config->vec_c0        = reserved_zmms - 4;
     i_micro_kernel_config->vec_c1        = reserved_zmms - 5;
     i_micro_kernel_config->vec_c2        = reserved_zmms - 6;
@@ -2413,8 +2459,8 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     i_micro_kernel_config->vec_c3_d      = reserved_zmms - 10;
     i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 11;
     i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 12;
-    i_micro_kernel_config->vec_ones      = reserved_zmms - 13;
-    i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 14;
+    i_micro_kernel_config->vec_nom       = reserved_zmms - 13;
+    i_micro_kernel_config->vec_denom     = reserved_zmms - 14;
 
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx( io_generated_code,
@@ -2429,8 +2475,11 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_lo_bound,
           i_micro_kernel_config->vec_ones,
           i_micro_kernel_config->vec_neg_ones );
+          if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+            i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
+            i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
+          }
     } else {
-
       libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( io_generated_code,
           i_micro_kernel_config->vec_c0,
           i_micro_kernel_config->vec_c1,
@@ -2458,13 +2507,16 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       reserved_zmms--;
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        reserved_zmms -= 2;
+      }
     }
 
     i_micro_kernel_config->mask_hi       = reserved_mask_regs - 1;
     i_micro_kernel_config->mask_lo       = reserved_mask_regs - 2;
     i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
-    i_micro_kernel_config->vec_nom       = reserved_zmms - 2;
-    i_micro_kernel_config->vec_denom     = reserved_zmms - 3;
+    i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 2;
+    i_micro_kernel_config->vec_halves    = reserved_zmms - 3;
     i_micro_kernel_config->vec_c0        = reserved_zmms - 4;
     i_micro_kernel_config->vec_c1        = reserved_zmms - 5;
     i_micro_kernel_config->vec_c2        = reserved_zmms - 6;
@@ -2475,8 +2527,8 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 11;
     i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 12;
     i_micro_kernel_config->vec_ones      = reserved_zmms - 13;
-    i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 14;
-    i_micro_kernel_config->vec_halves    = reserved_zmms - 15;
+    i_micro_kernel_config->vec_nom       = reserved_zmms - 14;
+    i_micro_kernel_config->vec_denom     = reserved_zmms - 15;
 
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx( io_generated_code,
@@ -2491,6 +2543,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
          i_micro_kernel_config->vec_lo_bound,
          i_micro_kernel_config->vec_ones,
          i_micro_kernel_config->vec_neg_ones );
+        if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+          i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
+          i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
+        }
     } else {
       libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code,
          i_micro_kernel_config->vec_c0,
