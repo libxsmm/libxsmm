@@ -164,6 +164,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
     float scfq;
     /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
     LIBXSMM_ELIDE_RESULT(float, LIBXSMM_FREXPF(max_value, &maxexp));
+    LIBXSMM_ASSERT(maxexp >= (15/*LIBXSMM_MANT_DFP16?*/ - add_shift));
     maxexp -= (15/*LIBXSMM_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
@@ -330,6 +331,7 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32( libxsmm_float16 in ) {
     lz_cnt = ( m >  0x7f ) ? 2 : lz_cnt;
     lz_cnt = ( m >  0xff ) ? 1 : lz_cnt;
     lz_cnt = ( m > 0x1ff ) ? 0 : lz_cnt;
+    LIBXSMM_ASSERT(e_norm >= lz_cnt);
     e_norm -= lz_cnt;
     m = (m << (lz_cnt+1)) & 0x03ff;
   } else if ( (e == 0) && (m == 0) ) {
@@ -407,6 +409,7 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
     hybrid_in.u = hybrid_in.u + 0x000000fff + fixup;
     e = ( hybrid_in.u & 0x7f800000 ) >> 23;
     m = ( hybrid_in.u & 0x007fffff );
+    LIBXSMM_ASSERT(e >= (f32_bias - f16_bias));
     e -= (f32_bias - f16_bias);
     m = m >> 13;
 #else
@@ -414,6 +417,7 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
     hybrid_in.u = hybrid_in.u + 0x00001000;
     e = ( hybrid_in.u & 0x7f800000 ) >> 23;
     m = ( hybrid_in.u & 0x007fffff );
+    LIBXSMM_ASSERT(e >= (f32_bias - f16_bias));
     e -= (f32_bias - f16_bias);
     m = m >> 13;
 #endif
@@ -500,6 +504,7 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
     hybrid_in.u = hybrid_in.u + 0x000fffff + fixup;
     e = ( hybrid_in.u & 0x7f800000 ) >> 23;
     m = ( hybrid_in.u & 0x007fffff );
+    LIBXSMM_ASSERT(e >= (f32_bias - f16_bias));
     e -= (f32_bias - bf8_bias);
     m = m >> 21;
   }
@@ -532,6 +537,7 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
       unsigned int lz_cnt = 2;
       lz_cnt = ( m >   0x1 ) ? 1 : lz_cnt;
       lz_cnt = ( m >   0x3 ) ? 0 : lz_cnt;
+      LIBXSMM_ASSERT(e_norm >= lz_cnt);
       e_norm -= lz_cnt;
       m = (m << (lz_cnt+1)) & 0x07;
     } else if ( (e == 0) && (m == 0) ) {
@@ -602,6 +608,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
       hybrid_in.u = hybrid_in.u + 0x0007ffff + fixup;
       e = ( hybrid_in.u & 0x7f800000 ) >> 23;
       m = ( hybrid_in.u & 0x007fffff );
+      LIBXSMM_ASSERT(e >= (f32_bias - f8_bias));
       e -= (f32_bias - f8_bias);
       m = m >> 20;
     }
@@ -652,17 +659,18 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) 
     m |= (((m_f16 & 0x007f) + 0x007f) >> 7);
     /* RNE Round */
     fixup = (m >> 7) & 0x1;
-    m = m + 0x003f + fixup;
+    m = m + LIBXSMM_CAST_USHORT(0x003f + fixup);
     m = m >> 7;
     e = 0x0;
   /* normal */
   } else {
     /* RNE round */
     fixup = (m_f16 >> 7) & 0x1;
-    in = in + 0x003f + fixup;
+    in = in + LIBXSMM_CAST_USHORT(0x003f + fixup);
     e = ( in & 0x7c00 ) >> 10;
     m = ( in & 0x03ff );
-    e -= (f16_bias - f8_bias);
+    LIBXSMM_ASSERT(e >= LIBXSMM_CAST_USHORT(f16_bias - f8_bias));
+    e -= LIBXSMM_CAST_USHORT(f16_bias - f8_bias);
     m = m >> 7;
   }
 
