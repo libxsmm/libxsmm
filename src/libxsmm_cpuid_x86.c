@@ -395,7 +395,6 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
-#if defined(LIBXSMM_PLATFORM_X86)
   if (LIBXSMM_X86_AVX512 <= id) {
     result = 16;
   }
@@ -405,27 +404,24 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_X86_GENERIC <= id) {
     result = 4;
   }
-  else
-#elif defined(LIBXSMM_PLATFORM_AARCH64)
-  if (LIBXSMM_AARCH64_V81     == id ||
-      LIBXSMM_AARCH64_V82     == id ||
-      LIBXSMM_AARCH64_APPL_M1 == id ||
-      LIBXSMM_AARCH64_SVE128  == id) {
+  else if (LIBXSMM_AARCH64_V81 == id
+        || LIBXSMM_AARCH64_V82 == id
+        || LIBXSMM_AARCH64_APPL_M1 == id
+        || LIBXSMM_AARCH64_SVE128  == id)
+  {
     result = 4;
   }
-  else if (LIBXSMM_AARCH64_SVE256 == id ||
-           LIBXSMM_AARCH64_NEOV1  == id ) {
+  else if (LIBXSMM_AARCH64_SVE256 == id
+        || LIBXSMM_AARCH64_NEOV1  == id)
+  {
     result = 8;
   }
-  else if (LIBXSMM_AARCH64_SVE512 == id ||
-           LIBXSMM_AARCH64_A64FX  == id) {
+  else if (LIBXSMM_AARCH64_SVE512 == id
+        || LIBXSMM_AARCH64_A64FX  == id)
+  {
     result = 16;
   }
-  else
-#else
-  LIBXSMM_UNUSED(id);
-#endif
-  { /* scalar */
+  else { /* scalar */
     result = 1;
   }
   return result;
