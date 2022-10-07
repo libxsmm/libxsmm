@@ -16,7 +16,7 @@
 #include <math.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-#define USE_VECTORIZED_PATH 1
+//#define USE_VECTORIZED_PATH 1
 
 #if defined(__AVX512F__)
 inline __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }

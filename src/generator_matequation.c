@@ -25,7 +25,13 @@ void libxsmm_generator_matequation_kernel( libxsmm_generated_code*         io_ge
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
-  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82) ) {
+  } else if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_V82 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_SVE256 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_SVE512 ||
+       io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
     libxsmm_generator_matequation_aarch64_kernel( io_generated_code, i_mateqn_desc );
   } else {
     /* TODO fix this error and support for more architectures */

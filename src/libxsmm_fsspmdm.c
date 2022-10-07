@@ -12,6 +12,32 @@
 #include <libxsmm_fsspmdm.h>
 #include "generator_common.h"
 
+#if 0
+LIBXSMM_API_INLINE
+void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
+                                int i_fp64,
+                                int* o_sparse,
+                                int* o_dense) {
+  int vl = libxsmm_cpuid_vlen32( libxsmm_target_archid );
+  if ( i_fp64 ) {
+    vl = LIBXSMM_UPDIV( vl, 2 );
+  }
+
+  *o_sparse = vl;
+  *o_dense = vl;
+
+  /* Dense NEON benefits from larger sizes */
+  if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
+       libxsmm_target_archid < LIBXSMM_AARCH64_SVE128 ) {
+    if ( 0 == N % (2*vl) ) {
+      *o_dense = 2*vl;
+    }
+    if ( 0 == N % (4*vl) ) {
+      *o_dense = 4*vl;
+    }
+  }
+}
+#endif
 
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,

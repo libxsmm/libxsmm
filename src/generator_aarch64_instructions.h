@@ -193,10 +193,16 @@
 #define LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF       0xb9400006
 #define LIBXSMM_AARCH64_INSTR_GP_LDR_I_POST      0xb8400406
 #define LIBXSMM_AARCH64_INSTR_GP_LDR_I_PRE       0xb8400c06
+#define LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF      0x79400006
+#define LIBXSMM_AARCH64_INSTR_GP_LDRH_I_POST     0x78400406
+#define LIBXSMM_AARCH64_INSTR_GP_LDRH_I_PRE      0x78400c06
 #define LIBXSMM_AARCH64_INSTR_GP_STR_R           0xb8204803
 #define LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF       0xb9000006
 #define LIBXSMM_AARCH64_INSTR_GP_STR_I_POST      0xb8000406
 #define LIBXSMM_AARCH64_INSTR_GP_STR_I_PRE       0xb8000c06
+#define LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF      0x79000006
+#define LIBXSMM_AARCH64_INSTR_GP_STRH_I_POST     0x78000406
+#define LIBXSMM_AARCH64_INSTR_GP_STRH_I_PRE      0x78000c06
 #define LIBXSMM_AARCH64_INSTR_GP_LDP_I_OFF       0x29400007
 #define LIBXSMM_AARCH64_INSTR_GP_LDP_I_POST      0x28c00007
 #define LIBXSMM_AARCH64_INSTR_GP_LDP_I_PRE       0x29c00007
@@ -334,6 +340,10 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_2        0x0e003013
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_3        0x0e005013
 #define LIBXSMM_AARCH64_INSTR_ASIMD_TBX_4        0x0e007013
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BFMMLA_V     0x6e40ec13
+#define LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V      0x4e80a413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V      0x6e80a413
+#define LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V     0x4e80ac13
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
@@ -352,6 +362,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF   0xe590e086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF     0xe4a0e086
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF   0xe510e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF    0x84408086 /* load 1 byte,  broadcast to all active elements; set inactive to zero */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF    0x84c0a086 /* load 2 bytes, broadcast to all active elements; set inactive to zero */
@@ -368,7 +379,8 @@
 /* the two last bytes can be used for instruction-metadata, as they always will be replaced with registers/parameters */
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_PREDICATED  0x80
 #define LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED     0x40
-#define LIBXSMM_AARCH64_INSTR_SVE_IS_DESTRUCTIVE 0x20
+#define LIBXSMM_AARCH64_INSTR_SVE_SRC0_IS_DST    0x20
+#define LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM        0x04
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC0       0x02 /* currently set for all instructions, so maybe could be replaced/removed */
 #define LIBXSMM_AARCH64_INSTR_SVE_HAS_SRC1       0x01
 /* define unpredicated SVE instructions */
@@ -376,8 +388,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_EOR_V          0x04a03003 /* exclusive or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_V          0x04603003 /* binary or, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_ADD_V          0x04200003 /* integer add, vectors, unpredicated */
-#define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c02 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
-#define LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V        0x04209402 /* logical shift right by immediate, unpredicated (predicated exists as well) */
+#define LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V        0x04209c06 /* logical shift left by immediate, unpredicated (predicated exists as well)*/
+#define LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V        0x04209406 /* logical shift right by immediate, unpredicated (predicated exists as well) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADD_V         0x65000003 /* add, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSUB_V         0x65000403 /* subtract, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V         0x65000803 /* multiply, vectors, unpredicated */
@@ -385,7 +397,15 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FRECPS_V       0x65001803 /* used for Newton step to improve the reciprocal, unpredicated: 2-(src0*src1) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTE_V      0x650f3002 /* reciprocial sqrt estimate, vectors, unpredicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FRSQRTS_V      0x65001c03 /* used for Newton step to improve reciprocal sqrt, unpredicated: (3-(src0*src1))/2 */
-
+#define LIBXSMM_AARCH64_INSTR_SVE_BFMMLA_V       0x6460e403
+#define LIBXSMM_AARCH64_INSTR_SVE_FMMLA_V        0x64a0e403
+#define LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V        0x45009803
+#define LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V        0x45c09803
+#define LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V       0x45809803
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN1_V         0x05207003 /* Interleave even elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_TRN2_V         0x05207403 /* Interleave odd elements from two vectors */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKLO_V      0x05323802 /* Unsigned unpack and extend low-half of vector */
+#define LIBXSMM_AARCH64_INSTR_SVE_UUNPKHI_V      0x05333802 /* Unsigned unpack and extend high-half of vector */
 #define LIBXSMM_AARCH64_INSTR_SVE_ORR_P          0x25804003 /* logical or of two predicate registers, can be used as MOV */
 
 /* zip & unzip (instructions exist for predicates (P) and vectors (V)) */
@@ -393,16 +413,21 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O        0x05204c03 /* unzip  odd elements from two predicates */
 #define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H        0x05204403 /* zip two predicates, store high bits */
 #define LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L        0x05204003 /* zip two predicates, store  low bits */
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP1_V         0x05206803
+#define LIBXSMM_AARCH64_INSTR_SVE_UZP2_V         0x05206c03
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V         0x05206003
+#define LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V         0x05206403
 
 /* define predicated SVE compute instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FNEG_V_P       0x041da082 /* negate, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFCVT_V_P      0x658aa082 /* Floating-point down convert to BFloat16 format (predicated) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FSQRT_V_P      0x650da082 /* square root, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P       0x650280a2 /* multiply, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P       0x650d80a2 /* divide, a/b, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P      0x650c80a2 /* divide, b/a, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P       0x650780a2 /* minimum, vectors, predicated, src0 == dst */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P       0x650680a2 /* maximum, vectors, predicated, src0 == dst */
-#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188082 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
+#define LIBXSMM_AARCH64_INSTR_SVE_FADD_I_P       0x65188086 /* add immediate; src1 == 0 -> 0.5, else 1.0, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_P       0x65200083 /* fused multiply-add, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_P       0x65202083 /* fused multiply-subtract, vectors, predicated */
 #define LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P      0x65002082 /* reduce all active elements into a scalar (add), and place result into asimd register, vectors, predicated */
@@ -418,7 +443,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
-
+/* define integer instructions */
+#define LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I        0x2521c026 /* integer sub with immediate, src0 = dest*/
 /* table access instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBL            0x05203003 /* src0[src1], out of bounds -> zero, not vector length agnostic */
 #define LIBXSMM_AARCH64_INSTR_SVE_TBX            0x05202c03 /* src0[src1], out of bounds -> merge, not vector length agnostic */

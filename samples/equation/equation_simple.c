@@ -972,8 +972,8 @@ int main( int argc, char* argv[] ) {
     libxsmm_blasint mask_ld = ((ld+15)-((ld+15)%16))/8;
     unsigned char *mask_ref = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
     unsigned char *mask_eqn = (unsigned char*) libxsmm_aligned_malloc( sizeof(unsigned char)*N*mask_ld,   64);
-    memset(mask_ref, 0, N * mask_ld * sizeof(unsigned char));
-    memset(mask_eqn, 0, N * mask_ld * sizeof(unsigned char));
+    memset(mask_ref, 0, sizeof(unsigned char) * N * mask_ld);
+    memset(mask_eqn, 0, sizeof(unsigned char) * N * mask_ld);
     s = 0;
 
     my_eqn2       = libxsmm_matrix_eqn_create();

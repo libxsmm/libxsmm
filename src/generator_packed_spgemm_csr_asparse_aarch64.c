@@ -56,15 +56,27 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
 
   /* select packed width */
   if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      l_simd_packed_width = 8;
-    } else {
+    if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+        l_simd_packed_width = 2;
+      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+        l_simd_packed_width = 4;
+      } else {
+        l_simd_packed_width = 8;
+      }
+    } else { /* asimd */
       l_simd_packed_width = 2;
     }
   } else {
-    if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      l_simd_packed_width = 16;
-    } else {
+    if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+        l_simd_packed_width = 4;
+      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+        l_simd_packed_width = 8;
+      } else {
+        l_simd_packed_width = 16;
+      }
+    } else { /* asimd */
       l_simd_packed_width = 4;
     }
   }
@@ -119,7 +131,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
   }
 
   /* set P0 in case of SVE */
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
                                                   -1,
@@ -215,7 +227,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64_n_loop( libxsmm_generat
                                   const unsigned int*, const unsigned int*, const void*, const unsigned int,
                                   const unsigned int, const unsigned int, const unsigned int, const unsigned int);
 
-  if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     l_generator_microkernel = libxsmm_generator_packed_spgemm_csr_asparse_aarch64_m_loop_sve;
   } else {
     l_generator_microkernel = libxsmm_generator_packed_spgemm_csr_asparse_aarch64_m_loop_asimd;

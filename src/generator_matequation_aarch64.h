@@ -68,7 +68,7 @@ void libxsmm_generator_matequation_destroy_stack_frame_aarch64( libxsmm_generate
                                               libxsmm_matequation_gp_reg_mapping*                 i_gp_reg_mapping,
                                               unsigned int                                        i_strategy  );
 LIBXSMM_API_INTERN
-void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size );
+void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn **jiting_queue, unsigned int *queue_size, libxsmm_matrix_eqn_fusion_knobs *fusion_knobs );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*        io_generated_code,

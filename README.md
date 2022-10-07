@@ -322,7 +322,7 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 
 ```bash
 git clone --branch results \
-  https://github.com/hfp/libxsmm.git \
+  https://github.com/libxsmm/libxsmm.git \
   libxsmm-results
 ```
 

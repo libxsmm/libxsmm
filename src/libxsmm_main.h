@@ -508,9 +508,6 @@ LIBXSMM_API void libxsmm_xfree(const void* memory, int check);
  */
 LIBXSMM_API_INTERN size_t libxsmm_format_value(char buffer[32], int buffer_size, size_t nbytes, const char scale[], const char* unit, int base);
 
-/** Returns the type-name of data-type (can be also libxsmm_datatype). */
-LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
-
 /** Dump data and (optionally) checks attempt to dump different data into an existing file (unique). */
 LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const void* data, size_t size, int unique);
 

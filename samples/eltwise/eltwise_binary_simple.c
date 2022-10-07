@@ -59,13 +59,13 @@ void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_dat
       if (in2_use[j*ldi+i] == 0.0f) {
         in2_use[j*ldi+i] = 1.0;
       }
-      in_use[j*ldi+i] = 2.0 * in2_use[j*ldi+i];
-      if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.0) {
-        in_use[j*ldi+i] = 400.0;
-        in2_use[j*ldi+i] = 200.0;
+      in_use[j*ldi+i] = 2.f * in2_use[j*ldi+i];
+      if (LIBXSMM_ABS(in_use[j*ldi+i]) > 400.f) {
+        in_use[j*ldi+i] = 400.f;
+        in2_use[j*ldi+i] = 200.f;
       }
       if (use_bcast > 0) {
-        in2_use[j*ldi+i] = 1.0;
+        in2_use[j*ldi+i] = 1.f;
       }
     }
   }
