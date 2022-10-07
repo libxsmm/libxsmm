@@ -1207,7 +1207,9 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     } else if ( l_has_two_sources ||
               (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
                l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P ||
-               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P) ){
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_P ||
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIV_V_P ||
+               l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FDIVR_V_P ) ){
       l_vec_reg_src_0 = l_vec_reg_src_1;
     }
   }
