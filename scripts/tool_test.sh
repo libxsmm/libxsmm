@@ -254,12 +254,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
+    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
@@ -347,7 +347,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          if [ "${TOOL_COMMAND}" ] && [ "$(command -v ${TOOL_COMMAND})" ]; then
+          if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
               echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
@@ -360,7 +360,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
             fi
           else
             echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
-            unset TOOL_COMMAND
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
