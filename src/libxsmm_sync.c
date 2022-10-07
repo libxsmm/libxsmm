@@ -147,7 +147,7 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
       barrier->init_done = 1; /* true */
     }
     else {
-      while (0/*false*/ == barrier->init_done);
+      while (0/*false*/ == barrier->init_done) {} /* empty block instead of semicolon */
     }
 
     /* set required per-thread information */
@@ -172,7 +172,7 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
       barrier->init_done = 2;
     }
     else {
-      while (2 != barrier->init_done);
+      while (2 != barrier->init_done) {} /* empty block instead of semicolon */
     }
   }
 #endif

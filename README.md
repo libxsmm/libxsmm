@@ -17,7 +17,7 @@ For a list questions and answers, please also have a look at [https://github.com
 ```cpp
 #include <libxsmm.h>
 #include <vector>
-int main(/*int argc, char* argv[]*/) {
+int main(int argc, char* argv[]) {
   typedef double T;
   int batchsize = 1000, m = 13, n = 5, k = 7;
   std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0);
@@ -322,7 +322,7 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 
 ```bash
 git clone --branch results \
-  https://github.com/hfp/libxsmm.git \
+  https://github.com/libxsmm/libxsmm.git \
   libxsmm-results
 ```
 

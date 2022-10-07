@@ -123,15 +123,16 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
          io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) {
       libxsmm_generator_spgemm_csr_asparse_reg_x86( io_generated_code, i_xgemm_desc,
                                                     i_row_idx, i_column_idx, i_values );
-    /* aarch64 with SVE */
-    } else if ( io_generated_code->arch == LIBXSMM_AARCH64_A64FX ) {
-      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
-                                                            i_row_idx, i_column_idx, i_values );
     /* aarch64 without SVE */
     } else if ( io_generated_code->arch >= LIBXSMM_AARCH64_V81 &&
-                io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
+                io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
       libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( io_generated_code, i_xgemm_desc,
                                                              i_row_idx, i_column_idx, i_values );
+    /* aarch64 with SVE */
+    }  else if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 &&
+                 io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) {
+      libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( io_generated_code, i_xgemm_desc,
+                                                            i_row_idx, i_column_idx, i_values );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
@@ -190,7 +191,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     /* read CSC file and construct CSC data structure */
     libxsmm_sparse_csc_reader( &l_generated_code, i_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
-    if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) {
+    if (NULL != l_row_idx && NULL != l_column_idx && NULL != l_values) {
 #if !defined(NDEBUG)
       /* mute static analysis about garbage content */
       double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
@@ -231,7 +232,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
         }
       }
 
-      assert(0 != l_tmp);
+      assert(NULL != l_tmp);
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
           printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);
@@ -252,7 +253,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     /* read CSR file and construct CSR data structure */
     libxsmm_sparse_csr_reader( &l_generated_code, i_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
-    if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
+    if (NULL != l_row_idx && NULL != l_column_idx && NULL != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
 #if !defined(NDEBUG)
       /* mute static analysis about garbage content */
       double *const l_tmp = (double*)calloc((size_t)l_row_count * l_column_count, sizeof(double));
@@ -271,7 +272,8 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
         l_tmp[l_n] = 0.0;
       }
 
-      for ( l_n = 0; l_n < l_row_count+1; l_n++) {
+      /* coverity[tainted_data] */
+      for ( l_n = 0; l_n <= l_row_count; l_n++) {
          printf("%u ", l_row_idx[l_n]);
       }
       printf("\n");
@@ -293,7 +295,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
         }
       }
 
-      assert(0 != l_tmp);
+      assert(NULL != l_tmp);
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
           printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);

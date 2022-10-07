@@ -65,9 +65,7 @@ LIBXSMM_API int libxsmm_get_target_archid(void);
 /** Set target architecture (id: see libxsmm_typedefs.h) for subsequent code generation (JIT). */
 LIBXSMM_API void libxsmm_set_target_archid(int id);
 
-/**
- * get typename string
- */
+/** Returns the type-name of data-type (can be also libxsmm_datatype). */
 LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype);
 
 /**

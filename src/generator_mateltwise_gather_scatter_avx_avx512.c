@@ -427,14 +427,14 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         vload_instr, vstore_instr, vlen, vname_load, vname_store, 0, ones_mask_reg, mask_reg, help_mask_reg,
         is_gather, gp_idx_mat_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat, ld_reg_mat );
 
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, m_unroll_factor * vlen * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, m_unroll_factor * idx_tsize * idx_vlen);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)m_unroll_factor * idx_tsize * idx_vlen);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (n_unroll_factor * ld_reg_mat - m_trips_loop * m_unroll_factor * vlen)  * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (n_unroll_factor * m - m_trips_loop * m_unroll_factor * idx_vlen) * idx_tsize);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ((long long)n_unroll_factor * ld_reg_mat - (long long)m_trips_loop * m_unroll_factor * vlen) * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, ((long long)n_unroll_factor * m - (long long)m_trips_loop * m_unroll_factor * idx_vlen) * idx_tsize);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat * n - m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_ind_base, m * idx_tsize * n - m_trips_loop * m_unroll_factor * idx_vlen * idx_tsize );
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat * n - (long long)m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)m * idx_tsize * n - (long long)m_trips_loop * m_unroll_factor * idx_vlen * idx_tsize );
   }
 
   if (peeled_m_trips > 0) {
@@ -446,8 +446,8 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
         vload_instr, vstore_instr, vlen, vname_load, vname_store, use_m_masking, ones_mask_reg, mask_reg, help_mask_reg,
         is_gather, gp_idx_mat_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat, ld_reg_mat );
 
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, n_unroll_factor * m * idx_tsize);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)n_unroll_factor * m * idx_tsize);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
@@ -651,20 +651,20 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_m_loop( libxsmm_generated_
       }
     }
     if (m_trips_loop > 1) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, m_unroll_factor * vlen * dtype_size_reg_mat);
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, m_unroll_factor * vlen * dtype_size_idx_mat);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_reg_mat);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_idx_mat);
       if (pf_dist > 0) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_pf_reg, m_unroll_factor * vlen * dtype_size_idx_mat);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_pf_reg, (long long)m_unroll_factor * vlen * dtype_size_idx_mat);
       }
       libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
     }
   }
   if (peeled_m_trips > 0) {
     if (m_trips_loop == 1) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, m_unroll_factor * vlen * dtype_size_reg_mat);
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, m_unroll_factor * vlen * dtype_size_idx_mat);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_reg_mat);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_idx_mat);
       if (pf_dist > 0) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_pf_reg, m_unroll_factor * vlen * dtype_size_idx_mat);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_pf_reg, (long long)m_unroll_factor * vlen * dtype_size_idx_mat);
       }
     }
     if (is_gather == 1) {
@@ -729,10 +729,10 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_m_loop( libxsmm_generated_
   /* Adjust m advancements */
   if (m_trips_loop >= 1) {
     if (peeled_m_trips > 0) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
     } else {
       if (m_trips_loop > 1) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)m_trips_loop * m_unroll_factor * vlen * dtype_size_reg_mat);
       }
     }
   }
@@ -958,8 +958,8 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
     libxsmm_generator_mateltwise_header_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, 1);
     libxsmm_x86_instruction_alu_mem(io_generated_code, ind_alu_mov_instr, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_n_loop, idx_tsize, 0, gp_idx_mat_reg, 0);
     libxsmm_x86_instruction_alu_mem(io_generated_code, ind_alu_mov_instr, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_n_loop, idx_tsize, pf_dist * idx_tsize, gp_idx_mat_pf_reg, 0);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_reg, ld_idx_mat * dtype_size_idx_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_pf_reg, ld_idx_mat * dtype_size_idx_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_reg, (long long)ld_idx_mat * dtype_size_idx_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_pf_reg, (long long)ld_idx_mat * dtype_size_idx_mat);
     libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_base_reg, gp_idx_mat_reg);
     libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_base_reg, gp_idx_mat_pf_reg);
 
@@ -967,7 +967,7 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
         vload_instr, vstore_instr, pf_instr, vlen, vname, use_m_masking, use_mask_move_instr, use_m_scalar_loads_stores, mask_reg, pf_dist,
         is_gather, gp_idx_mat_reg, gp_idx_mat_pf_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat );
 
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
     libxsmm_generator_mateltwise_footer_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n);
     libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_n, pf_dist);
   } else {
@@ -977,14 +977,14 @@ void libxsmm_generator_gather_scatter_cols_avx_avx512_microkernel( libxsmm_gener
 
   libxsmm_generator_mateltwise_header_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, 1);
   libxsmm_x86_instruction_alu_mem(io_generated_code, ind_alu_mov_instr, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_n_loop, idx_tsize, 0, gp_idx_mat_reg, 0);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_reg, ld_idx_mat * dtype_size_idx_mat);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, LIBXSMM_X86_INSTR_IMUL, gp_idx_mat_reg, (long long)ld_idx_mat * dtype_size_idx_mat);
   libxsmm_x86_instruction_alu_reg(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_base_reg, gp_idx_mat_reg);
 
   libxsmm_generator_gather_scatter_cols_avx_avx512_m_loop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, m_trips_loop, m_unroll_factor, peeled_m_trips,
       vload_instr, vstore_instr, pf_instr, vlen, vname, use_m_masking, use_mask_move_instr, use_m_scalar_loads_stores, mask_reg, 0,
       is_gather, gp_idx_mat_reg, gp_idx_mat_pf_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat );
 
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_mateltwise_footer_n_dyn_loop(io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_mapping->gp_reg_n_loop, i_gp_reg_mapping->gp_reg_n);
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   free(p_jump_label_tracker);
@@ -1113,11 +1113,11 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_mem( io_generated_code, load_instr,  gp_reg_mat_reg, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, gp_aux, 0 );
     libxsmm_x86_instruction_alu_mem( io_generated_code, store_instr, gp_idx,         LIBXSMM_X86_GP_REG_UNDEF, 0, 0, gp_aux, 1 );
   }
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx,         ld_idx_mat * dtype_size_idx_mat);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx,         (long long)ld_idx_mat * dtype_size_idx_mat);
   libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
 
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat * n - dtype_size_reg_mat);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat * n - (long long)dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer_with_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1, m);
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   free(p_jump_label_tracker);
@@ -1244,8 +1244,8 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
     libxsmm_x86_instruction_alu_mem( io_generated_code, store_instr, gp_idx,         LIBXSMM_X86_GP_REG_UNDEF       , 0                 , 0, gp_aux, 1 );
   }
   libxsmm_generator_generic_loop_footer_with_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 1, m);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, idx_tsize * m);
-  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)idx_tsize * m);
+  libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat);
   libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
   free(p_jump_label_tracker);
@@ -1519,14 +1519,14 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         vload_instr, vstore_instr, vlen, vname_load, vname_store, 0, ones_mask_reg, mask_reg, help_mask_reg,
         is_gather, gp_idx_mat_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat, ld_idx_mat, ld_reg_mat );
 
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, (long long)n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, ld_reg_mat * dtype_size_reg_mat * n);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_idx_mat_reg, ld_idx_mat * dtype_size_idx_mat * n);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_reg_mat_reg, (long long)ld_reg_mat * dtype_size_reg_mat * n);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_sub_instruction, gp_idx_mat_reg, (long long)ld_idx_mat * dtype_size_idx_mat * n);
 
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, m_unroll_factor * vlen * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, m_unroll_factor * idx_tsize * idx_vlen);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)m_unroll_factor * vlen * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_ind_base, (long long)m_unroll_factor * idx_tsize * idx_vlen);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, m_trips_loop);
   }
 
@@ -1548,8 +1548,8 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
         vload_instr, vstore_instr, vlen, vname_load, vname_store, use_m_masking, ones_mask_reg, mask_reg, help_mask_reg,
         is_gather, gp_idx_mat_reg, gp_reg_mat_reg, dtype_size_idx_mat, dtype_size_reg_mat, ld_idx_mat, ld_reg_mat );
 
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_reg_mat_reg, (long long)n_unroll_factor * ld_reg_mat * dtype_size_reg_mat);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, i_micro_kernel_config->alu_add_instruction, gp_idx_mat_reg, (long long)n_unroll_factor * ld_idx_mat * dtype_size_idx_mat);
     libxsmm_generator_generic_loop_footer( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, n);
   }
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_GATHER_SCATTER_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)

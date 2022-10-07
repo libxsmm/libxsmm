@@ -448,7 +448,7 @@ LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_gemm_init()
+LIBXSMM_API_INTERN void libxsmm_gemm_init(void)
 {
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr = { 0 };
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
@@ -1223,12 +1223,15 @@ LIBXSMM_API libxsmm_bitfield libxsmm_gemm_batch_flags(
 # if (2 == LIBXSMM_GEMM_NTS || 0 > LIBXSMM_GEMM_NTS)
   if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & result))
 # endif
-  {
-    cpuid_vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
-    if (0 == LIBXSMM_MOD2((uintptr_t)c, (uintptr_t)cpuid_vlen)) {
-      otypesize = libxsmm_typesize(gemm_shape->out_type);
-      if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, cpuid_vlen)) { /* aligned C-matrices? */
-        result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+  { const char *const env_gemm_nts = getenv("LIBXSMM_GEMM_NTS");
+    if (NULL == env_gemm_nts || '0' != *env_gemm_nts) {
+      cpuid_vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
+      if (0 == LIBXSMM_MOD2((uintptr_t)c, (uintptr_t)cpuid_vlen)) {
+        otypesize = libxsmm_typesize(gemm_shape->out_type);
+        /* check if C-matrices are aligned */
+        if (0 == LIBXSMM_MOD2(gemm_shape->ldc * otypesize, cpuid_vlen)) {
+          result |= LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+        }
       }
     }
   }

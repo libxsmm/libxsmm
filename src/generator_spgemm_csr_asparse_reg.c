@@ -1235,7 +1235,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_neon( libxsmm_generated_co
         /* Compute the displacement */
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                                                       l_base_c_gp_reg, (long long)l_z*i_xgemm_desc->ldc*l_fbytes );
+                                                       l_base_c_gp_reg, (unsigned long long)l_z*i_xgemm_desc->ldc*l_fbytes );
 
         /* Issue the moves */
         if ( 1 == l_n_blocking ) {
@@ -1291,7 +1291,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
   unsigned int *const l_unique_pos = (unsigned int*)(0 != l_n_row_idx ? malloc(sizeof(unsigned int) * l_n_row_idx) : NULL);
   int *const l_unique_sgn = (int*)(0 != l_n_row_idx ? malloc(sizeof(int) * l_n_row_idx) : NULL);
   unsigned int l_reg_unique, l_base_c_reg, l_base_c_gp_reg, l_ld_reg, l_used_reg = 0;
-  int l_curr_b_disp = 0;
+  int l_curr_b_disp = 0, l_curr_rvb_disp = -1;
 
   unsigned int l_bcast_reg_vals[30], l_nbcast_vals = 0;
 
@@ -1546,10 +1546,13 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
     l_curr_b_disp = l_b_disp;
 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-      /* Load B itself */
-      libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
-                                            l_gp_reg_mapping.gp_reg_help_1, 0, l_n,
-                                            l_rvb, LIBXSMM_AARCH64_SVE_REG_P0 );
+      /* Load B itself (elide if already loaded) */
+      if ( l_curr_rvb_disp != l_b_disp + (int)(l_n*l_vbytes) ) {
+        libxsmm_aarch64_instruction_sve_move( io_generated_code, l_ld_tbl[l_fp64],
+                                              l_gp_reg_mapping.gp_reg_help_1, 0, l_n,
+                                              l_rvb, LIBXSMM_AARCH64_SVE_REG_P0 );
+        l_curr_rvb_disp = l_b_disp + l_n*l_vbytes;
+      }
 
       for ( l_z = 0; l_z < op.n; l_z++ ) {
         unsigned int l_u = op.src_vals[l_z], l_v;
@@ -1620,7 +1623,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
 
               libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                              l_base_a_off_reg, l_gp_reg_mapping.gp_reg_help_0,
-                                                             l_gp_reg_mapping.gp_reg_help_2, (long long)l_u*l_fbytes );
+                                                             l_gp_reg_mapping.gp_reg_help_2, (unsigned long long)l_u*l_fbytes );
             }
 
             /* Load */
@@ -1691,7 +1694,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg_aarch64_sve( libxsmm_generated_cod
         /* Compute the displacement */
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
-                                                       l_base_c_gp_reg, (long long)l_z*i_xgemm_desc->ldc*l_fbytes );
+                                                       l_base_c_gp_reg, (unsigned long long)l_z*i_xgemm_desc->ldc*l_fbytes );
 
         /* Issue the moves */
         for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {

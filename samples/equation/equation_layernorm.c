@@ -16,7 +16,7 @@
 #include <math.h>
 
 #define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-#define USE_VECTORIZED_PATH 1
+//#define USE_VECTORIZED_PATH 1
 
 #if defined(__AVX512F__)
 inline __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
@@ -43,7 +43,7 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
     for (s1 = 0; s1 < S1; s1++) {
-      for( s3 = 0; s3 < S3-15; s3+=16) {
+      for ( s3 = 0; s3 < S3-15; s3+=16) {
         __m512 vin = _mm512_loadu_ps_auto(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
         vm = _mm512_add_ps(vm, vin);
         vv = _mm512_add_ps(vv, _mm512_mul_ps(vin, vin));
@@ -132,7 +132,7 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
         vdb = _mm512_add_ps(vdb, vtmp);
       }
 
-      if(s3 < S3) {
+      if (s3 < S3) {
         int rem = S3 - s3;
         __mmask16 mask = (1 << rem) - 1;
         __m512 vdout = _mm512_maskz_loadu_ps_auto(mask, &LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3));
@@ -203,7 +203,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
     for (s1 = 0; s1 < S1; s1++) {
-      for( s3 = 0; s3 < S3-15; s3+=16) {
+      for ( s3 = 0; s3 < S3-15; s3+=16) {
         __m512 vin = _mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
         vm = _mm512_add_ps(vm, vin);
         vv = _mm512_add_ps(vv, _mm512_mul_ps(vin, vin));
@@ -254,7 +254,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
     float v = 0;
     float c = (float)(1.0 / (S1*S3));
     for (s1 = 0; s1 < S1; s1++) {
-      for( s3 = 0; s3 < S3; s3++) {
+      for ( s3 = 0; s3 < S3; s3++) {
         m += LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
         v += LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) * LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3);
       }
@@ -306,7 +306,7 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
         vdb = _mm512_add_ps(vdb, vtmp);
       }
 
-      if(s3 < S3) {
+      if (s3 < S3) {
         int rem = S3 - s3;
         __mmask16 mask = (1 << rem) - 1;
         __m512 vdout = _mm512_maskz_loadu_ps(mask, &LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3));

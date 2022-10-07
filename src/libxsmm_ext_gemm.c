@@ -421,8 +421,8 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
     for (i = 0; i < ngroups; ++i) {
       const libxsmm_blasint isize = batchsize[i], asize = LIBXSMM_ABS(isize);
       if (0 < asize) {
-        const void* const ialpha = (NULL != alpha ? ((const char*)alpha + i * otypesize) : NULL);
-        const void* const ibeta = (NULL != beta ? ((const char*)beta + i * otypesize) : NULL);
+        const void *const ialpha = (NULL != alpha ? &((const char*)alpha)[i*otypesize] : NULL);
+        const void *const ibeta = (NULL != beta ? &((const char*)beta)[i*otypesize] : NULL);
         const char *const ta = (NULL != transa ? (transa + i) : NULL);
         const char *const tb = (NULL != transb ? (transb + i) : NULL);
         libxsmm_bitfield gemm_flags = LIBXSMM_GEMM_PFLAGS(ta, tb, LIBXSMM_FLAGS), flags = gemm_flags;
@@ -498,7 +498,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
           const int ntasks = (int)LIBXSMM_UPDIV(asize, libxsmm_gemm_taskgrain);
           const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
           if (1 < nthreads && 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & flags)) {
-            int tid;
+            int tid = 0;
             LIBXSMM_OMP_VAR(tid);
             if (0 == outerpar) { /* enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)

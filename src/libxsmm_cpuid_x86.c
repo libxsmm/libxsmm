@@ -49,7 +49,7 @@
         __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
         : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
         : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
-      ); LIBXSMM_UNUSED(EDX)
+      ); if (0 == (EDX)) LIBXSMM_UNUSED(EDX)
 #   endif
 # else /* legacy Cray Compiler */
 #   define LIBXSMM_XGETBV(XCR, EAX, EDX) (EAX) = (EDX) = 0
@@ -352,11 +352,23 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
     case LIBXSMM_AARCH64_V82: {
       target_arch = "aarch64";
     } break;
-    case LIBXSMM_AARCH64_A64FX: {
-      target_arch = "a64fx";
-    } break;
     case LIBXSMM_AARCH64_APPL_M1: {
       target_arch = "appl_m1";
+    } break;
+    case LIBXSMM_AARCH64_SVE128: {
+      target_arch = "sve128";
+    } break;
+    case LIBXSMM_AARCH64_SVE256: {
+      target_arch = "sve256";
+    } break;
+    case LIBXSMM_AARCH64_NEOV1: {
+      target_arch = "neov1";
+    } break;
+    case LIBXSMM_AARCH64_SVE512: {
+      target_arch = "sve512";
+    } break;
+    case LIBXSMM_AARCH64_A64FX: {
+      target_arch = "a64fx";
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
@@ -383,8 +395,24 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 {
   int result;
-#if defined(LIBXSMM_PLATFORM_X86)
-  if (LIBXSMM_X86_AVX512 <= id) {
+  if (LIBXSMM_AARCH64_V81 == id
+        || LIBXSMM_AARCH64_V82 == id
+        || LIBXSMM_AARCH64_APPL_M1 == id
+        || LIBXSMM_AARCH64_SVE128  == id)
+  {
+    result = 4;
+  }
+  else if (LIBXSMM_AARCH64_SVE256 == id
+        || LIBXSMM_AARCH64_NEOV1  == id)
+  {
+    result = 8;
+  }
+  else if (LIBXSMM_AARCH64_SVE512 == id
+        || LIBXSMM_AARCH64_A64FX  == id)
+  {
+    result = 16;
+  }
+  else if (LIBXSMM_X86_AVX512 <= id) {
     result = 16;
   }
   else if (LIBXSMM_X86_AVX <= id) {
@@ -393,21 +421,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else if (LIBXSMM_X86_GENERIC <= id) {
     result = 4;
   }
-  else
-#elif defined(LIBXSMM_PLATFORM_AARCH64)
-  if (LIBXSMM_AARCH64_V81 == id ||
-      LIBXSMM_AARCH64_V82 == id ||
-      LIBXSMM_AARCH64_APPL_M1 == id) {
-    result = 4;
-  }
-  else if (LIBXSMM_AARCH64_A64FX == id) {
-    result = 16;
-  }
-  else
-#else
-  LIBXSMM_UNUSED(id);
-#endif
-  { /* scalar */
+  else { /* scalar */
     result = 1;
   }
   return result;

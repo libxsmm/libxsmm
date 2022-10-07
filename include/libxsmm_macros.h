@@ -84,8 +84,8 @@
 # endif
 #endif
 
-#define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
-#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY2(SYMBOL)
+#define LIBXSMM_STRINGIFY_AUX(SYMBOL) #SYMBOL
+#define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY_AUX(SYMBOL)
 #define LIBXSMM_TOSTRING(SYMBOL) LIBXSMM_STRINGIFY(SYMBOL)
 #define LIBXSMM_CONCATENATE2(A, B) A##B
 #define LIBXSMM_CONCATENATE3(A, B, C) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(A, B), C)
@@ -142,22 +142,30 @@
 #define LIBXSMM_IS_UINT(VALUE) LIBXSMM_IS_INTEGER(unsigned int, VALUE, 0, UINT_MAX)
 #define LIBXSMM_IS_INT(VALUE) LIBXSMM_IS_INTEGER(/*signed*/int, VALUE, INT_MIN, INT_MAX)
 
+#if !defined(LIBXSMM_CAST_CHECK)
+# if !defined(__COVERITY__) && 1
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(EXPR, MSG)
+# else
+#   define LIBXSMM_CAST_CHECK(EXPR, MSG) LIBXSMM_ASSERT_MSG(1, MSG)
+# endif
+#endif
+
 /**
  * LIBXSMM_CAST: Perform type-cast with following two advantages:
  *               (1) Make it easy to locate/find the type-cast.
  *               (2) Range-check to ensure fitting into type.
  */
-#define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ULLONG(VALUE), "Value cannot be represented as ULLONG"), VALUE))
-#define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_LLONG(VALUE), "Value cannot be represented as LLONG"), VALUE))
-#define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ULONG(VALUE), "Value cannot be represented as ULONG"), VALUE))
-#define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_LONG(VALUE), "Value cannot be represented as LONG"), VALUE))
-#define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_USHORT(VALUE), "Value cannot be represented as USHORT"), VALUE))
-#define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_SHORT(VALUE), "Value cannot be represented as SHORT"), VALUE))
-#define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_UCHAR(VALUE), "Value cannot be represented as UCHAR"), VALUE))
-#define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_ICHAR(VALUE), "Value cannot be represented as ICHAR"), VALUE))
-#define LIBXSMM_CAST_CHAR(VALUE) ((char)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_CHAR(VALUE), "Value cannot be represented as CHAR"), VALUE))
-#define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_UINT(VALUE), "Value cannot be represented as UINT"), VALUE))
-#define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_ASSERT_MSG(LIBXSMM_IS_INT(VALUE), "Value cannot be represented as INT"), VALUE))
+#define LIBXSMM_CAST_ULLONG(VALUE) ((unsigned long long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ULLONG(VALUE), "Value cannot be represented as ULLONG"), VALUE))
+#define LIBXSMM_CAST_LLONG(VALUE) ((/*signed*/long long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_LLONG(VALUE), "Value cannot be represented as LLONG"), VALUE))
+#define LIBXSMM_CAST_ULONG(VALUE) ((unsigned long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ULONG(VALUE), "Value cannot be represented as ULONG"), VALUE))
+#define LIBXSMM_CAST_LONG(VALUE) ((/*signed*/long)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_LONG(VALUE), "Value cannot be represented as LONG"), VALUE))
+#define LIBXSMM_CAST_USHORT(VALUE) ((unsigned short)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_USHORT(VALUE), "Value cannot be represented as USHORT"), VALUE))
+#define LIBXSMM_CAST_SHORT(VALUE) ((/*signed*/short)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_SHORT(VALUE), "Value cannot be represented as SHORT"), VALUE))
+#define LIBXSMM_CAST_UCHAR(VALUE) ((unsigned char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_UCHAR(VALUE), "Value cannot be represented as UCHAR"), VALUE))
+#define LIBXSMM_CAST_ICHAR(VALUE) ((signed char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_ICHAR(VALUE), "Value cannot be represented as ICHAR"), VALUE))
+#define LIBXSMM_CAST_CHAR(VALUE) ((char)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_CHAR(VALUE), "Value cannot be represented as CHAR"), VALUE))
+#define LIBXSMM_CAST_UINT(VALUE) ((unsigned int)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_UINT(VALUE), "Value cannot be represented as UINT"), VALUE))
+#define LIBXSMM_CAST_INT(VALUE) ((/*signed*/int)(LIBXSMM_CAST_CHECK(LIBXSMM_IS_INT(VALUE), "Value cannot be represented as INT"), VALUE))
 
 #if (0 != LIBXSMM_ILP64)
 # define LIBXSMM_IS_BLASINT(VALUE) LIBXSMM_IS_LLONG(VALUE)
@@ -422,7 +430,7 @@
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
-#endif /*LIBXSMM_PRAGMA*/
+#endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD)
 # if defined(LIBXSMM_INTEL_COMPILER) && (1500 <= LIBXSMM_INTEL_COMPILER)
@@ -494,6 +502,25 @@
 # else
 #   define LIBXSMM_PRAGMA_UNROLL_N(N)
 # endif
+#endif
+
+#if !defined(__INTEL_COMPILER)
+# if defined(__clang__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(clang diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(clang diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(clang diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# elif defined(__GNUC__) && LIBXSMM_VERSION2(4, 6) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__)
+#   define LIBXSMM_PRAGMA_DIAG_PUSH()     LIBXSMM_PRAGMA(GCC diagnostic push)
+#   define LIBXSMM_PRAGMA_DIAG_POP()      LIBXSMM_PRAGMA(GCC diagnostic pop)
+#   define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)  LIBXSMM_PRAGMA(GCC diagnostic ignored DIAG)
+#   define LIBXSMM_PRAGMA_DIAG
+# endif
+#endif
+#if !defined(LIBXSMM_PRAGMA_DIAG)
+# define LIBXSMM_PRAGMA_DIAG_PUSH()
+# define LIBXSMM_PRAGMA_DIAG_POP()
+# define LIBXSMM_PRAGMA_DIAG_OFF(DIAG)
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -809,8 +836,16 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #   endif
 # endif
 #endif
-#if !defined(_GNU_SOURCE) && defined(LIBXSMM_BUILD)
-# define _GNU_SOURCE
+#if defined(LIBXSMM_BUILD)
+# if !defined(_DEFAULT_SOURCE)
+#   define _DEFAULT_SOURCE
+# endif
+# if !defined(_XOPEN_SOURCE)
+#   define _XOPEN_SOURCE
+# endif
+# if !defined(_GNU_SOURCE)
+#   define _GNU_SOURCE
+# endif
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
 # define __STDC_FORMAT_MACROS
@@ -946,11 +981,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_PUTENV(A) putenv(A)
 # define LIBXSMM_MKTEMP(A) mkstemp(A)
-# if !defined(_GNU_SOURCE) || (defined(__cplusplus) && 199711L > __cplusplus)
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
-# else
+# if defined(__clang__) || !defined(__GNUC__) || (defined(__GNUC__) && LIBXSMM_VERSION2(4, 3) <= LIBXSMM_VERSION2(__GNUC__, __GNUC_MINOR__))
 LIBXSMM_EXTERN int mkstemp(char*);
+# else
+LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
 # endif
+LIBXSMM_EXTERN int putenv(char*) LIBXSMM_NOTHROW;
 #endif
 
 /* block must be after including above header files */

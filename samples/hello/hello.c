@@ -10,7 +10,7 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 
-int main(/*int argc, char* argv[]*/) {
+int main(int argc, char* argv[]) {
   const size_t t = sizeof(double);
   int flags = LIBXSMM_GEMM_FLAG_NONE, batchsize = 1000, m = 13, n = 5, k = 7, ki, i, j;
   double *a = malloc(t * batchsize * m * k), *b = malloc(t * batchsize * k * n);
@@ -19,6 +19,7 @@ int main(/*int argc, char* argv[]*/) {
   libxsmm_dmmfunction kernel = libxsmm_dmmdispatch(
     m, n, k, NULL /*lda*/, NULL /*ldb*/, NULL /*ldc*/, &alpha, &beta, &flags, NULL /*prefetch*/);
   assert(NULL != kernel && NULL != a && NULL != b && NULL != c);
+  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
   for (i = 0; i < batchsize; ++i) { /* initialize input */
     for (ki = 0; ki < k; ++ki) {
       for (j = 0; j < m; ++j) a[i * j * ki] = ((double)1) / ((i + j + ki) % 25);
