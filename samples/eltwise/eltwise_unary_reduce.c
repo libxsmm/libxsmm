@@ -264,6 +264,9 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     } else {
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
     }
+    if (reduce_on_outputs > 0) {
+      unary_flags |= LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_INIT_ACC);
+    }
     unary_shape.n = 0;
     if (reduce_op == 0) {
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
