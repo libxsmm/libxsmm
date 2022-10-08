@@ -552,9 +552,9 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
         } else if ( dtype == LIBXSMM_DATATYPE_HF8 ) {
           float tmp_rnd = (float)get_random_posneg_p5_num();
           libxsmm_rne_convert_fp32_hf8( &tmp_rnd, &hf8_data[(l_r * ld * n) + (l_j * ld) + l_i], 1 );
-        } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
+        } else if ( dtype == LIBXSMM_DATATYPE_I32S ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (get_random_posneg_p5_num() * 40.0);
-        } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
+        } else if ( dtype == LIBXSMM_DATATYPE_I16S ) {
           s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(get_random_posneg_p5_num() * 40.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
           if ( pos_val_only != 0 ) {
@@ -741,9 +741,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
         }
       }
     }
-  } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I16) &&
-              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32) &&
-              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32)    ) {
+  } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I16S) &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32S) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32S)    ) {
     short* s_a = (short*)a;
     short* s_b = (short*)b;
     int*   i_c = (int*)c;
@@ -765,8 +765,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
-              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32)  &&
-              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32S)  &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32S) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     unsigned char* c_a = (unsigned char*)a;
     char*          c_b = (char*)b;
@@ -794,8 +794,8 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
       }
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
-              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32)  &&
-              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->out_type  == LIBXSMM_DATATYPE_I32S)  &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32S) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
@@ -824,7 +824,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
               (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) &&
-              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32S) &&
               (i_gemm_def->unsigned_a == 1) && (i_gemm_def->unsigned_b == 0) ) {
     unsigned char* c_a = (unsigned char*)a;
     char* c_b          = (char*)b;
@@ -859,7 +859,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     }
   } else if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_I8)  &&
               (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F32) &&
-              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32) &&
+              (i_gemm_def->comp_type == LIBXSMM_DATATYPE_I32S) &&
               (i_gemm_def->unsigned_a == 0) && (i_gemm_def->unsigned_b == 1) ) {
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
@@ -1310,8 +1310,8 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
 
     free( data_f );
     free( data_gold_f ) ;
-  } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
+  } else if ( dtype == LIBXSMM_DATATYPE_I32S ) {
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32S, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
@@ -1947,24 +1947,24 @@ int main(int argc, char* argv []) {
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
     l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
   } else if ( (strcmp(l_precision, "I16I32") == 0) ) {
-    l_gemm_def.in_type = LIBXSMM_DATATYPE_I16;
-    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
-    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_I16S;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32S;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32S;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
   } else if (strcmp(l_precision, "USI8I32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
-    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
-    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32S;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32S;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
     l_gemm_def.unsigned_a = 1;
   } else if (strcmp(l_precision, "SUI8I32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
-    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32;
-    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_I32S;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32S;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
@@ -1972,7 +1972,7 @@ int main(int argc, char* argv []) {
   } else if (strcmp(l_precision, "USI8F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
-    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32S;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
@@ -1981,7 +1981,7 @@ int main(int argc, char* argv []) {
   } else if (strcmp(l_precision, "SUI8F32") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_I8;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
-    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_I32S;
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;

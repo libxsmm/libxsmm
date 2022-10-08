@@ -442,8 +442,8 @@ $MNK_INTERFACE_LIST
 template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32S; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16S; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };

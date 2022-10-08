@@ -55,21 +55,21 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     libxsmm_matdiff_clear(info);
     inf = info->min_ref;
     switch ((int)datatype) {
-    case LIBXSMM_DATATYPE_I64: {
+    case LIBXSMM_DATATYPE_I64S: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE long long
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
     } break;
-    case LIBXSMM_DATATYPE_I32: {
+    case LIBXSMM_DATATYPE_I32S: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
 #       include "template/libxsmm_matdiff.h"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64
     } break;
-    case LIBXSMM_DATATYPE_I16: {
+    case LIBXSMM_DATATYPE_I16S: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_TYPE2FP64(VALUE) ((double)(VALUE))
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
 #       include "template/libxsmm_matdiff.h"

@@ -22,17 +22,17 @@ libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {
   if ( (strcmp(dt, "F64") == 0) ) {
     dtype = LIBXSMM_DATATYPE_F64;
   } else if ( (strcmp(dt, "I64") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I64;
+    dtype = LIBXSMM_DATATYPE_I64S;
   } else if ( (strcmp(dt, "F32") == 0) ) {
     dtype = LIBXSMM_DATATYPE_F32;
   } else if ( (strcmp(dt, "I32") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I32;
+    dtype = LIBXSMM_DATATYPE_I32S;
   } else if ( (strcmp(dt, "F16") == 0) ) {
     dtype = LIBXSMM_DATATYPE_F16;
   } else if ( (strcmp(dt, "BF16") == 0) ) {
     dtype = LIBXSMM_DATATYPE_BF16;
   } else if ( (strcmp(dt, "I16") == 0) ) {
-    dtype = LIBXSMM_DATATYPE_I16;
+    dtype = LIBXSMM_DATATYPE_I16S;
   } else if ( (strcmp(dt, "BF8") == 0) ) {
     dtype = LIBXSMM_DATATYPE_BF8;
   } else if ( (strcmp(dt, "HF8") == 0) ) {
@@ -81,9 +81,9 @@ void init_random_matrix( const libxsmm_datatype dtype, void* data, const libxsmm
           libxsmm_hfloat8 tmp_hf8;
           libxsmm_rne_convert_fp32_hf8(&tmp, &tmp_hf8, 1);
           hf8_data[(l_r * ld * n) + (l_j * ld) + l_i] = (libxsmm_hfloat8)tmp_hf8;
-        } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
+        } else if ( dtype == LIBXSMM_DATATYPE_I32S ) {
           i_data[(l_r * ld * n) + (l_j * ld) + l_i] = (int)  (libxsmm_rng_f64() * 20.0);
-        } else if ( dtype == LIBXSMM_DATATYPE_I16 ) {
+        } else if ( dtype == LIBXSMM_DATATYPE_I16S ) {
           s_data[(l_r * ld * n) + (l_j * ld) + l_i] = (short)(libxsmm_rng_f64() * 20.0);
         } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
           c_data[(l_r * ld * n) + (l_j * ld) + l_i] = (char) (libxsmm_rng_f64() * 20.0);
@@ -115,11 +115,11 @@ void apply_row_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
-      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
+      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64S) ) {
         d_data[(i*ld)+j] = d_data[i*ld];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32S) ) {
         f_data[(i*ld)+j] = f_data[i*ld];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16S) ) {
         s_data[(i*ld)+j] = s_data[i*ld];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[i*ld];
@@ -138,11 +138,11 @@ void apply_col_bcast_matrix( const libxsmm_datatype dtype, void* data, const lib
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
-      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
+      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64S) ) {
         d_data[(i*ld)+j] = d_data[j];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32S) ) {
         f_data[(i*ld)+j] = f_data[j];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16S) ) {
         s_data[(i*ld)+j] = s_data[j];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8)) {
         c_data[(i*ld)+j] = c_data[j];
@@ -161,11 +161,11 @@ void apply_scalar_bcast_matrix( const libxsmm_datatype dtype, void* data, const 
 
   for ( i = 0; i < n; ++i ) {
     for ( j = 0; j < LIBXSMM_MAX(m,ld); ++j ) {
-      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
+      if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64S) ) {
         d_data[(i*ld)+j] = d_data[0];
-      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32S) ) {
         f_data[(i*ld)+j] = f_data[0];
-      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+      } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16S) ) {
         s_data[(i*ld)+j] = s_data[0];
       } else if ( (dtype == LIBXSMM_DATATYPE_I8) || (dtype == LIBXSMM_DATATYPE_BF8) || (dtype == LIBXSMM_DATATYPE_HF8) ) {
         c_data[(i*ld)+j] = c_data[0];
@@ -216,8 +216,8 @@ libxsmm_matdiff_info check_matrix( const libxsmm_datatype dtype, const void* dat
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, f_data_gold, f_data, &ld, &ld);
     free( f_data );
     free( f_data_gold );
-  } else if ( dtype == LIBXSMM_DATATYPE_I32 ) {
-    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32, m, n, data_gold, data, &ld, &ld);
+  } else if ( dtype == LIBXSMM_DATATYPE_I32S ) {
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I32S, m, n, data_gold, data, &ld, &ld);
   } else if ( dtype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_I8, m, n, data_gold, data, &ld, &ld);
   }

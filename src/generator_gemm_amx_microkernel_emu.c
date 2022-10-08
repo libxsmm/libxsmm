@@ -499,7 +499,7 @@ void libxsmm_generator_gemm_amx_single_tilestore_emu( libxsmm_generated_code*   
   unsigned int reserved_zmms       = i_micro_kernel_config->reserved_zmms;
   unsigned int fused_eltwise       = ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_sigmoid == 1)) ? 1 : 0;
 
-  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
+  if (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) || LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
     libxsmm_x86_instruction_tile_move_emu( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,

@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
   argop_vec_1 = (argop_mode & 2) >> 1;
 
   if (idx_mode == 0) {
-    idx_dtype = LIBXSMM_DATATYPE_I32;
+    idx_dtype = LIBXSMM_DATATYPE_I32S;
   } else {
-    idx_dtype = LIBXSMM_DATATYPE_I64;
+    idx_dtype = LIBXSMM_DATATYPE_I64S;
   }
 
   if (op == OP_COPY) {
@@ -525,7 +525,7 @@ int main(int argc, char* argv[])
 
   if (argop_vec_0 > 0) {
     printf("###### Arg idx 0 #######\n");
-    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_0_i32, argop_off_vec_0_i32, 0, 0);
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32S, m, 1, ref_argop_off_vec_0_i32, argop_off_vec_0_i32, 0, 0);
 
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
@@ -539,7 +539,7 @@ int main(int argc, char* argv[])
 
   if (argop_vec_1 > 0) {
     printf("###### Arg idx 1 #######\n");
-    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_vec_1_i32, argop_off_vec_1_i32, 0, 0);
+    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32S, m, 1, ref_argop_off_vec_1_i32, argop_off_vec_1_i32, 0, 0);
 
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);

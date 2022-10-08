@@ -3224,13 +3224,13 @@ void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated
   /* convert to int */
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2DQ, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
 
-  if ( i_datatype == LIBXSMM_DATATYPE_I16 ) {
+  if ( i_datatype == LIBXSMM_DATATYPE_I16S ) {
     /* @TODO: add rouding */
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDW, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
   } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
     /* @TODO: add rouding */
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDB, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
-  } else if ( i_datatype == LIBXSMM_DATATYPE_I32 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I32S ) {
     /* nothing to do */
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -3243,11 +3243,11 @@ void libxsmm_generator_vcvtint2ps_avx512( libxsmm_generated_code* io_generated_c
                                           const libxsmm_datatype  i_datatype,
                                           const unsigned int      io_vec_reg,
                                           const unsigned int      i_scf_vec_reg ) {
-  if ( i_datatype == LIBXSMM_DATATYPE_I16 ) {
+  if ( i_datatype == LIBXSMM_DATATYPE_I16S ) {
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXWD, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
   } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXBD, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
-  } else if ( i_datatype == LIBXSMM_DATATYPE_I32 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_I32S ) {
     /* nothing to do */
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -3270,11 +3270,11 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
   unsigned long long l_mask = 0;
 
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
-    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64S ) {
       l_mask = 0xff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32S ) {
       l_mask = 0xffff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16S ) {
       l_mask = 0xffffffff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_I8 || i_datatype == LIBXSMM_DATATYPE_BF8 || i_datatype == LIBXSMM_DATATYPE_HF8 ) {
       l_mask = 0xffffffffffffffff;
@@ -3283,11 +3283,11 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       return;
     }
   } else if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
-    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+    if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64S ) {
       l_mask = 0xf;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32S ) {
       l_mask = 0xff;
-    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
+    } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16S ) {
       l_mask = 0xffff;
     } else if ( i_datatype == LIBXSMM_DATATYPE_I8 || i_datatype == LIBXSMM_DATATYPE_BF8 || i_datatype == LIBXSMM_DATATYPE_HF8  ) {
       l_mask = 0xffffffff;
@@ -3311,17 +3311,17 @@ void libxsmm_generator_initialize_avx512_mask( libxsmm_generated_code* io_genera
       l_mask );
 
   /* loading the mask register */
-  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64S ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
         (io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE) ? LIBXSMM_X86_INSTR_KMOVB_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
         i_gp_reg_tmp,
         i_mask_reg );
-  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32S ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
         LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
         i_gp_reg_tmp,
         i_mask_reg );
-  } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_F16 || i_datatype == LIBXSMM_DATATYPE_BF16 || i_datatype == LIBXSMM_DATATYPE_I16S ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
         LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
         i_gp_reg_tmp,
@@ -3342,14 +3342,14 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
                                             const unsigned int      i_mask_reg,
                                             const unsigned int      i_mask_count,
                                             const libxsmm_datatype  i_datatype) {
-  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64S ) {
     unsigned long long mask_array[4] = {0, 0, 0, 0};
     unsigned int i;
     for (i = 0; i < i_mask_count; i++) {
       mask_array[i] = 0xFFFFFFFFFFFFFFFF;
     }
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
-  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32S ) {
     unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int i;
     for (i = 0; i < i_mask_count; i++) {

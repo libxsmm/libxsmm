@@ -374,7 +374,7 @@ void libxsmm_generator_gemm_footer_mloop_amx( libxsmm_generated_code*           
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
       unsigned int l_type_scaling;
       if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
-          (LIBXSMM_DATATYPE_I16  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
+          (LIBXSMM_DATATYPE_I16S  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
         l_type_scaling = 2;
       } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         l_type_scaling = 4;

@@ -20,7 +20,7 @@ LIBXSMM_INLINE
 void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
   size_t i, j;
 
-  if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64) ) {
+  if ( (dtype == LIBXSMM_DATATYPE_F64) || (dtype == LIBXSMM_DATATYPE_I64S) ) {
     const double*  in_data = (const double*)in;
     double*       out_data = (double*)      out;
     for ( i = 0; i < (size_t)N; ++i ) {
@@ -28,7 +28,7 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
         out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
       }
     }
-  } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32)) {
+  } else if ( (dtype == LIBXSMM_DATATYPE_F32) || (dtype == LIBXSMM_DATATYPE_I32S)) {
     const float*  in_data = (const float*)in;
     float*       out_data = (float*)      out;
     for ( i = 0; i < (size_t)N; ++i ) {
@@ -36,7 +36,7 @@ void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const li
         out_data[(j*(size_t)ldo)+i] = in_data[(i*(size_t)ldi)+j];
       }
     }
-  } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16) ) {
+  } else if ( (dtype == LIBXSMM_DATATYPE_BF16) || (dtype == LIBXSMM_DATATYPE_F16) || (dtype == LIBXSMM_DATATYPE_I16S) ) {
     const unsigned short*  in_data = (const unsigned short*)in;
     unsigned short*       out_data = (unsigned short*)      out;
     for ( i = 0; i < (size_t)N; ++i ) {
@@ -294,9 +294,9 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
-  unary_shape.out_type = LIBXSMM_DATATYPE_I16;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I16S;
 
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in_vnni;
@@ -606,9 +606,9 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_shape.n = N;
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
-  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
-  unary_shape.out_type = LIBXSMM_DATATYPE_I16;
-  unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I16S;
 
   /* use jited tranpose */
   unary_param.in.primary  = (void*)in;
@@ -1518,22 +1518,22 @@ int main( int argc, char* argv[] ) {
   if ( op == 'T' ) {
     printf("Testing %s Norm to Norm Transpose - M=%i, N=%i, LDI=%i, LDO=%i \n", libxsmm_get_typename(dtype), M, N, ldi, ldo);
     ret = test_normal_to_normalT( M, N, ldi, ldo, dtype );
-  } else if ( op == 'R' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
+  } else if ( op == 'R' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16S ) ) {
     printf("Testing 16bit VNNI2 to VNNI2 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni2_to_vnni2T_16bit( M, N, ldi, ldo );
   } else if ( op == 'R' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {
     printf("Testing 08bit VNNI to VNNI4 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni4_to_vnni4T_08bit( M, N, ldi, ldo );
-  } else if ( op == 'I' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 ) ) {
+  } else if ( op == 'I' && ( dtype == LIBXSMM_DATATYPE_I16S || dtype == LIBXSMM_DATATYPE_BF16 ) ) {
     printf("Testing 16bit VNNI to VNNI4 Transpose - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni4_to_vnni4T_16bit( M, N, ldi, ldo );
-  } else if ( op == 'V' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
+  } else if ( op == 'V' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16S ) ) {
     printf("Testing 16bit NORM to VNNI2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni2_16bit( M, N, ldi, ldo );
   } else if ( op == 'V' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {
     printf("Testing 08bit NORM to VNNI4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni4_08bit( M, N, ldi, ldo );
-  } else if ( op == 'B' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 ) ) {
+  } else if ( op == 'B' && ( dtype == LIBXSMM_DATATYPE_I16S || dtype == LIBXSMM_DATATYPE_BF16 ) ) {
     printf("Testing 16bit NORM to VNNI4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni4_16bit( M, N, ldi, ldo );
   } else if ( op == 'N' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {
@@ -1542,13 +1542,13 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'W' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {
     printf("Testing 08bit VNNI4 to VNNI2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_vnni4_to_vnni2_08bit( M, N, ldi, ldo );
-  } else if ( op == 'X' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
+  } else if ( op == 'X' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16S ) ) {
     printf("Testing 16bit NORM PADN Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padn_mod2_16bit( M, N, ldi, ldo );
-  } else if ( op == 'Y' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
+  } else if ( op == 'Y' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16S ) ) {
     printf("Testing 16bit NORM PADM Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padm_mod2_16bit( M, N, ldi, ldo );
-  } else if ( op == 'Z' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16 ) ) {
+  } else if ( op == 'Z' && ( dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 || dtype == LIBXSMM_DATATYPE_I16S ) ) {
     printf("Testing 16bit NORM PADNM Mod2 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod2_16bit( M, N, ldi, ldo );
   } else if ( op == 'X' && ( dtype == LIBXSMM_DATATYPE_I8 || dtype == LIBXSMM_DATATYPE_BF8 ) ) {

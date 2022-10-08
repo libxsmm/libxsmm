@@ -696,7 +696,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   int maskid                       = ((tile_in_last_tilerow > 0) && (i_micro_kernel_config->m_remainder > 0)) ? i_micro_kernel_config->mask_m_fp32 : 0;
 
   if ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
-      (LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) {
+      (LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ))) {
     libxsmm_x86_instruction_tile_move( io_generated_code,
         i_micro_kernel_config->instruction_set,
         LIBXSMM_X86_INSTR_TILESTORED,

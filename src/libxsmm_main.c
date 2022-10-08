@@ -1733,9 +1733,9 @@ LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, dou
     switch ((int)datatype) {
       case LIBXSMM_DATATYPE_F64: *dvalue =         (*(const double   *)value); break;
       case LIBXSMM_DATATYPE_F32: *dvalue = (double)(*(const float    *)value); break;
-      case LIBXSMM_DATATYPE_I64: *dvalue = (double)(*(const long long*)value); break;
-      case LIBXSMM_DATATYPE_I32: *dvalue = (double)(*(const int      *)value); break;
-      case LIBXSMM_DATATYPE_I16: *dvalue = (double)(*(const short    *)value); break;
+      case LIBXSMM_DATATYPE_I64S: *dvalue = (double)(*(const long long*)value); break;
+      case LIBXSMM_DATATYPE_I32S: *dvalue = (double)(*(const int      *)value); break;
+      case LIBXSMM_DATATYPE_I16S: *dvalue = (double)(*(const short    *)value); break;
       case LIBXSMM_DATATYPE_I8:  *dvalue = (double)(*(const char     *)value); break;
       default: result = EXIT_FAILURE;
     }
@@ -1753,23 +1753,23 @@ LIBXSMM_API const char* libxsmm_get_typename(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_F16:  return "f16";
     case LIBXSMM_DATATYPE_BF8:  return "bf8";
     case LIBXSMM_DATATYPE_HF8:  return "hf8";
-    case LIBXSMM_DATATYPE_I64:  return "i64";
-    case LIBXSMM_DATATYPE_I32:  return "i32";
-    case LIBXSMM_DATATYPE_I16:  return "i16";
+    case LIBXSMM_DATATYPE_I64S:  return "i64";
+    case LIBXSMM_DATATYPE_I32S:  return "i32";
+    case LIBXSMM_DATATYPE_I16S:  return "i16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
     default: {
-      if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
-          LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
+      if (LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_INP(datatype) &&
+          LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i16i32";
       }
-      else if (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP(datatype) &&
+      else if (LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_INP(datatype) &&
                LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i16f32";
       }
       else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP(datatype) &&
-               LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT(datatype))
+               LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_OUT(datatype))
       {
         return "i8i32";
       }
