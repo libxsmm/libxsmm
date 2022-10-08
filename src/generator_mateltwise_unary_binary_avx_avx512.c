@@ -2475,10 +2475,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
           i_micro_kernel_config->vec_lo_bound,
           i_micro_kernel_config->vec_ones,
           i_micro_kernel_config->vec_neg_ones );
-          if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
-            i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
-            i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
-          }
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
+        i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
+      }
     } else {
       libxsmm_generator_prepare_coeffs_tanh_ps_rational_78_avx512( io_generated_code,
           i_micro_kernel_config->vec_c0,
@@ -2516,20 +2516,19 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     i_micro_kernel_config->mask_lo       = reserved_mask_regs - 2;
     i_micro_kernel_config->vec_x2        = reserved_zmms - 1;
     i_micro_kernel_config->vec_neg_ones  = reserved_zmms - 2;
-    i_micro_kernel_config->vec_halves    = reserved_zmms - 3;
-    i_micro_kernel_config->vec_c0        = reserved_zmms - 4;
-    i_micro_kernel_config->vec_c1        = reserved_zmms - 5;
-    i_micro_kernel_config->vec_c2        = reserved_zmms - 6;
-    i_micro_kernel_config->vec_c3        = reserved_zmms - 7;
-    i_micro_kernel_config->vec_c1_d      = reserved_zmms - 8;
-    i_micro_kernel_config->vec_c2_d      = reserved_zmms - 9;
-    i_micro_kernel_config->vec_c3_d      = reserved_zmms - 10;
-    i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 11;
-    i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 12;
-    i_micro_kernel_config->vec_ones      = reserved_zmms - 13;
-    i_micro_kernel_config->vec_nom       = reserved_zmms - 14;
-    i_micro_kernel_config->vec_denom     = reserved_zmms - 15;
-
+    i_micro_kernel_config->vec_c0        = reserved_zmms - 3;
+    i_micro_kernel_config->vec_c1        = reserved_zmms - 4;
+    i_micro_kernel_config->vec_c2        = reserved_zmms - 5;
+    i_micro_kernel_config->vec_c3        = reserved_zmms - 6;
+    i_micro_kernel_config->vec_c1_d      = reserved_zmms - 7;
+    i_micro_kernel_config->vec_c2_d      = reserved_zmms - 8;
+    i_micro_kernel_config->vec_c3_d      = reserved_zmms - 9;
+    i_micro_kernel_config->vec_hi_bound  = reserved_zmms - 10;
+    i_micro_kernel_config->vec_lo_bound  = reserved_zmms - 11;
+    i_micro_kernel_config->vec_ones      = reserved_zmms - 12;
+    i_micro_kernel_config->vec_nom       = reserved_zmms - 13;
+    i_micro_kernel_config->vec_denom     = reserved_zmms - 14;
+    i_micro_kernel_config->vec_halves    = reserved_zmms - 15;
     if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
       libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx( io_generated_code,
          i_micro_kernel_config->vec_c0,
@@ -2543,10 +2542,10 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
          i_micro_kernel_config->vec_lo_bound,
          i_micro_kernel_config->vec_ones,
          i_micro_kernel_config->vec_neg_ones );
-        if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
-          i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
-          i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
-        }
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        i_micro_kernel_config->vec_nom          = i_micro_kernel_config->dcvt_zmm_aux0;
+        i_micro_kernel_config->vec_denom        = i_micro_kernel_config->dcvt_zmm_aux1;
+      }
     } else {
       libxsmm_generator_prepare_coeffs_sigmoid_ps_rational_78_avx512( io_generated_code,
          i_micro_kernel_config->vec_c0,
