@@ -2112,10 +2112,18 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_ELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV)) {
     i_micro_kernel_config->zero_vreg = i_micro_kernel_config->reserved_zmms;
     i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms + 1;
-    i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 2;
-    i_micro_kernel_config->tmp_vreg3 = i_micro_kernel_config->reserved_zmms + 3;
-    i_micro_kernel_config->fam_lu_vreg_alpha = i_micro_kernel_config->reserved_zmms + 4;
+    i_micro_kernel_config->fam_lu_vreg_alpha = i_micro_kernel_config->reserved_zmms + 2;
+    i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 3;
+    i_micro_kernel_config->tmp_vreg3 = i_micro_kernel_config->reserved_zmms + 4;
     i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 5;
+
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+        i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms - 2;
+        i_micro_kernel_config->tmp_vreg2     = i_micro_kernel_config->dcvt_zmm_aux0;
+        i_micro_kernel_config->tmp_vreg3     = i_micro_kernel_config->dcvt_zmm_aux1;
+      }
+    }
 
     /* load alpha */
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
