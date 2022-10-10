@@ -1272,6 +1272,11 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
             i_micro_kernel_config->vector_name,
             i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
 
+          if ( (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
+               (l_bf16_compute == 0)     ) {
+            libxsmm_generator_cvtbf16ps_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
+          }
+
           if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_ELU_INV ) {
             libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
                 LIBXSMM_X86_INSTR_VCMPPS,
