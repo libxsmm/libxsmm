@@ -413,7 +413,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
-    error_bound = 0.005;
+    error_bound = 0.008;
   } else if ( op == SQRT_OP || op == EXP_OP || op == TANH_OP || op == TANH_INV_OP ||
               op == SIGMOID_OP || op == SIGMOID_INV_OP || op == GELU_OP || op == GELU_INV_OP ) {
     if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_F32) && (dtype_comp == LIBXSMM_DATATYPE_F32) ) {
