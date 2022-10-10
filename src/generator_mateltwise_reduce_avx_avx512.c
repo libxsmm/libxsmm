@@ -6974,6 +6974,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
   peeled_m_trips    = 0;
 
   if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+    aux_vreg_offset = 7;
     if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
       if (max_m_unrolling > 5) {
         max_m_unrolling -= 2;
