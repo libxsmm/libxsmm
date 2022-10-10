@@ -52,7 +52,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
             LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
           const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
             (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
-            LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S );
+            LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
           const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
             (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
             LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
@@ -263,7 +263,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
             const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
               m, n, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
             const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-              m, n, ldi, ldo, LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S );
+              m, n, ldi, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
             const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
               m, n, ldi, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
             switch (typesize) {
@@ -365,7 +365,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
         const libxsmm_meltw_unary_shape unary_shape_f32 = libxsmm_create_meltw_unary_shape(
           m, n, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
         const libxsmm_meltw_unary_shape unary_shape_i16 = libxsmm_create_meltw_unary_shape(
-          m, n, ldi, ldo, LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S, LIBXSMM_DATATYPE_I16S );
+          m, n, ldi, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16 );
         const libxsmm_meltw_unary_shape unary_shape_i8 = libxsmm_create_meltw_unary_shape(
           m, n, ldi, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8 );
         switch (typesize) {

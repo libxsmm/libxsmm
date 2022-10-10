@@ -63,8 +63,8 @@
 #define LIBXSMM_TYPESYMBOL_libxsmm_float16 F16
 #define LIBXSMM_TYPESYMBOL_libxsmm_bfloat8 BF8
 #define LIBXSMM_TYPESYMBOL_libxsmm_hfloat8 HF8
-#define LIBXSMM_TYPESYMBOL_int I32S
-#define LIBXSMM_TYPESYMBOL_short I16S
+#define LIBXSMM_TYPESYMBOL_int I32
+#define LIBXSMM_TYPESYMBOL_short I16
 #define LIBXSMM_TYPESYMBOL_char I8
 
 #define LIBXSMM_TYPESIZE(ENUM) ( \
@@ -74,9 +74,9 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_BF8  ? 1 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_HF8  ? 1 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I64S  ? 8 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I32S  ? 4 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I16S  ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
   0/*invalid*/)))))))))))
 
@@ -167,9 +167,9 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_F16,
   LIBXSMM_DATATYPE_BF8,
   LIBXSMM_DATATYPE_HF8,
-  LIBXSMM_DATATYPE_I64S,
-  LIBXSMM_DATATYPE_I32S,
-  LIBXSMM_DATATYPE_I16S,
+  LIBXSMM_DATATYPE_I64,
+  LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DATATYPE_I16,
   LIBXSMM_DATATYPE_I8,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;

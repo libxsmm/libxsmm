@@ -1433,8 +1433,8 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
     /* should not happen */
   }
 
-  if ( ( LIBXSMM_DATATYPE_I64S == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
-         LIBXSMM_DATATYPE_I64S == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
+  if ( ( LIBXSMM_DATATYPE_I64 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
+         LIBXSMM_DATATYPE_I64 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
        ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
          LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ) {
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
@@ -1445,8 +1445,8 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
-  } else if ( ( LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
-                LIBXSMM_DATATYPE_I32S == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
+  } else if ( ( LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
+                LIBXSMM_DATATYPE_I32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
               ( LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
                 LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ) {
     if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT) {
@@ -1457,8 +1457,8 @@ void libxsmm_generator_transform_sse_microkernel( libxsmm_generated_code*       
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
-  } else if ( ( LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
-                LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
+  } else if ( ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
+                LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
               ( LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&
                 LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ||
               ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) &&

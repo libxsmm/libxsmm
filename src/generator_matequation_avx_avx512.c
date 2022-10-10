@@ -807,7 +807,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
                                                unsigned int                           *timestamp,
                                                unsigned int                           last_timestamp ) {
   if (fusion_pattern == LIBXSMM_MATRIX_EQN_FUSION_PATTERN_GATHER_COLS_REDUCE_COLS) {
-    cur_node->fusion_info.gather.idx_dtype = ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES) > 0) ? LIBXSMM_DATATYPE_I32S : LIBXSMM_DATATYPE_I64S;
+    cur_node->fusion_info.gather.idx_dtype = ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES) > 0) ? LIBXSMM_DATATYPE_I32 : LIBXSMM_DATATYPE_I64;
     cur_node->fusion_info.gather.idx_array_pos_in_arg = cur_node->le->info.arg.in_pos;
     cur_node->info.u_op.flags = 0;
     /* Collapse parent UNARY node and enhance info in gather node */
@@ -815,7 +815,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
       cur_node->fusion_info.gather.fused_reduce_cols_add = 1;
       cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD;
       cur_node->info.u_op.flags = 0;
-      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32S) {
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
       } else {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
@@ -827,7 +827,7 @@ void libxsmm_generator_matequation_apply_gather_fusion_pattern_transformation(li
       cur_node->fusion_info.gather.fused_reduce_cols_max = 1;
       cur_node->info.u_op.type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX;
       cur_node->info.u_op.flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC;
-      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32S) {
+      if (cur_node->fusion_info.gather.idx_dtype == LIBXSMM_DATATYPE_I32) {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES;
       } else {
         cur_node->info.u_op.flags |=  LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;

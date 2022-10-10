@@ -215,7 +215,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
   unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I16;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
   /* use jited quantization */
@@ -229,7 +229,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
-  unary_shape.in0_type = LIBXSMM_DATATYPE_I16S;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -349,7 +349,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_shape.ldi = ldi;
   unary_shape.ldo = ldo;
   unary_shape.in0_type = LIBXSMM_DATATYPE_F32;
-  unary_shape.out_type = LIBXSMM_DATATYPE_I32S;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
   /* use jited quantization */
@@ -363,7 +363,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   }
   unary_kernel_quant( &unary_param );
 
-  unary_shape.in0_type = LIBXSMM_DATATYPE_I32S;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I32;
   unary_shape.out_type = LIBXSMM_DATATYPE_F32;
   unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
 
@@ -449,10 +449,10 @@ int main( int argc, char* argv[] ) {
   if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I8) ) {
     printf("Testing FP32 <-> int8 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int8_to_float( M, N, ldi, ldo );
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I16S) ) {
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I16) ) {
     printf("Testing FP32 <-> int16 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int16_to_float( M, N, ldi, ldo );
-  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I32S) ) {
+  } else if ( (dtype_in == LIBXSMM_DATATYPE_F32) && (dtype_out == LIBXSMM_DATATYPE_I32) ) {
     printf("Testing FP32 <-> int32 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int32_to_float( M, N, ldi, ldo );
   } else {

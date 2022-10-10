@@ -75,9 +75,9 @@
      &    LIBXSMM_DATATYPE_F32  = 1,                                    &
      &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
      &    LIBXSMM_DATATYPE_F16  = 3,                                    &
-     &    LIBXSMM_DATATYPE_I64S  = 3,                                    &
-     &    LIBXSMM_DATATYPE_I32S  = 4,                                    &
-     &    LIBXSMM_DATATYPE_I16S  = 5,                                    &
+     &    LIBXSMM_DATATYPE_I64  = 3,                                    &
+     &    LIBXSMM_DATATYPE_I32  = 4,                                    &
+     &    LIBXSMM_DATATYPE_I16  = 5,                                    &
      &    LIBXSMM_DATATYPE_I8   = 6,                                    &
      &    LIBXSMM_DATATYPE_UNSUPPORTED = 7
 

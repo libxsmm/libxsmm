@@ -145,7 +145,7 @@ void libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( libxsmm_genera
                                                       i_gp_reg_mapping->gp_reg_help_1,
                                                       LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 0,
                                                       i_n_blocking, i_n_blocking );
-      } else if ( LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      } else if ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                   LIBXSMM_X86_INSTR_VPMADDWD,
                                                   i_micro_kernel_config->vector_name,
@@ -537,7 +537,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
 
-  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16S == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) &&
+  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) &&
        (io_generated_code->arch < LIBXSMM_X86_AVX2_ADL) ) {
     libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( io_generated_code, i_gp_reg_mapping,
         i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, i_offset );

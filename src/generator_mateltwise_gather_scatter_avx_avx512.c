@@ -394,7 +394,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_microkernel( libxsmm_gener
 #endif
       libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       if (idx_tsize == 8) {
-        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64S);
+        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64);
       } else {
         idx_mask_reg = mask_reg;
       }
@@ -1474,7 +1474,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_microkernel( libxsmm_gener
 #endif
       libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, LIBXSMM_DATATYPE_F32);
       if (idx_tsize == 8) {
-        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64S);
+        libxsmm_generator_initialize_avx_mask( io_generated_code, idx_mask_reg, m % vlen, LIBXSMM_DATATYPE_I64);
       } else {
         idx_mask_reg = mask_reg;
       }

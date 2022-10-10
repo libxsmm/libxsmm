@@ -276,7 +276,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
       if (NULL != dalpha) *dalpha = (double)aa;
       if (NULL != dbeta) *dbeta = (double)bb;
     } break;
-    case LIBXSMM_DATATYPE_I16S: {
+    case LIBXSMM_DATATYPE_I16: {
       /**
        * Take alpha and beta as short data although wgemm works on integers.
        * However, alpha and beta are only JIT-supported for certain values,
@@ -285,7 +285,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
        */
       const short aa = (short)(NULL != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
       const short bb = (short)(NULL != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
-      LIBXSMM_ASSERT(LIBXSMM_DATATYPE_I32S == oprec);
+      LIBXSMM_ASSERT(LIBXSMM_DATATYPE_I32 == oprec);
       result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
       if (NULL != dalpha) *dalpha = (double)aa;
       if (NULL != dbeta) *dbeta = (double)bb;
@@ -297,7 +297,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
        * and the call-side may not distinct different input and output types
        * (integer/short), hence it is safer to only read short data.
        */
-      if (LIBXSMM_DATATYPE_I32S == oprec) {
+      if (LIBXSMM_DATATYPE_I32 == oprec) {
         const short aa = (short)(NULL != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
         const short bb = (short)(NULL != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_bigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
