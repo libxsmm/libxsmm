@@ -1495,7 +1495,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
-                                         i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
+                                         (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
       }
     }
 
@@ -1504,7 +1504,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
-                                       i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
+                                       (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
     }
 
     /* in case of bfloat16 "prepare" A matrix in registers zmm l_k%2 and zmm3 using FP32 numbers */
@@ -1833,7 +1833,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_b,
-                                       i_k_blocking * i_micro_kernel_config->datatype_size_in );
+                                       (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in );
     }
   } else {
     /* advance pointers of B only when we are not fully unrolling K and taking care of intermediate advances */
@@ -1842,7 +1842,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_b,
-                                       (i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->ldb) );
+                                       (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->ldb );
     }
   }
 
@@ -1967,7 +1967,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
-                                         i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
+                                         (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
       }
     }
 
@@ -1976,7 +1976,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
-                                       i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
+                                       (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in * i_xgemm_desc->lda );
     }
 
     /* compute vectorwidth (A) * column broadcast (B) */
@@ -2044,7 +2044,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( 
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_b,
-                                     i_k_blocking * i_micro_kernel_config->datatype_size_in );
+                                     (long long)i_k_blocking * i_micro_kernel_config->datatype_size_in );
   }
 
   /* add additional accumulators, if needed */

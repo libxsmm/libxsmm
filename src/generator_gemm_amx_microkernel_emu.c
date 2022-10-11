@@ -763,8 +763,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/;
+        _A_offsets[i] = offset_A + ((long long)_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/) / i_micro_kernel_config->sparsity_factor_A;
+        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/);
       }
     }
 
@@ -783,8 +783,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _in[i];
-        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/;
+        _A_offsets[i] = offset_A + ((long long)_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/) / i_micro_kernel_config->sparsity_factor_A;
+        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/);
       }
     }
 
@@ -803,8 +803,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/;
+        _A_offsets[i] = offset_A + ((long long)_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
+        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/);
       }
     }
 
@@ -823,8 +823,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/;
+        _A_offsets[i] = offset_A + ((long long)_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/) / i_micro_kernel_config->sparsity_factor_A;
+        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/);
       }
     }
 
@@ -843,8 +843,8 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
       /* Fill in the accumulator IDs properly and the A/B offsets*/
       for (i = 0; i < 4; i++) {
         _C_tile_id[i] = _im[i] * 2 + _in[i];
-        _A_offsets[i] = offset_A + (_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/)/i_micro_kernel_config->sparsity_factor_A;
-        _B_offsets[i] = offset_B + _in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/;
+        _A_offsets[i] = offset_A + ((long long)_im_offset_prefix_sums[_im[i]] * 4 /*i_micro_kernel_config->datatype_size*/) / i_micro_kernel_config->sparsity_factor_A;
+        _B_offsets[i] = offset_B + ((long long)_in_offset_prefix_sums[_in_tileloads_B[i]] * i_xgemm_desc->ldb * 4 /*i_micro_kernel_config->datatype_size*/);
       }
     }
 

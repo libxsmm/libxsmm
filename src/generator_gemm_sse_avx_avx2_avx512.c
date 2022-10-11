@@ -289,8 +289,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack_as_f
       i_xgemm_desc->flags = i_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
       i_xgemm_desc->flags = i_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
     }
-    i_xgemm_desc->c1 = i_xgemm_desc->m * i_xgemm_desc->k * 4;
-    i_xgemm_desc->c2 = i_xgemm_desc->n * i_xgemm_desc->k * 4;
+    i_xgemm_desc->c1 = 4LL * i_xgemm_desc->m * i_xgemm_desc->k;
+    i_xgemm_desc->c2 = 4LL * i_xgemm_desc->n * i_xgemm_desc->k;
   }
 
   libxsmm_x86_instruction_pop_reg( io_generated_code, LIBXSMM_X86_GP_REG_RDX );
