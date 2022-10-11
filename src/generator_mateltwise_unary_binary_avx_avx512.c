@@ -1264,12 +1264,21 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
 
           libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPEQD, i_micro_kernel_config->vector_name, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->tmp_vreg, 0);
         } else {
+          char vname = (l_vlen * i_micro_kernel_config->datatype_size_in == 64) ? 'z' : ( (l_vlen * i_micro_kernel_config->datatype_size_in == 32) ? 'y' : 'x' );
+          if (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) {
+            if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+              if (i_mask_last_m_chunk > 0) {
+                i_mask_reg = i_mateltwise_desc->m % i_vlen;
+              }
+            }
+          }
+
           libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             i_micro_kernel_config->vmove_instruction_in,
             i_gp_reg_mapping->gp_reg_relumask,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (im * l_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
-            i_micro_kernel_config->vector_name,
+            vname,
             i_micro_kernel_config->tmp_vreg, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? 1 : 0, ( (i_mask_last_m_chunk == 1) && ( im == (i_m_blocking-1)) ) ? i_mask_reg : 0, 0 );
 
           if ( (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) &&
