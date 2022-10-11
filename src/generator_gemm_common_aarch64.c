@@ -618,12 +618,12 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_
       if ( i_ld-l_m_bytes > 0 ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr, i_gp_reg_scratch0, i_gp_reg_addr,
-                                                       ((unsigned long long)i_ld - l_m_bytes) );
+                                                       ((long long)i_ld - l_m_bytes) );
       }
     }
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_addr, i_gp_reg_scratch0, i_gp_reg_addr,
-                                                   (unsigned long long)i_ld*i_n_blocking );
+                                                   (long long)i_ld*i_n_blocking );
   } else {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
@@ -757,7 +757,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
         }
         /* combine the m-jump with the n one*/
         else {
-          l_jump_block_m_last = (unsigned long long)i_vec_length * i_data_size;
+          l_jump_block_m_last = (long long)i_vec_length * i_data_size;
         }
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_FADD_V,
             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, 0, l_sve_type );
@@ -802,7 +802,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
     }
 
     /* reset C-ptr to original address */
-    l_jump_block_n_last = (unsigned long long)i_ld * i_n_blocking - l_jump_block_n_last;
+    l_jump_block_n_last = (long long)i_ld * i_n_blocking - l_jump_block_n_last;
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                    LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                    i_gp_reg_addr,
@@ -1529,7 +1529,7 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
       l_b_offset = (i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in) - (i_micro_kernel_config->datatype_size_in*i_n_blocking);
     } else {
       l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in;
-      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2, (unsigned long long)l_b_offset );
+      libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2, (long long)l_b_offset );
 
       l_b_offset = i_xgemm_desc->ldb - i_n_blocking;
       l_b_offset *= i_micro_kernel_config->datatype_size_in;;
@@ -1538,11 +1538,11 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, (unsigned long long)l_b_offset );
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, (long long)l_b_offset );
 
   /* preload offset of A */
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
-                                           ((unsigned long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+                                           ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
 
   /* load b offsets */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
@@ -1554,7 +1554,7 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
         } else {
           l_b_offset = i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size_in;
         }
-        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 + (l_n - 1), (unsigned long long)l_b_offset );
+        libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 + (l_n - 1), (long long)l_b_offset );
       }
     }
   }

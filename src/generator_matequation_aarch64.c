@@ -472,7 +472,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       } else {
         libxsmm_blasint arg_tmp_id = -1-cur_eqn->eqn_root->tmp.id;
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, temp_reg );
-        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, temp_reg, l_gp_reg_mapping.temp_reg2, temp_reg, (unsigned long long)arg_tmp_id*32);
+        libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, temp_reg, l_gp_reg_mapping.temp_reg2, temp_reg, (long long)arg_tmp_id*32);
         libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, temp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, temp_reg );
       }
       copy_mateqn_desc.datatype = LIBXSMM_CAST_UCHAR(cur_eqn->eqn_root->tmp.dtype);
