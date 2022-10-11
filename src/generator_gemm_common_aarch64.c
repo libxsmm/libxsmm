@@ -721,7 +721,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
       /* this is the jump size to be performed after a m-block is complete */
       unsigned long long l_jump_block_m_last = 0;
 
-      for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         if (l_n == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
@@ -731,7 +731,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                                 l_m,
                                                 LIBXSMM_AARCH64_SVE_REG_UNDEF );
 
-          if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+          if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
             libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                            l_gp_reg_bias,
@@ -747,7 +747,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                               0,
                                               l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m,
                                               LIBXSMM_AARCH64_SVE_REG_UNDEF );
-        if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+        if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
           libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                          LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                          i_gp_reg_addr,
@@ -763,7 +763,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
             l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, 0, l_sve_type );
       }
 
-      if( l_m_blocks[1] != 0 ) {
+      if ( l_m_blocks[1] != 0 ) {
         if (l_n == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
@@ -788,7 +788,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
       }
       l_jump_block_m_last += i_ld - l_m_bytes_full;
 
-      if( l_n != i_n_blocking - 1 ) {
+      if ( l_n != i_n_blocking - 1 ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr,
@@ -811,7 +811,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                                    l_jump_block_n_last );
   } else {
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      for( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocks[0]; l_m++ ) {
         if (l_n == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
@@ -821,7 +821,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                                 l_m,
                                                 LIBXSMM_AARCH64_SVE_REG_UNDEF );
 
-          if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+          if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
             libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                            LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                            l_gp_reg_bias,
@@ -834,7 +834,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
             l_m, l_m, 0, l_vec_reg_acc_start + l_m_total_blocks * l_n + l_m, l_pred_reg, l_sve_type );
       }
 
-      if( l_m_blocks[1] != 0 ) {
+      if ( l_m_blocks[1] != 0 ) {
         if (l_n == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                                 LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,

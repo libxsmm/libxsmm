@@ -73,7 +73,7 @@ void libxsmm_generator_set_p_register_aarch64_sve( libxsmm_generated_code* io_ge
                                                    unsigned int            i_p_reg,
                                                    int                     i_n_bits,
                                                    unsigned int            i_gp_reg_scratch ) {
-  if( i_n_bits < 0 ) {
+  if ( i_n_bits < 0 ) {
     libxsmm_aarch64_instruction_sve_pcompute( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SVE_PTRUE,
                                               i_p_reg,
@@ -167,9 +167,9 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
                                                        const unsigned char     i_mask_reg ) {
 
   /* i_masked_elems: 0 = load as many as you can; else: load <i_masked_elems> elements */
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT)  ) {
-    if( i_masked_elems == 0 ) {/* just load/store without predicate */
+    if ( i_masked_elems == 0 ) {/* just load/store without predicate */
       unsigned int l_instr = i_is_store ? LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
       libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, i_mask_reg );
     } else {
@@ -177,7 +177,7 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64( libxsmm_generated_code* i
       libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, 0, 0, i_vec_reg, i_mask_reg );
     }
     /* increment register if needed; add via immediate */
-    if( i_adv_gpr ) {
+    if ( i_adv_gpr ) {
       unsigned int l_sve_length = libxsmm_cpuid_vlen( io_generated_code->arch );/* 512 bits = 64 bytes for the A64FX */
       unsigned int l_offset = i_datatype_size * (i_masked_elems ? i_masked_elems : l_sve_length / i_datatype_size);
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
@@ -363,7 +363,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
   unsigned char l_offset = (unsigned char)(( i_adv_gpr == 0 ) ? 0 : i_datatype_size);
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 
-  if( l_is_sve ) {
+  if ( l_is_sve ) {
     int l_pred_reg = 0;/* todo find suitable predicate register */
     /* different element sizes use different instructions; load a single element, broadcast it, and set the rest to zero */
     int l_instr = i_datatype_size == 1 ? LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF :
@@ -373,7 +373,7 @@ void libxsmm_generator_bcastload_masked_vreg_aarch64_asimd( libxsmm_generated_co
      /* mark the predicate element to only load i_masked_elems elements, or all if -1 */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, i_masked_elems ? (int)(i_masked_elems * i_datatype_size) : -1, i_gp_reg_scratch );
     libxsmm_aarch64_instruction_sve_move( io_generated_code, l_instr, i_gp_reg_addr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_vec_reg, l_pred_reg );
-    if( l_offset ){/* post increment address by offset */
+    if ( l_offset ){/* post increment address by offset */
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_addr, i_gp_reg_addr, l_offset, 0 );
     }
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch );
@@ -530,7 +530,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_cod
   LIBXSMM_UNUSED( i_xgemm_desc );
   LIBXSMM_UNUSED( i_vec_reg_count );
 
-  if( i_zip_row_major ) {
+  if ( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP1;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP2;
     l_type_zip = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
@@ -549,7 +549,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_asimd( libxsmm_generated_cod
   l_vec_reg_tmp[1] = l_vec_reg_acc_start - 1;
 
   /* load C accumulator */
-  if( i_zero == 0 ) {
+  if ( i_zero == 0 ) {
     for ( l_n = 0; l_n < l_n_blocks; l_n++ ) {
       /* second address register for loads */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
@@ -706,7 +706,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
   /* loads C accumulator from memory */
-  if( i_zero == 0 ) {
+  if ( i_zero == 0 ) {
     /* this is the jump size to be performed after a n-block is complete */
     unsigned long long l_jump_block_n_last = 0;
 
@@ -729,7 +729,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
              or
              2) we are not at the end of the m-loop
         */
-        if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+        if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
           libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                          LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                          i_gp_reg_addr,
@@ -743,7 +743,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
         }
       }
 
-      if( l_m_blocks[1] != 0 ) {
+      if ( l_m_blocks[1] != 0 ) {
         libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                               LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                                               i_gp_reg_addr,
@@ -755,7 +755,7 @@ void libxsmm_generator_load_2dregblock_aarch64_sve( libxsmm_generated_code* io_g
 
       l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;
 
-      if( l_n != i_n_blocking - 1 ) {
+      if ( l_n != i_n_blocking - 1 ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_addr,
@@ -836,7 +836,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   LIBXSMM_UNUSED( i_zip_row_major );
 
   /* TODO (MMLA): implement */
-  /* if( i_zip_row_major ) {
+  /* if ( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_SVE_UZP1_V;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_SVE_UZP2_V;
     l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_S;
@@ -860,7 +860,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
   }
 
   /* load C accumulator */
-  if( i_zero == 0 ) {
+  if ( i_zero == 0 ) {
     for ( l_n = 0; l_n < l_n_blocks; l_n++ ) {
       /* second address register for loads */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
@@ -892,7 +892,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
                   l_output_bf16_mask );
               libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, l_m, 0);
             }
-            if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+            if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
               libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                              LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                              l_gp_reg_bias,
@@ -1155,7 +1155,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
                   l_output_bf16_mask );
               libxsmm_generator_vcvt_bf16f32_aarch64_sve( io_generated_code, l_m, 0);
             }
-            if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+            if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
               libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                              LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                              l_gp_reg_bias,
@@ -1332,7 +1332,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_asimd( libxsmm_generated_co
   LIBXSMM_UNUSED( i_xgemm_desc );
   LIBXSMM_UNUSED( i_vec_reg_count );
 
-  if( i_zip_row_major ) {
+  if ( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP1;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_ASIMD_UZP2;
     l_type_zip = LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S;
@@ -1467,7 +1467,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
   LIBXSMM_UNUSED( i_zip_row_major );
 
   /* TODO (MMLA): implement */
-  /* if( i_zip_row_major ) {
+  /* if ( i_zip_row_major ) {
     l_instr_zip[0] = LIBXSMM_AARCH64_INSTR_SVE_UZP1_V;
     l_instr_zip[1] = LIBXSMM_AARCH64_INSTR_SVE_UZP2_V;
     l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_S;
@@ -1827,7 +1827,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
             or
             2) we are not at the end of the m-loop
       */
-      if( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
+      if ( l_m_blocks[1] != 0 || l_m != l_m_blocks[0] - 1 ) {
         libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code,
                                                         LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                         i_gp_reg_addr,
@@ -1841,7 +1841,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
       }
     }
 
-    if( l_m_blocks[1] != 0 ) {
+    if ( l_m_blocks[1] != 0 ) {
       libxsmm_aarch64_instruction_sve_move( io_generated_code,
                                             LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
                                             i_gp_reg_addr,
@@ -1853,7 +1853,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
 
     l_jump_block_m_last += i_ld - l_m_bytes_full;
 
-    if( l_n != i_n_blocking - 1 ) {
+    if ( l_n != i_n_blocking - 1 ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                      i_gp_reg_addr,
@@ -1887,7 +1887,7 @@ void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io
   /* The memory layout is currently designed for architectures with upto 512 bit vector length.
    * If an architecture has a wider vector length, a lot of things need to be fixed (for both aarch64 and x86).
    * Load the first VL in fp32 values, the rest doesn't matter */
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* The offset for the LDR instruction is not in bytes, it's in vector lengths;
      * Therefore, currently only architectures with a power-of-2-vector length are suppored by this code. */
@@ -1921,7 +1921,7 @@ void libxsmm_generator_store_prng_state_aarch64_asimd( libxsmm_generated_code* i
                                                        const unsigned int      prng_state2_vreg,
                                                        const unsigned int      prng_state3_vreg ) {
   /* store RNG state */
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* the same notes as in libxsmm_generator_load_prng_state_aarch64_asimd() apply here */
     unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
@@ -1953,7 +1953,7 @@ void libxsmm_generator_prepare_dropout_aarch64_asimd( libxsmm_generated_code* io
                                                       const unsigned int      dropout_vreg_one,
                                                       const unsigned int      dropout_prob_vreg,
                                                       const unsigned int      dropout_invprob_vreg ) {
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
     unsigned char l_pred_reg = 0;
@@ -2002,7 +2002,7 @@ void libxsmm_generator_prepare_dropout_inv_aarch64_asimd( libxsmm_generated_code
                                                           const unsigned int      dropout_vreg_one,
                                                           const unsigned int      dropout_vreg_zero,
                                                           const unsigned int      dropout_prob_vreg ) {
-  if( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
+  if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
       (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     /* predicate register 0 must be ptrue; is ensured in generator_mateltwise_unary_binary_aarch64.c */
     unsigned char l_pred_reg = 0;
@@ -3733,7 +3733,7 @@ void libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( libxsmm_generated_c
   unsigned int i;
 
   /* fills an SVE register with i_bytes of data, which later will be used using indexed access */
-  if( !( i_bytes % 16 == 0) ) {
+  if ( !( i_bytes % 16 == 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_SIZE );
     return;
   }
@@ -3791,7 +3791,7 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
                                                    i_gp_reg_dst, i_gp_reg_dst, l_vector_length, 0 );
   }
 
-  if(l_remainder != 0) {
+  if (l_remainder != 0) {
     /* remainder handling, set predicate first */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, i_pred_reg_tmp, l_remainder, i_gp_reg_tmp );
     /* load all bytes */
@@ -3804,7 +3804,7 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
   }
 
   /* decrement source and destination registers */
-  if(l_incremented_size > 0){
+  if (l_incremented_size > 0){
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,
                                                    i_gp_reg_src, i_gp_reg_src, l_incremented_size, 0 );
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_I,

@@ -556,7 +556,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   LIBXSMM_UNUSED(i_mask_reg);
 
-  if( l_is_sve ){
+  if ( l_is_sve ){
     /* define predicate registers 0 and 1 for storing */
     /* TODO: implement predication without re-initializing the predicate registers all the time */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
@@ -1619,7 +1619,7 @@ void libxsmm_generator_unary_binary_aarch64_load_bitmask_2bytemult_sve( libxsmm_
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be read, 512 bit -> .. -> 2 bytes */
   unsigned char im_mod = im & 3; /* 4 = number of bits per float within predicate register */
 
-  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+  if ( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
   }
 
@@ -1723,7 +1723,7 @@ void libxsmm_generator_unary_binary_aarch64_store_bitmask_2bytemult_sve( libxsmm
   unsigned int l_data_length = l_predicate_length / 4; /* only every 4th bit needs to be stored */
   unsigned char im_mod = im & 3;
 
-  if( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
+  if ( !( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
@@ -2102,10 +2102,10 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
     default:;
   }
 
-  if( l_is_sve && l_is_predicated ) {/* set the whole predicate register to true */
+  if ( l_is_sve && l_is_predicated ) {/* set the whole predicate register to true */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, 0 );
   }
-  if( l_is_sve ){
+  if ( l_is_sve ){
     /* define predicate registers 0 and 1 for loading */
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 1, i_mask_last_m_chunk * i_micro_kernel_config->datatype_size_in1, i_gp_reg_mapping->gp_reg_scratch_1 );
     if (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) || LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2) || LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {

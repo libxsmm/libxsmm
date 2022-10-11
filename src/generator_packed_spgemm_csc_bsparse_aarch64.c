@@ -44,10 +44,10 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
 
   /* select simd packing width and accumulator blocking */
   if ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    if( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
-      if( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+    if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 2;
-      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+      } else if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
         l_simd_packed_width = 4;
       } else {
         l_simd_packed_width = 8;
@@ -56,10 +56,10 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
       l_simd_packed_width = 2;
     }
   } else {
-    if( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
-      if( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
+    if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
+      if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 4;
-      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+      } else if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
         l_simd_packed_width = 8;
       } else {
         l_simd_packed_width = 16;

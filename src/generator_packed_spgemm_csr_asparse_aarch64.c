@@ -59,7 +59,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
     if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
       if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 2;
-      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+      } else if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
         l_simd_packed_width = 4;
       } else {
         l_simd_packed_width = 8;
@@ -71,7 +71,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
     if ( io_generated_code->arch >= LIBXSMM_AARCH64_SVE128 ) {
       if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE256 ) {
         l_simd_packed_width = 4;
-      } else if( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
+      } else if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE512 ) {
         l_simd_packed_width = 8;
       } else {
         l_simd_packed_width = 16;
