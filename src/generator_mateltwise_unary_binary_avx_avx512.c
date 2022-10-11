@@ -2185,17 +2185,27 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
       if (op == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) {
         reserved_zmms += 10;
-
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+          if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+            reserved_zmms -= 2;
+          }
+        }
         i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
         i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
         i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
         i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
-        i_micro_kernel_config->dropout_vreg_tmp0    = reserved_zmms - 5;
-        i_micro_kernel_config->dropout_vreg_tmp1    = reserved_zmms - 6;
-        i_micro_kernel_config->dropout_vreg_tmp2    = reserved_zmms - 7;
-        i_micro_kernel_config->dropout_vreg_one     = reserved_zmms - 8;
-        i_micro_kernel_config->dropout_prob_vreg    = reserved_zmms - 9;
-        i_micro_kernel_config->dropout_invprob_vreg = reserved_zmms - 10;
+        i_micro_kernel_config->dropout_vreg_tmp2    = reserved_zmms - 5;
+        i_micro_kernel_config->dropout_vreg_one     = reserved_zmms - 6;
+        i_micro_kernel_config->dropout_prob_vreg    = reserved_zmms - 7;
+        i_micro_kernel_config->dropout_invprob_vreg = reserved_zmms - 8;
+        i_micro_kernel_config->dropout_vreg_tmp0    = reserved_zmms - 9;
+        i_micro_kernel_config->dropout_vreg_tmp1    = reserved_zmms - 10;
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+          if (i_micro_kernel_config->use_fp32bf16_cvt_replacement > 0) {
+            i_micro_kernel_config->dropout_vreg_tmp0  = i_micro_kernel_config->dcvt_zmm_aux0;
+            i_micro_kernel_config->dropout_vreg_tmp1  = i_micro_kernel_config->dcvt_zmm_aux1;
+          }
+        }
 
         libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
                                                       i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
