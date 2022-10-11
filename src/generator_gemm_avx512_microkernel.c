@@ -202,14 +202,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
         libxsmm_x86_instruction_alu_imm( io_generated_code,
             i_micro_kernel_config->alu_add_instruction,
             i_gp_reg_mapping->gp_reg_a,
-            (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+            (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
         /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
         if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a_prefetch,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
         }
       }
       /* issue fma */
@@ -370,14 +370,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_nofsdbcst( 
         libxsmm_x86_instruction_alu_imm( io_generated_code,
             i_micro_kernel_config->alu_add_instruction,
             i_gp_reg_mapping->gp_reg_a,
-            (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+            (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
         /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
         if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a_prefetch,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
         }
       }
       /* issue fma */
@@ -599,14 +599,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf16_emu_nofsd
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
           if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
-                (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
         }
         /* issue fma */
@@ -821,14 +821,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf16_emu_no
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
           if ( (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2) || (i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) ) {
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
-                (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
         }
         /* issue fma */
@@ -1055,7 +1055,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
 #if 0
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
@@ -1063,7 +1063,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdb
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
-                (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
 #endif
         }
@@ -1300,7 +1300,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nof
           libxsmm_x86_instruction_alu_imm( io_generated_code,
               i_micro_kernel_config->alu_add_instruction,
               i_gp_reg_mapping->gp_reg_a,
-              (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+              (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
 
           /* if we prefetch next A into L2, we need to also increment the prefetch pointer */
 #if 0
@@ -1308,7 +1308,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nof
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                 i_micro_kernel_config->alu_add_instruction,
                 i_gp_reg_mapping->gp_reg_a_prefetch,
-                (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
 #endif
         }

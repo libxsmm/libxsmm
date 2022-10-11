@@ -64,7 +64,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
-                                     (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                                     (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
       }
       /* different ways of using B */
       if ( i_offset != (-1) ) {
@@ -200,7 +200,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
-                                         (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                                         (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
           /* issue mul+add */
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -240,7 +240,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
             libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
-                                         (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size_in) );
+                                         (long long)i_xgemm_desc->lda*i_micro_kernel_config->datatype_size_in );
           }
           /* issue mul/add */
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
