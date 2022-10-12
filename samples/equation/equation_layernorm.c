@@ -33,12 +33,12 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
 }
 
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
-#if defined(__AVX512F__)
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, beta, pbeta, S3);
+#if defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
@@ -89,21 +89,36 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     }
   }
 #else
-  LIBXSMM_UNUSED( S1 );
-  LIBXSMM_UNUSED( S2 );
-  LIBXSMM_UNUSED( S3 );
-  LIBXSMM_UNUSED( pinp );
-  LIBXSMM_UNUSED( pgamma );
-  LIBXSMM_UNUSED( pbeta );
-  LIBXSMM_UNUSED( mean );
-  LIBXSMM_UNUSED( var );
-  LIBXSMM_UNUSED( pout );
-  LIBXSMM_UNUSED( eps );
+  for (s2 = 0; s2 < S2; s2++) {
+    float m = 0;
+    float v = 0;
+    float c = (float)(1.0 / (S1*S3));
+    for (s1 = 0; s1 < S1; s1++) {
+      for ( s3 = 0; s3 < S3; s3++) {
+        m +=  upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
+        v +=  upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)) * upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
+      }
+    }
+    m = m * c;
+    v = v * c;
+    v = LIBXSMM_MAX(v - m * m, 0.0f);
+    v = 1.0f / ((float)sqrt(v+eps));
+    mean[s2] = m;
+    var[s2] = v;
+    float s = v;
+    float b = -1.f * v * m;
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        float res;
+        res = (upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)) * s + b) *  upconvert_bf16(LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3)) + upconvert_bf16(LIBXSMM_VLA_ACCESS(2, beta, s1, s3, S3));
+        libxsmm_rne_convert_fp32_bf16( &res, &LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3), 1 );
+      }
+    }
+  }
 #endif
 }
 
 void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta) {
-#if defined(__AVX512F__)
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din, pdin, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
@@ -111,6 +126,7 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, S3);
+#if defined(__AVX512F__)
   for (s2 = 0; s2 < S2; s2++) {
     float a = var[s2];
     float b = -a*mean[s2];
@@ -178,17 +194,30 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     }
   }
 #else
-  LIBXSMM_UNUSED( S1 );
-  LIBXSMM_UNUSED( S2 );
-  LIBXSMM_UNUSED( S3 );
-  LIBXSMM_UNUSED( pdout );
-  LIBXSMM_UNUSED( pinp );
-  LIBXSMM_UNUSED( mean );
-  LIBXSMM_UNUSED( var );
-  LIBXSMM_UNUSED( pgamma );
-  LIBXSMM_UNUSED( pdin );
-  LIBXSMM_UNUSED( pdgamma );
-  LIBXSMM_UNUSED( pdbeta );
+  for (s2 = 0; s2 < S2; s2++) {
+    float a = var[s2], c;
+    float b = -a*mean[s2];
+    float ds = 0.0f;
+    float db = 0.0f;
+    float scale = 1.0f / (S1 * S3);
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        LIBXSMM_VLA_ACCESS(2, dgamma, s1, s3, S3) += (a * upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)) + b) * upconvert_bf16(LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3));
+        LIBXSMM_VLA_ACCESS(2, dbeta, s1, s3, S3) += upconvert_bf16(LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3));
+        ds += upconvert_bf16(LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3)) * upconvert_bf16(LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3)) * upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3));
+        db += upconvert_bf16(LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3)) * upconvert_bf16(LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3));
+      }
+    }
+    b = (db * mean[s2] - ds) * a * a * a * scale;
+    c = -b * mean[s2] - db * a * scale;
+    for (s1 = 0; s1 < S1; s1++) {
+      for (s3 = 0; s3 < S3; s3++) {
+        float res;
+        res = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, dout, s1, s2, s3, S2, S3))  * a * upconvert_bf16(LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3)) + b * upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)) + c;
+        libxsmm_rne_convert_fp32_bf16( &res, &LIBXSMM_VLA_ACCESS(3, din, s1, s2, s3, S2, S3), 1 );
+      }
+    }
+  }
 #endif
 }
 

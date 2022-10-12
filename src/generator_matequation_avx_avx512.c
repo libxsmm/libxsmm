@@ -965,7 +965,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
   unsigned int strategy = JIT_STRATEGY_HYBRID;
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R8;
-  unsigned int all_nodes_f32 = 1;
+  /* unsigned int all_nodes_f32 = 1; */
   libxsmm_matrix_eqn_fusion_knobs fusion_knobs;
   memset(&fusion_knobs, 0, sizeof(libxsmm_matrix_eqn_fusion_knobs));
 
@@ -974,6 +974,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     return;
   }
 
+#if 0
   libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX512) &&
        !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
@@ -981,6 +982,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
+#endif
 
   /* Some basic initialization of the config kernel */
   libxsmm_generator_matequation_init_micro_kernel_config(io_generated_code, &l_kernel_config);
