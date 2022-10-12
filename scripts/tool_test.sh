@@ -32,6 +32,7 @@ source "${HERE}/../.env/buildkite.env" ""
 MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
+UMASK=007
 
 if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
@@ -39,7 +40,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
 
   # ensure proper permissions
-  umask 007
+  umask ${UMASK}
 
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -296,6 +297,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        echo "umask ${UMASK}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
@@ -339,7 +341,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\numask ${UMASK}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             -e "s/^srun[[:space:]]//" \
