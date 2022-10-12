@@ -4050,14 +4050,6 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
   unsigned int bcast_vecin = 0, bcast_vecidx = 0;
   bcast_vecidx = bcast_arg & 1;
   bcast_vecin  = (bcast_arg >> 1) & 1;
-  int ldi2 = i_mateltwise_desc->ldi;
-  if ((bcast_vecidx == 1) && (bcast_vecin == 0))
-  {
-    ldi2 = i_mateltwise_desc->ldi * bcast_param;
-  } else if((bcast_vecidx == 0) && (bcast_vecin == 1)){
-    ldi2 = i_mateltwise_desc->ldi / bcast_param;
-  }
-
   if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
     vname_argop_bcast = 'y';
     vlen = 8;
@@ -4240,6 +4232,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       record_argop_off_vec1 = 0;
       rbp_offset_argop_ptr0 = rbp_offset_argop_ptr1;
     }
+    bcast_vecidx = bcast_vecin;
   }
 
   if (use_implicitly_indexed_vecidx == 0) {
@@ -4353,21 +4346,28 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
           0 );
     }
   }
-
-  if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0) {
-    op_order = 1;
-  } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN) > 0) {
-    op_order = 0;
-  } else {
-#if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
-    free(p_jump_label_tracker);
-#endif
-    /* This should not happen  */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
-    return;
-  }
-
+  int ldi2 = i_mateltwise_desc->ldi;
   if (apply_op == 1) {
+    if ((bcast_vecidx == 1) && (bcast_vecin == 0))
+    {
+      ldi2 = i_mateltwise_desc->ldi * bcast_param;
+    } else if((bcast_vecidx == 0) && (bcast_vecin == 1)){
+      ldi2 = i_mateltwise_desc->ldi / bcast_param;
+    }
+
+    if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX) > 0) {
+      op_order = 1;
+    } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN) > 0) {
+      op_order = 0;
+    } else {
+#if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
+      free(p_jump_label_tracker);
+#endif
+      /* This should not happen  */
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+      return;
+    }
+
     if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_ADD) > 0) {
       op_instr = LIBXSMM_X86_INSTR_VADDPS;
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OP_SUB) > 0) {
@@ -4500,6 +4500,8 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     }
   }
 
+  printf("apply_op = %d, op_order = %d, m = %d, vlen = %d, use_m_masking = %d, m_trips = %d, m_unroll_factor = %d, m_trips_loop = %d, peeled_m_trips = %d\n",
+          apply_op, op_order, m, vlen, use_m_masking, m_trips, m_unroll_factor, m_trips_loop, peeled_m_trips);
   if (apply_redop == 1) {
     if (load_acc == 0) {
       if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
