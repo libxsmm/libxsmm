@@ -2226,7 +2226,7 @@ void libxsmm_compute_binary_aarch64_2d_reg_block( libxsmm_generated_code*       
       if ( l_ld_bytes_in2 != l_m_adjust_in2 ) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        i_gp_reg_mapping->gp_reg_in2, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in2,
-                                                       (long long)l_ld_bytes_in2-l_m_adjust_in2 );
+                                                       (long long)l_ld_bytes_in2 - l_m_adjust_in2 );
       }
     }
     if (bcast_col == 1 && in < (i_n_blocking-1)) {

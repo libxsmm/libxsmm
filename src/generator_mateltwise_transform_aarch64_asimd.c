@@ -293,7 +293,7 @@ void libxsmm_generator_transform_norm_to_vnni4_aarch64_asimd_Nmod4_Mmod8_microke
   }
   if (i_mateltwise_desc->ldo > i_mateltwise_desc->m) {
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                   i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, 4LL * (i_mateltwise_desc->ldo - i_mateltwise_desc->m) * i_micro_kernel_config->datatype_size_out );
+                                                   i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, 4LL * ((long long)i_mateltwise_desc->ldo - i_mateltwise_desc->m) * i_micro_kernel_config->datatype_size_out );
   }
   /* close n loop */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, 4 );

@@ -117,7 +117,7 @@ void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_gener
                                             libxsmm_loop_label_tracker* io_loop_label_tracker,
                                             const unsigned int          i_gp_reg_loop_cnt,
                                             const unsigned int          i_trips ) {
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_loop_cnt, (long long)i_trips );
+  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_loop_cnt, i_trips );
   libxsmm_aarch64_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
 }
 
@@ -1750,7 +1750,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
       if (i_micro_kernel_config->fused_relu > 0) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
-                                                       ( 1ull * i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+                                                       ( 1ull * i_xgemm_desc->ldcp - (8ull * l_mask_adv))/8 );
       }
     } else {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
@@ -1762,7 +1762,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
       if (i_micro_kernel_config->fused_relu > 0) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        gp_reg_relumask, i_gp_reg_scratch1, gp_reg_relumask,
-                                                       ( 2ull * i_xgemm_desc->ldcp - (l_mask_adv*8))/8 );
+                                                       ( 2ull * i_xgemm_desc->ldcp - (8ull * l_mask_adv))/8 );
       }
     }
   }
@@ -1851,7 +1851,7 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
                                             LIBXSMM_AARCH64_SVE_REG_P1 );
     }
 
-    l_jump_block_m_last += i_ld - l_m_bytes_full;
+    l_jump_block_m_last += (long long)i_ld - l_m_bytes_full;
 
     if ( l_n != i_n_blocking - 1 ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,

@@ -369,7 +369,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64_m_loop_asimd( libxsmm_g
                                                      +(l_n*i_packed_width*i_micro_kernel_config->datatype_size_in));
 
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
-                                                     (long long)l_b_offset );
+                                                     l_b_offset );
 
           if ( i_packed_mask == 0 ) {
             libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_R,
@@ -523,7 +523,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64_m_loop_sve( libxsmm_gen
                                                      +(l_n*i_packed_width));
 
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1,
-                                                     (long long)l_b_offset );
+                                                     l_b_offset );
 
           if ( i_packed_mask == 0 ) {
             libxsmm_aarch64_instruction_sve_move( io_generated_code,
