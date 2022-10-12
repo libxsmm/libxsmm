@@ -21,13 +21,13 @@ if [ -e ${CODEFILE} ]; then
 fi
 
 if [ ! -e ${KEYFILE} ]; then
-  >&2 echo "Error: No file ${KEYFILE} found!"
+  >&2 echo "ERROR: No file ${KEYFILE} found!"
   exit 1
 fi
 
 # check for any pending replacement which overlays local view of repository
 if [ "$(git replace -l)" ]; then
-  >&2 echo "Error: found pending replacements!"
+  >&2 echo "ERROR: found pending replacements!"
   >&2 echo "Run: \"git replace -l | xargs -i git replace -d {}\" to cleanup"
   >&2 echo "Run: \"git filter-branch -- --all\" to apply (not recommended!)"
   exit 1

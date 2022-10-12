@@ -259,7 +259,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < N/4; ++j ) {
     for ( i = 0; i < ldi ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         in_vnni[(j*ldi*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
       }
     }
@@ -284,7 +284,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   /* to vnni */
   for ( j = 0; j < M/4; ++j ) {
     for ( i = 0; i < N ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         out_vnni[(j*ldo*4)+(i*4)+j2] = out_gold[(((j*4)+j2)*ldo)+i];
       }
     }
@@ -596,7 +596,7 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   /* to vnni */
   for ( j = 0; j < Nn/4; ++j ) {
     for ( i = 0; i < M ; ++i ) {
-      for( j2 = 0; j2 < 4; ++j2 ) {
+      for ( j2 = 0; j2 < 4; ++j2 ) {
         out_gold[(j*ldo*4)+(i*4)+j2] = in[(((j*4)+j2)*ldi)+i];
       }
     }

@@ -389,8 +389,6 @@ unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_d
     return LIBXSMM_X86_INSTR_VMOVUPS;
   } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) || (LIBXSMM_DATATYPE_F16 == dtype) ) {
     return LIBXSMM_X86_INSTR_VMOVDQU16;
-  } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
-    return LIBXSMM_X86_INSTR_VMOVDQU16;
   } else if ( (LIBXSMM_DATATYPE_I8 == dtype) || (LIBXSMM_DATATYPE_BF8 == dtype) || (LIBXSMM_DATATYPE_HF8 == dtype) ) {
     return LIBXSMM_X86_INSTR_VMOVDQU8;
   } else {
@@ -405,8 +403,6 @@ unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_
   } else if ( (LIBXSMM_DATATYPE_F32 == dtype) || (LIBXSMM_DATATYPE_I32 == dtype)) {
     return LIBXSMM_X86_INSTR_VBROADCASTSS;
   } else if ( (LIBXSMM_DATATYPE_BF16 == dtype) || (LIBXSMM_DATATYPE_I16 == dtype) || (LIBXSMM_DATATYPE_F16 == dtype) ) {
-    return LIBXSMM_X86_INSTR_VPBROADCASTW;
-  } else if ( LIBXSMM_DATATYPE_F16 == dtype ) {
     return LIBXSMM_X86_INSTR_VPBROADCASTW;
   } else if ( (LIBXSMM_DATATYPE_I8 == dtype) || (LIBXSMM_DATATYPE_BF8 == dtype) || (LIBXSMM_DATATYPE_HF8 == dtype) ) {
     return LIBXSMM_X86_INSTR_VPBROADCASTB;

@@ -32,6 +32,7 @@ source "${HERE}/../.env/buildkite.env" ""
 MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
+UMASK=007
 
 if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
@@ -39,7 +40,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
 
   # ensure proper permissions
-  umask 007
+  umask ${UMASK}
 
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -254,12 +255,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
+    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
@@ -296,6 +297,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        echo "umask ${UMASK}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
@@ -339,7 +341,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\numask ${UMASK}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             -e "s/^srun[[:space:]]//" \
@@ -347,7 +349,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          if [ "${TOOL_COMMAND}" ] && [ "$(command -v ${TOOL_COMMAND})" ]; then
+          if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
               echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
@@ -360,7 +362,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
             fi
           else
             echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
-            unset TOOL_COMMAND
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];

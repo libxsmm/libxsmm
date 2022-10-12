@@ -11,40 +11,39 @@
 ###############################################################################
 
 CURL=$(command -v curl)
-GREP=$(command -v grep)
-CUT=$(command -v cut)
 GIT=$(command -v git)
+SED=$(command -v sed)
 
-USR=libxsmm
-PRJ=libxsmm
-URL="https://api.github.com/repos/${USR}/${PRJ}/forks"
+PRJ_DEFAULT="libxsmm/libxsmm"
 
-if [ "${CURL}" ] && [ "${GIT}" ] && \
-   [ "${GREP}" ] && [ "${CUT}" ];
-then
+if [ "${CURL}" ] && [ "${GIT}" ] && [ "${SED}" ]; then
   N=0
-  for FORK in $(${CURL} -s ${URL} \
-  | ${GREP} "\"html_url\"" | ${GREP} "${PRJ}" | ${CUT} -d/ -f4);
-  do
-    echo -n "Fork ${FORK} "
-    if $(${GIT} remote add ${FORK} https://github.com/${FORK}/${PRJ}.git 2>/dev/null); then
-      echo -n "added and "
+  PRJ=$(${GIT} remote get-url origin 2>/dev/null | ${SED} "s/..*\/\(..*\)\/\(..*\)\.git/\1\/\2/")
+  URL="https://api.github.com/repos/${PRJ:-${PRJ_DEFAULT}}/forks"
+  FORKS="$(${CURL} -s ${URL} | ${SED} -n "s/[[:space:]]*\"html_url\":[[:space:]]*\"..*\/\/..*\/\(..*\)\/\(..*\)\".*/\1\/\2/p")"
+  if [ "${FORKS}" ]; then
+    for FORK in ${FORKS}; do
+      USER=$(echo "${FORK}" | ${SED} "s/\/..*//")
+      echo -n "Fork ${USER} "
+      if $(${GIT} remote add ${USER} https://github.com/${FORK}.git 2>/dev/null); then
+        echo -n "added and "
+      fi
+      if $(${GIT} fetch ${USER} 2>/dev/null); then
+        echo "updated."
+      else
+        ${GIT} remote remove ${USER} 2>/dev/null
+        echo "removed."
+      fi
+      N=$((N+1))
+    done
+    if [ "0" != "${N}" ]; then
+      echo "Processed number of forks: ${N}"
     fi
-    if $(${GIT} fetch ${FORK} 2>/dev/null); then
-      echo "updated."
-    else
-      ${GIT} remote remove ${FORK} 2>/dev/null
-      echo "removed."
-    fi
-    N=$((N+1))
-  done
-  if [ "0" != "${N}" ]; then
-    echo "Processed number of forks: ${N}"
   else
-    ${CURL} ${URL}
+    >&2 echo "ERROR: \"${CURL} -s ${URL}\" failed!"
+    exit 1
   fi
 else
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi
-
