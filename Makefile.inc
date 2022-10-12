@@ -49,16 +49,22 @@ endif
 #MAKEINC := $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 MAKEINC := $(patsubst %/,%,$(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
-ifeq (d,$(filter d,$(MAKEFLAGS)))
-  #SHELL := bash -xv
-  SHELL += -xv
-endif
-
 COMMAND := $(shell which command 2>/dev/null)
 ifneq (,$(COMMAND))
   which = $(shell $(COMMAND) -v $1)
 else
   which = $(shell which $(firstword $1) 2>/dev/null)
+endif
+
+ifeq (d,$(filter d,$(MAKEFLAGS)))
+  SHOPT := -xv
+endif
+
+BASH := $(call which,bash)
+ifneq (,$(BASH))
+  SHELL := $(BASH) $(SHOPT)
+else
+  SHELL := $(SHELL) $(SHOPT)
 endif
 
 # ensure a number or instead return zero (by default) or 2nd argument (if given)
