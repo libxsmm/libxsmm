@@ -48,10 +48,10 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
       fi
     done
   else
-    >&2 echo "Error: missing name of backup-file generated with \"declare -px\"!"
+    >&2 echo "ERROR: missing name of backup-file generated with \"declare -px\"!"
     exit 1
   fi
 else
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi

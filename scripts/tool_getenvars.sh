@@ -38,6 +38,6 @@ if [ "${FIND}" ] && [ "${SORT}" ] && [ "${SED}" ] && [ -d "${SRC}" ]; then
   echo "============================="
   echo "${ENVARS}" | ${SED} -n "/LIBXSMM_/p"
 else
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi

@@ -6,7 +6,7 @@ GREP=$(command -v grep)
 GIT=$(command -v git)
 
 if [ "" = "${GREP}" ]; then
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi
 if [ "${GIT}" ] && [ "" = "$(${GIT} ls-files "${HERE}/${SRCDIR}/libxsmm_main.c" 2>/dev/null)" ]; then
