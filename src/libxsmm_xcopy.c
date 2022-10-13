@@ -693,25 +693,25 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
         switch (typesize) {
           case 8: {
             const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
-              m, n, ldi, ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
+              m, n, m/*ldi*/, ldo, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64);
             kernel.function = libxsmm_dispatch_meltw_unary_v2(
               LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
           } break;
           case 4: {
             const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
-              m, n, ldi, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
+              m, n, m/*ldi*/, ldo, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32);
             kernel.function = libxsmm_dispatch_meltw_unary_v2(
               LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
           } break;
           case 2: {
             const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
-              m, n, ldi, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16);
+              m, n, m/*ldi*/, ldo, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16, LIBXSMM_DATATYPE_I16);
             kernel.function = libxsmm_dispatch_meltw_unary_v2(
               LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
           } break;
           case 1: {
             const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
-              m, n, ldi, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
+              m, n, m/*ldi*/, ldo, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8, LIBXSMM_DATATYPE_I8);
             kernel.function = libxsmm_dispatch_meltw_unary_v2(
               LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE);
           } break;
