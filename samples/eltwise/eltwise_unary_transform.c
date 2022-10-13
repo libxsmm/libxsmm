@@ -232,7 +232,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unsigned int s;
   int ret = EXIT_SUCCESS;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -454,8 +454,8 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_blasint Nn = N + (N%2);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -556,8 +556,8 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
   libxsmm_meltw_unary_type  unary_type;
-  libxsmm_meltw_unary_shape unary_shape = { 0 };
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -661,8 +661,8 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -942,8 +942,8 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint Nn = ((N%2) == 0) ? N : N+1;
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1034,8 +1034,8 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1127,8 +1127,8 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint Mn = ((M%2) == 0) ? M : M+1;
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1219,8 +1219,8 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint Nn = ((N%4) == 0) ? N : LIBXSMM_UP(N, 4);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1311,8 +1311,8 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
@@ -1404,8 +1404,8 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   libxsmm_blasint Mn = ((M%4) == 0) ? M : LIBXSMM_UP(M, 4);
 
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
-  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
 
   if ( M > ldi ) {
