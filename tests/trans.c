@@ -13,6 +13,9 @@
 #if !defined(ELEM_TYPE)
 # define ELEM_TYPE float
 #endif
+#if !defined(ITRANS) && 1
+# define ITRANS
+#endif
 
 #if !defined(PRINT) && (defined(_DEBUG) || 0)
 # define PRINT
@@ -37,13 +40,13 @@ int main(void)
   const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 24, 32, 32, 64, 512,  64, 136, 3072 };
   const libxsmm_blasint batchsize = 13;
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
+  unsigned int ntotal = 0, njit = 0, nerrors = 0, before = 0;
 #if (0 != LIBXSMM_JIT)
   /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEM_TYPE);
 #endif
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
   ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
   const size_t typesize = sizeof(ELEM_TYPE);
-  unsigned int ntotal = 0, njit = 0, nerrors = 0;
   int* batchidx = NULL;
   int test, fun;
 
@@ -78,7 +81,6 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
-      unsigned int before = nerrors;
       memcpy(c, b, typesize * max_size_b); /* prepare */
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
       nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
@@ -137,6 +139,7 @@ int main(void)
     }
   }
 
+#if defined(ITRANS)
   for (test = start; test < ntests; ++test) {
     memcpy(c, b, typesize * max_size_b * batchsize); /* prepare */
     libxsmm_itrans_batch(b, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test],
@@ -144,7 +147,6 @@ int main(void)
       0/*tid*/, 1/*ntasks*/);
     for (i = 0; i < batchsize; ++i) {
       const size_t stride = (size_t)i * max_size_b;
-      unsigned int before = nerrors;
       nerrors += validate(c + stride, b + stride, c + stride,
         max_size_b, m[test], n[test], ldi[test], ldo[test]);
       if (before != nerrors) {
@@ -156,6 +158,7 @@ int main(void)
     }
     memcpy(b, c, typesize* max_size_b* batchsize); /* restore */
   }
+#endif
 
   libxsmm_free(batchidx);
   libxsmm_free(a);
