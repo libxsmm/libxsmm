@@ -4500,8 +4500,6 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     }
   }
 
-  printf("apply_op = %d, op_order = %d, m = %d, vlen = %d, use_m_masking = %d, m_trips = %d, m_unroll_factor = %d, m_trips_loop = %d, peeled_m_trips = %d\n",
-          apply_op, op_order, m, vlen, use_m_masking, m_trips, m_unroll_factor, m_trips_loop, peeled_m_trips);
   if (apply_redop == 1) {
     if (load_acc == 0) {
       if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
