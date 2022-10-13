@@ -68,16 +68,16 @@
 #define LIBXSMM_TYPESYMBOL_char I8
 
 #define LIBXSMM_TYPESIZE(ENUM) ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_F64  ? 8 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_F32  ? 4 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_BF16 ? 2 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_F16  ? 2 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_BF8  ? 1 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_HF8  ? 1 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I64  ? 8 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I32  ? 4 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I16  ? 2 : ( \
-  ((int)(ENUM)) == LIBXSMM_DATATYPE_I8   ? 1 : ( \
+  (LIBXSMM_DATATYPE_F64  == ((int)(ENUM))) ? 8 : ( \
+  (LIBXSMM_DATATYPE_F32  == ((int)(ENUM))) ? 4 : ( \
+  (LIBXSMM_DATATYPE_BF16 == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_F16  == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_BF8  == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_HF8  == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_I64  == ((int)(ENUM))) ? 8 : ( \
+  (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
+  (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
   0/*invalid*/)))))))))))
 
 /* Get input or output precision */
@@ -159,7 +159,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meltw_descriptor li
 /** Structure storing arguments of the matrix-equation routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_meqn_descriptor libxsmm_meqn_descriptor;
 
-/** Enumerates element/data types. */
+/**
+ * Enumerates primitive element/data types.
+ * Related: LIBXSMM_TYPESIZE, LIBXSMM_TYPEINFO,
+ * and LIBXSMM_TYPENAME.
+ */
 typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
@@ -175,11 +179,11 @@ typedef enum libxsmm_datatype {
 } libxsmm_datatype;
 
 typedef enum libxsmm_meltw_operation {
-  LIBXSMM_MELTW_OPERATION_NONE                                             =  0,
-  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX                                =  1,
-  LIBXSMM_MELTW_OPERATION_UNARY                                            =  2,
-  LIBXSMM_MELTW_OPERATION_BINARY                                           =  3,
-  LIBXSMM_MELTW_OPERATION_TERNARY                                          =  4
+  LIBXSMM_MELTW_OPERATION_NONE              =  0,
+  LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX =  1,
+  LIBXSMM_MELTW_OPERATION_UNARY             =  2,
+  LIBXSMM_MELTW_OPERATION_BINARY            =  3,
+  LIBXSMM_MELTW_OPERATION_TERNARY           =  4
 } libxsmm_meltw_operation;
 
 typedef enum libxsmm_meltw_opreduce_vecs_flags {
