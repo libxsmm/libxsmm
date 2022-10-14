@@ -470,6 +470,7 @@
 #define LIBXSMM_X86_INSTR_VPADDSW          0x300516ed
 #define LIBXSMM_X86_INSTR_VPADDSB          0x300516ec
 #define LIBXSMM_X86_INSTR_VPSUBD           0x300516fa
+#define LIBXSMM_X86_INSTR_VPSUBW           0x300516f9
 #define LIBXSMM_X86_INSTR_VPMAXSD          0x3005263d
 #define LIBXSMM_X86_INSTR_VPMAXSW          0x300516ee
 #define LIBXSMM_X86_INSTR_VPMINSD          0x30052639
@@ -1270,6 +1271,7 @@
 #define LIBXSMM_ERR_LDA_TRANS             90050
 #define LIBXSMM_ERR_BRGEMM_TRANS          90051
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
+#define LIBXSMM_ERR_UNSUP_SIZE            90053
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
@@ -1361,6 +1363,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int n_loop_exists;
   unsigned int fused_bcolbias;
   unsigned int fused_b8colbias;
+  unsigned int fused_h8colbias;
   unsigned int fused_scolbias;
   unsigned int fused_relu;
   unsigned int fused_relu_nobitmask;
@@ -1443,6 +1446,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 
   /* Auxiliary fields for LP emulations */
   unsigned int bf8_gemm_via_stack_alloc_tensors;
+  unsigned int hf8_gemm_via_stack_alloc_tensors;
 
 } libxsmm_micro_kernel_config;
 
@@ -1577,8 +1581,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int use_fp32bf16_cvt_replacement;
   unsigned int dcvt_mask_aux0;
   unsigned int dcvt_mask_aux1;
+  unsigned int dcvt_mask_aux2;
   unsigned int dcvt_zmm_aux0;
   unsigned int dcvt_zmm_aux1;
+  unsigned int dcvt_zmm_aux2;
+  unsigned int dcvt_zmm_aux3;
   unsigned int inout_vreg_mask;
   unsigned int tmp_vreg;
   unsigned int tmp_vreg2;
@@ -1710,8 +1717,10 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_gp_reg_mapping_struct {
   unsigned int gp_reg_offset;
   unsigned int temp_reg;
   unsigned int temp_reg2;
+  unsigned int temp_reg3;
   unsigned int gp_reg_scratch_0;
   unsigned int gp_reg_scratch_1;
+  unsigned int gp_reg_scratch_2;
   libxsmm_mateltwise_gp_reg_mapping gp_reg_mapping_eltwise;
   libxsmm_gp_reg_mapping            gp_reg_mapping_gemm;
 } libxsmm_matequation_gp_reg_mapping;
@@ -1736,19 +1745,30 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vlen_comp;
   unsigned int vlen_out;
   char vector_name;
+  unsigned int                      in_f32_mask;
+  unsigned int                      in_bf16_mask;
+  unsigned int                      out_f32_mask;
+  unsigned int                      out_bf16_mask;
+  unsigned int                      full_vlen_bf16_mask;
   unsigned int                      is_head_reduce_to_scalar;
   unsigned int                      inout_vreg_mask;
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
+  unsigned int                      cvt_result_to_f16;
   unsigned int                      cvt_result_to_bf8;
+  unsigned int                      cvt_result_to_hf8;
+  unsigned int                      tmp_vreg;
   unsigned int                      dcvt_mask_aux0;
   unsigned int                      dcvt_mask_aux1;
+  unsigned int                      dcvt_mask_aux2;
   unsigned int                      dcvt_zmm_aux0;
   unsigned int                      dcvt_zmm_aux1;
+  unsigned int                      dcvt_zmm_aux2;
+  unsigned int                      dcvt_zmm_aux3;
   unsigned int                      reduce_vreg;
   unsigned int                      n_avail_gpr;
-  unsigned int                      gpr_pool[16];
+  unsigned int                      gpr_pool[32];
   unsigned int                      n_tmp_reg_blocks;
   unsigned int                      contains_binary_op;
   unsigned int                      contains_ternary_op;

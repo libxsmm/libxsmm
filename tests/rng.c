@@ -23,7 +23,7 @@
 #endif
 
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char* argv[])
 {
 #if defined(USE_EXPECTED)
   const unsigned int seed = 25071975;
@@ -39,6 +39,7 @@ int main(/*int argc, char* argv[]*/)
   float *const rngs = (float*)malloc((size_t)(sizeof(float) * num_rngs));
   if (NULL == rngs) num_rngs = 0;
 
+  LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
   /* mute warning about potentially uninitialized variable */
   libxsmm_matdiff_clear(&info);
 

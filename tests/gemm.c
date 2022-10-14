@@ -121,6 +121,9 @@ int main(void)
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
       const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]) | ((beta[i] == 0) ? LIBXSMM_GEMM_FLAG_BETA_0 : 0);
       const int smm = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
+#if (0 == LIBXSMM_JIT)
+      LIBXSMM_UNUSED(flags);
+#endif
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       _MM_SET_EXCEPTION_STATE(0);
 #endif
@@ -276,4 +279,3 @@ int main(void)
 #endif
   return result;
 }
-

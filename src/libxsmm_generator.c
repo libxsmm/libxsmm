@@ -354,6 +354,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init(libxsmm_desc
   } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
+  LIBXSMM_ASSERT(NULL != result.ptr);
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in_type, out_type);
   result.ptr->datatype2 = 0;
   result.ptr->flags = (unsigned short)flags;
@@ -381,6 +382,7 @@ LIBXSMM_API libxsmm_meltw_descriptor* libxsmm_meltw_descriptor_init2(libxsmm_des
   } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
+  LIBXSMM_ASSERT(NULL != result.ptr);
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM(in0_type, out_type);
   result.ptr->datatype1 = (unsigned char)LIBXSMM_GETENUM(in1_type, in2_type);
   result.ptr->datatype2 = (unsigned char)LIBXSMM_GETENUM(comp_type, out_type);
@@ -407,6 +409,7 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
   } result = { 0 };
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
+  LIBXSMM_ASSERT(NULL != result.ptr);
   result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( LIBXSMM_DATATYPE_UNSUPPORTED, out_type);
   result.ptr->eqn_idx = eqn_idx;
   result.ptr->ldo = ldo;

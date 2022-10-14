@@ -72,6 +72,7 @@
     <ClInclude Include="..\src\generator_mateltwise_unary_binary_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_matequation_regblocks_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_regblocks_avx_avx512.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_aarch64.h" />
     <ClInclude Include="..\src\generator_matequation_scratch_avx_avx512.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="..\src\generator_matequation.c" />
     <ClCompile Include="..\src\generator_matequation_aarch64.c" />
     <ClCompile Include="..\src\generator_matequation_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_matequation_regblocks_aarch64.c" />
     <ClCompile Include="..\src\generator_matequation_regblocks_avx_avx512.c" />
     <ClCompile Include="..\src\generator_matequation_scratch_aarch64.c" />
     <ClCompile Include="..\src\generator_matequation_scratch_avx_avx512.c" />

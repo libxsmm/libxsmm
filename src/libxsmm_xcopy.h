@@ -31,18 +31,12 @@
 # define LIBXSMM_XCOPY_TILE_MIN 2
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
-#if defined(LIBXSMM_PLATFORM_X86)
-# if !defined(LIBXSMM_XCOPY_JIT)
-#   if (defined(_WIN32) || defined(__CYGWIN__))
-#     define LIBXSMM_XCOPY_JIT 0
-#   elif defined(NDEBUG)
-#     define LIBXSMM_XCOPY_JIT 0
-#   else
-#     define LIBXSMM_XCOPY_JIT 3
-#   endif
+#if !defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_JIT)
+# if defined(NDEBUG) && 0
+#   define LIBXSMM_XCOPY_JIT 3
+# else
+#   define LIBXSMM_XCOPY_JIT 0
 # endif
-#else
-# define LIBXSMM_XCOPY_JIT 0
 #endif
 
 /* like LIBXSMM_ACCESS (LIBXSMM_INDEX1), but based on Byte-measured index/stride; returns the value */
@@ -64,7 +58,7 @@
   libxsmm_meltw_unary_param libxsmm_mzero_call_args_; \
   libxsmm_mzero_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mzero_call_args_.out.primary = (DST); \
-  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_mzero_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)
@@ -72,7 +66,7 @@
   libxsmm_meltw_unary_param libxsmm_mcopy_call_args_; \
   libxsmm_mcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_mcopy_call_args_.out.primary = (DST); \
-  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_mcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)
@@ -87,7 +81,7 @@
   libxsmm_meltw_unary_param libxsmm_tcopy_call_args_; \
   libxsmm_tcopy_call_args_.in.primary = (void*)(SRC); \
   libxsmm_tcopy_call_args_.out.primary = (DST); \
-  LIBXSMM_ASSERT(NULL != (KERNEL).ptr); \
+  LIBXSMM_ASSERT(NULL != (KERNEL).function); \
   (KERNEL).function(&libxsmm_tcopy_call_args_); \
   LIBXSMM_UNUSED(LDO); \
 } while(0)
@@ -275,7 +269,7 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride[],
   libxsmm_xcopykernel kernel, libxsmm_blasint begin, libxsmm_blasint end);
 
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT))
+#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
 /** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
 #endif

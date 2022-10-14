@@ -12,6 +12,32 @@
 #include <libxsmm_fsspmdm.h>
 #include "generator_common.h"
 
+#if 0
+LIBXSMM_API_INLINE
+void libxsmm_fsspmdm_base_vlen( libxsmm_blasint N,
+                                int i_fp64,
+                                int* o_sparse,
+                                int* o_dense) {
+  int vl = libxsmm_cpuid_vlen32( libxsmm_target_archid );
+  if ( i_fp64 ) {
+    vl = LIBXSMM_UPDIV( vl, 2 );
+  }
+
+  *o_sparse = vl;
+  *o_dense = vl;
+
+  /* Dense NEON benefits from larger sizes */
+  if ( libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
+       libxsmm_target_archid < LIBXSMM_AARCH64_SVE128 ) {
+    if ( 0 == N % (2*vl) ) {
+      *o_dense = 2*vl;
+    }
+    if ( 0 == N % (4*vl) ) {
+      *o_dense = 4*vl;
+    }
+  }
+}
+#endif
 
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -46,6 +72,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   { /* Compute the vector/chunk sizes */
     const int vlen = libxsmm_cpuid_vlen(libxsmm_target_archid);
     const int vl = LIBXSMM_UPDIV(vlen, typesize);
+    LIBXSMM_ASSERT(0 < vl);
     N_sparse1 = N_dense = vl;
     /* Dense NEON benefits from larger sizes */
     if (libxsmm_target_archid >= LIBXSMM_AARCH64_V81 &&
@@ -259,7 +286,7 @@ LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
 
   /* We have at least one kernel */
   if (0 < nkerns) {
-    const char* const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
+    const char *const env_fsspmdm_hint = getenv("LIBXSMM_FSSPMDM_HINT");
     const int fsspmdm_hint = (NULL == env_fsspmdm_hint ? 0 : atoi(env_fsspmdm_hint));
     void *B = NULL, *C = NULL;
     double dt_dense = (NULL != k_dense) ? 1e5 : 1e6;

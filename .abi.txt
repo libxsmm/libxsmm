@@ -25,8 +25,10 @@ libxsmm_blas_sgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_convert_bf16_f32
 libxsmm_convert_bf8_f32
+libxsmm_convert_f16_f32
 libxsmm_convert_f16_to_f32
 libxsmm_convert_f32_to_f16
+libxsmm_convert_hf8_f32
 libxsmm_cpuid
 libxsmm_cpuid_arm
 libxsmm_cpuid_name
@@ -245,6 +247,7 @@ libxsmm_pfree
 libxsmm_pmalloc
 libxsmm_pmalloc_init
 libxsmm_primes_u32
+libxsmm_print_cmdline
 libxsmm_product_limit
 libxsmm_ptr_b0
 libxsmm_ptr_b1
@@ -285,8 +288,11 @@ libxsmm_release_scratch
 libxsmm_release_smmkernel
 libxsmm_remainder
 libxsmm_rnaz_convert_fp32_bf16
+libxsmm_rne_convert_fp16_hf8
 libxsmm_rne_convert_fp32_bf16
 libxsmm_rne_convert_fp32_bf8
+libxsmm_rne_convert_fp32_f16
+libxsmm_rne_convert_fp32_hf8
 libxsmm_rng_create_extstate
 libxsmm_rng_destroy_extstate
 libxsmm_rng_f32_seq

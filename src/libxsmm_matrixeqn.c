@@ -95,7 +95,7 @@ LIBXSMM_API_INTERN libxsmm_blasint libxsmm_matrix_eqn_can_overwrite_unary_input(
   if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_IDENTITY) {
     result = 0;
   }
-  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
+  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_HF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   if (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(cur_node->info.u_op.type) > 0) {
@@ -110,7 +110,7 @@ LIBXSMM_API_INTERN libxsmm_blasint libxsmm_matrix_eqn_can_overwrite_binary_input
   if ((cur_node->info.b_op.is_matmul == 1) || (cur_node->info.b_op.is_brgemm == 1)) {
     result = 0;
   }
-  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
+  if (((cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_F16) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_HF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_HF8) || (cur_node->le->tmp.dtype == LIBXSMM_DATATYPE_BF8) || (cur_node->ri->tmp.dtype == LIBXSMM_DATATYPE_BF8)) && (cur_node->tmp.dtype == LIBXSMM_DATATYPE_F32)) {
     result = 0;
   }
   return result;
@@ -598,7 +598,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_m
     }
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->le);
     libxsmm_matrix_eqn_reassign_children_bcast_tmp(eqn, cur_node->ri);
-  } else if( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     if ((cur_node->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (libxsmm_matrix_eqn_get_bcast_type_ternary(cur_node->info.t_op.flags, LEFT) != LIBXSMM_MATRIX_EQN_BCAST_TYPE_NONE)) {
       cur_node->le->tmp.id = eqn->eqn_root->reg_score;
       eqn->eqn_root->reg_score = eqn->eqn_root->reg_score + 1;
@@ -652,7 +652,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_create_exec_plan( libxsmm_matrix_eqn_
       libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
     }
     libxsmm_matrix_eqn_exec_plan_visit_binary_node(cur_node, global_timestamp, n_max_tmp, tmp_storage_pool);
-  } else if( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+  } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     if ((cur_node->le->reg_score >= cur_node->ri->reg_score) && (cur_node->le->reg_score >= cur_node->r2->reg_score) ) {
       libxsmm_matrix_eqn_create_exec_plan( cur_node->le, global_timestamp, n_max_tmp, tmp_storage_pool );
       if ( cur_node->ri->reg_score >= cur_node->r2->reg_score ) {

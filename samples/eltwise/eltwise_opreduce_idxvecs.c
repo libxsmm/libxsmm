@@ -60,6 +60,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
   }
 }
 
+LIBXSMM_INLINE
 void shuffle_array(unsigned long long *array, int n) {
   if (n > 1)
   {
@@ -85,10 +86,10 @@ int main(int argc, char* argv[])
   unsigned long long *argop_off_vec_0, *argop_off_vec_1, *ref_argop_off_vec_0, *ref_argop_off_vec_1;
   unsigned int  *argop_off_vec_0_i32, *argop_off_vec_1_i32, *ref_argop_off_vec_0_i32, *ref_argop_off_vec_1_i32;
   unsigned int  *cols_ind_array_i32, *cols_ind_array2_i32;
-  libxsmm_meltw_opreduce_vecs_idx_param     params = { 0 };
-  libxsmm_meltw_opreduce_vecs_flags         opredop_flags;
-  libxsmm_meltwfunction_opreduce_vecs_idx   kernel;
-  libxsmm_matdiff_info                      norms_elts, diff;
+  libxsmm_meltw_opreduce_vecs_idx_param params /*= { 0 }*/;
+  libxsmm_meltw_opreduce_vecs_flags opredop_flags;
+  libxsmm_meltwfunction_opreduce_vecs_idx kernel;
+  libxsmm_matdiff_info norms_elts, diff;
   unsigned long long l_start, l_end;
   double l_total = 0.0, l_total2 = 0.0;
   char opname[50];
@@ -113,7 +114,7 @@ int main(int argc, char* argv[])
   libxsmm_matdiff_clear(&norms_elts);
   libxsmm_matdiff_clear(&diff);
 
-  if(argc == 1){
+  if (argc == 1) {
     /* probably help is wanted */
     printf(" Error! Usage: %s [M=64] [N=64] [N_COLS_IDX=32] [LD_IN_0=64] [LD_IN_1=64] [OP=0] [OP_ORDER=0] [SCALE_OP_RES=0] [REDOP=0] [REG_VECIN=0] [IMPLICIT_IDX=0] [ARGOP_MODE=0] [IDX_MODE=0] [ITERS=10000] [BF16=0]\n", argv[0] );
     exit(-1);
@@ -199,10 +200,10 @@ int main(int argc, char* argv[])
   }
 
   if (op_order == OPORDER_VECIN_VECIDX) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIN_VECIDX);
     sprintf(opordername, "VECIN_VECIDX");
   } else if (op_order == OPORDER_VECIDX_VECIN) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_OPORDER_VECIDX_VECIN);
     sprintf(opordername, "VECIDX_VECIN");
   } else {
     printf("ERROR: Invalid OP_ORDER requested!!!\n");
@@ -212,7 +213,7 @@ int main(int argc, char* argv[])
   if (scale_op_res == NO_SCALE_OP_RESULT) {
     sprintf(scaleopresname, "NO");
   } else if (scale_op_res == SCALE_OP_RESULT) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_SCALE_OP_RESULT);
     sprintf(scaleopresname, "YES");
   } else {
     printf("ERROR: Scale OP result should be 0 or 1!!!\n");
@@ -220,16 +221,16 @@ int main(int argc, char* argv[])
   }
 
   if (redop == REDOP_NONE) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_NONE);
     sprintf(redopname, "NONE");
   } else if (redop == REDOP_SUM) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_SUM);
     sprintf(redopname, "SUM");
   } else if (redop == REDOP_MAX) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX);
     sprintf(redopname, "MAX");
   } else if (redop == REDOP_MIN) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN);
     sprintf(redopname, "MIN");
   } else {
     printf("ERROR: Invalid REDOP requested!!!\n");
@@ -239,22 +240,22 @@ int main(int argc, char* argv[])
   if (op != OP_COPY) {
     if (use_regular_vecin == 0) {
       if (use_implicit_idx > 0) {
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC;
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VEC);
       } else {
-        opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC;
+        opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_INDEXED_VEC);
       }
     }
   }
 
   if (argop_vec_0 == 1) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0);
   }
   if (argop_vec_1 == 1) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1);
   }
 
   if ((op == OP_COPY) && (use_implicit_idx > 0)) {
-    opredop_flags = opredop_flags | LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX;
+    opredop_flags = LIBXSMM_EOR(libxsmm_meltw_opreduce_vecs_flags, opredop_flags, LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_IMPLICIT_INDEXED_VECIDX);
   }
 
   unsigned short bcast_factor_0 = 0;
@@ -579,7 +580,8 @@ int main(int argc, char* argv[])
   /* compare */
   printf("#   Correctness  #\n");
   printf("OP=%s, OPORDER=%s, SCALE_OP_RES=%s, REDOP=%s\n", opname, opordername, scaleopresname, redopname);
-  printf("IDX_VEC_IN=%d, IMPLICIT_IDX_VEC_IN=%d, ARGOP_MODE=%d, IDX_SIZE=%d\n", (use_regular_vecin > 0) ? 0 : 1, use_implicit_idx, argop_mode, (idx_mode == 0) ? 4 : 8);
+  printf("IDX_VEC_IN=%i, IMPLICIT_IDX_VEC_IN=%u, ARGOP_MODE=%u, IDX_SIZE=%i\n", (use_regular_vecin > 0) ? 0 : 1,
+    use_implicit_idx, argop_mode, (idx_mode == 0) ? 4 : 8);
   printf("##########################################\n");
   if (use_bf16 == 1) {
     libxsmm_convert_bf16_f32( result_bf16, result, ld_in);

@@ -53,10 +53,10 @@ if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}"
     if [ "${TOUCH}" ]; then ${TOUCH} "$0"; fi
   fi
 elif [ ! "${DIFF}" ]; then
-  >&2 echo "Error: please install diffutils - diff command is missing!"
+  >&2 echo "ERROR: please install diffutils - diff command is missing!"
   exit 1
 else
-  >&2 echo "Error: missing prerequisites!"
+  >&2 echo "ERROR: missing prerequisites!"
   exit 1
 fi
 

@@ -62,8 +62,7 @@
 # else
 #   define LIBXSMM_MAP_JIT 0
 # endif
-LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_THROW;
-LIBXSMM_EXTERN int mkstemp(char*) LIBXSMM_NOTHROW;
+LIBXSMM_EXTERN int ftruncate(int, off_t) LIBXSMM_NOTHROW;
 #endif
 #if !defined(LIBXSMM_MALLOC_FINAL)
 # define LIBXSMM_MALLOC_FINAL 3
@@ -277,7 +276,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     LIBXSMM_UNUSED(CALLER); \
     if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
       /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
-    ){ \
+    ) { \
       INTERNAL_FREE_REAL(PTR); \
     } \
     else { /* recognize pointers not issued by LIBXSMM */ \
@@ -582,7 +581,7 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
 #if 1 /* should be implied by non-zero counter */
         && NULL != pool->instance.buffer
 #endif
-      ){/* check if memory belongs to scratch domain or local domain */
+      ) {/* check if memory belongs to scratch domain or local domain */
 #if 1
         const size_t size = pool->instance.minsize;
 #else
@@ -981,8 +980,8 @@ LIBXSMM_API void __wrap_free(void* ptr)
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && ((defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)) || defined(LIBXSMM_MALLOC_MOD))
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_THROW;
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_THROW
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t /*alignment*/, size_t /*size*/) LIBXSMM_NOTHROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_t alignment, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -993,8 +992,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* memalign(size_
   return result;
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t /*size*/) LIBXSMM_THROW;
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t size) LIBXSMM_THROW
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t /*size*/) LIBXSMM_NOTHROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -1006,8 +1005,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* malloc(size_t 
 }
 
 #if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t /*num*/, size_t /*size*/) LIBXSMM_THROW;
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t num, size_t size) LIBXSMM_THROW
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t /*num*/, size_t /*size*/) LIBXSMM_NOTHROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t num, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
   const size_t nbytes = num * size;
@@ -1023,8 +1022,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE_MALLOC void* calloc(size_t 
 #endif
 
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/) LIBXSMM_THROW;
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM_THROW
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/) LIBXSMM_NOTHROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM_NOEXCEPT
 {
   void* result;
 # if defined(LIBXSMM_MALLOC_MMAP_HOOK)
@@ -1036,8 +1035,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size) LIBXSMM
 }
 #endif
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/) LIBXSMM_THROW;
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr) LIBXSMM_THROW
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/) LIBXSMM_NOTHROW;
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr) LIBXSMM_NOEXCEPT
 {
   INTERNAL_FREE_HOOK(ptr, NULL/*caller*/);
 }
@@ -1634,7 +1633,7 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
   }
   if (0 <= i && i < (int)sizeof(filename)) {
     /* coverity[secure_temp] */
-    i = mkstemp(filename);
+    i = LIBXSMM_MKTEMP(filename);
     if (0 <= i) {
       if (0 == unlink(filename) && 0 == ftruncate(i, size) /*&& 0 == chmod(filename, S_IRWXU)*/) {
         const int mflags = (flags | LIBXSMM_MAP_SHARED | LIBXSMM_MAP_JIT);
@@ -2301,6 +2300,11 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
+# if defined(__APPLE__) && defined(__arm64__)
+          if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
+            pthread_jit_write_protect_np(1/*true*/);
+          }
+# endif
 #endif
         }
 #if !defined(_WIN32)
@@ -2314,6 +2318,12 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
             (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
+
+# if defined(__APPLE__) && defined(__arm64__)
+          if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
+            pthread_jit_write_protect_np(1/*true*/);
+          }
+# else
           xattrib_result = libxsmm_malloc_xattrib(buffer, flags, alloc_size);
           if (EXIT_SUCCESS != xattrib_result) {
             if (0 != libxsmm_se) { /* hard-error in case of SELinux */
@@ -2330,11 +2340,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
               fprintf(stderr, "LIBXSMM WARNING: read-only request for JIT-buffer failed!\n");
             }
           }
-        }
-#endif
-#if defined(__APPLE__) && defined(__arm64__)
-        if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) {
-          pthread_jit_write_protect_np(1/*true*/);
+# endif
         }
 #endif
       }

@@ -22,9 +22,9 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
 
   int maxthreads = omp_get_max_threads();
   int histogram[nbkts*maxthreads], histogram_ps[nbkts*maxthreads + 1];
-  if(max_value == 0) return inp_buf;
+  if (max_value == 0) return inp_buf;
   int num_bits = 64;
-  if(sizeof(T) == 8 && max_value > std::numeric_limits<int>::max()) {
+  if (sizeof(T) == 8 && max_value > std::numeric_limits<int>::max()) {
     num_bits = sizeof(T) * 8 - __builtin_clzll(max_value);
   } else {
     num_bits = 32 - __builtin_clz((unsigned int)max_value);
@@ -43,16 +43,16 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
     Key_Value_Pair<T> * input = inp_buf;
     Key_Value_Pair<T> * output = tmp_buf;
 
-    for(unsigned int pass = 0; pass < num_passes; pass++)
+    for (unsigned int pass = 0; pass < num_passes; pass++)
     {
 
       auto t1 = get_time();
       /* Step 1: compute histogram
          Reset histogram */
-      for(int i = 0; i < nbkts; i++) local_histogram[i] = 0;
+      for (int i = 0; i < nbkts; i++) local_histogram[i] = 0;
 
 #pragma omp for schedule(static)
-      for(int64_t i = 0; i < elements_count_4; i+=4)
+      for (int64_t i = 0; i < elements_count_4; i+=4)
       {
         T val_1 = input[i].first;
         T val_2 = input[i+1].first;
@@ -64,9 +64,9 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
         local_histogram[ (val_3>>(pass*bkt_bits)) & bkt_mask]++;
         local_histogram[ (val_4>>(pass*bkt_bits)) & bkt_mask]++;
       }
-      if(tid == (nthreads -1))
+      if (tid == (nthreads -1))
       {
-        for(int64_t i = elements_count_4; i < elements_count; i++)
+        for (int64_t i = elements_count_4; i < elements_count; i++)
         {
           T val = input[i].first;
           local_histogram[ (val>>(pass*bkt_bits)) & bkt_mask]++;
@@ -75,18 +75,18 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
 #pragma omp barrier
       auto t11 = get_time();
       /* Step 2: prefix sum */
-      if(tid == 0)
+      if (tid == 0)
       {
         int sum = 0, prev_sum = 0;
-        for(int bins = 0; bins < nbkts; bins++) for(int t = 0; t < nthreads; t++) { sum += histogram[t*nbkts + bins]; histogram_ps[t*nbkts + bins] = prev_sum; prev_sum = sum; }
-        histogram_ps[nbkts*nthreads] = prev_sum; if(prev_sum != elements_count) { printf("Error1!\n"); exit(123); }
+        for (int bins = 0; bins < nbkts; bins++) for (int t = 0; t < nthreads; t++) { sum += histogram[t*nbkts + bins]; histogram_ps[t*nbkts + bins] = prev_sum; prev_sum = sum; }
+        histogram_ps[nbkts*nthreads] = prev_sum; if (prev_sum != elements_count) { printf("Error1!\n"); exit(123); }
       }
 #pragma omp barrier
       auto t12 = get_time();
 
       /* Step 3: scatter */
 #pragma omp for schedule(static)
-      for(int64_t i = 0; i < elements_count_4; i+=4)
+      for (int64_t i = 0; i < elements_count_4; i+=4)
       {
         T val_1 = input[i].first;
         T val_2 = input[i+1].first;
@@ -106,9 +106,9 @@ Key_Value_Pair<T>* radix_sort_parallel(Key_Value_Pair<T>* inp_buf, Key_Value_Pai
         pos = local_histogram_ps[bin_4]++;
         output[pos] = input[i+3];
       }
-      if(tid == (nthreads -1))
+      if (tid == (nthreads -1))
       {
-        for(int64_t i = elements_count_4; i < elements_count; i++)
+        for (int64_t i = elements_count_4; i < elements_count; i++)
         {
           T val = input[i].first;
           int pos = local_histogram_ps[ (val>>(pass*bkt_bits)) & bkt_mask]++;

@@ -29,14 +29,18 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 source "${HERE}/../.env/buildkite.env" ""
 #source "${HERE}/../.env/travis.env" ""
 
-MKTEMP=${REPOROOT}/.mktmp.sh
+MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
+UMASK=007
 
 if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
+
+  # ensure proper permissions
+  umask ${UMASK}
 
   # check if full/unlimited tests are triggered
   if [ "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -145,6 +149,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     LIMITRUN=$((LIMIT<LIMITRUN?LIMIT:LIMITRUN))
   fi
 
+  CPUINFO=${HERE}/tool_cpuinfo.sh
   # eventually cleanup run-script of terminated/previous sessions
   rm -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
@@ -160,20 +165,18 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
-    umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
-                    --unbuffered ${TESTSCRIPT}"
+                    --unbuffered ${TESTSCRIPT} ${*:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
-    umask 007
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
-    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT}"
+    LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${*:2}"
   else # avoid temporary script in case of non-batch execution
     if [ ! "${MAKEJ}" ]; then
-      MAKEJ="-j $(eval "${REPOROOT}/scripts/tool_cpuinfo.sh" -nc)"
+      MAKEJ="-j $(eval "${CPUINFO}" -nc)"
       export MAKEJ
     fi
     SHOW_PARTITION=0
@@ -252,12 +255,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ]; then
+    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${REPOROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
@@ -294,10 +297,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        echo "umask ${UMASK}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
         if [ "0" != "${SHOW_PARTITION}" ]; then echo "echo \"-> \${USER}@\${HOSTNAME} (\${PWD})\"" >>"${TESTSCRIPT}"; fi
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REPOREMOTE}/scripts/tool_cpuinfo.sh -nc)\"; fi" >>"${TESTSCRIPT}"
+        REMINFO=$(echo "${CPUINFO}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${REMINFO} -nc)\"; fi" >>"${TESTSCRIPT}"
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
@@ -308,13 +313,14 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "export INTEL_LICENSE_FILE=${REPOREMOTE}/licenses" >>"${TESTSCRIPT}"
         fi
         # setup environment on a per-test basis
-        ENVREMOTE=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-        echo "if [ -e \"${ENVREMOTE}\" ]; then" >>"${TESTSCRIPT}"
+        ENVREM=$(echo "${ENVFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        ENVRST=$(echo "${HERE}/tool_envrestore.sh" | ${SED} "s/${REPPAT}/${REMPAT}/")
+        echo "if [ -e \"${ENVREM}\" ]; then" >>"${TESTSCRIPT}"
         if [ "${LAUNCH_CMD}" ]; then
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
+          echo "  eval ${ENVRST} \"${ENVREM}\" \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
           echo "  source \"${REPOREMOTE}/.env.sh\"" >>"${TESTSCRIPT}"
         else
-          echo "  eval ${REPOREMOTE}/scripts/tool_envrestore.sh \"${ENVREMOTE}\"" >>"${TESTSCRIPT}"
+          echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
         fi
         echo "fi" >>"${TESTSCRIPT}"
         if [ -e "${CONFIGFILE}" ]; then
@@ -335,25 +341,27 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
-            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\numask ${UMASK}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
+            -e "s/^srun[[:space:]]//" \
             "${SLURMFILE}" >"${SLURMFILE}.run" && chmod +rx "${SLURMFILE}.run"
           RUNFILE=$(readlink -f "${SLURMFILE}.run")
           RUNREM=$(echo "${RUNFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")
+          CMDREM=$(echo "${TOOL_COMMAND}" | ${SED} "s/${REPPAT}/${REMPAT}/")
           if [ "${TOOL_COMMAND}" ]; then
             if [ "0" = "${TOOL_INJECT}" ] || [ ! "$(${SED} -n "/^taskset/p" "${RUNFILE}")" ]; then
-              echo -n "${TOOL_COMMAND} ${RUNREM} ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
+              echo -n "${CMDREM} ${RUNREM} \$@ ${TOOL_COMMAND_POST}" >>"${TESTSCRIPT}"
             else # inject TOOL_COMMAND
-              TOOL_COMMAND_SED1="$(echo "${TOOL_COMMAND}" | ${SED} "${DIRPAT}") "
+              TOOL_COMMAND_SED1="$(echo "${CMDREM}" | ${SED} "${DIRPAT}") "
               if [ "${TOOL_COMMAND_POST}" ]; then
                 TOOL_COMMAND_SED2=" $(echo "${TOOL_COMMAND_POST}" | ${SED} "${DIRPAT}")"
               fi
               ${SED} -i "s/\(^taskset[[:space:]]..*\)/${TOOL_COMMAND_SED1}\1${TOOL_COMMAND_SED2}/" "${RUNFILE}"
-              echo -n "${RUNREM}" >>"${TESTSCRIPT}"
+              echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
             fi
           else
-            echo -n "${RUNREM}" >>"${TESTSCRIPT}"
+            echo -n "${RUNREM} \$@" >>"${TESTSCRIPT}"
           fi
           if [ "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "$(command -v cat)" ] && [ "$(command -v tail)" ];
@@ -443,4 +451,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
 
   exit "${RESULT}"
+else
+  >&2 echo "ERROR: missing prerequisites!"
+  exit 1
 fi

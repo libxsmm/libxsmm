@@ -17,7 +17,7 @@ For a list questions and answers, please also have a look at [https://github.com
 ```cpp
 #include <libxsmm.h>
 #include <vector>
-int main(/*int argc, char* argv[]*/) {
+int main(int argc, char* argv[]) {
   typedef double T;
   int batchsize = 1000, m = 13, n = 5, k = 7;
   std::vector<T> a(batchsize * m * k), b(batchsize * k * n), c(m * n, 0);
@@ -77,7 +77,7 @@ The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains ro
 
 ### Deep Learning<a name="interface-for-dl"></a>
 
-The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/libxsmm_dnn/tests). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided in the [DL Samples](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning).
+The Deep Learning domain is detailed by the following [sample codes](https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning). Here we demonstrate how common operators in deep learning applications (GEMM with activation function fusion, Convolutions with activation function fusion, various norming and pooling operators, etc.) can be implemented using the Tensor Processing Primitive provided by LIBXSMM. Example drivers for performance evaluation are provided as part of [LIBXSMM_DNN](https://github.com/libxsmm/libxsmm_dnn/tree/main/tests).
 
 ### Service Functions
 
@@ -322,7 +322,7 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 
 ```bash
 git clone --branch results \
-  https://github.com/hfp/libxsmm.git \
+  https://github.com/libxsmm/libxsmm.git \
   libxsmm-results
 ```
 
