@@ -97,9 +97,10 @@ CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
 
-UMASK := 0022
+UMASK := 002
+PERMD := $(shell echo "$$((777-$(UMASK)))")
 ifneq (,$(strip $(MKDIR)))
-  MKDIR += --mode=$(UMASK)
+  MKDIR += --mode=$(PERMD)
 endif
 
 # Python interpreter per PYTHON=/path/to/python

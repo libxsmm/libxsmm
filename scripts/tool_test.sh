@@ -34,10 +34,11 @@ RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
 if [ ! "${UMASK}" ]; then
-  UMASK=0022
+  UMASK=002
 fi
+PERMD=$((777-UMASK))
 if [ "${MKDIR}" ]; then
-  MKDIR="${MKDIR} --mode=${UMASK}"
+  MKDIR="${MKDIR} --mode=${PERMD}"
 fi
 
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then

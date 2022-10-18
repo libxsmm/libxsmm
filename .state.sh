@@ -19,8 +19,9 @@ TR=$(command -v tr)
 if [ ! "${UMASK}" ]; then
   UMASK=0022
 fi
+PERMD=$((777-UMASK))
 if [ "${MKDIR}" ]; then
-  MKDIR="${MKDIR} --mode=${UMASK}"
+  MKDIR="${MKDIR} --mode=${PERMD}"
 fi
 
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
