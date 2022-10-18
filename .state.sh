@@ -21,7 +21,7 @@ if [ ! "${UMASK}" ]; then
 fi
 PERMD=$((777-UMASK))
 if [ "${MKDIR}" ]; then
-  MKDIR="${MKDIR} --mode=${PERMD}"
+  MKDIR="${MKDIR} -m ${PERMD}"
 fi
 
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then

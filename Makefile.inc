@@ -100,7 +100,7 @@ MAKE ?= make
 UMASK := 002
 PERMD := $(shell echo "$$((777-$(UMASK)))")
 ifneq (,$(strip $(MKDIR)))
-  MKDIR += --mode=$(PERMD)
+  MKDIR += -m $(PERMD)
 endif
 
 # Python interpreter per PYTHON=/path/to/python
