@@ -18,23 +18,32 @@ PRJ_DEFAULT="libxsmm/libxsmm"
 
 if [ "${CURL}" ] && [ "${GIT}" ] && [ "${SED}" ]; then
   N=0
-  PRJ=$(${GIT} remote get-url origin 2>/dev/null | ${SED} "s/..*\/\(..*\)\/\(..*\)\.git/\1\/\2/")
+  PRJ="$(${GIT} remote get-url origin 2>/dev/null | ${SED} "s/..*\/\(..*\)\/\(..*\)\.git/\1\/\2/")"
   URL="https://api.github.com/repos/${PRJ:-${PRJ_DEFAULT}}/forks"
-  FORKS="$(${CURL} -s ${URL} | ${SED} -n "s/[[:space:]]*\"html_url\":[[:space:]]*\"..*\/\/..*\/\(..*\)\/\(..*\)\".*/\1\/\2/p")"
+  FORKS="$(${CURL} -s "${URL}" | ${SED} -n "s/[[:space:]]*\"html_url\":[[:space:]]*\"..*\/\/..*\/\(..*\)\/\(..*\)\".*/\1\/\2/p")"
   if [ "${FORKS}" ]; then
     for FORK in ${FORKS}; do
       USER=$(echo "${FORK}" | ${SED} "s/\/..*//")
       echo -n "Fork ${USER} "
-      if $(${GIT} remote add ${USER} https://github.com/${FORK}.git 2>/dev/null); then
+      if ${GIT} remote add "${USER}" "https://github.com/${FORK}.git" 2>/dev/null; then
         echo -n "added and "
       fi
-      if $(${GIT} fetch ${USER} 2>/dev/null); then
+      if ${GIT} fetch "${USER}" 2>/dev/null; then
         echo "updated."
-      else
-        ${GIT} remote remove ${USER} 2>/dev/null
-        echo "removed."
+        N=$((N+1))
       fi
-      N=$((N+1))
+    done
+    for USER in $(${GIT} remote 2>/dev/null); do
+      if [ ! "$(echo "${FORKS}" | ${SED} -n "/${USER}/p")" ]; then
+        if ${GIT} fetch "${USER}" 2>/dev/null; then
+          echo "Fork ${USER} updated."
+          N=$((N+1))
+        elif [ "$(${GIT} remote -v 2>/dev/null | ${SED} -n "/${USER}[[:space:]]..*\/${USER}\/..*[[:space:]](fetch)/p")" ]; then
+          ${GIT} remote remove "${USER}"
+          echo "Fork ${USER} removed."
+          N=$((N+1))
+        fi
+      fi
     done
     if [ "0" != "${N}" ]; then
       echo "Processed number of forks: ${N}"

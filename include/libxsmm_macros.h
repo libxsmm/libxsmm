@@ -576,6 +576,11 @@
 #define LIBXSMM_CONST_VOID_PTR(A) *((const void**)&(A))
 #define LIBXSMM_EOR(ENUM_TYPE, ENUM, FLAG) ((ENUM_TYPE)(((int)(ENUM)) | ((int)(FLAG))))
 
+LIBXSMM_API_INLINE   signed long long libxsmm_widen_u32i64(unsigned int value) { return value; }
+LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) { return value; }
+#define LIBXSMM_WIDEN_U32I64(VALUE) libxsmm_widen_u32i64(LIBXSMM_CAST_UINT(VALUE))
+#define LIBXSMM_WIDEN_U32U64(VALUE) libxsmm_widen_u32i64(LIBXSMM_CAST_UINT(VALUE))
+
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L/*C99*/ <= __STDC_VERSION__)
 # if defined(__PGI)

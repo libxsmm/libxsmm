@@ -1,8 +1,9 @@
 Title: LIBXSMM
 project: LIBXSMM
 author: Intel Corporation
-summary: Library targeting Intel Architecture for specialized matrix operations.
-project_github: https://github.com/hfp/libxsmm/
+license: <a href="https://libxsmm.readthedocs.io/LICENSE/">BSD 3-Clause License</a>
+summary: Library for specialized tensor operations.
+project_github: https://github.com/libxsmm/libxsmm/
 project_download: https://github.com/libxsmm/libxsmm/releases/latest/
 favicon: ../.theme/img/favicon.png
 css: ../.theme/ford.css
@@ -11,4 +12,4 @@ src_dir: ../include
 search: true
 page_dir: .
 
-Library targeting Intel Architecture for specialized matrix operations: [libxsmm.readthedocs.io/](https://libxsmm.readthedocs.io/)
+Library for specialized tensor operations: [libxsmm.readthedocs.io/](https://libxsmm.readthedocs.io/)

@@ -1485,7 +1485,7 @@ install-minimal: libxsmm
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing libraries..."
-	@mkdir -p $(PREFIX)/$(POUTDIR)
+	@$(MKDIR) -p $(PREFIX)/$(POUTDIR)
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
@@ -1497,65 +1497,65 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(CP) -va $(OUTDIR)/libxsmm.$(DLIBEXT)* $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(PREFIX)/$(POUTDIR) 2>/dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -va $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(DLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -va $(OUTDIR)/mic/libxsmmext.$(DLIBEXT)* $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -va $(OUTDIR)/mic/libxsmmf.$(DLIBEXT)* $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(DLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -va $(OUTDIR)/mic/libxsmm.$(DLIBEXT)* $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(SLIBEXT) ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic; \
+		$(MKDIR) -p $(PREFIX)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(PREFIX)/$(POUTDIR)/mic; \
 	fi
 	@echo
 	@echo "LIBXSMM installing pkg-config and module files..."
-	@mkdir -p $(PREFIX)/$(PPKGDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PPKGDIR)
 	@$(CP) -v $(OUTDIR)/*.pc $(PREFIX)/$(PPKGDIR) 2>/dev/null || true
 	@if [ ! -e $(PREFIX)/$(PMODDIR)/libxsmm.env ]; then \
-		mkdir -p $(PREFIX)/$(PMODDIR); \
+		$(MKDIR) -p $(PREFIX)/$(PMODDIR); \
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
 	fi
 	@echo
 	@echo "LIBXSMM installing utilities..."
-	@mkdir -p $(PREFIX)
+	@$(MKDIR) -p $(PREFIX)
 	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/.mktmp.sh $(PREFIX) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/.flock.sh $(PREFIX) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/.state.sh $(PREFIX) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
-	@mkdir -p $(PREFIX)/$(PBINDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@mkdir -p $(PREFIX)/$(PINCDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing header-only..."
-	@mkdir -p $(PREFIX)/$(PSRCDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PSRCDIR)
 	@$(CP) -r $(ROOTDIR)/$(SRCDIR)/* $(PREFIX)/$(PSRCDIR) >/dev/null 2>/dev/null || true
 endif
 
@@ -1564,13 +1564,13 @@ install: install-minimal
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing documentation..."
-	@mkdir -p $(PREFIX)/$(PDOCDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/SECURITY.md $(PREFIX)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
 	@sed "s/^\"//;s/\\\n\"$$//;/STATIC=/d" $(DIRSTATE)/.state >$(PREFIX)/$(PDOCDIR)/build.txt 2>/dev/null || true
-	@mkdir -p $(PREFIX)/$(LICFDIR)
+	@$(MKDIR) -p $(PREFIX)/$(LICFDIR)
 ifneq ($(call qapath,$(PREFIX)/$(PDOCDIR)/LICENSE.md),$(call qapath,$(PREFIX)/$(LICFDIR)/$(LICFILE)))
 	@$(MV) $(PREFIX)/$(PDOCDIR)/LICENSE.md $(PREFIX)/$(LICFDIR)/$(LICFILE)
 endif
@@ -1596,7 +1596,7 @@ install-dev: install-realall build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing tests..."
-	@mkdir -p $(PREFIX)/$(PTSTDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PTSTDIR)
 	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PTSTDIR) 2>/dev/null || true
 endif
 
@@ -1605,7 +1605,7 @@ install-artifacts: install-dev
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
-	@mkdir -p $(PREFIX)/$(PDOCDIR)/artifacts
+	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)/artifacts
 	@$(CP) -v $(DIRSTATE)/.state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
 endif
 
@@ -1736,7 +1736,7 @@ deb:
 		fi; \
 		tar xf $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz; \
 		cd $${ARCHIVE_NAME}-$${VERSION_ARCHIVE}; \
-		mkdir -p debian/source; cd debian/source; \
+		$(MKDIR) -p debian/source; cd debian/source; \
 		echo "3.0 (quilt)" >format; \
 		cd ..; \
 		echo "Source: $${ARCHIVE_NAME}" >control; \

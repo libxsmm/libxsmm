@@ -92,9 +92,17 @@ endif
 ifneq (,$(call which,stdbuf))
   FLUSH ?= stdbuf -o0 -e0
 endif
+MKDIR ?= $(call which,mkdir)
 CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
+
+UMASK := 002
+UMASK_CURRENT := $(shell umask)
+ifneq (0,$(shell echo "$$(($(UMASK)<$(patsubst $(UMASK)%,$(UMASK),$(UMASK_CURRENT))))"))
+  $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
+  MKDIR += -m $(shell echo "$$((777-$(UMASK)))")
+endif
 
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 := $(call which,python3)
@@ -2499,7 +2507,6 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
-  RUNGCOV RUNXCOV CODECOV UPLOAD POSTPROC \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
@@ -2512,12 +2519,12 @@ VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   /$(HOMEDIR),$(if $(HOMEDIR),/$$HOME),$(patsubst $(HOMEDIR)%,$(if $(HOMEDIR),$$HOME%),$(filter-out \
   $(EXCLUDE_VALUE),$($V))))))))?)
 DIRSTATE ?= .
-PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
+PRESTATE := $(shell echo '$(VALSTATE)' | UMASK=$(UMASK) $(DEPDIR)/.state.sh $(DIRSTATE))
 
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
 %/.make:
-	@mkdir -p $(call qdir,$@) && touch $@
+	@$(MKDIR) -p $(call qdir,$@) && touch $@
 
 .make:
 	@-touch $@

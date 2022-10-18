@@ -1599,7 +1599,8 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_SSE3;
     }
     else if (arch == libxsmm_stristr(arch, "x86") || arch == libxsmm_stristr(arch, "x86_64")
-          || arch == libxsmm_stristr(arch, "x64") || arch == libxsmm_stristr(arch, "sse2"))
+          || arch == libxsmm_stristr(arch, "x64") || arch == libxsmm_stristr(arch, "sse2")
+          || arch == libxsmm_stristr(arch, "sse"))
     {
       target_archid = LIBXSMM_X86_GENERIC;
     }

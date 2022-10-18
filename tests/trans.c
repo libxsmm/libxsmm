@@ -11,7 +11,19 @@
 #include <libxsmm.h>
 
 #if !defined(ELEM_TYPE)
-# define ELEM_TYPE double
+# define ELEM_TYPE float
+#endif
+#if !defined(ITRANS) && 1
+# define ITRANS
+#endif
+
+#if !defined(PRINT) && (defined(_DEBUG) || 0)
+# define PRINT
+#endif
+#if defined(PRINT)
+# define FPRINTF(STREAM, ...) do { fprintf(STREAM, __VA_ARGS__); } while(0)
+#else
+# define FPRINTF(STREAM, ...) do {} while(0)
 #endif
 
 
@@ -28,10 +40,13 @@ int main(void)
   const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 24, 32, 32, 64, 512,  64, 136, 3072 };
   const libxsmm_blasint batchsize = 13;
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
+  unsigned int ntotal = 0, njit = 0, nerrors = 0, before = 0;
+#if (0 != LIBXSMM_JIT)
+  /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEM_TYPE);
+#endif
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
   ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
   const size_t typesize = sizeof(ELEM_TYPE);
-  unsigned int nerrors = 0;
   int* batchidx = NULL;
   int test, fun;
 
@@ -66,38 +81,67 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
-      memcpy(c, b, typesize * max_size_b);
+      memcpy(c, b, typesize * max_size_b); /* prepare */
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
       nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
+      memcpy(b, c, typesize * max_size_b); /* restore */
+      if (before != nerrors) {
+        FPRINTF(stderr, "ERROR (libxsmm_otrans): %ix%i-kernel with ldi=%i ldo=%i failed!\n",
+          m[test], n[test], ldi[test], ldo[test]);
+        before = nerrors;
+      }
+      ++ntotal;
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid() &&
-          LIBXSMM_X86_ALLFEAT >= libxsmm_get_target_archid()
-        && (LIBXSMM_DATATYPE_F64 == LIBXSMM_DATATYPE(ELEM_TYPE) ||
-            LIBXSMM_DATATYPE_F32 == LIBXSMM_DATATYPE(ELEM_TYPE)))
+      if (1 /*(LIBXSMM_DATATYPE_F64 == elemtype || LIBXSMM_DATATYPE_F32 == elemtype)*/
+        /*&& LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid()*/
+        /*&& LIBXSMM_X86_ALLFEAT >= libxsmm_get_target_archid()*/)
       {
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
-          m[test], n[test], ldi[test], ldo[test],
-          LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE), LIBXSMM_DATATYPE(ELEM_TYPE) );
+          m[test], n[test], ldi[test], ldo[test], elemtype, elemtype, elemtype);
         const libxsmm_meltwfunction_unary kernel = libxsmm_dispatch_meltw_unary_v2(
-          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
-        if (NULL == kernel) {
-# if defined(_DEBUG)
-          fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
-# endif
+          LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape,
+          LIBXSMM_MELTW_FLAG_UNARY_NONE);
+        if (NULL != kernel) {
+          libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+          unary_param.in.primary = (void*)a;
+          unary_param.out.primary = (void*)b;
+          memcpy(c, b, typesize * max_size_b); /* prepare */
+          kernel(&unary_param);
+          nerrors += validate(a, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
+          memcpy(b, c, typesize * max_size_b); /* restore */
+          if (before != nerrors) {
+            FPRINTF(stderr, "ERROR (meltw_unary): %ix%i-kernel with ldi=%i ldo=%i failed!\n",
+              m[test], n[test], ldi[test], ldo[test]);
+            before = nerrors;
+          }
+          ++njit;
+        }
+        else {
+          FPRINTF(stderr, "ERROR (meltw_unary): %ix%i-kernel with ldi=%i ldo=%i not generated!\n",
+            m[test], n[test], ldi[test], ldo[test]);
           ++nerrors;
         }
+        ++ntotal;
       }
 #endif
       if (0 == fun) {
-        memcpy(c, b, typesize * max_size_b);
+        memcpy(c, b, typesize * max_size_b); /* prepare */
         itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
         nerrors += validate(c, b, c, max_size_b, m[test], n[test], ldi[test], ldo[test]);
+        memcpy(b, c, typesize * max_size_b); /* restore */
+        if (before != nerrors) {
+          FPRINTF(stderr, "ERROR (libxsmm_itrans): %ix%i-kernel with ldi=%i ldo=%i failed!\n",
+            m[test], n[test], ldi[test], ldo[test]);
+          before = nerrors;
+        }
+        ++ntotal;
       }
     }
   }
 
+#if defined(ITRANS)
   for (test = start; test < ntests; ++test) {
-    memcpy(c, b, typesize * max_size_b * batchsize);
+    memcpy(c, b, typesize * max_size_b * batchsize); /* prepare */
     libxsmm_itrans_batch(b, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test],
       0/*index_base*/, sizeof(int)/*index_stride*/, batchidx, batchsize,
       0/*tid*/, 1/*ntasks*/);
@@ -105,8 +149,16 @@ int main(void)
       const size_t stride = (size_t)i * max_size_b;
       nerrors += validate(c + stride, b + stride, c + stride,
         max_size_b, m[test], n[test], ldi[test], ldo[test]);
+      if (before != nerrors) {
+        FPRINTF(stderr, "ERROR (libxsmm_itrans_batch): %ix%i-kernel with ldi=%i ldo=%i failed!\n",
+          m[test], n[test], ldi[test], ldo[test]);
+        before = nerrors;
+      }
+      ++ntotal;
     }
+    memcpy(b, c, typesize* max_size_b* batchsize); /* restore */
   }
+#endif
 
   libxsmm_free(batchidx);
   libxsmm_free(a);
@@ -117,9 +169,8 @@ int main(void)
     return EXIT_SUCCESS;
   }
   else {
-# if defined(_DEBUG)
-    fprintf(stderr, "errors=%u\n", nerrors);
-# endif
+    FPRINTF(stderr, "total=%u jitted=%u errors=%u (%i%%)\n",
+      ntotal, njit, nerrors, (int)LIBXSMM_ROUND(100.0 * nerrors / ntotal));
     return EXIT_FAILURE;
   }
 }

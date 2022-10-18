@@ -12,6 +12,12 @@
 # shellcheck disable=SC1090,SC2129,SC2207
 set -o pipefail
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+# TODO: map to CI-provider (abstract environment)
+source "${HERE}/../.env/buildkite.env" ""
+
+MKTEMP=${HERE}/../.mktmp.sh
+MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
 # flush asynchronous NFS mount
 SYNC=$(command -v sync)
@@ -24,21 +30,17 @@ if [ ! "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-# TODO: map to CI-provider (abstract environment)
-source "${HERE}/../.env/buildkite.env" ""
-#source "${HERE}/../.env/travis.env" ""
-
-MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
-UMASK=007
 
-if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
+if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
 
+  if [ ! "${UMASK}" ]; then UMASK=002; fi
+  #PERMD=$((777-UMASK))
+  #MKDIR="${MKDIR} -m ${PERMD}"
   # ensure proper permissions
   umask ${UMASK}
 
@@ -103,6 +105,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     fi
   fi
   export PARTITIONS
+  read -ra ARRAY <<<"${PARTITIONS}"
+  NPARTITIONS=${#ARRAY[@]}
 
   # setup CONFIGS (multiple configurations)
   if [ ! "${CONFIGS}" ]; then
@@ -115,6 +119,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     # singular CONFIG replaces set of CONFIGS
     CONFIGS=${CONFIG}
   fi
+  read -ra ARRAY <<<"${CONFIGS}"
+  NCONFIGS=${#ARRAY[@]}
+
   # setup ENVS (multiple environments)
   if [ ! "${ENVS}" ]; then
     if [ "${ENV}" ]; then
@@ -123,6 +130,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       ENVS=none
     fi
   fi
+  read -ra ARRAY <<<"${ENVS}"
+  NENVS=${#ARRAY[@]}
 
   # select test-set ("travis" by default)
   if [ ! "${TESTSET}" ]; then
@@ -193,8 +202,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   declare -px >"${ENVFILE}"
 
   RESULT=0
-  # control log
-  echo && echo "^^^ +++"
   while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -251,8 +258,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     else
       TOUCHFILE=${LIMITFILE}
     fi
-    for PARTITION in ${PARTITIONS}; do
-    for CONFIG in ${CONFIGS}; do
+    COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
+    COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
     if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
@@ -271,7 +278,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         CONFIGFILE=""
       fi
     fi
-    for ENV in ${ENVS}; do
+    COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
         ENVSTR=${ENV}
@@ -286,12 +293,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         | tr "[:lower:]" "[:upper:]" | tr -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr "[:upper:]" "[:lower:]")" ]; then
         if [ "${HEADER}" ]; then
-          echo "+++ TEST ${TESTID} (${HEADER})"
+          echo "--- TEST ${TESTID} (${HEADER})"
         else
-          echo "+++ TEST ${TESTID}"
+          echo "--- TEST ${TESTID}"
         fi
       else
-        echo "+++ TEST ${HEADER}"
+        echo "--- TEST ${HEADER}"
       fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
@@ -306,7 +313,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
-          mkdir -p "${REPOROOT}/licenses"
+          ${MKDIR} -p "${REPOROOT}/licenses"
           cp -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u "${LICSDIR}"/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
@@ -337,7 +344,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
-          # control log
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
@@ -388,10 +394,23 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
+        if [ ! "${LOGFILE}" ]; then LOGFILE=.test-${LABEL}.log; fi
+        LOGPATH=$(dirname "${LOGFILE}")
+        LOGBASE=$(basename "${LOGFILE}" .log)
+        if [ "1" != "${NPARTITIONS}" ]; then
+          LOGBASE=${LOGBASE}-${PARTITION}
+        fi
+        if [ "1" != "${NCONFIGS}" ]; then
+          LOGBASE=${LOGBASE}-${COUNT_CFG}
+        fi
+        if [ "1" != "${NENVS}" ]; then
+          LOGBASE=${LOGBASE}-${COUNT_ENV}
+        fi
+        LOGFILE=${LOGPATH}/${LOGBASE}.log
         if [ -t 0 ]; then
-          eval "${COMMAND} 2>&1 | tee .test-${LABEL}.log"
+          eval "${COMMAND} 2>&1 | tee ${LOGFILE}"
         else
-          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee .test-${LABEL}.log"
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOGFILE}"
         fi
       else
         eval "${COMMAND}"
@@ -407,9 +426,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         fi
         break 4
       fi
-    done # ENVS
-    done # CONFIGS
-    done # PARTITIONS
+    COUNT_ENV=$((COUNT_ENV+1)); done # ENVS
+    COUNT_CFG=$((COUNT_CFG+1)); done # CONFIGS
+    COUNT_PRT=$((COUNT_PRT+1)); done # PARTITIONS
     if [ "${TOUCHFILE}" ]; then
       echo "${JOBID}" >"${TOUCHFILE}"
       TOUCHFILE=""
@@ -432,17 +451,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
   if [ "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
     rm "${ENVFILE}"
-  fi
-
-  # control log
-  if [ "0" = "${RESULT}" ]; then
-    echo "+++ ------------------------------------------------------------------------------"
-    echo "SUCCESS"
-  else
-    echo "^^^ +++"
-    echo "+++ ------------------------------------------------------------------------------"
-    echo "FAILURE"
-    echo
   fi
 
   # override result code (alternative outcome)

@@ -90,8 +90,8 @@ if [ "$(command -v datamash)" ]; then
   echo "Performance"
   echo "------------------------------------------------------------------"
   if [ "$(datamash geomean 2>&1 | grep invalid)" ]; then
-    cat performance.csv | datamash --headers -t";" mean 5-8
+    cat performance.csv | datamash --headers -t"${SEP}" mean 5-8
   else
-    cat performance.csv | datamash --headers -t";" geomean 5-8
+    cat performance.csv | datamash --headers -t"${SEP}" geomean 5-8
   fi
 fi
