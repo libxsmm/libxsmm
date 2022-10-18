@@ -103,6 +103,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     fi
   fi
   export PARTITIONS
+  read -ra ARRAY <<<"${PARTITIONS}"
+  NPARTITIONS=${#ARRAY[@]}
 
   # setup CONFIGS (multiple configurations)
   if [ ! "${CONFIGS}" ]; then
@@ -115,6 +117,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     # singular CONFIG replaces set of CONFIGS
     CONFIGS=${CONFIG}
   fi
+  read -ra ARRAY <<<"${CONFIGS}"
+  NCONFIGS=${#ARRAY[@]}
+
   # setup ENVS (multiple environments)
   if [ ! "${ENVS}" ]; then
     if [ "${ENV}" ]; then
@@ -123,6 +128,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       ENVS=none
     fi
   fi
+  read -ra ARRAY <<<"${ENVS}"
+  NENVS=${#ARRAY[@]}
 
   # select test-set ("travis" by default)
   if [ ! "${TESTSET}" ]; then
@@ -251,8 +258,8 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
     else
       TOUCHFILE=${LIMITFILE}
     fi
-    for PARTITION in ${PARTITIONS}; do
-    for CONFIG in ${CONFIGS}; do
+    COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
+    COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
     if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
@@ -271,7 +278,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         CONFIGFILE=""
       fi
     fi
-    for ENV in ${ENVS}; do
+    COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
         ENVSTR=${ENV}
@@ -388,10 +395,23 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
+        if [ ! "${LOGFILE}" ]; then LOGFILE=.test-${LABEL}.log; fi
+        LOGPATH=$(dirname "${LOGFILE}")
+        LOGBASE=$(basename "${LOGFILE}" .log)
+        if [ "1" != "${NPARTITIONS}" ]; then
+          LOGBASE=${LOGBASE}-${PARTITION}
+        fi
+        if [ "1" != "${NCONFIGS}" ]; then
+          LOGBASE=${LOGBASE}-${COUNT_CFG}
+        fi
+        if [ "1" != "${NENVS}" ]; then
+          LOGBASE=${LOGBASE}-${COUNT_ENV}
+        fi
+        LOGFILE=${LOGPATH}/${LOGBASE}.log
         if [ -t 0 ]; then
-          eval "${COMMAND} 2>&1 | tee .test-${LABEL}.log"
+          eval "${COMMAND} 2>&1 | tee ${LOGFILE}"
         else
-          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee .test-${LABEL}.log"
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOGFILE}"
         fi
       else
         eval "${COMMAND}"
@@ -407,9 +427,9 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         fi
         break 4
       fi
-    done # ENVS
-    done # CONFIGS
-    done # PARTITIONS
+    COUNT_ENV=$((COUNT_ENV+1)); done # ENVS
+    COUNT_CFG=$((COUNT_CFG+1)); done # CONFIGS
+    COUNT_PRT=$((COUNT_PRT+1)); done # PARTITIONS
     if [ "${TOUCHFILE}" ]; then
       echo "${JOBID}" >"${TOUCHFILE}"
       TOUCHFILE=""
