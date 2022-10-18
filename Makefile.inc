@@ -99,7 +99,7 @@ MAKE ?= make
 
 UMASK := 002
 UMASK_CURRENT := $(shell umask)
-ifneq ($(UMASK),$(patsubst $(UMASK)%,$(UMASK),$(UMASK_CURRENT)))
+ifneq (0,$(shell echo "$$(($(UMASK)<$(patsubst $(UMASK)%,$(UMASK),$(UMASK_CURRENT))))"))
   $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
   MKDIR += -m $(shell echo "$$((777-$(UMASK)))")
 endif
