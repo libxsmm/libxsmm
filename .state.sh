@@ -16,6 +16,13 @@ UNIQ=$(command -v uniq)
 SED=$(command -v sed)
 TR=$(command -v tr)
 
+if [ ! "${UMASK}" ]; then
+  UMASK=0022
+fi
+if [ "${MKDIR}" ]; then
+  MKDIR="${MKDIR} --mode=${UMASK}"
+fi
+
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
   if [ "$1" ]; then
     STATEFILE=$1/.state

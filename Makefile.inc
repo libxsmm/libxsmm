@@ -92,9 +92,15 @@ endif
 ifneq (,$(call which,stdbuf))
   FLUSH ?= stdbuf -o0 -e0
 endif
+MKDIR ?= $(call which,mkdir)
 CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
+
+UMASK := 0022
+ifneq (,$(strip $(MKDIR)))
+  MKDIR += --mode=$(UMASK)
+endif
 
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 := $(call which,python3)
@@ -2512,12 +2518,12 @@ VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   /$(HOMEDIR),$(if $(HOMEDIR),/$$HOME),$(patsubst $(HOMEDIR)%,$(if $(HOMEDIR),$$HOME%),$(filter-out \
   $(EXCLUDE_VALUE),$($V))))))))?)
 DIRSTATE ?= .
-PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
+PRESTATE := $(shell echo '$(VALSTATE)' | UMASK=$(UMASK) $(DEPDIR)/.state.sh $(DIRSTATE))
 
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
 %/.make:
-	@mkdir -p $(call qdir,$@) && touch $@
+	@$(MKDIR) -p $(call qdir,$@) && touch $@
 
 .make:
 	@-touch $@

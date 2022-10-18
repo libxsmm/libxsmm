@@ -12,6 +12,12 @@
 # shellcheck disable=SC1090,SC2129,SC2207
 set -o pipefail
 
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+# TODO: map to CI-provider (abstract environment)
+source "${HERE}/../.env/buildkite.env" ""
+
+MKTEMP=${HERE}/../.mktmp.sh
+MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
 # flush asynchronous NFS mount
 SYNC=$(command -v sync)
@@ -24,17 +30,17 @@ if [ ! "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-# TODO: map to CI-provider (abstract environment)
-source "${HERE}/../.env/buildkite.env" ""
-#source "${HERE}/../.env/travis.env" ""
-
-MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
-UMASK=0022
 
-if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
+if [ ! "${UMASK}" ]; then
+  UMASK=0022
+fi
+if [ "${MKDIR}" ]; then
+  MKDIR="${MKDIR} --mode=${UMASK}"
+fi
+
+if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
@@ -311,7 +317,7 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         # make execution environment available
         if [ ! "${INTEL_LICENSE_FILE}" ]; then
           LICSDIR=$(command -v icc | ${SED} "s/\(\/.*intel\)\/.*$/\1/")
-          mkdir -p "${REPOROOT}/licenses"
+          ${MKDIR} -p "${REPOROOT}/licenses"
           cp -u "${HOME}"/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u "${LICSDIR}"/licenses/* "${REPOROOT}/licenses" 2>/dev/null
           cp -u /opt/intel/licenses/* "${REPOROOT}/licenses" 2>/dev/null
