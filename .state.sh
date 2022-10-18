@@ -16,15 +16,13 @@ UNIQ=$(command -v uniq)
 SED=$(command -v sed)
 TR=$(command -v tr)
 
-if [ ! "${UMASK}" ]; then
-  UMASK=0022
-fi
-PERMD=$((777-UMASK))
-if [ "${MKDIR}" ]; then
-  MKDIR="${MKDIR} -m ${PERMD}"
-fi
-
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
+  if [ ! "${UMASK}" ]; then UMASK=0022; fi
+  #PERMD=$((777-UMASK))
+  #MKDIR="${MKDIR} -m ${PERMD}"
+  # ensure proper permissions
+  umask ${UMASK}
+
   if [ "$1" ]; then
     STATEFILE=$1/.state
     ${MKDIR} -p "$1"

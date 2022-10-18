@@ -33,19 +33,14 @@ fi
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
-if [ ! "${UMASK}" ]; then
-  UMASK=002
-fi
-PERMD=$((777-UMASK))
-if [ "${MKDIR}" ]; then
-  MKDIR="${MKDIR} -m ${PERMD}"
-fi
-
 if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
 
+  if [ ! "${UMASK}" ]; then UMASK=002; fi
+  #PERMD=$((777-UMASK))
+  #MKDIR="${MKDIR} -m ${PERMD}"
   # ensure proper permissions
   umask ${UMASK}
 

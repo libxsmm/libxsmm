@@ -98,9 +98,10 @@ MV ?= $(call which,mv)
 MAKE ?= make
 
 UMASK := 002
-PERMD := $(shell echo "$$((777-$(UMASK)))")
-ifneq (,$(strip $(MKDIR)))
-  MKDIR += -m $(PERMD)
+UMASK_CURRENT := $(shell umask)
+ifneq ($(UMASK),$(patsubst $(UMASK)%,$(UMASK),$(UMASK_CURRENT)))
+  $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
+  MKDIR += -m $(shell echo "$$((777-$(UMASK)))")
 endif
 
 # Python interpreter per PYTHON=/path/to/python
