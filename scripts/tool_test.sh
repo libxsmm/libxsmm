@@ -32,7 +32,7 @@ source "${HERE}/../.env/buildkite.env" ""
 MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
-UMASK=007
+UMASK=0022
 
 if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   DIRPAT="s/\//\\\\\//g"
@@ -200,8 +200,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   declare -px >"${ENVFILE}"
 
   RESULT=0
-  # control log
-  echo && echo "^^^ +++"
   while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -293,12 +291,12 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
         | tr "[:lower:]" "[:upper:]" | tr -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr "[:upper:]" "[:lower:]")" ]; then
         if [ "${HEADER}" ]; then
-          echo "+++ TEST ${TESTID} (${HEADER})"
+          echo "--- TEST ${TESTID} (${HEADER})"
         else
-          echo "+++ TEST ${TESTID}"
+          echo "--- TEST ${TESTID}"
         fi
       else
-        echo "+++ TEST ${HEADER}"
+        echo "--- TEST ${HEADER}"
       fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
@@ -344,7 +342,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
           echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
-          # control log
           echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
@@ -452,17 +449,6 @@ if [ "${MKTEMP}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
   fi
   if [ "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
     rm "${ENVFILE}"
-  fi
-
-  # control log
-  if [ "0" = "${RESULT}" ]; then
-    echo "+++ ------------------------------------------------------------------------------"
-    echo "SUCCESS"
-  else
-    echo "^^^ +++"
-    echo "+++ ------------------------------------------------------------------------------"
-    echo "FAILURE"
-    echo
   fi
 
   # override result code (alternative outcome)
