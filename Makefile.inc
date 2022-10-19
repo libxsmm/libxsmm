@@ -233,7 +233,7 @@ ifeq (d,$(filter d,$(MAKEFLAGS)))
 endif
 
 ifneq (,$(UMASK))
-  UMASK_CURRENT := $(shell umask | sed "s/\($$(echo "$(UMASK)" | sed "s/./[0-9]/g")\).*/\1/")
+  UMASK_CURRENT := $(shell umask)
   ifneq (0,$(shell echo "$$(($(UMASK)<$(UMASK_CURRENT)))"))
     $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
   endif
