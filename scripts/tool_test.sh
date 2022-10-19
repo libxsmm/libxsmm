@@ -388,6 +388,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/obj\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/obj\"); echo \"  OBJ: \${STAT}\"; fi" >>"${TESTSCRIPT}"
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
+        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
+          echo "find ${REPOREMOTE} -mindepth 1 -type d -exec chmod u+rwx,g+rwx,o=rx {} \;" >>"${TESTSCRIPT}"
+          echo "find ${REPOREMOTE}             -type f -exec chmod u+rw,g+rw,o+r {} \;" >>"${TESTSCRIPT}"
+        fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
       elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
@@ -423,6 +427,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       fi
       # capture test status
       RESULT=$?
+
+      if [ ! "${TESTSCRIPT}" ] || [ ! -e "${TESTSCRIPT}" ]; then
+        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
+          find ${REPOROOT} -mindepth 1 -type d -exec chmod u+rwx,g+rwx,o=rx {} \;
+          find ${REPOROOT}             -type f -exec chmod u+rw,g+rw,o+r {} \;
+        fi
+      fi
 
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
