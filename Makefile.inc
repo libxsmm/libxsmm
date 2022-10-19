@@ -237,8 +237,8 @@ ifneq (,$(UMASK))
   ifneq (0,$(shell echo "$$(($(UMASK)<$(UMASK_CURRENT)))"))
     $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
   endif
-  #SHELL := $(shell printf "$(CHAR_HASH)!$(SHELL)\numask $(UMASK)\n$(SHELL) \"\$$$\@\"\n" \
-  #        >$(DEPDIR)/.shell.sh && chmod +x $(DEPDIR)/.shell.sh && echo "$(DEPDIR)/.shell.sh")
+  SHELL := $(shell printf "$(CHAR_HASH)!$(SHELL)\numask $(UMASK)\n$(SHELL) \"\$$$\@\"\n" \
+          >$(DEPDIR)/.shell.sh && chmod +x $(DEPDIR)/.shell.sh && echo "$(DEPDIR)/.shell.sh")
 endif
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
