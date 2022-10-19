@@ -222,6 +222,11 @@ LIBFIND ?= /usr/local/lib
 MKTEMP := $(DEPDIR)/.mktmp.sh
 FLOCK := $(DEPDIR)/.flock.sh
 
+# Special characters
+CHAR_OPEN := (
+CHAR_CLOSE := )
+CHAR_HASH := \#
+
 # make -d triggers Shell's verbose output
 ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL := $(SHELL) -xv
@@ -232,7 +237,8 @@ ifneq (,$(UMASK))
   ifneq (0,$(shell echo "$$(($(UMASK)<$(UMASK_CURRENT)))"))
     $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
   endif
-  SHELL := $(shell printf "#!$(SHELL)\numask $(UMASK)\n$(SHELL) \"\$$$\@\"\n" >$(DEPDIR)/.shell.sh && echo "$(DEPDIR)/.shell.sh")
+  #SHELL := $(shell printf "$(CHAR_HASH)!$(SHELL)\numask $(UMASK)\n$(SHELL) \"\$$$\@\"\n" \
+  #        >$(DEPDIR)/.shell.sh && chmod +x $(DEPDIR)/.shell.sh && echo "$(DEPDIR)/.shell.sh")
 endif
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
@@ -275,9 +281,6 @@ SPACES ?= 0
 REVERSION0 := [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*
 REVERSION1 := s/..* \($(REVERSION0)\)[ \S]*.*/\1/
 REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
-CHAR_OPEN := (
-CHAR_CLOSE := )
-CHAR_HASH := \#
 
 ifneq (0,$(SPACES))
   unquote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed -e 's/^[" ][" ]*//' -e 's/[" ][" ]*$$//')
