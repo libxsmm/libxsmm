@@ -28,6 +28,7 @@ site
 bin
 tmp
 obj
+.shell.sh
 .couscous
 .vscode
 .state

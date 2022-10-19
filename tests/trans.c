@@ -40,8 +40,14 @@ int main(void)
   const libxsmm_blasint ldo[] = { 1, 1, 7, 8, 8, 2, 3, 1, 1, 1, 4, 5, 13,  5, 13, 16, 22, 24, 32, 32, 64, 512,  64, 136, 3072 };
   const libxsmm_blasint batchsize = 13;
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
-  unsigned int ntotal = 0, njit = 0, nerrors = 0, before = 0;
+  unsigned int nerrors = 0, before = 0;
+#if defined(PRINT)
+  unsigned int ntotal = 0;
+#endif
 #if (0 != LIBXSMM_JIT)
+# if defined(PRINT)
+  unsigned int njit = 0;
+# endif
   /*const*/ int elemtype = LIBXSMM_DATATYPE(ELEM_TYPE);
 #endif
   libxsmm_blasint max_size_a = 0, max_size_b = 0, i;
@@ -90,7 +96,9 @@ int main(void)
           m[test], n[test], ldi[test], ldo[test]);
         before = nerrors;
       }
+#if defined(PRINT)
       ++ntotal;
+#endif
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
       if (1 /*(LIBXSMM_DATATYPE_F64 == elemtype || LIBXSMM_DATATYPE_F32 == elemtype)*/
         /*&& LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid()*/
@@ -114,14 +122,18 @@ int main(void)
               m[test], n[test], ldi[test], ldo[test]);
             before = nerrors;
           }
+# if defined(PRINT)
           ++njit;
+# endif
         }
         else {
           FPRINTF(stderr, "ERROR (meltw_unary): %ix%i-kernel with ldi=%i ldo=%i not generated!\n",
             m[test], n[test], ldi[test], ldo[test]);
           ++nerrors;
         }
+# if defined(PRINT)
         ++ntotal;
+# endif
       }
 #endif
       if (0 == fun) {
@@ -134,7 +146,9 @@ int main(void)
             m[test], n[test], ldi[test], ldo[test]);
           before = nerrors;
         }
+#if defined(PRINT)
         ++ntotal;
+#endif
       }
     }
   }
@@ -154,7 +168,9 @@ int main(void)
           m[test], n[test], ldi[test], ldo[test]);
         before = nerrors;
       }
+# if defined(PRINT)
       ++ntotal;
+# endif
     }
     memcpy(b, c, typesize* max_size_b* batchsize); /* restore */
   }

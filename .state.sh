@@ -17,12 +17,11 @@ SED=$(command -v sed)
 TR=$(command -v tr)
 
 if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}" ]; then
-  if [ ! "${UMASK}" ]; then UMASK=0022; fi
-  #PERMD=$((777-UMASK))
-  #MKDIR="${MKDIR} -m ${PERMD}"
   # ensure proper permissions
-  umask ${UMASK}
-
+  if [ "${UMASK}" ]; then
+    UMASK_CMD="umask ${UMASK};"
+    eval "${UMASK_CMD}"
+  fi
   if [ "$1" ]; then
     STATEFILE=$1/.state
     ${MKDIR} -p "$1"
@@ -44,7 +43,7 @@ if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}"
     RESULT=$?
     if [ "0" != "${RESULT}" ] || [ "${STATE_DIFF}" ]; then
       if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-        printf "%s\n" "${STATE}" > "${STATEFILE}"
+        printf "%s\n" "${STATE}" >"${STATEFILE}"
       fi
       echo "$0 ${STATE_DIFF}"
       # only needed to execute body of .state-rule
@@ -52,7 +51,7 @@ if [ "${MKDIR}" ] && [ "${SED}" ] && [ "${TR}" ] && [ "${DIFF}" ] && [ "${UNIQ}"
     fi
   else # difference must not be determined
     if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-      printf "%s\n" "${STATE}" > "${STATEFILE}"
+      printf "%s\n" "${STATE}" >"${STATEFILE}"
     fi
     echo "$0"
     # only needed to execute body of .state-rule

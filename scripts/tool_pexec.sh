@@ -23,9 +23,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   LG_DEFAULT="./${NAME}.log"
   QT_DEFAULT=0; SP_DEFAULT=2
   CONSUMED=0
-  if [ ! "${UMASK}" ]; then UMASK=002; fi
   # ensure proper permissions
-  umask ${UMASK}
+  if [ "${UMASK}" ]; then
+    UMASK_CMD="umask ${UMASK};"
+    eval "${UMASK_CMD}"
+  fi
   while test $# -gt 0; do
     case "$1" in
     -h|--help)
@@ -123,7 +125,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   else
     LOG_OUTER=${LOG}
   fi
-  PEXEC_SCRIPT="set -eo pipefail; umask ${UMASK}; \
+  PEXEC_SCRIPT="set -eo pipefail; ${UMASK_CMD} \
     _PEXEC_MAKE_PRETTY() { \
       local HERE PRE CMD ARGS WORDS INPUT=\$*; \
       HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
