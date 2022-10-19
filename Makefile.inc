@@ -56,17 +56,6 @@ else
   which = $(shell which $(firstword $1) 2>/dev/null)
 endif
 
-ifeq (d,$(filter d,$(MAKEFLAGS)))
-  SHOPT := -xv
-endif
-
-BASH := $(call which,bash)
-ifneq (,$(BASH))
-  SHELL := $(BASH) $(SHOPT)
-else
-  SHELL := $(SHELL) $(SHOPT)
-endif
-
 # ensure a number or instead return zero (by default) or 2nd argument (if given)
 qnum = $(shell echo "$1" | grep "^-*[0-9][0-9]*$$" 2>/dev/null || echo "$(if $2,$2,0)")
 
@@ -97,13 +86,6 @@ CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
 
-UMASK := 002
-UMASK_CURRENT := $(shell umask | sed "s/\([0-9][0-9][0-9]\).*/\1/")
-ifneq (0,$(shell echo "$$(($(UMASK)<$(UMASK_CURRENT)))"))
-  $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
-  MKDIR += -m $(shell echo "$$((777-$(UMASK)))")
-endif
-
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 := $(call which,python3)
 # Python3 by default
@@ -111,7 +93,6 @@ ifneq (,$(PYTHON3))
   PYTHON := $(PYTHON3)
 else ifneq (,$(call which,python))
   ifneq (Windows_NT,$(UNAME))
-    #SHELL := $(ENVBIN) PATH=$(MAKEINC):$(PATH) $(SHELL)
     PYTHON3 := $(shell ln -s $(call which,python) $(MAKEINC)/python3 2>/dev/null)
     PYTHON := $(MAKEINC)/python3
   else
@@ -237,9 +218,22 @@ endif
 # Additional library search paths
 LIBFIND ?= /usr/local/lib
 
-# Internal utilities
+# Utilities
 MKTEMP := $(DEPDIR)/.mktmp.sh
 FLOCK := $(DEPDIR)/.flock.sh
+
+# make -d triggers Shell's verbose output
+ifeq (d,$(filter d,$(MAKEFLAGS)))
+  SHELL := $(SHELL) -xv
+endif
+
+ifneq (,$(UMASK))
+  UMASK_CURRENT := $(shell umask | sed "s/\($$(echo "$(UMASK)" | sed "s/./[0-9]/g")\).*/\1/")
+  ifneq (0,$(shell echo "$$(($(UMASK)<$(UMASK_CURRENT)))"))
+    $(info WARNING: umask $(UMASK_CURRENT) does not match requirement ($(UMASK)))
+  endif
+  SHELL := $(shell printf "#!$(SHELL)\numask $(UMASK)\n$(SHELL) \"\$$$\@\"\n" >$(DEPDIR)/.shell.sh && echo "$(DEPDIR)/.shell.sh")
+endif
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
@@ -2519,7 +2513,7 @@ VALSTATE := $(foreach V,$(STATE),$V=$(subst \
   /$(HOMEDIR),$(if $(HOMEDIR),/$$HOME),$(patsubst $(HOMEDIR)%,$(if $(HOMEDIR),$$HOME%),$(filter-out \
   $(EXCLUDE_VALUE),$($V))))))))?)
 DIRSTATE ?= .
-PRESTATE := $(shell echo '$(VALSTATE)' | UMASK=$(UMASK) $(DEPDIR)/.state.sh $(DIRSTATE))
+PRESTATE := $(shell echo '$(VALSTATE)' | $(DEPDIR)/.state.sh $(DIRSTATE))
 
 $(DIRSTATE)/.state: $(firstword $(PRESTATE))
 
