@@ -381,6 +381,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         else
           echo "${TEST}" >>"${TESTSCRIPT}"
         fi
+        # debug test environment
+        if [ "${DEBUG_TEST}" ] && [ "0" != "${DEBUG_TEST}" ]; then
+          echo "echo \"DEBUG: \$(hostname)\"" >>"${TESTSCRIPT}"
+          echo "if [ -d \"${REPOREMOTE}/bin\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/bin\"); echo \"  BIN: \${STAT}\"; fi" >>"${TESTSCRIPT}"
+          echo "if [ -d \"${REPOREMOTE}/obj\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/obj\"); echo \"  OBJ: \${STAT}\"; fi" >>"${TESTSCRIPT}"
+          echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
+        fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
       elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
