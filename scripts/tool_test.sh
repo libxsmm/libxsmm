@@ -389,7 +389,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "chmod -R g+u,o=u-w \"${REPOREMOTE}\"" >>"${TESTSCRIPT}"
+          echo "chmod -R --quiet g+u,o=u-w \"${REPOREMOTE}\" || true" >>"${TESTSCRIPT}"
         fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
@@ -429,7 +429,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
       if [ ! "${TESTSCRIPT}" ] || [ ! -e "${TESTSCRIPT}" ]; then
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          chmod -R g+u,o=u-w "${REPOROOT}"
+          chmod -R --quiet g+u,o=u-w "${REPOROOT}" || true
         fi
       fi
 
