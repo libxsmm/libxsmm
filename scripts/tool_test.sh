@@ -292,13 +292,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         | tr "[:lower:]" "[:upper:]" | tr -s " " "/")
       if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr "[:upper:]" "[:lower:]")" ]; then
         if [ "${HEADER}" ]; then
-          echo "--- TEST ${TESTID} (${HEADER})"
+          CAPTION="${TESTID} (${HEADER})"
         else
-          echo "--- TEST ${TESTID}"
+          CAPTION="${TESTID}"
         fi
       else
-        echo "--- TEST ${HEADER}"
+        CAPTION="${HEADER}"
       fi
+      echo "--- TEST ${CAPTION}"
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
@@ -343,7 +344,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
-          echo "echo \"--- RUN ${TESTID}\"" >>"${TESTSCRIPT}"
+          echo "echo \"--- RUN ${CAPTION}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
@@ -415,11 +416,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         if [ "1" != "${NENVS}" ]; then
           LOGBASE=${LOGBASE}-${COUNT_ENV}
         fi
-        LOGFILE=${LOGPATH}/${LOGBASE}.log
+        LOG=${LOGPATH}/${LOGBASE}.log
         if [ -t 0 ]; then
-          eval "${COMMAND} 2>&1 | tee ${LOGFILE}"
+          eval "${COMMAND} 2>&1 | tee ${LOG}"
         else
-          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOGFILE}"
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOG}"
         fi
       else
         eval "${COMMAND}"
