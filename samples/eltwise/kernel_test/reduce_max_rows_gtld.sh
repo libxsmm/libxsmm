@@ -2,6 +2,10 @@
 
 PREC_LIST="F32 BF16 F16";
 
+if [[ ${LIBXSMM_TARGET} == "aarch64" ]]; then
+    PREC_LIST="F32";
+fi
+
 if [[ ${LIBXSMM_TARGET} == "clx" ]]; then
     PREC_LIST="F32 BF16 F16 BF8 HF8";
 fi
