@@ -105,6 +105,28 @@ float fp32_binary_compute(float in0, float in1, float out, unsigned int op) {
 }
 
 LIBXSMM_INLINE
+double fp64_binary_compute(double in0, double in1, double out, unsigned int op) {
+  double res = out;
+
+  if ( op == ADD_OP) {
+    res = in0 + in1;
+  } else  if ( op == SUB_OP) {
+    res = in0 - in1;
+  } else if ( op == MUL_OP) {
+    res = in0 * in1;
+  } else if ( op == DIV_OP) {
+    res = in0 / in1;
+  } else if ( op == MULADD_OP) {
+    res += in0 * in1;
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
+  }
+
+  return res;
+}
+
+LIBXSMM_INLINE
 void set_opname(unsigned int op, char *opname) {
   if ( op == ADD_OP ) {
     sprintf(opname, "add");
@@ -234,6 +256,22 @@ void binary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libx
         } else {
           /* shouldn't happen */
         }
+      }
+    }
+  } else if ( dtype_comp == LIBXSMM_DATATYPE_F64 ) {
+    double in1_value = 0;
+    double in0_value = 0;
+    double out_value = 0;
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        const double* d_in0 = (const double*)in0;
+        const double* d_in1 = (const double*)in1;
+        double* d_out = (double*)out;
+        in0_value = d_in0[(j*ldi0) + i];
+        in1_value = d_in1[(j*ldi1) + i];
+        out_value = d_out[(j*ldo) + i];
+        out_value = fp64_binary_compute(in0_value, in1_value, out_value, op);
+        d_out[(j*ldo) + i] = out_value;
       }
     }
   } else {
@@ -443,6 +481,7 @@ int main( int argc, char* argv[] ) {
 
   if ( valid_op > 0 ) {
     if ( ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+         ( (dtype_in0 == LIBXSMM_DATATYPE_F64 ) && (dtype_in1 == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
          /* BF16 */
          ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in0 == LIBXSMM_DATATYPE_F32 ) && (dtype_in1 == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||

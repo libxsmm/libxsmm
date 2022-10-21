@@ -95,6 +95,33 @@ float gelu_inv(float x) {
 }
 
 LIBXSMM_INLINE
+double fp64_unary_compute(double in, unsigned int op) {
+  double res = 0;
+  if ( op == COPY_OP) {
+    res = in;
+  } else if ( op == NEGATE_OP) {
+    res = -1.0 * in;
+  } else if (op == X2_OP) {
+    res = in * in;
+  } else if (op == XOR_OP) {
+    res = 0;
+  } else if (op == SQRT_OP) {
+    res = sqrt(in);
+  } else if (op == INC_OP) {
+    res = in + 1.0;
+  } else if (op == RCP_OP) {
+    res = 1.0/in;
+  } else if (op == RCP_SQRT_OP) {
+    res = 1.0/sqrt(in);
+  } else {
+    printf("Invalid OP\n");
+    exit(-1);
+  }
+
+  return res;
+}
+
+LIBXSMM_INLINE
 float fp32_unary_compute(float in, unsigned int op) {
   float res = 0;
 
@@ -291,6 +318,18 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
         } else {
           /* shouldn't happen */
         }
+      }
+    }
+  } else if ( dtype_comp == LIBXSMM_DATATYPE_F64 ) {
+    for ( j = 0; j < N; ++j ) {
+      for ( i = 0; i < M; ++i ) {
+        double in_value = 0.0;
+        double out_value;
+        const double* d_in = (const double*)in;
+        double* d_out = (double*)out;
+        in_value = d_in[(j*ldi) + i];
+        out_value = fp64_unary_compute(in_value, op);
+        d_out[(j*ldo) + i] = out_value;
       }
     }
   } else {
@@ -526,7 +565,8 @@ int main( int argc, char* argv[] ) {
   }
 
   if ( op == COPY_OP ) {
-    if ( ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+    if ( ( (dtype_in == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
+         ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
@@ -551,7 +591,8 @@ int main( int argc, char* argv[] ) {
       exit(-1);
     }
   } else if ( valid_op > 0 ) {
-    if ( ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
+    if ( ( (dtype_in == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
+         ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
