@@ -1878,6 +1878,40 @@ void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                    
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrpd_avx( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2) {
+
+  if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
+    /* This should not happen  */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
+    return;
+  }
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VPERM2F128,
+                                           'y',
+                                           i_vec_inout, i_vec_inout, i_vec_tmp1, 0x1 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           instr,
+                                           'y',
+                                           i_vec_inout, i_vec_tmp1, i_vec_tmp2 );
+
+  libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code,
+                                           LIBXSMM_X86_INSTR_VSHUFPD,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp2, i_vec_tmp1, 0x1 );
+
+  libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
+                                           instr,
+                                           'y',
+                                           i_vec_tmp2, i_vec_tmp1, i_vec_inout );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                        io_generated_code,
     unsigned int                                   instr,
     const unsigned int                             i_vec_inout,
