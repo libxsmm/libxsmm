@@ -1625,12 +1625,12 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
     /* Calculate input mask in case we see m_masking */
     if (use_m_masking == 1) {
+      mask_reg = available_vregs-1;
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, (libxsmm_datatype)libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP));
+      available_vregs--;
       if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
         mask_reg_in = m % vlen;
       } else {
-        mask_reg = available_vregs-1;
-        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
-        available_vregs--;
         mask_reg_in = mask_reg;
       }
     }
