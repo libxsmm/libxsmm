@@ -1600,7 +1600,11 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
     if ((use_m_masking > 0) && ( flag_reduce_op_max > 0 )) {
       aux_vreg = available_vregs - 1;
       available_vregs--;
-      libxsmm_generator_load_vreg_minus_infinity(io_generated_code, 'y', LIBXSMM_X86_GP_REG_RAX, aux_vreg);
+      if (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) {
+        libxsmm_generator_load_vreg_minus_infinity_double(io_generated_code, vname_in, LIBXSMM_X86_GP_REG_RAX, aux_vreg);
+      } else {
+        libxsmm_generator_load_vreg_minus_infinity(io_generated_code, 'y', LIBXSMM_X86_GP_REG_RAX, aux_vreg);
+      }
     }
     if (reduce_on_output > 0) {
       tmp_vreg = available_vregs - 1;
@@ -1621,12 +1625,12 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
 
     /* Calculate input mask in case we see m_masking */
     if (use_m_masking == 1) {
-      mask_reg = available_vregs-1;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
-      available_vregs--;
       if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
         mask_reg_in = m % vlen;
       } else {
+        mask_reg = available_vregs-1;
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_reg, m % vlen, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
+        available_vregs--;
         mask_reg_in = mask_reg;
       }
     }
@@ -1663,7 +1667,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
         if ((use_m_masking == 1) && (im == (m_trips-1))) {
           libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                    LIBXSMM_X86_INSTR_VBLENDVPS,
+                    (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) ? LIBXSMM_X86_INSTR_VBLENDVPD : LIBXSMM_X86_INSTR_VBLENDVPS,
                     'y',
                     reg_sum,
                     aux_vreg,
@@ -1701,7 +1705,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
       /* If we have remainder, then we want to blend in -INF for the zero'ed out entries */
       if ( (flag_reduce_op_max > 0) && (im == m_trips-1) && (use_m_masking > 0)) {
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8(io_generated_code,
-                  LIBXSMM_X86_INSTR_VBLENDVPS,
+                  (LIBXSMM_DATATYPE_F64 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)) ? LIBXSMM_X86_INSTR_VBLENDVPD : LIBXSMM_X86_INSTR_VBLENDVPS,
                   'y',
                   cur_vreg,
                   aux_vreg,

@@ -489,6 +489,11 @@ void libxsmm_generator_load_vreg_minus_infinity(libxsmm_generated_code* io_gener
                                                    const unsigned int      i_vreg_minus_infinity);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_minus_infinity_double(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_minus_infinity);
+LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_dropout_avx_avx512( libxsmm_generated_code* io_generated_code,
                                                    const unsigned char     i_vname,
                                                    const unsigned int      i_gp_reg_tmp,
