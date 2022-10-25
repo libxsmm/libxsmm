@@ -20,19 +20,24 @@ SED=$(command -v sed)
 TR=$(command -v tr)
 RM=$(command -v rm)
 
-if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
+if [ "$1" ] && [ ! -e "$1" ]; then
+  KIND=$1
+  shift
+fi
+
+if [ "${TOOL_ENABLED}" ] && [ "${TOOL_ENABLED}" != "0" ]; then
   if [ "$1" ]    && [ "${BASENAME}" ] && [ "${TOOL}" ] && \
      [ "${TR}" ] && [ "${GREP}" ]     && [ "${SED}" ]  && \
      [ "${RM}" ];
   then
     HERE=$(cd "$(dirname "$0")" && pwd -P)
-    if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    if [ ! "${TRAVIS_BUILD_DIR}" ]; then
       export TRAVIS_BUILD_DIR=${HERE}/..
     fi
     if [ "${TESTID}" ]; then
       ID=${TESTID}
     fi
-    if [ "" = "${ID}" ]; then
+    if [ ! "${ID}" ]; then
       ID=${COVID}
     fi
     if [ "${ID}" ]; then
@@ -51,7 +56,7 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
       ${TOOL} -report problems -r ${DIR}/${ID} >${DIR}/${RPTNAME}.txt
       RESULT2=$?
 
-      if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
+      if [ ! "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
         FN=$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt | \
              ${SED} -e 's/..* Function \(..*\):..*/\1/')
         XFLT=$(echo "${TOOL_XFILTER}" | ${TR} -s " " | ${TR} " " "|")
@@ -59,7 +64,7 @@ if [ "${TOOL_ENABLED}" != "" ] && [ "${TOOL_ENABLED}" != "0" ]; then
         MATCH=${FN}
 
         if [ "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
-        if [ "" = "${YFLT}" ]  || [ "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
+        if [ ! "${YFLT}" ]  || [ "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
           RESULT=${RESULT2}
         fi
       fi

@@ -51,7 +51,7 @@ if [ "${MKTEMP}" ] && [ "${MAKE}" ] && \
 then
   cd "${HERE}/.." || exit 1
   ARG=$*
-  if [ "" = "${ARG}" ]; then
+  if [ ! "${ARG}" ]; then
     ARG=lib
   fi
   TMPF=$("${MKTEMP}" .tool_analyze.XXXXXX)
