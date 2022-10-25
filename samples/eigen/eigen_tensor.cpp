@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
-      libxsmm_gemm_print(stdout, libxsmm_gemm_precision_enum<ITYPE>::value, &transa, &transb,
+      libxsmm_gemm_print(stdout, libxsmm_datatype_enum<ITYPE>::value, &transa, &transb,
         &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
       fprintf(stdout, "\n\n");
 # if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
