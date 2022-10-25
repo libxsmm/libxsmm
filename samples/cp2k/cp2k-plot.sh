@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -78,13 +78,13 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   # determine behavior of sort command
   export LC_ALL=C.UTF-8
 
-  if [ "" = "$1" ]; then
+  if [ ! "$1" ]; then
     FILENAME=cp2k-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
   fi
-  if [ "" = "$1" ]; then
+  if [ ! "$1" ]; then
     MULTI=1
   else
     MULTI=$1

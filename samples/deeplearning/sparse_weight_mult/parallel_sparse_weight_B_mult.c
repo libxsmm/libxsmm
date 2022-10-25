@@ -258,8 +258,8 @@ int main(int argc, char **argv) {
     /* check error */
     float l_max_error = 0.0f;
     for (i = 0; i < N * K; ++i) {
-        if (fabs(l_C[i] - l_C_gold[i]) > l_max_error) {
-            l_max_error = (float)fabs(l_C[i] - l_C_gold[i]);
+        if (LIBXSMM_FABSF(l_C[i] - l_C_gold[i]) > l_max_error) {
+            l_max_error = LIBXSMM_FABSF(l_C[i] - l_C_gold[i]);
         }
     }
     printf("max error = %f\n", l_max_error);

@@ -130,8 +130,8 @@ int main(int argc, char* argv[]) {
 
   /* check correctness */
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    if ( max_error < fabs( c1[i] - c2[i] ) ) {
-      max_error = fabs( c1[i] - c2[i] );
+    if ( max_error < LIBXSMM_FABS( c1[i] - c2[i] ) ) {
+      max_error = LIBXSMM_FABS( c1[i] - c2[i] );
     }
   }
 

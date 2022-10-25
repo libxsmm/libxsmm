@@ -20,19 +20,19 @@ AWK=$(command -v awk)
 RM=$(command -v rm)
 
 
-if [ "" = "$1" ]; then
+if [ ! "$1" ]; then
   KIND=xsmm
 else
   KIND=$1
   shift
 fi
-if [ "" = "$1" ]; then
+if [ ! "$1" ]; then
   FILEEXT=pdf
 else
   FILEEXT=$1
   shift
 fi
-if [ "" = "$1" ]; then
+if [ ! "$1" ]; then
   MULTI=1
 else
   MULTI=$1
