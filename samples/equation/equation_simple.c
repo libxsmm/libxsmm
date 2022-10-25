@@ -34,7 +34,7 @@ void create_unique_random_array(unsigned long long *inout_array, int n) {
 }
 
 int unequal_fp32_vals(float a, float b) {
-  if (fabs(a-b) < EPS) {
+  if (LIBXSMM_FABSF(a-b) < EPS) {
     return 0;
   } else {
     return 1;
@@ -54,7 +54,7 @@ int unequal_bf16_vals(libxsmm_bfloat16 a, libxsmm_bfloat16 b) {
   bf16_hp.i[0] = 0;
   bf16_hp2.i[1] = b;
   bf16_hp2.i[0] = 0;
-  if (fabs(bf16_hp.f - bf16_hp2.f) < EPS) {
+  if (LIBXSMM_FABSF(bf16_hp.f - bf16_hp2.f) < EPS) {
     return 0;
   } else {
     return 1;
@@ -66,7 +66,7 @@ int unequal_f16_vals(libxsmm_float16 a, libxsmm_float16 b) {
   libxsmm_convert_f16_f32( &a, &af, 1);
   libxsmm_convert_f16_f32( &b, &bf, 1);
 
-  if (fabs(af - bf) < EPS) {
+  if (LIBXSMM_FABSF(af - bf) < EPS) {
     return 0;
   } else {
     return 1;
@@ -78,7 +78,7 @@ int unequal_bf8_vals(libxsmm_bfloat8 a, libxsmm_bfloat8 b) {
   libxsmm_convert_bf8_f32( &a, &af, 1);
   libxsmm_convert_bf8_f32( &b, &bf, 1);
 
-  if (fabs(af - bf) < EPS) {
+  if (LIBXSMM_FABSF(af - bf) < EPS) {
     return 0;
   } else {
     return 1;
@@ -90,7 +90,7 @@ int unequal_hf8_vals(libxsmm_hfloat8 a, libxsmm_hfloat8 b) {
   libxsmm_convert_hf8_f32( &a, &af, 1);
   libxsmm_convert_hf8_f32( &b, &bf, 1);
 
-  if (fabs(af - bf) < EPS) {
+  if (LIBXSMM_FABSF(af - bf) < EPS) {
     return 0;
   } else {
     return 1;

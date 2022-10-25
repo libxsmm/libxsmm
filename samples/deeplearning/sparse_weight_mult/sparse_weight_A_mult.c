@@ -156,9 +156,9 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < NB; l_i++) {
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
-        if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_j, l_i, l_k, NB, nb)
+        if (LIBXSMM_FABSF( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_j, l_i, l_k, NB, nb)
                     - LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr, l_j, l_i, l_k, NB, nb) ) > l_max_error ) {
-          l_max_error = (float)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_j, l_i, l_k, NB, nb)
+          l_max_error = LIBXSMM_FABSF( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_j, l_i, l_k, NB, nb)
                                        -LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csr, l_j, l_i, l_k, NB, nb) );
         }
       }
