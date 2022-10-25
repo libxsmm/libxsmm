@@ -174,11 +174,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
+    trap "rm ${TESTSCRIPT}" EXIT
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT} ${*:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
+    trap "rm ${TESTSCRIPT}" EXIT
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${*:2}"
@@ -194,9 +196,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
-  # backup current environment (snapshot)
+  # eventually cleanup environment snapshots
   rm -f "${REPOROOT}"/.env_??????
+  # backup current environment (snapshot)
   ENVFILE=$(${MKTEMP} "${REPOROOT}/.env_XXXXXX")
+  trap "rm ${ENVFILE}" EXIT
   chmod +r "${ENVFILE}"
   declare -px >"${ENVFILE}"
 
@@ -460,14 +464,6 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     # clear captured test
     TEST=""
   done # TEST
-
-  # remove temporary files
-  if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
-    rm "${TESTSCRIPT}"
-  fi
-  if [ "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
-    rm "${ENVFILE}"
-  fi
 
   # override result code (alternative outcome)
   if [ "${RESULTCODE}" ]; then
