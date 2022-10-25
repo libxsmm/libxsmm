@@ -13,67 +13,57 @@
 RPT=inspector
 KIND=mi1
 
-BASENAME=$(command -v basename)
 TOOL=$(command -v inspxe-cl)
 GREP=$(command -v grep)
 SED=$(command -v sed)
 TR=$(command -v tr)
-RM=$(command -v rm)
 
 if [ "$1" ] && [ ! -e "$1" ]; then
   KIND=$1
   shift
 fi
 
-if [ "${TOOL_ENABLED}" ] && [ "${TOOL_ENABLED}" != "0" ]; then
-  if [ "$1" ]    && [ "${BASENAME}" ] && [ "${TOOL}" ] && \
-     [ "${TR}" ] && [ "${GREP}" ]     && [ "${SED}" ]  && \
-     [ "${RM}" ];
-  then
-    HERE=$(cd "$(dirname "$0")" && pwd -P)
-    if [ ! "${TRAVIS_BUILD_DIR}" ]; then
-      export TRAVIS_BUILD_DIR=${HERE}/..
-    fi
-    if [ "${TESTID}" ]; then
-      ID=${TESTID}
-    fi
-    if [ ! "${ID}" ]; then
-      ID=${COVID}
-    fi
-    if [ "${ID}" ]; then
-      RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
-    else
-      RPTNAME=$(${BASENAME} $1)-${KIND}
-    fi
+if [ "${TOOL_ENABLED}" ] && [ "${TOOL_ENABLED}" != "0" ] && [ "${TOOL}" ] && \
+   [ "${TR}" ] && [ "${GREP}" ] && [ "${SED}" ]  && \
+   [ -e "$1" ];
+then
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
+  if [ "${TESTID}" ]; then
+    ID=${TESTID}
+  fi
+  if [ ! "${ID}" ]; then
+    ID=${COVID}
+  fi
+  if [ "${ID}" ]; then
+    RPTNAME=$(basename "$1")-${KIND}-${ID}
+  else
+    RPTNAME=$(basename "$1")-${KIND}
+  fi
 
-    DIR=${TRAVIS_BUILD_DIR}/${RPT}
-    ${RM} -rf ${DIR}/${ID}
+  DIR=${HERE}/${RPT}
+  rm -rf "${DIR:?}/${ID}"
 
-    ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- "$@"
-    RESULT=$?
+  ${TOOL} -collect "${KIND}" -r "${DIR}/${ID}" -no-auto-finalize -return-app-exitcode -- "$@"
+  RESULT=$?
 
-    if [ "0" = "${RESULT}" ]; then
-      ${TOOL} -report problems -r ${DIR}/${ID} >${DIR}/${RPTNAME}.txt
-      RESULT2=$?
+  if [ "0" = "${RESULT}" ]; then
+    ${TOOL} -report problems -r "${DIR}/${ID}" >"${DIR}/${RPTNAME}.txt"
+    RESULT2=$?
 
-      if [ ! "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
-        FN=$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt | \
-             ${SED} -e 's/..* Function \(..*\):..*/\1/')
-        XFLT=$(echo "${TOOL_XFILTER}" | ${TR} -s " " | ${TR} " " "|")
-        YFLT=$(echo "${TOOL_FILTER}" | ${TR} -s " " | ${TR} " " "|")
-        MATCH=${FN}
+    if [ ! "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
+      FN=$(${GREP} 'Function' "${DIR}/${RPTNAME}.txt" | \
+           ${SED} -e 's/..* Function \(..*\):..*/\1/')
+      XFLT=$(echo "${TOOL_XFILTER}" | ${TR} -s " " | ${TR} " " "|")
+      YFLT=$(echo "${TOOL_FILTER}" | ${TR} -s " " | ${TR} " " "|")
+      MATCH=${FN}
 
-        if [ "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
-        if [ ! "${YFLT}" ]  || [ "$(echo "${MATCH}" | ${GREP} -E  ${YFLT})" ]; then
-          RESULT=${RESULT2}
-        fi
+      if [ "${XFLT}" ]; then MATCH=$(echo "${MATCH}" | ${GREP} -Ev "${XFLT}"); fi
+      if [ ! "${YFLT}" ]  || [ "$(echo "${MATCH}" | ${GREP} -E  "${YFLT}")" ]; then
+        RESULT=${RESULT2}
       fi
     fi
-    exit ${RESULT}
-  else
-    "$@"
   fi
+  exit ${RESULT}
 else
   "$@"
 fi
-
