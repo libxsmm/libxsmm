@@ -15,7 +15,7 @@ SORT=$(command -v sort)
 SED=$(command -v gsed)
 
 # GNU sed is desired (macOS)
-if [ "" = "${SED}" ]; then
+if [ ! "${SED}" ]; then
   SED=$(command -v sed)
 fi
 

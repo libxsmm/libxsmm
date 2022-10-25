@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
     d1 = libxsmm_sexp2((float)rd);
     d2 = LIBXSMM_EXP2F((float)rd);
-    e1 = fabs(d1 - d2); e2 = fabs(d2);
+    e1 = LIBXSMM_FABS(d1 - d2); e2 = LIBXSMM_FABS(d2);
     e3 = 0 < e2 ? (e1 / e2) : 0.0;
     if (1E-4 < LIBXSMM_MIN(e1, e3)) exit(EXIT_FAILURE);
 
@@ -110,26 +110,26 @@ int main(int argc, char* argv[])
     a = libxsmm_isqrt_u64(r64);
     b = ref_isqrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
-    d1 = libxsmm_ssqrt((float)fabs(rd));
-    e1 = fabs(d1 * d1 - fabs(rd));
-    d2 = LIBXSMM_SQRTF((float)fabs(rd));
-    e2 = fabs(d2 * d2 - fabs(rd));
+    d1 = libxsmm_ssqrt((float)LIBXSMM_FABS(rd));
+    e1 = LIBXSMM_FABS(d1 * d1 - LIBXSMM_FABS(rd));
+    d2 = LIBXSMM_SQRTF((float)LIBXSMM_FABS(rd));
+    e2 = LIBXSMM_FABS(d2 * d2 - LIBXSMM_FABS(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;
-      if (1E-2 > LIBXSMM_MIN(fabs(e1 - e2), e3)) {
+      if (1E-2 > LIBXSMM_MIN(LIBXSMM_FABS(e1 - e2), e3)) {
         ++warn_ssqrt;
       }
       else {
         exit(EXIT_FAILURE);
       }
     }
-    d1 = libxsmm_dsqrt(fabs(rd));
-    e1 = fabs(d1 * d1 - fabs(rd));
-    d2 = sqrt(fabs(rd));
-    e2 = fabs(d2 * d2 - fabs(rd));
+    d1 = libxsmm_dsqrt(LIBXSMM_FABS(rd));
+    e1 = LIBXSMM_FABS(d1 * d1 - LIBXSMM_FABS(rd));
+    d2 = sqrt(LIBXSMM_FABS(rd));
+    e2 = LIBXSMM_FABS(d2 * d2 - LIBXSMM_FABS(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;
-      if (1E-11 > LIBXSMM_MIN(fabs(e1 - e2), e3)) {
+      if (1E-11 > LIBXSMM_MIN(LIBXSMM_FABS(e1 - e2), e3)) {
         ++warn_dsqrt;
       }
       else {

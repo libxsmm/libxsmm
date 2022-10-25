@@ -77,13 +77,13 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   # determine behavior of sort command
   export LC_ALL=C.UTF-8
 
-  if [ "" = "$1" ]; then
+  if [ ! "$1" ]; then
     FILENAME=eigen_smm-cp2k.pdf
   else
     FILENAME=$1
     shift
   fi
-  if [ "" = "$1" ]; then
+  if [ ! "$1" ]; then
     MULTI=1
   else
     MULTI=$1

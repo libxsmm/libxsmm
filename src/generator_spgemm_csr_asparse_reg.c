@@ -70,21 +70,21 @@ void libxsmm_analyse_sparse_nnz( unsigned int   i_n_row_idx,
   unsigned int l_unique = 1;
   unsigned int l_hit, l_m, l_z;
 
-  o_unique_values[0] = fabs(i_values[0]);
+  o_unique_values[0] = LIBXSMM_FABS(i_values[0]);
   o_unique_pos[0] = 0;
   o_unique_sgn[0] = (i_values[0] > 0) ? 1 : -1;
   for ( l_m = 1; l_m < i_n_row_idx; l_m++ ) {
     l_hit = 0;
     /* search for the value */
     for ( l_z = 0; l_z < l_unique; l_z++ ) {
-      if ( !(o_unique_values[l_z] < fabs(i_values[l_m])) && !(o_unique_values[l_z] > fabs(i_values[l_m])) ) {
+      if ( !(o_unique_values[l_z] < LIBXSMM_FABS(i_values[l_m])) && !(o_unique_values[l_z] > LIBXSMM_FABS(i_values[l_m])) ) {
         o_unique_pos[l_m] = l_z;
         l_hit = 1;
       }
     }
     /* value was not found */
     if ( !l_hit ) {
-      o_unique_values[l_unique] = fabs(i_values[l_m]);
+      o_unique_values[l_unique] = LIBXSMM_FABS(i_values[l_m]);
       o_unique_pos[l_m] = l_unique++;
     }
     o_unique_sgn[l_m] = (i_values[l_m] > 0) ? 1 : -1;

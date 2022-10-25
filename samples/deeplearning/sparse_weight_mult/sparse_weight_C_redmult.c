@@ -163,9 +163,9 @@ int main(int argc, char* argv[]) {
 #if 0
        printf("(%i, %i): %f %f\n", l_i, l_rowidx[l_colptr[l_i]+l_j], LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C), l_c_sp_csc[l_colptr[l_i]+l_j] );
 #endif
-       if (fabs( LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C)
+       if (LIBXSMM_FABSF( LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C)
                     - l_c_sp_csc[l_colptr[l_i]+l_j] ) > l_max_error ) {
-          l_max_error = (float)fabs( LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C)
+          l_max_error = LIBXSMM_FABSF( LIBXSMM_VLA_ACCESS(2, l_p_c_de, l_i, l_rowidx[l_colptr[l_i]+l_j], C)
                     - l_c_sp_csc[l_colptr[l_i]+l_j] );
       }
     }

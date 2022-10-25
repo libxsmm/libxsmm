@@ -42,7 +42,7 @@ CP=$(command -v cp)
 RM=$(command -v rm)
 
 # GNU sed is desired (macOS)
-if [ "" = "${SED}" ]; then
+if [ ! "${SED}" ]; then
   SED=$(command -v sed)
 fi
 
@@ -92,7 +92,7 @@ then
     REFORMAT=0
     if [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]]; then
       if [ "${FMTBIN}" ] && [ -e ${REPO}/.clang-format ]; then
-        if [ "" = "${FMTDIRS}" ]; then REFORMAT=1; fi
+        if [ ! "${FMTDIRS}" ]; then REFORMAT=1; fi
         for FMTDIR in ${FMTDIRS}; do
           if [[ ${FILE} = "${FMTDIR}/"* ]]; then
             REFORMAT=1; break

@@ -70,7 +70,7 @@ if [ -e "${HERE}/${TEST}-blas" ]; then
 fi
 
 if [ -e "${HERE}/${TEST}-wrap" ] && [ -e .state ] && \
-   [ "" = "$(${GREP} 'BLAS=0' .state)" ];
+   [ ! "$(${GREP} 'BLAS=0' .state)" ];
 then
   echo "-----------------------------------"
   echo "${NAME} (STATIC WRAP)"
