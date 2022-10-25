@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2129,SC2207
+# shellcheck disable=SC1090,SC2064,SC2129,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -390,7 +390,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "trap \"chmod -R -f g+u,o=u-w \"\"${REPOROOT}\"\" || true\" EXIT" >>"${TESTSCRIPT}"
+          echo "trap \"chmod -Rf g+u,o=u-w ${REPOROOT} || true\" EXIT" >>"${TESTSCRIPT}"
         fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
@@ -430,7 +430,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
       if [ ! "${TESTSCRIPT}" ] || [ ! -e "${TESTSCRIPT}" ]; then
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          trap "chmod -R -f g+u,o=u-w ""${REPOROOT}"" || true" EXIT
+          trap "chmod -Rf g+u,o=u-w ${REPOROOT} || true" EXIT
         fi
       fi
 
