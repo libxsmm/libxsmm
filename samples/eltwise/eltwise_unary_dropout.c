@@ -20,8 +20,6 @@
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
 
-#define LIBXSMM_ALIGNDOWN(N, A) ((N) & ~((A)-1))
-
 LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
   libxsmm_bfloat16_f32 bf16_hp /* = { 0 }*/;
@@ -72,7 +70,7 @@ void dropout_fwd_f32_f32_gold(const unsigned int M, const float *in, float *out,
   float pi = 1/pn;
   unsigned int w = libxsmm_cpuid_vlen32(libxsmm_get_target_archid());
 
-  for (i = 0; i < LIBXSMM_ALIGNDOWN(M, w); i+=w) {
+  for (i = 0; i < LIBXSMM_LO2(M, w); i+=w) {
     lsfr_Xwide( (unsigned int*)rng_state, vrng, w );
     for ( j = 0; j < w; ++j ) {
       out[i+j] = ( vrng[j] < pn ) ? pi * in[i+j] : 0.0f;

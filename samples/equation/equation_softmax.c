@@ -15,15 +15,14 @@
 #include <stdio.h>
 #include <math.h>
 
-#define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-
 #if defined(__AVX512F__)
-inline __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
-inline __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
-inline void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
-inline void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
+LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
+LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
+LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
+LIBXSMM_INLINE void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
 #endif
 
+LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
   libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
@@ -31,6 +30,7 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_INLINE
 void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
@@ -44,7 +44,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
     __m512 vsum = _mm512_setzero_ps();
 
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         vmax = _mm512_max_ps(_mm512_loadu_ps_auto(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)), vmax);
       }
       if (s3 < S3) {
@@ -56,7 +56,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
     max = _mm512_reduce_max_ps(vmax);
     vmax = _mm512_set1_ps(max);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 vz = LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS(_mm512_sub_ps(_mm512_loadu_ps_auto(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)), vmax));
         _mm512_storeu_ps(&tmp[s1][s3], vz);
         vsum = _mm512_add_ps(vsum, vz);
@@ -73,7 +73,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
     sum = 1.0 / sum;
     vsum = _mm512_set1_ps(sum);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         _mm512_storeu_ps_auto(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3), _mm512_mul_ps(vsum, _mm512_loadu_ps(&tmp[s1][s3])));
       }
       if (s3 < S3) {
@@ -115,6 +115,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
@@ -125,7 +126,7 @@ void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 vgo = _mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, gout, s1, s2, s3, S2, S3));
         __m512 vo = _mm512_loadu_ps_auto(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3));
         vsum = _mm512_fmadd_ps(vgo, vo, vsum);
@@ -141,7 +142,7 @@ void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
     sum = _mm512_reduce_add_ps(vsum);
     vsum = _mm512_set1_ps(sum);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 tmp = _mm512_sub_ps(_mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, gout, s1, s2, s3, S2, S3)), vsum);
         _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(3, ginp, s1, s2, s3, S2, S3), _mm512_mul_ps(_mm512_loadu_ps_auto(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3)), tmp));
       }
@@ -170,6 +171,7 @@ void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
@@ -183,7 +185,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
     __m512 vsum = _mm512_setzero_ps();
 
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         vmax = _mm512_max_ps(_mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)), vmax);
       }
       if (s3 < S3) {
@@ -195,7 +197,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
     max = _mm512_reduce_max_ps(vmax);
     vmax = _mm512_set1_ps(max);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 vz = LIBXSMM_INTRINSICS_MM512_EXP_PS_3DTS(_mm512_sub_ps(_mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3)), vmax));
         _mm512_storeu_ps(&tmp[s1][s3], vz);
         vsum = _mm512_add_ps(vsum, vz);
@@ -212,7 +214,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
     sum = 1.0 / sum;
     vsum = _mm512_set1_ps(sum);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3), _mm512_mul_ps(vsum, _mm512_loadu_ps(&tmp[s1][s3])));
       }
       if (s3 < S3) {
@@ -251,6 +253,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout)
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
@@ -261,7 +264,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 vgo = _mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, gout, s1, s2, s3, S2, S3));
         __m512 vo = _mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3));
         vsum = _mm512_fmadd_ps(vgo, vo, vsum);
@@ -277,7 +280,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
     sum = _mm512_reduce_add_ps(vsum);
     vsum = _mm512_set1_ps(sum);
     for (s1 = 0; s1 < S1; s1++) {
-      for (s3 = 0; s3 < ALIGNDOWN(S3, 16); s3+=16) {
+      for (s3 = 0; s3 < LIBXSMM_LO2(S3, 16); s3+=16) {
         __m512 tmp = _mm512_sub_ps(_mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, gout, s1, s2, s3, S2, S3)), vsum);
         _mm512_storeu_ps(&LIBXSMM_VLA_ACCESS(3, ginp, s1, s2, s3, S2, S3), _mm512_mul_ps(_mm512_loadu_ps(&LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3)), tmp));
       }
@@ -306,6 +309,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
 #endif
 }
 
+LIBXSMM_INLINE
 void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
   LIBXSMM_ALIGNED(float tmp[4096], 64);
@@ -325,6 +329,7 @@ void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, libxsm
   }
 }
 
+LIBXSMM_INLINE
 void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
   LIBXSMM_ALIGNED(float tmp[4096], 64);
@@ -345,6 +350,7 @@ void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, lib
 }
 
 #if 1
+LIBXSMM_INLINE
 void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
   LIBXSMM_ALIGNED(float tmp[4096], 64);
@@ -366,6 +372,7 @@ void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout
   }
 }
 
+LIBXSMM_INLINE
 void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
   int s2;
   LIBXSMM_ALIGNED(float tmp[4096], 64);
@@ -387,6 +394,7 @@ void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgr
   }
 }
 #else
+LIBXSMM_INLINE
 void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout, float *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function funcfoo) {
   int s1, s2, s3;
   libxsmm_matrix_eqn_param eqn_param;
@@ -403,6 +411,7 @@ void tpp_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *pgradout
   }
 }
 
+LIBXSMM_INLINE
 void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgradout, libxsmm_bfloat16 *pout, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function funcfoo) {
   int s1, s2, s3;
   libxsmm_matrix_eqn_param eqn_param;
