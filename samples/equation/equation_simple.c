@@ -1045,7 +1045,7 @@ int main( int argc, char* argv[] ) {
       printf("FAILURE mask\n");
     }
     printf("##########################################\n");
-    printf("#   Correctness RELU Equation - MASK   #\n");
+    printf("#   Correctness RELU Equation - MASK     #\n");
     printf("##########################################\n");
     libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_I32, (mask_ld*N)/4, 1, mask_ref, mask_eqn, 0, 0);
     printf("L1 reference  : %.25g\n", norms_out.l1_ref);
