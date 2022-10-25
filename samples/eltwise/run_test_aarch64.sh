@@ -2,6 +2,7 @@
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 EXEC=${HERE}/../../scripts/tool_pexec.sh
+export LIBXSMM_TARGET=aarch64
 
 cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_trans_08b_eqld.sh
