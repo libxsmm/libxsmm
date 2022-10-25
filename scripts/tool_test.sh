@@ -390,7 +390,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "trap \"chmod -Rf g+u,o=u-w ${REPOROOT} || true\" EXIT" >>"${TESTSCRIPT}"
+          echo "trap \"chmod -Rf g+u,o=u-w ${REPOREMOTE} || true\" EXIT" >>"${TESTSCRIPT}"
         fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
