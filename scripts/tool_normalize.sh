@@ -57,13 +57,13 @@ if [ "${CAT}" ] && [ -e "${CODEFILE}" ]; then
 fi
 
 if [ "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ] && \
-   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; echo $?)" ];
+   [ "0" != "$(${FLAKE8} "${HERE}"/*.py 2>&1 >/dev/null; echo $?)" ];
 then
   echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
 if [ "${MYPY}" ] && [ "0" = "$(${MYPY} 2>&1 >/dev/null; echo $?)" ] && \
-   [ "0" != "$(${MYPY} ${HERE}/*.py 2>&1 >/dev/null; echo $?)" ];
+   [ "0" != "$(${MYPY} "${HERE}"/*.py 2>&1 >/dev/null; echo $?)" ];
 then
   echo "Warning: some Python scripts do not pass MyPy check (${HERE})!"
 fi
@@ -82,16 +82,16 @@ then
   set -f
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS} *Makefile*; do
-  for FILE in $(${GIT} ls-files ${PATTERN}); do
+  for FILE in $(${GIT} ls-files "${PATTERN}"); do
     # FILE must be located in DIR (if given) and FILE must exist
-    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]] || [ ! -e ${FILE} ]; then continue; fi
+    if [[ "${DIR}" && (${FILE} != "${DIR}/"*) ]] || [ ! -e "${FILE}" ]; then continue; fi
     echo -n "${FILE}"
     #
     # Reformat code (fallback: check for banned characters, etc.).
     #
     REFORMAT=0
     if [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]]; then
-      if [ "${FMTBIN}" ] && [ -e ${REPO}/.clang-format ]; then
+      if [ "${FMTBIN}" ] && [ -e "${REPO}/.clang-format" ]; then
         if [ ! "${FMTDIRS}" ]; then REFORMAT=1; fi
         for FMTDIR in ${FMTDIRS}; do
           if [[ ${FILE} = "${FMTDIR}/"* ]]; then
@@ -108,7 +108,7 @@ then
       if [ "0" != "${EXCLUDE}" ]; then
         REFORMAT=0
       elif [[ (${FILE} = *".c") || (${FILE} = *".h") ]] && \
-           [ "$(${SED} -n "${PATCMT}x/p" ${FILE})" ];
+           [ "$(${SED} -n "${PATCMT}x/p" "${FILE}")" ];
       then
         echo " : has C++ comments"
         exit 1
@@ -117,61 +117,61 @@ then
     # remove or comment the following line to enable reformat (do not set REFORMAT=1)
     REFORMAT=0
     if [ "0" != "${REFORMAT}" ]; then
-      if [ "0" = "$(${FMTBIN} --style=file ${FILE} >${TMPF}; echo $?)" ] && \
-         [ "1" = "$(${DIFF} ${FILE} ${TMPF} >/dev/null; echo $?)" ];
+      if [ "0" = "$(${FMTBIN} --style=file "${FILE}" >"${TMPF}"; echo $?)" ] && \
+         [ "1" = "$(${DIFF} "${FILE}" "${TMPF}" >/dev/null; echo $?)" ];
       then
-        ${CP} ${TMPF} ${FILE}
+        ${CP} "${TMPF}" "${FILE}"
         echo -n " : reformatted"
       else
         REFORMAT=0
       fi
     elif [[ ${FILE} != *"Makefile"* ]] && \
-         [ "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ];
+         [ "$(${SED} -n "${PATBAN}x/p" "${FILE}" 2>/dev/null)" ];
     then
       echo " : has banned characters"
       exit 1
     elif [[ ${FILE} = "src/"* ]] && \
          [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]] && \
-         [ "$(${SED} -n "${PATPRE}x/p" ${FILE} 2>/dev/null)" ];
+         [ "$(${SED} -n "${PATPRE}x/p" "${FILE}" 2>/dev/null)" ];
     then
       echo " : white space leads '#' (malformed preprocessor command)"
       exit 1
-    elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" ${FILE})" ]; then
-      ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" ${FILE} >${TMPF}
-      ${CP} ${TMPF} ${FILE}
+    elif [ "$(${SED} -n "s/\([^[:space:]]\)\t/\1 /gp" "${FILE}")" ]; then
+      ${SED} -e "s/\([^[:space:]]\)\t/\1 /g" "${FILE}" >"${TMPF}"
+      ${CP} "${TMPF}" "${FILE}"
       echo -n " : removed tabs"
       REFORMAT=1
     fi
     #
     # Check for non-UNIX line-endings.
     #
-    if [ "$(${SED} -n "${PATEOL}x/p" ${FILE} 2>/dev/null | ${TR} -d "\n")" ]; then
+    if [ "$(${SED} -n "${PATEOL}x/p" "${FILE}" 2>/dev/null | ${TR} -d "\n")" ]; then
       echo " : has non-UNIX line endings"
       exit 1
     fi
     #
     # Check and fix for trailing spaces.
     #
-    if [ "$(${SED} -n "${PATSPC}x/p" ${FILE})" ]; then
-      ${SED} -e "${PATSPC}/" ${FILE} >${TMPF}
-      ${CP} ${TMPF} ${FILE}
+    if [ "$(${SED} -n "${PATSPC}x/p" "${FILE}")" ]; then
+      ${SED} -e "${PATSPC}/" "${FILE}" >"${TMPF}"
+      ${CP} "${TMPF}" "${FILE}"
       echo -n " : removed trailing spaces"
       REFORMAT=1
     fi
     #
     # Check and fix executable flag of file under source control.
     #
-    FLAGS=$(${GIT} ls-files -s ${FILE} | ${CUT} -d' ' -f1)
+    FLAGS=$(${GIT} ls-files -s "${FILE}" | ${CUT} -d' ' -f1)
     if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ] || [ "*.slurm" = "${PATTERN}" ]; then
-      if [ "$(${SED} -n '1!b;/#!/p' ${FILE})" ] && \
+      if [ "$(${SED} -n '1!b;/#!/p' "${FILE}")" ] && \
          [ "100755" != "${FLAGS}" ];
       then
-        ${GIT} update-index --chmod=+x ${FILE}
+        ${GIT} update-index --chmod=+x "${FILE}"
         echo -n " : marked executable"
         REFORMAT=1
       fi
     elif [ "100644" != "${FLAGS}" ] && [ "120000" != "${FLAGS}" ]; then
-      ${GIT} update-index --chmod=-x ${FILE}
+      ${GIT} update-index --chmod=-x "${FILE}"
       echo -n " : marked non-executable"
       REFORMAT=1
     fi
@@ -182,7 +182,7 @@ then
     fi
   done
   done
-  ${RM} -f ${TMPF} .libxsmm_??????.txt
+  ${RM} -f "${TMPF}" .libxsmm_??????.txt
   echo "Successfully Completed."
   exit 0
 fi
