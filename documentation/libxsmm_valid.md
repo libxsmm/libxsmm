@@ -12,8 +12,6 @@ Remember: a set of key-value pairs represents a single unique (re-)build (and te
 make STATIC=0 tests
 ```
 
-There is a whole collection of test targets available (`test-cp2k`, `test-cpp`, `test-nek`). However, it is then better to rely on test-suites.
-
 ## Test Suites
 
 It is possible to run tests like LIBXSMM's continuous integration:
@@ -22,42 +20,28 @@ It is possible to run tests like LIBXSMM's continuous integration:
 scripts/tool_test.sh
 ```
 
-The above command runs the entire collection ("scripts/tool_test.sh 0"). However, one test (of currently 11 tests) can be selected by number (1-11):
+The above command runs the entire collection ("scripts/tool_test.sh 0"). However, a single test out of the collection:
 
 ```bash
 scripts/tool_test.sh 1
 ```
 
-The suite itself can be also selected. For example, some DNN tests are described in `.test-dnn.yml`:
+In general, key-value pairs that are valid for LIBXSMM's `make` can be specified:
 
 ```bash
-TESTSET=test-dnn scripts/tool_test.sh
+AVX=3 DBG=1 scripts/tool_test.sh
 ```
 
-In general, all key-value pairs valid for LIBXSMM's `make` can be given as part of the environment:
+There are several collections of specific domains:
 
-```bash
-AVX=3 MIC=0 TESTSET=test-dnn scripts/tool_test.sh
-```
-
-Please note, the suite/test itself may be comprised of key-value pairs that take precedence.
+* `samples/utilities/wrap/wrap-test.sh`: test substituting standard symbols at link/run-time (gemm, gemv, etc).
+* `samples/xgemm/kernel_test.sh`: test SMM kernels in an almost exhaustive fashion (brute-force).
+* `samples/eltwise/run_test.sh`: test all kinds of element-wise kernels and variants.
+* `samples/pyfr/test.sh`: test Sparse Matrix times Dense Matrix (FsSpMDM).
 
 ## CI Tests
 
-The `tool_test.sh` script is included in repository archives and releases i.e., it works for non-repository folders. In contrast, the Continuous Integration (CI) use case relies on the Git command being present and the folder being a Git-clone.
-
-Functionality
-
-* `[skip ci]` as part of a commit message will not trigger the CI agents, and tests are skipped for such a commit.
-* `[full ci]` as part of a commit message will trigger a full test even if the setup uses the "Fast CI" option.
-
-The "Fast CI" option is enabled per filename given as 2nd command line argument:
-
-```bash
-scripts/tool_test.sh 1 .fullci
-```
-
-In the above example, a file named `.fullci` may contain path/file patterns (wildcard format) triggering a full test if the files changed by the commit match any of the patterns.
+The `tool_test.sh` script is included in repository archives and releases, i.e., it works for non-repository folders. In contrast, the Continuous Integration (CI) relies on the Git command being present and the main folder being a cloned repository.
 
 ## Portability
 
