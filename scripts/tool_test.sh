@@ -174,13 +174,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     #SRUN_FLAGS="${SRUN_FLAGS} --preserve-env"
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
-    trap "rm ${TESTSCRIPT}" EXIT
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
                     --unbuffered ${TESTSCRIPT} ${*:2}"
   elif [[ ("${LAUNCH_CMD}") || (-d "$1") || ("${SLURMSCRIPT}" && "0" != "${SLURMSCRIPT}") ]]; then
     TESTSCRIPT=$(${MKTEMP} "${REPOROOT}/.tool_XXXXXX.sh")
-    trap "rm ${TESTSCRIPT}" EXIT
     REMSCRIPT=$(echo "${TESTSCRIPT}" | ${SED} "s/${REPPAT}/${REMPAT}/")
     chmod +rx "${TESTSCRIPT}"
     LAUNCH="${LAUNCH_CMD} ${REMSCRIPT} ${*:2}"
@@ -200,9 +198,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   rm -f "${REPOROOT}"/.env_??????
   # backup current environment (snapshot)
   ENVFILE=$(${MKTEMP} "${REPOROOT}/.env_XXXXXX")
-  trap "rm ${ENVFILE}" EXIT
   chmod +r "${ENVFILE}"
   declare -px >"${ENVFILE}"
+
+  if [[ "${UMASK}" && (! "${TESTSCRIPT}" || ! -e "${TESTSCRIPT}") ]]; then
+    # TODO: derive permissions from UMASK
+    trap "rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)" EXIT
+  else
+    trap "rm ${TESTSCRIPT} ${ENVFILE}" EXIT
+  fi
 
   RESULT=0
   while [ "${TEST}" ] || TEST=$(eval " \
@@ -431,12 +435,6 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       fi
       # capture test status
       RESULT=$?
-
-      if [ ! "${TESTSCRIPT}" ] || [ ! -e "${TESTSCRIPT}" ]; then
-        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          trap "chmod -Rf g+u,o=u-w ${REPOROOT} || true" EXIT
-        fi
-      fi
 
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
