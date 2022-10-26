@@ -9,6 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
+# shellcheck disable=SC2064
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 CPPCHECK=$(command -v cppcheck)
@@ -56,8 +57,8 @@ then
   fi
   TMPF=$("${MKTEMP}" .tool_analyze.XXXXXX)
   ${CP} "${HERE}/../include/libxsmm_config.h" "${TMPF}"
+  trap "${MV} ${TMPF} ${HERE}/../include/libxsmm_config.h" EXIT
   ${MAKE} -e CXX="${CXX}" CC="${CC}" FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2>.analyze.log
-  ${MV} "${TMPF}" "${HERE}/../include/libxsmm_config.h"
   ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log \
     | ${GREP} -v "make:" \
     | ${GREP} -v "is never read" \
