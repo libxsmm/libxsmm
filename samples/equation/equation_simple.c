@@ -527,6 +527,7 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 13) {
     in_dt = LIBXSMM_DATATYPE_F64;
     out_dt = LIBXSMM_DATATYPE_F64;
+    compute_dt = LIBXSMM_DATATYPE_F64;
   }
 
   arg0 = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
@@ -589,7 +590,7 @@ int main( int argc, char* argv[] ) {
       f64_arg2[(i*ld)+j] = libxsmm_rng_f64();
       f64_arg3[(i*ld)+j] = libxsmm_rng_f64();
       f64_out[(i*ld)+j]  = libxsmm_rng_f64();
-      f64_eqn_out[(i*ld)+j] = out[(i*ld)+j];
+      f64_eqn_out[(i*ld)+j] = f64_out[(i*ld)+j];
 
       arg0[(i*ld)+j] = (float)f64_arg0[(i*ld)+j];
       arg1[(i*ld)+j] = (float)f64_arg1[(i*ld)+j];
@@ -789,7 +790,7 @@ int main( int argc, char* argv[] ) {
         }
       } else if (out_dt == LIBXSMM_DATATYPE_F64) {
         if ( unequal_fp64_vals(f64_out[(i*ld)+j], f64_eqn_out[(i*ld)+j])  ) {
-          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, out[(i*ld)+j], eqn_out[(i*ld)+j]);*/
+          /*printf("error at possition i=%i, j=%i, %f, %f\n", i, j, f64_out[(i*ld)+j], f64_eqn_out[(i*ld)+j]);*/
           s = 1;
         }
       } else if (out_dt == LIBXSMM_DATATYPE_BF16) {

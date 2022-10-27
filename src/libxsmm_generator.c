@@ -410,7 +410,7 @@ LIBXSMM_API libxsmm_meqn_descriptor* libxsmm_meqn_descriptor_init(libxsmm_descri
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
   LIBXSMM_ASSERT(NULL != result.ptr);
-  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( LIBXSMM_DATATYPE_UNSUPPORTED, out_type);
+  result.ptr->datatype = (unsigned char)LIBXSMM_GETENUM( out_type, out_type);
   result.ptr->eqn_idx = eqn_idx;
   result.ptr->ldo = ldo;
   result.ptr->m = m;
