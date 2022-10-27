@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2064,SC2129,SC2207
+# shellcheck disable=SC1090,SC2064,SC2129,SC2153,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -106,6 +106,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   export PARTITIONS
   read -ra ARRAY <<<"${PARTITIONS}"
   NPARTITIONS=${#ARRAY[@]}
+
+  if [ "${LIBXSMM_TARGETS}" ] && [ ! "${LIBXSMM_TARGET}" ]; then
+    read -ra ARRAY <<<"${LIBXSMM_TARGETS}"
+    NTARGETS=${#ARRAY[@]}
+    export LIBXSMM_TARGET=${ARRAY[RANDOM%NTARGETS]}
+  fi
 
   # setup CONFIGS (multiple configurations)
   if [ ! "${CONFIGS}" ]; then
