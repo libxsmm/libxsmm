@@ -181,10 +181,12 @@
           REAL(C_DOUBLE) l1_ref, min_ref, max_ref, avg_ref, var_ref
           !> Statistics: sum/l1, min., max., arith. avg., and variance.
           REAL(C_DOUBLE) l1_tst, min_tst, max_tst, avg_tst, var_tst
-          !> Values (v_ref, v_tst) and location (m, n) of largest linf_abs.
+          !> Values(v_ref, v_tst) and location(m, n) of largest linf_abs.
           REAL(C_DOUBLE) v_ref, v_tst
-          !> Values (v_ref, v_tst), location (m, n), and zero-based i-th of
-          !> r reductions (libxsmm_matdiff_reduce) of smallest R-squared.
+          !> If r is non-zero (i is not negative), values (v_ref, v_tst),
+          !> and the location (m, n) stem from the i-th reduction
+          !> (r calls of libxsmm_matdiff_reduce) of the largest
+          !> difference (libxsmm_matdiff_epsilon).
           INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
