@@ -189,7 +189,7 @@ int main(void)
     const double epsilon = libxsmm_matdiff_epsilon(di + 4);
     /* intentionally not considered: libxsmm_matdiff_reduce(&diff, di + 4) */
     /* Epsilon (combined) */
-    if (0.0000001 < LIBXSMM_ABS(epsilon - 0.0400000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(epsilon - 0.0244949)) result = EXIT_FAILURE;
     /* One-norm */
     if (0.0000001 < LIBXSMM_ABS(di[4].norm1_abs - 0.0400000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(di[4].norm1_rel - 1.0000000)) result = EXIT_FAILURE;
