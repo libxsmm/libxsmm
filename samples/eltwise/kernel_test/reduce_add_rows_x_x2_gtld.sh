@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-PREC_LIST="F32 BF16 F16";
-
-if [[ ${LIBXSMM_TARGET} == "aarch64" ]]; then
-    PREC_LIST="F32";
+PREC_LIST="F32";
+if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
+    PREC_LIST="F32 BF16 F16";
+fi
+if [[ ${LIBXSMM_TARGET} == "neov1" ]]; then
+    PREC_LIST="F32 BF16";
 fi
 
-if [[ ${LIBXSMM_TARGET} == "clx" ]]; then
-    PREC_LIST="F32 BF16 F16 BF8 HF8";
-fi
-if [[ ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
+
+if [[ ${LIBXSMM_TARGET} == "clx" || ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
     PREC_LIST="F32 BF16 F16 BF8 HF8";
 fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
