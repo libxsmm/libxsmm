@@ -67,7 +67,7 @@ LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_datatype  dtype);
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_datatype  dtype);
+unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_generated_code* io_generated_code,  libxsmm_datatype  dtype);
 
 
 LIBXSMM_API_INTERN
