@@ -556,7 +556,8 @@
 
 #define LIBXSMM_UPDIV(N, MULT) (((N) + ((MULT) - 1)) / (MULT))
 #define LIBXSMM_UP(N, MULT) (LIBXSMM_UPDIV(N, MULT) * (MULT))
-#define LIBXSMM_UP2(N, NPOT) (((N) + ((NPOT) - 1)) & ~((NPOT) - 1))
+#define LIBXSMM_LO2(N, NPOT) ((N) & ~((NPOT) - 1))
+#define LIBXSMM_UP2(N, NPOT) LIBXSMM_LO2((N) + ((NPOT) - 1), NPOT)
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))

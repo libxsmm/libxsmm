@@ -15,16 +15,16 @@
 #include <stdio.h>
 #include <math.h>
 
-#define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-//#define USE_VECTORIZED_PATH 1
+/*#define USE_VECTORIZED_PATH 1*/
 
 #if defined(__AVX512F__)
-inline __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
-inline __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
-inline void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
-inline void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
+LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
+LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
+LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
+LIBXSMM_INLINE void _mm512_mask_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __mmask16 k, __m512 a) { _mm256_mask_storeu_epi16((__m256i*)mem_addr, k, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
 #endif
 
+LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
   libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
@@ -32,6 +32,7 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_INLINE
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
@@ -118,6 +119,7 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, din, pdin, S2, S3);
@@ -221,6 +223,7 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
@@ -305,6 +308,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
 #endif
 }
 
+LIBXSMM_INLINE
 void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta) {
   int s1, s2, s3;
   LIBXSMM_VLA_DECL(3, float, din, pdin, S2, S3);
@@ -406,6 +410,7 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
 #endif
 }
 
+LIBXSMM_INLINE
 void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
@@ -450,6 +455,7 @@ void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamm
   }
 }
 
+LIBXSMM_INLINE
 void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
   int s2;
   libxsmm_matrix_eqn_param eqn_param;
@@ -494,7 +500,7 @@ void tpp_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, l
   }
 }
 
-
+LIBXSMM_INLINE
 void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp, float *mean, float *var, float *pgamma, float *pdin, float *pdgamma, float *pdbeta,
     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func) {
   int s2;
@@ -544,6 +550,7 @@ void tpp_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, float *pinp
   }
 }
 
+LIBXSMM_INLINE
 void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, libxsmm_bfloat16 *pinp, float *mean, float *var, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pdin, float *pdgamma, float *pdbeta,
     libxsmm_matrix_eqn_function dgamma_func, libxsmm_matrix_eqn_function dbeta_func, libxsmm_matrix_eqn_function db_func, libxsmm_matrix_eqn_function ds_func, libxsmm_matrix_eqn_function din_func) {
   int s2;

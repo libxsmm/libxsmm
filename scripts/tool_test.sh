@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2129,SC2207
+# shellcheck disable=SC1090,SC2064,SC2129,SC2153,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -107,6 +107,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   read -ra ARRAY <<<"${PARTITIONS}"
   NPARTITIONS=${#ARRAY[@]}
 
+  if [ "${LIBXSMM_TARGETS}" ] && [ ! "${LIBXSMM_TARGET}" ]; then
+    read -ra ARRAY <<<"${LIBXSMM_TARGETS}"
+    NTARGETS=${#ARRAY[@]}
+    export LIBXSMM_TARGET=${ARRAY[RANDOM%NTARGETS]}
+  fi
+
   # setup CONFIGS (multiple configurations)
   if [ ! "${CONFIGS}" ]; then
     if [ "${CONFIG}" ]; then
@@ -194,11 +200,19 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
-  # backup current environment (snapshot)
+  # eventually cleanup environment snapshots
   rm -f "${REPOROOT}"/.env_??????
+  # backup current environment (snapshot)
   ENVFILE=$(${MKTEMP} "${REPOROOT}/.env_XXXXXX")
   chmod +r "${ENVFILE}"
   declare -px >"${ENVFILE}"
+
+  if [[ "${UMASK}" && (! "${TESTSCRIPT}" || ! -e "${TESTSCRIPT}") ]]; then
+    # TODO: derive permissions from UMASK
+    trap "rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)" EXIT
+  else
+    trap "rm ${TESTSCRIPT} ${ENVFILE}" EXIT
+  fi
 
   RESULT=0
   while [ "${TEST}" ] || TEST=$(eval " \
@@ -344,7 +358,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
           echo "RESULT=\$?" >>"${TESTSCRIPT}"
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
-          echo "echo \"--- RUN ${CAPTION}\"" >>"${TESTSCRIPT}"
+          echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
@@ -390,7 +404,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "trap \"chmod -R -f g+u,o=u-w \"\"${REPOROOT}\"\" || true\" EXIT" >>"${TESTSCRIPT}"
+          echo "trap \"chmod -Rf g+u,o=u-w ${REPOREMOTE} || true\" EXIT" >>"${TESTSCRIPT}"
         fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
@@ -428,12 +442,6 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       # capture test status
       RESULT=$?
 
-      if [ ! "${TESTSCRIPT}" ] || [ ! -e "${TESTSCRIPT}" ]; then
-        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          trap "chmod -R -f g+u,o=u-w ""${REPOROOT}"" || true" EXIT
-        fi
-      fi
-
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ] && [ "1" != "${LIMITHARD}" ]; then
         if [ "${TOUCHFILE}" ]; then
@@ -460,14 +468,6 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     # clear captured test
     TEST=""
   done # TEST
-
-  # remove temporary files
-  if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
-    rm "${TESTSCRIPT}"
-  fi
-  if [ "${ENVFILE}" ] && [ -e "${ENVFILE}" ]; then
-    rm "${ENVFILE}"
-  fi
 
   # override result code (alternative outcome)
   if [ "${RESULTCODE}" ]; then

@@ -15,11 +15,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define ALIGNDOWN(N, A) ((N) & ~((A)-1))
-
-#define EPS 1.19209290e-03F
-
-
+LIBXSMM_INLINE
 void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *in, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
@@ -32,6 +28,7 @@ void reference_unpack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, 
   }
 }
 
+LIBXSMM_INLINE
 void reference_pack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *out, libxsmm_bfloat16 *in_lo, libxsmm_bfloat16 *in_hi) {
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
@@ -44,6 +41,7 @@ void reference_pack(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, fl
   }
 }
 
+LIBXSMM_INLINE
 void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat16 *dwt, float lr, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {
@@ -62,23 +60,23 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
 }
 
 #if defined(__AVX512F__)
-inline __m512 convert_split_bf16_to_fp32(const __m256i src_hi, const __m256i src_lo) {
+LIBXSMM_INLINE __m512 convert_split_bf16_to_fp32(const __m256i src_hi, const __m256i src_lo) {
   __m512i y1 = _mm512_cvtepu16_epi32(src_hi);
   __m512i y2 = _mm512_cvtepu16_epi32(src_lo);
   return _mm512_castsi512_ps(_mm512_add_epi32(_mm512_bslli_epi128(y1, 2), y2));
 }
 
-inline __m512 convert_bf16_to_fp32(const __m256i src) {
+LIBXSMM_INLINE __m512 convert_bf16_to_fp32(const __m256i src) {
   __m512i y = _mm512_cvtepu16_epi32(src);
   return _mm512_castsi512_ps(_mm512_bslli_epi128(y, 2));
 }
 
-inline __m256i  convert_fp32_to_bf16(const __m512 src) {
+LIBXSMM_INLINE __m256i  convert_fp32_to_bf16(const __m512 src) {
   __m512i y = _mm512_bsrli_epi128(_mm512_castps_si512(src), 2);
   return _mm512_cvtepi32_epi16(y);
 }
 
-inline void iadd_split_bf16(libxsmm_bfloat16 *inout_hi, libxsmm_bfloat16 *inout_lo, libxsmm_bfloat16 *in, int len, float alpha) {
+LIBXSMM_INLINE void iadd_split_bf16(libxsmm_bfloat16 *inout_hi, libxsmm_bfloat16 *inout_lo, libxsmm_bfloat16 *in, int len, float alpha) {
   __m512 vAlpha = _mm512_set1_ps(alpha);
   int state_mask = ((1 << 16) - 1);
   __m512i vMask = _mm512_set1_epi32(state_mask);
@@ -101,6 +99,7 @@ inline void iadd_split_bf16(libxsmm_bfloat16 *inout_hi, libxsmm_bfloat16 *inout_
   }
 }
 
+LIBXSMM_INLINE
 void vec_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libxsmm_bfloat16 *dwt, float lr, libxsmm_bfloat16 *out_lo, libxsmm_bfloat16 *out_hi) {
   libxsmm_blasint i, j;
   for (j = 0; j < N; j++) {

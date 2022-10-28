@@ -235,8 +235,8 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
       result = LIBXSMM_MIN(input->normf_rel, input->linf_abs) / input->rsq;
     }
     else {
-      const double a = LIBXSMM_MAX(input->norm1_abs, input->linf_abs);
-      const double b = LIBXSMM_MAX(input->normi_abs, input->l2_abs);
+      const double a = LIBXSMM_MIN(input->norm1_abs, input->normi_abs);
+      const double b = LIBXSMM_MAX(input->linf_abs, input->l2_abs);
       result = LIBXSMM_MAX(a, b);
     }
   }
@@ -248,6 +248,9 @@ LIBXSMM_API double libxsmm_matdiff_epsilon(const libxsmm_matdiff_info* input)
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
 {
   if (NULL != output && NULL != input) {
+    /* epsilon is determined before updating the output */
+    const double epsinp = libxsmm_matdiff_epsilon(input);
+    const double epsout = libxsmm_matdiff_epsilon(output);
     if (output->linf_abs <= input->linf_abs) {
       output->linf_abs = input->linf_abs;
       output->linf_rel = input->linf_rel;
@@ -285,7 +288,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     if (output->min_tst >= input->min_tst) {
       output->min_tst = input->min_tst;
     }
-    if (output->rsq > input->rsq || 1 < input->rsq) {
+    if (epsout < epsinp) {
       output->rsq = input->rsq;
       output->v_ref = input->v_ref;
       output->v_tst = input->v_tst;

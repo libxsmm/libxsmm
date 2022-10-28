@@ -1532,5 +1532,3 @@ LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx ) {
   libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqns[idx]->eqn_root );
   printf("\n\n");
 }
-
-

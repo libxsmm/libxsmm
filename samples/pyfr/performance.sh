@@ -7,6 +7,9 @@
 # Further information: https://github.com/libxsmm/libxsmm/                    #
 # SPDX-License-Identifier: BSD-3-Clause                                       #
 ###############################################################################
+# Hans Pabst (Intel Corp.)
+###############################################################################
+# shellcheck disable=SC2143
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 BASE=$(echo "$0" | sed 's/\(.[^/]*\/\)*//' | sed 's/\(.*\)\..*/\1/')
@@ -36,7 +39,7 @@ then
 fi
 
 TMPF=$(mktemp)
-trap "rm -f ${TMPF}" EXIT
+trap 'rm -f ${TMPF}' EXIT
 
 SEP=";"
 POSTFX="-sp"
@@ -90,8 +93,8 @@ if [ "$(command -v datamash)" ]; then
   echo "Performance"
   echo "------------------------------------------------------------------"
   if [ "$(datamash geomean 2>&1 | grep invalid)" ]; then
-    cat performance.csv | datamash --headers -t"${SEP}" mean 5-8
+    datamash --headers -t"${SEP}"    mean 5-8 <performance.csv
   else
-    cat performance.csv | datamash --headers -t"${SEP}" geomean 5-8
+    datamash --headers -t"${SEP}" geomean 5-8 <performance.csv
   fi
 fi
