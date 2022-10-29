@@ -151,7 +151,6 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       Arg1 = arg1[(i*ld)+j];
       Arg2 = arg2[(i*ld)+j];
       Arg3 = arg3[(i*ld)+j];
-
 #if 0
       out[(i*ld)+j] = (Arg0 + 1.0f + Arg1) * (LIBXSMM_TANHF(1.0f/Arg2) + Arg3);
 #else
