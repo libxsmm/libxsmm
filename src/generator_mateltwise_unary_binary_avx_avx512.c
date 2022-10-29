@@ -352,7 +352,11 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
   unsigned int vbcast_instr = ( i_micro_kernel_config->datatype_size_in == 4 ) ? ((io_generated_code->arch < LIBXSMM_X86_AVX512) ? LIBXSMM_X86_INSTR_VBROADCASTSS : LIBXSMM_X86_INSTR_VPBROADCASTD) : (( i_micro_kernel_config->datatype_size_in == 2 ) ? LIBXSMM_X86_INSTR_VPBROADCASTW : LIBXSMM_X86_INSTR_VPBROADCASTB);
 
   if ( i_micro_kernel_config->datatype_size_in == 8 ) {
-    vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX;
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX;
+    } else {
+      vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ;
+    }
   }
 
   if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ||
@@ -1642,7 +1646,11 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
   unsigned int i_mask_reg_out = i_mask_reg;
 
   if ( i_micro_kernel_config->datatype_size_in1 == 8 ) {
-    vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX ;
+    if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+      vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ_VEX;
+    } else {
+      vbcast_instr = LIBXSMM_X86_INSTR_VPBROADCASTQ;
+    }
   }
 
   if ( ( LIBXSMM_DATATYPE_I16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ||
