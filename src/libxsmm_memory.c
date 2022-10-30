@@ -553,6 +553,45 @@ LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const ch
 }
 
 
+LIBXSMM_API void libxsmm_shuffle(void* data, size_t typesize, size_t count)
+{
+  const size_t shuffle = libxsmm_coprime2(count);
+  size_t i = 0;
+  if (typesize < 128) {
+    unsigned char *const inout = (unsigned char*)data;
+    for (; i < count; ++i) LIBXSMM_MEMSWP127(inout + ((shuffle * i) % count) * typesize, inout + i * typesize, typesize);
+  }
+  else {
+    for (; i < count; ++i) {
+      unsigned char *const dst = (unsigned char*)data + typesize * ((shuffle * i) % count);
+      unsigned char *const src = (unsigned char*)data + typesize * i;
+      size_t j = 0;
+      for (; j < typesize; ++j) LIBXSMM_ISWAP(dst[j], src[j]);
+    }
+  }
+}
+
+
+LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t typesize, size_t count)
+{
+  if (src != dst) {
+    const size_t shuffle = libxsmm_coprime2(count);
+    const char *const inp = (const char*)src;
+    char *const out = (char*)dst;
+    size_t i = 0;
+    if (typesize < 128) {
+      for (; i < count; ++i) LIBXSMM_MEMCPY127(out + typesize * ((shuffle * i) % count), inp + typesize * i, typesize);
+    }
+    else {
+      for (; i < count; ++i) memcpy(out + typesize * ((shuffle * i) % count), inp + typesize * i, typesize);
+    }
+  }
+  else {
+    libxsmm_shuffle(dst, typesize, count);
+  }
+}
+
+
 #if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */

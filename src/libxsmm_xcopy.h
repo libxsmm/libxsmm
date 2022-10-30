@@ -118,7 +118,8 @@
         for (libxsmm_xcopy_tile_j_ = N0; libxsmm_xcopy_tile_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_tile_j_) { \
           XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_tile_i_, libxsmm_xcopy_tile_j_, \
             libxsmm_xcopy_tile_src_, libxsmm_xcopy_tile_dst_); \
-          LIBXSMM_MEMCPY127_LOOP(libxsmm_xcopy_tile_dst_, libxsmm_xcopy_tile_src_, TYPESIZE, LIBXSMM_PRAGMA_NONTEMPORAL); \
+          LIBXSMM_MEMORY127_LOOP(libxsmm_xcopy_tile_dst_, libxsmm_xcopy_tile_src_, \
+            TYPESIZE, LIBXSMM_MEMCPY127_OP, LIBXSMM_PRAGMA_NONTEMPORAL); \
         } \
       } \
     } \
