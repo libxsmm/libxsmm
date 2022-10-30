@@ -1897,19 +1897,18 @@
 
         !> Calculate co-prime number <= n/2 (except: libxsmm_coprime2(0|1) == 0).
         !> Implicit FORTRAN 77 interface:
-        !> INTEGER(4) :: coprime (OUT)
-        !> INTEGER(4) :: n
+        !> INTEGER(8) :: coprime (OUT), n (IN)
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_coprime2
         ELEMENTAL FUNCTION libxsmm_coprime2(n)
           INTEGER(C_LONG_LONG) :: libxsmm_coprime2
-          INTEGER(C_INT), INTENT(IN) :: n
+          INTEGER(C_LONG_LONG), INTENT(IN) :: n
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_coprime2
           INTERFACE
             PURE SUBROUTINE internal_coprime2(coprime, n)               &
      &      BIND(C, NAME="libxsmm_coprime2_")
-              IMPORT :: C_LONG_LONG, C_INT
+              IMPORT :: C_LONG_LONG
               INTEGER(C_LONG_LONG), INTENT(OUT) :: coprime
-              INTEGER(C_INT), INTENT(IN) :: n
+              INTEGER(C_LONG_LONG), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
           libxsmm_coprime2 = INT(0, KIND=C_LONG_LONG) ! avoid warning (older CRAY)
