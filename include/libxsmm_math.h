@@ -69,8 +69,8 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
  */
 LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[]);
 
-/** Calculate co-prime number <= n/2 (except: libxsmm_shuffle(0|1) == 0). */
-LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
+/** Calculate co-prime number <= n/2 (except: libxsmm_coprime2(0|1) == 0). */
+LIBXSMM_API size_t libxsmm_coprime2(unsigned int n);
 
 /**
  * Minimizes the waste, if "a" can only be processed in multiples of "b".

@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 #endif
   {
     triplet *const rnd = (triplet*)(0 < size_total ? malloc(sizeof(triplet) * size_total) : NULL);
-    const size_t shuffle = libxsmm_shuffle(size_total);
+    const size_t shuffle = libxsmm_coprime2(size_total);
     const double alpha = 1, beta = 1;
     int i, n;
 

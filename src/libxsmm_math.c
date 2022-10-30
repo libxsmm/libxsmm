@@ -329,7 +329,7 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
+LIBXSMM_API size_t libxsmm_coprime2(unsigned int n)
 {
   const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
   const unsigned int d = (0 != (n & 1) ? 1 : 2);
@@ -633,21 +633,21 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* in
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* /*coprime*/, const int* /*n*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int* n)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_coprime2)(long long* /*coprime*/, const int* /*n*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_coprime2)(long long* coprime, const int* n)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != coprime && NULL != n && 0 <= *n)
 #endif
   {
-    *coprime = (long long)(libxsmm_shuffle((unsigned int)(*n)) & 0x7FFFFFFF);
+    *coprime = (long long)(libxsmm_coprime2((unsigned int)(*n)) & 0x7FFFFFFF);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_coprime2 specified!\n");
   }
 #endif
 }

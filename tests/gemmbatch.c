@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     : batchsize);
   /* process batch of A, B, and C in "random" order */
   const size_t shuffle = (0 != (9 < argc ? atoi(argv[9]) : 1)
-    ? libxsmm_shuffle((unsigned int)size)
+    ? libxsmm_coprime2((unsigned int)size)
     : 0);
   /* allocate A, B, C, and D/Gold matrix buffers */
   TYPE *const a = (TYPE*)MALLOC(sizeof(TYPE) * na * size);
