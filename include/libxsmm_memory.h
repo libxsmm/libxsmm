@@ -13,41 +13,41 @@
 
 #include "libxsmm_macros.h"
 
-#define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, OP, NTS) do { \
+#define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, RHS, NTS) do { \
   const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
-  signed char libxsmm_memory127_loop_i_; \
-  NTS(DST) LIBXSMM_PRAGMA_UNROLL \
-  for (libxsmm_memory127_loop_i_ = 0; \
-    libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
+  unsigned char *const LIBXSMM_RESTRICT libxsmm_memory127_loop_dst_ = (unsigned char*)(DST); \
+  signed char libxsmm_memory127_loop_i_ = 0; \
+  NTS(libxsmm_memory127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
+  for (; libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
     ++libxsmm_memory127_loop_i_) \
   { \
-    OP(DST, SRC, libxsmm_memory127_loop_i_); \
+    RHS(unsigned char, libxsmm_memory127_loop_dst_, SRC, libxsmm_memory127_loop_i_); \
   } \
 } while(0)
 #define LIBXSMM_MEMORY127_NTS(...)
 
-#define LIBXSMM_MEMSET127_OP(DST, SRC, IDX) \
-  (((unsigned char*)(DST))[IDX] = (unsigned char)(SRC))
+#define LIBXSMM_MEMSET127_RHS(TYPE, DST, SRC, IDX) \
+  ((DST)[IDX] = (TYPE)(SRC))
 #define LIBXSMM_MEMSET127(DST, SRC, SIZE) \
   LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
-  LIBXSMM_MEMSET127_OP, LIBXSMM_MEMORY127_NTS)
+  LIBXSMM_MEMSET127_RHS, LIBXSMM_MEMORY127_NTS)
 #define LIBXSMM_MEMZERO127(DST) LIBXSMM_MEMSET127(DST, 0, sizeof(*(DST)))
 
-#define LIBXSMM_MEMCPY127_OP(DST, SRC, IDX) \
-  (((unsigned char*)(DST))[IDX] = ((const unsigned char*)(SRC))[IDX])
+#define LIBXSMM_MEMCPY127_RHS(TYPE, DST, SRC, IDX) \
+  ((DST)[IDX] = ((const TYPE *LIBXSMM_RESTRICT)(SRC))[IDX])
 #define LIBXSMM_MEMCPY127(DST, SRC, SIZE) \
   LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
-  LIBXSMM_MEMCPY127_OP, LIBXSMM_MEMORY127_NTS)
+  LIBXSMM_MEMCPY127_RHS, LIBXSMM_MEMORY127_NTS)
 #define LIBXSMM_ASSIGN127(DST, SRC) do { \
   LIBXSMM_ASSERT(sizeof(*(SRC)) <= sizeof(*(DST))); \
   LIBXSMM_MEMCPY127(DST, SRC, sizeof(*(SRC))); \
 } while(0)
 
-#define LIBXSMM_MEMSWP127_OP(DST, SRC, IDX) \
-  LIBXSMM_ISWAP(((unsigned char*)(DST))[IDX], ((unsigned char*)(SRC))[IDX])
+#define LIBXSMM_MEMSWP127_RHS(TYPE, DST, SRC, IDX) \
+  LIBXSMM_ISWAP((DST)[IDX], ((TYPE *LIBXSMM_RESTRICT)(SRC))[IDX])
 #define LIBXSMM_MEMSWP127(DST, SRC, SIZE) \
   LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
-  LIBXSMM_MEMSWP127_OP, LIBXSMM_MEMORY127_NTS)
+  LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS)
 
 
 /**

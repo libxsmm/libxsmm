@@ -119,7 +119,7 @@
           XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_tile_i_, libxsmm_xcopy_tile_j_, \
             libxsmm_xcopy_tile_src_, libxsmm_xcopy_tile_dst_); \
           LIBXSMM_MEMORY127_LOOP(libxsmm_xcopy_tile_dst_, libxsmm_xcopy_tile_src_, \
-            TYPESIZE, LIBXSMM_MEMCPY127_OP, LIBXSMM_PRAGMA_NONTEMPORAL); \
+            TYPESIZE, LIBXSMM_MEMCPY127_RHS, LIBXSMM_PRAGMA_NONTEMPORAL); \
         } \
       } \
     } \
@@ -286,4 +286,3 @@ LIBXSMM_APIVAR_PUBLIC(float libxsmm_mzero_nscale);
 LIBXSMM_APIVAR_PUBLIC(float libxsmm_tcopy_nscale);
 
 #endif /*LIBXSMM_XCOPY_H*/
-
