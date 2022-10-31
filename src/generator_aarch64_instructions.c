@@ -798,7 +798,9 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     case LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V:
     case LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V:
-      break;
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_E_V:
+    case LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_V:
+       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       exit(-1);
@@ -1161,6 +1163,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_SMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V:
     case LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I:
+    case LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_P:
       break;
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);

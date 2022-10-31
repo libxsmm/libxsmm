@@ -534,6 +534,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_asimd_compute( "asimd_comp_SMMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V,   0, 0 );
   test_asimd_compute( "asimd_comp_UMMLA_V",   &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V,   0, 0 );
   test_asimd_compute( "asimd_comp_USMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V,  0, 0 );
+  test_asimd_compute( "asimd_comp_BFDOT_V",    &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_V,    0, 0 );
+  test_asimd_compute( "asimd_comp_BFDOT_E_V",  &mycode, LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_E_V,  1, 0 );
 
   mycode.arch = LIBXSMM_AARCH64_A64FX;
   /* testing asimd ldr/str instructions */
@@ -568,6 +570,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_sve_compute( "sve_comp_UMMLA_V",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_UMMLA_V, 0 );
   test_sve_compute( "sve_comp_USMMLA_V", &mycode, LIBXSMM_AARCH64_INSTR_SVE_USMMLA_V, 0 );
   test_sve_compute( "sve_comp_SUB_V",    &mycode, LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I,    0 );
+  test_sve_compute( "sve_comp_BFDOT_V_P", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_P,   1 );
+  test_sve_compute( "sve_comp_BFDOT_V_I", &mycode, LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I,   1 );
 
   test_sve_pcompute( "sve_pcomp_PTRUE",  &mycode, LIBXSMM_AARCH64_INSTR_SVE_PTRUE );
   mycode.arch = LIBXSMM_AARCH64_V81;
