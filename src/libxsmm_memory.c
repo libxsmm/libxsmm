@@ -555,18 +555,25 @@ LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const ch
 
 LIBXSMM_API void libxsmm_shuffle(void* data, size_t elemsize, size_t count)
 {
+  unsigned char *const LIBXSMM_RESTRICT inout = (unsigned char*)data;
   const size_t shuffle = libxsmm_coprime2(count);
   size_t i = 0;
   if (elemsize < 128) {
-    unsigned char *const inout = (unsigned char*)data;
-    for (; i < count; ++i) LIBXSMM_MEMSWP127(inout + ((shuffle * i) % count) * elemsize, inout + i * elemsize, elemsize);
+    for (; i < count; ++i) {
+      size_t j = (shuffle * i) % count;
+      if (i > j) {
+        LIBXSMM_MEMSWP127(inout + elemsize * j, inout + elemsize * i, elemsize);
+      }
+    }
   }
   else {
     for (; i < count; ++i) {
-      unsigned char *const dst = (unsigned char*)data + elemsize * ((shuffle * i) % count);
-      unsigned char *const src = (unsigned char*)data + elemsize * i;
-      size_t j = 0;
-      for (; j < elemsize; ++j) LIBXSMM_ISWAP(dst[j], src[j]);
+      size_t j = (shuffle * i) % count;
+      if (i > j) {
+        unsigned char *const LIBXSMM_RESTRICT a = inout + elemsize * j;
+        unsigned char *const LIBXSMM_RESTRICT b = inout + elemsize * i;
+        for (j = 0; j < elemsize; ++j) LIBXSMM_ISWAP(a[j], b[j]);
+      }
     }
   }
 }
@@ -576,14 +583,14 @@ LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, s
 {
   if (src != dst) {
     const size_t shuffle = libxsmm_coprime2(count);
-    const char *const inp = (const char*)src;
-    char *const out = (char*)dst;
+    const char *const LIBXSMM_RESTRICT inp = (const char*)src;
+    char *const LIBXSMM_RESTRICT out = (char*)dst;
     size_t i = 0;
     if (elemsize < 128) {
-      for (; i < count; ++i) LIBXSMM_MEMCPY127(out + elemsize * ((shuffle * i) % count), inp + elemsize * i, elemsize);
+      for (; i < count; ++i) LIBXSMM_MEMCPY127(out + elemsize * i, inp + elemsize * ((shuffle * i) % count), elemsize);
     }
     else {
-      for (; i < count; ++i) memcpy(out + elemsize * ((shuffle * i) % count), inp + elemsize * i, elemsize);
+      for (; i < count; ++i) memcpy(out + elemsize * i, inp + elemsize * ((shuffle * i) % count), elemsize);
     }
   }
   else {

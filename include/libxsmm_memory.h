@@ -16,9 +16,9 @@
 #define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, RHS, NTS) do { \
   const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
   unsigned char *const LIBXSMM_RESTRICT libxsmm_memory127_loop_dst_ = (unsigned char*)(DST); \
-  signed char libxsmm_memory127_loop_i_ = 0; \
+  signed char libxsmm_memory127_loop_i_; \
   NTS(libxsmm_memory127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
-  for (; libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
+  for (libxsmm_memory127_loop_i_ = 0; libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
     ++libxsmm_memory127_loop_i_) \
   { \
     RHS(unsigned char, libxsmm_memory127_loop_dst_, SRC, libxsmm_memory127_loop_i_); \
@@ -90,10 +90,10 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
  */
 LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
 
-/** In-place shuffling of data given by elemsize and count. */
+/** In-place shuffling of data (bijective) given by elemsize and count. */
 LIBXSMM_API void libxsmm_shuffle(void* data, size_t elemsize, size_t count);
 
-/** Out-of-place shuffling of data given by elemsize and count. */
+/** Out-of-place shuffling of data (bijective) given by elemsize and count. */
 LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count);
 
 #endif /*LIBXSMM_MEMORY_H*/
