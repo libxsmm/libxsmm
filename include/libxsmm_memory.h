@@ -16,7 +16,7 @@
 #define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, OP, NTS) do { \
   const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
   signed char libxsmm_memory127_loop_i_; \
-  NTS(libxsmm_memory127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
+  NTS(DST) LIBXSMM_PRAGMA_UNROLL \
   for (libxsmm_memory127_loop_i_ = 0; \
     libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
     ++libxsmm_memory127_loop_i_) \
