@@ -17,42 +17,84 @@ int main(int argc, char* argv[])
   const libxsmm_blasint isize = sizeof(item);
   const libxsmm_blasint size = 1000, ntests = 1000;
   char *const data = (char*)malloc((size_t)isize * size);
-  libxsmm_blasint i, j, k, s;
+  char* const shuf = (char*)malloc((size_t)isize * size);
+  int result = EXIT_SUCCESS;
   LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
 
-  if (NULL != libxsmm_stristr("ends with b", "Begins with b")) return EXIT_FAILURE;
-  if (NULL == libxsmm_stristr("in between of", "BeTwEEn")) return EXIT_FAILURE;
-  if (NULL == libxsmm_stristr("spr", "SPR")) return EXIT_FAILURE;
-  if (NULL != libxsmm_stristr(NULL, "bb")) return EXIT_FAILURE;
-  if (NULL != libxsmm_stristr("aa", NULL)) return EXIT_FAILURE;
-  if (NULL != libxsmm_stristr(NULL, NULL)) return EXIT_FAILURE;
+  /* check if buffers are allocated (prerequisite) */
+  if (EXIT_SUCCESS == result && NULL == data) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL == shuf) result = EXIT_FAILURE;
 
-  if (NULL == data) return EXIT_FAILURE;
-  libxsmm_rng_seq(data, isize * size);
+  /* check libxsmm_stristr */
+  if (EXIT_SUCCESS == result && NULL != libxsmm_stristr("ends with b", "Begins with b")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL == libxsmm_stristr("in between of", "BeTwEEn")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL == libxsmm_stristr("spr", "SPR")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL != libxsmm_stristr(NULL, "bb")) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL != libxsmm_stristr("aa", NULL)) result = EXIT_FAILURE;
+  if (EXIT_SUCCESS == result && NULL != libxsmm_stristr(NULL, NULL)) result = EXIT_FAILURE;
 
-  for (i = 0; i < ntests; ++i) {
-    j = (libxsmm_blasint)libxsmm_rng_u32(size);
-    s = libxsmm_rng_u32(isize) + 1;
-    libxsmm_rng_seq(item, s);
-    for (k = s; k < isize; ++k) item[k] = 0;
-    LIBXSMM_MEMCPY127(data + (j * isize), item, isize);
-    k = libxsmm_diff_n(item, data,
-      (unsigned char)s, (unsigned char)isize,
-      0, size);
-    while (k < j) {
+  /* check LIBXSMM_MEMCPY127 and libxsmm_diff_n */
+  if (EXIT_SUCCESS == result) {
+    libxsmm_blasint i = 0;
+    libxsmm_rng_seq(data, isize * size);
+
+    for (; i < ntests; ++i) {
+      const libxsmm_blasint j = (libxsmm_blasint)libxsmm_rng_u32(size);
+      const libxsmm_blasint s = libxsmm_rng_u32(isize) + 1;
+      libxsmm_blasint k = s;
+      libxsmm_rng_seq(item, s);
+      for (; k < isize; ++k) item[k] = 0;
+      LIBXSMM_MEMCPY127(data + (j * isize), item, isize);
       k = libxsmm_diff_n(item, data,
         (unsigned char)s, (unsigned char)isize,
-        k + 1, size);
-    }
-    if (k == j) {
-      continue;
-    }
-    else {
-      free(data); return EXIT_FAILURE;
+        0, size);
+      while (k < j) {
+        k = libxsmm_diff_n(item, data,
+          (unsigned char)s, (unsigned char)isize,
+          k + 1, size);
+      }
+      if (k == j) {
+        continue;
+      }
+      else {
+        result = EXIT_FAILURE;
+        break;
+      }
     }
   }
-  free(data);
 
-  return EXIT_SUCCESS;
+  /* check libxsmm_shuffle2 */
+  if (EXIT_SUCCESS == result) {
+    libxsmm_blasint i = 0;
+    const char *const src = (const char*)data;
+    libxsmm_shuffle2(shuf, src, isize, size);
+    for (; i < size; ++i) {
+      const size_t j = libxsmm_diff_n(&src[i*isize], shuf,
+        LIBXSMM_CAST_UCHAR(isize), LIBXSMM_CAST_UCHAR(isize),
+        (i + size / 2) % size, size);
+      if ((size_t)size <= j) {
+        result = EXIT_FAILURE;
+        break;
+      }
+    }
+  }
+#if 0
+  /* check libxsmm_shuffle */
+  if (EXIT_SUCCESS == result) {
+    libxsmm_blasint i = 0;
+    const char *const src = (const char*)data, *const dst = (const char*)shuf;
+    libxsmm_shuffle(shuf, isize, size);
+    for (; i < size; ++i) {
+      if (0 != libxsmm_diff(&src[i*isize], &dst[i*isize], LIBXSMM_CAST_UCHAR(isize))) {
+        result = EXIT_FAILURE;
+        break;
+      }
+    }
+  }
+#endif
+  free(data);
+  free(shuf);
+
+  return result;
 }
 
