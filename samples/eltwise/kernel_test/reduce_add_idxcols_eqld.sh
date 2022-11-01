@@ -3,12 +3,6 @@
 source setup_tpp_prec_list.sh unary_reduce_colsidx
 
 
-if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
-    exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
-    exit 0;
-fi
 
 TESTFILE1=$(mktemp)
 

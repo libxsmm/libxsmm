@@ -78,3 +78,10 @@ if [[ $1 == "binary_simple" ]]; then
   fi
 fi
 
+if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
+    exit 0;
+fi
+if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
+    exit 0;
+fi
+
