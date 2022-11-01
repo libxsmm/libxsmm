@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
 #if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
+  const size_t shuffle = libxsmm_coprime2((unsigned int)size);
 #endif
   /* allocate A, B, and C matrix buffers */
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);

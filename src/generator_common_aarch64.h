@@ -16,6 +16,16 @@
 #include "generator_common.h"
 #include "generator_aarch64_instructions.h"
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_vcvt_f32bf16_aarch64_sve( libxsmm_generated_code* io_generated_code,
+    const unsigned int i_vec_inout,
+    const unsigned int i_pred_reg);
+
 /**
  * Sets the given predicate register.
  *

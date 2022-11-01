@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
 #if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
+  const size_t shuffle = libxsmm_coprime2((unsigned int)size);
 #endif
   size_t sa = sizeof(T) * na * size + PAD - 1;
   size_t sb = sizeof(T) * nb * size + PAD - 1;

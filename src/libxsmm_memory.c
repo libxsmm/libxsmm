@@ -360,50 +360,50 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
 }
 
 
-LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
-  unsigned char stride, unsigned int hint, unsigned int n)
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char elemsize,
+  unsigned char stride, unsigned int hint, unsigned int count)
 {
   unsigned int result;
-  LIBXSMM_ASSERT(size <= stride);
+  LIBXSMM_ASSERT(elemsize <= stride);
 #if defined(LIBXSMM_MEMORY_STDLIB) && !defined(LIBXSMM_MEMORY_SW)
-  LIBXSMM_DIFF_N(unsigned int, result, memcmp, a, bn, size, stride, hint, n);
+  LIBXSMM_DIFF_N(unsigned int, result, memcmp, a, bn, elemsize, stride, hint, count);
 #else
 # if !defined(LIBXSMM_MEMORY_SW)
-  switch (size) {
+  switch (elemsize) {
     case 64: {
       LIBXSMM_DIFF_64_DECL(a64);
       LIBXSMM_DIFF_64_LOAD(a64, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_64, a64, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_64, a64, bn, 64, stride, hint, count);
     } break;
     case 48: {
       LIBXSMM_DIFF_48_DECL(a48);
       LIBXSMM_DIFF_48_LOAD(a48, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_48, a48, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_48, a48, bn, 48, stride, hint, count);
     } break;
     case 32: {
       LIBXSMM_DIFF_32_DECL(a32);
       LIBXSMM_DIFF_32_LOAD(a32, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_32, a32, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_32, a32, bn, 32, stride, hint, count);
     } break;
     case 16: {
       LIBXSMM_DIFF_16_DECL(a16);
       LIBXSMM_DIFF_16_LOAD(a16, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, 16, stride, hint, count);
     } break;
     case 8: {
       LIBXSMM_DIFF_8_DECL(a8);
       LIBXSMM_DIFF_8_LOAD(a8, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_8, a8, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_8, a8, bn, 8, stride, hint, count);
     } break;
     case 4: {
       LIBXSMM_DIFF_4_DECL(a4);
       LIBXSMM_DIFF_4_LOAD(a4, a);
-      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_4, a4, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_4, a4, bn, 4, stride, hint, count);
     } break;
     default:
 # endif
     {
-      LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, size, stride, hint, n);
+      LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, elemsize, stride, hint, count);
     }
 # if !defined(LIBXSMM_MEMORY_SW)
   }
@@ -553,6 +553,70 @@ LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const ch
 }
 
 
+LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count)
+{
+  const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
+  unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
+  const size_t size = elemsize * count;
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out))
+#endif
+  {
+    const size_t shuffle = libxsmm_coprime2(count);
+    size_t i = 0, j = 1;
+    if (elemsize < 128) {
+      switch (elemsize) {
+        case 8: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 4: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 2: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 1: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            out[i] = inp[size-elemsize*j];
+          }
+        } break;
+        default: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
+          }
+        }
+      }
+    }
+    else {
+      for (; i < size; i += elemsize, j += shuffle) {
+        if (count < j) j -= count;
+        memcpy(out + i, inp + size - elemsize * j, elemsize);
+      }
+    }
+  }
+#if !defined(NDEBUG)
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
+    }
+  }
+#endif
+}
+
+
 #if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */
@@ -567,10 +631,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xhash)(int* hash_seed, const void* data
     *hash_seed = (int)(libxsmm_hash(data, (unsigned int)*size, (unsigned int)*hash_seed) & 0x7FFFFFFF/*sign-bit*/);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xhash specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xhash specified!\n");
+    }
   }
 #endif
 }
@@ -588,10 +653,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdiff)(int* result, const void* a, cons
     *result = libxsmm_memcmp(a, b, (size_t)*size);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xdiff specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xdiff specified!\n");
+    }
   }
 #endif
 }
@@ -609,10 +675,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
     LIBXSMM_MEMSET127(dst, 0, s);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+    }
   }
 #endif
 }
@@ -630,10 +697,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, 
     *result = libxsmm_aligned(ptr, &next, alignment);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
+    }
   }
 #endif
 }
