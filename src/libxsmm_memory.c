@@ -553,49 +553,67 @@ LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const ch
 }
 
 
-LIBXSMM_API void libxsmm_shuffle(void* data, size_t elemsize, size_t count)
+LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count)
 {
-  unsigned char *const LIBXSMM_RESTRICT inout = (unsigned char*)data;
-  const size_t shuffle = libxsmm_coprime2(count);
-  size_t i = 0;
-  if (elemsize < 128) {
-    for (; i < count; ++i) {
-      size_t j = (shuffle * i) % count;
-      if (i > j) {
-        LIBXSMM_MEMSWP127(inout + elemsize * j, inout + elemsize * i, elemsize);
-      }
-    }
-  }
-  else {
-    for (; i < count; ++i) {
-      size_t j = (shuffle * i) % count;
-      if (i > j) {
-        unsigned char *const LIBXSMM_RESTRICT a = inout + elemsize * j;
-        unsigned char *const LIBXSMM_RESTRICT b = inout + elemsize * i;
-        for (j = 0; j < elemsize; ++j) LIBXSMM_ISWAP(a[j], b[j]);
-      }
-    }
-  }
-}
-
-
-LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count)
-{
-  if (src != dst) {
+  const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
+  unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
+  const size_t size = elemsize * count;
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out))
+#endif
+  {
     const size_t shuffle = libxsmm_coprime2(count);
-    const char *const LIBXSMM_RESTRICT inp = (const char*)src;
-    char *const LIBXSMM_RESTRICT out = (char*)dst;
-    size_t i = 0;
+    size_t i = 0, j = 1;
     if (elemsize < 128) {
-      for (; i < count; ++i) LIBXSMM_MEMCPY127(out + elemsize * i, inp + elemsize * ((shuffle * i) % count), elemsize);
+      switch (elemsize) {
+        case 8: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 4: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 2: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - elemsize * j);
+          }
+        } break;
+        case 1: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            out[i] = inp[size-elemsize*j];
+          }
+        } break;
+        default: {
+          for (; i < size; i += elemsize, j += shuffle) {
+            if (count < j) j -= count;
+            LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
+          }
+        }
+      }
     }
     else {
-      for (; i < count; ++i) memcpy(out + elemsize * i, inp + elemsize * ((shuffle * i) % count), elemsize);
+      for (; i < size; i += elemsize, j += shuffle) {
+        if (count < j) j -= count;
+        memcpy(out + i, inp + size - elemsize * j, elemsize);
+      }
     }
   }
-  else {
-    libxsmm_shuffle(dst, elemsize, count);
+#if !defined(NDEBUG)
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
+    }
   }
+#endif
 }
 
 
@@ -613,10 +631,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xhash)(int* hash_seed, const void* data
     *hash_seed = (int)(libxsmm_hash(data, (unsigned int)*size, (unsigned int)*hash_seed) & 0x7FFFFFFF/*sign-bit*/);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xhash specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xhash specified!\n");
+    }
   }
 #endif
 }
@@ -634,10 +653,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xdiff)(int* result, const void* a, cons
     *result = libxsmm_memcmp(a, b, (size_t)*size);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xdiff specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xdiff specified!\n");
+    }
   }
 #endif
 }
@@ -655,10 +675,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xclear)(void* dst, const int* size)
     LIBXSMM_MEMSET127(dst, 0, s);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_xclear specified!\n");
+    }
   }
 #endif
 }
@@ -676,10 +697,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_aligned)(int* result, const void* ptr, 
     *result = libxsmm_aligned(ptr, &next, alignment);
   }
 #if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    LIBXSMM_INIT
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_aligned specified!\n");
+    }
   }
 #endif
 }

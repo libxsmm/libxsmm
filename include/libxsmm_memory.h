@@ -90,10 +90,7 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
  */
 LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
 
-/** In-place shuffling of data (bijective) given by elemsize and count. */
-LIBXSMM_API void libxsmm_shuffle(void* data, size_t elemsize, size_t count);
-
-/** Out-of-place shuffling of data (bijective) given by elemsize and count. */
-LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count);
+/** Out-of-place shuffling of data given by elemsize and count. */
+LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count);
 
 #endif /*LIBXSMM_MEMORY_H*/
