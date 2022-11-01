@@ -12,11 +12,17 @@
 # shellcheck disable=SC2086
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+SORT=$(command -v sort)
 GREP=$(command -v grep)
 SED=$(command -v sed)
 ENV=$(command -v env)
 TR=$(command -v tr)
 WC=$(command -v wc)
+
+if [ ! "${GREP}" ] || [ ! "${SED}" ] || [ ! "${TR}" ] || [ ! "${WC}" ]; then
+  >&2 echo "ERROR: missing prerequisites!"
+  exit 1
+fi
 
 #Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
 
@@ -26,7 +32,10 @@ TESTS_NEEDBLAS="gemm.c wrap.sh"
 TESTS_NEEDBLAS_GREP=$(echo "${TESTS_NEEDBLAS}" | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
-  TESTS="$(${GREP} -l "main[[:space:]]*(.*)" "${HERE}"/*.c 2>/dev/null) eltwise.sh fsspmdm.sh wrap.sh"
+  TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" *.c 2>/dev/null) memcmp.sh eltwise.sh fsspmdm.sh wrap.sh"
+  if [ "${SORT}" ]; then
+    TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
+  fi
 else
   TESTS="$*"
 fi
@@ -59,7 +68,7 @@ NTEST=1
 NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
   NAME=$(echo "${TEST}" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
-  printf "%02d of %02d (${NAME})... " "${NTEST}" "${NMAX}"
+  printf "%02d of %02d: %-12s " "${NTEST}" "${NMAX}" "${NAME}"
   if [ "0" != "$(echo "${TESTS_DISABLED}" | ${GREP} -q "${NAME}"; echo $?)" ]; then
     cd "${HERE}" || exit 1
     if [ -e "${HERE}/${NAME}.sh" ]; then

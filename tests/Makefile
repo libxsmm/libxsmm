@@ -65,6 +65,7 @@ REALTYPE := $(word $(if $(REALTYPE_INDEX),$(REALTYPE_INDEX),1),double float)
 .PHONY: all
 all: $(XFILES)
 	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory"
 
@@ -146,6 +147,7 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 .PHONY: clean
 clean:
 	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
@@ -162,6 +164,7 @@ endif
 .PHONY: realclean
 realclean: clean
 	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
