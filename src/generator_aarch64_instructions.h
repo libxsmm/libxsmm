@@ -344,8 +344,8 @@
 #define LIBXSMM_AARCH64_INSTR_ASIMD_SMMLA_V      0x4e80a413
 #define LIBXSMM_AARCH64_INSTR_ASIMD_UMMLA_V      0x6e80a413
 #define LIBXSMM_AARCH64_INSTR_ASIMD_USMMLA_V     0x4e80ac13
-#define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_E_V    0x0430f00f
-#define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_V      0x2e30fc0b
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_E_V    0x0f40f00f
+#define LIBXSMM_AARCH64_INSTR_ASIMD_BFDOT_V      0x2e40fc0b
 
 /* define SVE LD/ST instriction */
 #define LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF    0x85804006
@@ -441,12 +441,12 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V      0x65004183 /* fp compare less than, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V      0x65004083 /* fp compare greater than or equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V      0x65102092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
-#define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_P      0x64680083 /* BF16 dot-product */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V        0x64608003 /* BF16 dot-product */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLS_V_I       0x64200443 /* fused multiply-subtract */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMUL_V_I       0x64202043 /* multiply */
-#define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I      0x64603043 /* BF16 dot-product */
+#define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V_I      0x64604043 /* BF16 dot-product */
 /* define integer instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_SUB_V_I        0x2521c026 /* integer sub with immediate, src0 = dest*/
 /* table access instructions */
