@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
 
-PREC_LIST="F32";
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-    PREC_LIST="F32 BF16 F16";
-fi
-if [[ ${LIBXSMM_TARGET} == "neov1" ]]; then
-    PREC_LIST="F32 BF16";
-fi
+source setup_tpp_prec_list.sh unary_reduce_colsidx
 
 
-if [[ ${LIBXSMM_TARGET} == "clx" || ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
-    PREC_LIST="F32 BF16 F16 BF8 HF8";
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
     exit 0;
 fi

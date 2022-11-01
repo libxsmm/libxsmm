@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
 
-PREC_LIST="F32_F32_F32";
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-    PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32 F16_F16_F32 F32_F16_F32 F16_F32_F32";
-fi
-if [[ ${LIBXSMM_TARGET} == "neov1" ]]; then
-    PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32";
-fi
+source setup_tpp_prec_list.sh unary_no_simple
 
 
-if [[ ${LIBXSMM_TARGET} == "clx" || ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
-    PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32 F16_F16_F32 F32_F16_F32 F16_F32_F32 BF8_BF8_F32 F32_BF8_F32 BF8_F32_F32 HF8_HF8_F32 F32_HF8_F32 HF8_F32_F32";
-fi
 if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
     exit 0;
 fi
