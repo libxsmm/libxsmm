@@ -29,6 +29,8 @@ libxsmm_convert_f16_f32
 libxsmm_convert_f16_to_f32
 libxsmm_convert_f32_to_f16
 libxsmm_convert_hf8_f32
+libxsmm_coprime2
+libxsmm_coprime2_
 libxsmm_cpuid
 libxsmm_cpuid_arm
 libxsmm_cpuid_name
@@ -325,7 +327,7 @@ libxsmm_sgemm3
 libxsmm_sgemm_
 libxsmm_sgemm_descriptor_init
 libxsmm_shuffle
-libxsmm_shuffle_
+libxsmm_shuffle2
 libxsmm_sink
 libxsmm_smmavailable
 libxsmm_smmcall

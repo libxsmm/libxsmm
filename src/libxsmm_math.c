@@ -329,22 +329,22 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
+LIBXSMM_API size_t libxsmm_coprime2(size_t n)
 {
-  const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
-  const unsigned int d = (0 != (n & 1) ? 1 : 2);
-  unsigned int result = (1 < n ? 1 : 0), i;
+  const size_t s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
+  const size_t d = (0 != (n & 1) ? 1 : 2);
+  size_t result = (1 < n ? 1 : 0), i;
   for (i = (d < n ? (n - 1) : 0); d < i; i -= d) {
-    const unsigned int c = (s <= i ? (i - s) : (s - i));
-    unsigned int a = n, b = c;
+    const size_t c = LIBXSMM_DELTA(s, i);
+    size_t a = n, b = c;
     do {
-      const unsigned int r = a % b;
+      const size_t r = a % b;
       a = b;
       b = r;
     } while (0 != b);
     if (1 == a) {
       result = c;
-      if (2 * c <= n) {
+      if ((c * 2) <= n) {
         i = d; /* break */
       }
     }
@@ -633,21 +633,21 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* in
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* /*coprime*/, const int* /*n*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int* n)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_coprime2)(long long* /*coprime*/, const int* /*n*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_coprime2)(long long* coprime, const int* n)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
   if (NULL != coprime && NULL != n && 0 <= *n)
 #endif
   {
-    *coprime = (long long)(libxsmm_shuffle((unsigned int)(*n)) & 0x7FFFFFFF);
+    *coprime = (long long)(libxsmm_coprime2((size_t)(*n)) & 0x7FFFFFFF);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_coprime2 specified!\n");
   }
 #endif
 }

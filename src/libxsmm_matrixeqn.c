@@ -876,14 +876,13 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
 
   if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
     libxsmm_matrix_eqn_elem *node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
-
+    assert(NULL != node);
     node->le = NULL;
     node->ri = NULL;
     node->r2 = NULL;
     node->up = cur_node;
     node->type = type;
     node->info = info;
-
     if ( cur_node->le == NULL ) {
       cur_node->le = node;
     } else {
@@ -892,18 +891,16 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
       free( node );
       node = NULL;
     }
-
     return node;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
     libxsmm_matrix_eqn_elem *node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
-
+    assert(NULL != node);
     node->le = NULL;
     node->ri = NULL;
     node->r2 = NULL;
     node->up = cur_node;
     node->type = type;
     node->info = info;
-
     if ( cur_node->le == NULL ) {
       cur_node->le = node;
     } else if ( cur_node->ri == NULL ) {
@@ -914,18 +911,16 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
       free( node );
       node = NULL;
     }
-
     return node;
   } else if ( cur_node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
     libxsmm_matrix_eqn_elem *node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
-
+    assert(NULL != node);
     node->le = NULL;
     node->ri = NULL;
     node->r2 = NULL;
     node->up = cur_node;
     node->type = type;
     node->info = info;
-
     if ( cur_node->le == NULL ) {
       cur_node->le = node;
     } else if ( cur_node->ri == NULL ) {
@@ -938,7 +933,6 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
       free( node );
       node = NULL;
     }
-
     return node;
   /* we converting the root */
   } else if ( (cur_node->type == LIBXSMM_MATRIX_EQN_NODE_NONE) && (type != LIBXSMM_MATRIX_EQN_NODE_ARG) ) {
@@ -948,13 +942,11 @@ LIBXSMM_API_INTERN libxsmm_matrix_eqn_elem* libxsmm_matrix_eqn_add_node( libxsmm
     cur_node->up = NULL;
     cur_node->type = type;
     cur_node->info = info;
-
     return cur_node;
   } else {
     /* should not happen */
     fprintf( stderr, "at this position we cannot add an op!\n");
   }
-
   return NULL;
 }
 
@@ -1114,6 +1106,7 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_rpn_print( libxsmm_matrix_eqn_ele
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx );
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_mov_head( libxsmm_blasint idx ) {
+  assert(NULL !=libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation does not exist!\n" );
   }
@@ -1160,6 +1153,7 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   libxsmm_blasint ret = libxsmm_matrix_eqns_count;
   libxsmm_matrix_eqn_elem* node;
 
+  assert(NULL != libxsmm_matrix_eqns);
   /* lazy init of helper array */
   if ( libxsmm_matrix_eqns_init == 0 ) {
     libxsmm_blasint i;
@@ -1175,12 +1169,11 @@ LIBXSMM_API libxsmm_blasint libxsmm_matrix_eqn_create(void) {
   libxsmm_matrix_eqns[ret] = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
 
   node = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
-
+  assert(NULL != node);
   node->le = NULL;
   node->ri = NULL;
   node->up = NULL;
   node->type = LIBXSMM_MATRIX_EQN_NODE_NONE;
-
   libxsmm_matrix_eqns[ret]->eqn_root = node;
   libxsmm_matrix_eqns[ret]->eqn_cur = node;
   libxsmm_matrix_eqns[ret]->is_constructed = 0;
@@ -1503,6 +1496,7 @@ LIBXSMM_API int libxsmm_matrix_eqn_push_back_ternary_op_v2(const libxsmm_matrix_
 }
 
 LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx ) {
+  assert(NULL != libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation does not exist!\n" );
   }
@@ -1518,6 +1512,7 @@ LIBXSMM_API void libxsmm_matrix_eqn_tree_print( const libxsmm_blasint idx ) {
 
 
 LIBXSMM_API void libxsmm_matrix_eqn_rpn_print( const libxsmm_blasint idx ) {
+  assert(NULL != libxsmm_matrix_eqns);
   if ( libxsmm_matrix_eqns[idx] == NULL ) {
     fprintf( stderr, "the requested equation does not exist!\n" );
   }

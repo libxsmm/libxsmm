@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     : batchsize);
   /* process batch of A, B, and C in "random" order */
   const size_t shuffle = (0 != (9 < argc ? atoi(argv[9]) : 1)
-    ? libxsmm_shuffle((unsigned int)size)
+    ? libxsmm_coprime2(size)
     : 0);
   /* allocate A, B, C, and D/Gold matrix buffers */
   TYPE *const a = (TYPE*)MALLOC(sizeof(TYPE) * na * size);
@@ -134,11 +134,11 @@ int main(int argc, char* argv[])
     for (i = 0; i < size; ++i) {
       const libxsmm_blasint j = (0 != shuffle ? (libxsmm_blasint)((i * shuffle) % size) : i);
       ia[i] = j * na; ib[i] = j * nb; ic[i] = j * nc;
-      LIBXSMM_MATINIT(TYPE, 25 + i, a + i * na, m, k, lda, scale);
-      LIBXSMM_MATINIT(TYPE, 75 + i, b + i * nb, k, n, ldb, scale);
+      LIBXSMM_MATINIT(TYPE, 25 + i, &a[i*na], m, k, lda, scale);
+      LIBXSMM_MATINIT(TYPE, 75 + i, &b[i*nb], k, n, ldb, scale);
       if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-        LIBXSMM_MATINIT(TYPE, 42 + i, c + i * nc, m, n, ldc, scale);
-        LIBXSMM_MATINIT(TYPE, 42 + i, d + i * nc, m, n, ldc, scale);
+        LIBXSMM_MATINIT(TYPE, 42 + i, &c[i*nc], m, n, ldc, scale);
+        LIBXSMM_MATINIT(TYPE, 42 + i, &d[i*nc], m, n, ldc, scale);
       }
     }
 
@@ -593,8 +593,8 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + i * na, &lda, b + i * nb, &ldb,
-          &beta, d + i * nc, &ldc);
+          &alpha, &a[i*na], &lda, &b[i*nb], &ldb,
+          &beta, &d[i*nc], &ldc);
       }
 #if defined(PRINT)
       d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -630,8 +630,8 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + i * na, &lda, b + i * nb, &ldb,
-          &beta, d + i * nc, &ldc);
+          &alpha, &a[i*na], &lda, &b[i*nb], &ldb,
+          &beta, &d[i*nc], &ldc);
       }
 #if defined(PRINT)
       d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -663,8 +663,8 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + i * na, &lda, b + i * nb, &ldb,
-          &beta, d + i * nc, &ldc);
+          &alpha, &a[i*na], &lda, &b[i*nb], &ldb,
+          &beta, &d[i*nc], &ldc);
       }
 #if defined(PRINT)
       d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());

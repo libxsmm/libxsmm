@@ -13,43 +13,41 @@
 
 #include "libxsmm_macros.h"
 
-#if defined(__clang_analyzer__)
-# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) memset((void*)(PTRDST), VALUE, SIZE)
-#else
-# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) do { \
-  char *const libxsmm_memset127_dst_ = (char*)(PTRDST); \
-  union { size_t size; signed char size1; } libxsmm_memset127_; \
-  signed char libxsmm_memset127_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
-  libxsmm_memset127_.size = (SIZE); \
-  LIBXSMM_PRAGMA_UNROLL \
-  for (libxsmm_memset127_i_ = 0; libxsmm_memset127_i_ < libxsmm_memset127_.size1; \
-    ++libxsmm_memset127_i_) \
+#define LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, RHS, NTS) do { \
+  const signed char libxsmm_memory127_loop_size_ = LIBXSMM_CAST_ICHAR(SIZE); \
+  unsigned char *const LIBXSMM_RESTRICT libxsmm_memory127_loop_dst_ = (unsigned char*)(DST); \
+  signed char libxsmm_memory127_loop_i_; \
+  NTS(libxsmm_memory127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
+  for (libxsmm_memory127_loop_i_ = 0; libxsmm_memory127_loop_i_ < libxsmm_memory127_loop_size_; \
+    ++libxsmm_memory127_loop_i_) \
   { \
-    libxsmm_memset127_dst_[libxsmm_memset127_i_] = (char)(VALUE); \
+    RHS(unsigned char, libxsmm_memory127_loop_dst_, SRC, libxsmm_memory127_loop_i_); \
   } \
 } while(0)
-#endif
-#define LIBXSMM_MEMZERO127(PTRDST) LIBXSMM_MEMSET127(PTRDST, '\0', sizeof(*(PTRDST)))
+#define LIBXSMM_MEMORY127_NTS(...)
 
-#define LIBXSMM_MEMCPY127_LOOP(PTRDST, PTRSRC, SIZE, NTS) do { \
-  const unsigned char *const libxsmm_memcpy127_loop_src_ = (const unsigned char*)(PTRSRC); \
-  unsigned char *const libxsmm_memcpy127_loop_dst_ = (unsigned char*)(PTRDST); \
-  signed char libxsmm_memcpy127_loop_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
-  NTS(libxsmm_memcpy127_loop_dst_) LIBXSMM_PRAGMA_UNROLL \
-  for (libxsmm_memcpy127_loop_i_ = 0; libxsmm_memcpy127_loop_i_ < (signed char)(SIZE); \
-    ++libxsmm_memcpy127_loop_i_) \
-  { \
-    libxsmm_memcpy127_loop_dst_[libxsmm_memcpy127_loop_i_] = \
-    libxsmm_memcpy127_loop_src_[libxsmm_memcpy127_loop_i_]; \
-  } \
+#define LIBXSMM_MEMSET127_RHS(TYPE, DST, SRC, IDX) \
+  ((DST)[IDX] = (TYPE)(SRC))
+#define LIBXSMM_MEMSET127(DST, SRC, SIZE) \
+  LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
+  LIBXSMM_MEMSET127_RHS, LIBXSMM_MEMORY127_NTS)
+#define LIBXSMM_MEMZERO127(DST) LIBXSMM_MEMSET127(DST, 0, sizeof(*(DST)))
+
+#define LIBXSMM_MEMCPY127_RHS(TYPE, DST, SRC, IDX) \
+  ((DST)[IDX] = ((const TYPE*)(SRC))[IDX])
+#define LIBXSMM_MEMCPY127(DST, SRC, SIZE) \
+  LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
+  LIBXSMM_MEMCPY127_RHS, LIBXSMM_MEMORY127_NTS)
+#define LIBXSMM_ASSIGN127(DST, SRC) do { \
+  LIBXSMM_ASSERT(sizeof(*(SRC)) <= sizeof(*(DST))); \
+  LIBXSMM_MEMCPY127(DST, SRC, sizeof(*(SRC))); \
 } while(0)
-#define LIBXSMM_MEMCPY127_NTS(...)
-#define LIBXSMM_MEMCPY127(PTRDST, PTRSRC, SIZE) \
-  LIBXSMM_MEMCPY127_LOOP(PTRDST, PTRSRC, SIZE, LIBXSMM_MEMCPY127_NTS)
-#define LIBXSMM_ASSIGN127(PTRDST, PTRSRC) do { \
-  LIBXSMM_ASSERT(sizeof(*(PTRSRC)) <= sizeof(*(PTRDST))); \
-  LIBXSMM_MEMCPY127(PTRDST, PTRSRC, sizeof(*(PTRSRC))); \
-} while(0)
+
+#define LIBXSMM_MEMSWP127_RHS(TYPE, DST, SRC, IDX) \
+  LIBXSMM_ISWAP((DST)[IDX], ((TYPE*)(SRC))[IDX])
+#define LIBXSMM_MEMSWP127(DST, SRC, SIZE) \
+  LIBXSMM_MEMORY127_LOOP(DST, SRC, SIZE, \
+  LIBXSMM_MEMSWP127_RHS, LIBXSMM_MEMORY127_NTS)
 
 
 /**
@@ -65,11 +63,13 @@ LIBXSMM_API int libxsmm_aligned(const void* ptr, const size_t* inc, int* alignme
 LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size);
 
 /**
- * Calculates if there is a difference between "a" and "n x b".
- * Returns the index of the first match (or "n" in case of no match).
+ * Calculates the "difference" between "a" and "b"; "a" is taken "count" times into account.
+ * Returns the first match (index) of no difference (or "n" if "a" did not match).
+ * The hint determines the initial index searching for a difference, and it must
+ * be in bounds [0, count), but otherwise only impacts performance.
  */
-LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
-  unsigned char stride, unsigned int hint, unsigned int n);
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char elemsize,
+  unsigned char stride, unsigned int hint, unsigned int count);
 
 /** Similar to memcmp (C standard library), but the result is conceptually only a boolean. */
 LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
@@ -89,5 +89,11 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
  * If zero is returned, nothing was printed (no prefix, no postfix).
  */
 LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
+
+/** In-place shuffling of data (bijective) given by elemsize and count. */
+LIBXSMM_API void libxsmm_shuffle(void* data, size_t elemsize, size_t count);
+
+/** Out-of-place shuffling of data (bijective) given by elemsize and count. */
+LIBXSMM_API void libxsmm_shuffle2(void* dst, const void* src, size_t elemsize, size_t count);
 
 #endif /*LIBXSMM_MEMORY_H*/

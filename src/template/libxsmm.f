@@ -1895,25 +1895,24 @@
      &      ref, tst, ldref, ldtst)
         END SUBROUTINE
 
-        !> Calculate co-prime number <= n/2 (except: libxsmm_shuffle(0|1) == 0).
+        !> Calculate co-prime number <= n/2 (except: libxsmm_coprime2(0|1) == 0).
         !> Implicit FORTRAN 77 interface:
-        !> INTEGER(4) :: coprime (OUT)
-        !> INTEGER(4) :: n
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_shuffle
-        ELEMENTAL FUNCTION libxsmm_shuffle(n)
-          INTEGER(C_LONG_LONG) :: libxsmm_shuffle
-          INTEGER(C_INT), INTENT(IN) :: n
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_shuffle
+        !> INTEGER(8) :: coprime (OUT), n (IN)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_coprime2
+        ELEMENTAL FUNCTION libxsmm_coprime2(n)
+          INTEGER(C_LONG_LONG) :: libxsmm_coprime2
+          INTEGER(C_LONG_LONG), INTENT(IN) :: n
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_coprime2
           INTERFACE
-            PURE SUBROUTINE internal_shuffle(coprime, n)                &
-     &      BIND(C, NAME="libxsmm_shuffle_")
-              IMPORT :: C_LONG_LONG, C_INT
+            PURE SUBROUTINE internal_coprime2(coprime, n)               &
+     &      BIND(C, NAME="libxsmm_coprime2_")
+              IMPORT :: C_LONG_LONG
               INTEGER(C_LONG_LONG), INTENT(OUT) :: coprime
-              INTEGER(C_INT), INTENT(IN) :: n
+              INTEGER(C_LONG_LONG), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
-          libxsmm_shuffle = INT(0, KIND=C_LONG_LONG) ! avoid warning (older CRAY)
-          CALL internal_shuffle(libxsmm_shuffle, n)
+          libxsmm_coprime2 = INT(0, KIND=C_LONG_LONG) ! avoid warning (older CRAY)
+          CALL internal_coprime2(libxsmm_coprime2, n)
         END FUNCTION
 
         !> Calculates a hash value for the given array and seed.
