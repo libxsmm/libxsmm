@@ -1,23 +1,8 @@
 #!/usr/bin/env bash
 
-PREC_LIST="F32 BF16 F16";
+source setup_tpp_prec_list.sh unary_reduce
 
-if [[ ${LIBXSMM_TARGET} == "aarch64" ]]; then
-    PREC_LIST="F32";
-fi
 
-if [[ ${LIBXSMM_TARGET} == "clx" ]]; then
-    PREC_LIST="F32 BF16 F16 BF8 HF8";
-fi
-if [[ ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
-    PREC_LIST="F32 BF16 F16 BF8 HF8";
-fi
-if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
-    exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
-    exit 0;
-fi
 
 TESTFILE1=$(mktemp)
 

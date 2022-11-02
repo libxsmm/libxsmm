@@ -290,8 +290,9 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
 
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
+      int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       scratch_size = tmp_size * n_tmp;
       i_micro_kernel_config->tmp_size = tmp_size;
@@ -314,8 +315,9 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
         fprintf( stderr, "JITing Matrix Equation with REGISTER-BLOCK TEMPS (n_args = %d , addr_scratch_size = %.5g KB)\n", n_args, (1.0*addr_scratch_size)/1024.0 );
       }
     } else if (i_strategy == JIT_STRATEGY_HYBRID) {
+      int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
