@@ -558,6 +558,12 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
     /* Find input precision of op */
     in_precision = cur_op->le->tmp.dtype;
 
+    /* Adjust precisions to F64 if the input is also F64 */
+    if (in_precision == LIBXSMM_DATATYPE_F64) {
+      in_precision = LIBXSMM_DATATYPE_F64;
+      out_precision = LIBXSMM_DATATYPE_F64;
+    }
+
     /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
     if (timestamp == last_timestamp) {
       out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);

@@ -17,13 +17,12 @@ int main(int argc, char* argv[])
   const libxsmm_blasint elemsize = sizeof(item);
   const libxsmm_blasint count = 1000, ntests = 1000;
   char *const data = (char*)malloc((size_t)elemsize * count);
-  char *const shuf = (char*)malloc((size_t)elemsize * count);
+  const char init[] = "The quick brown fox jumps over the lazy dog";
   int result = EXIT_SUCCESS;
   LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
 
   /* check if buffers are allocated (prerequisite) */
   if (EXIT_SUCCESS == result && NULL == data) result = EXIT_FAILURE;
-  if (EXIT_SUCCESS == result && NULL == shuf) result = EXIT_FAILURE;
 
   /* check libxsmm_stristr */
   if (EXIT_SUCCESS == result && NULL != libxsmm_stristr("ends with b", "Begins with b")) result = EXIT_FAILURE;
@@ -63,35 +62,31 @@ int main(int argc, char* argv[])
     }
   }
 
-  /* check libxsmm_shuffle2 */
-  if (EXIT_SUCCESS == result) {
-    libxsmm_blasint i = 0;
-    libxsmm_shuffle2(shuf, data, elemsize, count);
-    for (; i < count; ++i) {
-      const unsigned int j = libxsmm_diff_n(&data[i*elemsize], shuf,
-        LIBXSMM_CAST_UCHAR(elemsize), LIBXSMM_CAST_UCHAR(elemsize),
-        (i + count / 2) % count, count);
-      if ((size_t)count <= j) {
-        result = EXIT_FAILURE;
-        break;
-      }
-    }
-  }
-
   /* check libxsmm_shuffle */
   if (EXIT_SUCCESS == result) {
-    libxsmm_blasint i = 0;
-    libxsmm_shuffle(shuf, elemsize, count);
-    for (; i < count; ++i) {
-      if (0 != libxsmm_diff(&data[i*elemsize], &shuf[i*elemsize], LIBXSMM_CAST_UCHAR(elemsize))) {
-        result = EXIT_FAILURE;
-        break;
+    char a[sizeof(init)], b[sizeof(init)];
+    const size_t size = sizeof(init);
+    size_t s = 1;
+    for (; s < size; ++s) {
+      size_t i = 0;
+      memcpy(a, init, s); a[s] = '\0';
+      memset(b, 0, s + 1);
+      result = EXIT_FAILURE;
+      for (; i < s; ++i) {
+        libxsmm_shuffle(b, a, 1, s);
+        if (0 != i || 2 > s || 0 != memcmp(b, init, s)) {
+          libxsmm_shuffle(a, b, 1, s);
+          if (0 == memcmp(a, init, s)) {
+            result = EXIT_SUCCESS;
+            break;
+          }
+        }
+        else break;
       }
+      if (EXIT_SUCCESS != result) break;
     }
   }
-
   free(data);
-  free(shuf);
 
   return result;
 }

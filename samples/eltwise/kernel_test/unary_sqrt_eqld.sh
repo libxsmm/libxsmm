@@ -1,23 +1,8 @@
 #!/usr/bin/env bash
 
-PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32 F16_F16_F32 F32_F16_F32 F16_F32_F32";
+source setup_tpp_prec_list.sh unary_simple
 
-if [[ ${LIBXSMM_TARGET} == "aarch64" ]]; then
-    PREC_LIST="F32_F32_F32";
-fi
 
-if [[ ${LIBXSMM_TARGET} == "clx" ]]; then
-    PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32 F16_F16_F32 F32_F16_F32 F16_F32_F32 BF8_BF8_F32 F32_BF8_F32 BF8_F32_F32 HF8_HF8_F32 F32_HF8_F32 HF8_F32_F32";
-fi
-if [[ ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
-    PREC_LIST="F32_F32_F32 BF16_BF16_F32 F32_BF16_F32 BF16_F32_F32 F16_F16_F32 F32_F16_F32 F16_F32_F32 BF8_BF8_F32 F32_BF8_F32 BF8_F32_F32 HF8_HF8_F32 F32_HF8_F32 HF8_F32_F32";
-fi
-if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
-    exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
-    exit 0;
-fi
 
 TESTFILE1=$(mktemp)
 

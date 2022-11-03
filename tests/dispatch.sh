@@ -12,14 +12,29 @@
 set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../scripts/tool_pexec.sh
+SIZE=1000
 
-if [ "${HERE}" ]; then
-  # adjust test properties
-  export LIBXSMM_FSSPMDM_HINT=$((RANDOM%3+1))
-  export TEST_N=48
+export CHECK=1
 
-  "${HERE}/../samples/pyfr/test.sh" -o /dev/null -n 5 "$@"
-else
-  >&2 echo "ERROR: missing prerequisites!"
-  exit 1
-fi
+cd ${HERE}/../samples/utilities/dispatch
+cat <<EOM | ${EXEC} -o /dev/null "$@"
+./dispatch $((SIZE*1)) 1
+./dispatch $((SIZE*2)) 1
+./dispatch $((SIZE*3)) 1
+./dispatch $((SIZE*1)) 2
+./dispatch $((SIZE*2)) 2
+./dispatch $((SIZE*3)) 2
+./dispatch $((SIZE*1)) 3
+./dispatch $((SIZE*2)) 3
+./dispatch $((SIZE*3)) 3
+./dispatch $((SIZE*1)) 4
+./dispatch $((SIZE*2)) 4
+./dispatch $((SIZE*3)) 4
+./dispatch $((SIZE*1)) 7
+./dispatch $((SIZE*2)) 7
+./dispatch $((SIZE*3)) 7
+./dispatch $((SIZE*1)) 8
+./dispatch $((SIZE*2)) 8
+./dispatch $((SIZE*3)) 8
+EOM

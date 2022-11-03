@@ -17,6 +17,7 @@
 LIBXSMM_API_INTERN
 void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*                 io_generated_code,
                                                  libxsmm_mateltwise_kernel_config*       i_micro_kernel_config,
+                                                 libxsmm_datatype                        i_compute_dtype,
                                                  unsigned int                            op,
                                                  unsigned int                            flags,
                                                  unsigned int                            i_gp_reg_tmp,

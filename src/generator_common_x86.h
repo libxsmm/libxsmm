@@ -50,6 +50,27 @@ void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                    
     const unsigned int                             i_vec_tmp2);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrpd_avx_avx512( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrpd_avx512( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_hinstrpd_avx( libxsmm_generated_code*                        io_generated_code,
+    unsigned int                                   instr,
+    const unsigned int                             i_vec_inout,
+    const unsigned int                             i_vec_tmp1,
+    const unsigned int                             i_vec_tmp2);
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vpermd_16way_avx2( libxsmm_generated_code*                        io_generated_code,
     const unsigned int                             i_vec_index,
     const unsigned int                             i_vec_c_lo,
@@ -481,6 +502,11 @@ void libxsmm_generator_load_vreg_minus_infinity(libxsmm_generated_code* io_gener
                                                    const unsigned int      i_gp_reg_tmp,
                                                    const unsigned int      i_vreg_minus_infinity);
 
+LIBXSMM_API_INTERN
+void libxsmm_generator_load_vreg_minus_infinity_double(libxsmm_generated_code* io_generated_code,
+                                                   const unsigned char     i_vname,
+                                                   const unsigned int      i_gp_reg_tmp,
+                                                   const unsigned int      i_vreg_minus_infinity);
 LIBXSMM_API_INTERN
 void libxsmm_generator_prepare_dropout_avx_avx512( libxsmm_generated_code* io_generated_code,
                                                    const unsigned char     i_vname,
