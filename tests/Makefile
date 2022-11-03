@@ -69,6 +69,7 @@ all: $(XFILES)
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory"
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
@@ -152,6 +153,7 @@ clean:
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory clean"
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
@@ -170,6 +172,7 @@ realclean: clean
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory realclean"
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
