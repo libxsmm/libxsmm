@@ -48,6 +48,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
                               unsigned int reduce_op, unsigned int reduce_rows,
                               unsigned int record_idx, unsigned long long *ref_argop_off, libxsmm_datatype dtype, unsigned int reduce_on_output ) {
   libxsmm_blasint i = 0, j = 0, jj = 0;
+  LIBXSMM_UNUSED(dtype);
   if (reduce_op == 0) {
     /* Calculate reference results...  */
     if (reduce_rows == 1) {
