@@ -724,7 +724,7 @@ endif
 endif # noarch
 	$(eval TMPFILE = $(shell $(MKTEMP) /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
-		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
+		-e "s/void libxsmm_/LIBXSMM_API_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
 		-e "s/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/" \
 		-e "s/#pragma message (\".*KERNEL COMPILATION ERROR in: \" __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/" \
 		-e "/#error No kernel was compiled, lacking support for current architecture?/d" \

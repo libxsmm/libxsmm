@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eo pipefail
 
 # Arguments M N K beta reps
 # l_r is fixed to 16, when we FP32
@@ -6,7 +7,7 @@
 
 ITERS=10
 
-# scatter, elemnet
+# scatter, element
 echo "scatter, element, f32"
 ./dense_packedacrm_f32 9 729 35 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 729 35 1.0 ${ITERS}
@@ -26,7 +27,7 @@ echo "gather, surface, f32"
 ./dense_packedacrm_f32 9 35 81 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 35 81 1.0 ${ITERS}
 
-# scatter, elemnet
+# scatter, element
 echo "scatter, element, f64"
 ./dense_packedacrm_f64 9 729 35 0.0 ${ITERS}
 ./dense_packedacrm_f64 9 729 35 1.0 ${ITERS}

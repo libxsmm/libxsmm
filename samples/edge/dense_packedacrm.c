@@ -8,11 +8,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include <libxsmm.h>
 
 #if defined(__EDGE_EXECUTE_F32__)
@@ -22,7 +17,8 @@
 #endif
 
 
-static void matMulFusedAC(       libxsmm_blasint  i_r,
+LIBXSMM_INLINE
+void matMulFusedAC(              libxsmm_blasint  i_r,
                                  libxsmm_blasint  i_m,
                                  libxsmm_blasint  i_n,
                                  libxsmm_blasint  i_k,
@@ -57,6 +53,7 @@ static void matMulFusedAC(       libxsmm_blasint  i_r,
     }
   }
 }
+
 
 int main(int argc, char* argv[]) {
 #if defined(__EDGE_EXECUTE_F32__)
@@ -93,90 +90,93 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint i = 0;
   unsigned long long l_libxsmmflops;
   libxsmm_kernel_info l_kinfo;
+  int result = EXIT_SUCCESS;
 
-  for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    c1[i] = (REALTYPE)libxsmm_rng_f64();
-  }
-  for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    c2[i] = c1[i];
-  }
-  for ( i = 0; i < l_m*l_k*l_r; ++i ) {
-    a[i] = (REALTYPE)libxsmm_rng_f64();
-  }
-  for ( i = 0; i < l_k*l_n; ++i ) {
-    b[i] = (REALTYPE)libxsmm_rng_f64();
-  }
-
-  /* JIT code */
-  mykernel = libxsmm_create_packed_gemm_ac_rm_v2( gemm_shape, l_flags, l_prefetch_flags, l_r );
-
-  /* run reference */
-  matMulFusedAC( l_r,
-                  l_m, l_n, l_k,
-                  l_k,
-                  l_n,
-                  l_n,
-                  l_beta,
-                  a,
-                  b,
-                  c1);
-
-  /* run optimized */
-  memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
-  gemm_param.a.primary = (void*)a;
-  gemm_param.b.primary = (void*)b;
-  gemm_param.c.primary = (void*)c2;
-  mykernel( &gemm_param );
-
-  /* check correctness */
-  for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    if ( max_error < LIBXSMM_FABS( c1[i] - c2[i] ) ) {
-      max_error = LIBXSMM_FABS( c1[i] - c2[i] );
+  if (NULL != a && NULL != b && NULL != c1 && NULL != c2) {
+    for (i = 0; i < l_m * l_n * l_r; ++i) {
+      c1[i] = (REALTYPE)libxsmm_rng_f64();
     }
-  }
+    for (i = 0; i < l_m * l_n * l_r; ++i) {
+      c2[i] = c1[i];
+    }
+    for (i = 0; i < l_m * l_k * l_r; ++i) {
+      a[i] = (REALTYPE)libxsmm_rng_f64();
+    }
+    for (i = 0; i < l_k * l_n; ++i) {
+      b[i] = (REALTYPE)libxsmm_rng_f64();
+    }
 
-  printf("max. error: %f\n", max_error);
+    /* JIT code */
+    mykernel = libxsmm_create_packed_gemm_ac_rm_v2(gemm_shape, l_flags, l_prefetch_flags, l_r);
 
-  /* lets run some performance test */
-  l_start = libxsmm_timer_tick();
-  for ( i = 0; i < l_reps; ++i ) {
     /* run reference */
-    matMulFusedAC( l_r,
-                    l_m, l_n, l_k,
-                    l_k,
-                    l_n,
-                    l_n,
-                    l_beta,
-                    a,
-                    b,
-                    c1);
-  }
-  l_end = libxsmm_timer_tick();
-  l_total_ref = libxsmm_timer_duration(l_start, l_end);
+    matMulFusedAC(l_r,
+      l_m, l_n, l_k,
+      l_k,
+      l_n,
+      l_n,
+      l_beta,
+      a,
+      b,
+      c1);
 
-  l_start = libxsmm_timer_tick();
-  for ( i = 0; i < l_reps; ++i ) {
     /* run optimized */
-    mykernel( &gemm_param );
+    memset(&gemm_param, 0, sizeof(libxsmm_gemm_param));
+    gemm_param.a.primary = (void*)a;
+    gemm_param.b.primary = (void*)b;
+    gemm_param.c.primary = (void*)c2;
+    mykernel(&gemm_param);
+
+    /* check correctness */
+    for (i = 0; i < l_m * l_n * l_r; ++i) {
+      if (max_error < LIBXSMM_FABS(c1[i] - c2[i])) {
+        max_error = LIBXSMM_FABS(c1[i] - c2[i]);
+      }
+    }
+
+    printf("max. error: %f\n", max_error);
+
+    /* lets run some performance test */
+    l_start = libxsmm_timer_tick();
+    for (i = 0; i < l_reps; ++i) {
+      /* run reference */
+      matMulFusedAC(l_r,
+        l_m, l_n, l_k,
+        l_k,
+        l_n,
+        l_n,
+        l_beta,
+        a,
+        b,
+        c1);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total_ref = libxsmm_timer_duration(l_start, l_end);
+
+    l_start = libxsmm_timer_tick();
+    for (i = 0; i < l_reps; ++i) {
+      /* run optimized */
+      mykernel(&gemm_param);
+    }
+    l_end = libxsmm_timer_tick();
+    l_total_opt = libxsmm_timer_duration(l_start, l_end);
+    libxsmm_get_kernel_info(LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
+    l_libxsmmflops = l_kinfo.nflops;
+
+    gflops_ref = (flops / l_total_ref) / 1e9;
+    gflops_opt = (flops / l_total_opt) / 1e9;
+    gflops_opt2 = (((double)l_libxsmmflops * l_reps) / l_total_opt) / 1e9;
+
+    printf("GFLOPS ref: %f\n", gflops_ref);
+    printf("GFLOPS opt, calculated: %f\n", gflops_opt);
+    printf("GFLOPS opt, libxsmm:    %f\n", gflops_opt2);
   }
-  l_end = libxsmm_timer_tick();
-  l_total_opt = libxsmm_timer_duration(l_start, l_end);
-  libxsmm_get_kernel_info( LIBXSMM_CONST_VOID_PTR(mykernel), &l_kinfo);
-  l_libxsmmflops = l_kinfo.nflops;
-
-  gflops_ref  = (flops/l_total_ref)/1e9;
-  gflops_opt  = (flops/l_total_opt)/1e9;
-  gflops_opt2 = (((double)l_libxsmmflops*l_reps)/l_total_opt)/1e9;
-
-  printf("GFLOPS ref: %f\n", gflops_ref);
-  printf("GFLOPS opt, calculated: %f\n", gflops_opt);
-  printf("GFLOPS opt, libxsmm:    %f\n", gflops_opt2);
+  else result = EXIT_FAILURE;
 
   libxsmm_free( a );
   libxsmm_free( b );
   libxsmm_free( c1 );
   libxsmm_free( c2 );
 
-  return 0;
+  return result;
 }
-
