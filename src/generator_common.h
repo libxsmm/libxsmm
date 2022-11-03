@@ -1688,7 +1688,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
   unsigned int neg_signs_vreg;
 
   /* Aux variables for kernel config  */
-  unsigned int use_fp64_compute;
   unsigned int vlen_in;
   unsigned int vlen_in1;
   unsigned int vlen_in2;
@@ -1746,7 +1745,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vlen_comp;
   unsigned int vlen_out;
   char vector_name;
-  unsigned int use_fp64_compute;
   unsigned int                      in_f32_mask;
   unsigned int                      in_bf16_mask;
   unsigned int                      out_f32_mask;

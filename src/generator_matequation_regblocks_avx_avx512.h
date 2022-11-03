@@ -116,6 +116,7 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_c
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_code*     io_generated_code,
                                                  libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,
+                                                 libxsmm_datatype                        i_compute_dtype,
                                                  libxsmm_meltw_unary_type                i_op_type,
                                                  unsigned int                            i_reg_block_id,
                                                  unsigned int                            i_m_blocking,
@@ -126,6 +127,7 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_code*    io_generated_code,
                                                  libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,
+                                                 libxsmm_datatype                        i_compute_dtype,
                                                  libxsmm_meltw_binary_type               i_op_type,
                                                  unsigned int                            i_left_reg_block_id,
                                                  unsigned int                            i_right_reg_block_id,
@@ -136,6 +138,7 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block( libxsmm_generated_code*    io_generated_code,
                                                  libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,
+                                                 libxsmm_datatype                        i_compute_dtype,
                                                  libxsmm_meltw_ternary_type              i_op_type,
                                                  unsigned int                            i_left_reg_block_id,
                                                  unsigned int                            i_right_reg_block_id,
@@ -180,6 +183,7 @@ unsigned int libxsmm_generator_matequation_regblocks_binary_op_req_zmms(libxsmm_
 
 LIBXSMM_API_INTERN
 void libxsmm_adjust_required_zmms( libxsmm_generated_code*                    io_generated_code, libxsmm_matequation_kernel_config* i_micro_kernel_config,
+    libxsmm_datatype i_compute_dtype,
     libxsmm_meltw_unary_type u_type,
     libxsmm_meltw_binary_type b_type,
     unsigned int pool_id );
