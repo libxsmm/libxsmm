@@ -1081,7 +1081,7 @@ int main( int argc, char* argv[] ) {
     op_metadata   = libxsmm_create_matrix_eqn_op_metadata(my_eqn2, -1);
     arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt);
-    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_RELU, out_dt, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT);
     if (datatype_mode == 1) {
       libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, out_dt, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     }
