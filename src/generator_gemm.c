@@ -24,10 +24,16 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
   int l_emu_amx = 0;
+  int l_aarch64_bfdot = 0;
   const char *const l_env_emu_amx = getenv("EMULATE_AMX");
+  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
   if ( 0 == l_env_emu_amx ) {
   } else {
     l_emu_amx = atoi(l_env_emu_amx);
+  }
+  if ( 0 == l_env_aarch64_bfdot ) {
+  } else {
+    l_aarch64_bfdot = atoi(l_env_aarch64_bfdot);
   }
 
   /* overwrite VNNI Flag when K == 1 */
@@ -211,7 +217,39 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   } else if ( ( io_generated_code->arch >= LIBXSMM_AARCH64_V81    )  &&
               ( io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) &&
               (    ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )
-                || ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) ) {
+                || ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) &&
+              ( l_aarch64_bfdot != 0 ) ) {
+    /* TODO (MMLA): add flags and check on MMLA-formated A/B */
+    /* TODO (MMLA): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
+    /* TODO (MMLA): adjust checks for future SVE kernels */
+    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+      if (l_xgemm_desc_mod.k % 2 != 0) {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
+    } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+      if (l_xgemm_desc_mod.k % 4 != 0)  {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+        return;
+      }
+    }
+    /* ASIMD + MMLA */
+    if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+      l_vector_length = 4;
+    }
+    /* SVE256 + MMLA */
+    else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
+      l_vector_length = 8;
+    }
+    else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+  } else if ( ( io_generated_code->arch >= LIBXSMM_AARCH64_V81    )  &&
+              ( io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT ) &&
+              (    ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )
+                || ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) &&
+              ( l_aarch64_bfdot == 0 ) ) {
     /* TODO (MMLA): add flags and check on MMLA-formated A/B */
     /* TODO (MMLA): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
     /* TODO (MMLA): adjust checks for future SVE kernels */
