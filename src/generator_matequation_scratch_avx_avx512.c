@@ -135,22 +135,8 @@ void libxsmm_generator_matequation_gemm_set_descriptor(libxsmm_generated_code* i
     gemm_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
   }
 
-  if ( (( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256 ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX )
-                ||( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX )
-              )
-              && LIBXSMM_DATATYPE_BF16== a_in_type ) {
-    /* some checks as we cannot mask everything */
-    if ( (k % 2 != 0) && ((gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
-      return;
-    }
-    if ( (gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
-    } else {
-      k = k/2;
-      ldb = ldb/2;
-    }
-  } else if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
-              ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CORE ) && LIBXSMM_DATATYPE_BF16 == a_in_type ) {
+  if ( ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) &&
+              ( io_generated_code->arch >= LIBXSMM_X86_AVX2 ) && LIBXSMM_DATATYPE_BF16 == a_in_type ) {
     /* some checks as we cannot mask everything */
     if ( (k % 2 != 0) && ((gemm_flags & LIBXSMM_GEMM_FLAG_VNNI_A) != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
