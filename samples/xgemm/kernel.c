@@ -670,6 +670,14 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
   libxsmm_blasint m = i_gemm_def->m;
   libxsmm_blasint n = i_gemm_def->n;
   libxsmm_blasint k = i_gemm_def->k;
+  libxsmm_blasint l_aarch64_bfdot = 0;
+  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
+
+  /* check if we use BFDOT or BFMMLA */
+  if ( 0 == l_env_aarch64_bfdot ) {
+  } else {
+    l_aarch64_bfdot = atoi(l_env_aarch64_bfdot);
+  }
 
   if ( (i_gemm_def->in_type   == LIBXSMM_DATATYPE_F64) &&
        (i_gemm_def->out_type  == LIBXSMM_DATATYPE_F64) &&
@@ -773,9 +781,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     int*           i_c = (int*)c;
     int l_k_block = 4;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 8 : 4 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
@@ -802,9 +810,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     int*           i_c = (int*)c;
     int l_k_block = 4;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 8 : 4 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
@@ -831,9 +839,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float*         c_c = (float*)c;
     int l_k_block = 4;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 8 : 4 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
@@ -866,9 +874,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float*         c_c = (float*)c;
     int l_k_block = 4;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 8 : 4 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
@@ -900,9 +908,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float*            f_c = (float*)c;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ?  2 : 1;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 4 : 2 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
@@ -936,9 +944,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     float acc = 0.0f;
     libxsmm_bfloat16 h_acc;
     int arch_cpuid = libxsmm_cpuid();
-    /* For arm archs interprete the vnni format differently */
+    /* For arm archs interprete the vnni format differently based on the used extension */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
+      l_k_block = ( i_gemm_def->vnni_a != 0) ? ( (l_aarch64_bfdot == 0) ? 4 : 2 ) : 1;
     }
 
     for (l_j = 0; l_j < n; l_j++) {
