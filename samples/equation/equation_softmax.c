@@ -15,6 +15,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#define FWD_SMAX 1
+#define BWD_SMAX 2
+#define FWD_BWD_SMAX 3
+
 #if defined(__AVX512F__)
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
@@ -444,6 +448,7 @@ int main( int argc, char* argv[] ) {
   int S3 = 64;
   int iters = 100;
   int datatype_mode = 0;
+  int pass = FWD_BWD_SMAX;
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
@@ -452,7 +457,8 @@ int main( int argc, char* argv[] ) {
   if ( argc > 2 ) S2 = atoi(argv[2]);
   if ( argc > 3 ) S3 = atoi(argv[3]);
   if ( argc > 4 ) datatype_mode = atoi(argv[4]);
-  if ( argc > 5 ) iters = atoi(argv[5]);
+  if ( argc > 5 ) pass = atoi(argv[5]);
+  if ( argc > 6 ) iters = atoi(argv[6]);
 
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
@@ -492,242 +498,251 @@ int main( int argc, char* argv[] ) {
   }
 
   /* Create MatEq for fwd softmax */
-  tmp_ld = S3;
-  ld = S2*S3;
-  my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-  /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  if ((pass & FWD_SMAX) > 0) {
+    tmp_ld = S3;
+    ld = S2*S3;
+    my_eqn0 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
+    /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+    func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
-  my_eqn1 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  /*libxsmm_matrix_eqn_tree_print( my_eqn1 );*/
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-  func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
+    my_eqn1 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    /*libxsmm_matrix_eqn_tree_print( my_eqn1 );*/
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
+    func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
 
-  if (datatype_mode == 0) {
-    vectorized_softmax_fwd(S1, S2, S3, inp, out);
-    tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
-  } else if (datatype_mode == 1) {
-    vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
-    tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
-    for ( i = 0; i < S1*S2*S3; ++i ) {
-      out[i] = upconvert_bf16(bf16_out[i]);
-      eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
-    }
-  }
-
-  /* compare */
-  printf("##########################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 FWD Softmax - Output  #\n");
-  } else {
-    printf("# Correctness BF16 FWD Softmax - Output  #\n");
-  }
-  printf("##########################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  if (datatype_mode == 0) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_softmax_fwd(S1, S2, S3, inp, out);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics softmax time FWD  = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup FWD is %.5g\n", l_total/l_total2);
-  } else if (datatype_mode == 1) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    } else if (datatype_mode == 1) {
       vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics softmax time FWD = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+      for ( i = 0; i < S1*S2*S3; ++i ) {
+        out[i] = upconvert_bf16(bf16_out[i]);
+        eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
+      }
     }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup FWD is %.5g\n", l_total/l_total2);
-  }
 
-  t_tpp = l_total2;
-  t_vec = l_total;
+    /* compare */
+    printf("##########################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 FWD Softmax - Output  #\n");
+    } else {
+      printf("# Correctness BF16 FWD Softmax - Output  #\n");
+    }
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if (iters > 0) {
+      if (datatype_mode == 0) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_softmax_fwd(S1, S2, S3, inp, out);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_softmax_fwd(S1, S2, S3, inp, out);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics softmax time FWD  = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, func0, func1);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+      } else if (datatype_mode == 1) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics softmax time FWD = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, func0, func1);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+      }
+
+      t_tpp = l_total2;
+      t_vec = l_total;
+    }
+  }
 
   /* Create MatEq for bwd softmax */
 #if 1
-  tmp_ld = S3;
-  ld = S2*S3;
+  if ((pass & BWD_SMAX) > 0) {
+    tmp_ld = S3;
+    ld = S2*S3;
 
-  my_eqn2 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-  func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
+    my_eqn2 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+    func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
 #if 0
-  my_eqn3 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
-  func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    my_eqn3 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
+    func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
 #else
-  my_eqn3 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn3, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
-  func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    my_eqn3 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn3, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
+    func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
 #endif
 #else
-  ld = S2*S3;
-  my_eqn2 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn2, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
-  func2 = libxsmm_dispatch_matrix_eqn( S3, S1, &ld, LIBXSMM_DATATYPE_F32, my_eqn2 );
+    ld = S2*S3;
+    my_eqn2 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn2, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 0, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
+    func2 = libxsmm_dispatch_matrix_eqn( S3, S1, &ld, LIBXSMM_DATATYPE_F32, my_eqn2 );
 #endif
 
-  if (datatype_mode == 0) {
-    vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
-    tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
-  } else if (datatype_mode == 1) {
-    vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
-    tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
-  }
-
-  /* compare */
-  printf("##########################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Softmax - Output  #\n");
-  } else {
-    printf("# Correctness BF16 BWD Softmax - Output  #\n");
-  }
-  printf("##########################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  if (datatype_mode == 0) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    if (datatype_mode == 0) {
       vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics softmax time BWD  = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup BWD is %.5g\n", l_total/l_total2);
-  } else if (datatype_mode == 1) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    } else if (datatype_mode == 1) {
       vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics softmax time BWD = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
     }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup BWD is %.5g\n", l_total/l_total2);
+
+    /* compare */
+    printf("##########################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 BWD Softmax - Output  #\n");
+    } else {
+      printf("# Correctness BF16 BWD Softmax - Output  #\n");
+    }
+    printf("##########################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if (iters > 0 ) {
+      if (datatype_mode == 0) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics softmax time BWD  = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, func2, func3);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+      } else if (datatype_mode == 1) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics softmax time BWD = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, func2, func3);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+      }
+      /* printf("Running sum is %.5f\n", sum); */
+
+      t_tpp += l_total2;
+      t_vec += l_total;
+    }
   }
-  /* printf("Running sum is %.5f\n", sum); */
 
-  t_tpp += l_total2;
-  t_vec += l_total;
-
-
-  printf("\n\n=================================\n");
-  printf("Total Speedup via TPP Matrix equation is %.5g\n", t_vec/t_tpp);
-  printf("=================================\n");
+  if (iters > 0) {
+    printf("\n\n=================================\n");
+    printf("Total Speedup via TPP Matrix equation is %.5g\n", t_vec/t_tpp);
+    printf("=================================\n");
+  }
   libxsmm_free(inp);
   libxsmm_free(out);
   libxsmm_free(gout);

@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <math.h>
 
+#define FWD_LNORM 1
+#define BWD_LNORM 2
+#define FWD_BWD_LNORM 3
 /*#define USE_VECTORIZED_PATH 1*/
 
 #if defined(__AVX512F__)
@@ -621,6 +624,7 @@ int main( int argc, char* argv[] ) {
   int S3 = 64;
   int iters = 100;
   int datatype_mode = 0;
+  int pass = FWD_BWD_LNORM;
   libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
@@ -629,7 +633,8 @@ int main( int argc, char* argv[] ) {
   if ( argc > 2 ) S2 = atoi(argv[2]);
   if ( argc > 3 ) S3 = atoi(argv[3]);
   if ( argc > 4 ) datatype_mode = atoi(argv[4]);
-  if ( argc > 5 ) iters = atoi(argv[5]);
+  if ( argc > 5 ) pass = atoi(argv[5]);
+  if ( argc > 6 ) iters = atoi(argv[6]);
 
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
@@ -704,315 +709,325 @@ int main( int argc, char* argv[] ) {
     cache_fl[i] = (float)libxsmm_rng_f64();
   }
 
-  /* TPPs for reducing X and X2 */
-  ld = S2*S3;
-  tmp_ld = S3;
-  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
-  reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
-  ld = S3;
-  tmp_ld = 1;
-  unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
-  jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
-  reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
-  reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
+  if ((pass & FWD_LNORM) > 0) {
+    /* TPPs for reducing X and X2 */
+    ld = S2*S3;
+    tmp_ld = S3;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_X2_OP_ADD;
+    jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
+    reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
+    ld = S3;
+    tmp_ld = 1;
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
+    jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
+    reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
+    reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
 
-  /* TPP for scaling */
-  ld = S2*S3;
-  tmp_ld = 1;
-  tmp_ld2 = S3;
-  my_eqn0 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 2, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+    /* TPP for scaling */
+    ld = S2*S3;
+    tmp_ld = 1;
+    tmp_ld2 = S3;
+    my_eqn0 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 1, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, 1, 1, tmp_ld, 2, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
+    func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
-  /* Check correctness */
-  if (datatype_mode == 0) {
-    vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
-    tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-  } else if (datatype_mode == 1) {
-    vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
-    tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-    for ( i = 0; i < S1*S2*S3; ++i ) {
-      out[i] = upconvert_bf16(bf16_out[i]);
-      eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
-    }
-  }
-
-  /* compare */
-  printf("############################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 FWD Layernorm - Output  #\n");
-  } else {
-    printf("# Correctness BF16 FWD Layernorm - Output  #\n");
-  }
-  printf("############################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  if (datatype_mode == 0) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    /* Check correctness */
+    if (datatype_mode == 0) {
       vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup FWD is %.5g\n", l_total/l_total2);
-  } else if (datatype_mode == 1) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    } else if (datatype_mode == 1) {
       vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+      for ( i = 0; i < S1*S2*S3; ++i ) {
+        out[i] = upconvert_bf16(bf16_out[i]);
+        eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
+      }
     }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
-    printf("Speedup FWD is %.5g\n", l_total/l_total2);
+
+    /* compare */
+    printf("############################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 FWD Layernorm - Output  #\n");
+    } else {
+      printf("# Correctness BF16 FWD Layernorm - Output  #\n");
+    }
+    printf("############################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, out, eqn_out, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if (iters > 0) {
+      if (datatype_mode == 0) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+      } else if (datatype_mode == 1) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
+        printf("Speedup FWD is %.5g\n", l_total/l_total2);
+      }
+    }
   }
 
   t_tpp = l_total2;
   t_vec = l_total;
 
-  /* Create MatEq for bwd layernorm */
-  tmp_ld = S3;
-  ld = S2*S3;
-  tmp_ld2 = 1;
+  if ((pass & BWD_LNORM) > 0) {
+    /* Create MatEq for bwd layernorm */
+    tmp_ld = S3;
+    ld = S2*S3;
+    tmp_ld2 = 1;
 
-  /* dgamma function  */
-  my_eqn1 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, 1, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 4, 0, LIBXSMM_DATATYPE_F32 );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-  func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
+    /* dgamma function  */
+    my_eqn1 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, ld, 0, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, 1, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 4, 0, LIBXSMM_DATATYPE_F32 );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+    func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
 
-  /* dbeta function  */
-  my_eqn2 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, tmp_ld, 5, 0, LIBXSMM_DATATYPE_F32 );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-  func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
+    /* dbeta function  */
+    my_eqn2 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, tmp_ld, 5, 0, LIBXSMM_DATATYPE_F32 );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
+    func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
 
-  /* db equation */
+    /* db equation */
 #if 1
-  my_eqn3 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
-  func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    my_eqn3 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
+    func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
 #else
-  my_eqn3 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
-  func3 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn3 );
+    my_eqn3 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
+    func3 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn3 );
 #endif
 
-  /* ds equation */
+    /* ds equation */
 #if 1
-  my_eqn4 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
-  func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape_out );
+    my_eqn4 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
+    func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape_out );
 #else
-  my_eqn4 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
-  func4 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn4 );
+    my_eqn4 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn4, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, tmp_ld, 6, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
+    func4 = libxsmm_dispatch_matrix_eqn( 1, 1, &tmp_ld2, LIBXSMM_DATATYPE_F32, my_eqn4 );
 #endif
 
-  /* din equation */
-  my_eqn5 = libxsmm_matrix_eqn_create();
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn5, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_binary_op( my_eqn5, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, tmp_ld, 6, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, ld, 3, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_ternary_op( my_eqn5, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, ld, 0, 0, in_dt );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );
-  libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 7, 0, LIBXSMM_DATATYPE_F32 );
-  arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
-  func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape_out );
+    /* din equation */
+    my_eqn5 = libxsmm_matrix_eqn_create();
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn5, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
+    libxsmm_matrix_eqn_push_back_binary_op( my_eqn5, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, tmp_ld, 6, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 1, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, ld, 3, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn5, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_1 | LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_2 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, S3, S1, ld, 0, 0, in_dt );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 2, 0, LIBXSMM_DATATYPE_F32 );
+    libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 7, 0, LIBXSMM_DATATYPE_F32 );
+    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
+    func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape_out );
 
-  if (datatype_mode == 0) {
-    vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
-    tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-  } else if (datatype_mode == 1) {
-    vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
-    tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-    for ( i = 0; i < S1*S2*S3; ++i ) {
-      dinp[i] = upconvert_bf16(bf16_dinp[i]);
-      eqn_dinp[i] = upconvert_bf16(bf16_eqn_dinp[i]);
-    }
-  }
-
-  /* compare */
-  printf("############################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Layernorm - Dinput  #\n");
-  } else {
-    printf("# Correctness BF16 BWD Layernorm - Dinput  #\n");
-  }
-  printf("############################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, dinp, eqn_dinp, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  printf("###########################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Layernorm - Dbeta  #\n");
-  } else {
-    printf("# Correctness BF16 BWD Layernorm - Dbeta  #\n");
-  }
-  printf("###########################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S3, 1, dbeta, eqn_dbeta, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  printf("############################################\n");
-  if (datatype_mode == 0) {
-    printf("# Correctness FP32 BWD Layernorm - Dgamma  #\n");
-  } else {
-    printf("# Correctness BF16 BWD Layernorm - Dgamma #\n");
-  }
-  printf("############################################\n");
-  libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S3, 1, dgamma, eqn_dgamma, 0, 0);
-  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
-  printf("L1 test       : %.25g\n", norms_out.l1_tst);
-  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
-  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
-  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
-  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
-  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
-
-  if (datatype_mode == 0) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    if (datatype_mode == 0) {
       vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time BWD = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
-    printf("Speedup BWD is %.5g\n", l_total/l_total2);
-  } else if (datatype_mode == 1) {
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i];
-    }
-    vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
+    } else if (datatype_mode == 1) {
       vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
-    }
-    l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);
-    printf("Intrinsics layernorm time BWD  = %.5g\n", ((double)(l_total)));
-    for (i = 0; i < 1024 * 1024; i++ ) {
-      sum += cache_fl[i] + (float)l_total;
-    }
-    tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
-    l_start = libxsmm_timer_tick();
-    for (it = 0; it < iters; it++) {
       tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+      for ( i = 0; i < S1*S2*S3; ++i ) {
+        dinp[i] = upconvert_bf16(bf16_dinp[i]);
+        eqn_dinp[i] = upconvert_bf16(bf16_eqn_dinp[i]);
+      }
     }
-    l_end = libxsmm_timer_tick();
-    l_total2 = libxsmm_timer_duration(l_start, l_end);
-    printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
-    printf("Speedup BWD is %.5g\n", l_total/l_total2);
+
+    /* compare */
+    printf("############################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 BWD Layernorm - Dinput  #\n");
+    } else {
+      printf("# Correctness BF16 BWD Layernorm - Dinput  #\n");
+    }
+    printf("############################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S2*S3, 1, dinp, eqn_dinp, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    printf("###########################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 BWD Layernorm - Dbeta  #\n");
+    } else {
+      printf("# Correctness BF16 BWD Layernorm - Dbeta  #\n");
+    }
+    printf("###########################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S3, 1, dbeta, eqn_dbeta, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    printf("############################################\n");
+    if (datatype_mode == 0) {
+      printf("# Correctness FP32 BWD Layernorm - Dgamma  #\n");
+    } else {
+      printf("# Correctness BF16 BWD Layernorm - Dgamma #\n");
+    }
+    printf("############################################\n");
+    libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, S1*S3, 1, dgamma, eqn_dgamma, 0, 0);
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if (iters > 0 ) {
+      if (datatype_mode == 0) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics layernorm time BWD = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
+        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+      } else if (datatype_mode == 1) {
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i];
+        }
+        vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total = libxsmm_timer_duration(l_start, l_end);
+        printf("Intrinsics layernorm time BWD  = %.5g\n", ((double)(l_total)));
+        for (i = 0; i < 1024 * 1024; i++ ) {
+          sum += cache_fl[i] + (float)l_total;
+        }
+        tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+        l_start = libxsmm_timer_tick();
+        for (it = 0; it < iters; it++) {
+          tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
+        }
+        l_end = libxsmm_timer_tick();
+        l_total2 = libxsmm_timer_duration(l_start, l_end);
+        printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
+        printf("Speedup BWD is %.5g\n", l_total/l_total2);
+      }
+    }
   }
   /* printf("Running sum is %.5f\n", sum); */
 
   t_tpp += l_total2;
   t_vec += l_total;
 
-  printf("\n\n=================================\n");
-  printf("Total Speedup via TPP Matrix equation is %.5g\n", t_vec/t_tpp);
-  printf("=================================\n");
+  if (iters > 0) {
+    printf("\n\n=================================\n");
+    printf("Total Speedup via TPP Matrix equation is %.5g\n", t_vec/t_tpp);
+    printf("=================================\n");
+  }
 
   libxsmm_free(inp);
   libxsmm_free(out);
