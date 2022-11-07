@@ -504,7 +504,24 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
 }
 
 
-LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count)
+LIBXSMM_API size_t libxsmm_unshuffle(size_t count, const size_t* shuffle)
+{
+  size_t result = 0;
+  if (0 < count) {
+    const size_t n = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
+    size_t c = count - 1, j = c, d = 0;
+    for (; result < count; ++result, j = c - d) {
+      d = (j * n) % count;
+      if (0 == d) break;
+    }
+  }
+  assert(result <= count);
+  return result;
+}
+
+
+LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count,
+  const size_t* shuffle, const size_t* nrepeat)
 {
   const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
   unsigned char *const LIBXSMM_RESTRICT out = (unsigned char*)dst;
@@ -514,46 +531,55 @@ LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, si
   if (NULL != inp && NULL != out && ((out + size) <= inp || (inp + size) <= out))
 #endif
   {
-    const size_t shuffle = libxsmm_coprime2(count);
+    const size_t n = (NULL == shuffle ? libxsmm_coprime2(count) : *shuffle);
     size_t i = 0, j = 1;
-    if (elemsize < 128) {
-      switch (elemsize) {
-        case 8: {
-          for (; i < size; i += elemsize, j += shuffle) {
-            if (count < j) j -= count;
-            *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - elemsize * j);
-          }
-        } break;
-        case 4: {
-          for (; i < size; i += elemsize, j += shuffle) {
-            if (count < j) j -= count;
-            *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - elemsize * j);
-          }
-        } break;
-        case 2: {
-          for (; i < size; i += elemsize, j += shuffle) {
-            if (count < j) j -= count;
-            *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - elemsize * j);
-          }
-        } break;
-        case 1: {
-          for (; i < size; i += elemsize, j += shuffle) {
-            if (count < j) j -= count;
-            out[i] = inp[size-elemsize*j];
-          }
-        } break;
-        default: {
-          for (; i < size; i += elemsize, j += shuffle) {
-            if (count < j) j -= count;
-            LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
+    if (NULL == nrepeat || 1 == *nrepeat) {
+      if (elemsize < 128) {
+        switch (elemsize) {
+          case 8: {
+            for (; i < size; i += elemsize, j += n) {
+              if (count < j) j -= count;
+              *(unsigned long long*)(out + i) = *(const unsigned long long*)(inp + size - elemsize * j);
+            }
+          } break;
+          case 4: {
+            for (; i < size; i += elemsize, j += n) {
+              if (count < j) j -= count;
+              *(unsigned int*)(out + i) = *(const unsigned int*)(inp + size - elemsize * j);
+            }
+          } break;
+          case 2: {
+            for (; i < size; i += elemsize, j += n) {
+              if (count < j) j -= count;
+              *(unsigned short*)(out + i) = *(const unsigned short*)(inp + size - elemsize * j);
+            }
+          } break;
+          case 1: {
+            for (; i < size; i += elemsize, j += n) {
+              if (count < j) j -= count;
+              out[i] = inp[size-elemsize*j];
+            }
+          } break;
+          default: {
+            for (; i < size; i += elemsize, j += n) {
+              if (count < j) j -= count;
+              LIBXSMM_MEMCPY127(out + i, inp + size - elemsize * j, elemsize);
+            }
           }
         }
       }
+      else { /* generic path */
+        for (; i < size; i += elemsize, j += n) {
+          if (count < j) j -= count;
+          memcpy(out + i, inp + size - elemsize * j, elemsize);
+        }
+      }
     }
-    else {
-      for (; i < size; i += elemsize, j += shuffle) {
-        if (count < j) j -= count;
-        memcpy(out + i, inp + size - elemsize * j, elemsize);
+    else if (0 < count) { /* generic path */
+      size_t c = count - 1, k;
+      for (j = i; i < count; ++i, j = i) {
+        for (k = 0; k < *nrepeat; ++k) j = c - (n * j) % count;
+        memcpy(out + elemsize * i, inp + elemsize * j, elemsize);
       }
     }
   }

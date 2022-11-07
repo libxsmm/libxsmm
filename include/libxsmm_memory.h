@@ -83,7 +83,16 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char string[]);
 /** Return the pointer to the 1st match of "b" in "a", or NULL (no match). */
 LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[]);
 
+/** Determines the number of calls to restore the original data (libxsmm_shuffle). */
+LIBXSMM_API size_t libxsmm_unshuffle(size_t count,
+  /* Shall be coprime to count (libxsmm_coprime2(count) if NULL). */
+  const size_t* shuffle);
+
 /** Out-of-place shuffling of data given by elemsize and count. */
-LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count);
+LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count,
+  /* Shall be coprime to count (libxsmm_coprime2(count) if NULL). */
+  const size_t* shuffle,
+  /* If NULL, the default value is one. */
+  const size_t* nrepeat);
 
 #endif /*LIBXSMM_MEMORY_H*/
