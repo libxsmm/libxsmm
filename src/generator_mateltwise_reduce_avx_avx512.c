@@ -7396,7 +7396,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                              im,
                                                              0,
                                                              0,
-                                                             3 );
+                                                             0 );
       } else {
         if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
           libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
@@ -7791,7 +7791,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
                                                              im,
                                                              ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? use_m_masking : 0,
                                                              0,
-                                                             3 );
+                                                             0 );
       } else {
         if (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
           libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
