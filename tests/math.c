@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  { /* check shuffle routine */
+  { /* check coprime2 routine */
     const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
     const int n = sizeof(test) / sizeof(*test);
     for (i = 0; i < n; ++i) {
