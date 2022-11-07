@@ -434,6 +434,8 @@ void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgr
 #endif
 
 int main( int argc, char* argv[] ) {
+  int ret = EXIT_SUCCESS;
+  double error_bound = 0.00001;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3;
   libxsmm_matrix_eqn_function func0, func1, func2, func3;
   libxsmm_blasint i, it, ld, tmp_ld;
@@ -551,6 +553,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
 
     if (iters > 0) {
       if (datatype_mode == 0) {
@@ -681,6 +687,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
+
     if (iters > 0 ) {
       if (datatype_mode == 0) {
         for (i = 0; i < 1024 * 1024; i++ ) {
@@ -752,5 +762,5 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(bf16_eqn_out);
   libxsmm_free(cache_fl);
 
-  return 0;
+  return ret;
 }

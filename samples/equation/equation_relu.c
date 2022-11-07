@@ -37,6 +37,8 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 }
 
 int main( int argc, char* argv[] ) {
+  int ret = EXIT_SUCCESS;
+  double error_bound = 0.00001;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j, s;
@@ -309,6 +311,7 @@ int main( int argc, char* argv[] ) {
     printf("SUCCESS mask\n");
   } else {
     printf("FAILURE mask\n");
+    ret = EXIT_FAILURE;
   }
   printf("##########################################\n");
   printf("#   Correctness RELU Equation - MASK     #\n");
@@ -322,6 +325,9 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
 
   libxsmm_free(arg0);
   libxsmm_free(arg1);
@@ -353,5 +359,5 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(hf8_out);
   libxsmm_free(hf8_eqn_out);
 
-  return 0;
+  return ret;
 }

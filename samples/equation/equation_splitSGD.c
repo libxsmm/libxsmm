@@ -109,6 +109,8 @@ void vec_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, libx
 #endif
 
 int main( int argc, char* argv[] ) {
+  int ret = EXIT_SUCCESS;
+  double error_bound = 0.00001;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   float *wt;
@@ -208,6 +210,10 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
+
   reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
@@ -248,6 +254,6 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(f32_ref_out);
   libxsmm_free(f32_eqn_out);
 
-  return 0;
+  return ret;
 }
 

@@ -604,6 +604,8 @@ void tpp_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pdout, 
 }
 
 int main( int argc, char* argv[] ) {
+  int ret = EXIT_SUCCESS;
+  double error_bound = 0.00001;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
   libxsmm_meltw_unary_flags jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
@@ -768,6 +770,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
 
     if (iters > 0) {
       if (datatype_mode == 0) {
@@ -934,6 +940,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
+
     printf("###########################################\n");
     if (datatype_mode == 0) {
       printf("# Correctness FP32 BWD Layernorm - Dbeta  #\n");
@@ -950,6 +960,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
+
     printf("############################################\n");
     if (datatype_mode == 0) {
       printf("# Correctness FP32 BWD Layernorm - Dgamma  #\n");
@@ -965,6 +979,10 @@ int main( int argc, char* argv[] ) {
     printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
     printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
     printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+    if ( norms_out.normf_rel > error_bound ) {
+      ret = EXIT_FAILURE;
+    }
 
     if (iters > 0 ) {
       if (datatype_mode == 0) {
@@ -1055,5 +1073,5 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(bf16_eqn_out);
   libxsmm_free(cache_fl);
 
-  return 0;
+  return ret;
 }

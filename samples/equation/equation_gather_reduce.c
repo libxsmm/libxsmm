@@ -30,6 +30,8 @@ void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 }
 
 int main( int argc, char* argv[] ) {
+  int ret = EXIT_SUCCESS;
+  double error_bound = 0.00001;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j,it;
@@ -269,6 +271,10 @@ int main( int argc, char* argv[] ) {
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
 
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
+
   if (iters > 0) {
     eqn1_f32f32(M, N, ld, large_input, cols_ind_array, out);
     l_start = libxsmm_timer_tick();
@@ -315,5 +321,5 @@ int main( int argc, char* argv[] ) {
   libxsmm_free(hf8_out);
   libxsmm_free(hf8_eqn_out);
 
-  return 0;
+  return ret;
 }
