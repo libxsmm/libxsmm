@@ -504,55 +504,6 @@ LIBXSMM_API const char* libxsmm_stristr(const char a[], const char b[])
 }
 
 
-#if !defined(__linux__) && defined(__APPLE__)
-LIBXSMM_EXTERN char*** _NSGetArgv(void);
-LIBXSMM_EXTERN int* _NSGetArgc(void);
-#endif
-
-
-LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
-{
-  int result = 0;
-#if defined(__linux__)
-  FILE* const cmdline = fopen("/proc/self/cmdline", "r");
-  if (NULL != cmdline) {
-    char c;
-    if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
-      result += fprintf(stream, "%s", prefix);
-      do {
-        result += (int)fwrite('\0' != c ? &c : " ", 1, 1, stream);
-      } while (1 == fread(&c, 1, 1, cmdline));
-    }
-    fclose(cmdline);
-  }
-#else
-  char** argv = NULL;
-  int argc = 0;
-# if defined(_WIN32)
-  argv = __argv;
-  argc = __argc;
-# elif defined(__APPLE__)
-  argv = (NULL != _NSGetArgv() ? *_NSGetArgv() : NULL);
-  argc = (NULL != _NSGetArgc() ? *_NSGetArgc() : 0);
-# endif
-  if (0 < argc) {
-    int i = 1;
-#   if defined(_WIN32)
-    const char *const cmd = strrchr(argv[0], '\\');
-    result += fprintf(stream, "%s%s", prefix, NULL != cmd ? (cmd + 1) : argv[0]);
-#   else
-    result += fprintf(stream, "%s%s", prefix, argv[0]);
-#   endif
-    for (; i < argc; ++i) result += fprintf(stream, " %s", argv[i]);
-  }
-#endif
-  if (0 < result) {
-    result += fprintf(stream, "%s", postfix);
-  }
-  return result;
-}
-
-
 LIBXSMM_API void libxsmm_shuffle(void* dst, const void* src, size_t elemsize, size_t count)
 {
   const unsigned char *const LIBXSMM_RESTRICT inp = (const unsigned char*)src;
