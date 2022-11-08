@@ -350,6 +350,7 @@ libxsmm_trace_info
 libxsmm_trace_init
 libxsmm_truncate_convert_f32_bf16
 libxsmm_typesize
+libxsmm_unshuffle
 libxsmm_wigemm_descriptor_init
 libxsmm_xclear_
 libxsmm_xdiff_

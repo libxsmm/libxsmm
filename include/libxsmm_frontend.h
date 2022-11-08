@@ -494,6 +494,13 @@
 #define LIBXSMM_MATINIT_OMP(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
   LIBXSMM_MATINIT_AUX(LIBXSMM_PRAGMA_OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
 
+/**
+ * Print the command line arguments of the current process, and get the number of written
+ * characters including the prefix, the postfix, but not the terminating NULL character.
+ * If zero is returned, nothing was printed (no prefix, no postfix).
+ */
+LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix);
+
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
 #define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
   LIBXSMM_GEMM_PRINT2(OSTREAM, PRECISION, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
