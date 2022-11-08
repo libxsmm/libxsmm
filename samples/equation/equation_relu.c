@@ -26,9 +26,9 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       Arg0 = arg0[(i*ld)+j];
       Arg1 = arg1[(i*ld)+j];
       Arg2 = arg2[(i*ld)+j];
-      res = gelu(Arg0 - Arg1) + Arg2;
+      res = 1.0f + (Arg0 - Arg1) + Arg2;
       /* Set relu mask */
-      relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res < 0.0f ) ? 0x0 : (1 << (j%8)) );
+      relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res <= 0.0f ) ? 0x0 : (1 << (j%8)) );
       /* Applu relu  */
       res = (res < 0.0f) ? 0.0f : res;
       out[(i*ld)+j] = res;
@@ -202,7 +202,7 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, out_dt, LIBXSMM_MELTW_FLAG_UNARY_NONE);
   }
   libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
-  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+  libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_INC, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
   libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_NONE);
   arg_metadata  = libxsmm_create_matrix_eqn_arg_metadata(my_eqn0, 0);
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
@@ -300,9 +300,11 @@ int main( int argc, char* argv[] ) {
 
   s = 0;
   for ( i = 0; i < N; ++i ) {
-    for ( j = 0; j < M/8; ++j ) {
-      if ( mask_ref[(i*mask_ld)+j] != mask_eqn[(i*mask_ld)+j] ) {
-        printf("error at possition i=%i, j=%i, %u, %u\n", i, j*8, mask_ref[(i*mask_ld)+j], mask_eqn[(i*mask_ld)+j]);
+    for ( j = 0; j < M; ++j ) {
+      unsigned int gold_val = (mask_ref[(i*mask_ld)+j/8]) & (1 << (j%8));
+      unsigned int comp_val = (mask_eqn[(i*mask_ld)+j/8]) & (1 << (j%8));
+      if ( gold_val != comp_val ) {
+        printf("error at possition i=%i, j=%i, %u, %u\n", i, j, mask_ref[(i*mask_ld)+j/8], mask_eqn[(i*mask_ld)+j/8]);
         s = 1;
       }
     }

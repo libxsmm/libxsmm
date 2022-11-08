@@ -435,7 +435,7 @@ void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgr
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00001;
+  double error_bound = 0.0001;
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3;
   libxsmm_matrix_eqn_function func0, func1, func2, func3;
   libxsmm_blasint i, it, ld, tmp_ld;
@@ -468,6 +468,7 @@ int main( int argc, char* argv[] ) {
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
+    error_bound = 0.001;
   } else {
     printf("ERROR: Supporting only FP32 and BF16 precisions...\n");
   }
