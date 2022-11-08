@@ -401,6 +401,16 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_clear(&norms_out);
   set_in_out_compute_dt(datatype_mode, &in_dt, &out_dt, &compute_dt);
 
+  if (in_dt == LIBXSMM_DATATYPE_BF16 || out_dt == LIBXSMM_DATATYPE_BF16) {
+    error_bound = 0.001;
+  } else if (in_dt == LIBXSMM_DATATYPE_F16 || out_dt == LIBXSMM_DATATYPE_F16) {
+    error_bound = 0.001;
+  } else if (in_dt == LIBXSMM_DATATYPE_HF8 || out_dt == LIBXSMM_DATATYPE_HF8) {
+    error_bound = 0.01;
+  } else if (in_dt == LIBXSMM_DATATYPE_BF8 || out_dt == LIBXSMM_DATATYPE_BF8) {
+    error_bound = 0.01;
+  }
+
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {
       f64_arg0[(i*ld)+j] = libxsmm_rng_f64();
