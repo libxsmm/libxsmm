@@ -616,7 +616,7 @@ int main( int argc, char* argv[] ) {
 
   /* compare */
   printf("##########################################\n");
-  printf("#   Correctness  - Output                #\n");
+  printf("#   Correctness Equation simple - Output #\n");
   printf("##########################################\n");
 #if 0
   libxsmm_matdiff(&norms_out, LIBXSMM_DATATYPE_F32, ld_in*n, 1, sout_ref, sout, 0, 0);
