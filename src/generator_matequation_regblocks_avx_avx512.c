@@ -699,7 +699,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
-          ((i_micro_kernel_config->cvt_result_to_bf8 == 1) || (i_micro_kernel_config->cvt_result_to_hf8 == 1) || ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) && (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256)) )? 'x' : ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) || (io_generated_code->arch < LIBXSMM_X86_AVX512)) ? 'y' : 'z',
+          ((i_micro_kernel_config->cvt_result_to_bf8 == 1) || (i_micro_kernel_config->cvt_result_to_hf8 == 1) || ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) && (io_generated_code->arch < LIBXSMM_X86_AVX512)) )? 'x' : ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) || (io_generated_code->arch < LIBXSMM_X86_AVX512)) ? 'y' : 'z',
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1 );
     }
   }
@@ -797,7 +797,7 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_c
       i_gp_reg_mapping->gp_reg_out,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
       0,
-      ((i_micro_kernel_config->cvt_result_to_bf8 == 1) || (i_micro_kernel_config->cvt_result_to_hf8 == 1) || ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1 ) && (io_generated_code->arch <= LIBXSMM_X86_AVX512_VL256)) ) ? 'x' : ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1 ) || (io_generated_code->arch < LIBXSMM_X86_AVX512)) ? 'y' : 'z',
+      ((i_micro_kernel_config->cvt_result_to_bf8 == 1) || (i_micro_kernel_config->cvt_result_to_hf8 == 1) || ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1 ) && (io_generated_code->arch < LIBXSMM_X86_AVX512)) ) ? 'x' : ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1 ) || (io_generated_code->arch < LIBXSMM_X86_AVX512)) ? 'y' : 'z',
       i_micro_kernel_config->reduce_vreg, 1, out_mask, 1 );
 }
 
