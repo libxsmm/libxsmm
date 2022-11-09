@@ -10,6 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import matplotlib.pyplot as plot
+import statistics
 import requests
 import argparse
 import pathlib
@@ -127,11 +128,19 @@ def main(args):
                                 ylabel = unit if unit else init
                             yvalue.append(float(match.group(3)))
                             break
-            axes[i].plot(yvalue, ".:", label=q)
+                if args.history <= len(yvalue):
+                    break
+            unit = ylabel if ylabel else args.result
+            if 0 < args.median:
+                yvs = yvalue[0 : args.median]  # noqa: E203
+                geo = statistics.geometric_mean([y for y in yvs if 0 < y])
+                label = f"{q} = {int(geo)} {unit}"
+            else:
+                label = q
+            axes[i].plot(yvalue, ".:", label=label)
         axes[i].set_title(entry.upper())
         axes[i].legend()
         i = i + 1
-    unit = ylabel if ylabel else args.result
     figure.suptitle(f"Performance History in {unit}", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
@@ -182,8 +191,22 @@ if __name__ == "__main__":
         "-r",
         "--result",
         type=str,
-        default="fps",
+        default="ms",
         help="Kind of value",
+    )
+    argparser.add_argument(
+        "-m",
+        "--median",
+        type=int,
+        default=7,
+        help="Number of samples",
+    )
+    argparser.add_argument(
+        "-n",
+        "--history",
+        type=int,
+        default=25,
+        help="Number of builds",
     )
     args = argparser.parse_args()
     main(args)
