@@ -149,6 +149,12 @@ int main( int argc, char* argv[] ) {
   f32_ref_out = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
   f32_eqn_out = (float*) libxsmm_aligned_malloc( sizeof(float)*N*ld,   64);
 
+  for ( i = 0; i < N*ld; ++i ) {
+    f32_eqn_out[i] = (float)libxsmm_rng_f64();
+  }
+  memcpy(f32_ref_out, f32_eqn_out, ld * N * sizeof(float));
+
+
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_out);
 
