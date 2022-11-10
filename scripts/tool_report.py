@@ -23,7 +23,11 @@ def main(args):
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
-    query = args.query.lower()
+    select = args.select.lower().split()
+    query = args.query.lower().split()
+    smry = args.summary.lower()
+    rslt = args.result.lower()
+    sdo = 0 < args.median and smry != rslt
 
     try:  # proceeed with cached results in case of an error
         builds = requests.get(url, params=params, headers=auth).json()
@@ -100,20 +104,29 @@ def main(args):
             file.write("\n")  # append newline at EOF
 
     template = database[str(latest)]
+    nselect = sum(1 for e in template if not select or any(s in e.lower() for s in select))
     figure, axes = plot.subplots(
-        len(template), sharex=True, figsize=(9, 6), dpi=300
+        max(nselect, 1), sharex=True, figsize=(9, 6), dpi=300
     )  # noqa: E501
+    if 2 > nselect:
+        axes = [axes]
     i = 0
-    for entry in template:
-        for q in (q for q in template[entry] if query in q.lower()):
-            ylabel = None
+    ylabel = yunit = slabel = sunit = None
+    for entry in (e for e in template if not select or any(s in e.lower() for s in select)):
+        for value in (
+            v
+            for v in template[entry]
+            if not query or all(p in v.lower() for p in query)
+        ):
             yvalue = []
+            meanvl = []
             for build in (
                 build
                 for build in database
-                if entry in database[build] and q in database[build][entry]
+                if entry in database[build] and value in database[build][entry]
             ):
-                for v in database[build][entry][q]:
+                r = s = False
+                for v in database[build][entry][value]:
                     match = re.match(
                         r"(.+)?(^|[\s:=])([+-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+-]?\d+)?)",  # noqa: E501
                         v,
@@ -121,27 +134,41 @@ def main(args):
                     if match and match.group(3):
                         init = match.group(1).strip() if match.group(1) else ""
                         unit = v[match.end(3) :].strip()  # noqa: E203
-                        if (args.result.lower() in init.lower()) or (
-                            args.result.lower() in unit.lower()
-                        ):
+                        ilow = init.lower()
+                        ulow = unit.lower()
+                        if (rslt in ilow) or (rslt in ulow):
                             if not ylabel:
                                 ylabel = unit if unit else init
                             yvalue.append(float(match.group(3)))
-                            break
+                            r = True
+                        if sdo and ((smry in ilow) or (smry in ulow)):
+                            if not slabel:
+                                slabel = unit if unit else init
+                            meanvl.append(float(match.group(3)))
+                            s = True
+                    if r and (s or not sdo):
+                        break
                 if args.history <= len(yvalue):
                     break
-            unit = ylabel if ylabel else args.result
+            if not yunit:
+                yunit = (ylabel if ylabel else args.result).split()[0]
             if 0 < args.median:
-                yvs = yvalue[0 : args.median]  # noqa: E203
-                geo = statistics.geometric_mean([y for y in yvs if 0 < y])
-                label = f"{q} = {int(geo)} {unit}"
+                if not sunit:
+                    sunit = (slabel if slabel else args.result).split()[0]
+                if meanvl:
+                    mvl = meanvl[0 : args.median]  # noqa: E203
+                else:
+                    mvl = yvalue[0 : args.median]  # noqa: E203
+                geo = statistics.geometric_mean([v for v in mvl if 0 < v])
+                label = f"{value} = {int(geo)} {sunit}"
             else:
-                label = q
+                label = value
             axes[i].plot(yvalue, ".:", label=label)
+        axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend()
         i = i + 1
-    figure.suptitle(f"Performance History in {unit}", fontsize="x-large")
+    figure.suptitle(f"Performance History [{yunit}]", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
     figure.savefig(args.filepath.stem + ".png")
@@ -161,7 +188,7 @@ if __name__ == "__main__":
         help="JSON-database used to cache results",
     )
     argparser.add_argument(
-        "-s",
+        "-c",
         "--organization",
         type=str,
         default="intel",
@@ -181,6 +208,13 @@ if __name__ == "__main__":
         help="Authorization token",
     )
     argparser.add_argument(
+        "-e",
+        "--select",
+        type=str,
+        default="",
+        help="Select entry",
+    )
+    argparser.add_argument(
         "-q",
         "--query",
         type=str,
@@ -192,7 +226,14 @@ if __name__ == "__main__":
         "--result",
         type=str,
         default="ms",
-        help="Kind of value",
+        help="Plotted values",
+    )
+    argparser.add_argument(
+        "-s",
+        "--summary",
+        type=str,
+        default="gflops",
+        help="Summarized values",
     )
     argparser.add_argument(
         "-m",
