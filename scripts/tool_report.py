@@ -45,18 +45,24 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     return nentries, nerrors
 
 
-def parseval(value):
+def parseval(string):
+    """
+    Split "string" into "init", "value", and "unit".
+    """
     return re.match(
         r"(.+)?(^|[\s:=])([+-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+-]?\d+)?)",
-        value,  # noqa: E501
+        string,  # noqa: E501
     )
 
 
 def matchstr(s1, s2):
-    if not re.search(r"\d+$", s1) or not re.search(r"\d+$", s2):
-        return s1 in s2
-    else:  # avoid matching, e.g. "a12" if "a1" is searched
-        return (s1 + ".") in (s2 + ".")
+    if s1:
+        if not re.search(r"\d+$", s1) or not re.search(r"\d+$", s2):
+            return s1 in s2
+        else:  # avoid matching, e.g. "a12" if "a1" is searched
+            return (s1 + ".") in (s2 + ".")
+    else:
+        return False
 
 
 def main(args):
@@ -68,7 +74,7 @@ def main(args):
     query = args.query.lower().split()
     smry = args.summary.lower()
     rslt = args.result.lower()
-    sdo = 0 < args.median and smry != rslt
+    sdo = 0 < args.mean and smry != rslt
     nerrors = nentries = 0
     fig = "png"
 
@@ -79,7 +85,7 @@ def main(args):
         print(f"Create new database {args.filepath}")
         database = dict()
         pass
-    latest = int(next(iter(database.keys()))) if database else 0
+    latest = max(int(e) for e in database) if database else 0
 
     if args.infile:
         try:
@@ -115,28 +121,30 @@ def main(args):
         elif not builds:
             print(f"WARNING: failed to connect to {url}.")
         # iterate over all builds (latest first)
-        for build in builds:
-            nbuild = build["number"]
-            # JSON stores integers as string
-            strbuild = str(nbuild)
-            if strbuild in database:
-                break
+        if builds:
             print_build = True
-            jobs = build["jobs"]
-            for job in (job for job in jobs if 0 == job["exit_status"]):
-                if print_build:
-                    print("|", end="", flush=True)
-                    print_build = False
-                print(".", end="", flush=True)
-                log = requests.get(job["log_url"], headers=auth)
-                txt = json.loads(log.text)["content"]
-                nentries, nerrors = parselog(
-                    database, strbuild, job["name"], txt, nentries, nerrors
-                )
-                if latest < nbuild and 0 < nentries:
-                    latest = nbuild
-        if builds and not print_build:
-            print("")
+            for build in builds:
+                nbuild = build["number"]
+                # JSON stores integers as string
+                strbuild = str(nbuild)
+                if strbuild in database:
+                    break
+                print_build = True
+                jobs = build["jobs"]
+                for job in (job for job in jobs if 0 == job["exit_status"]):
+                    if print_build:
+                        print("|", end="", flush=True)
+                        print_build = False
+                    print(".", end="", flush=True)
+                    log = requests.get(job["log_url"], headers=auth)
+                    txt = json.loads(log.text)["content"]
+                    nentries, nerrors = parselog(
+                        database, strbuild, job["name"], txt, nentries, nerrors
+                    )
+                    if latest < nbuild and 0 < nentries:
+                        latest = nbuild
+            if not print_build:
+                print("")
 
     if 0 != nerrors:
         y = "ies" if 1 != nerrors else "y"
@@ -160,7 +168,7 @@ def main(args):
     if 2 > nselect:
         axes = [axes]
     i = 0
-    ylabel = yunit = slabel = sunit = None
+    yunit = sunit = None
     for entry in (
         e
         for e in template
@@ -169,7 +177,7 @@ def main(args):
         for value in (
             v
             for v in template[entry]
-            if not query or all(matchstr(p, v.lower()) for p in query)
+            if not query or any(matchstr(p, v.lower()) for p in query)
         ):
             yvalue = []
             meanvl = []
@@ -178,28 +186,20 @@ def main(args):
                 for b in database
                 if entry in database[b] and value in database[b][entry]
             ):
-                r = s = False
+                ylabel = slabel = False
                 values = database[build][entry][value]
                 # match --result primarily against "unit"
                 for v in reversed(values):  # match last entry
                     match = parseval(v)
                     if match and match.group(3):
-                        init = (
-                            match.group(1).strip(": ")
-                            if match.group(1)
-                            else ""  # noqa: E501
-                        )
                         unit = v[match.end(3) :].strip()  # noqa: E203
-                        ilow = init.lower()
                         ulow = unit.lower()
-                        if not r and matchstr(rslt, ulow):
-                            ylabel = unit if unit else init
+                        if not ylabel and matchstr(rslt, ulow):
                             yvalue.append(float(match.group(3)))
-                            r = True
-                        if not s and sdo and matchstr(smry, ulow):
-                            slabel = unit if unit else init
+                            ylabel = unit
+                        if not slabel and sdo and matchstr(smry, ulow):
                             meanvl.append(float(match.group(3)))
-                            s = True
+                            slabel = unit
                 # match --result secondary against "init"
                 for v in reversed(values):  # match last entry
                     match = parseval(v)
@@ -211,34 +211,44 @@ def main(args):
                         )
                         unit = v[match.end(3) :].strip()  # noqa: E203
                         ilow = init.lower()
-                        ulow = unit.lower()
-                        if not r and matchstr(rslt, ilow):
-                            ylabel = unit if unit else init
+                        if not ylabel and matchstr(rslt, ilow):
                             yvalue.append(float(match.group(3)))
-                            r = True
-                        if not s and sdo and matchstr(smry, ilow):
-                            slabel = unit if unit else init
+                            ylabel = unit if unit else init
+                        if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(match.group(3)))
-                            s = True
+                            slabel = unit if unit else init
                 if args.history <= len(yvalue):
                     break
             if not yunit:
                 yunit = (ylabel if ylabel else args.result).split()[0]
-            if 0 < args.median:
-                if not sunit:
-                    sunit = (slabel if slabel else args.result).split()[0]
-                if meanvl:
-                    mvl = meanvl[0 : args.median]  # noqa: E203
+            if 0 < args.mean:
+                values = [v for v in (meanvl if meanvl else yvalue) if 0 < v]
+                vnew = values[0 : args.mean]  # noqa: E203
+                if vnew:
+                    if not sunit:
+                        sunit = (slabel if slabel else args.result).split()[0]
+                    mnew = statistics.geometric_mean(vnew)
+                    vold = values[args.mean :]  # noqa: E203
+                    if vold:
+                        mold = statistics.geometric_mean(vold)
+                        diff = 100 * (mold - mnew) / mold
+                        perc = int((diff + 0.5) if 0 <= diff else (diff - 0.5))
+                        perx = (
+                            f"$\pm${perc}"  # noqa: W605
+                            if 0 == perc
+                            else (f"+{perc}" if 0 < perc else f"{perc}")
+                        )
+                        label = f"{value} = {int(mnew + 0.5)} {sunit} ({perx}%)"  # noqa: E501
+                    else:
+                        label = f"{value} = {int(mnew + 0.5)} {sunit}"
                 else:
-                    mvl = yvalue[0 : args.median]  # noqa: E203
-                geo = statistics.geometric_mean([v for v in mvl if 0 < v])
-                label = f"{value} = {int(geo + 0.5)} {sunit}"
+                    label = value
             else:
                 label = value
             axes[i].plot(yvalue, ".:", label=label)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
-        axes[i].legend()
+        axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
     figure.suptitle(f"Performance History [{yunit}]", fontsize="x-large")
     figure.gca().invert_xaxis()
@@ -281,7 +291,7 @@ if __name__ == "__main__":
         help="Buildkite pipeline",
     )
     argparser.add_argument(
-        "-a",
+        "-t",
         "--token",
         type=str,
         help="Authorization token",
@@ -315,10 +325,17 @@ if __name__ == "__main__":
         help="Summarized values",
     )
     argparser.add_argument(
+        "-a",
+        "--analyze",
+        type=str,
+        default="",
+        help="Analyze common property",
+    )
+    argparser.add_argument(
         "-m",
-        "--median",
+        "--mean",
         type=int,
-        default=7,
+        default=3,
         help="Number of samples",
     )
     argparser.add_argument(
