@@ -418,7 +418,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
-        if [ ! "${LOGFILE}" ]; then LOGFILE=.test-${LABEL}.log; fi
+        if [ "${LOGFILE}" ]; then
+          if [ "." = "$(dirname "${LOGFILE}")" ]; then
+            LOGFILE=${HERE}/${LOGFILE}
+          fi
+        else
+          LOGFILE=${HERE}/.test-${LABEL}.log
+        fi
+        export LOGFILE
         LOGPATH=$(dirname "${LOGFILE}")
         LOGBASE=$(basename "${LOGFILE}" .log)
         if [ "1" != "${NPARTITIONS}" ]; then
