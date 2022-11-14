@@ -65,6 +65,10 @@ def matchstr(s1, s2):
         return False
 
 
+def num2int(num):
+    return int((num + 0.5) if 0 <= num else (num - 0.5))
+
+
 def num2str(num):
     return (
         f"$\pm${num}"  # noqa: W605
@@ -128,21 +132,21 @@ def main(args):
             exit(1)
         elif not builds:
             print(f"WARNING: failed to connect to {url}.")
-        # iterate over all builds (latest first)
-        if builds:
-            print_build = True
-            for build in builds:
+
+        njobs = 0
+        while builds:
+            # iterate over all builds (latest first)
+            for build in (b for b in builds if "running" != b["state"]):
                 nbuild = build["number"]
                 # JSON stores integers as string
                 strbuild = str(nbuild)
                 if strbuild in database:
                     break
-                print_build = True
                 jobs = build["jobs"]
+                n = 0
                 for job in (job for job in jobs if 0 == job["exit_status"]):
-                    if print_build:
-                        print("|", end="", flush=True)
-                        print_build = False
+                    if 0 == n:
+                        print(f"[{nbuild}]", end="", flush=True)
                     print(".", end="", flush=True)
                     log = requests.get(job["log_url"], headers=auth)
                     txt = json.loads(log.text)["content"]
@@ -151,14 +155,23 @@ def main(args):
                     )
                     if latest < nbuild and 0 < nentries:
                         latest = nbuild
-            if not print_build:
-                print("")
+                    n = n + 1
+                njobs = njobs + n
+            if 1 < nbuild:
+                params["page"] = params["page"] + 1  # next page
+                builds = requests.get(url, params=params, headers=auth).json()
+            else:
+                builds = None
+        if 0 < njobs:
+            print("[OK]")
 
     if 0 != nerrors:
         y = "ies" if 1 != nerrors else "y"
         print(f"Ignored {nerrors} erroneous entr{y}!")
     y = "ies" if 1 != nentries else "y"
     print(f"Found {nentries} new entr{y}.")
+    if database:
+        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
     if 0 != nentries:
         with open(outfile, "w") as file:
             json.dump(database, file, indent=2)
@@ -236,8 +249,14 @@ def main(args):
                                     aunit = ulab
                                 analyze[init] = []
                             analyze[init].append(float(match.group(3)))
-                if args.history <= len(yvalue):
-                    break
+
+            if yvalue:
+                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+            if meanvl:
+                meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
+            for a in analyze:
+                analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
+
             if not yunit:
                 yunit = (ylabel if ylabel else args.result).split()[0]
             if 0 < args.mean:
@@ -248,49 +267,64 @@ def main(args):
                         sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {int(mnew + 0.5)} {sunit}"
+                    label = f"{value} = {num2int(mnew)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
-                        diff = 100 * (mold - mnew) / mold
-                        perc = int((diff + 0.5) if 0 <= diff else (diff - 0.5))
-                        label = f"{label} ({num2str(perc)}%"
-                        if 0 != perc and args.analyze and aunit == sunit:
-                            labelmax = labelmin = None
+                        perc = num2int(100 * (mold - mnew) / mold)
+                        label = f"{label} ({num2str(perc)}%)"
+
+                        if 0 != perc and args.analyze:
                             amax = float("-inf")
                             amin = float("inf")
-                            for a in reversed(analyze):
+                            for a in analyze:
                                 vnew = analyze[a][0 : args.mean]  # noqa: E203
                                 vold = analyze[a][args.mean :]  # noqa: E203
                                 if vnew and vold:
                                     anew = statistics.geometric_mean(vnew)
                                     aold = statistics.geometric_mean(vold)
-                                    diff = 100 * (aold - anew) / aold
-                                    perc = int(
-                                        (diff + 0.5)
-                                        if 0 <= diff
-                                        else (diff - 0.5)  # noqa: E501
-                                    )
+                                    perc = num2int(100 * (aold - anew) / aold)
                                     if perc > amax:
-                                        labelmax = a
+                                        vmax = num2int(anew)
+                                        analyze_max = a
                                         amax = perc
                                     elif perc < amin:
-                                        labelmin = a
+                                        vmin = num2int(anew)
+                                        analyze_min = a
                                         amin = perc
-                            if labelmin and 0 != amin:
-                                label = f"{label} {labelmin}={num2str(amin)}"
-                            if labelmax and 0 != amax:
-                                label = f"{label} {labelmax}={num2str(amax)}"
-                        label = f"{label})"
+                            unit = f" {aunit}" if aunit else ""
+                            if analyze_min and 0 != vmin and 0 != amin:
+                                vlabel = analyze_min.replace(" ", "")
+                                label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
+                            if analyze_max and 0 != vmax and 0 != amax:
+                                vlabel = analyze_max.replace(" ", "")
+                                label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
                 else:
                     label = value
             else:
                 label = value
-            axes[i].plot(yvalue, ".:", label=label)
+
+            if smry or (not analyze_min and not analyze_max):
+                xvalue = [*range(0, len(yvalue))]
+                axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                axes[i].set_ylabel(yunit)
+            else:
+                if analyze_min:
+                    yvalue = analyze[analyze_min]
+                    xvalue = [*range(0, len(yvalue))]
+                    label = f"{value}: {analyze_min}"
+                    axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                if analyze_max:
+                    yvalue = analyze[analyze_max]
+                    xvalue = [*range(0, len(yvalue))]
+                    label = f"{value}: {analyze_max}"
+                    axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                axes[i].set_ylabel(aunit)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
-    figure.suptitle(f"Performance History [{yunit}]", fontsize="x-large")
+    axes[i - 1].set_xlabel("Number of Builds")
+    figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
     figure.savefig(figfile)
@@ -368,7 +402,7 @@ if __name__ == "__main__":
         "-a",
         "--analyze",
         type=str,
-        default="",
+        default="layer",
         help="Analyze common property",
     )
     argparser.add_argument(
@@ -382,7 +416,7 @@ if __name__ == "__main__":
         "-n",
         "--history",
         type=int,
-        default=25,
+        default=30,
         help="Number of builds",
     )
     args = argparser.parse_args()
