@@ -65,6 +65,14 @@ def matchstr(s1, s2):
         return False
 
 
+def num2str(num):
+    return (
+        f"$\pm${num}"  # noqa: W605
+        if 0 == num
+        else (f"+{num}" if 0 < num else f"{num}")
+    )
+
+
 def main(args):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
@@ -168,7 +176,7 @@ def main(args):
     if 2 > nselect:
         axes = [axes]
     i = 0
-    yunit = sunit = None
+    yunit = None
     for entry in (
         e
         for e in template
@@ -179,14 +187,16 @@ def main(args):
             for v in template[entry]
             if not query or any(matchstr(p, v.lower()) for p in query)
         ):
-            yvalue = []
-            meanvl = []
+            yvalue = []  # determined by --result
+            meanvl = []  # determined by --summary
+            sunit = aunit = None
+            analyze = dict()
             for build in (
                 b
                 for b in database
                 if entry in database[b] and value in database[b][entry]
             ):
-                ylabel = slabel = False
+                ylabel = slabel = None
                 values = database[build][entry][value]
                 # match --result primarily against "unit"
                 for v in reversed(values):  # match last entry
@@ -210,13 +220,22 @@ def main(args):
                             else ""  # noqa: E501
                         )
                         unit = v[match.end(3) :].strip()  # noqa: E203
+                        ulab = unit if unit else init
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
                             yvalue.append(float(match.group(3)))
-                            ylabel = unit if unit else init
+                            ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(match.group(3)))
-                            slabel = unit if unit else init
+                            slabel = ulab
+                        if (not aunit or ulab == aunit) and matchstr(
+                            args.analyze, ilow
+                        ):
+                            if init not in analyze:
+                                if not aunit:
+                                    aunit = ulab
+                                analyze[init] = []
+                            analyze[init].append(float(match.group(3)))
                 if args.history <= len(yvalue):
                     break
             if not yunit:
@@ -229,18 +248,39 @@ def main(args):
                         sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
+                    label = f"{value} = {int(mnew + 0.5)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
                         diff = 100 * (mold - mnew) / mold
                         perc = int((diff + 0.5) if 0 <= diff else (diff - 0.5))
-                        perx = (
-                            f"$\pm${perc}"  # noqa: W605
-                            if 0 == perc
-                            else (f"+{perc}" if 0 < perc else f"{perc}")
-                        )
-                        label = f"{value} = {int(mnew + 0.5)} {sunit} ({perx}%)"  # noqa: E501
-                    else:
-                        label = f"{value} = {int(mnew + 0.5)} {sunit}"
+                        label = f"{label} ({num2str(perc)}%"
+                        if 0 != perc and args.analyze and aunit == sunit:
+                            labelmax = labelmin = None
+                            amax = float("-inf")
+                            amin = float("inf")
+                            for a in reversed(analyze):
+                                vnew = analyze[a][0 : args.mean]  # noqa: E203
+                                vold = analyze[a][args.mean :]  # noqa: E203
+                                if vnew and vold:
+                                    anew = statistics.geometric_mean(vnew)
+                                    aold = statistics.geometric_mean(vold)
+                                    diff = 100 * (aold - anew) / aold
+                                    perc = int(
+                                        (diff + 0.5)
+                                        if 0 <= diff
+                                        else (diff - 0.5)  # noqa: E501
+                                    )
+                                    if perc > amax:
+                                        labelmax = a
+                                        amax = perc
+                                    elif perc < amin:
+                                        labelmin = a
+                                        amin = perc
+                            if labelmin and 0 != amin:
+                                label = f"{label} {labelmin}={num2str(amin)}"
+                            if labelmax and 0 != amax:
+                                label = f"{label} {labelmax}={num2str(amax)}"
+                        label = f"{label})"
                 else:
                     label = value
             else:
