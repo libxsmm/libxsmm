@@ -286,8 +286,9 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
       /*TODO: Now we allocate tmps with dsize float */
       /* Extra tmp for ternary accommodation */
+      int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score + 1;
-      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       scratch_size = tmp_size * n_tmp;
       i_micro_kernel_config->tmp_size = tmp_size;
@@ -314,8 +315,9 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
         fprintf( stderr, "JITing Matrix Equation with REGISTER-BLOCK TEMPS (n_args = %d , addr_scratch_size = %.5g KB)\n", n_args, (1.0*addr_scratch_size)/1024.0 );
       }
     } else if (i_strategy == JIT_STRATEGY_HYBRID) {
+      int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
-      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * 4;
+      libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
@@ -406,7 +408,7 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
 
   /* Check if equation is purely F32 */
   libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
-  if ( !((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1))) {
+  if ( !((LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1)))) {
     if (l_is_sve == 0) {
       fprintf( stderr, "For now BF16 dtype is supported only on SVE enabled archs\n" );
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );

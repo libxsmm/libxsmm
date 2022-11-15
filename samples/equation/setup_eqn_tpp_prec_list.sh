@@ -5,8 +5,11 @@ if [[ $1 == "equation_simple" ]]; then
   if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
     export EQN_PREC_LIST="0 1 2 3 7 8 9 13";
   fi
+  if [[ ${LIBXSMM_TARGET} == "aarch64" ]]; then
+    export EQN_PREC_LIST="0 13";
+  fi
   if [[ ${LIBXSMM_TARGET} == "neov1" ]]; then
-    export EQN_PREC_LIST="0 1 2 3";
+    export EQN_PREC_LIST="0 1 2 3 13";
   fi
   if [[ ${LIBXSMM_TARGET} == "clx" ||  ${LIBXSMM_TARGET} == "cpx" ||  ${LIBXSMM_TARGET} == "spr" || ${LIBXSMM_TARGET} == "avx512_vl256_clx" ]]; then
     export EQN_PREC_LIST="0 1 2 3 4 5 6 7 8 9 10 11 12 13";

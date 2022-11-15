@@ -109,7 +109,8 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block_aarch64( libxsmm_gen
                                                  libxsmm_meltw_unary_type                i_op_type,
                                                  unsigned int                            i_reg_block_id,
                                                  unsigned int                            i_m_blocking,
-                                                 unsigned int                            i_n_blocking );
+                                                 unsigned int                            i_n_blocking,
+                                                 libxsmm_datatype                        i_dtype );
 
 
 
@@ -121,7 +122,8 @@ void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block_aarch64( libxsmm_ge
                                                  unsigned int                            i_right_reg_block_id,
                                                  unsigned int                            i_dst_reg_block_id,
                                                  unsigned int                            i_m_blocking,
-                                                 unsigned int                            i_n_blocking );
+                                                 unsigned int                            i_n_blocking,
+                                                 libxsmm_datatype                        i_dtype );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_generated_code*    io_generated_code,
@@ -131,7 +133,9 @@ void libxsmm_generator_mateqn_compute_ternary_op_2d_reg_block_aarch64( libxsmm_g
                                                  unsigned int                            i_right_reg_block_id,
                                                  unsigned int                            i_dst_reg_block_id,
                                                  unsigned int                            i_m_blocking,
-                                                 unsigned int                            i_n_blocking );
+                                                 unsigned int                            i_n_blocking,
+                                                 libxsmm_datatype                        i_dtype );
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_2d_microkernel_aarch64( libxsmm_generated_code*            io_generated_code,
