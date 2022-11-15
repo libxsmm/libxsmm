@@ -250,16 +250,16 @@ def main(args):
                                 analyze[init] = []
                             analyze[init].append(float(match.group(3)))
 
-            if yvalue:
+            if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
-            if meanvl:
-                meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
-            for a in analyze:
+            for a in analyze:  # (re-)reverse and trim collected values
                 analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
 
             if not yunit:
                 yunit = (ylabel if ylabel else args.result).split()[0]
             if 0 < args.mean:
+                if meanvl:  # (re-)reverse and trim collected values
+                    meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
                 values = [v for v in (meanvl if meanvl else yvalue) if 0 < v]
                 vnew = values[0 : args.mean]  # noqa: E203
                 if vnew:
@@ -270,19 +270,20 @@ def main(args):
                     label = f"{value} = {num2int(mnew)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
-                        perc = num2int(100 * (mold - mnew) / mold)
+                        perc = num2int(100 * (mnew - mold) / mold)
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
                             amax = float("-inf")
                             amin = float("inf")
                             for a in analyze:
-                                vnew = analyze[a][0 : args.mean]  # noqa: E203
-                                vold = analyze[a][args.mean :]  # noqa: E203
+                                values = [v for v in analyze[a] if 0 < v]
+                                vnew = values[0 : args.mean]  # noqa: E203
+                                vold = values[args.mean :]  # noqa: E203
                                 if vnew and vold:
                                     anew = statistics.geometric_mean(vnew)
                                     aold = statistics.geometric_mean(vold)
-                                    perc = num2int(100 * (aold - anew) / aold)
+                                    perc = num2int(100 * (anew - aold) / aold)
                                     if perc > amax:
                                         vmax = num2int(anew)
                                         analyze_max = a
@@ -312,12 +313,16 @@ def main(args):
                     yvalue = analyze[analyze_min]
                     xvalue = [*range(0, len(yvalue))]
                     label = f"{value}: {analyze_min}"
-                    axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                    axes[i].step(
+                        xvalue, yvalue, ".:", where="mid", label=label
+                    )  # noqa: E501
                 if analyze_max:
                     yvalue = analyze[analyze_max]
                     xvalue = [*range(0, len(yvalue))]
                     label = f"{value}: {analyze_max}"
-                    axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                    axes[i].step(
+                        xvalue, yvalue, ".:", where="mid", label=label
+                    )  # noqa: E501
                 axes[i].set_ylabel(aunit)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
