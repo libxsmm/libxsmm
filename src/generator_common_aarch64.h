@@ -58,7 +58,8 @@ void libxsmm_generator_mov_aarch64( libxsmm_generated_code* io_generated_code,
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
                                          unsigned int            instr,
-                                         const unsigned int      i_vec_inout );
+                                         const unsigned int      i_vec_inout,
+                                         libxsmm_aarch64_asimd_tupletype  i_tuple_type    );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,

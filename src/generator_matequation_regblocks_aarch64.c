@@ -534,7 +534,7 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output_aarch64( libxsmm_gen
   if ( is_sve ) {
     libxsmm_aarch64_instruction_sve_compute(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg, i_micro_kernel_config->reduce_vreg, 0, i_micro_kernel_config->reduce_vreg, 0, sve_type );
   } else {
-    libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg);
+    libxsmm_generator_hinstrps_aarch64(io_generated_code, hreduce_instr, i_micro_kernel_config->reduce_vreg, (LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)) == 8) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S);
   }
 
   if (i_micro_kernel_config->cvt_result_to_bf16 == 1) {

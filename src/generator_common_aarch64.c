@@ -63,9 +63,12 @@ void libxsmm_generator_vcvt_f32bf16_aarch64( libxsmm_generated_code* io_generate
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
     unsigned int                                   instr,
-    const unsigned int                             i_vec_inout ) {
-    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
-    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );
+    const unsigned int                             i_vec_inout,
+    libxsmm_aarch64_asimd_tupletype                i_tuple_type) {
+  libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, i_tuple_type );
+  if (i_tuple_type == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S) {
+    libxsmm_aarch64_instruction_asimd_compute( io_generated_code, instr, i_vec_inout, i_vec_inout, 0, i_vec_inout, i_tuple_type );
+  }
 }
 
 LIBXSMM_API_INTERN
