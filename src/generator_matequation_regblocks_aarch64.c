@@ -1392,7 +1392,7 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
   /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
   for (i = 0 ; i < 64; i++) {
     if (i_micro_kernel_config->unary_ops_pool[i] > 0) {
-      /* @TODO Evangelos: see the last to args... they are needed for dropout... */
+      /* TODO: Evangelos: see the last to args... they are needed for dropout... */
       libxsmm_configure_unary_aarch64_kernel_vregs_masks( io_generated_code, meltw_config, i, 0, i_gp_reg_mapping->temp_reg, i_gp_reg_mapping->temp_reg2, i_gp_reg_mapping->temp_reg, i_gp_reg_mapping->temp_reg2 );
     }
   }

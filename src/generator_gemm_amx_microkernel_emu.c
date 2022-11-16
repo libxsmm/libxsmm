@@ -892,7 +892,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     }
 
     if (_A_tile_id_load[i] > 0) {
-      /* @TODO catch _A_offset overflow */
+      /* TODO: catch _A_offset overflow */
       libxsmm_x86_instruction_tile_move_emu( io_generated_code,
           i_micro_kernel_config->instruction_set,
           _A_tileload_instr[i],
@@ -914,7 +914,7 @@ void libxsmm_generator_gemm_amx_microkernel_emu( libxsmm_generated_code*        
     }
 
     if (_B_tile_id_load[i] > 0) {
-      /* @TODO catch _B_offset overflow */
+      /* TODO: catch _B_offset overflow */
       libxsmm_x86_instruction_tile_move_emu( io_generated_code,
             i_micro_kernel_config->instruction_set,
             _B_tileload_instr[i],

@@ -2379,7 +2379,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
         /* Here is the K loop along with the microkernel */
         l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], A_offs, B_offs, 1);
 
-        /* @TODO this cide is dead: In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+        /* TODO: this cide is dead: In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
 #if 0
         if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
           libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -2508,7 +2508,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop( libxsmm_generated_code*           
       /* Here is the K loop along with the microkernel */
       l_generator_kloop(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, n_blocking_info, &m_blocking_info[l_m_count], 0, 0, 0);
 
-      /* @TODO this code is dead: In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
+      /* TODO: this code is dead: In case of address based batch redcue push the proper A/B address updates if the k loop is not fully unrolled */
 #if 0
       if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) && (fully_unroll_k == 0)) {
         libxsmm_x86_instruction_alu_mem( io_generated_code,

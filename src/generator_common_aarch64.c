@@ -2070,7 +2070,7 @@ void libxsmm_generator_xoshiro128pp_aarch64_asimd( libxsmm_generated_code* io_ge
   LIBXSMM_UNUSED(i_vec_reg_rng_tmp_0);
   LIBXSMM_UNUSED(i_vec_reg_rng_tmp_1);
   LIBXSMM_UNUSED(o_vec_reg_rng);
-  /* @TODO: needs validation */
+  /* TODO: needs validation */
 #if 0
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ADD_V,
                                              i_vec_reg_rng_state_0, i_vec_reg_rng_state_3, 0, i_vec_reg_rng_tmp_0, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S );

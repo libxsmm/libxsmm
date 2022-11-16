@@ -411,7 +411,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
                                                 const unsigned int      i_mask_reg_number,
                                                 const unsigned int      i_is_store );
 
-/* @TODO check if we can merge this alu_imm */
+/* TODO: check if we can merge this alu_imm */
 /**
  * Generates prefetch instructions with displacements, SIB addressing is not
  * supported by this function

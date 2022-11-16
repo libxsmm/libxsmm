@@ -398,7 +398,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
   m_globalPointerArray = (real**) malloc(l_numberOfCopies*sizeof(real*));
   m_globalDataArray = (GlobalData**) malloc(l_numberOfCopies*sizeof(GlobalData*));
 
-  // @TODO: for NUMA we need to bind this
+  // TODO: for NUMA we need to bind this
   for (unsigned int l_globalDataCount = 0; l_globalDataCount < l_numberOfCopies; l_globalDataCount++) {
 #ifdef USE_HBM_GLOBALDATA
     hbw_posix_memalign( (void**) &(m_globalPointerArray[l_globalDataCount]), 2097152, l_globalMatrices );

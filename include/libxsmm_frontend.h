@@ -359,7 +359,7 @@
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
   LIBXSMM_ASSERT(FN); FN(A, B, C)
-/* @TODO fix prefetch */
+/* TODO: fix prefetch */
 #define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) do { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \

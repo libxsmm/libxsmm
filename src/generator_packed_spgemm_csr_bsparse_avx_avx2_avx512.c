@@ -80,7 +80,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_avx_avx2_avx512( libxsmm_genera
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
 #endif
  /* packed blocking  */
-  /* @TODO for 2^x for l_simd_packed iters we might want to todo something else */
+  /* TODO: for 2^x for l_simd_packed iters we might want to todo something else */
   libxsmm_compute_equalized_blocking( l_simd_packed_iters, l_max_reg_block, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 #if 0
   printf("packed blocking (range0, block0, range1, block1): %u %u %u %u\n", l_packed_reg_range[0], l_packed_reg_block[0], l_packed_reg_range[1], l_packed_reg_block[1]);

@@ -3015,7 +3015,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
-    /* @TODO fix this code for the 3 kernel types we have
+    /* TODO: fix this code for the 3 kernel types we have
      * right now XGEMM ABI and BRGEMM go to 96 byte */
     wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
@@ -3049,7 +3049,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3078,7 +3078,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3131,7 +3131,7 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3457,7 +3457,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3500,7 +3500,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3542,7 +3542,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3578,7 +3578,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3615,7 +3615,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsm
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3914,11 +3914,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
     if (NULL != fn->xmm)
 #endif
     {
-      /* @TODO fix prefetch */
+      /* TODO: fix prefetch */
       LIBXSMM_UNUSED( pa );
       LIBXSMM_UNUSED( pb );
       LIBXSMM_UNUSED( pc );
-      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TODO fix prefetch */
+      fn->xmm(a, b, c/*, pa, pb, pc*/); /* TODO: fix prefetch */
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */

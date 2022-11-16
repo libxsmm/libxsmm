@@ -29,7 +29,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( lib
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* @TODO we could do more agressive blocking if needed */
+  /* TODO: we could do more agressive blocking if needed */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_reg_block = 28;
   } else {

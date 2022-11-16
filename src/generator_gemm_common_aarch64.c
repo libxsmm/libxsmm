@@ -1330,7 +1330,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
 
   if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 16 ) {
       l_m_blocking = 16;
     } else {
@@ -1341,7 +1341,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
       }
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 8 ) {
       l_m_blocking = 8;
     } else {
@@ -1349,14 +1349,14 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 32 ) {
       l_m_blocking = 32;
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_SVE256 || i_arch == LIBXSMM_AARCH64_NEOV1 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 16 ) {
       l_m_blocking = 16;
     } else {
@@ -1364,14 +1364,14 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_SVE512 || i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_DATATYPE_F32  == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* Remark switching ti OUT datatype check here to cover BF16 in, Fp32/Int32 out kernel with the same logic */
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 64 ) {
       l_m_blocking = 64;
     } else {
       l_m_blocking = i_xgemm_desc->m;
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_SVE512 || i_arch == LIBXSMM_AARCH64_A64FX ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    /* @TODO check if there is a better blocking strategy */
+    /* TODO: check if there is a better blocking strategy */
     if ( i_xgemm_desc->m >= 32 ) {
       l_m_blocking = 32;
     } else {

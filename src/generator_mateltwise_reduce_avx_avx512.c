@@ -6834,7 +6834,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel( libxsmm_generated
     return;
   }
 
-  /* @TODO: For AVX256 VL we might want to use the AVx512 code pass in future */
+  /* TODO: For AVX256 VL we might want to use the AVx512 code pass in future */
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
     l_save_arch = io_generated_code->arch;
     io_generated_code->arch = LIBXSMM_X86_AVX2;

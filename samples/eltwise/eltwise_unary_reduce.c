@@ -556,30 +556,30 @@ int main(int argc, char* argv[])
       d_result_reduce_elts_squared = (double*) d_result_reduce_elts + result_size;
       if (dtype == LIBXSMM_DATATYPE_BF16) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat16*) result_reduce_elts_lp + result_size);
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
         libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_F16) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_float16*) result_reduce_elts_lp + result_size);
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_f16_f32( (libxsmm_float16*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
         libxsmm_convert_f16_f32( (libxsmm_float16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_BF8) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_bfloat8*) result_reduce_elts_lp + result_size);
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
         libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_HF8) {
         result_reduce_elts_squared_lp = (char*)((libxsmm_hfloat8*) result_reduce_elts_lp + result_size);
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)result_reduce_elts_lp, ref_result_reduce_elts, result_size );
         libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_F32) {
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         memcpy( (void*)ref_result_reduce_elts, (void*)result_reduce_elts, sizeof(float)*result_size );
         memcpy( (void*)ref_result_reduce_elts_squared, (void*)result_reduce_elts_squared, sizeof(float)*result_size );
       } else if (dtype == LIBXSMM_DATATYPE_F64) {
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         memcpy( (void*)d_ref_result_reduce_elts, (void*)d_result_reduce_elts, sizeof(double)*result_size );
         memcpy( (void*)d_ref_result_reduce_elts_squared, (void*)d_result_reduce_elts_squared, sizeof(double)*result_size );
       }
@@ -589,19 +589,19 @@ int main(int argc, char* argv[])
       d_result_reduce_elts_squared = (double*) d_result_reduce_elts;
       if (dtype == LIBXSMM_DATATYPE_BF16) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_bf16_f32( (libxsmm_bfloat16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_F16) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_f16_f32( (libxsmm_float16*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_BF8) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_bf8_f32( (libxsmm_bfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_HF8) {
         result_reduce_elts_squared_lp = result_reduce_elts_lp;
-        /* @TODO this needs clean-up */
+        /* TODO: this needs clean-up */
         libxsmm_convert_hf8_f32( (libxsmm_hfloat8*)result_reduce_elts_squared_lp, ref_result_reduce_elts_squared, result_size );
       } else if (dtype == LIBXSMM_DATATYPE_F32) {
         memcpy( (void*)ref_result_reduce_elts_squared, (void*)result_reduce_elts_squared, sizeof(float)*result_size );

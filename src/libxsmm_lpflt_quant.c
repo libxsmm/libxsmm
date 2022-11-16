@@ -97,9 +97,9 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
     /* extract sign */
     /* __mmask16 smask =  _mm512_cmplt_ps_mask (inp, _mm512_set1_ps(0)); */
     sign = ((value.u & LIBXSMM_MASK_SIGN_F32) >> (LIBXSMM_SZ_F32-1));
-    /* calculate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
+    /* calculate rhs, be aware of the now explicit leading bit, TODO: add DFP8/4 */
     rhs = (unsigned char)((LIBXSMM_MANT_SZ_F32+1) - LIBXSMM_MANT_DFP16 + exp_off + add_shift);
-    /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM WARNING: that we shifted out the entire mantissa */
+    /* some safety, to generate 0 when we fall off quant region, TODO: issue a LIBXSMM WARNING: that we shifted out the entire mantissa */
     if (rhs > (LIBXSMM_MANT_SZ_F32+1)) {
       rhs = (LIBXSMM_MANT_SZ_F32+1);
     }
@@ -112,7 +112,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 
     if (round_mode == LIBXSMM_QUANT_BIAS_ROUND) {
       /* biased rounding towards next bigger number */
-      /* first let's determine in the original number if we need a bias rounding, @TODO need fix for F64 */
+      /* first let's determine in the original number if we need a bias rounding, TODO: need fix for F64 */
       int bias_needed = (mant & (0x3 << (rhs-2)));
       /* apply bias */
       if (bias_needed > 0) {
@@ -149,7 +149,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 }
 
 
-/* @TODO make this routine aware of any int type */
+/* TODO: make this routine aware of any int type */
 LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   int i = 0;
 
@@ -157,7 +157,7 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
   LIBXSMM_INIT
 
   /* in case we are using FP-Mul based quantization we use a different path for now
-     @TODO let's unify the paths by using the similar vectorization for both */
+     TODO: let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_QUANT_FPHW_ROUND ) {
     const float max_value = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;

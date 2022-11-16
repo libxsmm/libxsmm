@@ -2648,7 +2648,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                                    l_alu_instr, i_gp_reg_base,
                                                    i_gp_reg_idx, i_scale, i_displacement, i_gp_reg_number );
   } else {
-    /* @TODO */
+    /* TODO: */
   }
 }
 
@@ -2763,7 +2763,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       }
     }
 
-    /* @TODO fix! for IMUL we have a ternay instrucation */
+    /* TODO: fix! for IMUL we have a ternay instrucation */
     if ( l_alu_instr == LIBXSMM_X86_INSTR_IMULW_IMM16 ||
          l_alu_instr == LIBXSMM_X86_INSTR_IMULD_IMM32 ||
          l_alu_instr == LIBXSMM_X86_INSTR_IMULQ_IMM32 ) {
@@ -3452,7 +3452,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
   /*const unsigned int i_gp_reg_idx = LIBXSMM_X86_GP_REG_UNDEF;*/
   /*const unsigned int i_scale = 1;*/
 
-  /* @TODO: check instruction set */
+  /* TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
@@ -3495,7 +3495,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
     tile_config_imm[55]                 = i_tile_config->tile7cols;
   }
 
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @Greg please add encodings here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -3659,7 +3659,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
             }
             libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
           } else {
-            /* @TODO handle error */
+            /* TODO: handle error */
           }
         }
         break;
@@ -3677,7 +3677,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
           }
           libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         } else {
-          /* @TODO handle error */
+          /* TODO: handle error */
         }
         break;
       }
@@ -3709,7 +3709,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
                                         const unsigned int      i_scale,
                                         const int               i_displacement,
                                         const unsigned int      i_tile_reg_number ) {
-  /* @TODO: check instruction set */
+  /* TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
   /* check if passed in a correct instruction */
@@ -3772,7 +3772,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
           }
           libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         } else {
-          /* @TODO handle error */
+          /* TODO: handle error */
         }
         break;
       }
@@ -3790,7 +3790,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
           }
           libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         } else {
-          /* @TODO handle error */
+          /* TODO: handle error */
         }
         break;
       }
@@ -3821,7 +3821,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_tile_src_reg_number_0,
                                            const unsigned int      i_tile_src_reg_number_1,
                                            const unsigned int      i_tile_dst_reg_number ) {
-  /* @TODO: check instruction set */
+  /* TODO: check instruction set */
   LIBXSMM_UNUSED( i_instruction_set );
 
   /* check if passed in a correct instruction */
@@ -3883,7 +3883,7 @@ void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*  
     return;
   }
 
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     int l_lab = io_loop_label_tracker->label_count;
     io_loop_label_tracker->label_count++;
@@ -3934,7 +3934,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
     return;
   }
 
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /*unsigned char *buf = (unsigned char *) io_generated_code->generated_code;*/
     int i = io_generated_code->code_size;
@@ -3989,7 +3989,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
     return;
   }
 
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_ref = 0;
     libxsmm_jump_source l_source = io_jump_label_tracker->label_source[i_label_no];
@@ -4045,7 +4045,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
   io_jump_label_tracker->label_source[i_label_no].instr_addr[l_pos] = io_generated_code->code_size;
   io_jump_label_tracker->label_source[i_label_no].ref_count++;
 
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     int l_dest_addr;
     int l_tmp;
@@ -4123,7 +4123,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     int jmpval = 0;
     int vecval = 0;
 
-    /* @TODO fix max. size error */
+    /* TODO: fix max. size error */
     if ( l_maxsize - i < 139 ) {
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: Most constant jumps need at most 139 bytes\n");
       exit(-1);
@@ -4286,9 +4286,9 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                const unsigned int            skip_callee_save,
                                                unsigned int                  i_prefetch) {
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     unsigned char* l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -4322,7 +4322,7 @@ void libxsmm_x86_instruction_open_stream_gemm( libxsmm_generated_code*       io_
       io_generated_code->sf_size += 40;
     }
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -4396,9 +4396,9 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
                                                 const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                 const unsigned int            skip_callee_save,
                                                 unsigned int                  i_prefetch) {
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interface */
+    /* TODO: this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -4430,13 +4430,13 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
     }
 
     /* retq */
-    /* @TODO: I do not know if this is the correct placement in the generation process */
+    /* TODO: I do not know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -4457,7 +4457,7 @@ void libxsmm_x86_instruction_close_stream_gemm( libxsmm_generated_code*       io
       io_generated_code->sf_size -= 40;
     }
 
-    /* @TODO: I do not know if this is the correct placement in the generation process */
+    /* TODO: I do not know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
@@ -4639,9 +4639,9 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generated_code,
                                              const unsigned int      i_gp_struct_params,
                                              const unsigned int      skip_callee_save ) {
-  /* @TODO add checks in debug mode */
+  /* TODO: add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     unsigned char* l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -4673,7 +4673,7 @@ void libxsmm_x86_instruction_open_stream_v2( libxsmm_generated_code* io_generate
     /* update code length */
     io_generated_code->code_size = l_code_size;
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -4713,7 +4713,7 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      skip_callee_save ) {
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interface */
+    /* TODO: this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -4744,13 +4744,13 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
     }
 
     /* retq */
-    /* @TODO: I do not know if this is the correct placement in the generation process */
+    /* TODO: I do not know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    /* TODO: this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
@@ -4771,7 +4771,7 @@ void libxsmm_x86_instruction_close_stream_v2( libxsmm_generated_code* io_generat
       io_generated_code->sf_size -= 40;
     }
 
-    /* @TODO: I do not know if this is the correct placement in the generation process */
+    /* TODO: I do not know if this is the correct placement in the generation process */
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
