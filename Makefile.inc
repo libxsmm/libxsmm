@@ -1530,6 +1530,24 @@ else # GCC assumed
       FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC)) # 2<=PEDANTIC
+      ifneq (2,$(PEDANTIC)) # 2<=PEDANTIC
+      ifneq (0,$(CLANG))
+        CPEDANTIC += -Weverything \
+          -Wno-implicit-int-float-conversion \
+          -Wno-cast-align -Wno-cast-qual \
+          -Wno-disabled-macro-expansion \
+          -Wno-atomic-implicit-seq-cst \
+          -Wno-used-but-marked-unused \
+          -Wno-reserved-identifier \
+          -Wno-padded -Wno-packed \
+          -Wno-reserved-id-macro \
+          -Wno-double-promotion \
+          -Wno-sign-conversion \
+          -Wno-extra-semi-stmt \
+          -Wno-unused-macros \
+          -Wno-float-equal
+      endif
+      endif
       ifneq (Darwin,$(UNAME))
         ifeq (,$(filter-out 0,$(FORCE_CXX)))
           ifneq (0,$(shell echo "$$((0==$(CLANG)||130000>$(CC_VERSION_NUM)))"))
