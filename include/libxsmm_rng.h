@@ -35,7 +35,7 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
 
 /**
  * This SP-RNG is using xoshiro128+ 1.0, work done by
- * David Blackman and Sebastiano Vigna (vigna@acm.org).
+ * David Blackman and Sebastiano Vigna (vigna @ acm.org).
  * It is their best and fastest 32-bit generator for
  * 32-bit floating-point numbers. They suggest to use
  * its upper bits for floating-point generation, what

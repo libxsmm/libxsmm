@@ -586,8 +586,8 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
  * Generates a label to which one can jump back and pushes it on the loop label stack
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @parma i_labal_no position in the jump label tracker to set
- * @param io_jump_forward_label_tracker forward jump tracker structure for tracking the jump addresses/labels
+ * @param i_label_no position in the jump label tracker to set
+ * @param io_jump_label_tracker forward jump tracker structure for tracking the jump addresses/labels
 */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
