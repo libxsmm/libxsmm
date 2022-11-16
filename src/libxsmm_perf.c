@@ -88,7 +88,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
   JITDUMP_MAGIC = ('J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
   JITDUMP_MAGIC_SWAPPED = ('J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
   JITDUMP_VERSION = 1;
-  JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
+  JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /* << 0 */;
   JITDUMP_CODE_LOAD = 0;
   JITDUMP_CODE_MOVE = 1;
   JITDUMP_CODE_DEBUG_INFO = 2;

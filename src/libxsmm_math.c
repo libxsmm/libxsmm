@@ -571,7 +571,7 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
     const signed char ux = (signed char)LIBXSMM_ABS(x);
     if (31 < ux) {
       static const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
-      signed char n = ux >> 5, r = ux - (n << 5), i;
+      signed char n = ux >> 5, r = ux - (signed char)(n << 5), i;
       result.s = r32;
       for (i = 1; i < n; ++i) result.s *= r32;
       result.s *= (float)(1U << r);

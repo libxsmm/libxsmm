@@ -777,8 +777,9 @@ void libxsmm_compute_unary_aarch64_2d_reg_block_op( libxsmm_generated_code*     
 
         /* number needs to be adjusted, if the type is fp64 or bf16 */
         /* fp32 is type 0x02; number of iterations for bytes: 0, bf16: 1, fp32: 3, fp64: 7 */
-        unsigned char max_num_iterations = (1 << (unsigned char) l_sve_type) - 1;
-        unsigned char num_iterations = libxsmm_get_ulp_precision() == LIBXSMM_ULP_PRECISION_ESTIMATE ? 0 : max_num_iterations;
+        const int niterations = (1 << (int)l_sve_type) - 1;
+        unsigned char max_num_iterations = (unsigned char)niterations;
+        unsigned char num_iterations = (libxsmm_get_ulp_precision() == LIBXSMM_ULP_PRECISION_ESTIMATE ? 0 : max_num_iterations);
         if ( l_is_sve ) {
           unsigned char tmp_guess = LIBXSMM_CAST_UCHAR(i_micro_kernel_config->tmp_vreg);
           unsigned char tmp_guess_squared = LIBXSMM_CAST_UCHAR(i_micro_kernel_config->tmp_vreg2);

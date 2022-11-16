@@ -353,8 +353,8 @@ void libxsmm_generator_transform_norm_to_vnni4_aarch64_sve_microkernel_block( li
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V, 2, 3, 0, 7, 0, l_sve_type2 );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, 4, 5, 0, 8, 0, l_sve_type4 ); /* M0 - M3 [N0N1N2N3] */
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V, 4, 5, 0, 9, 0, l_sve_type4 ); /* M4 - M7 [N0N1N2N3] */
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, 6, 7, 0, 10, 0, l_sve_type4 );/* M8 - M11[N0N1N2N3] */
-  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V, 6, 7, 0, 11, 0, l_sve_type4 );/* M12 -M15[N0N1N2N3] */
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, 6, 7, 0, 10, 0, l_sve_type4 ); /* M8 - M11[N0N1N2N3] */
+  libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP2_V, 6, 7, 0, 11, 0, l_sve_type4 ); /* M12 -M15[N0N1N2N3] */
 
   if (i_m_remainder == 0) {
     libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,

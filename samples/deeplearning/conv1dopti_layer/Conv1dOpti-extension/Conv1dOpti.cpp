@@ -533,7 +533,6 @@ std::tuple<at::Tensor, at::Tensor> Conv1dOpti_backward_bf16_libxsmm(at::Tensor& 
     }
 
 
-
     /* -------------------------------  Backward Weight part of the code ---------------------------------- */
 
 

@@ -359,8 +359,8 @@ typedef enum libxsmm_build_kind {
 typedef uint64_t libxsmm_descriptor_kind;
 #else
 # define LIBXSMM_DESCRIPTOR_BIG(KIND) ((libxsmm_descriptor_kind)((KIND) | 0x80))
-# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((int)((KIND) >> 7))
-# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((int)((KIND) & 0x7F))
+# define LIBXSMM_DESCRIPTOR_ISBIG(KIND) ((unsigned char)((KIND) >> 7))
+# define LIBXSMM_DESCRIPTOR_KIND(KIND) ((unsigned char)((KIND) & 0x7F))
 typedef unsigned char libxsmm_descriptor_kind;
 #endif
 

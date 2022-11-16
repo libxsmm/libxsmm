@@ -128,7 +128,8 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       const float eps = LIBXSMM_RES_DFP16;
       /* coverity[dont_call] */
-      const float r = (float)rand();
+      const int ri = rand();
+      const float r = (float)ri;
       libxsmm_float_uint fvalue = { 0 };
       float p, q;
       /* masking all bits which will be shifted out */
@@ -183,7 +184,8 @@ LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int 
 #     pragma omp parallel for private(i)
 #endif
       for (i = 0; i < length; ++i ) {
-        out_buffer[i] = (short)LIBXSMM_ROUNDF(in_buffer[i] * scfq);
+        const float f = LIBXSMM_ROUNDF(in_buffer[i] * scfq);
+        out_buffer[i] = (short)f;
       }
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
@@ -712,7 +714,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bf8(const float* in, libxsmm_bfloat8* 
       ? (((hybrid_in.u & 0x03ff) == 0x0) ? hybrid_in.u : hybrid_in.u | 0x0200)
       : hybrid_in.u + 0x007f + fixup);
     /* shift right */
-    res = (unsigned short)(hybrid_in.u >> 8);
+    res = (libxsmm_bfloat8)(hybrid_in.u >> 8);
 
     out[i] = res;
   }
@@ -722,7 +724,8 @@ LIBXSMM_API void libxsmm_convert_bf8_f32(const libxsmm_bfloat8* in, float* out, 
   unsigned int i = 0;
 
   for ( i = 0; i < length; ++i ) {
-    unsigned short tmp = ((unsigned short)in[i]) << 8;
+    const unsigned short inus = (unsigned short)in[i];
+    const unsigned short tmp = (unsigned short)(inus << 8);
     out[i] = libxsmm_convert_f16_to_f32( tmp );
   }
 }
@@ -733,10 +736,8 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
   unsigned short rand = (unsigned short)libxsmm_rng_u32(1);
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; ++i ) {
-    unsigned short short_round = 0;
+    unsigned short short_round = libxsmm_convert_f32_to_f16( in[i] );
     unsigned int do_round = 1;
-
-    short_round = libxsmm_convert_f32_to_f16( in[i] );
 
     /* we do not round NaN and inf */
     if ( (short_round & 0x7c00) == 0x7c00 ) {
@@ -756,4 +757,3 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
     out[i] = (unsigned char)short_round;
   }
 }
-

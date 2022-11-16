@@ -2538,7 +2538,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     default:
       fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: 0x%08x\n", i_prefetch_instr);
       exit(-1);
-      break;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -2622,7 +2621,6 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
-      break;
   }
 
   if ( io_generated_code->code_type > 1 )
@@ -2715,7 +2713,6 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
-      break;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -2823,7 +2820,6 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
-      break;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3024,7 +3020,6 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: 0x%08x\n", i_alu_instr);
       exit(-1);
-      break;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3758,8 +3753,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
 
     switch ( i_tmove_instr ) {
       case LIBXSMM_X86_INSTR_TILELOADD:
-      case LIBXSMM_X86_INSTR_TILELOADDT1:
-      {
+      case LIBXSMM_X86_INSTR_TILELOADDT1: {
         /* check that SIB addressing is set */
         if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
           libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
@@ -3774,10 +3768,8 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
         } else {
           /* TODO: handle error */
         }
-        break;
-      }
-      case LIBXSMM_X86_INSTR_TILESTORED:
-      {
+      } break;
+      case LIBXSMM_X86_INSTR_TILESTORED: {
         /* check that SIB addressing is set */
         if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
           libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
@@ -3792,9 +3784,8 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
         } else {
           /* TODO: handle error */
         }
-        break;
-      }
-      case LIBXSMM_X86_INSTR_TILEZERO:
+      } break;
+      case LIBXSMM_X86_INSTR_TILEZERO: {
         if ( io_generated_code->code_type == 0 ) {
           l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%tmm%u\\n\\t\"\n",
                                                        l_instr_name, i_tile_reg_number );
@@ -3803,8 +3794,9 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
                                                        l_instr_name, i_tile_reg_number );
         }
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      } break;
       default:
-        break;
+        assert(0/*should not happen*/);
     }
   } else {
     /* general encoder error */

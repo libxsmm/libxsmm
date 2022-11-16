@@ -547,11 +547,12 @@ LIBXSMM_API_INLINE void internal_register_static_code(
   /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc);
   if (precondition) {
     const size_t size = (LIBXSMM_HASH_SIZE) - sizeof(libxsmm_descriptor_kind);
+    const size_t size_desc = sizeof(libxsmm_gemm_descriptor);
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_dinit(&blob, precision,
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_FLAGS, INTERNAL_PREFETCH);
     unsigned int i = LIBXSMM_MOD2(
-      libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(sizeof(libxsmm_gemm_descriptor), size)),
+      libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(size_desc, size)),
       LIBXSMM_CAPACITY_REGISTRY);
     libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
@@ -689,9 +690,12 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
+    const char */*const*/ version = LIBXSMM_VERSION, */*const*/ branch = LIBXSMM_BRANCH; /* mute warnings */
+    LIBXSMM_ASSERT(NULL != version && NULL != branch);
     LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
-      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH,
+      0 != *branch ? "-" : "", 0 != *version ? version : "unconfigured",
+      LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
@@ -933,7 +937,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
     const char *const env_cache = getenv("LIBXSMM_CACHE");
     if (NULL != env_cache && '\0' != *env_cache) {
-      const int cache_size = atoi(env_cache), cache_size2 = LIBXSMM_UP2POT(cache_size);
+      const int cache_size = atoi(env_cache), cache_size2 = (int)LIBXSMM_UP2POT(cache_size);
       internal_cache_size = LIBXSMM_MIN(cache_size2, LIBXSMM_CACHE_MAXSIZE);
     }
     else {
@@ -1187,7 +1191,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           const char *const env_nlocks = getenv("LIBXSMM_NLOCKS");
           const int reglock_count = (NULL == env_nlocks || 0 == *env_nlocks || 1 > atoi(env_nlocks))
             ? (INTERNAL_REGLOCK_MAXN) : LIBXSMM_MIN(atoi(env_nlocks), INTERNAL_REGLOCK_MAXN);
-          internal_reglock_count = LIBXSMM_LO2POT(reglock_count);
+          internal_reglock_count = (int)LIBXSMM_LO2POT(reglock_count);
 # else
           internal_reglock_count = 0;
 # endif
@@ -3021,7 +3025,8 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      const int gemm_prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
     }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
 #if defined(_DEBUG)

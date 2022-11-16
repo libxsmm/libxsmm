@@ -468,7 +468,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(void)
     const char *const env_nlocks = getenv("LIBXSMM_GEMM_NLOCKS");
     const int nlocks = ((NULL == env_nlocks || 0 == *env_nlocks) ? -1/*default*/ : atoi(env_nlocks));
     unsigned int i;
-    internal_gemm_nlocks = LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MIN(nlocks, LIBXSMM_GEMM_MAXNLOCKS));
+    internal_gemm_nlocks = (unsigned int)LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MIN(nlocks, LIBXSMM_GEMM_MAXNLOCKS));
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
@@ -593,8 +593,9 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const void* beta, void* c, const libxsmm_blasint* ldc)
 {
   const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
-  const char ctransa = (char)(NULL != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'n' : 't'));
-  const char ctransb = (char)(NULL != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 't'));
+  const int itransa = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A, itransb = LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B;
+  const char ctransa = (char)(NULL != transa ? (*transa) : (0 == itransa ? 'n' : 't'));
+  const char ctransb = (char)(NULL != transb ? (*transb) : (0 == itransb ? 'n' : 't'));
   const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
   const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
   const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
@@ -1090,9 +1091,10 @@ LIBXSMM_API int libxsmm_gemm_batch_kernel(libxsmm_gemmfunction kernel, libxsmm_b
 #endif /*(0 != LIBXSMM_SYNC)*/
     }
     else if (0 == index_stride) { /* array of pointers to matrices (singular strides are measured in Bytes) */
-      const libxsmm_blasint da = (NULL != stride_a ? ((size_t)*stride_a) : sizeof(void*)) - index_base * sizeof(void*);
-      const libxsmm_blasint db = (NULL != stride_b ? ((size_t)*stride_b) : sizeof(void*)) - index_base * sizeof(void*);
-      const libxsmm_blasint dc = (NULL != stride_c ? ((size_t)*stride_c) : sizeof(void*)) - index_base * sizeof(void*);
+      const libxsmm_blasint pointersize = (libxsmm_blasint)sizeof(void*); /* LIBXSMM_BITS/8 */
+      const libxsmm_blasint da = (NULL != stride_a ? *stride_a : pointersize) - index_base * pointersize;
+      const libxsmm_blasint db = (NULL != stride_b ? *stride_b : pointersize) - index_base * pointersize;
+      const libxsmm_blasint dc = (NULL != stride_c ? *stride_c : pointersize) - index_base * pointersize;
       char *ai = &a0[begin * da], *bi = &b0[begin * db], *ci = &c0[begin * dc];
       const libxsmm_blasint end1 = (end != size ? end : (end - 1));
       libxsmm_blasint i;
@@ -1274,9 +1276,10 @@ LIBXSMM_API void libxsmm_gemm_batch_blas(libxsmm_datatype iprec, libxsmm_datatyp
       }
     }
     else if (0 == index_stride) { /* array of pointers to matrices (singular strides are measured in Bytes) */
-      const libxsmm_blasint da = (NULL != stride_a ? ((size_t)*stride_a) : sizeof(void*)) - index_base * sizeof(void*);
-      const libxsmm_blasint db = (NULL != stride_b ? ((size_t)*stride_b) : sizeof(void*)) - index_base * sizeof(void*);
-      const libxsmm_blasint dc = (NULL != stride_c ? ((size_t)*stride_c) : sizeof(void*)) - index_base * sizeof(void*);
+      const libxsmm_blasint pointersize = (libxsmm_blasint)sizeof(void*); /* LIBXSMM_BITS/8 */
+      const libxsmm_blasint da = (NULL != stride_a ? *stride_a : pointersize) - index_base * pointersize;
+      const libxsmm_blasint db = (NULL != stride_b ? *stride_b : pointersize) - index_base * pointersize;
+      const libxsmm_blasint dc = (NULL != stride_c ? *stride_c : pointersize) - index_base * pointersize;
       for (i = 0; i < size; ++i) {
         const void *const ai = *(const void**)&a0[i * da], *const bi = *(const void**)&b0[i * db];
         void *const ci = *(void**)&c0[i * dc];
@@ -1355,7 +1358,8 @@ LIBXSMM_API void libxsmm_gemm_batch_task(libxsmm_datatype iprec, libxsmm_datatyp
             }
           }
           else if (0 != batchcheck) { /* arrays of pointers */
-            const libxsmm_blasint dc = (NULL != stride_c ? ((size_t)*stride_c) : sizeof(void*)) - index_base * sizeof(void*);
+            const libxsmm_blasint pointersize = (libxsmm_blasint)sizeof(void*); /* LIBXSMM_BITS/8 */
+            const libxsmm_blasint dc = (NULL != stride_c ? *stride_c : pointersize) - index_base * pointersize;
             libxsmm_blasint size = LIBXSMM_ABS(batchsize), s = 0;
             const char* pc = (const char*)c;
             for (; s < size; ++s, pc += dc) {

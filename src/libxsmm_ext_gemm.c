@@ -460,7 +460,8 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_datatype iprec, libxsmm_
               }
             }
             else if (0 != batchcheck) { /* arrays of pointers */
-              const libxsmm_blasint dc = (NULL != stride_c ? ((size_t)*stride_c) : sizeof(void*)) - index_base * sizeof(void*);
+              const libxsmm_blasint pointersize = (libxsmm_blasint)sizeof(void*); /* LIBXSMM_BITS/8 */
+              const libxsmm_blasint dc = (NULL != stride_c ? *stride_c : pointersize) - index_base * pointersize;
               const char* pc = (const char*)c;
               libxsmm_blasint s = 0;
               for (; s < asize; ++s, pc += dc) {

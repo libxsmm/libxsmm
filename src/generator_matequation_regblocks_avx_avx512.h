@@ -122,8 +122,6 @@ void libxsmm_generator_mateqn_compute_unary_op_2d_reg_block( libxsmm_generated_c
                                                  unsigned int                            i_m_blocking,
                                                  unsigned int                            i_n_blocking );
 
-
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_compute_binary_op_2d_reg_block( libxsmm_generated_code*    io_generated_code,
                                                  libxsmm_matequation_kernel_config*      i_meqn_micro_kernel_config,

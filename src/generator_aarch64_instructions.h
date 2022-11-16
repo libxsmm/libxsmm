@@ -884,10 +884,10 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
  * Generates an optimal sequence of adding up to a 64bit imm to a GPR
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_alu_instr actual alu gpr instruction
+ * @param i_alu_meta_instr actual alu gpr instruction
  * @param i_gp_reg_src soruce register
- * @param i_gp_reg_dst destination register
  * @param i_gp_reg_tmp temp register which may be used
+ * @param i_gp_reg_dst destination register
  * @param i_imm64 the 64 bit immediate
  */
 LIBXSMM_API_INTERN
@@ -952,4 +952,3 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */
-

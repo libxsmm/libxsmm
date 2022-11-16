@@ -1300,7 +1300,7 @@ LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
     char* env = getenv("LIBXSMM_ULP_PRECISION");
     float p = 0;
     if (env) {
-      p = (float)atof(env);/* alternatively to atof, we could use strcmp */
+      p = (float)atof(env); /* alternatively to atof, we could use strcmp */
       if (p == 0.5)
         precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
       else if (p == 1.0)

@@ -1213,9 +1213,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -160;
     case LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR:
       return -168;
-    default:
-      return 0;
   }
+  return 0;
 }
 
 LIBXSMM_API_INTERN
@@ -3435,5 +3434,3 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned i
 #endif
   }
 }
-
-

@@ -216,7 +216,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
   libxsmm_aarch64_sve_type sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)));
   libxsmm_aarch64_asimd_tupletype asimd_type = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
   unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned char pred_reg_all = 0;/* set by caller */
+  unsigned char pred_reg_all = 0; /* set by caller */
   unsigned char pred_reg_mask = 1;
   unsigned char pred_reg_all_bf16 = 2;
   unsigned char pred_reg_mask_use = 0;
@@ -856,7 +856,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_aarch64_sve_type sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_TYPESIZE(libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP)));
   libxsmm_aarch64_asimd_tupletype asimd_type = (i_micro_kernel_config->datatype_size_in == 4) ? LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S : LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D;
-  unsigned char pred_reg_all = 0;/* defined by caller */
+  unsigned char pred_reg_all = 0; /* defined by caller */
   unsigned char pred_reg_mask = 1;
   unsigned char pred_reg_all_bf16 = 2;
   unsigned char pred_reg_mask_compute_f32 = 3;
@@ -890,7 +890,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
 
   if ( flag_reduce_op_add > 0 ) {
     reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FADD_V : LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V;
-    hreduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FADDP_V;/* sve todo: what is that instruction? probably reduce... */
+    hreduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FADDV_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FADDP_V; /* sve todo: what is that instruction? probably reduce... */
   } else if ( flag_reduce_op_max > 0 ) {
     reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
     hreduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAXP_V;
@@ -1275,7 +1275,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
   const int LIBXSMM_AARCH64_INSTR_DOTPS = -1;
   unsigned int  bcast_param = 0;
   unsigned int gp_reg_index_64bit = 0, gp_reg_index = 0, gp_reg_ldi = 0, gp_reg_impl_index = 0;
-  unsigned char pred_reg_all = 0;/* sve predicate registers with all elements enabled; set by caller */
+  unsigned char pred_reg_all = 0; /* sve predicate registers with all elements enabled; set by caller */
   unsigned char pred_reg_mask = 1;
   unsigned char pred_reg_argidx = 2;
   unsigned char pred_reg_all_bf16 = 3;
@@ -2684,7 +2684,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
   unsigned int l_masked_elements = 0;
   unsigned int l_is_inp_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
   unsigned int l_is_out_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ? 1 : 0;
-  unsigned int aux_vreg_offset = LIBXSMM_AARCH64_GP_REG_X16 & 31;/* register number 16 */
+  unsigned int aux_vreg_offset = LIBXSMM_AARCH64_GP_REG_X16 & 31; /* register number 16 */
   unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
 #if defined(USE_ENV_TUNING)
   const char *const env_max_m_unroll = getenv("MAX_M_UNROLL_REDUCE_COLS_IDX");

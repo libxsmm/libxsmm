@@ -164,12 +164,12 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_instruction_set requested instruction set to encode
  * @param i_vmove_instr actual vmov variant
- * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_gp_reg_base the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address
  * @param i_vector_name the vector register name prefix (x, y or z)
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_mask_reg_number the mask register to be used
- * @param i_use_zero_masking: 0: merge masking ; !=0: zero masking
+ * @param i_use_zero_masking 0: merge masking ; !=0: zero masking
  * @param i_is_store 0: load semantic, other: store semantic
  */
 LIBXSMM_API_INTERN
@@ -418,7 +418,7 @@ void libxsmm_x86_instruction_vex_evex_mask_mov( libxsmm_generated_code* io_gener
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_prefetch_instr actual prefetch variant
- * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_gp_reg_base the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address
  */
 LIBXSMM_API_INTERN
@@ -513,7 +513,6 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
  * @param i_mask_instr actual mask move instruction
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_mask_reg_number the register number (k1=1...k7=7)
- * @param i_is_store indicates if we wnat to move the mask to gpr
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
@@ -531,7 +530,6 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
  * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
  * @param i_displacement displacement to SIB address
  * @param i_mask_reg_number the register number (k1=1...k7=7)
- * @param i_is_store indicates if we wnat to move the mask to gpr
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated_code,
@@ -665,7 +663,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
  * @param i_gp_reg_idx the base register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_scale scaling factor of idx
  * @param i_displacement the offset to the base address
- * @param i_tile_reg_number_0 the tile register number (tmm: 0-7)
+ * @param i_tile_reg_number the tile register number (tmm: 0-7)
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_code,
@@ -696,4 +694,3 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
                                            const unsigned int      i_tile_dst_reg_number );
 
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */
-
