@@ -409,18 +409,18 @@ int main(int argc, char* argv[])
   unsigned int idx_type = 0;
   unsigned int record_idx = 0;
   libxsmm_blasint ld_in = 64/*, ld_out = 64*/;
-  float  *sinp, *result_reduce_elts, *result_reduce_elts_squared, *ref_result_reduce_elts, *ref_result_reduce_elts_squared;
-  double *dinp, *d_result_reduce_elts, *d_result_reduce_elts_squared, *d_ref_result_reduce_elts, *d_ref_result_reduce_elts_squared;
-  unsigned long long *ref_argop_off, *argop_off;
-  unsigned int *ref_argop_off_i32, *argop_off_i32;
+  float  *sinp = NULL, *result_reduce_elts = NULL, *result_reduce_elts_squared = NULL, *ref_result_reduce_elts = NULL, *ref_result_reduce_elts_squared = NULL;
+  double *dinp = NULL, *d_result_reduce_elts = NULL, *d_result_reduce_elts_squared = NULL, *d_ref_result_reduce_elts = NULL, *d_ref_result_reduce_elts_squared = NULL;
+  unsigned long long *ref_argop_off = NULL, *argop_off = NULL;
+  unsigned int *ref_argop_off_i32 = NULL, *argop_off_i32 = NULL;
   char *sinp_lp = NULL;
   char *result_reduce_elts_lp = NULL;
   char *result_reduce_elts_squared_lp = NULL;
 #ifdef FP16_REDUCE_COLSIDX
-  unsigned short *sinp_hp, *result_reduce_elts_hp;
+  unsigned short *sinp_hp = NULL, *result_reduce_elts_hp = NULL;
 #endif
-  unsigned long long *cols_ind_array;
-  unsigned int *cols_ind_array_32bit;
+  unsigned long long *cols_ind_array = NULL;
+  unsigned int *cols_ind_array_32bit = NULL;
   libxsmm_meltwfunction_unary kernel = NULL;
   libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
   libxsmm_meltwfunction_unary kernel2 = NULL;
