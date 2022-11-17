@@ -292,9 +292,10 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
   }
 
   /* We fully unroll in N dimension, calculate m-mask if there is remainder */
-  m                 = i_mateltwise_desc->m;
-  n                 = i_mateltwise_desc->n;
-  use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;
+  m = i_mateltwise_desc->m;
+  n = i_mateltwise_desc->n;
+  assert(0 != vlen);
+  use_m_masking = ( m % vlen == 0 ) ? 0 : 1;
 
   /* set pred reg 0 to true for sve */
   if ( is_sve ) {
@@ -940,10 +941,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   }
 
   /* In this case we do not support the algorithm with "on the fly transpose" */
-  m                 = i_mateltwise_desc->m;
-  n                 = i_mateltwise_desc->n;
-  use_m_masking     = ( m % vlen == 0 ) ? 0 : 1;
-  m_trips           = ( m+vlen-1 )/ vlen;
+  m = i_mateltwise_desc->m;
+  n = i_mateltwise_desc->n;
+  assert(0 != vlen);
+  use_m_masking = ( m % vlen == 0 ) ? 0 : 1;
+  m_trips = ( m+vlen-1 )/ vlen;
   im = 0;
 
   /* set pred reg 0 to true for sve */
