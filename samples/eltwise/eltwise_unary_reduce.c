@@ -50,7 +50,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
   libxsmm_blasint i = 0, j = 0, jj = 0;
   LIBXSMM_UNUSED(dtype);
   if (reduce_op == 0) {
-    /* Calculate reference results...  */
+    /* Calculate reference results... */
     if (reduce_rows == 1) {
       for (j = 0; j < n; j++) {
         if ( reduce_on_output == 0 ) {
@@ -175,7 +175,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
   }
 
   if (reduce_op == 0) {
-    /* Calculate reference results...  */
+    /* Calculate reference results... */
     if (reduce_rows == 1) {
       for (j = 0; j < n; j++) {
         if ( reduce_on_output == 0 ) {
@@ -341,7 +341,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     unary_shape.comp_type = LIBXSMM_DATATYPE_F32;
   }
 
-  /* JIT kernel  */
+  /* JIT kernel */
   if (n_cols_idx == 0) {
     kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
   } else {
@@ -370,7 +370,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     }
   }
 
-  /* Setup param struct  */
+  /* Setup param struct */
   if (dtype == LIBXSMM_DATATYPE_F32 || dtype == LIBXSMM_DATATYPE_F64) {
     unary_param.in.primary = sinp;
     unary_param.out.primary = result_reduce_elts;
@@ -475,7 +475,7 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  /* Allocate arrays  */
+  /* Allocate arrays */
   sinp  = (float*) malloc( sizeof(float)*ld_in*n );
   dinp  = (double*) malloc( sizeof(double)*ld_in*n );
   result_reduce_elts = (float*) malloc( sizeof(float)*result_size*2 );
@@ -539,7 +539,6 @@ int main(int argc, char* argv[])
       libxsmm_rne_convert_fp32_hf8( result_reduce_elts, (libxsmm_hfloat8*)result_reduce_elts_lp, result_size*2 );
     }
   }
-
 
   cols_ind_array = (unsigned long long*) malloc(n_cols_idx*sizeof(unsigned long long));
   cols_ind_array_32bit = (unsigned int*) malloc(n_cols_idx*sizeof(unsigned int));
@@ -632,7 +631,7 @@ int main(int argc, char* argv[])
       record_idx, argop_off, argop_off_i32, reduce_on_outputs );
 
   if (n_cols_idx == 0) {
-    /* Call JITed kernel and compare result  */
+    /* Call JITed kernel and compare results */
     printf("Calling JITed reduce kernel... \n");
     kernel( &unary_param );
   } else {
@@ -765,7 +764,7 @@ int main(int argc, char* argv[])
   }
 
   l_start = libxsmm_timer_tick();
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (k = 0; k < iters; k++) {
     if (dtype == LIBXSMM_DATATYPE_F64) {
       reference_reduce_kernel_f64( m, n, ld_in, (libxsmm_blasint)n_cols_idx, dinp, d_ref_result_reduce_elts, d_ref_result_reduce_elts_squared, cols_ind_array, reduce_op, reduce_rows, record_idx, ref_argop_off, dtype, reduce_on_outputs );
@@ -797,10 +796,8 @@ int main(int argc, char* argv[])
   free(result_reduce_elts);
   free(dinp);
   free(d_result_reduce_elts);
-  if (dtype != LIBXSMM_DATATYPE_F32 || dtype != LIBXSMM_DATATYPE_F64) {
-    free(sinp_lp);
-    free(result_reduce_elts_lp);
-  }
+  free(sinp_lp);
+  free(result_reduce_elts_lp);
   free(ref_result_reduce_elts);
   free(ref_result_reduce_elts_squared);
   free(d_ref_result_reduce_elts);
