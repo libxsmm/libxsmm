@@ -174,6 +174,9 @@ VISIBILITY ?= 0
 # or used to scale the problem size
 TESTSIZE ?= 1
 
+# Delay for user-interaction (sleep)
+WAIT ?= 12
+
 # PYMOD=1: enable Python module development
 PYMOD ?= 0
 
