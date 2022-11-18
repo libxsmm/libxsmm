@@ -766,7 +766,7 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_load_store( "evex_mov_VMOVSH_LD_MEM", &mycode, LIBXSMM_X86_INSTR_VMOVSH_LD_MEM, 1 );
   test_evex_load_store( "evex_mov_VMOVSH_ST_MEM", &mycode, LIBXSMM_X86_INSTR_VMOVSH_ST_MEM, 2 );
 
-  /* @TODO check these for stores */
+  /* TODO: check these for stores */
   test_evex_load_store( "evex_mov_VPMOVDW", &mycode, LIBXSMM_X86_INSTR_VPMOVDW, 1 );
   test_evex_load_store( "evex_mov_VPMOVDB", &mycode, LIBXSMM_X86_INSTR_VPMOVDB, 1 );
   test_evex_load_store( "evex_mov_VPMOVSDB", &mycode, LIBXSMM_X86_INSTR_VPMOVSDB, 1 );

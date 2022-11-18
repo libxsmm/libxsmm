@@ -30,9 +30,7 @@ void libxsmm_generator_vcvt_f32bf16_aarch64_sve( libxsmm_generated_code* io_gene
  * Sets the given predicate register.
  *
  * @param io_generated_code will be updated with respective instructions.
- * @param i_p_reg id of the predicate register which is set.
- * @param i_n_bits number of of bits which are set to 1. if negative, all bits are set.
- * @param i_gp_reg_scratch general purpose scratch register.
+ * @param i_pred_reg id of the predicate register which is set.
  **/
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64( libxsmm_generated_code* io_generated_code,
@@ -58,7 +56,8 @@ void libxsmm_generator_mov_aarch64( libxsmm_generated_code* io_generated_code,
 LIBXSMM_API_INTERN
 void libxsmm_generator_hinstrps_aarch64( libxsmm_generated_code* io_generated_code,
                                          unsigned int            instr,
-                                         const unsigned int      i_vec_inout );
+                                         const unsigned int      i_vec_inout,
+                                         libxsmm_aarch64_asimd_tupletype  i_tuple_type    );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_loop_header_aarch64( libxsmm_generated_code*     io_generated_code,
@@ -379,9 +378,9 @@ void libxsmm_generator_gelu_ps_minimax3_aarch64_asimd( libxsmm_generated_code*  
  * @param i_vec_xr sve register
  * @param i_vec_xa sve register
  * @param i_vec_index sve register with the index for the TBL
+ * @param i_vec_C0 sve register for the result of the TBL on array C0
  * @param i_vec_C1 sve register for the result of the TBL on array C1
  * @param i_vec_C2 sve register for the result of the TBL on array C2
- * @param i_vec_C3 sve register for the result of the TBL on array C3
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_thres threshold sve register which is set to 0x40879fff for each elemenent
  * @param i_vec_absmask mask sve register which is set to 0x7fffffff for each elemenent
@@ -451,9 +450,9 @@ void libxsmm_generator_gelu_inv_ps_minimax3_aarch64_asimd( libxsmm_generated_cod
  * @param i_vec_xr sve register
  * @param i_vec_xa sve register
  * @param i_vec_index sve register with the index for the TBL
+ * @param i_vec_C0 sve register for the result of the TBL on array C0
  * @param i_vec_C1 sve register for the result of the TBL on array C1
  * @param i_vec_C2 sve register for the result of the TBL on array C2
- * @param i_vec_C3 sve register for the result of the TBL on array C3
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_thres threshold sve register which is set to 0x408f5fff for each elemenent
  * @param i_vec_absmask mask sve register which is set to 0x7fffffff for each elemenent
@@ -831,9 +830,7 @@ void libxsmm_aarch64_instruction_broadcast_scalar_to_vec_sve ( libxsmm_generated
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_reg ASIMD register
- * @param i_gp_reg_tmp the gp register which contains the comperitor
- * @param i_tupletype input datatype
- * @param imm64 constant value to land in ASIMD reg
+ * @param i_gp_reg_tmp0 the gp register which contains the comperitor
 */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_load16bytes_const_to_vec( libxsmm_generated_code* io_generated_code,
@@ -889,11 +886,11 @@ void libxsmm_aarch64_instruction_sve_loadbytes_const_to_vec( libxsmm_generated_c
  * Resets both source and destination pointer after the copy has completed.
  *
  * @param io_generated_code current program
- * @param i_gp_src_reg source pointer register
- * @param i_gp_dst_reg destination pointer register
- * @param i_gp_tmp_reg a temporary general-purpose register
- * @param i_vec_tmp_reg a temporary vector register
- * @param i_pred_tmp_reg a temporary predicate register
+ * @param i_gp_reg_src source pointer register
+ * @param i_gp_reg_dst destination pointer register
+ * @param i_gp_reg_tmp a temporary general-purpose register
+ * @param i_vec_reg_tmp a temporary vector register
+ * @param i_pred_reg_tmp a temporary predicate register
  * @param i_element_count how many elements are to be copied
  * @param i_sve_type the type of element to be copied (defines amount of bytes/element)
  */
@@ -908,4 +905,3 @@ void libxsmm_aarch64_instruction_sve_memcpy( libxsmm_generated_code*        io_g
                                              const libxsmm_aarch64_sve_type i_sve_type );
 
 #endif /* GENERATOR_COMMON_AARCH64_H */
-

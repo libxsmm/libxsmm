@@ -29,7 +29,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* @TODO we could do more agressive blockings if needed */
+  /* TODO: we could do more agressive blockings if needed */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_reg_block = 28;
   } else {
@@ -439,7 +439,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 0, 1 );
 
   /* full vector load of A */
-  /* @TODO: prepare KNM's QMADD */
+  /* TODO: prepare KNM's QMADD */
   for ( l_lcl_k = 0; l_lcl_k < 1; l_lcl_k++ ) {
     /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
     if ( l_use_masking ) {

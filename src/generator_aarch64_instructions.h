@@ -888,10 +888,10 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
  * Generates an optimal sequence of adding up to a 64bit imm to a GPR
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_alu_instr actual alu gpr instruction
+ * @param i_alu_meta_instr actual alu gpr instruction
  * @param i_gp_reg_src soruce register
- * @param i_gp_reg_dst destination register
  * @param i_gp_reg_tmp temp register which may be used
+ * @param i_gp_reg_dst destination register
  * @param i_imm64 the 64 bit immediate
  */
 LIBXSMM_API_INTERN
@@ -930,8 +930,8 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
  * Generates a label to which one can jump back and pushes it on the loop label stack
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @parma i_labal_no position in the jump label tracker to set
- * @param io_jump_forward_label_tracker forward jump tracker structure for tracking the jump addresses/labels
+ * @param i_label_no position in the jump label tracker to set
+ * @param io_jump_label_tracker forward jump tracker structure for tracking the jump addresses/labels
 */
 LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
@@ -956,4 +956,3 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
                                                      libxsmm_jump_label_tracker* io_jump_label_tracker );
 
 #endif /* GENERATOR_AARCH64_INSTRUCTIONS_H */
-

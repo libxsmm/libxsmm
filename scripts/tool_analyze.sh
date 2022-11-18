@@ -58,7 +58,7 @@ then
   TMPF=$("${MKTEMP}" .tool_analyze.XXXXXX)
   ${CP} "${HERE}/../include/libxsmm_config.h" "${TMPF}"
   trap "${MV} ${TMPF} ${HERE}/../include/libxsmm_config.h" EXIT
-  ${MAKE} -e CXX="${CXX}" CC="${CC}" FC= FORCE_CXX=1 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2>.analyze.log
+  ${MAKE} -e CXX="${CXX}" CC="${CC}" FC= FORCE_CXX=1 PEDANTIC=3 DBG=1 ILP64=1 EFLAGS="--analyze" ${ARG} 2>.analyze.log
   ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log \
     | ${GREP} -v "make:" \
     | ${GREP} -v "is never read" \

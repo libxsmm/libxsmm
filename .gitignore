@@ -19,6 +19,7 @@ samples/*/*.sln
 samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
+tool_report.png
 inspector*
 licenses
 bazel-*

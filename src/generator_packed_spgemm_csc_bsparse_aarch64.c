@@ -91,7 +91,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
 #endif
  /* packed blocking  */
-  /* @TODO for 2^x for l_simd_packed iters we might want to todo something else */
+  /* TODO: for 2^x for l_simd_packed iters we might want to todo something else */
   libxsmm_compute_equalized_blocking( l_simd_packed_iters, l_max_reg_block, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 #if 0
   printf("packed blocking (range0, block0, range1, block1): %u %u %u %u\n", l_packed_reg_range[0], l_packed_reg_block[0], l_packed_reg_range[1], l_packed_reg_block[1]);
@@ -301,7 +301,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_asimd( libxsmm_ge
 
   /* load k if packed remainder is non-zero */
   if ( i_packed_remainder != 0 ) {
-    /* @TODO */
+    /* TODO: */
   }
 
   /* load C accumulator */
@@ -315,7 +315,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_asimd( libxsmm_ge
       } else {
         unsigned int l_reg = (l_n*i_packed_blocking) + l_p;
         if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-          /* @TODO */
+          /* TODO: */
         } else {
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
                                                      ( ((long long)i_n_processed + l_n)*i_packed_width*i_micro_kernel_config->datatype_size_out ) +
@@ -359,7 +359,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_asimd( libxsmm_ge
     if ( l_found_mul != 0 ) {
       for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
         if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-          /* @TODO */
+          /* TODO: */
         } else {
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                                      ((long long)l_k*i_packed_width*i_micro_kernel_config->datatype_size_in) +
@@ -391,7 +391,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_asimd( libxsmm_ge
   for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
     for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
       if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-        /* @TODO */
+        /* TODO: */
       } else {
         unsigned int l_reg = (l_n*i_packed_blocking) + l_p;
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
@@ -460,7 +460,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
 
   /* load k if packed remainder is non-zero */
   if ( i_packed_remainder != 0 ) {
-    /* @TODO */
+    /* TODO: */
   }
 
   /* load C accumulator */
@@ -476,7 +476,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
       } else {
         unsigned int l_reg = (l_n*i_packed_blocking) + l_p;
         if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-          /* @TODO */
+          /* TODO: */
         } else {
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,
                                                      ( ((long long)i_n_processed + l_n)*i_packed_width ) +
@@ -521,7 +521,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
     if ( l_found_mul != 0 ) {
       for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
         if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-          /* @TODO */
+          /* TODO: */
         } else {
           libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                                      ((long long)l_k*i_packed_width) +
@@ -560,7 +560,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_sve( libxsmm_gene
   for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
     for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
       if ( (l_p == i_packed_blocking-1) && (i_packed_remainder != 0) ) {
-        /* @TODO */
+        /* TODO: */
       } else {
         unsigned int l_reg = (l_n*i_packed_blocking) + l_p;
         libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_2,

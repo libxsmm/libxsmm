@@ -88,6 +88,20 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   CUT=${PEXEC_CT:-${CUT}}; NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
   NTH=${PEXEC_NT:-${NTH}}; MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
+  COUNTER=0
+  while read -r LINE; do
+    if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
+      COUNTER=$((COUNTER+1))
+      COUNTED="${COUNTED}"$'\n'"${LINE}"
+    elif [ "0" != "$((COUNTER<MIN))" ]; then
+      ATLEAST="${ATLEAST}"$'\n'"${LINE}"
+    fi
+  done
+  IFS=$'\n' && for LINE in ${ATLEAST}; do
+    if [ "0" != "$((MIN<=COUNTER))" ]; then break; fi
+    COUNTED="${COUNTED}"$'\n'"${LINE}"
+    COUNTER=$((COUNTER+1))
+  done
   if [ ! "${LOG}" ]; then LOG="/dev/stdout"; fi
   if [ -e "${INFO}" ]; then
     NC=$(${INFO} -nc); NT=$(${INFO} -nt)
@@ -107,6 +121,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
       if [ "${OMP_NUM_THREADS}" ] && [ "0" != "$((OMP_NUM_THREADS<=NT))" ]; then
         NP=$(((NP+OMP_NUM_THREADS-1)/OMP_NUM_THREADS))
+      elif [ "0" != "$((COUNTER<NP))" ]; then
+        export OMP_NUM_THREADS=$((NT/COUNTER))
       else
         export OMP_NUM_THREADS=$((NT/NP))
       fi
@@ -168,20 +184,6 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     else \
       \$0; \
     fi >\"\${_PEXEC_LOG}\" 2>&1"
-  COUNTER=0
-  while read -r LINE; do
-    if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
-      COUNTER=$((COUNTER+1))
-      COUNTED="${COUNTED}"$'\n'"${LINE}"
-    elif [ "0" != "$((COUNTER<MIN))" ]; then
-      ATLEAST="${ATLEAST}"$'\n'"${LINE}"
-    fi
-  done
-  IFS=$'\n' && for LINE in ${ATLEAST}; do
-    if [ "0" != "$((MIN<=COUNTER))" ]; then break; fi
-    COUNTED="${COUNTED}"$'\n'"${LINE}"
-    COUNTER=$((COUNTER+1))
-  done
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
       if [ "${BUILDKITE_LABEL}" ]; then

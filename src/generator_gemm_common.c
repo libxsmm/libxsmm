@@ -1213,9 +1213,8 @@ int libxsmm_generator_gemm_get_rbp_relative_offset( libxsmm_gemm_stack_var stack
       return -160;
     case LIBXSMM_GEMM_STACK_VAR_BIAS_SCRATCH_PTR:
       return -168;
-    default:
-      return 0;
   }
+  return 0;
 }
 
 LIBXSMM_API_INTERN
@@ -2877,7 +2876,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   libxsmm_micro_kernel_config *const i_micro_kernel_config_mod = (libxsmm_micro_kernel_config*)&l_micro_kernel_config_mod;
   memcpy(i_micro_kernel_config_mod, i_micro_kernel_config, sizeof(libxsmm_micro_kernel_config));
 
-  /* @TODO fix this test */
+  /* TODO: fix this test */
 #if !defined(NDEBUG)
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_GENERIC ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3    ||
@@ -3412,7 +3411,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 }
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned int i_range, unsigned int i_max_block, unsigned int i_nomask_block, unsigned int *io_block, unsigned int *o_use_mask ) {
-  /* @TODO check if there is a better blocking strategy */
+  /* TODO: check if there is a better blocking strategy */
   if ( *io_block == i_max_block ) {
     *io_block = i_range % i_max_block;
     if ( *io_block % i_nomask_block != 0 ) {
@@ -3435,5 +3434,3 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_get_blocking_and_mask( unsigned i
 #endif
   }
 }
-
-

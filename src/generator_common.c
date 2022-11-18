@@ -31,7 +31,7 @@ void libxsmm_strncpy( char*                  o_dest,
     exit(-1);
   }
 
-  /* @TODO check for aliasing? */
+  /* TODO: check for aliasing? */
 
   strcpy( o_dest, i_src );
 }
@@ -71,14 +71,14 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* copy old content */
   if (l_length_1 > 0) {
-    /* @TODO using memcpy instead? */
+    /* TODO: using memcpy instead? */
     libxsmm_strncpy(l_new_string, current_code, (unsigned int)(l_length_1 + l_length_2), (unsigned int)l_length_1);
   } else {
     l_new_string[0] = '\0';
   }
 
   /* append new string */
-  /* @TODO using memcpy instead? */
+  /* TODO: using memcpy instead? */
   if (i_code_to_append != NULL) {
     strcat(l_new_string, i_code_to_append);
   }
@@ -1300,7 +1300,7 @@ LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
     char* env = getenv("LIBXSMM_ULP_PRECISION");
     float p = 0;
     if (env) {
-      p = (float)atof(env);/* alternatively to atof, we could use strcmp */
+      p = (float)atof(env); /* alternatively to atof, we could use strcmp */
       if (p == 0.5)
         precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
       else if (p == 1.0)

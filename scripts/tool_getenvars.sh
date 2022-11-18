@@ -23,6 +23,10 @@ HERE="$(cd "$(dirname "$0")" && pwd -P)"
 SRC="${HERE}/../src"
 EXT="c"
 
+if [ ! -d "${SRC}" ]; then
+  SRC="${HERE}/../include/libxsmm"
+fi
+
 if [ "${FIND}" ] && [ "${SORT}" ] && [ "${SED}" ] && [ -d "${SRC}" ]; then
   export LC_ALL=C
   ENVARS="$(${FIND} "${SRC}" -type f -name "*.${EXT}" -exec \

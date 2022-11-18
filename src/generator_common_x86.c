@@ -2218,7 +2218,7 @@ void libxsmm_generator_maskedload_8bit_avx2( libxsmm_generated_code* io_generate
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
 
-  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
 
   /* write 0 to this cache line */
@@ -2277,7 +2277,7 @@ void libxsmm_generator_maskedstore_8bit_avx2( libxsmm_generated_code* io_generat
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
 
-  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
 
   /* write register into this cache line */
@@ -2330,7 +2330,7 @@ void libxsmm_generator_maskedload_16bit_avx2( libxsmm_generated_code* io_generat
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
 
-  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
 
   /* write 0 to this cache line */
@@ -2383,7 +2383,7 @@ void libxsmm_generator_maskedstore_16bit_avx2( libxsmm_generated_code* io_genera
   int l_displacement = 0;
   unsigned int l_mask_count = i_mask_count;
 
-  /* allocate 1/2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf */
+  /* allocate 1/2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RSP, 32 );
 
   /* write register into this cache line */
@@ -2431,7 +2431,7 @@ void libxsmm_generator_vcvtneps2bf16_avx2_prep_stack( libxsmm_generated_code* io
   const unsigned char l_shufb_idx[32] = { 0x00, 0x01, 0x04, 0x05, 0x08, 0x09, 0x0c, 0x0d, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
                                            0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x01, 0x04, 0x05, 0x08, 0x09, 0x0c, 0x0d };
 
-  /* allocated 2 cache lines on the stack, @TODO: make sure taht the stack pointer is 64 bytealigned for perf
+  /* allocated 2 cache lines on the stack, TODO: make sure taht the stack pointer is 64 bytealigned for perf
    *  RSP+96  32 bytes of infnan mask
    *  RSP+64  32 bytes of fixup mask
    *  RSP+32  32 bytes of fixup
@@ -2472,7 +2472,7 @@ void libxsmm_generator_vcvtneps2bf16_avx2_preppedstack( libxsmm_generated_code* 
                                                         const unsigned int      io_vec_tmp_0,
                                                         const unsigned int      io_vec_tmp_1,
                                                         const unsigned int      i_skip_downcvt ) {
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   /* and with naninf and compute mask */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 96, 0,
@@ -2542,7 +2542,7 @@ void libxsmm_generator_cvtbf16ps_avx2_avx512( libxsmm_generated_code* io_generat
                                               const char              i_vname,
                                               const unsigned int      i_vec_reg,
                                               const unsigned int      o_vec_reg ) {
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   /* convert 16 bit values into 32 bit (integer convert) */
   libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVSXWD, i_vname,
                                             i_vec_reg, o_vec_reg );
@@ -2599,7 +2599,7 @@ void libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( libxsmm_generated_code
   if ( (io_generated_code->arch >= LIBXSMM_X86_AVX2) && (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256)) {
     libxsmm_generator_vcvtneps2bf16_avx2_preppedstack( io_generated_code, i_vname, i_vec_reg, o_vec_reg, io_vec_tmp_0, io_vec_tmp_1, i_skip_downcvt );
   } else {
-    /* @TODO check for valid i_vnames */
+    /* TODO: check for valid i_vnames */
     /* and with naninf and compute mask  */
     libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
                                                   LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
@@ -2660,7 +2660,7 @@ void libxsmm_generator_cvtbf8ps_avx512( libxsmm_generated_code* io_generated_cod
                                          const char              i_vname,
                                          const unsigned int      i_vec_reg,
                                          const unsigned int      o_vec_reg ) {
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   char i_vname_2 = (i_vname == 'z')?'y':'x';
 
   /* convert 16 bit values into 32 bit (integer convert) */
@@ -2680,7 +2680,7 @@ void libxsmm_generator_cvtbf8bf16_avx512( libxsmm_generated_code* io_generated_c
                                          const char              i_vname,
                                          const unsigned int      i_vec_reg,
                                          const unsigned int      o_vec_reg ) {
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   char i_vname_2 = (i_vname == 'z')?'y':'x';
 
   /* convert 16 bit values into 32 bit (integer convert) */
@@ -3129,7 +3129,7 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
                                                           const unsigned int      stochastic_rnd,
                                                           const unsigned int      i_vec_rand ) {
   char i_vname_2 = (i_vname == 'z')?'y':'x';
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   /* SAE is only available for 512bit */
   libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
                                                           i_vec_reg, i_vec_reg, 0, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
@@ -3210,7 +3210,7 @@ void libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( libxsmm_generat
                                                           const unsigned int      io_mask_1,
                                                           const unsigned int      stochastic_rnd,
                                                           const unsigned int      i_vec_rand ) {
-  /* @TODO check for valid i_vnames */
+  /* TODO: check for valid i_vnames */
   /* and with naninf */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 24, 1,
@@ -3373,10 +3373,10 @@ void libxsmm_generator_vcvtneps2int_avx512( libxsmm_generated_code* io_generated
   libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2DQ, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
 
   if ( i_datatype == LIBXSMM_DATATYPE_I16 ) {
-    /* @TODO: add rouding */
+    /* TODO: add rouding */
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDW, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
   } else if ( i_datatype == LIBXSMM_DATATYPE_I8 ) {
-    /* @TODO: add rouding */
+    /* TODO: add rouding */
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPMOVDB, 'z', io_vec_reg, LIBXSMM_X86_VEC_REG_UNDEF, io_vec_reg, 0, 0, 0, 0);
   } else if ( i_datatype == LIBXSMM_DATATYPE_I32 ) {
     /* nothing to do */

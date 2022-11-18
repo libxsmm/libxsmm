@@ -630,7 +630,7 @@ void libxsmm_generator_packed_spgemm_csc_csparse_avx_avx2_avx512( libxsmm_genera
     return;
   }
 
-  /* @TODO: we need to check this... however LIBXSMM descriptor setup disables A^T hard */
+  /* TODO: we need to check this... however LIBXSMM descriptor setup disables A^T hard */
 #if 0
   /* we need to have the A^T flag set */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_A) == 0 ) {

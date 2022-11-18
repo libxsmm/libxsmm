@@ -547,11 +547,12 @@ LIBXSMM_API_INLINE void internal_register_static_code(
   /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc);
   if (precondition) {
     const size_t size = (LIBXSMM_HASH_SIZE) - sizeof(libxsmm_descriptor_kind);
+    const size_t size_desc = sizeof(libxsmm_gemm_descriptor);
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_dinit(&blob, precision,
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_FLAGS, INTERNAL_PREFETCH);
     unsigned int i = LIBXSMM_MOD2(
-      libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(sizeof(libxsmm_gemm_descriptor), size)),
+      libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(size_desc, size)),
       LIBXSMM_CAPACITY_REGISTRY);
     libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
@@ -689,9 +690,12 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
+    const char */*const*/ version = LIBXSMM_VERSION, */*const*/ branch = LIBXSMM_BRANCH; /* mute warnings */
+    LIBXSMM_ASSERT(NULL != version && NULL != branch);
     LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH, 0 != *(LIBXSMM_BRANCH) ? "-" : "",
-      0 != *(LIBXSMM_VERSION) ? (LIBXSMM_VERSION) : "unconfigured", LIBXSMM_VERSION_NUMBER);
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s%s%s (%i)", LIBXSMM_BRANCH,
+      0 != *branch ? "-" : "", 0 != *version ? version : "unconfigured",
+      LIBXSMM_VERSION_NUMBER);
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
@@ -933,7 +937,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
     const char *const env_cache = getenv("LIBXSMM_CACHE");
     if (NULL != env_cache && '\0' != *env_cache) {
-      const int cache_size = atoi(env_cache), cache_size2 = LIBXSMM_UP2POT(cache_size);
+      const int cache_size = atoi(env_cache), cache_size2 = (int)LIBXSMM_UP2POT(cache_size);
       internal_cache_size = LIBXSMM_MIN(cache_size2, LIBXSMM_CACHE_MAXSIZE);
     }
     else {
@@ -1187,7 +1191,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           const char *const env_nlocks = getenv("LIBXSMM_NLOCKS");
           const int reglock_count = (NULL == env_nlocks || 0 == *env_nlocks || 1 > atoi(env_nlocks))
             ? (INTERNAL_REGLOCK_MAXN) : LIBXSMM_MIN(atoi(env_nlocks), INTERNAL_REGLOCK_MAXN);
-          internal_reglock_count = LIBXSMM_LO2POT(reglock_count);
+          internal_reglock_count = (int)LIBXSMM_LO2POT(reglock_count);
 # else
           internal_reglock_count = 0;
 # endif
@@ -3015,13 +3019,14 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     LIBXSMM_MEMZERO127(&wrap);
 #endif
     LIBXSMM_ASSIGN127(&wrap.gemm.desc, descriptor);
-    /* @TODO fix this code for the 3 kernel types we have
+    /* TODO: fix this code for the 3 kernel types we have
      * right now XGEMM ABI and BRGEMM go to 96 byte */
     wrap.kind = (libxsmm_descriptor_kind)(descriptor->flags < LIBXSMM_GEMM_FLAG_DESC_ISBIG
       ? ((libxsmm_descriptor_kind)LIBXSMM_KERNEL_KIND_MATMUL)
       : LIBXSMM_DESCRIPTOR_BIG(LIBXSMM_KERNEL_KIND_MATMUL));
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      const int gemm_prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
+      wrap.gemm.desc.prefetch = (unsigned char)gemm_prefetch;
     }
     result = internal_find_code(&wrap, sizeof(*descriptor), 0/*user_size*/).xgemm;
 #if defined(_DEBUG)
@@ -3049,7 +3054,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_gemm_v2( const libxsmm_gemm_sh
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3078,7 +3083,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_dispatch_brgemm_v2( const libxsmm_gemm_
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3131,7 +3136,7 @@ LIBXSMM_API libxsmm_gemmfunction_ext libxsmm_dispatch_brgemm_ext_v2( const libxs
   libxsmm_xmmfunction result;
   libxsmm_gemm_descriptor *desc = NULL;
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3457,7 +3462,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csr_v2(
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3500,7 +3505,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3542,7 +3547,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libx
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3578,7 +3583,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_bc_rm_v2( const libx
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3615,7 +3620,7 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_spgemm_csr_areg_v2( const libxsm
   libxsmm_code_pointer result = { 0 };
   LIBXSMM_INIT
 
-  /* @TODO some checks */
+  /* TODO: some checks */
   if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
     return NULL;
   }
@@ -3691,6 +3696,55 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
       fprintf(stderr, "LIBXSMM ERROR: failed to release kernel!\n");
     }
   }
+}
+
+
+#if !defined(__linux__) && defined(__APPLE__)
+LIBXSMM_EXTERN char*** _NSGetArgv(void);
+LIBXSMM_EXTERN int* _NSGetArgc(void);
+#endif
+
+
+LIBXSMM_API int libxsmm_print_cmdline(FILE* stream, const char* prefix, const char* postfix)
+{
+  int result = 0;
+#if defined(__linux__)
+  FILE* const cmdline = fopen("/proc/self/cmdline", "r");
+  if (NULL != cmdline) {
+    char c;
+    if (1 == fread(&c, 1, 1, cmdline) && '\0' != c) {
+      result += fprintf(stream, "%s", prefix);
+      do {
+        result += (int)fwrite('\0' != c ? &c : " ", 1, 1, stream);
+      } while (1 == fread(&c, 1, 1, cmdline));
+    }
+    fclose(cmdline);
+  }
+#else
+  char** argv = NULL;
+  int argc = 0;
+# if defined(_WIN32)
+  argv = __argv;
+  argc = __argc;
+# elif defined(__APPLE__)
+  argv = (NULL != _NSGetArgv() ? *_NSGetArgv() : NULL);
+  argc = (NULL != _NSGetArgc() ? *_NSGetArgc() : 0);
+# endif
+  if (0 < argc) {
+    int i = 1;
+#   if defined(_WIN32)
+    const char *const cmd = strrchr(argv[0], '\\');
+    result += fprintf(stream, "%s%s", prefix, NULL != cmd ? (cmd + 1) : argv[0]);
+#   else
+    result += fprintf(stream, "%s%s", prefix, argv[0]);
+#   endif
+    for (; i < argc; ++i) result += fprintf(stream, " %s", argv[i]);
+  }
+#endif
+  if (0 < result) {
+    result += fprintf(stream, "%s", postfix);
+  }
+  return result;
 }
 
 
@@ -3865,11 +3919,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
     if (NULL != fn->xmm)
 #endif
     {
-      /* @TODO fix prefetch */
+      /* TODO: fix prefetch */
       LIBXSMM_UNUSED( pa );
       LIBXSMM_UNUSED( pb );
       LIBXSMM_UNUSED( pc );
-      fn->xmm(a, b, c/*, pa, pb, pc*/); /* @TODO fix prefetch */
+      fn->xmm(a, b, c/*, pa, pb, pc*/); /* TODO: fix prefetch */
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */

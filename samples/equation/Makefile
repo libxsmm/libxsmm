@@ -37,7 +37,7 @@ COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-XFILES := $(OUTDIR)/equation_simple  $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD
+XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_gather_reduce  $(OUTDIR)/equation_relu $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
 
@@ -46,6 +46,12 @@ compile: $(OBJECTS)
 
 $(OUTDIR)/equation_simple: $(OUTDIR)/.make $(BLDDIR)/equation_simple-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_simple-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_relu: $(OUTDIR)/.make $(BLDDIR)/equation_relu-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_relu-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/equation_gather_reduce: $(OUTDIR)/.make $(BLDDIR)/equation_gather_reduce-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/equation_gather_reduce-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/equation_simple_layernorm: $(OUTDIR)/.make $(BLDDIR)/equation_simple_layernorm-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/equation_simple_layernorm-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

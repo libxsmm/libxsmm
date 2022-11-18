@@ -281,11 +281,8 @@ static edge_mat_desc libxsmm_sparse_csr_reader_desc( const char*    i_csr_file_i
   unsigned int l_row_count = 0;
   unsigned int l_col_count = 0;
   unsigned int l_num_elements = 0;
-  edge_mat_desc desc = { 0 };
-
-  desc.row_count = 0;
-  desc.col_count = 0;
-  desc.num_elements = 0;
+  edge_mat_desc desc;
+  memset(&desc, 0, sizeof(desc));
 
   l_csr_file_handle = fopen( i_csr_file_in, "r" );
   if ( l_csr_file_handle == NULL ) {
@@ -329,11 +326,8 @@ static edge_mat_desc libxsmm_sparse_csc_reader_desc( const char*    i_csc_file_i
   unsigned int l_row_count = 0;
   unsigned int l_col_count = 0;
   unsigned int l_num_elements = 0;
-  edge_mat_desc desc = { 0 };
-
-  desc.row_count = 0;
-  desc.col_count = 0;
-  desc.num_elements = 0;
+  edge_mat_desc desc;
+  memset(&desc, 0, sizeof(desc));
 
   l_csc_file_handle = fopen( i_csc_file_in, "r" );
   if ( l_csc_file_handle == NULL ) {

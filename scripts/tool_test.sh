@@ -24,6 +24,7 @@ SYNC=$(command -v sync)
 GREP=$(command -v grep)
 SED=$(command -v gsed)
 GIT=$(command -v git)
+TR=$(command -v tr)
 
 # GNU sed is desired (macOS)
 if [ ! "${SED}" ]; then
@@ -33,7 +34,7 @@ fi
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
-if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ]; then
+if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${SED}" ] && [ "${TR}" ]; then
   DIRPAT="s/\//\\\\\//g"
   REMPAT=$(echo "${REPOREMOTE}" | ${SED} "${DIRPAT}")
   REPPAT=$(echo "${REPOROOT}" | ${SED} "${DIRPAT}")
@@ -169,7 +170,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - | ${SED} "s/^-//;s/-$//")
+      LABEL=$(echo "${BUILDKITE_LABEL}" \
+        | ${TR} -s "[:punct:][:space:]" "-" \
+        | ${SED} "s/^-//;s/-$//" \
+        | ${SED} "s/[^A-Za-z0-9._-]//g")
     fi
     if [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
@@ -218,7 +222,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
-    ${SED} 's/^ *- *//;s/^  *//' | tr '\n' ' ' | \
+    ${SED} 's/^ *- *//;s/^  *//' | ${TR} '\n' ' ' | \
     ${SED} 's/  *$//'") && [ "${TEST}" ];
   do
     if [ -d "${TEST}" ]; then
@@ -242,7 +246,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
        [ "$(command -v date)" ];
     then
       NOW=$(date +%s)
-      LIMITFILE=$(echo "${LABEL}" | ${SED} "s/[^A-Za-z0-9._-]//g")
+      LIMITFILE=$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]")
       if [ ! "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} "s/[^A-Za-z0-9._-]//g")
       fi
@@ -303,8 +307,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "${ENVVAL}" ]; then HEADER="${HEADER} ${ENV}"; fi
       HEADER=$(echo "${HEADER}" \
         | ${SED} "s/^[[:space:]][[:space:]]*//;s/[[:space:]][[:space:]]*$//" \
-        | tr "[:lower:]" "[:upper:]" | tr -s " " "/")
-      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | tr "[:upper:]" "[:lower:]")" ]; then
+        | ${TR} "[:lower:]" "[:upper:]" | ${TR} -s " " "/")
+      if [ "${TESTID}" ] && [ "test" != "$(echo "${TESTID}" | ${TR} "[:upper:]" "[:lower:]")" ]; then
         if [ "${HEADER}" ]; then
           CAPTION="${TESTID} (${HEADER})"
         else
@@ -418,7 +422,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
-        if [ ! "${LOGFILE}" ]; then LOGFILE=.test-${LABEL}.log; fi
+        if [ "${LOGFILE}" ]; then
+          if [ "." = "$(dirname "${LOGFILE}")" ]; then
+            LOGFILE=${HERE}/${LOGFILE}
+          fi
+        else
+          LOGFILE=${HERE}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
+        fi
+        export LOGFILE
         LOGPATH=$(dirname "${LOGFILE}")
         LOGBASE=$(basename "${LOGFILE}" .log)
         if [ "1" != "${NPARTITIONS}" ]; then

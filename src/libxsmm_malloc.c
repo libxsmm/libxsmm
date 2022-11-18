@@ -711,10 +711,11 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
           if (req_size <= pool_size) { /* fast path: draw from pool-buffer */
 # if (0 != LIBXSMM_SYNC) && defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
             void *const headaddr = &pool->instance.head;
-            char *const head = (0 == internal_malloc_join
-              ? (pool->instance.head += alloc_size)
-              : ((char*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
+            const uintptr_t headint = (0 == internal_malloc_join
+              ? (uintptr_t)(pool->instance.head += alloc_size)
+              : (LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
                 (uintptr_t*)headaddr, alloc_size, LIBXSMM_ATOMIC_SEQ_CST)));
+            char *const head = (char*)headint;
 # else
             char *const head = (char*)(pool->instance.head += alloc_size);
 # endif

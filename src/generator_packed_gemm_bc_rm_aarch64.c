@@ -30,7 +30,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64( libxsmm_generated_code*       
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* select accumulator blocking */
-  /* @TODO we could do more agressive blocking if needed */
+  /* TODO: we could do more agressive blocking if needed */
   l_max_reg_block = 28;
 
   /* define gp register mapping */
@@ -277,10 +277,10 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
 
   /* we need masking and have less than SIMD width */
   } else if ( l_simd_packed_width > i_packed_width  ) {
-    /* @TODO */
+    /* TODO: */
   /* we need the general case */
   } else {
-    /* @TODO */
+    /* TODO: */
   }
 
   /* advance B and C pointers if N is bigger than our register blocking */
@@ -312,7 +312,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_asimd( libxsm
 
   /* check if we need to compute a mask */
   if ( i_simd_packed_width > i_simd_packed_valid ) {
-    /* @TODO */
+    /* TODO: */
   }
 
   /* load C accumulator */
@@ -324,7 +324,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_asimd( libxsm
     } else {
       /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
       if ( l_use_masking ) {
-        /* @TODO */
+        /* TODO: */
       } else {
         libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
                                                 i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF,
@@ -351,7 +351,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_asimd( libxsm
   /* loop over the register block */
   for ( l_n = 0; l_n < i_n_blocking; ++l_n ) {
     if ( l_use_masking ) {
-      /* @TODO */
+      /* TODO: */
     } else {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_LDR_I_POST,
                                               i_gp_reg_mapping->gp_reg_b, LIBXSMM_AARCH64_GP_REG_UNDEF, i_packed_width * i_micro_kernel_config->datatype_size_in,
@@ -375,7 +375,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_asimd( libxsm
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
     if ( l_use_masking ) {
-      /* @TODO */
+      /* TODO: */
     } else {
       libxsmm_aarch64_instruction_asimd_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_STR_I_POST,
                                               i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF,
@@ -413,7 +413,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_sve( libxsmm_
 
   /* check if we need to compute a mask */
   if ( i_simd_packed_width > i_simd_packed_valid ) {
-    /* @TODO */
+    /* TODO: */
   }
 
   /* load C accumulator */
@@ -427,7 +427,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_sve( libxsmm_
     } else {
       /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
       if ( l_use_masking ) {
-        /* @TODO */
+        /* TODO: */
       } else {
         libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
                                               i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
@@ -464,7 +464,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_sve( libxsmm_
   /* loop over the register block */
   for ( l_n = 0; l_n < i_n_blocking; ++l_n ) {
     if ( l_use_masking ) {
-      /* @TODO */
+      /* TODO: */
     } else {
       libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
                                             i_gp_reg_mapping->gp_reg_b, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,
@@ -498,7 +498,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop_simd_packed_sve( libxsmm_
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
     if ( l_use_masking ) {
-      /* @TODO */
+      /* TODO: */
     } else {
       libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
                                             i_gp_reg_mapping->gp_reg_c, LIBXSMM_AARCH64_GP_REG_UNDEF, 0,

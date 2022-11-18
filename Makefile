@@ -19,7 +19,8 @@ PPKGDIR ?= $(OUTDIR)
 PMODDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
-PDOCDIR ?= share/libxsmm
+PSHRDIR ?= share/libxsmm
+PDOCDIR ?= $(PSHRDIR)
 LICFDIR ?= $(PDOCDIR)
 LICFILE ?= LICENSE.md
 
@@ -187,8 +188,8 @@ TIMEOUT := 30
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE := \
   DESTDIR PREFIX BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR TIMEOUT \
-  PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
-  SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
+  PBINDIR PINCDIR POUTDIR PPKGDIR PMODDIR PSRCDIR PTSTDIR PSHRDIR PDOCDIR SCRDIR \
+  SPLDIR SRCDIR TEST VERSION_STRING DEPSTATIC ALIAS_% BLAS %_TARGET %ROOT MPSS KNC
 
 # fixed .state file directory (included by source)
 DIRSTATE := $(OUTDIR)/..
@@ -1477,7 +1478,7 @@ ifeq (,$(strip $(ALIAS_PREFIX)))
 endif
 ifneq ($(ALIAS_PREFIX),$(PREFIX))
   PPKGDIR := libdata/pkgconfig
-  PMODDIR := $(PDOCDIR)
+  PMODDIR := $(PSHRDIR)
 endif
 
 .PHONY: install-minimal
@@ -1537,17 +1538,6 @@ ifneq ($(PREFIX),$(ABSDIR))
 		$(CP) -v $(OUTDIR)/libxsmm.env $(PREFIX)/$(PMODDIR) 2>/dev/null || true; \
 	fi
 	@echo
-	@echo "LIBXSMM installing utilities..."
-	@$(MKDIR) -p $(PREFIX)
-	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
-	@$(CP) -v $(ROOTDIR)/.mktmp.sh $(PREFIX) 2>/dev/null || true
-	@$(CP) -v $(ROOTDIR)/.flock.sh $(PREFIX) 2>/dev/null || true
-	@$(CP) -v $(ROOTDIR)/.state.sh $(PREFIX) 2>/dev/null || true
-	@echo
-	@echo "LIBXSMM installing stand-alone generators..."
-	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
@@ -1577,36 +1567,57 @@ endif
 endif
 
 .PHONY: install-all
-install-all: install
-
-.PHONY: install-realall
-install-realall: install samples
+install-all: install build-tests
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
-	@echo "LIBXSMM installing samples..."
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@echo "LIBXSMM installing stand-alone generators..."
+	@$(MKDIR) -p $(PREFIX)/$(PBINDIR)
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(PREFIX)/$(PBINDIR) 2>/dev/null || true
+	@echo
+	@echo "LIBXSMM installing tests..."
+	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(PTSTDIR)
+	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PSHRDIR)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
-install-dev: install-realall build-tests
+install-dev: install-all
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
-	@echo "LIBXSMM installing tests..."
-	@$(MKDIR) -p $(PREFIX)/$(PTSTDIR)
-	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(PREFIX)/$(PTSTDIR) 2>/dev/null || true
+	@echo "================================================================================"
+	@echo "Installing development tools does not respect a common PREFIX, e.g., /usr/local."
+	@echo "For development, consider checking out https://github.com/libxsmm/libxsmm,"
+	@echo "or perform plain \"install\" (or \"install-all\")."
+	@echo "Hit CTRL-C to abort, or wait $(WAIT) seconds to continue."
+	@echo "--------------------------------------------------------------------------------"
+	@sleep $(WAIT)
+	@echo
+	@echo "LIBXSMM installing utilities..."
+	@$(MKDIR) -p $(PREFIX)
+	@$(CP) -v $(ROOTDIR)/Makefile.inc $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.mktmp.sh $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.flock.sh $(PREFIX) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/.state.sh $(PREFIX) 2>/dev/null || true
+	@echo
+	@echo "LIBXSMM tool scripts..."
+	@$(MKDIR) -p $(PREFIX)/$(SCRDIR)
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_getenvars.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_cpuinfo.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_pexec.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_test.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 endif
 
-.PHONY: install-artifacts
-install-artifacts: install-dev
+.PHONY: install-realall
+install-realall: install-dev samples
 ifneq ($(PREFIX),$(ABSDIR))
 	@echo
-	@echo "LIBXSMM installing artifacts..."
-	@$(MKDIR) -p $(PREFIX)/$(PDOCDIR)/artifacts
-	@$(CP) -v $(DIRSTATE)/.state $(PREFIX)/$(PDOCDIR)/artifacts/make.txt
+	@echo "LIBXSMM installing samples..."
+	@$(MKDIR) -p $(PREFIX)/$(PSHRDIR)/$(SPLDIR)
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/hello/,hello helloc hellof) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/magazine/,magazine_batch magazine_blas magazine_xsmm benchmark.plt benchmark.set *.sh) \
+						$(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/transpose/,transpose transposef) $(PREFIX)/$(PSHRDIR)/$(SPLDIR) 2>/dev/null || true
 endif
 
 ifeq (Windows_NT,$(UNAME))

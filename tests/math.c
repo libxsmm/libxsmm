@@ -206,14 +206,14 @@ int main(int argc, char* argv[])
     const size_t c[] = { 0, 1,  8,  64,  64, 128, 128 };
     const int n = sizeof(a) / sizeof(*a);
     for (i = 0; i < n; ++i) {
-      if (LIBXSMM_UP2POT(a[i]) != b[i]) exit(EXIT_FAILURE);
-      if (LIBXSMM_LO2POT(a[i]) != c[i]) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == LIBXSMM_UP2POT(a[i]))) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == LIBXSMM_LO2POT(a[i]))) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == LIBXSMM_UP2POT(b[i]))) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == LIBXSMM_LO2POT(b[i]))) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == LIBXSMM_UP2POT(c[i]))) exit(EXIT_FAILURE);
-      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == LIBXSMM_LO2POT(c[i]))) exit(EXIT_FAILURE);
+      if ((size_t)LIBXSMM_UP2POT(a[i]) != b[i]) exit(EXIT_FAILURE);
+      if ((size_t)LIBXSMM_LO2POT(a[i]) != c[i]) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == (size_t)LIBXSMM_UP2POT(a[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(a[i]) != (0 != a[i] && a[i] == (size_t)LIBXSMM_LO2POT(a[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == (size_t)LIBXSMM_UP2POT(b[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(b[i]) != (0 != b[i] && b[i] == (size_t)LIBXSMM_LO2POT(b[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == (size_t)LIBXSMM_UP2POT(c[i]))) exit(EXIT_FAILURE);
+      if (LIBXSMM_ISPOT(c[i]) != (0 != c[i] && c[i] == (size_t)LIBXSMM_LO2POT(c[i]))) exit(EXIT_FAILURE);
     }
   }
 
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  { /* check shuffle routine */
+  { /* check coprime2 routine */
     const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
     const int n = sizeof(test) / sizeof(*test);
     for (i = 0; i < n; ++i) {

@@ -63,7 +63,7 @@ void libxsmm_generator_gemm_amx_prefetch_tile_in_L2(libxsmm_generated_code*     
   LIBXSMM_UNUSED( i_micro_kernel_config );
 
   for (i=0; i<tile_cols; i++) {
-    /* @TODO cacht overflow in offset */
+    /* TODO: cacht overflow in offset */
     libxsmm_x86_instruction_prefetch(io_generated_code,
         LIBXSMM_X86_INSTR_PREFETCHT1,
         base_reg,
@@ -822,7 +822,7 @@ void libxsmm_generator_gemm_amx_single_tilestore( libxsmm_generated_code*       
   }
 }
 
-/* @TODO catch overflows caused by a_offs */
+/* TODO: catch overflows caused by a_offs */
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_amx_decompress_32x32_A_block(libxsmm_generated_code*     io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
@@ -1317,7 +1317,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     }
 
     if (_A_tile_id_load[i] > 0) {
-      /* @TODO: catch int overdlow in A_offset */
+      /* TODO: catch int overdlow in A_offset */
       libxsmm_x86_instruction_tile_move( io_generated_code,
           i_micro_kernel_config->instruction_set,
           _A_tileload_instr[i],
@@ -1339,7 +1339,7 @@ void libxsmm_generator_gemm_amx_microkernel( libxsmm_generated_code*            
     }
 
     if (_B_tile_id_load[i] > 0) {
-      /* @TODO: catch int overdlow in B_offset */
+      /* TODO: catch int overdlow in B_offset */
       libxsmm_x86_instruction_tile_move( io_generated_code,
             i_micro_kernel_config->instruction_set,
             _B_tileload_instr[i],

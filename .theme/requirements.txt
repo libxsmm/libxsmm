@@ -1,5 +1,5 @@
 sphinx-rtd-theme
 recommonmark
-mkdocs>=1.4.1
+mkdocs>=1.4.2
 mistune==0.8.4
 m2r2

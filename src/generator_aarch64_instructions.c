@@ -1093,7 +1093,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
                                      && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V
                                      && i_vec_instr != LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;
   unsigned char l_is_indexed = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED) == LIBXSMM_AARCH64_INSTR_SVE_IS_INDEXED;
-  unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V;/* a special case for now */
+  unsigned char l_has_logical_shift_imm = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V || i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSR_I_V; /* a special case for now */
   unsigned char l_has_immediate = (i_vec_instr & LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM) == LIBXSMM_AARCH64_INSTR_SVE_HAS_IMM;
   unsigned int l_vec_instr = i_vec_instr;
 
@@ -1235,11 +1235,11 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     /* setting Zn */
     code[code_head] |= (unsigned int)((0x1f & l_vec_reg_src_0) << 5);
     if ( l_has_logical_shift_imm ) {
-      unsigned char l_elementSizeBits = 8 << (int) i_type;/* B -> 8, H -> 16, S -> 32, D -> 64 */
+      unsigned char l_elementSizeBits = (unsigned char)(8 << (int)i_type); /* B -> 8, H -> 16, S -> 32, D -> 64 */
      /* the encoding for right shift is reversed */
       unsigned char l_index = i_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_LSL_I_V ? i_index : LIBXSMM_MAX( l_elementSizeBits - i_index, 0 );
       /* left/right shift (immediate) has a special encoding, which was not used before */
-      unsigned int l_shifted_size = 1 << (int) i_type;/* B -> 1, H -> 10, S -> 100, D -> 1000 */
+      unsigned int l_shifted_size = 1 << (int) i_type; /* B -> 1, H -> 10, S -> 100, D -> 1000 */
 
       if (i_index >= l_elementSizeBits) {
         /* the index must be within bounds */
@@ -1247,8 +1247,8 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         exit(-1);
       }
 
-      code[code_head] |= (unsigned int)((l_shifted_size >> 2) << 22);/* tszh in ARM docs */
-      code[code_head] |= (unsigned int)((l_shifted_size & 0x3) << 19);/* tszl in ARM docs */
+      code[code_head] |= (unsigned int)((l_shifted_size >> 2) << 22); /* tszh in ARM docs */
+      code[code_head] |= (unsigned int)((l_shifted_size & 0x3) << 19); /* tszl in ARM docs */
       code[code_head] |= (unsigned int)(l_index << 16); /* immediate value */
       /* set the highest bit for double at bit-index 22, if required */
       if (l_index >= 32 && i_type == LIBXSMM_AARCH64_SVE_TYPE_D) {

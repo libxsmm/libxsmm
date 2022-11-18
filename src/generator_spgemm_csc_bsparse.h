@@ -14,7 +14,7 @@
 
 #include <libxsmm_generator.h>
 
-/* @TODO change int based architecture value */
+/* TODO: change int based architecture value */
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_generated_code,
                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
