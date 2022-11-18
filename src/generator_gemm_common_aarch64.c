@@ -1515,6 +1515,13 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   int l_b_offset = 0;
   /* register blocking counter in n */
   unsigned int l_n = 0;
+  libxsmm_blasint l_aarch64_bfdot = 0;
+  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
+  /* check if we use BFDOT */
+  if ( 0 == l_env_aarch64_bfdot ) {
+  } else {
+    l_aarch64_bfdot = atoi(l_env_aarch64_bfdot);
+  }
 
   /* preload offset of B */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
@@ -1541,8 +1548,13 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_1, l_b_offset );
 
   /* preload offset of A */
-  libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
-                                           ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+  if ( (l_aarch64_bfdot != 0) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                             ((long long)i_xgemm_desc->lda - i_m_blocking) * 2*i_micro_kernel_config->datatype_size_in );
+  } else {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                             ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );
+  }
 
   /* load b offsets */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {

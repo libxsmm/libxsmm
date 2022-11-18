@@ -227,15 +227,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
-      l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
-      l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
     } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
       if (l_xgemm_desc_mod.k % 4 != 0)  {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
         return;
       }
-      l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/4;
-      l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/4;
     }
     /* ASIMD + MMLA */
     if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
