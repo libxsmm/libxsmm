@@ -13,10 +13,11 @@
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+ROOT=${HERE}/..
 # TODO: map to CI-provider (abstract environment)
-source "${HERE}/../.env/buildkite.env" ""
+source "${ROOT}/.env/buildkite.env" ""
 
-MKTEMP=${HERE}/../.mktmp.sh
+MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
 DIFF=$(command -v diff)
 # flush asynchronous NFS mount
@@ -279,12 +280,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${HERE}/../.env/${HOSTNAME}" ]; then
+    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${ROOT}/.env/${HOSTNAME}" ]; then
       CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
       if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
       else
-        CONFIGFILES=($(bash -c "ls -1 ${HERE}/../.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
       fi
       CONFIGCOUNT=${#CONFIGFILES[@]}
       if [ "0" != "${CONFIGCOUNT}" ]; then
@@ -322,6 +323,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
+          echo "trap \"chmod -Rf g+u,o=u-w ${REPOREMOTE} || true\" EXIT" >>"${TESTSCRIPT}"
+        fi
         echo "${UMASK_CMD}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
@@ -407,9 +411,6 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "if [ -d \"${REPOREMOTE}/obj\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/obj\"); echo \"  OBJ: \${STAT}\"; fi" >>"${TESTSCRIPT}"
           echo "if [ -d \"${REPOREMOTE}/lib\" ]; then STAT=\$(stat -c %a \"${REPOREMOTE}/lib\"); echo \"  LIB: \${STAT}\"; fi" >>"${TESTSCRIPT}"
         fi
-        if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "trap \"chmod -Rf g+u,o=u-w ${REPOREMOTE} || true\" EXIT" >>"${TESTSCRIPT}"
-        fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
       elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
@@ -421,13 +422,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
-      if [ "${LABEL}" ] && [ "$(command -v tee)" ]; then
+      if [ "$(command -v tee)" ]; then
         if [ "${LOGFILE}" ]; then
           if [ "." = "$(dirname "${LOGFILE}")" ]; then
-            LOGFILE=${HERE}/${LOGFILE}
+            LOGFILE=${PWD}/${LOGFILE}
           fi
+        elif [ "${LABEL}" ]; then
+          LOGFILE=${PWD}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
         else
-          LOGFILE=${HERE}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
+          LOGFILE=${PWD}/.test.log
         fi
         export LOGFILE
         LOGPATH=$(dirname "${LOGFILE}")
