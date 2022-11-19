@@ -1088,7 +1088,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
       }
 
       /* now we handle the remainder handling */
-      for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k++) {
+      for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k+=l_k_stride) {
         l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking);
       }
     }
