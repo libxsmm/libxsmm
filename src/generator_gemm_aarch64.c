@@ -1301,7 +1301,12 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
        (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     int l_nnz_bits = l_xgemm_desc_opa->m%l_micro_kernel_config.vector_length;
-    l_nnz_bits *= l_micro_kernel_config.datatype_size_out;
+    /* @TODO this is a hack as we need 32bit masks on A when using BFDOT */
+    if ( (l_use_mmla == 0) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) ) {
+      l_nnz_bits *= 4;
+    } else {
+      l_nnz_bits *= l_micro_kernel_config.datatype_size_out;
+    }
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                   LIBXSMM_AARCH64_SVE_REG_P0,
                                                   -1,
@@ -1313,14 +1318,20 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                   l_gp_reg_mapping.gp_reg_help_0 );
 
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
-      l_nnz_bits = l_micro_kernel_config.vector_length * l_micro_kernel_config.datatype_size_out;
-      libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+      int l_nnz_bits2 = l_micro_kernel_config.vector_length * l_micro_kernel_config.datatype_size_out;
+     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                     LIBXSMM_AARCH64_SVE_REG_P2,
-                                                    l_nnz_bits,
+                                                    l_nnz_bits2,
                                                     l_gp_reg_mapping.gp_reg_help_0 );
+      if ( l_use_mmla == 0 ) {
+        libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
+                                                      LIBXSMM_AARCH64_SVE_REG_P4,
+                                                      l_nnz_bits/2,
+                                                      l_gp_reg_mapping.gp_reg_help_0 );
+      }
     }
 
-    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( (l_use_mmla == 1) && LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
       /* For A we load in chunks of 8 bytes since A in VNNI4 */
       l_nnz_bits = (l_xgemm_desc_opa->m%4) * 8;
       if (l_nnz_bits > 0) {
@@ -1513,10 +1524,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
               libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                   l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, LIBXSMM_DATATYPE_F32, l_m_blocking, l_n_blocking, l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out, l_micro_kernel_config.datatype_size_out );
             } else {
-              libxsmm_generator_load_2dregblock_aarch64_sve( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+              libxsmm_generator_load_2dregblock_aarch64_sve( io_generated_code, LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                              l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                              l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
-                                                             l_micro_kernel_config.datatype_size_out,
                                                              (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags) );
             }
           }
@@ -1657,10 +1667,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
             /* Apply potential fusion to 2dregblock before storing it out */
             libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64( io_generated_code, l_xgemm_desc_opa, &l_micro_kernel_config, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.vector_length,
                 l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking, l_micro_kernel_config.datatype_size_out  );
-            libxsmm_generator_store_2dregblock_aarch64_sve( io_generated_code, l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
+            libxsmm_generator_store_2dregblock_aarch64_sve( io_generated_code, LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                             l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
-                                                            l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
-                                                            l_micro_kernel_config.datatype_size_out );
+                                                            l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
           }
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
