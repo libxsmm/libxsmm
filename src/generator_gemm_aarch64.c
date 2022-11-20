@@ -1323,7 +1323,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                     LIBXSMM_AARCH64_SVE_REG_P2,
                                                     l_nnz_bits2,
                                                     l_gp_reg_mapping.gp_reg_help_0 );
-      if ( l_use_mmla == 0 ) {
+     /* @TODO check if we can/should use only P3/P4 for both bfdot and bfmmla
+        as both code path should be disjunct */
+     if ( l_use_mmla == 0 ) {
         libxsmm_generator_set_p_register_aarch64_sve( io_generated_code,
                                                       LIBXSMM_AARCH64_SVE_REG_P4,
                                                       l_nnz_bits/2,

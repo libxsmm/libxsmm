@@ -260,10 +260,10 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
-  unsigned char l_pred_reg = 7;
+  unsigned char l_pred_reg = 0;
   unsigned char l_blend_reg = 6;
   unsigned char l_tmp_pred_reg0 = 5;
-  unsigned char l_tmp_pred_reg1 = 8;
+  unsigned char l_tmp_pred_reg1 = 7;
   unsigned int l_tmp_vreg = 0;
   unsigned int l_zero_vreg = 0;
   unsigned int gp_reg_relumask = 0;
@@ -284,7 +284,6 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
   if (io_micro_kernel_config->fused_relu_nobitmask == 0) {
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, gp_reg_relumask);
   }
-  libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch1 );
   libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
                                            l_zero_vreg, l_zero_vreg, 0, l_zero_vreg,
                                            l_pred_reg, l_sve_type );
