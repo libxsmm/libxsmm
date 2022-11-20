@@ -1274,6 +1274,17 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+#if 0
+    float* data_gold_f = (float*)data_gold;
+    float* data_f      = (float*)data;
+    libxsmm_blasint l_i, l_j;
+
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %10.10f, computed: %10.10f, diff: %10.10f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
@@ -1683,9 +1694,11 @@ void print_help(void) {
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("    tile configuration: 1 - external, 0 - internal\n");
+#if defined(USE_GEMM_EXT_FRONTEND)
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
   printf("    convert_C_to_vnni: 0/1 \n");
+#endif
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
@@ -1702,9 +1715,11 @@ void print_help(void) {
   printf("    #repetitions\n");
   printf("    0: no check, otherwise: run check\n");
   printf("    tile configuration: 1 - external, 0 - internal\n");
+#if defined(USE_GEMM_EXT_FRONTEND)
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
   printf("    convert_C_to_vnni: 0/1 \n");
+#endif
   printf("\n\n");
 }
 
