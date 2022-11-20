@@ -117,8 +117,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
                                                               libxsmm_datatype                colbias_precision,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_ld,
-                                                              const unsigned int              i_data_size);
+                                                              const unsigned int              i_ld );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64(  libxsmm_generated_code*     io_generated_code,
@@ -130,8 +129,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64(  libxsmm_genera
                                                               libxsmm_datatype                colbias_precision,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_ld,
-                                                              const unsigned int              i_data_size );
+                                                              const unsigned int              i_ld );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_code*         io_generated_code,
