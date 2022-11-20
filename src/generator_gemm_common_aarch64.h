@@ -32,7 +32,6 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
                                                               const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size,
                                                               unsigned int                    i_is_mmla_regblock  );
 
 LIBXSMM_API_INTERN
@@ -44,8 +43,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_asimd(  libx
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_generated_code*         io_generated_code,
@@ -56,8 +54,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
@@ -68,8 +65,7 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_asimd(  libxsmm
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd(  libxsmm_generated_code*         io_generated_code,
@@ -80,8 +76,7 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_asimd(  libxsmm_gene
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_sve(  libxsmm_generated_code*         io_generated_code,
@@ -92,8 +87,7 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64_sve(  libxsmm_genera
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_asimd(  libxsmm_generated_code*     io_generated_code,
@@ -140,8 +134,8 @@ void libxsmm_generator_gemm_apply_fusion_2dregblock_aarch64(  libxsmm_generated_
                                                               const unsigned int              i_vec_length,
                                                               const unsigned int              i_vec_reg_count,
                                                               const unsigned int              i_m_blocking,
-                                                              const unsigned int              i_n_blocking,
-                                                              const unsigned int              i_data_size  );
+                                                              const unsigned int              i_n_blocking );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_getval_stack_var_aarch64( libxsmm_generated_code*             io_generated_code,
                                                       libxsmm_gemm_stack_var              stack_var,
