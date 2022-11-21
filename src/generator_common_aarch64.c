@@ -1018,7 +1018,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
           if (l_n == 0) {
             if (l_is_colbias_bf16 == 0) {
               libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                  LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                  LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                   l_gp_reg_bias,
                   LIBXSMM_AARCH64_GP_REG_UNDEF,
                   0,
@@ -1040,7 +1040,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
         /* load first part */
         if (l_is_output_bf16 == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                                                 i_gp_reg_addr,
                                                 LIBXSMM_AARCH64_GP_REG_UNDEF,
                                                 0,
@@ -1076,7 +1076,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
         } else {
           if (l_is_output_bf16 == 0) {
             libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                                                  LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                                                   i_gp_reg_scratch,
                                                   LIBXSMM_AARCH64_GP_REG_UNDEF,
                                                   0,
@@ -1214,7 +1214,7 @@ void libxsmm_generator_load_2dregblock_mmla_aarch64_sve( libxsmm_generated_code*
           if (l_n == 0) {
             if (l_is_colbias_bf16 == 0) {
               libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                  LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF,
+                  LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF,
                   l_gp_reg_bias,
                   LIBXSMM_AARCH64_GP_REG_UNDEF,
                   0,
@@ -1686,7 +1686,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
       /* store first part */
       if (l_is_output_bf16 == 0) {
         libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                              LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
+                                              LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
                                               i_gp_reg_addr,
                                               LIBXSMM_AARCH64_GP_REG_UNDEF,
                                               0,
@@ -1733,7 +1733,7 @@ void libxsmm_generator_store_2dregblock_mmla_aarch64_sve( libxsmm_generated_code
         /* store second part */
         if (l_is_output_bf16 == 0) {
           libxsmm_aarch64_instruction_sve_move( io_generated_code,
-                                                  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
+                                                  LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF,
                                                   i_gp_reg_scratch,
                                                   LIBXSMM_AARCH64_GP_REG_UNDEF,
                                                   0,
