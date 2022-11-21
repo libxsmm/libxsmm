@@ -89,7 +89,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
-  unsigned char l_pred_reg = 7;
+  unsigned char l_pred_reg = LIBXSMM_AARCH64_SVE_REG_P0;
   unsigned int l_vr_c[24] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
   unsigned int l_mmla_iter = 0;
 
@@ -110,8 +110,6 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   if (i_is_mmla_regblock > 0) {
     l_vec_reg_acc_start = l_vr_c[0];
   }
-
-  libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, l_pred_reg, -1, i_gp_reg_scratch0);
 
   /* Save the accumulators to scratch  */
   if (l_vec_reg_acc_start < n_reserved_vregs) {
@@ -270,10 +268,10 @@ void libxsmm_generator_gemm_apply_relu_fusion_2dregblock_aarch64_sve(  libxsmm_g
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
   unsigned int l_remainder_size = 0;
-  unsigned char l_pred_reg = 0;
-  unsigned char l_blend_reg = 6;
-  unsigned char l_tmp_pred_reg0 = 5;
-  unsigned char l_tmp_pred_reg1 = 7;
+  unsigned char l_pred_reg = LIBXSMM_AARCH64_SVE_REG_P0;
+  unsigned char l_blend_reg = LIBXSMM_AARCH64_SVE_REG_P6;
+  unsigned char l_tmp_pred_reg0 = LIBXSMM_AARCH64_SVE_REG_P5;
+  unsigned char l_tmp_pred_reg1 = LIBXSMM_AARCH64_SVE_REG_P7;
   unsigned int l_tmp_vreg = 0;
   unsigned int l_zero_vreg = 0;
   unsigned int gp_reg_relumask = 0;
@@ -697,7 +695,7 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
   unsigned int l_gp_reg_bias = i_gp_reg_scratch0;
   unsigned int l_bias_tsize = LIBXSMM_TYPESIZE( colbias_precision );
   unsigned int l_matrix_tsize = LIBXSMM_TYPESIZE( (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) );
-  unsigned int l_pred_reg = LIBXSMM_AARCH64_SVE_REG_P7;
+  unsigned int l_pred_reg = LIBXSMM_AARCH64_SVE_REG_P0;
   unsigned int l_matrix_full_vector_mask = (LIBXSMM_DATATYPE_BF16 == l_matrix_tsize) ? LIBXSMM_AARCH64_SVE_REG_P2 : LIBXSMM_AARCH64_SVE_REG_UNDEF;
   unsigned int l_matrix_load_instr = (LIBXSMM_DATATYPE_BF16 == l_matrix_tsize) ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LDR_Z_I_OFF;
   unsigned int l_matrix_masked_load_instr = (LIBXSMM_DATATYPE_BF16 == l_matrix_tsize) ? LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF : LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF;
@@ -717,8 +715,6 @@ void libxsmm_generator_gemm_load_add_colbias_2dregblock_aarch64_sve(  libxsmm_ge
   /* start register of accumulator */
   l_vec_reg_acc_start = i_vec_reg_count - (i_n_blocking * l_m_total_blocks);
 
-
-  libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, l_pred_reg, -1, i_gp_reg_scratch0 );
   /* load C accumulator */
   libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_BIAS_PTR, l_gp_reg_bias);
 
