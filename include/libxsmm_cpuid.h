@@ -69,6 +69,14 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
 
 /**
+ * @TODO this might be limited lifetime API until we have a fully-fleged
+ * ARM CPU flags test
+ * Still it might be needed to overwrite BFMMLA with BFDOT for performance
+ * study reasons
+ */
+LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
+
+/**
  * Similar to libxsmm_cpuid_x86, but conceptually not x86-specific.
  * The actual code path (as used by LIBXSMM) is determined by
  * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.

@@ -1545,13 +1545,7 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   int l_b_offset = 0;
   /* register blocking counter in n */
   unsigned int l_n = 0;
-  libxsmm_blasint l_aarch64_bfdot = 0;
-  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
-  /* check if we use BFDOT */
-  if ( 0 == l_env_aarch64_bfdot ) {
-  } else {
-    l_aarch64_bfdot = atoi(l_env_aarch64_bfdot);
-  }
+  libxsmm_blasint l_aarch64_bfdot = (libxsmm_blasint)libxsmm_cpuid_arm_use_bfdot();
 
   /* preload offset of B */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {

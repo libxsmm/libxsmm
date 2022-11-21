@@ -971,14 +971,9 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
                                    const unsigned int, const unsigned int );
   /* TODO (MMLA) */
   /* enable MMLA settings for supported datatypes */
-  char l_use_bfdot = 0;
+  char l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
   char l_use_mmla = 0;
-  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
 
-  if ( 0 == l_env_aarch64_bfdot ) {
-  } else {
-    l_use_bfdot = atoi(l_env_aarch64_bfdot);
-  }
   if ( l_use_bfdot == 0 ) {
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
       l_use_mmla = 1;
@@ -1140,17 +1135,17 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   int gemm_stack_frame_is_set = 0;
 
   /* TODO (MMLA): clean up integration */
+  int l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
   char l_use_mmla = 0;
   char l_mmla_zip_row_major = 0;
 
   /* enable MMLA settings for supported datatypes */
   if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
        (LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
-    const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
-    if ( 0 == l_env_aarch64_bfdot ) {
+    if ( l_use_bfdot == 0 ) {
       l_use_mmla = 1;
     } else {
-      if ( atoi(l_env_aarch64_bfdot) != 0 ) {
+      if ( l_use_bfdot != 0 ) {
         l_use_mmla = 0;
       } else {
         l_use_mmla = 1;

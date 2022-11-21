@@ -33,6 +33,7 @@ libxsmm_coprime2
 libxsmm_coprime2_
 libxsmm_cpuid
 libxsmm_cpuid_arm
+libxsmm_cpuid_arm_use_bfdot
 libxsmm_cpuid_name
 libxsmm_cpuid_vlen32
 libxsmm_cpuid_x86

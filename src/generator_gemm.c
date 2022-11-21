@@ -24,16 +24,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
   int l_emu_amx = 0;
-  int l_aarch64_bfdot = 0;
+  int l_aarch64_bfdot = libxsmm_cpuid_arm_use_bfdot();
   const char *const l_env_emu_amx = getenv("EMULATE_AMX");
-  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
   if ( 0 == l_env_emu_amx ) {
   } else {
     l_emu_amx = atoi(l_env_emu_amx);
-  }
-  if ( 0 == l_env_aarch64_bfdot ) {
-  } else {
-    l_aarch64_bfdot = atoi(l_env_aarch64_bfdot);
   }
 
   /* overwrite VNNI Flag when K == 1 */
