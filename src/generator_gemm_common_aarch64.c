@@ -34,9 +34,12 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
     const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_UNSUPPORTED, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, i_xgemm_desc->m, i_xgemm_desc->n,
       i_xgemm_desc->m, i_xgemm_desc->ldc, 0, 0,
-      (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4, LIBXSMM_MELTW_OPERATION_UNARY);
+      (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE,
+      (libxsmm_cpuid_arm_use_bfdot() == 0) ? (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 : (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2,
+      LIBXSMM_MELTW_OPERATION_UNARY);
     libxsmm_mateltwise_kernel_config l_trans_config;
     unsigned int l_gp_reg_in = i_gp_reg_mapping->gp_reg_help_1;
+
     libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, trans_desc);
 
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C, i_gp_reg_mapping->gp_reg_c);
@@ -48,8 +51,15 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_X0, 0, 0 );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 64, i_gp_reg_mapping->gp_reg_c);
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 32, l_gp_reg_in);
-    libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
-                                                                               i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3, i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+    if ( libxsmm_cpuid_arm_use_bfdot() == 0 ) {
+      libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+                                                                                 i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
+                                                                                 i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+    } else {
+      libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+                                                                                 i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
+                                                                                 i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+    }
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 80, 0 );
   } else {
     /* Should not happen  */

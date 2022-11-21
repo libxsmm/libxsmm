@@ -2235,9 +2235,10 @@ int main(int argc, char* argv []) {
         }
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            int arch_cpuid = libxsmm_cpuid();
+            int l_arch_cpuid = libxsmm_cpuid();
+            int l_arm_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
             /* For arm archs interprete the vnni format differently */
-            if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
+            if ( (l_arch_cpuid >= LIBXSMM_AARCH64_V81 && l_arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT) && (l_arm_use_bfdot == 0) ) {
               convert_output_to_vnni4(&l_gemm_def, l_c_gold);
             } else {
               convert_output_to_vnni2(&l_gemm_def, l_c_gold);
