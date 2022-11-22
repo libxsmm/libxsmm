@@ -232,7 +232,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if defined(LIBXSMM_MALLOC_HOOK) && defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC)
 # define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) do { \
     const int internal_memalign_hook_recursive_ = LIBXSMM_ATOMIC_ADD_FETCH( \
-      &internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
+      &internal_malloc_recursive, 1, LIBXSMM_ATOMIC_SEQ_CST); \
     if ( 1 < internal_memalign_hook_recursive_ /* protect against recursion */ \
       || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
       || (internal_malloc_limit[0] > (SIZE)) \
@@ -250,11 +250,11 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
         internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, CALLER); \
       } \
     } \
-    LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
+    LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_SEQ_CST); \
   } while(0)
 # define INTERNAL_REALLOC_HOOK(RESULT, FLAGS, PTR, SIZE, CALLER) \
   if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
-    /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
+    /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_SEQ_CST))*/ \
     || (internal_malloc_limit[0] > (SIZE)) \
     || (internal_malloc_limit[1] < (SIZE) && 0 != internal_malloc_limit[1])) \
   { \
@@ -275,7 +275,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define INTERNAL_FREE_HOOK(PTR, CALLER) do { \
     LIBXSMM_UNUSED(CALLER); \
     if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind \
-      /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))*/ \
+      /*|| (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_SEQ_CST))*/ \
     ) { \
       INTERNAL_FREE_REAL(PTR); \
     } \
@@ -2679,9 +2679,9 @@ LIBXSMM_API void libxsmm_pmalloc_init(size_t size, size_t* num, void* pool[], vo
   LIBXSMM_ASSERT(0 < size && NULL != num && NULL != pool && NULL != storage);
   LIBXSMM_INIT /* CRC-facility must be initialized upfront */
   lock = internal_pmallocs + LIBXSMM_MOD2(LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool), LIBXSMM_MALLOC_NLOCKS);
-  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
   for (n = *num; i < n; ++i, p += size) pool[i] = p;
-  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
 }
 
 
@@ -2691,13 +2691,13 @@ LIBXSMM_API void* libxsmm_pmalloc(void* pool[], size_t* i)
   volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
   void* pointer;
   LIBXSMM_ASSERT(NULL != pool && NULL != i);
-  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
   assert(0 < *i && ((size_t)-1) != *i); /* !LIBXSMM_ASSERT */
   pointer = pool[--(*i)];
 #if !defined(NDEBUG)
   pool[*i] = NULL;
 #endif
-  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
   LIBXSMM_ASSERT(NULL != pointer);
   return pointer;
 }
@@ -2708,8 +2708,8 @@ LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i)
   const unsigned int hash = LIBXSMM_CRCPTR(LIBXSMM_MALLOC_SEED, pool);
   volatile int *const lock = internal_pmallocs + LIBXSMM_MOD2(hash, LIBXSMM_MALLOC_NLOCKS);
   LIBXSMM_ASSERT(NULL != pointer && NULL != pool && NULL != i);
-  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_ACQUIRE(lock, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_SEQ_CST);
   assert(NULL == pool[*i]); /* !LIBXSMM_ASSERT */
   pool[(*i)++] = pointer;
-  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_RELEASE(lock, LIBXSMM_ATOMIC_SEQ_CST);
 }
