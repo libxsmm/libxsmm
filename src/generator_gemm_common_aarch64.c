@@ -53,17 +53,14 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 64, i_gp_reg_mapping->gp_reg_c);
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XZR, 32, l_gp_reg_in);
     if ( libxsmm_cpuid_arm_use_bfdot() == 0 ) {
-      if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE128) ) {
-        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
-                                                                                   i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
-                                                                                   i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
-      } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) {
+      if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
         libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
                                                                                  i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
                                                                                  i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
       } else {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-        return;
+        libxsmm_generator_transform_norm_to_vnni4_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+                                                                                   i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
+                                                                                   i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
       }
     } else {
       libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
