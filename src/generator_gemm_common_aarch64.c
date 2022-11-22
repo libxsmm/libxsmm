@@ -30,6 +30,7 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
 
   LIBXSMM_UNUSED( i_micro_kernel_config );
 
+  /* @TODO: check if we need to check that N is %2 */
   if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
     libxsmm_descriptor_blob blob;
     const libxsmm_meltw_descriptor *const trans_desc = libxsmm_meltw_descriptor_init2(&blob,
@@ -63,9 +64,15 @@ void libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( libxsmm_generated
                                                                                    i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
       }
     } else {
-      libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+      if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch < LIBXSMM_AARCH64_SVE512) ) {
+        libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
                                                                                  i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
                                                                                  i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+      } else {
+        libxsmm_generator_transform_norm_to_vnni2_16bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker, l_gp_reg_in, i_gp_reg_mapping->gp_reg_c,
+                                                                                   i_gp_reg_mapping->gp_reg_help_2, i_gp_reg_mapping->gp_reg_help_3,
+                                                                                   i_gp_reg_mapping->gp_reg_help_4, &l_trans_config, trans_desc, 0);
+      }
     }
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP, 80, 0 );
   } else {
