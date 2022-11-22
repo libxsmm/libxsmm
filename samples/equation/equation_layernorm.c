@@ -838,6 +838,11 @@ int main( int argc, char* argv[] ) {
     ld = S2*S3;
     tmp_ld2 = 1;
 
+    for ( i = 0; i < S2; ++i ) {
+      mean[i] = (float)libxsmm_rng_f64();
+      var[i] = (float)libxsmm_rng_f64();
+    }
+
     /* dgamma function  */
     my_eqn1 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
