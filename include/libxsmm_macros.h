@@ -980,7 +980,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
+#elif (defined(__STDC_VERSION__) && 199901L <= __STDC_VERSION__) \
+   || (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
