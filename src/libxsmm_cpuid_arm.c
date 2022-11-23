@@ -60,14 +60,16 @@ LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum) {
 #if defined(LIBXSMM_PLATFORM_AARCH64)
 # if defined(__has_builtin) && __has_builtin(__builtin_sve_svcntb)
 #   define libxsmm_svcntb __builtin_sve_svcntb
-# elif defined(LIBXSMM_CPUID_ARM_CNTB)
-LIBXSMM_API_INTERN int libxsmm_svcntb(void);
+# elif defined(LIBXSMM_CPUID_ARM_CNTB) && 0
+LIBXSMM_API_INTERN uint64_t libxsmm_svcntb(void);
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(target("arch=armv8-a+sve"))
 uint64_t libxsmm_svcntb(void) {
   uint64_t result = 0;
   LIBXSMM_CPUID_ARM_CNTB(result);
   return result;
 }
+# else
+#   undef LIBXSMM_CPUID_ARM_CNTB
 # endif
 #endif
 
