@@ -22,6 +22,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_CPUID_ARM_BASELINE) && 0
+# define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_V82
+#endif
+
 #if defined(_MSC_VER)
 # define LIBXSMM_CPUID_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
     (((OP0) & 1) << 14) | \
@@ -35,6 +39,8 @@
 #else
 # define LIBXSMM_CPUID_ARM_MRS(RESULT, ID) __asm__ __volatile__( \
     "mrs %0," LIBXSMM_STRINGIFY(ID) : "=r"(RESULT))
+# define LIBXSMM_CPUID_ARM_CNTB(RESULT) __asm__ __volatile__( \
+    "cntb %0" : "=r"(RESULT))
 #endif
 
 
@@ -42,11 +48,21 @@
 LIBXSMM_APIVAR_DEFINE(jmp_buf internal_cpuid_arm_jmp_buf);
 
 LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int /*signum*/);
-LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum)
-{
+LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum) {
   void (*const handler)(int) = signal(signum, internal_cpuid_arm_sigill);
   LIBXSMM_ASSERT(SIGILL == signum);
   if (SIG_ERR != handler) longjmp(internal_cpuid_arm_jmp_buf, 1);
+}
+#endif
+
+
+#if defined(LIBXSMM_PLATFORM_AARCH64) && defined(LIBXSMM_CPUID_ARM_CNTB)
+LIBXSMM_API_INTERN int libxsmm_svcntb(void);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(target("arch=armv8-a+sve"))
+int libxsmm_svcntb(void) {
+  int result = 0;
+  LIBXSMM_CPUID_ARM_CNTB(result);
+  return result;
 }
 #endif
 
@@ -55,39 +71,52 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
 #if defined(LIBXSMM_PLATFORM_AARCH64)
-# if defined(__APPLE__) && defined(__arm64__)
-  /* TODO: integrate Apple specific flow into general flow (below) */
   if (NULL != info) LIBXSMM_MEMZERO127(info);
-  result = LIBXSMM_AARCH64_APPL_M1;
-# else
-#if 0
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid redetecting features */
+# if defined(__APPLE__) && defined(__arm64__)
+    /* TODO: integrate Apple specific flow into general flow (below) */
+    result = LIBXSMM_AARCH64_APPL_M1;
+# elif !defined(LIBXSMM_CPUID_ARM_BASELINE)
     void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
     result = LIBXSMM_AARCH64_V81;
     if (SIG_ERR != handler) {
       uint64_t capability; /* 64-bit value */
       if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
         LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64ISAR1_EL1);
-        if (0xF & capability) { /* DPB */
+        if (0 != (0xF & capability)) { /* DPB */
           result = LIBXSMM_AARCH64_V82;
+#   if defined(LIBXSMM_CPUID_ARM_CNTB)
           if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
             LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64PFR0_EL1);
-            if (0xF & (capability >> 32)) { /* SVE */
-              result = LIBXSMM_AARCH64_A64FX;
+            if (0 != (0xF & (capability >> 32))) { /* SVE */
+              switch (libxsmm_svcntb()) {
+                case 16: result = LIBXSMM_AARCH64_SVE128; break;
+                case 32: result = LIBXSMM_AARCH64_SVE256; break;
+                case 64: /* SVE 512-bit */
+                  result = (1 == (0xF & (capability >> 16))
+                    ? LIBXSMM_AARCH64_A64FX /* FP16 */
+                    : LIBXSMM_AARCH64_SVE512);
+                  break;
+#     if defined(NDEBUG)
+                default: ;
+#     else
+                default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+                  fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_arm discovered an unexpected SVE vector length!\n");
+                }
+#     endif
+              }
             }
           }
+#   endif
         }
       }
       /* restore original state */
       signal(SIGILL, handler);
     }
-    if (NULL != info) LIBXSMM_MEMZERO127(info);
-  }
 # else
-  if (NULL != info) LIBXSMM_MEMZERO127(info);
-  result = LIBXSMM_AARCH64_V82;
+    result = LIBXSMM_CPUID_ARM_BASELINE;
 # endif
-# endif
+  }
 #else
 # if !defined(NDEBUG)
   static int error_once = 0;
