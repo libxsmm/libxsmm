@@ -44,8 +44,6 @@
 # else
 #   define LIBXSMM_CPUID_ARM_MRS(RESULT, ID) __asm__ __volatile__( \
       "mrs %0," LIBXSMM_STRINGIFY(ID) : "=r"(RESULT))
-#   define LIBXSMM_CPUID_ARM_CNTB(RESULT) __asm__ __volatile__( \
-      "cntb %0" : "=r"(RESULT))
 # endif
 LIBXSMM_APIVAR_DEFINE(jmp_buf internal_cpuid_arm_jmp_buf);
 LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int /*signum*/);
@@ -54,23 +52,18 @@ LIBXSMM_API_INTERN void internal_cpuid_arm_sigill(int signum) {
   LIBXSMM_ASSERT(SIGILL == signum);
   if (SIG_ERR != handler) longjmp(internal_cpuid_arm_jmp_buf, 1);
 }
-#endif
-
-
-#if defined(LIBXSMM_PLATFORM_AARCH64)
-# if defined(__has_builtin) && __has_builtin(__builtin_sve_svcntb)
-#   define libxsmm_svcntb __builtin_sve_svcntb
-# elif defined(LIBXSMM_CPUID_ARM_CNTB) && 0
 LIBXSMM_API_INTERN uint64_t libxsmm_svcntb(void);
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(target("arch=armv8-a+sve"))
-uint64_t libxsmm_svcntb(void) {
-  uint64_t result = 0;
-  LIBXSMM_CPUID_ARM_CNTB(result);
+LIBXSMM_API_INTERN uint64_t libxsmm_svcntb(void) {
+# if defined(__has_builtin) && __has_builtin(__builtin_sve_svcntb) && 0
+  return __builtin_sve_svcntb();
+# elif !defined(_MSC_VER) /* TODO: improve condition */
+  register uint64_t result __asm__("r0");
+  __asm__ __volatile__(".byte 0xe0, 0xe3, 0x20, 0x04" /*cntb %0*/ : "=r"(result));
   return result;
-}
 # else
-#   undef LIBXSMM_CPUID_ARM_CNTB
+  return 0;
 # endif
+}
 #endif
 
 
@@ -91,7 +84,6 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
         LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64ISAR1_EL1);
         if (0 != (0xF & capability)) { /* DPB */
           result = LIBXSMM_AARCH64_V82;
-#   if defined(LIBXSMM_CPUID_ARM_CNTB)
           if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
             LIBXSMM_CPUID_ARM_MRS(capability, ID_AA64PFR0_EL1);
             if (0 != (0xF & (capability >> 32))) { /* SVE */
@@ -103,17 +95,16 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
                     ? LIBXSMM_AARCH64_A64FX /* FP16 */
                     : LIBXSMM_AARCH64_SVE512);
                   break;
-#     if defined(NDEBUG)
+#   if defined(NDEBUG)
                 default: ;
-#     else
+#   else
                 default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
                   fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_arm discovered an unexpected SVE vector length!\n");
                 }
-#     endif
+#   endif
               }
             }
           }
-#   endif
         }
       }
       /* restore original state */
