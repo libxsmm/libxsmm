@@ -477,27 +477,32 @@ void libxsmm_generator_transform_vnni2_to_vnni2t_Nmod8_16bit_aarch64_sve_microke
 
   libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
                                         i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (long long)l_ldo * i_micro_kernel_config->datatype_size_out );
   libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
-                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 1, 1, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 1, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (long long)l_ldo * i_micro_kernel_config->datatype_size_out );
   libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
-                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 2, 2, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 2, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (long long)l_ldo * i_micro_kernel_config->datatype_size_out );
   libxsmm_aarch64_instruction_sve_move( io_generated_code,  LIBXSMM_AARCH64_INSTR_SVE_STR_Z_I_OFF,
-                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 3, 3, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+                                        i_gp_reg_out, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 3, LIBXSMM_AARCH64_SVE_REG_UNDEF );
+  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (long long)l_ldo * i_micro_kernel_config->datatype_size_out );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
                                                  i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in, (3LL * l_ldi - 16) * i_micro_kernel_config->datatype_size_in );
-
-  libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (long long)l_ldo * 4 * i_micro_kernel_config->datatype_size_out );
 
   /* close m loop */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_m_loop, 8 );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                 i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in, (2LL * l_ldi - 2LL * i_mateltwise_desc->m) * i_micro_kernel_config->datatype_size_in );
+                                                 i_gp_reg_in, i_gp_reg_scratch, i_gp_reg_in, (4LL * l_ldi - 2LL * i_mateltwise_desc->m) * i_micro_kernel_config->datatype_size_in );
 
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (((long long)i_mateltwise_desc->m/8) * l_ldo - 16LL * 4LL) * i_micro_kernel_config->datatype_size_out );
+                                                 i_gp_reg_out, i_gp_reg_scratch, i_gp_reg_out, (((long long)i_mateltwise_desc->m/8) * 4 * l_ldo - 8LL * 2LL) * i_micro_kernel_config->datatype_size_out );
 
   /* close n loop */
   libxsmm_generator_loop_footer_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_n_loop, 8 );
