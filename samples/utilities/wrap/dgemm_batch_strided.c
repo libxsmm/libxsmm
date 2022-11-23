@@ -15,7 +15,8 @@
 # include <omp.h>
 #endif
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && 1
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+    (defined(LIBXSMM_PLATFORM_X86)) && 1
 # include <mkl.h>
 #endif
 #if defined(__INTEL_MKL__) && (20200002 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__+__INTEL_MKL_UPDATE__))

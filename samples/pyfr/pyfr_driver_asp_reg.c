@@ -19,7 +19,8 @@
 #define EPSILON_float 1e-4
 
 #if !defined(GEMM)
-# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
+     (defined(LIBXSMM_PLATFORM_X86))
 #   include <mkl.h>
 # else
 LIBXSMM_BLAS_SYMBOL_DECL(REALTYPE, gemm)
