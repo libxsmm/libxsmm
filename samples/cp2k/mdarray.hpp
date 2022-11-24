@@ -24,7 +24,7 @@
 #include "GPU/cuda.hpp"
 #endif
 
-#if defined(HAVE_MKL) || defined(__MKL)
+#if (defined(HAVE_MKL) || defined(__MKL)) && defined(LIBXSMM_PLATFORM_X86)
 # include <mkl.h>
 #elif defined(__CBLAS)
 # include <cblas.h>

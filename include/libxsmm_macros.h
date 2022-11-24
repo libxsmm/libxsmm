@@ -55,7 +55,7 @@
 # define LIBXSMM_PLATFORM_X86
 #endif
 #if !defined(LIBXSMM_PLATFORM_AARCH64) && \
-    (defined(__aarch64__) || defined(__arm64__))
+    (defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64))
 # define LIBXSMM_PLATFORM_AARCH64
 #endif
 #if !defined(LIBXSMM_PLATFORM_SUPPORTED)
@@ -68,12 +68,12 @@
 #if !defined(LIBXSMM_BITS)
 # if  (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
       (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
+      (defined(__aarch64__) || defined(__arm64__)) || \
       (defined(__x86_64__) && 0 != (__x86_64__)) || \
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
-      (defined(_WIN64)) || \
-      (defined(__powerpc64)) || \
-      (defined(__aarch64__))
+      (defined(_WIN64) || defined(_M_ARM64)) || \
+      (defined(__powerpc64))
 #   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif !defined(LIBXSMM_PLATFORM_FORCE) && defined(NDEBUG)
@@ -980,7 +980,8 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #endif
 #if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
+#elif (defined(__STDC_VERSION__) && 199901L <= __STDC_VERSION__) \
+   || (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)

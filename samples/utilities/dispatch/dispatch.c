@@ -20,7 +20,7 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#if defined(__MKL)
+#if defined(__MKL) && defined(LIBXSMM_PLATFORM_X86)
 # include <mkl.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
