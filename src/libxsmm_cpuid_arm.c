@@ -30,8 +30,8 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_CPUID_ARM_A64FX_FALLBACK) && 1
-# define LIBXSMM_CPUID_ARM_A64FX_FALLBACK
+#if !defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK) && 1
+# define LIBXSMM_CPUID_ARM_CNTB_FALLBACK
 #endif
 
 #if defined(LIBXSMM_PLATFORM_AARCH64)
@@ -121,23 +121,26 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
                 : LIBXSMM_AARCH64_SVE256);
               if (sve256 > result) result = sve256;
             } break;
-            case 64: /* SVE 512-bit */
-            case 0: { /* fallback (hack) */
-              const char vendor = libxsmm_cpuid_arm_vendor();
-              if ( /* FP16 check is a fallback only if vendor query failed */
-# if defined(LIBXSMM_CPUID_ARM_A64FX_FALLBACK)
-                ('\0' == vendor && 1 == (0xF & (id_aa64pfr0_el1 >> 16))) ||
+# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
+            case 0: /* fallback (hack) */
 # endif
-                ('F' == vendor)) /* Fujitsu */
-              {
+            case 64: { /* SVE 512-bit */
+              const char vendor = libxsmm_cpuid_arm_vendor();
+              if ('F' == vendor) { /* Fujitsu */
                 if (LIBXSMM_AARCH64_A64FX > result) {
+# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
                   if (0 != libxsmm_verbosity && 0 == no_access) { /* library code is expected to be mute */
                     fprintf(stderr, "LIBXSMM WARNING: assuming SVE 512-bit vector length!\n");
                   }
+# endif
                   result = LIBXSMM_AARCH64_A64FX;
                 }
               }
-              else if (64 == vlen_bytes) {
+              else
+# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
+              if (64 == vlen_bytes)
+# endif
+              {
                 LIBXSMM_ASSERT(0 == no_access);
                 if (LIBXSMM_AARCH64_SVE512 > result) result = LIBXSMM_AARCH64_SVE512;
               }
