@@ -57,9 +57,9 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_arm_svcntb(void);
 LIBXSMM_API_INTERN int libxsmm_cpuid_arm_svcntb(void) {
   uint64_t result = 0;
   if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
-# if defined(__has_builtin) && __has_builtin(__builtin_sve_svcntb) && 0
+# if (defined(__has_builtin) && __has_builtin(__builtin_sve_svcntb)) && 0
     result = __builtin_sve_svcntb();
-# elif !defined(_MSC_VER) /* TODO: improve condition */
+# elif !defined(_MSC_VER) && !defined(_CRAYC) /* TODO: improve condition */
     register uint64_t r0 __asm__("r0");
     __asm__ __volatile__(".byte 0xe0, 0xe3, 0x20, 0x04" /*cntb %0*/ : "=r"(r0));
     result = r0;
@@ -95,21 +95,19 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
       if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
         LIBXSMM_CPUID_ARM_MRS(id_aa64isar1_el1, ID_AA64ISAR1_EL1);
       }
-      if (LIBXSMM_AARCH64_V81 < result
+      if (LIBXSMM_AARCH64_V82 <= result
         || /* DPB */ 0 != (0xF & id_aa64isar1_el1))
       {
         uint64_t id_aa64pfr0_el1 = 0;
+        int no_access = 0; /* try libxsmm_cpuid_arm_svcntb */
         if (LIBXSMM_AARCH64_V82 > result) result = LIBXSMM_AARCH64_V82;
         if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
           LIBXSMM_CPUID_ARM_MRS(id_aa64pfr0_el1, ID_AA64PFR0_EL1);
         }
-        else { /* let libxsmm_cpuid_arm_svcntb handle the error */
-          id_aa64pfr0_el1 = 0xF;
-          id_aa64pfr0_el1 <<= 32;
-        }
-        if (0 != (0xF & (id_aa64pfr0_el1 >> 32))) { /* SVE */
-          const int svcntb = libxsmm_cpuid_arm_svcntb();
-          switch (svcntb) {
+        else no_access = 1;
+        if (0 != (0xF & (id_aa64pfr0_el1 >> 32)) || 0 != no_access) { /* SVE */
+          const int vlen_bytes = libxsmm_cpuid_arm_svcntb();
+          switch (vlen_bytes) {
             case 16: { /* SVE 128-bit */
               if (LIBXSMM_AARCH64_SVE128 > result) result = LIBXSMM_AARCH64_SVE128;
             } break;
@@ -130,7 +128,20 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
                 if (LIBXSMM_AARCH64_SVE512 > result) result = LIBXSMM_AARCH64_SVE512;
               }
             } break;
-            default: if (0 != libxsmm_verbosity && 0 != svcntb) { /* library code is expected to be mute */
+            case 0: if (0 == no_access) { /* fallback (hack) */
+              const char vendor = libxsmm_cpuid_arm_vendor();
+              if (('F' == vendor) /* Fujitsu */ || ('\0' == vendor
+                && 1 == (0xF & (id_aa64pfr0_el1 >> 16)) /* FP16 */))
+              {
+                if (LIBXSMM_AARCH64_A64FX > result) {
+                  if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+                    fprintf(stderr, "LIBXSMM WARNING: assuming SVE 512-bit vector length!\n");
+                  }
+                  result = LIBXSMM_AARCH64_A64FX;
+                }
+              }
+            } break;
+            default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
               fprintf(stderr, "LIBXSMM WARNING: discovered an unexpected SVE vector length!\n");
             }
           }
