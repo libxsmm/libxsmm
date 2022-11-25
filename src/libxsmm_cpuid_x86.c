@@ -430,7 +430,7 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
 
 LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
 {
-  int result = -1;
+  int result = 0;
 #if defined(LIBXSMM_PLATFORM_X86)
   if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
        (in_dtype == LIBXSMM_DATATYPE_F16)  ||
@@ -441,7 +441,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
               (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
     result = 4;
   } else {
-    result = -1;
+    result = 1;
   }
 # else
   if ( libxsmm_cpuid_arm_use_bfdot() != 0 ) {
@@ -454,7 +454,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
                 (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
       result = 4;
     } else {
-      result = -1;
+      result = 1;
     }
   } else {
     if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
@@ -466,7 +466,7 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
                 (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
       result = 8;
     } else {
-      result = -1;
+      result = 1;
     }
   }
 #endif
