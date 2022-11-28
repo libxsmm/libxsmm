@@ -99,8 +99,8 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
   fst.fst_bytesalloc = 0;
   return fcntl(fd, F_PREALLOCATE, &fst);
 }
-#   elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
-         (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+/*#   elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
+         (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)*/
 /* C89: avoid warning about posix_fallocate declared implicitly */
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 #   endif
