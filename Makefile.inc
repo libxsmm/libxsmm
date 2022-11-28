@@ -1699,7 +1699,11 @@ else # GCC assumed
             $(if $(GFC),gomp,$(OMPRT))))
         endif
         ifneq (,$(TESTRESC))
-          FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
+          ifeq (0,$(CLANG))
+            FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
+          else ifneq (,$(OMPRT))
+            FLDFLAGS += -l$(OMPRT)
+          endif
         else
           TESTRESC := $(call ftest,$(FLD),$(NULL),-fopenmp)
           ifneq (,$(TESTRESC))
