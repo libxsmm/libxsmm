@@ -20,6 +20,7 @@
 #include <setjmp.h>
 #if !defined(_WIN32) && !defined(__linux__)
 # include <sys/sysctl.h>
+# include <sys/types.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -85,7 +86,7 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(char vendor[], size_t* vendor_s
     if (NULL != vendor) {
 # if !defined(_WIN32) && !defined(__linux__)
       if (0 != sysctlbyname("machdep.cpu.brand_string", vendor, vendor_size, NULL, 0) || 0 == *vendor_size) {
-        /*const*/ int mib[] = {CTL_HW, HW_MODEL};
+        /*const*/ int mib[] = { CTL_HW, HW_MODEL };
         if (0 != sysctl(mib, sizeof(mib) / sizeof(*mib), vendor, vendor_size, NULL, 0) || 0 == *vendor_size) {
           *vendor_size = 0;
           *vendor = '\0';
@@ -130,7 +131,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
         || /* DPB */ 0 != (0xF & id_aa64isar1_el1))
       {
         uint64_t id_aa64pfr0_el1 = 0;
-        int no_access = 0; /* try libxsmm_cpuid_arm_svcntb */
+        volatile int no_access = 0; /* try libxsmm_cpuid_arm_svcntb */
         if (LIBXSMM_AARCH64_V82 > result) result = LIBXSMM_AARCH64_V82;
         if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
           LIBXSMM_CPUID_ARM_MRS(id_aa64pfr0_el1, ID_AA64PFR0_EL1);
