@@ -214,9 +214,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
               (    ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) )
                 || ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) &&
               ( l_aarch64_bfdot != 0 ) ) {
-    /* TODO (MMLA): add flags and check on MMLA-formated A/B */
-    /* TODO (MMLA): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
-    /* TODO (MMLA): adjust checks for future SVE kernels */
+    /* TODO (BFDOT): add flags and check on MMLA-formated A/B */
+    /* TODO (BFDOT): add support for at least m % 2 == 0, k % 4 == 0 when running BF16 */
+    /* TODO (BFDOT): adjust checks for future SVE kernels */
     if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
       if (l_xgemm_desc_mod.k % 2 != 0) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
@@ -228,11 +228,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         return;
       }
     }
-    /* ASIMD + MMLA */
+    /* ASIMD + BFDOT */
     if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
       l_vector_length = 4;
     }
-    /* SVE256 + MMLA */
+    /* SVE256 + BFDOT */
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
       l_vector_length = 8;
     }

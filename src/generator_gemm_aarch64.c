@@ -1145,11 +1145,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     if ( l_use_bfdot == 0 ) {
       l_use_mmla = 1;
     } else {
-      if ( l_use_bfdot != 0 ) {
-        l_use_mmla = 0;
-      } else {
-        l_use_mmla = 1;
-      }
+      l_use_mmla = 0;
     }
 
     if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
