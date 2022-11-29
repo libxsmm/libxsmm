@@ -1536,19 +1536,24 @@ else # GCC assumed
       ifneq (2,$(PEDANTIC)) # 2<=PEDANTIC
       ifneq (0,$(CLANG))
         CPEDANTIC += -Weverything \
+          -Wno-missing-variable-declarations \
           -Wno-implicit-int-float-conversion \
           -Wno-cast-align -Wno-cast-qual \
           -Wno-disabled-macro-expansion \
           -Wno-atomic-implicit-seq-cst \
+          -Wno-unknown-warning-option \
           -Wno-used-but-marked-unused \
+          -Wno-covered-switch-default \
           -Wno-reserved-identifier \
           -Wno-padded -Wno-packed \
           -Wno-reserved-id-macro \
+          -Wno-bad-function-cast \
           -Wno-double-promotion \
           -Wno-sign-conversion \
           -Wno-extra-semi-stmt \
           -Wno-unused-macros \
-          -Wno-float-equal
+          -Wno-float-equal \
+          -Wno-comma
       endif
       endif
       ifneq (Darwin,$(UNAME))
