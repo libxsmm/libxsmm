@@ -1538,6 +1538,7 @@ else # GCC assumed
         CPEDANTIC += -Weverything \
           -Wno-missing-variable-declarations \
           -Wno-implicit-int-float-conversion \
+          -Wno-poison-system-directories \
           -Wno-cast-align -Wno-cast-qual \
           -Wno-disabled-macro-expansion \
           -Wno-atomic-implicit-seq-cst \
@@ -1553,7 +1554,8 @@ else # GCC assumed
           -Wno-extra-semi-stmt \
           -Wno-unused-macros \
           -Wno-float-equal \
-          -Wno-comma
+          -Wno-comma \
+          -Wno-vla
       endif
       endif
       ifneq (Darwin,$(UNAME))
