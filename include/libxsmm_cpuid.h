@@ -49,15 +49,14 @@
 #define LIBXSMM_AARCH64_A64FX         2402 /* A64FX */
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 
-#if defined(LIBXSMM_PLATFORM_X86)
-/** Zero-initialized structure; assumes conservative properties. */
+ /** Zero-initialized structure; assumes conservative properties. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_info {
+  char model[1024]; /** CPU-name (OS-specific implementation). */
+#if defined(LIBXSMM_PLATFORM_X86)
   int constant_tsc; /** Timer stamp counter is monotonic. */
   int has_context;  /** Context switches are permitted. */
-} libxsmm_cpuid_info;
-#else
-typedef int libxsmm_cpuid_info;
 #endif
+} libxsmm_cpuid_info;
 
 /** Returns the target architecture and instruction set extensions. */
 #if defined(__cplusplus) /* note: stay compatible with TF */
@@ -69,11 +68,15 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
 
 /**
- * Similar to libxsmm_cpuid_x86, but conceptually not x86-specific.
+ * Similar to libxsmm_cpuid_x86, but conceptually not arch-specific.
  * The actual code path (as used by LIBXSMM) is determined by
  * libxsmm_[get|set]_target_archid/libxsmm_[get|set]_target_arch.
  */
-LIBXSMM_API int libxsmm_cpuid(void);
+#if defined(__cplusplus)
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info = NULL);
+#else
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info);
+#endif
 
 /**
  * Names the CPU architecture given by CPUID.

@@ -368,7 +368,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
       } else {
         /* let's recheck CPU to even emulation AVX512_BF16 */
-        io_generated_code->arch = libxsmm_cpuid();
+        io_generated_code->arch = libxsmm_cpuid(NULL);
         l_xgemm_desc_mod.c3 = 0;
         libxsmm_generator_gemm_amx_kernel_emu_wrapper( io_generated_code, &l_xgemm_desc_mod );
       }
@@ -377,7 +377,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       libxsmm_generator_gemm_amx_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     } else {
       if (l_emu_amx != 0) {
-        io_generated_code->arch = libxsmm_cpuid();
+        io_generated_code->arch = libxsmm_cpuid(NULL);
       }
       libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel_wrapper( io_generated_code, &l_xgemm_desc_mod );
     }
