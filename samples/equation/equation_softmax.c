@@ -314,16 +314,17 @@ void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, float 
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   /*LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);*/
   libxsmm_matrix_eqn_param eqn_param;
-  libxsmm_matrix_arg arg_array[1];
+  libxsmm_matrix_arg arg_array[2];
+  libxsmm_matrix_op_arg op_arg_arr[32];
+  eqn_param.ops_args = op_arg_arr;
   eqn_param.inputs = arg_array;
   LIBXSMM_UNUSED(S1);
   for (s2 = 0; s2 < S2; s2++) {
-    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = ptmp;
-    func0(&eqn_param);
+    op_arg_arr[31].primary = ptmp;
     arg_array[0].primary = ptmp;
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    func1(&eqn_param);
+    func0(&eqn_param);
   }
 }
 
@@ -334,16 +335,17 @@ void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, lib
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   /*LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);*/
   libxsmm_matrix_eqn_param eqn_param;
-  libxsmm_matrix_arg arg_array[1];
+  libxsmm_matrix_arg arg_array[2];
+  libxsmm_matrix_op_arg op_arg_arr[32];
+  eqn_param.ops_args = op_arg_arr;
   eqn_param.inputs = arg_array;
   LIBXSMM_UNUSED(S1);
   for (s2 = 0; s2 < S2; s2++) {
-    arg_array[0].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
-    eqn_param.output.primary = ptmp;
-    func0(&eqn_param);
+    op_arg_arr[31].primary = ptmp;
     arg_array[0].primary = ptmp;
+    arg_array[1].primary = &LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     eqn_param.output.primary = &LIBXSMM_VLA_ACCESS(3, out, 0, s2, 0, S2, S3);
-    func1(&eqn_param);
+    func0(&eqn_param);
   }
 }
 
@@ -450,6 +452,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype in_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_matrix_eqn_arg_metadata arg_metadata[128];
+  libxsmm_matrix_eqn_op_metadata  op_metadata[128];
+  libxsmm_meqn_arg_shape  arg_shape[128];
 
   if ( argc > 1 ) S1 = atoi(argv[1]);
   if ( argc > 2 ) S2 = atoi(argv[2]);
@@ -499,29 +504,46 @@ int main( int argc, char* argv[] ) {
 
   /* Create MatEq for fwd softmax */
   if ((pass & FWD_SMAX) > 0) {
+    libxsmm_matrix_arg_attributes arg_singular_attr;
     tmp_ld = S3;
     ld = S2*S3;
     my_eqn0 = libxsmm_matrix_eqn_create();
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, ld, 0, 0, in_dt );
-    /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
-    arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
-    func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+    arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
-    my_eqn1 = libxsmm_matrix_eqn_create();
-    libxsmm_matrix_eqn_push_back_binary_op( my_eqn1, LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_unary_op( my_eqn1, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
-    libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
-    /*libxsmm_matrix_eqn_tree_print( my_eqn1 );*/
+    op_metadata[0].eqn_idx      = my_eqn0;
+    op_metadata[0].op_arg_pos   = -1;
+    op_metadata[1].eqn_idx      = my_eqn0;
+    op_metadata[1].op_arg_pos   = 31;
+
+    arg_metadata[0].eqn_idx     = my_eqn0;
+    arg_metadata[0].in_arg_pos  = 0;
+    arg_shape[0].m = S3;
+    arg_shape[0].n = S1;
+    arg_shape[0].ld = tmp_ld;
+    arg_shape[0].type = LIBXSMM_DATATYPE_F32;
+
+    arg_metadata[1].eqn_idx     = my_eqn0;
+    arg_metadata[1].in_arg_pos  = 1;
+    arg_shape[1].m = S3;
+    arg_shape[1].n = S1;
+    arg_shape[1].ld = ld;
+    arg_shape[1].type = in_dt;
+
+    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_MUL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
+    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[0], arg_shape[0], arg_singular_attr);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[1], LIBXSMM_MELTW_TYPE_UNARY_DUMP, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_EXP, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
+    libxsmm_matrix_eqn_push_back_binary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_BINARY_BCAST_SCALAR_IN_1);
+    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS);
+    libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_MAX, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
+    libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata[1], arg_shape[1], arg_singular_attr);
+    /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
-    func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
+    func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
 
     if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);

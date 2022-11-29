@@ -1522,6 +1522,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_gp_reg_mapping_struct {
   unsigned int gp_reg_in_pf;
   unsigned int gp_reg_ldi;
   unsigned int gp_reg_out;
+  unsigned int gp_reg_out2;
   unsigned int gp_reg_ldo;
   unsigned int gp_reg_relumask;
   unsigned int gp_reg_fam_lualpha;
@@ -1741,6 +1742,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int vxor_instruction;
   unsigned int skip_pushpops_callee_gp_reg;
   unsigned int n_args;
+  unsigned int n_opargs;
   unsigned int vlen_in;
   unsigned int vlen_comp;
   unsigned int vlen_out;
@@ -1752,6 +1754,11 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      full_vlen_bf16_mask;
   unsigned int                      is_head_reduce_to_scalar;
   unsigned int                      inout_vreg_mask;
+  unsigned int                      inout_dump_mask;
+  libxsmm_datatype                  dtype_out_masked;
+  libxsmm_datatype                  dtype_in_masked;
+  unsigned int                      m_in_masked;
+  unsigned int                      m_out_masked;
   unsigned int                      out_mask;
   unsigned int                      cvt_result_to_bf16;
   unsigned int                      use_fp32bf16_cvt_replacement;
@@ -1774,6 +1781,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matequation_kernel_config_struct {
   unsigned int                      contains_ternary_op;
   unsigned int                      tmp_size;
   libxsmm_matrix_eqn_arg_v2         *arg_info;
+  libxsmm_matrix_eqn_tmp_info       *oparg_info;
   unsigned int                      reserved_zmms;
   unsigned int                      reserved_mask_regs;
   unsigned int                      register_block_size;
