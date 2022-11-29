@@ -151,7 +151,9 @@ else
 endif
 
 # Optimization flag derived from OPT flag
-OPTFLAGS ?= -O$(patsubst O%,%,$(OPT))
+OPT := $(patsubst O%,%,$(OPT))
+OPTFLAGS ?= -O$(OPT)
+OPTFLAG1 ?= -O$(shell echo "$$((1<$(OPT)?1:$(OPT)))")
 
 # Kind of Clang-analysis (thread, address, ...)
 SANITIZE ?= $(NULL)

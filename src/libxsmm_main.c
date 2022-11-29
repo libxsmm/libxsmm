@@ -2298,7 +2298,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
 #   if defined(__APPLE__) && defined(__arm64__)
         sys_icache_invalidate(code_buffer, total_size);
-#   elif defined(__aarch64__)
+#   elif defined(__aarch64__) && /*TODO*/!defined(_CRAYC)
 #     if defined(__clang__)
         __clear_cache(code_buffer, code_buffer + total_size);
 #     else
