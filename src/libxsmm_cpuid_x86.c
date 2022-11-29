@@ -13,6 +13,10 @@
 #include <libxsmm_sync.h>
 #include <ctype.h>
 #if !defined(_WIN32)
+# if !defined(__linux__)
+#   include <sys/sysctl.h>
+#   include <sys/types.h>
+# endif
 # include <sys/mman.h>
 #endif
 
