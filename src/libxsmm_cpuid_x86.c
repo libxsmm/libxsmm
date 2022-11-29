@@ -11,6 +11,7 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 #include <ctype.h>
 #if !defined(_WIN32)
 # if !defined(__linux__)
