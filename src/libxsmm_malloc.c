@@ -1394,8 +1394,13 @@ LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
     libxsmm_malloc_function internal_malloc_fn = { NULL };
     libxsmm_free_function internal_free_fn = { NULL };
     const void* internal_allocator = NULL;
+#if defined(LIBXSMM_MALLOC_HOOK)
     internal_malloc_fn.function = __real_malloc;
     internal_free_fn.function = __real_free;
+#else
+    internal_malloc_fn.function = malloc;
+    internal_free_fn.function = free;
+#endif
     /*internal_allocator = NULL;*/
     if (NULL == malloc_fn.function && NULL == free_fn.function) {
       libxsmm_default_allocator_context = internal_allocator;
