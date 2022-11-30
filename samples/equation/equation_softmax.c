@@ -308,7 +308,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
 }
 
 LIBXSMM_INLINE
-void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, float *ptmp, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
+void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, float *ptmp, libxsmm_matrix_eqn_function func0) {
   int s2;
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
@@ -329,7 +329,7 @@ void tpp_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout, float 
 }
 
 LIBXSMM_INLINE
-void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, float *ptmp, libxsmm_matrix_eqn_function func0, libxsmm_matrix_eqn_function func1) {
+void tpp_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pout, float *ptmp, libxsmm_matrix_eqn_function func0) {
   int s2;
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
@@ -547,10 +547,10 @@ int main( int argc, char* argv[] ) {
 
     if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);
-      tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0, func1);
+      tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
     } else if (datatype_mode == 1) {
       vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out, tmp);
-      tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0, func1);
+      tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0 );
       for ( i = 0; i < S1*S2*S3; ++i ) {
         out[i] = upconvert_bf16(bf16_out[i]);
         eqn_out[i] = upconvert_bf16(bf16_eqn_out[i]);
@@ -594,10 +594,10 @@ int main( int argc, char* argv[] ) {
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
-        tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0, func1);
+        tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
-          tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0, func1);
+          tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);
@@ -618,10 +618,10 @@ int main( int argc, char* argv[] ) {
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
-        tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0, func1);
+        tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0 );
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
-          tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0, func1);
+          tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0 );
         }
         l_end = libxsmm_timer_tick();
         l_total2 = libxsmm_timer_duration(l_start, l_end);

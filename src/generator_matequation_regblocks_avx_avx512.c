@@ -209,9 +209,9 @@ void libxsmm_generator_mateqn_adjust_opargs_addr(libxsmm_generated_code*        
   unsigned int n_opargs = i_micro_kernel_config->n_opargs;
   unsigned int i;
   unsigned int adjust_val = 0;
-  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
+  LIBXSMM_UNUSED(i_mateqn_desc);
 
   /* Adjust input args */
   for (i = 0; i < n_opargs; i++) {
@@ -425,7 +425,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   use_m_output_masking  = (i_m % i_vlen_out == 0 ) ? 0 : 1;
 
   if (use_m_input_masking == 1) {
-    libxsmm_datatype fake_dt;
+    libxsmm_datatype fake_dt = LIBXSMM_DATATYPE_F32;
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
       if (io_generated_code->arch >= LIBXSMM_X86_AVX512) {
         if (i_vlen_in == 64) {
@@ -466,7 +466,7 @@ void libxsmm_meqn_setup_input_output_masks( libxsmm_generated_code*             
   }
 
   if (use_m_output_masking == 1) {
-    libxsmm_datatype fake_dt;
+    libxsmm_datatype fake_dt = LIBXSMM_DATATYPE_F32;
     if (i_vlen_in == i_vlen_out) {
       mask_reg_out = mask_reg_in;
     } else {
@@ -773,6 +773,7 @@ void libxsmm_generator_mateqn_dump_2d_reg_block( libxsmm_generated_code*        
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
   unsigned int dump_mask;
+  LIBXSMM_UNUSED(i_gp_reg_mapping);
 
   /* Configure extra dump masks if need be */
   if (i_mask_last_m_chunk > 0) {

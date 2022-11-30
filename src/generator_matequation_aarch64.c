@@ -303,8 +303,9 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
       }
     } else if (i_strategy == JIT_STRATEGY_USING_TMP_REGISTER_BLOCKS){
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
+      libxsmm_blasint n_max_opargs = i_eqn->eqn_root->visit_timestamp + 1;
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 8;
+      addr_scratch_size = n_args * 8 + n_max_opargs * 32;
       /* make addr scratch size multiple of 64b */
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg, 0, 0 );
@@ -319,6 +320,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
       libxsmm_blasint n_args = i_eqn->eqn_root->n_args;
+      libxsmm_blasint n_max_opargs = i_eqn->eqn_root->visit_timestamp + 1;
       tmp_size = (tmp_size % 64 == 0) ? tmp_size : ((tmp_size + 63)/64) * 64;
       i_micro_kernel_config->tmp_size = tmp_size;
       /* make scratch size multiple of 64b */
@@ -330,7 +332,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
       libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_SCRATCH_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
       /* make addr scratch size multiple of 64b */
       i_micro_kernel_config->n_args = n_args;
-      addr_scratch_size = n_args * 8;
+      addr_scratch_size = n_args * 8 + n_max_opargs * 32;
       addr_scratch_size = (addr_scratch_size % 64 == 0) ? addr_scratch_size : ((addr_scratch_size + 63)/64) * 64;
       libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, LIBXSMM_AARCH64_GP_REG_XSP, temp_reg, 0, 0 );
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB, temp_reg, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg, addr_scratch_size );
