@@ -434,8 +434,8 @@ void tpp_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, float *pgr
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
   double error_bound = 0.009;
-  libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3;
-  libxsmm_matrix_eqn_function func0, func1, func2, func3;
+  libxsmm_blasint my_eqn0, my_eqn2, my_eqn3;
+  libxsmm_matrix_eqn_function func0, func2, func3;
   libxsmm_blasint i, it, ld, tmp_ld;
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;

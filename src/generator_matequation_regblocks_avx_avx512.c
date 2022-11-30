@@ -772,7 +772,7 @@ void libxsmm_generator_mateqn_dump_2d_reg_block( libxsmm_generated_code*        
   unsigned int cur_vreg;
   unsigned int i_start_vreg = libxsmm_generator_matequation_regblocks_get_start_of_register_block(i_micro_kernel_config, i_reg_block_id);
   char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
-  unsigned int dump_mask;
+  unsigned int dump_mask = i_mask_reg_in;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
 
   /* Configure extra dump masks if need be */
