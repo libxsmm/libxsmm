@@ -971,7 +971,7 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
                                    const unsigned int, const unsigned int );
   /* TODO (MMLA) */
   /* enable MMLA settings for supported datatypes */
-  char l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
+  char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
   char l_use_mmla = 0;
 
   if ( l_use_bfdot == 0 ) {
