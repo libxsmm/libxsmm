@@ -641,10 +641,13 @@ int main( int argc, char* argv[] ) {
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
+    if (1 == S1 && 1 == S3) {
+      error_bound = LIBXSMM_MAX(0.0007, error_bound);
+    }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
-    error_bound = 0.001;
+    error_bound = LIBXSMM_MAX(0.006, error_bound);
   } else {
     printf("ERROR: Supporting only FP32 and BF16 precisions...\n");
   }

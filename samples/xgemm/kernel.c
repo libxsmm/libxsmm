@@ -772,7 +772,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char*          c_b = (char*)b;
     int*           i_c = (int*)c;
     int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
@@ -801,7 +801,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
     int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
@@ -830,7 +830,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char* c_b          = (char*)b;
     float*         c_c = (float*)c;
     int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
@@ -865,7 +865,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_b = (unsigned char*)b;
     float*         c_c = (float*)c;
     int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
@@ -899,7 +899,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat16* h_b = (libxsmm_bfloat16*)b;
     float*            f_c = (float*)c;
     int l_k_block = ( i_gemm_def->vnni_a != 0) ?  2 : 1;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
@@ -935,7 +935,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     int l_k_block = ( i_gemm_def->vnni_a != 0) ?  2 : 1;
     float acc = 0.0f;
     libxsmm_bfloat16 h_acc;
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
     /* For arm archs interprete the vnni format differently */
     if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
       l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
@@ -1885,7 +1885,7 @@ int main(int argc, char* argv []) {
     const int is_env_SPR = (
       env_arch == libxsmm_stristr(env_arch, "spr") ||
       env_arch == libxsmm_stristr(env_arch, "amx"));
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
 
     if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
       && (l_tc_config)) {
@@ -2224,7 +2224,7 @@ int main(int argc, char* argv []) {
         }
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            int arch_cpuid = libxsmm_cpuid();
+            int arch_cpuid = libxsmm_cpuid(NULL);
             /* For arm archs interprete the vnni format differently */
             if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
               convert_output_to_vnni4(&l_gemm_def, l_c_gold);
@@ -2247,7 +2247,7 @@ int main(int argc, char* argv []) {
       {
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            int arch_cpuid = libxsmm_cpuid();
+            int arch_cpuid = libxsmm_cpuid(NULL);
             /* For arm archs interprete the vnni format differently */
             if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
               error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );

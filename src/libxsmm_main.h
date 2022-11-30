@@ -514,6 +514,9 @@ LIBXSMM_API_INTERN int libxsmm_dump(const char* title, const char* name, const v
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
+/** Determines CPU-name using OS-specific instead of CPU-specific interfaces. */
+LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size);
+
 /** Returns the type-size of data-type (can be also libxsmm_datatype). */
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 

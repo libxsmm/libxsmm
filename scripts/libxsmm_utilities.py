@@ -66,7 +66,7 @@ def load_mnklist(argv, threshold, inputformat=0, resultset=None):
                 int,
                 map(
                     lambda s: str(s).replace(",", " ").strip(),
-                    argv[2:2 + int(argv[0])],
+                    argv[2 : 2 + int(argv[0])],  # noqa: E203
                 ),
             )
         )
@@ -75,7 +75,12 @@ def load_mnklist(argv, threshold, inputformat=0, resultset=None):
                 int,
                 map(
                     lambda s: str(s).replace(",", " ").strip(),
-                    argv[2 + int(argv[0]):2 + int(argv[0]) + int(argv[1])],
+                    argv[
+                        2
+                        + int(argv[0]) : 2  # noqa: E203
+                        + int(argv[0])
+                        + int(argv[1])
+                    ],
                 ),
             )
         )
@@ -84,7 +89,7 @@ def load_mnklist(argv, threshold, inputformat=0, resultset=None):
                 int,
                 map(
                     lambda s: str(s).replace(",", " ").strip(),
-                    argv[2 + int(argv[0]) + int(argv[1]):],
+                    argv[2 + int(argv[0]) + int(argv[1]) :],  # noqa: E203
                 ),
             )
         )
@@ -207,7 +212,11 @@ def version_branch_from_file(version_filepath):
 
 def version_numbers(version, branch=None):
     version_list = version.split("-")
-    if version_list and not version_list[0][0].isdigit():
+    if (
+        0 < len(version_list)
+        and version_list[0]
+        and not version_list[0][0].isdigit()
+    ):
         vbranch = version_list[0]
     else:
         vbranch = "main"
@@ -280,20 +289,24 @@ if __name__ == "__main__":
         arg1 = int(sys.argv[1])
     else:
         arg1 = 0
-    if -1 == arg1:
+    if -1 >= arg1:
         if 5 < argc:
             # threshold = int(sys.argv[2])
             mnk_size = int(sys.argv[3])
-            dims = load_mnklist(sys.argv[4:4 + mnk_size], 0, -1)
-            dims = load_mnklist(sys.argv[4 + mnk_size:], 0, -2, dims)
+            dims = load_mnklist(
+                sys.argv[4 : 4 + mnk_size], 0, -1  # noqa: E203
+            )
+            dims = load_mnklist(
+                sys.argv[4 + mnk_size :], 0, -2, dims  # noqa: E203
+            )
             mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
             print(" ".join(mnklist))
         elif 3 == argc:
-            major, minor, update, patch = (
-                version_numbers(sys.argv[2], "release")
+            major, minor, update, patch = version_numbers(
+                sys.argv[2], "release"
             )
             print(["0", "1"][0 == patch])
-    elif 0 <= arg1:
+    else:  # 0 <= arg1
         if 0 == arg1 and 3 == argc:
             major, minor, update, patch = version_numbers(sys.argv[2])
             print(major)  # soname version
@@ -312,9 +325,3 @@ if __name__ == "__main__":
                 print("{0}-{1}".format(branch, realversion))
             else:
                 print(realversion)
-    else:
-        sys.tracebacklimit = 0
-        raise ValueError(
-            "{0}: wrong ({1}) number of arguments ('{2}') given!".format(
-                sys.argv[0], argc - 1, " ".join(sys.argv[1:]))
-        )

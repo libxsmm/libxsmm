@@ -701,9 +701,9 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       char number_format_buffer[32];
       libxsmm_scratch_info scratch_info;
-#if defined(LIBXSMM_PLATFORM_X86)
       libxsmm_cpuid_info info;
-      libxsmm_cpuid_x86(&info);
+      libxsmm_cpuid(&info);
+#if defined(LIBXSMM_PLATFORM_X86)
       if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) &&
         0 == internal_cpuid_info.has_context && 0 != info.has_context)
       {
@@ -711,7 +711,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       }
 #endif
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
-        fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
+        fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
+        if ((LIBXSMM_VERBOSITY_HIGH < libxsmm_verbosity || 0 > libxsmm_verbosity) && '\0' != *info.model) {
+          fprintf(stderr, " [%s]\n", info.model);
+        }
+        else fprintf(stderr, "\n");
       }
       if (0 != libxsmm_format_value(number_format_buffer, sizeof(number_format_buffer),
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
@@ -1507,11 +1511,11 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
       target_archid = LIBXSMM_AARCH64_V81;
       break;
 #endif
-    default: target_archid = libxsmm_cpuid();
+    default: target_archid = libxsmm_cpuid(NULL);
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    const int cpuid = libxsmm_cpuid();
+    const int cpuid = libxsmm_cpuid(NULL);
     if (cpuid < target_archid) {
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code may fail to run on \"%s\"!\n",
@@ -1542,7 +1546,7 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
-  const int cpuid = libxsmm_cpuid();
+  const int cpuid = libxsmm_cpuid(NULL);
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   if (NULL != arch && '\0' != *arch
     && arch != libxsmm_stristr(arch, "default")
@@ -2197,7 +2201,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             emu_amx = atoi(env_emu_amx);
           }
           if (emu_amx > 0) {
-            generated_code.arch = libxsmm_cpuid();
+            generated_code.arch = libxsmm_cpuid(NULL);
           }
         }
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
@@ -2231,7 +2235,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             emu_amx = atoi(env_emu_amx);
           }
           if (emu_amx > 0) {
-            generated_code.arch = libxsmm_cpuid();
+            generated_code.arch = libxsmm_cpuid(NULL);
           }
         }
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matequation_kernel, &generated_code, request->descriptor.meqn);
@@ -2294,7 +2298,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         LIBXSMM_ASSERT(NULL != code->ptr && 0 == (LIBXSMM_CODE_STATIC & code->uval));
 #   if defined(__APPLE__) && defined(__arm64__)
         sys_icache_invalidate(code_buffer, total_size);
-#   elif defined(__aarch64__)
+#   elif defined(__aarch64__) && /*TODO*/!defined(_CRAYC)
 #     if defined(__clang__)
         __clear_cache(code_buffer, code_buffer + total_size);
 #     else

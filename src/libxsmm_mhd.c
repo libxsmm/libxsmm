@@ -235,6 +235,7 @@ LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[])
   return result;
 }
 
+
 LIBXSMM_API_INLINE int internal_mhd_readline(char buffer[], char split, size_t* key_end, size_t* value_begin)
 {
   int result = EXIT_SUCCESS;
@@ -257,7 +258,6 @@ LIBXSMM_API_INLINE int internal_mhd_readline(char buffer[], char split, size_t* 
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -460,7 +460,6 @@ LIBXSMM_API int libxsmm_mhd_read_header(const char header_filename[], size_t fil
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -538,7 +537,6 @@ LIBXSMM_API int libxsmm_mhd_element_comparison(
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -587,7 +585,10 @@ LIBXSMM_API_INLINE int internal_mhd_minmax(const void* data, size_t nelements,
 }
 
 
-LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data, const size_t size[], const size_t pitch[],
+LIBXSMM_API_INTERN int internal_mhd_read(FILE* /*file*/, void* /*data*/, const size_t /*size*/[], const size_t /*pitch*/[],
+  size_t /*ndims*/, size_t /*ncomponents*/, libxsmm_mhd_elemtype /*type_stored*/, libxsmm_mhd_elemtype /*type_data*/,
+  size_t /*typesize*/, libxsmm_mhd_element_handler /*handle_element*/, int /*minmax*/, void* /*minval*/, void* /*maxval*/);
+LIBXSMM_API_INTERN int internal_mhd_read(FILE* file, void* data, const size_t size[], const size_t pitch[],
   size_t ndims, size_t ncomponents, libxsmm_mhd_elemtype type_stored, libxsmm_mhd_elemtype type_data,
   size_t typesize, libxsmm_mhd_element_handler handle_element, int minmax, void* minval, void* maxval)
 {
@@ -676,7 +677,6 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data, const size_t si
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -767,12 +767,14 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
 
-LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data, const size_t size[], const size_t pitch[],
+LIBXSMM_API_INTERN int internal_mhd_write(FILE* /*file*/, const void* /*data*/, const size_t /*size*/[], const size_t /*pitch*/[],
+  size_t /*ndims*/, size_t /*ncomponents*/, libxsmm_mhd_elemtype /*type_data*/, libxsmm_mhd_elemtype /*type*/,
+  size_t /*typesize_data*/, size_t /*typesize*/, int /*minmax*/, void* /*minval*/, void* /*maxval*/);
+LIBXSMM_API_INTERN int internal_mhd_write(FILE* file, const void* data, const size_t size[], const size_t pitch[],
   size_t ndims, size_t ncomponents, libxsmm_mhd_elemtype type_data, libxsmm_mhd_elemtype type,
   size_t typesize_data, size_t typesize, int minmax, void* minval, void* maxval)
 {
@@ -853,7 +855,6 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data, const si
       result = EXIT_FAILURE;
     }
   }
-
   return result;
 }
 
@@ -949,7 +950,5 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   else {
     result = EXIT_FAILURE;
   }
-
   return result;
 }
-
