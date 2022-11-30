@@ -12,6 +12,7 @@
 #define LIBXSMM_CPUID_H
 
 #include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
 
 /**
  * Enumerates the available target architectures and instruction
@@ -66,6 +67,19 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info = NULL);
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
+
+/**
+ * @TODO this might be limited lifetime API until we have a fully-fleged
+ * ARM CPU flags test
+ * Still it might be needed to overwrite BFMMLA with BFDOT for performance
+ * study reasons
+ */
+LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void);
+
+/**
+ * return the VNNI/Dot-product/Matmul blocking for a specific
+ * architecture and datatype */
+LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype);
 
 /**
  * Similar to libxsmm_cpuid_x86, but conceptually not arch-specific.
