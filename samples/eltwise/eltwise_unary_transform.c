@@ -190,6 +190,19 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_shape.comp_type = LIBXSMM_DATATYPE_BF16;
 
   /* use jited transpose */
+  /* to vnni */
+#if 0
+  for ( j = 0; j < N/2; ++j ) {
+    for ( i = 0; i < ldi ; ++i ) {
+      printf("( ");
+      for ( j2 = 0; j2 < 2; ++j2 ) {
+        printf("%i ", in_vnni[(j*ldi*2)+(i*2)+j2]);
+      }
+      printf(") ");
+    }
+    printf("\n");
+  }
+#endif
   unary_param.in.primary  = (void*)in_vnni;
   unary_param.out.primary = (void*)out;
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
@@ -198,6 +211,18 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
     exit(-1);
   }
   unary_kernel( &unary_param );
+#if 0
+  for ( j = 0; j < N/2; ++j ) {
+    for ( i = 0; i < ldi ; ++i ) {
+      printf("( ");
+      for ( j2 = 0; j2 < 2; ++j2 ) {
+        printf("%i ", out[(j*ldi*2)+(i*2)+j2]);
+      }
+      printf(") ");
+    }
+    printf("\n");
+  }
+#endif
 
   /* compare result */
   s = 0;

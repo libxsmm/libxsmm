@@ -747,7 +747,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     short* s_a = (short*)a;
     short* s_b = (short*)b;
     int*   i_c = (int*)c;
-    int l_k_block = 2;
+    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type);
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -771,12 +771,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_a = (unsigned char*)a;
     char*          c_b = (char*)b;
     int*           i_c = (int*)c;
-    int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
-    }
+    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type);
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -800,12 +795,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
     int*           i_c = (int*)c;
-    int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
-    }
+    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type);
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -829,12 +819,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     unsigned char* c_a = (unsigned char*)a;
     char* c_b          = (char*)b;
     float*         c_c = (float*)c;
-    int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
-    }
+    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type);
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -864,12 +849,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     char*          c_a = (char*)a;
     unsigned char* c_b = (unsigned char*)b;
     float*         c_c = (float*)c;
-    int l_k_block = 4;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  8 : 1;
-    }
+    int l_k_block = libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type);
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -898,12 +878,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat16* h_a = (libxsmm_bfloat16*)a;
     libxsmm_bfloat16* h_b = (libxsmm_bfloat16*)b;
     float*            f_c = (float*)c;
-    int l_k_block = ( i_gemm_def->vnni_a != 0) ?  2 : 1;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
-    }
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -932,14 +907,9 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat16* h_a = (libxsmm_bfloat16*)a;
     libxsmm_bfloat16* h_b = (libxsmm_bfloat16*)b;
     libxsmm_bfloat16* h_c = (libxsmm_bfloat16*)c;
-    int l_k_block = ( i_gemm_def->vnni_a != 0) ?  2 : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
     float acc = 0.0f;
     libxsmm_bfloat16 h_acc;
-    int arch_cpuid = libxsmm_cpuid(NULL);
-    /* For arm archs interprete the vnni format differently */
-    if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
-      l_k_block = ( i_gemm_def->vnni_a != 0) ?  4 : 1;
-    }
 
     for (l_j = 0; l_j < n; l_j++) {
       for (l_i = 0; l_i < m; l_i++) {
@@ -975,7 +945,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat8* h_a = (libxsmm_bfloat8*)a;
     libxsmm_bfloat8* h_b = (libxsmm_bfloat8*)b;
     float*           f_c = (float*)c;
-    int l_k_block = (i_gemm_def->vnni_a != 0) ? 4 : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
     for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
       for (l_j = 0; l_j < n; l_j++) {
         for (l_i = 0; l_i < m; l_i++) {
@@ -1007,7 +977,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_hfloat8* h_a = (libxsmm_hfloat8*)a;
     libxsmm_hfloat8* h_b = (libxsmm_hfloat8*)b;
     float*           f_c = (float*)c;
-    int l_k_block = (i_gemm_def->vnni_a != 0) ? 4 : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
     for (l_r = 0; l_r < i_gemm_def->br_count; l_r++) {
       for (l_j = 0; l_j < n; l_j++) {
         for (l_i = 0; l_i < m; l_i++) {
@@ -1031,7 +1001,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_bfloat8* h_a = (libxsmm_bfloat8*)a;
     libxsmm_bfloat8* h_b = (libxsmm_bfloat8*)b;
     libxsmm_bfloat8* h_c = (libxsmm_bfloat8*)c;
-    int l_k_block = (i_gemm_def->vnni_a != 0) ? 4 : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
     float acc = 0.0f;
     libxsmm_bfloat8 bf8_acc;
     for (l_j = 0; l_j < n; l_j++) {
@@ -1072,7 +1042,7 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
     libxsmm_hfloat8* h_a = (libxsmm_hfloat8*)a;
     libxsmm_hfloat8* h_b = (libxsmm_hfloat8*)b;
     libxsmm_hfloat8* h_c = (libxsmm_hfloat8*)c;
-    int l_k_block = (i_gemm_def->vnni_a != 0) ? 4 : 1;
+    int l_k_block = ( i_gemm_def->vnni_a != 0) ? libxsmm_cpuid_dot_pack_factor(i_gemm_def->in_type) : 1;
     float acc = 0.0f;
     libxsmm_hfloat8 hf8_acc;
     for (l_j = 0; l_j < n; l_j++) {
@@ -1266,6 +1236,17 @@ double check_matrix( const libxsmm_datatype dtype, const void* data_gold, const 
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_F32 ) {
+#if 0
+    float* data_gold_f = (float*)data_gold;
+    float* data_f      = (float*)data;
+    libxsmm_blasint l_i, l_j;
+
+    for (l_i = 0; l_i < m; l_i++) {
+      for (l_j = 0; l_j < n; l_j++) {
+        printf("gold: %10.10f, computed: %10.10f, diff: %10.10f\n", data_gold_f[(l_j * ld) + l_i], data_f[(l_j * ld) + l_i], data_gold_f[(l_j * ld) + l_i]-data_f[(l_j * ld) + l_i] );
+      }
+    }
+#endif
     libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, m, n, data_gold, data, &ld, &ld);
     error = libxsmm_matdiff_epsilon(&l_diff);
   } else if ( dtype == LIBXSMM_DATATYPE_BF16 ) {
@@ -1675,9 +1656,11 @@ void print_help(void) {
   printf("    BRunroll: 0/1\n");
   printf("    #repetitions\n");
   printf("    tile configuration: 1 - external, 0 - internal\n");
+#if defined(USE_GEMM_EXT_FRONTEND)
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
   printf("    convert_C_to_vnni: 0/1 \n");
+#endif
   printf("\n\n");
   printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
@@ -1694,9 +1677,11 @@ void print_help(void) {
   printf("    #repetitions\n");
   printf("    0: no check, otherwise: run check\n");
   printf("    tile configuration: 1 - external, 0 - internal\n");
+#if defined(USE_GEMM_EXT_FRONTEND)
   printf("    post_gemm_binary: 0 - none, 1 - colbias_add\n");
   printf("    post_gemm_unary: 0 - none, 1 - relu_nobitmask, 2 - relu_bitmask, 3 - sigmoid \n");
   printf("    convert_C_to_vnni: 0/1 \n");
+#endif
   printf("\n\n");
 }
 
@@ -2224,9 +2209,7 @@ int main(int argc, char* argv []) {
         }
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            int arch_cpuid = libxsmm_cpuid(NULL);
-            /* For arm archs interprete the vnni format differently */
-            if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
+            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.out_type) == 4 ) {
               convert_output_to_vnni4(&l_gemm_def, l_c_gold);
             } else {
               convert_output_to_vnni2(&l_gemm_def, l_c_gold);
@@ -2247,9 +2230,7 @@ int main(int argc, char* argv []) {
       {
         if (cvt_C_to_vnni > 0) {
           if ( l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16 ) {
-            int arch_cpuid = libxsmm_cpuid(NULL);
-            /* For arm archs interprete the vnni format differently */
-            if ( arch_cpuid >= LIBXSMM_AARCH64_V81 && arch_cpuid <= LIBXSMM_AARCH64_ALLFEAT ) {
+            if ( libxsmm_cpuid_dot_pack_factor(l_gemm_def.out_type) == 4 ) {
               error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*4, l_m*4, l_n/4 );
             } else {
               error = check_matrix( l_gemm_def.out_type, l_c_gold, l_c, l_ldc*2, l_m*2, l_n/2 );

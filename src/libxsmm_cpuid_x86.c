@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_cpuid.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
@@ -489,5 +490,50 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id)
   else { /* scalar */
     result = 1;
   }
+  return result;
+}
+
+LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
+{
+  int result = 0;
+#if defined(LIBXSMM_PLATFORM_X86)
+  if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
+       (in_dtype == LIBXSMM_DATATYPE_F16)  ||
+       (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
+    result = 2;
+  } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
+              (in_dtype == LIBXSMM_DATATYPE_HF8) ||
+              (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
+    result = 4;
+  } else {
+    result = 1;
+  }
+# else
+  if ( libxsmm_cpuid_arm_use_bfdot() != 0 ) {
+    if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
+         (in_dtype == LIBXSMM_DATATYPE_F16)  ||
+         (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
+      result = 2;
+    } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
+                (in_dtype == LIBXSMM_DATATYPE_HF8) ||
+                (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
+      result = 4;
+    } else {
+      result = 1;
+    }
+  } else {
+    if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
+         (in_dtype == LIBXSMM_DATATYPE_F16)  ||
+         (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
+      result = 4;
+    } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
+                (in_dtype == LIBXSMM_DATATYPE_HF8) ||
+                (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
+      result = 8;
+    } else {
+      result = 1;
+    }
+  }
+#endif
   return result;
 }

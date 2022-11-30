@@ -1757,115 +1757,128 @@ ifeq (undefined,$(origin TARGET))
   endif
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-    ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
-    ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC)&&80000<=$(GCC_VERSION_NUM))|| \
-          (0!=$(CLANG)&&(40000<=$(CC_VERSION_NUM)||0==$(CC_VERSION_NUM)))|| \
-          (0!=$(PGI)&&190000<=$(CC_VERSION_NUM))))"))
-    ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
-      CTARGET := -mfma -mavx512f -mavx512cd
-      ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
-        ifneq (,$(call ctest,$(CC),-mavx512pf -mavx512er))
-          CTARGET += -mavx512pf -mavx512er
+    ifeq (x86_64,$(MNAME))
+      ifneq (,$(filter 3,$(AVX))$(filter-out 0,$(VNNI) $(BF16)))
+      ifneq (0,$(shell echo "$$(((0!=$(XSMM_GCC)&&80000<=$(GCC_VERSION_NUM))|| \
+            (0!=$(CLANG)&&(40000<=$(CC_VERSION_NUM)||0==$(CC_VERSION_NUM)))|| \
+            (0!=$(PGI)&&190000<=$(CC_VERSION_NUM))))"))
+      ifneq (,$(call ctest,$(CC),-mfma -mavx512f -mavx512cd))
+        CTARGET := -mfma -mavx512f -mavx512cd
+        ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
+          ifneq (,$(call ctest,$(CC),-mavx512pf -mavx512er))
+            CTARGET += -mavx512pf -mavx512er
+          endif
+        else ifneq (,$(call ctest,$(CC),-mavx512dq -mavx512bw -mavx512vl))
+          ifneq (Darwin,$(UNAME))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+            #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (,$(filter 1 2 3,$(INTEL) $(XSMM_GCC)))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+            #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (0,$(shell echo "$$((0!=$(CLANG)&&80100<=$(CC_VERSION_NUM)))"))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          endif
+          ifneq (,$(filter-out 0,$(VNNI)))
+            CTARGET += $(call ctest,$(CC),-mavx512vnni)
+          else ifneq (,$(filter-out 0,$(BF16)))
+            CTARGET += $(call ctest,$(CC),-mavx512vnni -mavx512bf16)
+          endif
         endif
-      else ifneq (,$(call ctest,$(CC),-mavx512dq -mavx512bw -mavx512vl))
-        ifneq (Darwin,$(UNAME))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (,$(filter 1 2 3,$(INTEL) $(XSMM_GCC)))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (0,$(shell echo "$$((0!=$(CLANG)&&80100<=$(CC_VERSION_NUM)))"))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-        endif
-        ifneq (,$(filter-out 0,$(VNNI)))
-          CTARGET += $(call ctest,$(CC),-mavx512vnni)
-        else ifneq (,$(filter-out 0,$(BF16)))
-          CTARGET += $(call ctest,$(CC),-mavx512vnni -mavx512bf16)
+        ifneq (0,$(VMAX))
+          CTARGET += -mprefer-vector-width=512
         endif
       endif
-      ifneq (0,$(VMAX))
-        CTARGET += -mprefer-vector-width=512
       endif
-    endif
-    endif
-    endif
-    ifeq (,$(CTARGET)) # fallback to AVX2
-    ifneq (,$(filter 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||(40800<=$(GCC_VERSION_NUM)&&0==$(PGI))||0==$(CC_VERSION_NUM)))"))
-        CTARGET ?= -march=core-avx2
-      else
-        CTARGET ?= -mavx2 -mfma
       endif
-      ifneq (0,$(VMAX))
-        CTARGET += -mprefer-vector-width=256
-      endif
-    endif
-    endif
-    ifeq (,$(CTARGET)) # fallback to AVX
-    ifneq (,$(filter 1 2 3,$(AVX)))
-      ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||40400<=$(GCC_VERSION_NUM)||0==$(CC_VERSION_NUM)))"))
-        CTARGET ?= -mavx
+      ifeq (,$(CTARGET)) # fallback to AVX2
+      ifneq (,$(filter 2 3,$(AVX)))
+        ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||(40800<=$(GCC_VERSION_NUM)&&0==$(PGI))||0==$(CC_VERSION_NUM)))"))
+          CTARGET ?= -march=core-avx2
+        else
+          CTARGET ?= -mavx2 -mfma
+        endif
         ifneq (0,$(VMAX))
           CTARGET += -mprefer-vector-width=256
         endif
       endif
-    endif
-    endif
-    ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
-      ifeq (,$(CTARGET)) # SSE-4.2 or default-SSE
-        ifneq (,$(filter 01 02 03 10 11 12 13 40 41 42 43,$(SSE)$(AVX)))
-          ifneq (0,$(XSMM_GCC))
-            ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION_NUM)))"))
-              ifeq (0,$(MAINTAINER))
-                CTARGET := -msse4.2
-              else # maintainer build
-                ifeq (0,$(DEPSTATIC))
-                  TARGET := -msse4.2
-                  CTARGET := -msse2
-                else ifneq (0,$(SHARED))
-                  ifneq (,$(SHARED))
+      endif
+      ifeq (,$(CTARGET)) # fallback to AVX
+      ifneq (,$(filter 1 2 3,$(AVX)))
+        ifneq (0,$(shell echo "$$((0!=$(INTEL)||0!=$(CLANG)||40400<=$(GCC_VERSION_NUM)||0==$(CC_VERSION_NUM)))"))
+          CTARGET ?= -mavx
+          ifneq (0,$(VMAX))
+            CTARGET += -mprefer-vector-width=256
+          endif
+        endif
+      endif
+      endif
+      ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
+        ifeq (,$(CTARGET)) # SSE-4.2 or default-SSE
+          ifneq (,$(filter 01 02 03 10 11 12 13 40 41 42 43,$(SSE)$(AVX)))
+            ifneq (0,$(XSMM_GCC))
+              ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION_NUM)))"))
+                ifeq (0,$(MAINTAINER))
+                  CTARGET := -msse4.2
+                else # maintainer build
+                  ifeq (0,$(DEPSTATIC))
                     TARGET := -msse4.2
                     CTARGET := -msse2
+                  else ifneq (0,$(SHARED))
+                    ifneq (,$(SHARED))
+                      TARGET := -msse4.2
+                      CTARGET := -msse2
+                    else
+                      CTARGET := -msse4.2
+                    endif
                   else
                     CTARGET := -msse4.2
                   endif
-                else
-                  CTARGET := -msse4.2
                 endif
+              else
+                CTARGET := -msse2
               endif
-            else
-              CTARGET := -msse2
             endif
+            CTARGET ?= -msse4.2
+          else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
+            CTARGET := -msse$(SSE)
           endif
-          CTARGET ?= -msse4.2
-        else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
-          CTARGET := -msse$(SSE)
+        endif
+        ifeq (,$(CTARGET)) # SSE3
+        ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
+          ifneq (Darwin,$(UNAME))
+            CTARGET ?= -msse2
+          else # prevents Clang BE error (CRC32 and others)
+            CTARGET ?= -msse4.2
+          endif
+        endif
+        endif
+        # stop here as SSE=2 is implicitly present (64-bit ABI)
+      else ifneq (0,$(AVX))
+        CTARGET := -march=native -mtune=native
+        ifneq (0,$(VMAX))
+          ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
+            CTARGET += -mprefer-vector-width=512
+          else ifeq (1,$(words $(filter avx2,$(CPUFLAGS_X86))))
+            CTARGET += -mprefer-vector-width=256
+          else ifeq (1,$(words $(filter avx,$(CPUFLAGS_X86))))
+            CTARGET += -mprefer-vector-width=256
+          endif
         endif
       endif
-      ifeq (,$(CTARGET)) # SSE3
-      ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
-        ifneq (Darwin,$(UNAME))
-          CTARGET ?= -msse2
-        else # prevents Clang BE error (CRC32 and others)
-          CTARGET ?= -msse4.2
-        endif
+    else ifneq (,$(filter arm64 aarch64,$(MNAME)))
+      ifeq (Darwin,$(UNAME))
+      ifneq (,$(call ctest,$(CC),-target arm64-apple-macos -mcpu=apple-m1,$(NULL) $(NULL)))
+        CTARGET := -target arm64-apple-macos -mcpu=apple-m1
       endif
       endif
-      # stop here as SSE=2 is implicitly present (64-bit ABI)
-    else ifneq (0,$(AVX))
-      CTARGET := -march=native -mtune=native
-      ifneq (0,$(VMAX))
-        ifeq (1,$(words $(filter avx512f,$(CPUFLAGS_X86))))
-          CTARGET += -mprefer-vector-width=512
-        else ifeq (1,$(words $(filter avx2,$(CPUFLAGS_X86))))
-          CTARGET += -mprefer-vector-width=256
-        else ifeq (1,$(words $(filter avx,$(CPUFLAGS_X86))))
-          CTARGET += -mprefer-vector-width=256
-        endif
+      ifeq (,$(CTARGET))
+      ifneq (,$(call ctest,$(CC),-march=armv8.1-a,$(NULL) $(NULL)))
+        CTARGET := -march=armv8.1-a
+      endif
       endif
     endif
-  endif # CTARGET
   endif # DBG
+  endif # CTARGET
 else # take user's TARGET into account
   CTARGET := $(TARGET)
 endif
@@ -1882,16 +1895,10 @@ else ifneq (0,$(FORTRAN)) # coherent flags (CC/CXX/FC)
   override CTARGET := $(NULL)
 endif
 ifeq (,$(call ctest,$(CC),$(CFLAGS) $(CTARGET),$(NULL) $(NULL)))
-  # revoke target flags
-  CTARGET := $(NULL)
   ifneq (,$(call ctest,$(CC),-march=native -mtune=native,$(NULL) $(NULL)))
     CTARGET := -march=native -mtune=native
-  else ifeq (Darwin,$(UNAME))
-    ifeq (arm64,$(MNAME))
-    ifneq (,$(call ctest,$(CC),-target arm64-apple-macos -mcpu=apple-m1,$(NULL) $(NULL)))
-      CTARGET := -target arm64-apple-macos -mcpu=apple-m1
-    endif
-    endif
+  else # revoke target flags
+    CTARGET := $(NULL)
   endif
 endif
 # avoid unnecessary state

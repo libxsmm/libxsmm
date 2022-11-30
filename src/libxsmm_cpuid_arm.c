@@ -23,14 +23,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_CPUID_ARM_BASELINE)
-# if defined(__APPLE__) && defined(__arm64__) && 1
-#   define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_APPL_M1
-# elif 1
-#   define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_V81
-# endif
+#if !defined(LIBXSMM_CPUID_ARM_BASELINE) && 0
+# define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_NEOV1
 #endif
-
 #if !defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK) && 1
 # define LIBXSMM_CPUID_ARM_CNTB_FALLBACK
 #endif
@@ -85,6 +80,25 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void) {
 #endif
 
 
+LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  return 0;
+#else
+  const char *const l_env_aarch64_bfdot = getenv("LIBXSMM_AARCH64_USE_BFDOT");
+  int result = 0;
+  if ( 0 == l_env_aarch64_bfdot ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_aarch64_bfdot) != 0 ) {
+      result = 1;
+    }
+  }
+  return result;
+#endif
+}
+
+
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {
   static int result = LIBXSMM_TARGET_ARCH_UNKNOWN;
@@ -98,8 +112,11 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 # if defined(LIBXSMM_CPUID_ARM_BASELINE)
     result = LIBXSMM_CPUID_ARM_BASELINE;
 # else
+#   if defined(__APPLE__) && defined(__arm64__)
+    result = LIBXSMM_AARCH64_APPL_M1;
+#   else
     result = LIBXSMM_AARCH64_V81;
-# endif
+#   endif
     if (SIG_ERR != handler) {
       uint64_t id_aa64isar1_el1 = 0;
       if (0 == setjmp(internal_cpuid_arm_jmp_buf)) {
@@ -127,25 +144,25 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
                 : LIBXSMM_AARCH64_SVE256);
               if (sve256 > result) result = sve256;
             } break;
-# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
+#   if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
             case 0: /* fallback (hack) */
-# endif
+#   endif
             case 64: { /* SVE 512-bit */
               const char vendor = libxsmm_cpuid_arm_vendor();
               if ('F' == vendor) { /* Fujitsu */
                 if (LIBXSMM_AARCH64_A64FX > result) {
-# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
+#   if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
                   if (0 != libxsmm_verbosity && 0 == vlen_bytes) { /* library code is expected to be mute */
                     fprintf(stderr, "LIBXSMM WARNING: assuming SVE 512-bit vector length!\n");
                   }
-# endif
+#   endif
                   result = LIBXSMM_AARCH64_A64FX;
                 }
               }
               else
-# if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
+#   if defined(LIBXSMM_CPUID_ARM_CNTB_FALLBACK)
               if (64 == vlen_bytes)
-# endif
+#   endif
               {
                 LIBXSMM_ASSERT(0 == no_access);
                 if (LIBXSMM_AARCH64_SVE512 > result) result = LIBXSMM_AARCH64_SVE512;
@@ -163,16 +180,17 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
           }
         }
       }
-# if defined(__APPLE__) && defined(__arm64__)
+#   if defined(__APPLE__) && defined(__arm64__)
       else if (0 != model_size) { /* determine CPU based on vendor-string (everything else failed) */
         if (LIBXSMM_AARCH64_APPL_M1 > result && 0 == strncmp("Apple M1", cpuid_info.model, model_size)) {
           result = LIBXSMM_AARCH64_APPL_M1;
         }
       }
-# endif
+#   endif
       /* restore original state */
       signal(SIGILL, handler);
     }
+# endif
   }
   if (NULL != info) memcpy(info, &cpuid_info, sizeof(cpuid_info));
 #else
