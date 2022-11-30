@@ -12,8 +12,23 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_memory.h>
 #include <libxsmm_sync.h>
+#include "libxsmm_main.h"
+#include <ctype.h>
 #if !defined(_WIN32)
+# if !defined(__linux__)
+#   include <sys/sysctl.h>
+#   include <sys/types.h>
+# endif
 # include <sys/mman.h>
+#endif
+
+#define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
+
+#if !defined(LIBXSMM_CPUID_SYSCTL_BYNAME) && 1
+# define LIBXSMM_CPUID_SYSCTL_BYNAME "machdep.cpu.brand_string"
+#endif
+#if !defined(LIBXSMM_CPUID_PROC_CPUINFO) && 1
+# define LIBXSMM_CPUID_PROC_CPUINFO "model name"
 #endif
 
 #if defined(LIBXSMM_PLATFORM_X86)
@@ -58,8 +73,6 @@
 # endif
 #endif
 
-#define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
-
 #if defined(LIBXSMM_PLATFORM_X86)
 LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void);
 # if defined(__linux__)
@@ -92,6 +105,52 @@ LIBXSMM_API_INTERN int libxsmm_cpuid_x86_amx_enable(void)
 }
 # endif
 #endif
+
+
+LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size)
+{
+  if (NULL != model_size && 0 != *model_size) {
+    if (NULL != model) {
+      size_t size = *model_size;
+      *model_size = 0;
+      *model = '\0';
+      { /* OS specific discovery */
+#if defined(_WIN32) /* TODO */
+        LIBXSMM_UNUSED(size);
+#else
+        FILE *const cpuinfo = fopen("/proc/cpuinfo", "r");
+        if (NULL != cpuinfo) {
+          while (NULL != fgets(model, (int)size, cpuinfo)) {
+            if (0 != strncmp(LIBXSMM_CPUID_PROC_CPUINFO, model, sizeof(LIBXSMM_CPUID_PROC_CPUINFO) - 1)) *model = '\0';
+            else {
+              char* s = strchr(model, ':');
+              if (NULL != s) {
+                ++s; /* skip separator */
+                while (isspace(*s)) ++s;
+                *model_size = strlen(s);
+                memmove(model, s, *model_size);
+                s = strchr(model, '\n');
+                if (NULL != s) *s = '\0';
+                break;
+              }
+            }
+          }
+          fclose(cpuinfo);
+        }
+# if !defined(__linux__)
+        if (0 == *model_size && 0 == sysctlbyname(LIBXSMM_CPUID_SYSCTL_BYNAME, model, &size, NULL, 0)
+          && 0 != size)
+        {
+          *model_size = size;
+        }
+# endif
+#endif
+      }
+    }
+    else *model_size = 0; /* error */
+  }
+}
+
 
 LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
 {
@@ -259,6 +318,9 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
       }
 # endif
       if (NULL != info) {
+        size_t model_size = sizeof(info->model);
+        libxsmm_cpuid_model(info->model, &model_size);
+        LIBXSMM_ASSERT(0 != model_size || '\0' == *info->model);
         LIBXSMM_CPUID_X86(0x80000007, 0/*ecx*/, eax, ebx, ecx, edx);
         info->constant_tsc = LIBXSMM_CPUID_CHECK(edx, 0x00000100);
         info->has_context = has_context;
@@ -266,7 +328,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
     }
   }
   else {
-    if (NULL != info) LIBXSMM_MEMZERO127(info);
+    if (NULL != info) memset(info, 0, sizeof(*info));
     result = LIBXSMM_X86_GENERIC;
   }
 #else
@@ -278,18 +340,21 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info)
     fprintf(stderr, "LIBXSMM WARNING: libxsmm_cpuid_x86 called on non-x86 platform!\n");
   }
 # endif
-  if (NULL != info) LIBXSMM_MEMZERO127(info);
+  if (NULL != info) memset(info, 0, sizeof(*info));
 #endif
   return result;
 }
 
 
-LIBXSMM_API int libxsmm_cpuid(void)
+LIBXSMM_API int libxsmm_cpuid(libxsmm_cpuid_info* info)
 {
 #if defined(LIBXSMM_PLATFORM_X86)
-  return libxsmm_cpuid_x86(NULL/*info*/);
+  return libxsmm_cpuid_x86(info);
+#elif defined(LIBXSMM_PLATFORM_AARCH64)
+  return libxsmm_cpuid_arm(info);
 #else
-  return libxsmm_cpuid_arm(NULL/*info*/);
+  memset(info, 0, sizeof(info));
+  return LIBXSMM_TARGET_ARCH_UNKNOWN;
 #endif
 }
 

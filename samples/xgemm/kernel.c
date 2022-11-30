@@ -1870,7 +1870,7 @@ int main(int argc, char* argv []) {
     const int is_env_SPR = (
       env_arch == libxsmm_stristr(env_arch, "spr") ||
       env_arch == libxsmm_stristr(env_arch, "amx"));
-    int arch_cpuid = libxsmm_cpuid();
+    int arch_cpuid = libxsmm_cpuid(NULL);
 
     if ((!is_env_SPR && arch_cpuid < LIBXSMM_X86_AVX512_SPR)
       && (l_tc_config)) {

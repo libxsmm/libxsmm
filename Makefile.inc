@@ -151,7 +151,9 @@ else
 endif
 
 # Optimization flag derived from OPT flag
-OPTFLAGS ?= -O$(patsubst O%,%,$(OPT))
+OPT := $(patsubst O%,%,$(OPT))
+OPTFLAGS ?= -O$(OPT)
+OPTFLAG1 ?= -O$(shell echo "$$((1<$(OPT)?1:$(OPT)))")
 
 # Kind of Clang-analysis (thread, address, ...)
 SANITIZE ?= $(NULL)
@@ -1536,19 +1538,26 @@ else # GCC assumed
       ifneq (2,$(PEDANTIC)) # 2<=PEDANTIC
       ifneq (0,$(CLANG))
         CPEDANTIC += -Weverything \
+          -Wno-missing-variable-declarations \
           -Wno-implicit-int-float-conversion \
+          -Wno-poison-system-directories \
           -Wno-cast-align -Wno-cast-qual \
           -Wno-disabled-macro-expansion \
           -Wno-atomic-implicit-seq-cst \
+          -Wno-unknown-warning-option \
           -Wno-used-but-marked-unused \
+          -Wno-covered-switch-default \
           -Wno-reserved-identifier \
           -Wno-padded -Wno-packed \
           -Wno-reserved-id-macro \
+          -Wno-bad-function-cast \
           -Wno-double-promotion \
           -Wno-sign-conversion \
           -Wno-extra-semi-stmt \
           -Wno-unused-macros \
-          -Wno-float-equal
+          -Wno-float-equal \
+          -Wno-comma \
+          -Wno-vla
       endif
       endif
       ifneq (Darwin,$(UNAME))

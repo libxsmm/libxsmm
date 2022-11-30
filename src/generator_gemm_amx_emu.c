@@ -1119,7 +1119,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code* 
   unsigned int temp_reg = LIBXSMM_X86_GP_REG_R10;
   unsigned int reserved_zmms      = 0;
   unsigned int reserved_mask_regs = 1;
-  unsigned int emulate_cvt2bf16fp32 = (libxsmm_cpuid() < LIBXSMM_X86_AVX512_CPX) ? 1 : 0;
+  unsigned int emulate_cvt2bf16fp32 = (libxsmm_cpuid(NULL) < LIBXSMM_X86_AVX512_CPX) ? 1 : 0;
   LIBXSMM_UNUSED(i_gp_reg_mapping);
   LIBXSMM_UNUSED(i_xgemm_desc);
 
