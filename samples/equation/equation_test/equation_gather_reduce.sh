@@ -32,10 +32,16 @@ do
   N=`echo ${i} | awk -F"_" '{print $2}'`
   LD=`echo ${i} | awk -F"_" '{print $3}'`
   echo ${M} ${N} ${LD}
-  for PREC in ${EQN_PREC_LIST}
-  do
-    ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} 0 0
-    ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} 1 0
+  for PREC in ${EQN_PREC_LIST}; do
+    for IDXTYPE in 0 1; do
+      if [ ! "${PEXEC_NI}" ]; then
+        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0
+      else
+        ./equation_gather_reduce ${M} ${N} ${LD} ${PREC} ${IDXTYPE} 0 &
+        if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
+        if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+      fi
+    done
   done
 done
 rm ${TESTFILE1}

@@ -32,6 +32,12 @@ do
   N=`echo ${i} | awk -F"_" '{print $2}'`
   LD=`echo ${i} | awk -F"_" '{print $3}'`
   echo ${M} ${N} ${LD}
-  ./equation_splitSGD ${M} ${N} ${LD} 0
+  if [ ! "${PEXEC_NI}" ]; then
+    ./equation_splitSGD ${M} ${N} ${LD} 0
+  else
+    ./equation_splitSGD ${M} ${N} ${LD} 0 &
+    if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
+    if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+  fi
 done
 rm ${TESTFILE1}

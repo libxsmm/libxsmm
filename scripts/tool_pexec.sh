@@ -39,7 +39,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
-      echo "       -k|--ninner N [PEXEC_NI]: user code parallelism (N=0: automatic)"
+      echo "       -k|--ninner N [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
       echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
@@ -153,19 +153,19 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     NK=NJ
   fi
   # select inner parallelism
-  if [ "1" != "${NK}" ]; then
+  export OMP_NUM_THREADS=1
+  if [ "1" != "${NK}" ] && [ "/dev/null" = "${LOG}" ]; then
     if [ "${NIFIX}" ] && [ "0" != "${NIFIX}" ]; then
-      if [ "0" != "${NI}" ]; then
-        export OMP_NUM_THREADS=$(((NP+NJ-1)/NJ))
-      else
-        export OMP_NUM_THREADS=${NJ}
-        NJ=$(((NP+NJ-1)/NJ))
+      if [ "0" != "$((0<NI))" ]; then
+        export OMP_NUM_THREADS=$(((NK+NJ-1)/NJ))
+      elif [ "0" = "${NI}" ]; then
+        NJ=$(((NK+NJ-1)/NJ))
+      else # NI<0
+        NJ=${NQ}; NP=1
       fi
     else
       export OMP_NUM_THREADS=${NK}
     fi
-  else
-    export OMP_NUM_THREADS=1
   fi
   if [ "0" != "$((1!=NP))" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
