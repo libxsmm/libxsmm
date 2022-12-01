@@ -2606,6 +2606,148 @@ void libxsmm_generator_transform_norm_to_vnni4_08bit_avx512_mnblock_micro_kernel
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                 io_generated_code,
+                                                                                 const unsigned int                      i_gp_reg_in,
+                                                                                 const unsigned int                      i_gp_reg_out,
+                                                                                 const unsigned int                      i_mask_reg_0,
+                                                                                 const unsigned int                      i_mask_reg_1,
+                                                                                 const unsigned int                      i_vnni_lo_reg,
+                                                                                 const unsigned int                      i_vnni_hi_reg,
+                                                                                 const unsigned int                      i_vnni_lo_reg_2,
+                                                                                 const unsigned int                      i_vnni_hi_reg_2,
+                                                                                 const unsigned int                      i_m_step,
+                                                                                 const unsigned int                      i_n_step,
+                                                                                 const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                                 const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  unsigned int l_zmm = 0;
+  unsigned int l_zmm_tmp0 = ((i_n_step + 3) / 4) * 4;
+  unsigned int l_zmm_tmp1 = ((i_n_step + 3) / 4) * 4 + 1;
+  unsigned int l_m_bound = 16;
+
+  /* check for max unrolling */
+  if ( l_zmm_tmp0 > 27 || l_zmm_tmp1 > 27 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
+  }
+
+  /* load 4 registers */
+  for ( l_zmm = 0; l_zmm < i_n_step; l_zmm+=4 ) {
+    libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_in,
+                                      i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                      i_micro_kernel_config->vector_name, l_zmm + 0, i_mask_reg_0, 1, 0 );
+    if ( (i_n_step % 4 >= 1) && (l_zmm + 3 >= i_n_step) ) {
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
+                                                l_zmm + 1, l_zmm + 1, l_zmm + 1 );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_in,
+                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm + 1) * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                        i_micro_kernel_config->vector_name, l_zmm + 1, i_mask_reg_0, 1, 0 );
+    }
+    if ( (i_n_step % 4 >= 2) && (l_zmm + 2 >= i_n_step) ) {
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
+                                                l_zmm + 2, l_zmm + 2, l_zmm + 2 );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_in,
+                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm + 2) * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                        i_micro_kernel_config->vector_name, l_zmm + 2, i_mask_reg_0, 1, 0 );
+    }
+    if ( (i_n_step % 4 >= 3) && (l_zmm + 1 >= i_n_step) ) {
+      libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
+                                                l_zmm + 3, l_zmm + 3, l_zmm + 3 );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_in,
+                                        i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm + 3) * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                                        i_micro_kernel_config->vector_name, l_zmm + 3, i_mask_reg_0, 1, 0 );
+    }
+  }
+
+  /* advance input pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_in, (long long)i_m_step * i_micro_kernel_config->datatype_size_in );
+
+  /* create VNNI interleaved format */
+  for ( l_zmm = 0; l_zmm < i_n_step; l_zmm+=4 ) {
+    unsigned int l_zmm_tmp2 = l_zmm;
+    unsigned int l_zmm_tmp3 = l_zmm + 2;
+    if ( i_m_step > l_m_bound ) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                              l_zmm + 1, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm_tmp0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    }
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            l_zmm, i_vnni_lo_reg, l_zmm + 1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    if ( i_m_step > l_m_bound ) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                              l_zmm, i_vnni_hi_reg, l_zmm_tmp0, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    }
+
+    if ( i_m_step > l_m_bound ) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                              l_zmm + 3, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm_tmp1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    }
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                            l_zmm + 2, i_vnni_lo_reg, l_zmm + 3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    if ( i_m_step > l_m_bound ) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2W, i_micro_kernel_config->vector_name,
+                                                              l_zmm + 2, i_vnni_hi_reg, l_zmm_tmp1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+    }
+
+    /* Now zip the vnni2 register (l_zmm + 1 with l_zmm + 3 and (if i_m_step > l_m_bound) tmp0 with tmp1 */
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                            l_zmm + 3, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm_tmp2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
+                                                            l_zmm + 1, i_vnni_lo_reg_2, l_zmm + 3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+    libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
+                                                            l_zmm + 1, i_vnni_hi_reg_2, l_zmm_tmp2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+    /* Store 2 registers  */
+    if ( i_m_step > 8 ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                        i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                        i_micro_kernel_config->vector_name, l_zmm + 3, 0, 1, 1 );
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                        i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) + (32 * i_micro_kernel_config->datatype_size_out),
+                                        i_micro_kernel_config->vector_name, l_zmm_tmp2, i_mask_reg_1, 0, 1 );
+    } else {
+      libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                        i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
+                                        i_micro_kernel_config->vector_name, l_zmm + 3, i_mask_reg_1, 1, 1 );
+    }
+
+
+    if ( i_m_step > l_m_bound ) {
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU64_LD, i_micro_kernel_config->vector_name,
+                                                              l_zmm_tmp1, LIBXSMM_X86_VEC_REG_UNDEF, l_zmm_tmp3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
+                                                              l_zmm_tmp0, i_vnni_lo_reg_2, l_zmm_tmp1, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+      libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
+                                                              l_zmm_tmp0, i_vnni_hi_reg_2, l_zmm_tmp3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
+
+      /* Store 2 registers  */
+      if ( i_m_step > l_m_bound + 8 ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out + (64 * i_micro_kernel_config->datatype_size_out),
+                                          i_micro_kernel_config->vector_name, l_zmm_tmp1, 0, 1, 1 );
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) + (96 * i_micro_kernel_config->datatype_size_out),
+                                          i_micro_kernel_config->vector_name, l_zmm_tmp3, i_mask_reg_1, 0, 1 );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
+                                          i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out + (64 * i_micro_kernel_config->datatype_size_out) ,
+                                          i_micro_kernel_config->vector_name, l_zmm_tmp1, i_mask_reg_1, 1, 1 );
+      }
+    }
+  }
+
+  /* advance output pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                   i_gp_reg_out, (long long)i_m_step * 4 * i_micro_kernel_config->datatype_size_out );
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_transform_norm_to_vnni2_16bit_avx512_mnblock_micro_kernel( libxsmm_generated_code*                 io_generated_code,
                                                                                  const unsigned int                      i_gp_reg_in,
                                                                                  const unsigned int                      i_gp_reg_out,
@@ -2676,6 +2818,145 @@ void libxsmm_generator_transform_norm_to_vnni2_16bit_avx512_mnblock_micro_kernel
   /* advance output pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
                                    i_gp_reg_out, (long long)i_m_step * 2 * i_micro_kernel_config->datatype_size_out );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                        libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                        const unsigned int                      i_gp_reg_in,
+                                                                        const unsigned int                      i_gp_reg_out,
+                                                                        const unsigned int                      i_gp_reg_m_loop,
+                                                                        const unsigned int                      i_gp_reg_n_loop,
+                                                                        const unsigned int                      i_gp_reg_mask,
+                                                                        const unsigned int                      i_mask_reg_0,
+                                                                        const unsigned int                      i_mask_reg_1,
+                                                                        const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                        const libxsmm_meltw_descriptor*         i_mateltwise_desc,
+                                                                        const unsigned int                      i_pad_vnni ) {
+  unsigned int l_vnni_lo_reg = 31;
+  unsigned int l_vnni_hi_reg = 30;
+  unsigned int l_vnni_lo_reg_2 = 29;
+  unsigned int l_vnni_hi_reg_2 = 28;
+  unsigned int l_m_entries = 32;
+  unsigned int l_m_remainder = i_mateltwise_desc->m % l_m_entries;
+  unsigned int l_m_full = i_mateltwise_desc->m / l_m_entries;
+  unsigned int l_n_remainder = i_mateltwise_desc->n % 16;
+  unsigned int l_n_full = i_mateltwise_desc->n / 16;
+  short perm_table_vnni_lo[32] = {32, 0, 33, 1, 34, 2, 35, 3, 36, 4, 37, 5, 38, 6, 39, 7, 40, 8, 41, 9, 42, 10, 43, 11, 44, 12, 45, 13, 46, 14, 47, 15};
+  short perm_table_vnni_hi[32] = {48, 16, 49, 17, 50, 18, 51, 19, 52, 20, 53, 21, 54, 22, 55, 23, 56, 24, 57, 25, 58, 26, 59, 27, 60, 28, 61, 29, 62, 30, 63, 31};
+  int perm_table_vnni_lo_2[16] = {16, 0, 17, 1, 18, 2, 19, 3, 20, 4, 21, 5, 22, 6, 23, 7 };
+  int perm_table_vnni_hi_2[16] = {24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15};
+
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo, "perm_table_vnni_lo_", i_micro_kernel_config->vector_name, l_vnni_lo_reg);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi, "perm_table_vnni_hi_", i_micro_kernel_config->vector_name, l_vnni_hi_reg);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_lo_2, "perm_table_vnni_lo_2_", i_micro_kernel_config->vector_name, l_vnni_lo_reg_2);
+  libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table_vnni_hi_2, "perm_table_vnni_hi_2_", i_micro_kernel_config->vector_name, l_vnni_hi_reg_2);
+
+  /* check if the right combination of knobs is provided */
+  if ( (i_pad_vnni == 0) && (i_mateltwise_desc->n % 4 > 0) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
+  }
+
+  /* set masks */
+  if ( l_m_remainder > 0 ) {
+    /* load mask */
+    unsigned int l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
+    const unsigned long long l_load_mask = ( (unsigned long long)1 << l_m_remainder ) - 1;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_load_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_0 );
+
+    /* create store masking */
+    if ( l_m_remainder > l_m_entries/2 ) {
+      /* load mask */
+      unsigned int l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
+      const unsigned long long l_store_mask = ( (unsigned long long)1 << ((l_m_remainder - (l_m_entries/2)) * 4) ) - 1;
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
+      libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
+    } else {
+      /* load mask */
+      unsigned int l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
+      const unsigned long long l_store_mask = ( l_m_remainder == 16 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( (unsigned long long)1 << (l_m_remainder * 4) ) - 1);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
+      libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
+    }
+  }
+
+  if ( l_n_full > 0 ) {
+    /* open n loop */
+    if ( l_n_full > 1 ) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+      libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                       i_gp_reg_n_loop, 16 );
+    }
+
+    /* full m iterations in a loop */
+    if ( l_m_full > 0 ) {
+      /* open m loop */
+      if ( l_m_full > 1 ) {
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+        libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                         i_gp_reg_m_loop, 32 );
+      }
+
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel( io_generated_code, i_gp_reg_in, i_gp_reg_out, 0, 0, l_vnni_lo_reg, l_vnni_hi_reg, l_vnni_lo_reg_2, l_vnni_hi_reg_2,
+          32, 16, i_micro_kernel_config, i_mateltwise_desc );
+
+      /* close m footer */
+      if ( l_m_full > 1 ) {
+        libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                    i_gp_reg_m_loop, l_m_full*32 );
+      }
+    }
+    /* m remainder masked */
+    if ( l_m_remainder > 0 ) {
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel( io_generated_code, i_gp_reg_in, i_gp_reg_out, i_mask_reg_0, i_mask_reg_1,
+                                                                                  l_vnni_lo_reg, l_vnni_hi_reg, l_vnni_lo_reg_2, l_vnni_hi_reg_2, l_m_remainder, 16, i_micro_kernel_config, i_mateltwise_desc );
+    }
+
+    /* advance output pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_in, (16LL * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in) - ((long long)i_micro_kernel_config->datatype_size_in * i_mateltwise_desc->m) );
+
+    /* advance input pointer */
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                     i_gp_reg_out, (16LL * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out) - ((long long)i_micro_kernel_config->datatype_size_out * i_mateltwise_desc->m * 4) );
+
+    /* close n loop */
+    if ( l_n_full > 1 ) {
+      libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                  i_gp_reg_n_loop, l_n_full*16  );
+    }
+  }
+
+  if ( l_n_remainder > 0 ) {
+    /* full m iterations in a loop */
+    if ( l_m_full > 0 ) {
+      /* open m loop */
+      if ( l_m_full > 1 ) {
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+        libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ,
+                                         i_gp_reg_m_loop, 32 );
+      }
+
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel( io_generated_code, i_gp_reg_in, i_gp_reg_out, 0, 0, l_vnni_lo_reg, l_vnni_hi_reg,  l_vnni_lo_reg_2, l_vnni_hi_reg_2,
+          32, l_n_remainder, i_micro_kernel_config, i_mateltwise_desc );
+
+      /* close m footer */
+      if ( l_m_full > 1 ) {
+        libxsmm_generator_mateltwise_footer_m_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config,
+                                                    i_gp_reg_m_loop, l_m_full*32 );
+      }
+    }
+    /* m remainder masked */
+    if ( l_m_remainder > 0 ) {
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel( io_generated_code, i_gp_reg_in, i_gp_reg_out, i_mask_reg_0, i_mask_reg_1,
+                                                                                  l_vnni_lo_reg, l_vnni_hi_reg, l_vnni_lo_reg_2, l_vnni_hi_reg_2, l_m_remainder, l_n_remainder, i_micro_kernel_config, i_mateltwise_desc );
+    }
+  }
 }
 
 /*
@@ -3756,6 +4037,16 @@ void libxsmm_generator_transform_avx512_microkernel( libxsmm_generated_code*    
                                                                          i_micro_kernel_config, i_mateltwise_desc, 0 );
     } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI2_PAD ) {
       libxsmm_generator_transform_norm_to_vnni2_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                         l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                         l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1,
+                                                                         i_micro_kernel_config, i_mateltwise_desc, 1 );
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4 ) {
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
+                                                                         l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
+                                                                         l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1,
+                                                                         i_micro_kernel_config, i_mateltwise_desc, 0 );
+    } else if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4_PAD ) {
+      libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( io_generated_code, io_loop_label_tracker,
                                                                          l_gp_reg_in, l_gp_reg_out, l_gp_reg_mloop, l_gp_reg_nloop,
                                                                          l_gp_reg_mask, l_mask_reg_0, l_mask_reg_1,
                                                                          i_micro_kernel_config, i_mateltwise_desc, 1 );
