@@ -2635,7 +2635,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_in,
                                       i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                       i_micro_kernel_config->vector_name, l_zmm + 0, i_mask_reg_0, 1, 0 );
-    if ( (i_n_step % 4 >= 1) && (l_zmm + 3 >= i_n_step) ) {
+    if ( (i_n_step % 4 == 1) && (l_zmm + 3 >= i_n_step) ) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
                                                 l_zmm + 1, l_zmm + 1, l_zmm + 1 );
     } else {
@@ -2643,7 +2643,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
                                         i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm + 1) * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                         i_micro_kernel_config->vector_name, l_zmm + 1, i_mask_reg_0, 1, 0 );
     }
-    if ( (i_n_step % 4 >= 2) && (l_zmm + 2 >= i_n_step) ) {
+    if ( ((i_n_step % 4 == 1) || (i_n_step % 4 == 2) ) && (l_zmm + 3 >= i_n_step) ) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
                                                 l_zmm + 2, l_zmm + 2, l_zmm + 2 );
     } else {
@@ -2651,7 +2651,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
                                         i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, (l_zmm + 2) * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
                                         i_micro_kernel_config->vector_name, l_zmm + 2, i_mask_reg_0, 1, 0 );
     }
-    if ( (i_n_step % 4 >= 3) && (l_zmm + 1 >= i_n_step) ) {
+    if ( (i_n_step % 4 >= 1) && (l_zmm + 3 >= i_n_step) ) {
       libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_micro_kernel_config->vector_name,
                                                 l_zmm + 3, l_zmm + 3, l_zmm + 3 );
     } else {
