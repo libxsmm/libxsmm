@@ -616,7 +616,7 @@ LIBXSMM_API_INLINE unsigned long long libxsmm_widen_u32u64(unsigned int value) {
 # define LIBXSMM_SQRTF(A) ((float)sqrt((float)(A)))
 # define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
 # define LIBXSMM_LOG2F(A) ((float)LIBXSMM_LOG2((float)(A)))
-# define LIBXSMM_FABSF(A) ((float)fabsf((float)(A)))
+# define LIBXSMM_FABSF(A) ((float)fabs((float)(A)))
 # define LIBXSMM_FABS(A) fabs(A)
 # define LIBXSMM_ERFF(A) ((float)erf((float)(A)))
 # define LIBXSMM_EXP2(A) pow(2.0, A)
