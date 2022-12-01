@@ -74,6 +74,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  compute_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meltw_unary_flags unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
 
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
+
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
@@ -109,9 +112,6 @@ int main( int argc, char* argv[] ) {
 
   hf8_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*1*ld,   64);
   hf8_eqn_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*1*ld,   64);
-
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
 
   for ( i = 0; i < large_N; ++i ) {
     for ( j = 0; j < ld; ++j ) {

@@ -629,6 +629,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
 
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
+
   if ( argc > 1 ) S1 = atoi(argv[1]);
   if ( argc > 2 ) S2 = atoi(argv[2]);
   if ( argc > 3 ) S3 = atoi(argv[3]);
@@ -676,9 +679,6 @@ int main( int argc, char* argv[] ) {
   bf16_gamma = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_beta = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
-
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
 
   /* Initializing arrays */
   for ( i = 0; i < S1*S2*S3; ++i ) {
