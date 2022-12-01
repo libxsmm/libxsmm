@@ -78,7 +78,8 @@
   (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
   (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
-  0/*invalid*/)))))))))))
+  (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
+    0/*invalid*/))))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
