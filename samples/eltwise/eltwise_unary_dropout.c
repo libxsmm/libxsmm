@@ -472,11 +472,11 @@ int main( int argc, char* argv[] ) {
       printf("in: %s out: %s comp: %s backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_dropout_bwd( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
     } else {
-      printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+      printf(" Case not implemented! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
       exit(-1);
     }
   } else {
-    printf(" Not implemented case! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Case not implemented! Usage: %s [F/B] [bitmask: 0/1] [prec_in: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 

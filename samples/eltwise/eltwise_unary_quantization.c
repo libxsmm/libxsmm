@@ -456,7 +456,7 @@ int main( int argc, char* argv[] ) {
     printf("Testing FP32 <-> int32 quant - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_float_to_int32_to_float( M, N, ldi, ldo );
   } else {
-    printf(" Not implemented case! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Case not implemented! Usage: %s [F32] [I8/I16/I32] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
