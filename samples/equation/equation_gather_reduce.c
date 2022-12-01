@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <equation_common.h>
+#include "equation_common.h"
 
 #define EXPANSION_FACTOR 8
 

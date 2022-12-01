@@ -30,6 +30,8 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_matrix_arg arg_array[5];
   unsigned int all_correct = 1;
+  LIBXSMM_UNUSED(argc);
+  LIBXSMM_UNUSED(argv);
 
   S1 = 16;
   S2 = 64;

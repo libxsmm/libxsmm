@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <equation_common.h>
+#include "equation_common.h"
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, unsigned char* relu_mask, float *out) {
@@ -29,7 +29,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       res = 1.0f + (Arg0 - Arg1) + Arg2;
       /* Set relu mask */
       relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res <= 0.0f ) ? 0x0 : (1 << (j%8)) );
-      /* Applu relu  */
+      /* Apply relu  */
       res = (res < 0.0f) ? 0.0f : res;
       out[(i*ld)+j] = res;
     }
