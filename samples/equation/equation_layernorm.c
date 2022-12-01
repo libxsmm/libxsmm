@@ -643,7 +643,7 @@ int main( int argc, char* argv[] ) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
     if (1 == S1 && 1 == S3) {
-      error_bound = LIBXSMM_MAX(0.001, error_bound);
+      error_bound = LIBXSMM_MAX(0.005, error_bound);
     }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
