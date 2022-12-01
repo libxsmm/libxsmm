@@ -31,7 +31,7 @@ void eqn1_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
 
 int main( int argc, char* argv[] ) {
   int ret = EXIT_SUCCESS;
-  double error_bound = 0.00001;
+  double error_bound = 0.0001;
   libxsmm_blasint my_eqn0;
   libxsmm_matrix_eqn_function func0;
   libxsmm_blasint i, j,it;

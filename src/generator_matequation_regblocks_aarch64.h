@@ -16,6 +16,15 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_copy_opargs_aarch64(libxsmm_generated_code*        io_generated_code,
+    libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
+    libxsmm_matequation_kernel_config   *i_micro_kernel_config,
+    libxsmm_matrix_eqn_elem             *cur_node,
+    unsigned int                        *oparg_id,
+    libxsmm_matrix_eqn_tmp_info         *oparg_info,
+    unsigned int                        input_reg);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io_generated_code,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
     libxsmm_matequation_kernel_config   *i_micro_kernel_config,
@@ -23,6 +32,16 @@ void libxsmm_generator_copy_input_args_aarch64(libxsmm_generated_code*        io
     unsigned int                        *arg_id,
     libxsmm_matrix_eqn_arg_v2           *arg_info,
     unsigned int                        input_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_adjust_opargs_addr_aarch64(libxsmm_generated_code*        io_generated_code,
+    const libxsmm_meqn_descriptor       *i_mateqn_desc,
+    libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
+    libxsmm_matequation_kernel_config   *i_micro_kernel_config,
+    unsigned int                        i_adjust_instr,
+    unsigned int                        i_adjust_amount,
+    unsigned int                        i_adjust_type,
+    libxsmm_matrix_eqn_tmp_info         *oparg_info);
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_adjust_args_addr_aarch64(libxsmm_generated_code*        io_generated_code,
@@ -84,6 +103,22 @@ void libxsmm_generator_mateqn_store_2d_reg_block_aarch64( libxsmm_generated_code
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_dump_2d_reg_block_aarch64( libxsmm_generated_code*          io_generated_code,
+                                                 libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
+                                                 libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+                                                 const libxsmm_meqn_descriptor*          i_meqn_desc,
+                                                 unsigned int                            i_vlen,
+                                                 unsigned int                            i_m,
+                                                 unsigned int                            i_ld,
+                                                 unsigned int                            i_reg_block_id,
+                                                 unsigned int                            i_m_blocking,
+                                                 unsigned int                            i_n_blocking,
+                                                 unsigned int                            i_mask_last_m_chunk,
+                                                 unsigned int                            i_mask_reg,
+                                                 libxsmm_datatype                        i_regblock_dtype,
+                                                 unsigned int                            i_gp_reg_out );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_unpackstore_2d_reg_block_aarch64( libxsmm_generated_code*          io_generated_code,
