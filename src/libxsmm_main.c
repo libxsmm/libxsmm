@@ -395,7 +395,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 #endif
 #if defined(LIBXSMM_MALLOC_HOOK_INTRINSIC)
     { static int recursive = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED)) _mm_free(ptr);
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&recursive, 1, LIBXSMM_ATOMIC_SEQ_CST)) _mm_free(ptr);
       else {
 # if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
         __libc_free(ptr);
@@ -403,7 +403,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
         free(ptr);
 # endif
       }
-      LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+      LIBXSMM_ATOMIC_SUB_FETCH(&recursive, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
 #elif (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD))) /* GLIBC */
     __libc_free(ptr);
@@ -828,7 +828,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*mess
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
 { /* STOP termination handler for GNU Fortran runtime */
   static int once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
     union { const void* dlsym; void (*ptr)(const char*, int, int); } stop;
     dlerror(); /* clear an eventual error status */
     stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "_gfortran_stop_string");
@@ -843,7 +843,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* /*message*/, i
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int len)
 { /* STOP termination handler for Intel Fortran runtime */
   static int once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
     union { const void* dlsym; void (*ptr)(const char*, int); } stop;
     dlerror(); /* clear an eventual error status */
     stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core");
@@ -858,7 +858,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
 { /* STOP termination handler for Intel Fortran runtime */
   static int once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
     union { const void* dlsym; void (*ptr)(void); } stop;
     dlerror(); /* clear an eventual error status */
     stop.dlsym = dlsym(LIBXSMM_RTLD_NEXT, "for_stop_core_quiet");
@@ -1147,7 +1147,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
-  if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
+  if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) {
     static unsigned int ninit = 0, gid = 0;
     const unsigned int tid = LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ASSERT(0 < tid);
@@ -1299,7 +1299,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
     else /*if (gid != tid)*/ { /* avoid recursion */
       LIBXSMM_ASSERT(gid != tid);
-      while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) LIBXSMM_SYNC_YIELD;
+      while (2 > LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)) LIBXSMM_SYNC_YIELD;
       internal_init();
     }
 #if defined(LIBXSMM_PERF)
@@ -1314,7 +1314,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void libxsmm_finalize(void);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
   void *const regaddr = &internal_registry;
-  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
+  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
   libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
   if (NULL != registry) {
     int i;
@@ -1334,7 +1334,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REGLOCK, internal_reglock_ptr);
 # endif
 #endif
-    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
+    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
     registry = (libxsmm_code_pointer*)regptr;
     if (NULL != registry) {
       internal_regkey_type *const registry_keys = internal_registry_keys;
@@ -1354,7 +1354,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_xcopy_finalize();
       libxsmm_gemm_finalize();
       /* coverity[check_return] */
-      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
+      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST); /* invalidate code cache (TLS) */
 #if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       internal_cache_buffer = NULL;
 #endif
@@ -2364,7 +2364,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   internal_cache_type *const cache = &internal_cache_buffer;
 # endif
   unsigned char cache_index;
-  const unsigned int ninit = LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED);
+  const unsigned int ninit = LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST);
   internal_pad_descriptor(desc, size);
   if (0 == is_big_desc) {
     LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
@@ -3678,7 +3678,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* kernel)
         {
           LIBXSMM_ASSERT(LIBXSMM_KERNEL_UNREGISTERED > info.kind);
           /* coverity[check_return] */
-          LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_RELAXED); /* invalidate code cache (TLS) */
+          LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST); /* invalidate code cache (TLS) */
           internal_registry[regindex].ptr = NULL;
 #if !defined(NDEBUG)
           memset(internal_registry_keys + regindex, 0, sizeof(*internal_registry_keys));
