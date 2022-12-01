@@ -24,14 +24,15 @@ if [ "${CURL}" ] && [ "${GIT}" ] && [ "${SED}" ]; then
   if [ "${FORKS}" ]; then
     for FORK in ${FORKS}; do
       USER=$(echo "${FORK}" | ${SED} "s/\/..*//")
-      echo -n "Fork ${USER} "
+      echo -n "Fork ${USER}"
       if ${GIT} remote add "${USER}" "https://github.com/${FORK}.git" 2>/dev/null; then
-        echo -n "added and "
+        echo -n " added"
       fi
       if ${GIT} fetch "${USER}" 2>/dev/null; then
-        echo "updated."
+        echo -n " and updated"
         N=$((N+1))
       fi
+      echo "."
     done
     for USER in $(${GIT} remote 2>/dev/null); do
       if [ ! "$(echo "${FORKS}" | ${SED} -n "/${USER}/p")" ]; then
