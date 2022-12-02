@@ -1899,15 +1899,13 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl512_microkernel(
   unsigned int n4_chunks_odd = i_mateltwise_desc->n % 8;
   unsigned int N = i_mateltwise_desc->n;
   unsigned int n_blocks = ((n4_chunks_odd > 0) && (N > 4)) ? 2 : 1;
-
+  unsigned long long l_mask = 0xff00;
   short perm_table[32] = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 16, 20, 24, 28, 17, 21, 25, 29, 18, 22, 26, 30, 19, 23, 27, 31};
 
   /* Setup permute register */
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) perm_table, "perm_table_", i_micro_kernel_config->vector_name, l_perm_reg);
 
   /* set the masks for the load+blend stage */
-  unsigned long long l_mask = 0xff00;
-
   libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                    i_gp_reg_mask, l_mask );
   libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
@@ -3089,14 +3087,14 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( libxsmm
     /* create store masking */
     if ( l_m_remainder > l_m_entries/2 ) {
       /* load mask */
-      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
       const unsigned long long l_store_mask = ( (unsigned long long)1 << ((l_m_remainder - (l_m_entries/2)) * 4) ) - 1;
+      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
       libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
     } else {
       /* load mask */
-      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
       const unsigned long long l_store_mask = ( l_m_remainder == l_m_entries/2 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( (unsigned long long)1 << (l_m_remainder * 4) ) - 1);
+      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
       libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
     }
