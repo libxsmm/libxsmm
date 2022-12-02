@@ -1450,7 +1450,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     unsigned int                       fully_unrolled_brloop ) {
 
   unsigned int l_k_blocking = 16;
-  unsigned int l_k_pack_factor = 2;
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
   unsigned int k;
   long long offset_A = 0;
   long long offset_B = 0;
@@ -1459,10 +1459,8 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
 
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     l_k_blocking = 32;
-    l_k_pack_factor = 2;
-  } if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     l_k_blocking = 64;
-    l_k_pack_factor = 4;
   }
 
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE) {

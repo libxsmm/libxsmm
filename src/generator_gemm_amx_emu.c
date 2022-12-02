@@ -1442,12 +1442,11 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
 #endif
 
   /* Find K blocking  */
+  l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     k_blocking = 32;
-    l_k_pack_factor = 2;
   } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     k_blocking = 64;
-    l_k_pack_factor = 4;
   }
 
   while (i_xgemm_desc->k % k_blocking != 0) {
