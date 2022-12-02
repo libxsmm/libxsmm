@@ -1881,7 +1881,7 @@ void libxsmm_generator_transform_four_4x4_16bit_vnni2_to_vnni2t_avx512( libxsmm_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl512_microkernel( libxsmm_generated_code*                 io_generated_code,
                                                                              libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                              const unsigned int                      i_gp_reg_in,
                                                                              const unsigned int                      i_gp_reg_out,
@@ -1981,16 +1981,13 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxs
   }
 }
 
-#if 0
 LIBXSMM_API_INTERN
-void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl256_microkernel( libxsmm_generated_code*             io_generated_code,
                                                                              libxsmm_loop_label_tracker*             io_loop_label_tracker,
                                                                              const unsigned int                      i_gp_reg_in,
                                                                              const unsigned int                      i_gp_reg_out,
                                                                              const unsigned int                      i_gp_reg_m_loop,
                                                                              const unsigned int                      i_gp_reg_n_loop,
-                                                                             const unsigned int                      i_gp_reg_mask,
-                                                                             const unsigned int                      i_mask_reg_0,
                                                                              const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
                                                                              const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
   unsigned int l_ldi = i_mateltwise_desc->ldi*4;
@@ -2059,7 +2056,24 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxs
   /* close n loop */
   libxsmm_generator_mateltwise_footer_n_loop( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_gp_reg_n_loop, i_mateltwise_desc->n );
 }
-#endif
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_microkernel( libxsmm_generated_code*                 io_generated_code,
+                                                                             libxsmm_loop_label_tracker*             io_loop_label_tracker,
+                                                                             const unsigned int                      i_gp_reg_in,
+                                                                             const unsigned int                      i_gp_reg_out,
+                                                                             const unsigned int                      i_gp_reg_m_loop,
+                                                                             const unsigned int                      i_gp_reg_n_loop,
+                                                                             const unsigned int                      i_gp_reg_mask,
+                                                                             const unsigned int                      i_mask_reg_0,
+                                                                             const libxsmm_mateltwise_kernel_config* i_micro_kernel_config,
+                                                                             const libxsmm_meltw_descriptor*         i_mateltwise_desc ) {
+  if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512_CORE)) {
+    libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl256_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_micro_kernel_config, i_mateltwise_desc );
+  } else {
+    libxsmm_generator_transform_vnni4_to_vnni4t_16bit_avx512_vl512_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_in, i_gp_reg_out, i_gp_reg_m_loop, i_gp_reg_n_loop, i_gp_reg_mask, i_mask_reg_0, i_micro_kernel_config, i_mateltwise_desc );
+  }
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transform_vnni2_to_vnni2t_16bit_avx512_spr_microkernel( libxsmm_generated_code*                 io_generated_code,
