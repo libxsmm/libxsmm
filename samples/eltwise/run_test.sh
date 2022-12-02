@@ -71,6 +71,10 @@ cd ${HERE} && cat <<EOM | ${EXEC} -c 3- "$@"
 ./kernel_test/unary_vnni_16b_gtld.sh
 ./kernel_test/unary_vnni_08b_eqld.sh
 ./kernel_test/unary_vnni_08b_gtld.sh
+./kernel_test/unary_vnni4_to_vnni4T_16b_eqld.sh
+./kernel_test/unary_vnni4_to_vnni4T_16b_gtld.sh
+./kernel_test/unary_norm_to_vnni4_16b_eqld.sh
+./kernel_test/unary_norm_to_vnni4_16b_gtld.sh
 ./kernel_test/unary_vnnitrans_16b_eqld.sh
 ./kernel_test/unary_vnnitrans_16b_gtld.sh
 ./kernel_test/unary_vnnitrans_08b_eqld.sh
