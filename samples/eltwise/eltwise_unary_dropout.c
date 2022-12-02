@@ -417,15 +417,14 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
 }
 
 int main( int argc, char* argv[] ) {
-  char* dt_in = NULL;
-  char* dt_out = NULL;
-  libxsmm_datatype dtype_in;
-  libxsmm_datatype dtype_out;
+  char *dt_in = NULL, *dt_out = NULL, op;
+  const char* const env_check = getenv("CHECK");
+  const int check = LIBXSMM_ABS(NULL == env_check ? 1 : atoi(env_check));
   libxsmm_datatype dtype_comp = LIBXSMM_DATATYPE_F32;
-  char op;
+  libxsmm_datatype dtype_out;
+  libxsmm_datatype dtype_in;
   libxsmm_blasint bitm;
-  libxsmm_blasint M;
-  libxsmm_blasint N;
+  libxsmm_blasint M, N;
   libxsmm_blasint ldi;
   libxsmm_blasint ldo;
   int ret = EXIT_FAILURE;
@@ -444,7 +443,15 @@ int main( int argc, char* argv[] ) {
   ldi       = atoi(argv[7]);
   ldo       = atoi(argv[8]);
 
-  if (  op == 'B' && bitm == 0 ) {
+  libxsmm_init();
+  if (0 != check) {
+    const int target_archid = libxsmm_get_target_archid();
+    const int vlen32 = libxsmm_cpuid_vlen32(target_archid);
+    M = LIBXSMM_MIN(M, 4 * vlen32);
+    N = LIBXSMM_MIN(N, 4 * vlen32);
+  }
+
+  if ( op == 'B' && bitm == 0 ) {
     printf("Backward needs masks!\n");
     return ret;
   }
@@ -465,10 +472,10 @@ int main( int argc, char* argv[] ) {
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) ) ||
        ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) ) ) {
-    if (  op == 'F' ) {
+    if ( op == 'F' ) {
       printf("in: %s out: %s comp: %s forward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_dropout_fwd( bitm, M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
-    } else if (  op == 'B' ) {
+    } else if ( op == 'B' ) {
       printf("in: %s out: %s comp: %s backward dropout - M=%i, N=%i, LDI=%i, LDO=%i\n", libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo );
       ret = test_dropout_bwd( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
     } else {
