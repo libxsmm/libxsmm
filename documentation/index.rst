@@ -10,6 +10,7 @@
    PROF: Performance Profiling <libxsmm_prof.md>
    TUNE: Customization <libxsmm_tune.md>
    BE: Backend <libxsmm_be.md>
+   API: Application Programming Interface <libxsmm_api.md>
 
 .. toctree::
    :caption: Example Code
