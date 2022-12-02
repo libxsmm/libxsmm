@@ -323,9 +323,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
         echo "set -eo pipefail" >>"${TESTSCRIPT}"
+        # exact/real name of run-file is not known yet
+        EXIT_TRAP="rm -f ${REPOREMOTE}/.env.sh ${REPOREMOTE}/*.run"
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
-          echo "trap \"chmod -Rf g+u,o=u-w ${REPOREMOTE} || true\" EXIT" >>"${TESTSCRIPT}"
+          EXIT_TRAP="(${EXIT_TRAP}); (chmod -Rf g+u,o=u-w ${REPOREMOTE} || true)"
         fi
+        echo "trap \"${EXIT_TRAP}\" EXIT" >>"${TESTSCRIPT}"
         echo "${UMASK_CMD}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
