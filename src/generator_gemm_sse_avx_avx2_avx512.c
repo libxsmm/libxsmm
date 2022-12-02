@@ -1001,16 +1001,16 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     l_k_threshold = 23;
   }
 
-  if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-    l_k_pack_factor = 2;
-    l_k_blocking = 8;
-    l_k_threshold = 47;
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+    l_k_blocking = l_k_blocking*l_k_pack_factor;
+    l_k_threshold = ((l_k_threshold+1)*l_k_pack_factor)-1;
   }
 
   /* for BF8 we need to limit the unrolling */
   if (  LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
-    l_k_blocking = 2;
-    l_k_threshold = 7;
+    l_k_blocking = 8;
+    l_k_threshold = 15;
   }
 
   /* set up architecture dependent compute micro kernel generator */
