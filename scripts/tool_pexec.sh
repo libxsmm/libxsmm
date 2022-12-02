@@ -39,6 +39,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
+      echo "       -k|--ninner N [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
       echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
@@ -66,8 +67,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       CONSUMED=$((CONSUMED|1))
       NP=$2
       shift 2;;
-    -s|--nscale)
+    -k|--ninner)
       CONSUMED=$((CONSUMED|2))
+      NI=$2
+      shift 2;;
+    -s|--nscale)
+      CONSUMED=$((CONSUMED|4))
       SP=$2
       shift 2;;
     *)
@@ -76,6 +81,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         NP=$1
       elif [ "0" = "$((CONSUMED&2))" ]; then
         CONSUMED=$((CONSUMED|2))
+        NI=$1
+      elif [ "0" = "$((CONSUMED&4))" ]; then
+        CONSUMED=$((CONSUMED|4))
         SP=$1
       else
         1>&2 echo "ERROR: found spurious command line argument!"
@@ -84,10 +92,13 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       shift 1;;
     esac
   done
+  NIFIX=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
-  CUT=${PEXEC_CT:-${CUT}}; NP=${PEXEC_NP:-${NP}}; SP=${PEXEC_SP:-${SP}}
-  NTH=${PEXEC_NT:-${NTH}}; MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
+  NI=${PEXEC_NI:-${NI}}; if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS}; else NIFIX=1; fi
+  NP=${PEXEC_NP:-${NP}}; NI=${PEXEC_NI:-${NI}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
+  CUT=${PEXEC_CT:-${CUT}}; NTH=${PEXEC_NT:-${NTH}}
+  MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
   COUNTER=0
   while read -r LINE; do
     if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
@@ -118,23 +129,51 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     elif [ "0" != "$((1<SP))" ]; then
       NP=$((NP*SP))
     fi
+    NQ=${NP}
     if [ "${NT}" ] && [ "0" != "$((NP<=NT))" ]; then
-      if [ "${OMP_NUM_THREADS}" ] && [ "0" != "$((OMP_NUM_THREADS<=NT))" ]; then
-        NP=$(((NP+OMP_NUM_THREADS-1)/OMP_NUM_THREADS))
+      if [ "${NJ}" ] && [ "0" != "$((NJ<=NT))" ]; then
+        NP=$(((NP+NJ-1)/NJ))
       elif [ "0" != "$((COUNTER<NP))" ]; then
-        export OMP_NUM_THREADS=$((NT/COUNTER))
+        NJ=$((NT/COUNTER))
       else
-        export OMP_NUM_THREADS=$((NT/NP))
+        NJ=$((NT/NP))
       fi
     else
-      export OMP_NUM_THREADS=1
+      NJ=1
     fi
   else
-    export OMP_NUM_THREADS=1
-    NP=0
+    NP=0; NQ=0; NJ=1
+  fi
+  # sanitize outer parallelism
+  if [ "0" != "$((COUNTER<NP))" ]; then NP=${COUNTER}; fi
+  # sanitize inner parallelism
+  if [ "0" != "$((0<NP))" ]; then
+    NK=$(((NQ+NP-1)/NP))
+  else
+    NK=NJ
+  fi
+  # select inner parallelism
+  export OMP_NUM_THREADS=1
+  if [ "1" != "${NK}" ] && [ "/dev/null" = "${LOG}" ]; then
+    if [ "${NIFIX}" ] && [ "0" != "${NIFIX}" ]; then
+      if [ "0" != "$((0<NI))" ]; then
+        export OMP_NUM_THREADS=$(((NK+NJ-1)/NJ))
+      elif [ "0" = "${NI}" ]; then
+        NJ=$(((NK+NJ-1)/NJ))
+      else # NI<0
+        NJ=${NQ}; NP=1
+      fi
+    else
+      export OMP_NUM_THREADS=${NK}
+    fi
   fi
   if [ "0" != "$((1!=NP))" ]; then
     unset OMP_PROC_BIND GOMP_CPU_AFFINITY KMP_AFFINITY
+  fi
+  if [ "1" != "${NJ}" ]; then
+    export PEXEC_NI=${NJ}
+  else
+    unset PEXEC_NI
   fi
   if [[ ${LOG} != /dev/* ]]; then
     LOG_OUTER=/dev/stdout
@@ -194,7 +233,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
         | tr "[:lower:]" "[:upper:]") "
       fi
     fi
-    1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
+    1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}x${NJ}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
   echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
   RESULT=$?

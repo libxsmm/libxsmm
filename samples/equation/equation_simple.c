@@ -348,6 +348,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  compute_dt = LIBXSMM_DATATYPE_F32;
 
+  libxsmm_init();
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
@@ -396,9 +397,8 @@ int main( int argc, char* argv[] ) {
   hf8_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*N*ld,   64);
   hf8_eqn_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*N*ld,   64);
 
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
   set_in_out_compute_dt(datatype_mode, &in_dt, &out_dt, &compute_dt);
+  libxsmm_matdiff_clear(&norms_out);
 
   if (in_dt == LIBXSMM_DATATYPE_BF16 || out_dt == LIBXSMM_DATATYPE_BF16) {
     error_bound = 0.001;

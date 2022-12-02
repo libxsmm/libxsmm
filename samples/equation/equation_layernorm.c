@@ -94,8 +94,7 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
   }
 #else
   for (s2 = 0; s2 < S2; s2++) {
-    float m = 0;
-    float v = 0;
+    float m = 0, v = 0, s, b;
     float c = (float)(1.0 / (S1*S3));
     for (s1 = 0; s1 < S1; s1++) {
       for ( s3 = 0; s3 < S3; s3++) {
@@ -109,8 +108,8 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
     v = 1.0f / ((float)sqrt(v+eps));
     mean[s2] = m;
     var[s2] = v;
-    float s = v;
-    float b = -1.f * v * m;
+    s = v;
+    b = -1.f * v * m;
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
         float res;
@@ -285,8 +284,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
   }
 #else
   for (s2 = 0; s2 < S2; s2++) {
-    float m = 0;
-    float v = 0;
+    float m = 0, v = 0, s, b;
     float c = (float)(1.0 / (S1*S3));
     for (s1 = 0; s1 < S1; s1++) {
       for ( s3 = 0; s3 < S3; s3++) {
@@ -300,8 +298,8 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
     v = 1.0f / ((float)sqrt(v+eps));
     mean[s2] = m;
     var[s2] = v;
-    float s = v;
-    float b = -1.f * v * m;
+    s = v;
+    b = -1.f * v * m;
     for (s1 = 0; s1 < S1; s1++) {
       for (s3 = 0; s3 < S3; s3++) {
         LIBXSMM_VLA_ACCESS(3, out, s1, s2, s3, S2, S3) = (LIBXSMM_VLA_ACCESS(3, inp, s1, s2, s3, S2, S3) * s + b) * LIBXSMM_VLA_ACCESS(2, gamma, s1, s3, S3) + LIBXSMM_VLA_ACCESS(2, beta, s1, s3, S3);
@@ -631,6 +629,9 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_meqn_arg_shape arg_shape_out;
 
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
+
   if ( argc > 1 ) S1 = atoi(argv[1]);
   if ( argc > 2 ) S2 = atoi(argv[2]);
   if ( argc > 3 ) S3 = atoi(argv[3]);
@@ -642,7 +643,7 @@ int main( int argc, char* argv[] ) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
     if (1 == S1 && 1 == S3) {
-      error_bound = LIBXSMM_MAX(0.001, error_bound);
+      error_bound = LIBXSMM_MAX(0.005, error_bound);
     }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
@@ -678,9 +679,6 @@ int main( int argc, char* argv[] ) {
   bf16_gamma = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_beta = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S3,   2097152);
   bf16_eqn_out  = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*S1*S2*S3,   2097152);
-
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
 
   /* Initializing arrays */
   for ( i = 0; i < S1*S2*S3; ++i ) {

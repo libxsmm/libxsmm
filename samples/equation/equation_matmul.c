@@ -19,10 +19,12 @@
 # include <omp.h>
 #endif
 
+LIBXSMM_INLINE
 float fsigmoid(float x) {
   return (LIBXSMM_TANHF(x/2.0f) + 1.0f)/2.0f;
 }
 
+LIBXSMM_INLINE
 float upconvert_bf16(libxsmm_bfloat16 x) {
   libxsmm_bfloat16_f32 bf16_hp;
   bf16_hp.i[1] = x;
@@ -30,10 +32,12 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_INLINE
 float gelu(float x) {
   return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
+LIBXSMM_INLINE
 void gemm_fp32(float *A, float *B, float *C, float beta,
               libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
               libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -50,7 +54,7 @@ void gemm_fp32(float *A, float *B, float *C, float beta,
   for (j = 0; j < n; j++) {
     for (i = 0; i < m; i++) {
       if (beta == 0) {
-        C[i + j * ldc] = 0.0;
+        C[i + j * ldc] = 0.f;
       }
       for (br = 0; br < br_count; br++) {
         for (l = 0; l < k; l++) {
@@ -61,6 +65,7 @@ void gemm_fp32(float *A, float *B, float *C, float beta,
   }
 }
 
+LIBXSMM_INLINE
 void gemm_bf16(libxsmm_bfloat16 *A, libxsmm_bfloat16 *B, libxsmm_bfloat16 *C, libxsmm_bfloat16 beta,
               libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
               libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -76,7 +81,7 @@ void gemm_bf16(libxsmm_bfloat16 *A, libxsmm_bfloat16 *B, libxsmm_bfloat16 *C, li
 
   for (j = 0; j < n; j++) {
     for (i = 0; i < m; i++) {
-      float acc = 0.0;
+      float acc = 0.f;
       if (beta == 0) {
         C[i + j * ldc] = 0;
       }
@@ -91,11 +96,13 @@ void gemm_bf16(libxsmm_bfloat16 *A, libxsmm_bfloat16 *B, libxsmm_bfloat16 *C, li
   }
 }
 
+LIBXSMM_INLINE
 void eqn0_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
               float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb,
               float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc,
-              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd ) {
+              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd,
+              float *tmp) {
  /*
   *
   * Result = gelu(A+B) * tanh(C x D)
@@ -103,7 +110,8 @@ void eqn0_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
+  LIBXSMM_UNUSED(m_A); LIBXSMM_UNUSED(m_B); LIBXSMM_UNUSED(m_D);
+  LIBXSMM_UNUSED(n_A); LIBXSMM_UNUSED(n_B);
 
   gemm_fp32(C, D, tmp, 0,
             m_C, n_D, n_C,
@@ -116,6 +124,7 @@ void eqn0_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   }
 }
 
+LIBXSMM_INLINE
 void eqn1_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
               float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
@@ -128,8 +137,10 @@ void eqn1_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   */
 
   libxsmm_blasint i, j;
+  LIBXSMM_UNUSED(m_A); LIBXSMM_UNUSED(m_B); LIBXSMM_UNUSED(m_D);
+  LIBXSMM_UNUSED(n_A); LIBXSMM_UNUSED(n_B);
 
-  gemm_fp32(C, D, B, 1.0,
+  gemm_fp32(C, D, B, 1.f,
             m_C, n_D, n_C,
             ldc, ldd, ldb,
             brgemm_count, stride_a, stride_b);
@@ -141,11 +152,13 @@ void eqn1_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   }
 }
 
+LIBXSMM_INLINE
 void eqn2_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
               float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
               float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc, libxsmm_blasint stride_a,
-              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b ) {
+              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b,
+              float *tmp) {
  /*
   *
   * Result = gelu(A) * tanh( Sum Ci x Di )
@@ -153,7 +166,9 @@ void eqn2_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
+  LIBXSMM_UNUSED(m_A); LIBXSMM_UNUSED(m_B); LIBXSMM_UNUSED(m_D);
+  LIBXSMM_UNUSED(n_A); LIBXSMM_UNUSED(n_B); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(B);
 
   gemm_fp32(C, D, tmp, 0,
             m_C, n_D, n_C,
@@ -167,16 +182,20 @@ void eqn2_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   }
 }
 
+LIBXSMM_INLINE
 void eqn3_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
               float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
               float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc, libxsmm_blasint stride_a,
-              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b ) {
+              float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b,
+              float *tmp) {
 
   /* Result = Sum(Ci x Di) + gelu(A) */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
+  LIBXSMM_UNUSED(m_A); LIBXSMM_UNUSED(m_B); LIBXSMM_UNUSED(m_D);
+  LIBXSMM_UNUSED(n_A); LIBXSMM_UNUSED(n_B); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(B);
 
   gemm_fp32(C, D, tmp, 0,
             m_C, n_D, n_C,
@@ -190,17 +209,22 @@ void eqn3_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   }
 }
 
+LIBXSMM_INLINE
 void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld,
               float *A, libxsmm_blasint m_A, libxsmm_blasint n_A, libxsmm_blasint lda,
               float *B, libxsmm_blasint m_B, libxsmm_blasint n_B, libxsmm_blasint ldb, libxsmm_blasint brgemm_count,
               float *C, libxsmm_blasint m_C, libxsmm_blasint n_C, libxsmm_blasint ldc, libxsmm_blasint stride_a,
               float *D, libxsmm_blasint m_D, libxsmm_blasint n_D, libxsmm_blasint ldd, libxsmm_blasint stride_b,
-              float *colbias, int relu_sigmoid_fusion_mode ) {
+              float *colbias, int relu_sigmoid_fusion_mode,
+              float *tmp) {
 
   /* Result =  sigmoid( Sum(Ci x Di) + colbias + 1.0) */
 
   libxsmm_blasint i, j;
-  float tmp[m_C * n_D];
+  LIBXSMM_UNUSED(m_A); LIBXSMM_UNUSED(m_B); LIBXSMM_UNUSED(m_D);
+  LIBXSMM_UNUSED(n_A); LIBXSMM_UNUSED(n_B);
+  LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B);
 
   gemm_fp32(C, D, tmp, 0,
             m_C, n_D, n_C,
@@ -210,19 +234,19 @@ void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
   if (relu_sigmoid_fusion_mode == 0) {
     for (j = 0; j < n; j++) {
       for (i = 0; i < m; i++) {
-        Out[i + j * ld] = tmp[j *m_C + i] + colbias[i] + 1.0;
+        Out[i + j * ld] = tmp[j *m_C + i] + colbias[i] + 1.f;
       }
     }
   } else if (relu_sigmoid_fusion_mode == 1) {
     for (j = 0; j < n; j++) {
       for (i = 0; i < m; i++) {
-        Out[i + j * ld] = LIBXSMM_MAX(0.0, tmp[j *m_C + i] + colbias[i] + 1.0);
+        Out[i + j * ld] = LIBXSMM_MAX(0.f, tmp[j *m_C + i] + colbias[i] + 1.f);
       }
     }
   } else if (relu_sigmoid_fusion_mode == 2) {
     for (j = 0; j < n; j++) {
       for (i = 0; i < m; i++) {
-        Out[i + j * ld] = fsigmoid(tmp[j *m_C + i] + colbias[i] + 1.0);
+        Out[i + j * ld] = fsigmoid(tmp[j *m_C + i] + colbias[i] + 1.f);
       }
     }
   }
@@ -231,29 +255,41 @@ void eqn4_f32(float *Out, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint 
 int main( int argc, char* argv[] ) {
   libxsmm_blasint my_eqn0, my_eqn1, my_eqn2, my_eqn3, my_eqn4, my_eqn5;
   libxsmm_matrix_eqn_function func0, func1, func2, func3, func4, func5;
-  libxsmm_blasint i, j, k, l, it;
+  libxsmm_blasint i, j, k, l, it, i2;
   libxsmm_matrix_eqn_param eqn_param;
   unsigned long long l_start, l_end;
   double l_total = 0, l_total2 = 0;
   libxsmm_matdiff_info norms_out;
-  int iters = 100;
-  int datatype_mode = 0;
-  libxsmm_datatype  in_dt = LIBXSMM_DATATYPE_F32;
-  libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
-  libxsmm_blasint m_i[128], n_i[128], ld_i[128], blocks_i[128];
-  libxsmm_meqn_arg_shape  arg_shape[128];
+  int datatype_mode = 0, iters = 100;
+  libxsmm_datatype in_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_datatype out_dt = LIBXSMM_DATATYPE_F32;
+  libxsmm_blasint m_i[128] = { 0 };
+  libxsmm_blasint n_i[128] = { 0 };
+  libxsmm_blasint ld_i[128] = { 0 };
+  libxsmm_blasint blocks_i[128] = { 0 };
+  libxsmm_meqn_arg_shape arg_shape[128];
+  libxsmm_meqn_arg_shape colbias_shape_bf16, colbias_shape_fused;
   libxsmm_matrix_arg_attributes arg_set_attr0, arg_set_attr1;
   libxsmm_matrix_arg_attributes arg_singular_attr;
-  float *arg[128];
+  float *arg[128] = { NULL }, *tmp = NULL, *ref_arr = NULL, *out_arr = NULL;
+  float *colbias_f32 = NULL, *colbias_f32_fused = NULL;
+  float *copy_B = NULL, *orig_B = NULL;
+  libxsmm_bfloat16 *copy_C = NULL, *orig_C = NULL, *colbias = NULL;
+  libxsmm_bfloat16 *bf16_ref_arr = NULL, *bf16_out_arr = NULL;
+  libxsmm_bfloat16* bf16_arg[128] = { NULL };
   libxsmm_matrix_arg arg_array[128];
-  libxsmm_bfloat16 *bf16_arg[128];
   libxsmm_matrix_arg bf16_arg_array[128];
   libxsmm_matrix_eqn_arg_metadata arg_metadata[128];
   libxsmm_matrix_eqn_op_metadata  op_metadata[128];
-  libxsmm_blasint n_tensors, ref_id;
+  libxsmm_blasint n_tensors, ref_id, block_size;
   libxsmm_matrix_op_arg op_arg_arr[9];
   int relu_sigmoid_fusion_mode = 0;
-  unsigned long long  brcount;
+  unsigned long long brcount;
+  LIBXSMM_UNUSED(argc);
+
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
+
   i = 1;
   n_tensors = atoi(argv[i++]);
   ref_id = n_tensors;
@@ -308,13 +344,13 @@ int main( int argc, char* argv[] ) {
   }
   bf16_arg[ref_id] = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*n_i[n_tensors-1]*ld_i[n_tensors-1]*blocks_i[n_tensors-1],   64);
 
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
+  assert(4 <= n_tensors);
+  tmp = libxsmm_malloc(m_i[2] * m_i[3]);
 
   for (k = 0; k < n_tensors; k++) {
     float *cur_arr = arg[k];
     libxsmm_bfloat16 *bf16_cur_arr = bf16_arg[k];
-    libxsmm_blasint block_size = ld_i[k]*n_i[k];
+    block_size = ld_i[k]*n_i[k];
     for ( i = 0; i < n_i[k]; i++ ) {
       for ( j = 0; j < ld_i[k]; j++ ) {
         for ( l = 0; l < blocks_i[k]; l++) {
@@ -329,11 +365,11 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-  float *ref_arr = arg[ref_id];
-  float *out_arr = arg[n_tensors-1];
-  libxsmm_bfloat16 *bf16_ref_arr = bf16_arg[ref_id];
-  libxsmm_bfloat16 *bf16_out_arr = bf16_arg[n_tensors-1];
-  libxsmm_blasint block_size = ld_i[n_tensors-1]*n_i[n_tensors-1];
+  ref_arr = arg[ref_id];
+  out_arr = arg[n_tensors-1];
+  bf16_ref_arr = bf16_arg[ref_id];
+  bf16_out_arr = bf16_arg[n_tensors-1];
+  block_size = ld_i[n_tensors-1]*n_i[n_tensors-1];
   for ( i = 0; i < n_i[n_tensors-1]; i++ ) {
     for ( j = 0; j < ld_i[n_tensors-1]; j++ ) {
       for ( l = 0; l < blocks_i[n_tensors-1]; l++) {
@@ -393,7 +429,7 @@ int main( int argc, char* argv[] ) {
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1],
               arg[2], m_i[2], n_i[2], ld_i[2],
-              arg[3], m_i[3], n_i[3], ld_i[3] );
+              arg[3], m_i[3], n_i[3], ld_i[3], tmp );
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
@@ -432,7 +468,7 @@ int main( int argc, char* argv[] ) {
               arg[0], m_i[0], n_i[0], ld_i[0],
               arg[1], m_i[1], n_i[1], ld_i[1],
               arg[2], m_i[2], n_i[2], ld_i[2],
-              arg[3], m_i[3], n_i[3], ld_i[3] );
+              arg[3], m_i[3], n_i[3], ld_i[3], tmp );
   } else if (datatype_mode == 2) {
   } else if (datatype_mode == 3) {
   }
@@ -443,7 +479,7 @@ int main( int argc, char* argv[] ) {
                 arg[0], m_i[0], n_i[0], ld_i[0],
                 arg[1], m_i[1], n_i[1], ld_i[1],
                 arg[2], m_i[2], n_i[2], ld_i[2],
-                arg[3], m_i[3], n_i[3], ld_i[3] );
+                arg[3], m_i[3], n_i[3], ld_i[3], tmp );
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -465,8 +501,8 @@ int main( int argc, char* argv[] ) {
   printf("\n\nNow testing equation 1...\n\n");
 
   /* Create copy of B since this is now Inout  */
-  float *copy_B = (float*) libxsmm_aligned_malloc( sizeof(float)*n_i[1]*ld_i[1]*blocks_i[1],   64);
-  float *orig_B = arg[1];
+  copy_B = (float*) libxsmm_aligned_malloc( sizeof(float)*n_i[1]*ld_i[1]*blocks_i[1],   64);
+  orig_B = arg[1];
   for ( i = 0; i < n_i[1]; i++ ) {
     for ( j = 0; j < ld_i[1]; j++ ) {
       for ( l = 0; l < blocks_i[1]; l++) {
@@ -588,12 +624,11 @@ int main( int argc, char* argv[] ) {
   printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
 
   if (datatype_mode == 0) {
-    printf("\n\nNow testing equation with fused avx512 GEMM...\n\n");
     /* sigmoid( Sum(Ci x Di) + colbias + 1.0) */
-    float *colbias_f32_fused = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
-    memcpy(colbias_f32_fused, arg[2], m_i[2] * sizeof(float));
+    colbias_f32_fused = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
 
-    libxsmm_meqn_arg_shape  colbias_shape_fused;
+    printf("\n\nNow testing equation with fused avx512 GEMM...\n\n");
+    memcpy(colbias_f32_fused, arg[2], m_i[2] * sizeof(float));
     colbias_shape_fused.m = m_i[2];
     colbias_shape_fused.n = 1;
     colbias_shape_fused.ld = m_i[2];
@@ -630,7 +665,8 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+        colbias_f32_fused, relu_sigmoid_fusion_mode, tmp );
 
     /* compare */
     printf("##########################################\n");
@@ -652,7 +688,8 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+          colbias_f32_fused, relu_sigmoid_fusion_mode, tmp );
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -663,7 +700,8 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32_fused, relu_sigmoid_fusion_mode);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+            colbias_f32_fused, relu_sigmoid_fusion_mode, tmp );
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
@@ -702,14 +740,13 @@ int main( int argc, char* argv[] ) {
     eqn_param.ops_args = op_arg_arr;
 
     /* Create copy of C in VNNI format */
-    libxsmm_bfloat16 *copy_C = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*n_i[2]*ld_i[2]*blocks_i[2],   64);
-    libxsmm_bfloat16 *orig_C = bf16_arg[2];
-    int ___i = 0;
+    copy_C = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*n_i[2]*ld_i[2]*blocks_i[2],   64);
+    orig_C = bf16_arg[2];
     for ( l = 0; l < blocks_i[2]; l++) {
       for ( i = 0; i < n_i[2]/2; i++ ) {
         for ( j = 0; j < m_i[2]; j++ ) {
-          for ( ___i = 0; ___i < 2; ___i++ ) {
-            copy_C[___i + j*2 + i * ld_i[2] * 2 + l * ld_i[2] * n_i[2]] = orig_C[j + (i*2+___i) * ld_i[2] + l * ld_i[2] * n_i[2]];
+          for ( i2 = 0; i2 < 2; i2++ ) {
+            copy_C[i2 + j*2 + i * ld_i[2] * 2 + l * ld_i[2] * n_i[2]] = orig_C[j + (i*2+i2) * ld_i[2] + l * ld_i[2] * n_i[2]];
           }
         }
       }
@@ -738,7 +775,7 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
 
     libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
 
@@ -762,7 +799,7 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -773,7 +810,7 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
@@ -833,7 +870,7 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
 
     libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
 
@@ -857,7 +894,7 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -868,7 +905,7 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3]);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], tmp );
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
@@ -892,12 +929,11 @@ int main( int argc, char* argv[] ) {
 
     /* sigmoid( Sum(Ci x Di) + colbias + 1.0) */
 
-    libxsmm_bfloat16 *colbias = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*m_i[2],   64);
-    float *colbias_f32 = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
+    colbias = (libxsmm_bfloat16*) libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*m_i[2],   64);
+    colbias_f32 = (float*) libxsmm_aligned_malloc( sizeof(float)*m_i[2],   64);
     libxsmm_rne_convert_fp32_bf16( arg[2], colbias, m_i[2] );
     libxsmm_convert_bf16_f32(colbias, colbias_f32, m_i[2] );
 
-    libxsmm_meqn_arg_shape  colbias_shape_bf16;
     colbias_shape_bf16.m = m_i[2];
     colbias_shape_bf16.n = 1;
     colbias_shape_bf16.ld = m_i[2];
@@ -934,7 +970,8 @@ int main( int argc, char* argv[] ) {
         arg[0], m_i[0], n_i[0], ld_i[0],
         arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
         arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
+        arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+        colbias_f32, relu_sigmoid_fusion_mode, tmp );
 
     libxsmm_convert_bf16_f32( bf16_arg[n_tensors-1], arg[n_tensors-1], ld_i[n_tensors-1] * n_i[n_tensors-1] * blocks_i[n_tensors-1] );
 
@@ -958,7 +995,8 @@ int main( int argc, char* argv[] ) {
           arg[0], m_i[0], n_i[0], ld_i[0],
           arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
           arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
+          arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+          colbias_f32, relu_sigmoid_fusion_mode, tmp );
     } else if (datatype_mode == 2) {
     } else if (datatype_mode == 3) {
     }
@@ -969,7 +1007,8 @@ int main( int argc, char* argv[] ) {
             arg[0], m_i[0], n_i[0], ld_i[0],
             arg[1], m_i[1], n_i[1], ld_i[1], blocks_i[2],
             arg[2], m_i[2], n_i[2], ld_i[2], ld_i[2] * n_i[2],
-            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3], colbias_f32, relu_sigmoid_fusion_mode);
+            arg[3], m_i[3], n_i[3], ld_i[3], ld_i[3] * n_i[3],
+            colbias_f32, relu_sigmoid_fusion_mode, tmp );
       } else if (datatype_mode == 2) {
       } else if (datatype_mode == 3) {
       }
@@ -988,6 +1027,19 @@ int main( int argc, char* argv[] ) {
     printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
     printf("Speedup (%d iters) is %.5g\n", iters, l_total/l_total2);
   }
+
+  for (i = 0; i < n_tensors; i++) {
+    libxsmm_free(bf16_arg[i]);
+    libxsmm_free(arg[i]);
+  }
+  libxsmm_free(bf16_arg[ref_id]);
+  libxsmm_free(colbias_f32_fused);
+  libxsmm_free(colbias_f32);
+  libxsmm_free(colbias);
+  libxsmm_free(arg[ref_id]);
+  libxsmm_free(copy_B);
+  libxsmm_free(copy_C);
+  libxsmm_free(tmp);
 
   return 0;
 }

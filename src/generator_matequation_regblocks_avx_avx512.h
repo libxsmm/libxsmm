@@ -29,6 +29,25 @@ void libxsmm_generator_copy_input_args(libxsmm_generated_code*        io_generat
     unsigned int                        input_reg);
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_copy_opargs(libxsmm_generated_code*        io_generated_code,
+    libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
+    libxsmm_matequation_kernel_config   *i_micro_kernel_config,
+    libxsmm_matrix_eqn_elem             *cur_node,
+    unsigned int                        *oparg_id,
+    libxsmm_matrix_eqn_tmp_info         *oparg_info,
+    unsigned int                        input_reg);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_adjust_opargs_addr(libxsmm_generated_code*        io_generated_code,
+    const libxsmm_meqn_descriptor       *i_mateqn_desc,
+    libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
+    libxsmm_matequation_kernel_config   *i_micro_kernel_config,
+    unsigned int                        i_adjust_instr,
+    unsigned int                        i_adjust_amount,
+    unsigned int                        i_adjust_type,
+    libxsmm_matrix_eqn_tmp_info         *oparg_info);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io_generated_code,
     const libxsmm_meqn_descriptor       *i_mateqn_desc,
     libxsmm_matequation_gp_reg_mapping  *i_gp_reg_mapping,
@@ -37,6 +56,23 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
     unsigned int                        i_adjust_amount,
     unsigned int                        i_adjust_type,
     libxsmm_matrix_eqn_arg_v2           *arg_info);
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_mateqn_dump_2d_reg_block( libxsmm_generated_code*          io_generated_code,
+                                                 libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
+                                                 libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+                                                 const libxsmm_meqn_descriptor*          i_meqn_desc,
+                                                 unsigned int                            i_vlen,
+                                                 unsigned int                            i_m,
+                                                 unsigned int                            i_ld,
+                                                 unsigned int                            i_reg_block_id,
+                                                 unsigned int                            i_m_blocking,
+                                                 unsigned int                            i_n_blocking,
+                                                 unsigned int                            i_mask_last_m_chunk,
+                                                 unsigned int                            i_mask_reg_in,
+                                                 unsigned int                            i_mask_reg_out,
+                                                 libxsmm_datatype                        i_regblock_dtype,
+                                                 unsigned int                            i_gp_reg_out );
 
 LIBXSMM_API_INTERN
 void libxsmm_configure_mateqn_microkernel_loops( libxsmm_generated_code*                 io_generated_code,

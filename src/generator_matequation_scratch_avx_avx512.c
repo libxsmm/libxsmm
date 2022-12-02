@@ -682,6 +682,25 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg );
         }
 
+        /* If DUMP operator set secondary output in stack param struct */
+        if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_DUMP)) {
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              i_gp_reg_mapping->gp_reg_param_struct,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              0,
+              temp_reg,
+              0 );
+           libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_micro_kernel_config->alu_mov_instruction,
+              temp_reg,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              cur_op->info.u_op.op_arg_pos*32,
+              temp_reg,
+              0 );
+           libxsmm_generator_meqn_setval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, temp_reg);
+        }
+
         /* Prepare descriptor  */
         libxsmm_generator_matequation_create_unary_descriptor( &blob, cur_op, &meltw_desc, in_precision, out_precision );
       } else if (cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) {

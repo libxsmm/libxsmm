@@ -34,7 +34,13 @@ do
   echo ${M} ${N} ${LD}
   for PREC in ${EQN_PREC_LIST}
   do
-    ./equation_relu ${M} ${N} ${LD} ${PREC}
+    if [ ! "${PEXEC_NI}" ]; then
+      ./equation_relu ${M} ${N} ${LD} ${PREC}
+    else
+      ./equation_relu ${M} ${N} ${LD} ${PREC} &
+      if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
+      if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+    fi
   done
 done
 rm ${TESTFILE1}

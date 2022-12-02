@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <equation_common.h>
+#include "equation_common.h"
 
 LIBXSMM_INLINE
 void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float *arg0, float *arg1, float *arg2, unsigned char* relu_mask, float *out) {
@@ -29,7 +29,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       res = 1.0f + (Arg0 - Arg1) + Arg2;
       /* Set relu mask */
       relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res <= 0.0f ) ? 0x0 : (1 << (j%8)) );
-      /* Applu relu  */
+      /* Apply relu  */
       res = (res < 0.0f) ? 0.0f : res;
       out[(i*ld)+j] = res;
     }
@@ -70,6 +70,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_datatype  out_dt = LIBXSMM_DATATYPE_F32;
   libxsmm_datatype  compute_dt = LIBXSMM_DATATYPE_F32;
 
+  libxsmm_init();
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
   if ( argc > 3 ) ld = atoi(argv[3]);
@@ -111,9 +112,8 @@ int main( int argc, char* argv[] ) {
   hf8_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*N*ld,   64);
   hf8_eqn_out  = (libxsmm_hfloat8*) libxsmm_aligned_malloc( sizeof(libxsmm_hfloat8)*N*ld,   64);
 
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
   set_in_out_compute_dt(datatype_mode, &in_dt, &out_dt, &compute_dt);
+  libxsmm_matdiff_clear(&norms_out);
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {

@@ -108,10 +108,10 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
   libxsmm_cpuid_model(cpuid_info.model, &model_size);
   LIBXSMM_ASSERT(0 != model_size || '\0' == *cpuid_info.model);
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == result) { /* avoid redetecting features */
-    void (*const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
 # if defined(LIBXSMM_CPUID_ARM_BASELINE)
     result = LIBXSMM_CPUID_ARM_BASELINE;
 # else
+    void (* const handler)(int) = signal(SIGILL, internal_cpuid_arm_sigill);
 #   if defined(__APPLE__) && defined(__arm64__)
     result = LIBXSMM_AARCH64_APPL_M1;
 #   else

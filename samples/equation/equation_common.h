@@ -8,6 +8,9 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_EQUATION_COMMON_H
+#define LIBXSMM_EQUATION_COMMON_H
+
 #include <libxsmm.h>
 
 #define EPS 1.19209290e-03F
@@ -100,13 +103,12 @@ void set_in_out_compute_dt(int datatype_mode, libxsmm_datatype *res_in_dt, libxs
 
 LIBXSMM_INLINE
 void create_unique_random_array(unsigned long long *inout_array, int n) {
-  if (n > 1)
-  {
+  if (0 < n) {
     int i;
     for (i = 0; i < n; i++) {
       inout_array[i] = i;
     }
-    for (i = 0; i < n - 1; i++) {
+    for (i = 0; i < (n - 1); i++) {
       int j = i + rand() / (RAND_MAX / (n - i) + 1);
       unsigned long long t = inout_array[j];
       inout_array[j] = inout_array[i];
@@ -223,4 +225,4 @@ float gelu(float x) {
   return (LIBXSMM_ERFF(x/LIBXSMM_SQRTF(2.0f)) + 1.0f)*0.5f*x;
 }
 
-
+#endif /*LIBXSMM_EQUATION_COMMON_H*/

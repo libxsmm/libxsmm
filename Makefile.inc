@@ -155,7 +155,7 @@ OPT := $(patsubst O%,%,$(OPT))
 OPTFLAGS ?= -O$(OPT)
 OPTFLAG1 ?= -O$(shell echo "$$((1<$(OPT)?1:$(OPT)))")
 
-# Kind of Clang-analysis (thread, address, ...)
+# Kind of Clang/GCC based analysis (thread, address, ...)
 SANITIZE ?= $(NULL)
 
 # VMAX=0 (default): Prefer default vector size
@@ -1462,8 +1462,18 @@ else # GCC assumed
         CXXFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
         CFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
         FCFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
-        LDFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread) #$(call ldclib,$(LD),$(SLDFLAGS),tsan)
+        LDFLAGS += -fsanitize=$(if $(SANITIZE),$(SANITIZE),thread)
+        #LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),tsan)
       endif
+    endif
+    ifneq (,$(SANITIZE))
+    ifneq (,$(filter 1 2,$(SYM)))
+      CXXFLAGS += -fsanitize=$(SANITIZE)
+      CFLAGS += -fsanitize=$(SANITIZE)
+      FCFLAGS += -fsanitize=$(SANITIZE)
+      LDFLAGS += -fsanitize=$(SANITIZE)
+      #LDFLAGS += $(call ldclib,$(LD),$(SLDFLAGS),tsan)
+    endif
     endif
   endif
   ifeq (0,$(COMPATIBLE))

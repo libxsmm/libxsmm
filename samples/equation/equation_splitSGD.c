@@ -125,6 +125,7 @@ int main( int argc, char* argv[] ) {
   int N = 64;
   int ld = 64;
   /*unsigned int correct = 1;*/
+  libxsmm_meqn_arg_shape arg_shape_out;
   libxsmm_matrix_eqn_param eqn_param;
   libxsmm_matrix_arg arg_array[4];
   libxsmm_matdiff_info norms_out;
@@ -133,7 +134,8 @@ int main( int argc, char* argv[] ) {
   double l_total = 0, l_total2 = 0;
   int iters = 100;
 
-  libxsmm_meqn_arg_shape arg_shape_out;
+  libxsmm_init();
+  libxsmm_matdiff_clear(&norms_out);
 
   if ( argc > 1 ) M = atoi(argv[1]);
   if ( argc > 2 ) N = atoi(argv[2]);
@@ -153,10 +155,6 @@ int main( int argc, char* argv[] ) {
     f32_eqn_out[i] = (float)libxsmm_rng_f64();
   }
   memcpy(f32_ref_out, f32_eqn_out, ld * N * sizeof(float));
-
-
-  libxsmm_init();
-  libxsmm_matdiff_clear(&norms_out);
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {

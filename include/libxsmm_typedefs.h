@@ -78,7 +78,8 @@
   (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
   (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
-  0/*invalid*/)))))))))))
+  (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
+    0/*invalid*/))))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -297,7 +298,8 @@ typedef enum libxsmm_meltw_unary_type {
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADN_MOD4          = 59,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_PADNM_MOD4         = 60,
   LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM      = 61,
-  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2     = 62
+  LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2     = 62,
+  LIBXSMM_MELTW_TYPE_UNARY_DUMP                         = 63
 } libxsmm_meltw_unary_type;
 
 typedef enum libxsmm_meltw_binary_flags {
