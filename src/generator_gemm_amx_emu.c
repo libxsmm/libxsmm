@@ -1334,7 +1334,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
-  unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in;
+  unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in, l_k_pack_factor = 2;
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
 
@@ -1442,9 +1442,16 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
 #endif
 
   /* Find K blocking  */
-  k_blocking = 16;
+  if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+    k_blocking = 32;
+    l_k_pack_factor = 2;
+  } else if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
+    k_blocking = 64;
+    l_k_pack_factor = 4;
+  }
+
   while (i_xgemm_desc->k % k_blocking != 0) {
-    k_blocking--;
+    k_blocking -= l_k_pack_factor;
   }
 
   /* First init all tiles with default value 16 */
@@ -1473,17 +1480,17 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
     }
   }
   /* Configure tiles for A */
-  libxsmm_setup_tile(4, m_blocking_info[0].sizes[0], k_blocking, &tile_config);
+  libxsmm_setup_tile(4, m_blocking_info[0].sizes[0], k_blocking/l_k_pack_factor, &tile_config);
   if (m_tiles == 2) {
-    libxsmm_setup_tile(5, m_blocking_info[0].sizes[1], k_blocking, &tile_config);
+    libxsmm_setup_tile(5, m_blocking_info[0].sizes[1], k_blocking/l_k_pack_factor, &tile_config);
   }
   /* Configure tiles for B */
-  libxsmm_setup_tile(6, k_blocking, n_blocking_info[0].sizes[0], &tile_config);
+  libxsmm_setup_tile(6, k_blocking/l_k_pack_factor, n_blocking_info[0].sizes[0], &tile_config);
   if (n_tiles == 2) {
-    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[1], &tile_config);
+    libxsmm_setup_tile(7, k_blocking/l_k_pack_factor, n_blocking_info[0].sizes[1], &tile_config);
   }
   if (n_tiles == 4) {
-    libxsmm_setup_tile(7, k_blocking, n_blocking_info[0].sizes[3], &tile_config);
+    libxsmm_setup_tile(7, k_blocking/l_k_pack_factor, n_blocking_info[0].sizes[3], &tile_config);
   }
 
   /* implementing load from struct */
@@ -1540,12 +1547,12 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
       (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))     ) {
     /* Set the LD registers for A and B matrices */
     libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_lda, (i_xgemm_desc->lda * 4 /*l_micro_kernel_config.datatype_size*/)/4);
-    libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_ldb, (i_xgemm_desc->ldb * 4 /*l_micro_kernel_config.datatype_size*/)/4);
+    libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_ldb, (i_xgemm_desc->ldb * l_micro_kernel_config.datatype_size_in /*l_micro_kernel_config.datatype_size*/)/4);
     libxsmm_x86_instruction_alu_imm(io_generated_code, l_micro_kernel_config.alu_mov_instruction, i_gp_reg_mapping->gp_reg_ldc, (i_xgemm_desc->ldc * 4 /*l_micro_kernel_config.datatype_size*/)/4);
 
     /* Store this auxiliary info for the emulation */
     l_micro_kernel_config.lda_emu = (i_xgemm_desc->lda * 4 /*l_micro_kernel_config.datatype_size*/)/4;
-    l_micro_kernel_config.ldb_emu = (i_xgemm_desc->ldb * 4 /*l_micro_kernel_config.datatype_size*/)/4;
+    l_micro_kernel_config.ldb_emu = (i_xgemm_desc->ldb * l_micro_kernel_config.datatype_size_in /*l_micro_kernel_config.datatype_size*/)/4;
     l_micro_kernel_config.ldc_emu = (i_xgemm_desc->ldc * 4 /*l_micro_kernel_config.datatype_size*/)/4;
 
     libxsmm_generator_gemm_amx_kernel_nloop_emu(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, n_blocking_info, m_blocking_info);
