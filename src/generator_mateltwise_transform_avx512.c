@@ -3085,19 +3085,10 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_microkernel( libxsmm
     libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_0 );
 
     /* create store masking */
-    if ( l_m_remainder > l_m_entries/2 ) {
-      /* load mask */
-      const unsigned long long l_store_mask = ( (unsigned long long)1 << ((l_m_remainder - (l_m_entries/2)) * 4) ) - 1;
-      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
-      libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
-    } else {
-      /* load mask */
-      const unsigned long long l_store_mask = ( l_m_remainder == l_m_entries/2 ) ? (unsigned long long)0xffffffff : (unsigned long long)(( (unsigned long long)1 << (l_m_remainder * 4) ) - 1);
-      l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
-      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
-      libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
-    }
+    const unsigned long long l_store_mask = (l_m_remainder % (l_m_entries/4) == 0) ? (unsigned long long)0xffffffff : ( (unsigned long long)1 << ((l_m_remainder % (l_m_entries/4)) * 4) ) - 1;
+    l_mask_instr = (l_m_entries == 32) ? LIBXSMM_X86_INSTR_KMOVD_GPR_LD : LIBXSMM_X86_INSTR_KMOVW_GPR_LD ;
+    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mask, l_store_mask );
+    libxsmm_x86_instruction_mask_move( io_generated_code, l_mask_instr, i_gp_reg_mask, i_mask_reg_1 );
   }
 
   if ( l_n_full > 0 ) {
