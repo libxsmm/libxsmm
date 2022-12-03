@@ -1418,7 +1418,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
     l_n_accs = 4;
   }
   if ( l_n_accs > l_k_iters ) {
-    l_n_accs = i_k_blocking;
+    l_n_accs = l_k_iters;
     l_n_accs = (l_n_accs == 0) ? 1 : l_n_accs;
   }
 
