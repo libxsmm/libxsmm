@@ -1334,7 +1334,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
-  unsigned int m_blocking, n_blocking, k_blocking, ii = 0, m_tiles, n_tiles, im, in, l_k_pack_factor = 2;
+  unsigned int m_blocking, n_blocking, k_blocking = 16, ii = 0, m_tiles, n_tiles, im, in, l_k_pack_factor = 2;
   libxsmm_tile_config tile_config;
   LIBXSMM_MEMZERO127(&tile_config);
 
