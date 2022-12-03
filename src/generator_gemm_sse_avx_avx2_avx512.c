@@ -1001,7 +1001,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   }
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
     l_k_blocking = l_k_blocking*l_k_pack_factor;
     l_k_threshold = ((l_k_threshold+1)*l_k_pack_factor)-1;
   }

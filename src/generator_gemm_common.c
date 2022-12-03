@@ -2307,7 +2307,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -2381,7 +2381,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -2431,7 +2431,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
 
   /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
   }
 
   /* advance C pointer */

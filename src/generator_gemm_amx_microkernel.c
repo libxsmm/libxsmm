@@ -1450,7 +1450,7 @@ void libxsmm_generator_gemm_amx_kernel_kloop( libxsmm_generated_code*           
     unsigned int                       fully_unrolled_brloop ) {
 
   unsigned int l_k_blocking = 16;
-  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+  unsigned int l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
   unsigned int k;
   long long offset_A = 0;
   long long offset_B = 0;
