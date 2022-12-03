@@ -6,7 +6,7 @@ EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 cd "${HERE}" && \
 ls -1 ./kernel_test/*.slurm \
-  | grep -v -e "flat" -e "bf8" -e "i16" -e "sui8" -e "usi8" \
+  | grep -v -e "vnni" \
   | ${EXEC} -c 3- "$@"
 RESULT=$?
 
