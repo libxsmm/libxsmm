@@ -1386,20 +1386,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
   }
 #endif
 
-  /* for BF8 let's call the 2D kernel */
-  if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
-    for ( l_k = 0; l_k < i_k_blocking; l_k++) {
-      if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
-        libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                                                        i_xgemm_desc, 1, i_n_blocking, (i_k_blocking == i_xgemm_desc->k) ? (int)l_k : -1 );
-      } else {
-        libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                                                     i_xgemm_desc, 1, i_n_blocking, (i_k_blocking == i_xgemm_desc->k) ? (int)l_k : -1 );
-      }
-    }
-    return;
-  }
-
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
     l_k_iters = i_k_blocking / l_k_pack_factor;
@@ -1407,6 +1393,20 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxs
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
       return;
     }
+  }
+
+  /* for BF8 let's call the 2D kernel */
+  if ( LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
+    for ( l_k = 0; l_k < l_k_iters; l_k++) {
+      if ( (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) && (io_generated_code->arch < LIBXSMM_X86_AVX512) ) {
+        libxsmm_generator_gemm_avx512_microkernel_m8_bf8_emu_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                                                                        i_xgemm_desc, 1, i_n_blocking, (i_k_blocking == i_xgemm_desc->k) ? (int)(l_k*l_k_pack_factor) : -1 );
+      } else {
+        libxsmm_generator_gemm_avx512_microkernel_bf8_emu_nofsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                                                                     i_xgemm_desc, 1, i_n_blocking, (i_k_blocking == i_xgemm_desc->k) ? (int)(l_k*l_k_pack_factor) : -1 );
+      }
+    }
+    return;
   }
 
   /* compute number of n accumulators to hide FMA latencies */
