@@ -32,7 +32,9 @@ if __name__ == "__main__":
         if (base + 2) < argc:
             precision = int(sys.argv[base + 0])
             threshold = int(sys.argv[base + 1])
-            mnklist = libxsmm_utilities.load_mnklist(sys.argv[base + 2:], 0)
+            mnklist = libxsmm_utilities.load_mnklist(
+                sys.argv[base + 2 :], 0  # noqa: E203
+            )
             print(
                 "/* omit registering code if JIT is enabled"
                 " and if an ISA extension is found"
@@ -54,15 +56,9 @@ if __name__ == "__main__":
             print(
                 "   || (LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid)"
             )
-            print(
-                "   || (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid &&"
-            )
-            print(
-                "       libxsmm_cpuid_vlen32(LIBXSMM_STATIC_TARGET_ARCH) =="
-            )
-            print(
-                "       libxsmm_cpuid_vlen32(libxsmm_target_archid)))"
-            )
+            print("   || (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid &&")
+            print("       libxsmm_cpuid_vlen32(LIBXSMM_STATIC_TARGET_ARCH) ==")
+            print("       libxsmm_cpuid_vlen32(libxsmm_target_archid)))")
             print("#endif")
             print("{")
             print("  libxsmm_xmmfunction func;")

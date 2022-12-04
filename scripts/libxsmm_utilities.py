@@ -79,7 +79,7 @@ def load_mnklist(argv, threshold, inputformat=0, resultset=None):
                         2
                         + int(argv[0]) : 2  # noqa: E203
                         + int(argv[0])
-                        + int(argv[1])
+                        + int(argv[1])  # noqa: E203
                     ],
                 ),
             )
@@ -295,10 +295,10 @@ if __name__ == "__main__":
             mnk_size = int(sys.argv[3])
             dims = load_mnklist(
                 sys.argv[4 : 4 + mnk_size], 0, -1  # noqa: E203
-            )
+            )  # noqa: E203
             dims = load_mnklist(
                 sys.argv[4 + mnk_size :], 0, -2, dims  # noqa: E203
-            )
+            )  # noqa: E203
             mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
             print(" ".join(mnklist))
         elif 3 == argc:
