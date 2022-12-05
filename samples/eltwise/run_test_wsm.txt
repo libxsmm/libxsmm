@@ -1,8 +1,8 @@
 unary_gather_16b_eqld
 unary_gather_16b_gtld
-unary_gather_32b_gtld
 unary_gather_32b_eqld
+unary_gather_32b_gtld
+unary_scatter_16b_eqld
 unary_scatter_16b_gtld
 unary_scatter_32b_eqld
 unary_scatter_32b_gtld
-unary_scatter_16b_eqld
