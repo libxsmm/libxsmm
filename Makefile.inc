@@ -316,6 +316,10 @@ HEREDIR := $(call qapath,.)
 
 # pick the last of wildcard's sorted results
 wildcard1 = $(strip $(lastword $(sort $(wildcard $1))))
+# tail of list
+tailwords = $(wordlist 2, $(words \
+  $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}), \
+  $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifeq (NaN,$(call qnum,$(OMP),NaN))
@@ -958,6 +962,8 @@ ifneq (Darwin,$(UNAME))
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
+  WHOLE_BEGIN := $(call linkopt,--whole-archive)
+  WHOLE_END := $(call linkopt,--no-whole-archive)
   XLIB_BEGIN_FORCE := $(call linkopt,--as-needed)
   XLIB_END_FORCE := $(call linkopt,--no-as-needed)
 else # OSX
@@ -1003,24 +1009,27 @@ else
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
+LIB_SOLD := $(LD) -shared $(PICFLAG)
 ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared $(PICFLAG)
   LIB_XLD := $(XLD) -shared $(PICFLAG)
+  LIB_LD := $(LIB_SOLD)
 else
-  LIB_LD := $(LD)
   LIB_XLD := $(XLD)
+  LIB_LD := $(LD)
 endif
 
 ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD := $(FC) $(XLIB_END)
+  LIB_SFLD := $(FLD) -shared $(PICFLAG)
   ifeq (0,$(DEPSTATIC))
-    LIB_FLD := $(FLD) -shared $(PICFLAG)
+    LIB_FLD := $(LIB_SFLD)
   else
     LIB_FLD := $(FLD)
   endif
 endif
 endif
+LIB_SFLD ?= $(LIB_SOLD)
 LIB_FLD ?= $(LIB_LD)
 FLD ?= $(LD)
 
@@ -1079,25 +1088,25 @@ endif
 
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    solink = -o "$1.$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
+    solink = -o "$(basename $1).$(DLIBEXT).$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$(basename $1))).$(DLIBEXT).$5)
     ifneq (0,$(SONAMELNK))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5) 2>/dev/null)
+        ln -fs $(call qndir,$(basename $1).$(DLIBEXT).$2.$3.$4) $(call qndir,$(basename $1).$(DLIBEXT).$5) 2>/dev/null)
     endif
     ifneq (0,$(shell echo "$$((1<$(SONAMELNK)||0>$(SONAMELNK)))"))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$5) $(call qndir,$1) 2>/dev/null)
+        ln -fs $(call qndir,$(basename $1).$(DLIBEXT).$5) $(call qndir,$(basename $1).$(DLIBEXT)) 2>/dev/null)
     endif
   else # MinGW
-    solink = -o $(call quote,$1) $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
+    solink = -o $(call quote,$(basename $1).$(DLIBEXT)) $(call linkopt,-soname,$(strip $(call qndir,$(basename $1)).$(DLIBEXT).$5))
   endif
 else # macOS
-  solink = -o $(call qbname,$1).$2$(call qsuffix,$1) \
-           -install_name $(call qbname,$(call qapath,$1)).$2$(call qsuffix,$1) \
+  solink = -o $(call qbname,$1).$2.$(DLIBEXT) \
+           -install_name $(call qbname,$(call qapath,$1)).$2.$(DLIBEXT) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
     solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-      ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1) 2>/dev/null)
+      ln -fs $(call qndir,$(call qbname,$1).$2.$(DLIBEXT)) $(call qndir,$(basename $1)).$(DLIBEXT) 2>/dev/null)
   endif
 endif
 
@@ -2551,7 +2560,7 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
   DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
   CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% TMUX \
-  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
+  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
