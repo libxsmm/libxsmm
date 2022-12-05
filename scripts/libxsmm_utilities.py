@@ -287,15 +287,20 @@ def version_branch(max_strlen=-1):
 
 def libxsmm_target_arch():
     libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
-    os.environ["LD_LIBRARY_PATH"] = libpath
+    if "Darwin" == os.uname().sysname:
+        os.environ["DYLD_LIBRARY_PATH"] = libpath
+        libext = ".dylib"
+    else:
+        os.environ["LD_LIBRARY_PATH"] = libpath
+        libext = ".so"
     xsmmnoblas = (
-        "libxsmmnoblas.so"
-        if os.path.exists(os.path.join(libpath, "libxsmmnoblas.so"))
+        "libxsmmnoblas" + libext
+        if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
         else ctypes.util.find_library("xsmmnoblas")
     )
     xsmm = (
-        "libxsmm.so"
-        if os.path.exists(os.path.join(libpath, "libxsmm.so"))
+        "libxsmm" + libext
+        if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
         else ctypes.util.find_library("xsmm")
     )
     target = "generic"
