@@ -14,9 +14,11 @@
 XARGS=$(command -v xargs)
 FILE=$(command -v file)
 SED=$(command -v sed)
+CAT=$(command -v cat)
+CUT=$(command -v cut)
 
 # Note: avoid applying thread affinity (OMP_PROC_BIND or similar).
-if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
+if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}" ]; then
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
@@ -28,12 +30,26 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     UMASK_CMD="umask ${UMASK};"
     eval "${UMASK_CMD}"
   fi
+  if [ "${PPID}" ] && [ "$(command -v ps)" ]; then
+    PARENT=$(ps -o args= ${PPID} | ${SED} -n "s/[^[:space:]]*[[:space:]]*\(..*\)\.sh.*/\1/p")
+    if [ "${PARENT}" ]; then
+      if [ "$(command -v python3)" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
+        TARGET=$(python3 "${HERE}/libxsmm_utilities.py")
+      fi
+      if [ -e "${PARENT}_${TARGET}.txt" ]; then
+        WHITE=${PARENT}_${TARGET}.txt
+      elif [ -e "${PARENT}.txt" ]; then
+        WHITE=${PARENT}.txt
+      fi
+    fi
+  fi
   while test $# -gt 0; do
     case "$1" in
     -h|--help)
       if [ "0" != "${QT_DEFAULT}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
       echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
+      echo "       -w|--white    [PEXEC_WL]: whitelist (default: ${WHITE:-filename not defined})"
       echo "       -o|--log      [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
       echo "       -c|--cut      [PEXEC_CT]: cut output of each case (-f argument of cut)"
       echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
@@ -51,11 +67,14 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     -q|--quiet)
       QUIET=1
       shift 1;;
+    -w|--white)
+      WHITE=$2
+      shift 2;;
     -o|--log)
       LOG=$2
       shift 2;;
     -c|--cut)
-      CUT=$2
+      CT=$2
       shift 2;;
     -m|--min)
       MIN=$2
@@ -93,13 +112,18 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     esac
   done
   NIFIX=0
+  COUNTER=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   NI=${PEXEC_NI:-${NI}}; if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS}; else NIFIX=1; fi
   NP=${PEXEC_NP:-${NP}}; NI=${PEXEC_NI:-${NI}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
-  CUT=${PEXEC_CT:-${CUT}}; NTH=${PEXEC_NT:-${NTH}}
+  CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
   MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
-  COUNTER=0
+  WHITE=${PEXEC_WL:-${WHITE}}
+  if [ "${WHITE}" ] && [ ! -e "${WHITE}" ]; then
+    1>&2 echo "ERROR: \"${WHITE}\" whitelist file not found!"
+    exit 1
+  fi
   while read -r LINE; do
     if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
       COUNTER=$((COUNTER+1))
@@ -198,7 +222,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       done; \
       echo \"\${CMD}\${PRE}\${ARGS}\" \
       | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
-      | if [ \"${CUT}\" ]; then cut -d_ -f\"${CUT}\"; else cat; fi; \
+      | if [ \"${CT}\" ]; then ${CUT} -d_ -f\"${CT}\"; else ${CAT}; fi; \
     }; \
     _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \$0); \
     _PEXEC_TRAP_EXIT() { \
@@ -206,8 +230,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
       if [ \"0\" != \"\${RESULT}\" ]; then \
         local ERROR=\"ERROR\"; \
         if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
-        1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; \
-        exit 1; \
+        if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" ${WHITE})\" ]; then \
+          1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY} -> OK\n\" \${RESULT}; \
+        else \
+          1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
+        fi; \
+        exit 0; \
       elif [ \"0\" = \"${QUIET}\" ]; then \
         1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; \
       fi; \
@@ -227,7 +255,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ]; then
     if [ "$(command -v tr)" ]; then
       if [ "${BUILDKITE_LABEL}" ]; then
         LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
-        | sed 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
+        | ${SED} 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
       else
         LABEL="$(basename "$(pwd -P)" \
         | tr "[:lower:]" "[:upper:]") "
