@@ -4,11 +4,7 @@ source setup_eqn_tpp_prec_list.sh equation_gather_reduce
 
 TESTFILE1=$(mktemp)
 
-if [ -x "$(command -v python3)" ]; then
-  PYTHON=$(command -v python3)
-else
-  PYTHON=$(command -v python)
-fi
+PYTHON=$(command -v python3)
 
 ${PYTHON} << END
 import random as rnd

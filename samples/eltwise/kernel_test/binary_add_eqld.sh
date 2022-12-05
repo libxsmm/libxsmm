@@ -6,11 +6,7 @@ source setup_tpp_prec_list.sh binary_simple
 
 TESTFILE1=$(mktemp)
 
-if [ -x "$(command -v python3)" ]; then
-  PYTHON=$(command -v python3)
-else
-  PYTHON=$(command -v python)
-fi
+PYTHON=$(command -v python3)
 
 ${PYTHON} << END
 import random as rnd
