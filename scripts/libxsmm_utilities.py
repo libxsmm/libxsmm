@@ -12,6 +12,8 @@
 import itertools
 import operator
 import inspect
+import ctypes
+import ctypes.util
 import sys
 import os
 
@@ -283,6 +285,35 @@ def version_branch(max_strlen=-1):
     return (version, branch, realversion)
 
 
+def libxsmm_target_arch():
+    libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
+    os.environ["LD_LIBRARY_PATH"] = libpath
+    xsmmnoblas = (
+        "libxsmmnoblas.so"
+        if os.path.exists(os.path.join(libpath, "libxsmmnoblas.so"))
+        else ctypes.util.find_library("xsmmnoblas")
+    )
+    xsmm = (
+        "libxsmm.so"
+        if os.path.exists(os.path.join(libpath, "libxsmm.so"))
+        else ctypes.util.find_library("xsmm")
+    )
+    target = "generic"
+    try:
+        libxsmm = ctypes.CDLL(
+            os.path.join(libpath, xsmmnoblas), mode=ctypes.RTLD_GLOBAL
+        )
+        libxsmm = ctypes.CDLL(
+            os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
+        )
+        libxsmm_get_target_arch = libxsmm.libxsmm_get_target_arch
+        libxsmm_get_target_arch.restype = ctypes.c_char_p
+        target = libxsmm_get_target_arch().decode("ascii")
+    except:  # noqa: E722
+        pass
+    return target
+
+
 if __name__ == "__main__":
     argc = len(sys.argv)
     if 1 < argc:
@@ -310,6 +341,8 @@ if __name__ == "__main__":
         if 0 == arg1 and 3 == argc:
             major, minor, update, patch = version_numbers(sys.argv[2])
             print(major)  # soname version
+        elif 0 == arg1 and 1 == argc:
+            print(libxsmm_target_arch())
         else:
             version, branch, realversion = version_branch()
             major, minor, update, patch = version_numbers(version)
