@@ -44,20 +44,20 @@ f1.close()
 f2.close()
 END
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8 nobr 1 0 1 1
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8 nobr 1 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8_FLAT nobr 1 0 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8_FLAT nobr 1 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8 addrbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8_FLAT addrbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8 offsbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8_FLAT offsbr 5 0 1 1
 
-./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8 strdbr 5 0 1 1
+./kernel ${TESTFILE1} 1 1 0 0 0 0 BF8_FLAT strdbr 5 0 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8 addrbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8_FLAT addrbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8 offsbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8_FLAT offsbr 5 1 1 1
 
-./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8 strdbr 5 1 1 1
+./kernel ${TESTFILE2} 1 1 0 0 0 0 BF8_FLAT strdbr 5 1 1 1
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}
