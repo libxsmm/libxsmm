@@ -16,7 +16,7 @@ jobs:
     env: INSTALL=install-artifacts OPT=1 PYTHON=python2 MALLOC=-1 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
-    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 ANALYZE=1
+    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 STATIC_ANALYSIS=1
   - os: linux
     compiler: clang
     env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse MALLOC=1 LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
@@ -115,16 +115,16 @@ script:
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
     make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     make -e STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
 
-  - if [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     if [ ! "${COVERITY_SCAN_BINDIR}" ] || [ ! "${COVERITY_SCAN_USER}" ] || [ ! "${COVERITY_SCAN_TOKEN}" ]; then
       echo "Please setup COVERITY_SCAN_BINDIR, COVERITY_SCAN_USER, and COVERITY_SCAN_TOKEN.";
       exit 1;

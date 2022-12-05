@@ -179,16 +179,8 @@ TESTSIZE ?= 1
 # Delay for user-interaction (sleep)
 WAIT ?= 12
 
-# PYMOD=1: enable Python module development
-PYMOD ?= 0
-
 # Static or shared binary
-ifneq (0,$(PYMOD))
-  override PEDANTIC := 0
-  override STATIC := 0
-else
-  STATIC ?= 0
-endif
+STATIC ?= 0
 
 # PIC: PIC or pic
 PIC ?= pic
@@ -257,6 +249,9 @@ OMP ?= 0
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
+
+# Static code analysis (linking is not intended)
+ANALYZE ?= 0
 
 # Warning about unused functions
 UNUSED ?= 0
@@ -690,10 +685,18 @@ ifneq (,$(findstring -ar?,$(CCAR)?))
   endif
 endif
 
-ifneq (,$(FORCE_CXX))
-ifneq (0,$(FORCE_CXX))
-  override CC := $(CXX) $(call ctest,$(CC),-xc++)
+ifneq (0,$(ANALYZE))
+  ifeq (1,$(ANALYZE))
+    EFLAGS += $(call ctest,$(CC),--analyze)
+  else
+    PEDANTIC := 3
+  endif
+  FORCE_CXX := 1
 endif
+
+ifneq (,$(filter-out 0,$(FORCE_CXX)))
+  override EFLAGS := $(EFLAGS) $(call ctest,$(CXX),-xc++)
+  override CC := $(CXX)
 endif
 
 WCHECK ?= 0
@@ -1144,27 +1147,6 @@ else
 endif
 SLDFLAGS ?= $(NULL)
 
-ifneq (0,$(PYMOD))
-ifneq (,$(PYTHON))
-    PYVERSION_STRING := $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
-    PYVERSION := $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
-    TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
-    TESTRESA := $(wildcard $(TESTRESA)/include/python$(PYVERSION)/Python.h)
-    TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
-    ifneq (,$(TESTRESA))
-    ifneq (,$(TESTLIB))
-      LDFLAGS += $(TESTLIB)
-      IFLAGS += -I$(call qdir,$(TESTRESA))
-      DFLAGS += -D__PYTHON
-      # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-      ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
-        NOBLAS := 1
-      endif
-    endif
-    endif
-endif
-endif
-
 LIBATOMIC ?= 0
 ifneq (0,$(THREADS))
 ifneq (0,$(LIBATOMIC))
@@ -1548,9 +1530,12 @@ else # GCC assumed
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD := -std=c99
       endif
+      ifeq (0,$(ANALYZE))
+        CFLAGS += -Wstrict-prototypes
+      endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
-      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
+      CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC)) # 2<=PEDANTIC
@@ -1601,8 +1586,11 @@ else # GCC assumed
         endif
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
+      ifeq (0,$(ANALYZE))
+        CFLAGS += -Wstrict-prototypes
+      endif
       #CXXFLAGS += -Wno-missing-field-initializers #-Wzero-as-null-pointer-constant
-      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
+      CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
@@ -1839,19 +1827,8 @@ ifeq (undefined,$(origin TARGET))
                 ifeq (0,$(MAINTAINER))
                   CTARGET := -msse4.2
                 else # maintainer build
-                  ifeq (0,$(DEPSTATIC))
-                    TARGET := -msse4.2
-                    CTARGET := -msse2
-                  else ifneq (0,$(SHARED))
-                    ifneq (,$(SHARED))
-                      TARGET := -msse4.2
-                      CTARGET := -msse2
-                    else
-                      CTARGET := -msse4.2
-                    endif
-                  else
-                    CTARGET := -msse4.2
-                  endif
+                  TARGET := -msse4.2
+                  CTARGET := -msse2
                 endif
               else
                 CTARGET := -msse2
@@ -2563,7 +2540,7 @@ STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
   LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
-  HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
+  HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \
