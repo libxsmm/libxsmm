@@ -317,9 +317,8 @@ def libxsmm_target_arch():
         libxsmm_get_target_arch.restype = ctypes.c_char_p
         target = libxsmm_get_target_arch().decode("ascii")
     except:  # noqa: E722
-        print(
-            "WARNING: falling back to {0} target.".format(target),
-            file=sys.stderr,
+        sys.stderr.write(
+            "WARNING: falling back to {0} target.\n".format(target)
         )
         pass
     return target
