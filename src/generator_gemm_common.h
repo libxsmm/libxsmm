@@ -14,6 +14,38 @@
 
 #include "generator_common.h"
 
+LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( libxsmm_generated_code*    io_generated_code,
+                                                                                      libxsmm_loop_label_tracker*    io_loop_label_tracker,
+                                                                                      const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
+                                                                                      libxsmm_micro_kernel_config*   i_micro_kernel_config,
+                                                                                      libxsmm_gemm_descriptor*       i_xgemm_desc,
+                                                                                      unsigned int                   i_gp_reg_in,
+                                                                                      unsigned int                   i_struct_gp_reg,
+                                                                                      unsigned int                   i_tmp_reg,
+                                                                                      unsigned int                   i_loop_reg,
+                                                                                      unsigned int                   i_bound_reg,
+                                                                                      unsigned                       i_tmp_reg2,
+                                                                                      libxsmm_meltw_unary_type       i_op_type,
+                                                                                      libxsmm_blasint                i_m,
+                                                                                      libxsmm_blasint                i_n,
+                                                                                      libxsmm_blasint                i_ldi,
+                                                                                      libxsmm_blasint                i_ldo,
+                                                                                      libxsmm_blasint                i_tensor_stride,
+                                                                                      libxsmm_datatype               i_in_dtype,
+                                                                                      libxsmm_datatype               i_comp_dtype,
+                                                                                      libxsmm_datatype               i_out_dtype,
+                                                                                      libxsmm_gemm_stack_var         i_stack_var_offs_ptr,
+                                                                                      libxsmm_gemm_stack_var         i_stack_var_scratch_ptr,
+                                                                                      libxsmm_gemm_stack_var         i_stack_var_dst_ptr,
+                                                                                      libxsmm_meltw_unary_type       i_op2_type,
+                                                                                      libxsmm_blasint                i_m2,
+                                                                                      libxsmm_blasint                i_n2,
+                                                                                      libxsmm_blasint                i_ldi2,
+                                                                                      libxsmm_blasint                i_ldo2,
+                                                                                      libxsmm_datatype               i_in2_dtype,
+                                                                                      libxsmm_datatype               i_comp2_dtype,
+                                                                                      libxsmm_datatype               i_out2_dtype );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_vnni_store_C_from_scratch( libxsmm_generated_code*            io_generated_code,
     libxsmm_loop_label_tracker*        io_loop_label_tracker,
