@@ -33,7 +33,8 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
     ENVDIFF="declare -px | ${DIFF} ${ENVFILE} - | ${SED} -n 's/[<>] \(..*\)/\1/p' | ${SED} -n 's/declare -x \(.[^=]*\)=..*/\1/p' ${UNIQ}"
     for ENV in $(eval "${ENVDIFF}"); do # restore environment
       DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
-      if [ "$(echo "${DEF}" | ${SED} -n "/\"$/p")" ]; then
+      if [ "$(echo "${DEF}" | ${SED} -n "/\".*[^\]\"/p")" ]; then
+        echo "DEBUG: ${DEF}"
         if [ "${ENVSRCF}" ]; then
           VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
           if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
