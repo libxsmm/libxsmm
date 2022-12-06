@@ -230,11 +230,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        local ERROR=\"ERROR\"; \
-        if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
         if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" ${WHITE})\" ]; then \
-          1>&2 printf \" -> \${WHITE}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 0; \
+          1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 0; \
         else \
+          local ERROR=\"ERROR\"; \
+          if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
         exit 0; \
