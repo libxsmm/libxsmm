@@ -295,6 +295,7 @@ def libxsmm_target_arch():
     else:
         os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
+    os.environ["LIBXSMM_VERBOSE"] = "0"
     xsmmnoblas = (
         "libxsmmnoblas" + libext
         if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
