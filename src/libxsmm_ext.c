@@ -14,7 +14,7 @@
 
 
 #if defined(LIBXSMM_BUILD)
-#if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)
+#if defined(LIBXSMM_BUILD_EXT) && !defined(_WIN32)
 
 LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_ATTRIBUTE_WEAK
 void LIBXSMM_FSYMBOL(dgemm_batch)(const char transa_array[], const char transb_array[],
