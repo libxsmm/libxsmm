@@ -787,7 +787,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
     (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# define LIBXSMM_CTOR
+/*# define LIBXSMM_CTOR*/
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
