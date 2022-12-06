@@ -287,7 +287,9 @@ def version_branch(max_strlen=-1):
 
 def libxsmm_target_arch():
     libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
-    if "Darwin" == os.uname().sysname:
+    uname = os.uname()
+    oname = uname.sysname if not isinstance(uname, tuple) else uname[0]
+    if "Darwin" == oname:
         os.environ["DYLD_LIBRARY_PATH"] = libpath
         libext = ".dylib"
     else:
