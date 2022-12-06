@@ -34,7 +34,6 @@ if [ "${DIFF}" ] && [ "${SED}" ]; then
     for ENV in $(eval "${ENVDIFF}"); do # restore environment
       DEF=$(${SED} -n "/declare \-x ${ENV}=/p" "${ENVFILE}")
       if [ "$(echo "${DEF}" | ${SED} -n "/\".*[^\]\"/p")" ]; then
-        echo "DEBUG: ${DEF}"
         if [ "${ENVSRCF}" ]; then
           VAL=$(echo "${DEF}" | ${SED} "s/declare -x ${ENV}=\(..*\)/\1/")
           if [ "$(echo "${ENV}" | ${SED} -n "/PATH$/p")" ]; then
