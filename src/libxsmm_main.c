@@ -1940,7 +1940,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           char tc_option[16] = { 0 };
           int decompress_A = 0;
           int sparsity_factor_A = 1;
-          /* query batch reduce variant and brconfig hints (strides and unroll hint) */
+          /* query batch reduce variant and brconfig strides */
           if ( (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS & request->descriptor.gemm->flags) > 1 ) {
             br = 1;
           } else if ( (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET & request->descriptor.gemm->flags) > 1 ) {
