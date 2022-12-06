@@ -22,6 +22,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
+  PYTHON=$(command -v python3)
   LG_DEFAULT="./${NAME}.log"
   QT_DEFAULT=0; SP_DEFAULT=2
   CONSUMED=0
@@ -30,8 +31,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     UMASK_CMD="umask ${UMASK};"
     eval "${UMASK_CMD}"
   fi
-  if [ "$(command -v python3)" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
-    TARGET=$(python3 "${HERE}/libxsmm_utilities.py")
+  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
+  if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
+    TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
   fi
   if [ "${PPID}" ] && [ "$(command -v ps)" ]; then
     PARENT=$(ps -o args= ${PPID} | ${SED} -n "s/[^[:space:]]*[[:space:]]*\(..*\)\.sh.*/\1/p")
