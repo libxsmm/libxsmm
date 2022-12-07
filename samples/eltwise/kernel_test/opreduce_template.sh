@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-TESTFILE1=$(mktemp)
-
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
 else
   PYTHON=$(command -v python)
 fi
+
+TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
@@ -33,28 +33,29 @@ CHECK_SCALE_SIZE=1.0
 
 N_IDX=42
 
-for i in `cat ${TESTFILE1}`
-do
-  M=`echo ${i} | awk -F"_" '{print $1}'`
-  N=`echo ${i} | awk -F"_" '{print $2}'`
-  LDI=`echo ${i} | awk -F"_" '{print $3}'`
-  LDO=`echo ${i} | awk -F"_" '{print $4}'`
+for i in $(cat ${TESTFILE1}); do
+  M=$(echo ${i} | awk -F"_" '{print $1}')
+  N=$(echo ${i} | awk -F"_" '{print $2}')
+  LDI=$(echo ${i} | awk -F"_" '{print $3}')
+  LDO=$(echo ${i} | awk -F"_" '{print $4}')
   echo ${M} ${N} ${LDI} ${LDI}
-  for IDXTYPE in 0 1
-  do
-    for SCALE in 0 1
-    do
-      for EQLD in 0 1
-      do
+  for IDXTYPE in 0 1; do
+    for SCALE in 0 1; do
+      for EQLD in 0 1; do
         N_ADJ=$((${N} + ${N_IDX}))
         let LDI_ADJ=(1-${EQLD})*100+${LDI}*${EQLD}
         echo ${M} ${N_ADJ} ${N} ${LDI_ADJ}
         export CHECK_SCALE=${CHECK_SCALE_SIZE}
-        ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
+        if [ ! "${PEXEC_NI}" ]; then
+          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
+        else
+          ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16} &
+          if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
+          if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+        fi
       done
     done
   done
-
 done
 
 rm ${TESTFILE1}

@@ -32,7 +32,10 @@ TESTS_NEEDBLAS="gemm.c wrap.sh"
 TESTS_NEEDBLAS_GREP=$(echo "${TESTS_NEEDBLAS}" | ${SED} "s/[[:space:]][[:space:]]*/\\\\|/g" | ${SED} "s/\./\\\\./g")
 # good-enough pattern to match main functions, and to include translation unit in test set
 if [ ! "$*" ]; then
-  TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" *.c 2>/dev/null) dispatch.sh eltwise.sh fsspmdm.sh memcmp.sh packed.sh wrap.sh"
+  TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" *.c 2>/dev/null) \
+    dispatch.sh eltwise.sh equation.sh \
+    fsspmdm.sh memcmp.sh opreduce.sh \
+    packed.sh wrap.sh"
   if [ "${SORT}" ]; then
     TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
   fi
@@ -106,4 +109,3 @@ for TEST in ${TESTS}; do
   fi
   NTEST=$((NTEST+1))
 done
-

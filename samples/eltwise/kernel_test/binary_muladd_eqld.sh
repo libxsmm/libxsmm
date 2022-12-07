@@ -2,15 +2,13 @@
 
 source setup_tpp_prec_list.sh binary_simple
 
-
-
-TESTFILE1=$(mktemp)
-
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
 else
   PYTHON=$(command -v python)
 fi
+
+TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
@@ -28,23 +26,27 @@ END
 
 BINARY_OP=5
 
-for i in `cat ${TESTFILE1}`
-do
-  M=`echo ${i} | awk -F"_" '{print $1}'`
-  N=`echo ${i} | awk -F"_" '{print $2}'`
-  LDI=`echo ${i} | awk -F"_" '{print $3}'`
-  LDO=`echo ${i} | awk -F"_" '{print $4}'`
+for i in $(cat ${TESTFILE1}); do
+  M=$(echo ${i} | awk -F"_" '{print $1}')
+  N=$(echo ${i} | awk -F"_" '{print $2}')
+  LDI=$(echo ${i} | awk -F"_" '{print $3}')
+  LDO=$(echo ${i} | awk -F"_" '{print $4}')
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC in ${PREC_LIST}
-  do
-    PREC_IN0=`echo ${PREC} | awk -F"_" '{print $1}'`
-    PREC_IN1=`echo ${PREC} | awk -F"_" '{print $2}'`
-    PREC_OUT=`echo ${PREC} | awk -F"_" '{print $3}'`
-    PREC_COMP=`echo ${PREC} | awk -F"_" '{print $4}'`
-    for BCAST in 0 1 2 3 4 5 6
-    do
-      ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+  for PREC in ${PREC_LIST}; do
+    PREC_IN0=$(echo ${PREC} | awk -F"_" '{print $1}')
+    PREC_IN1=$(echo ${PREC} | awk -F"_" '{print $2}')
+    PREC_OUT=$(echo ${PREC} | awk -F"_" '{print $3}')
+    PREC_COMP=$(echo ${PREC} | awk -F"_" '{print $4}')
+    for BCAST in 0 1 2 3 4 5 6; do
+      if [ ! "${PEXEC_NI}" ]; then
+        ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+      else
+        ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI} &
+        if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
+        if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+      fi
     done
   done
 done
+
 rm ${TESTFILE1}
