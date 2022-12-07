@@ -2,14 +2,13 @@
 
 source setup_eqn_tpp_prec_list.sh equation_split_sgd
 
-TESTFILE1=$(mktemp)
-trap "rm ${TESTFILE1}" EXIT
-
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
 else
   PYTHON=$(command -v python)
 fi
+
+TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
@@ -40,3 +39,5 @@ for i in $(cat ${TESTFILE1}); do
     if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
   fi
 done
+
+rm ${TESTFILE1}

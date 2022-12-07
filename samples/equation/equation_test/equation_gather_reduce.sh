@@ -2,14 +2,13 @@
 
 source setup_eqn_tpp_prec_list.sh equation_gather_reduce
 
-TESTFILE1=$(mktemp)
-trap "rm ${TESTFILE1}" EXIT
-
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
 else
   PYTHON=$(command -v python)
 fi
+
+TESTFILE1=$(mktemp)
 
 ${PYTHON} << END
 import random as rnd
@@ -44,3 +43,5 @@ for i in $(cat ${TESTFILE1}); do
     done
   done
 done
+
+rm ${TESTFILE1}
