@@ -3,6 +3,7 @@
 source setup_eqn_tpp_prec_list.sh equation_split_sgd
 
 TESTFILE1=$(mktemp)
+trap "rm ${TESTFILE1}" EXIT
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
@@ -26,11 +27,10 @@ for m in randnum:
 f1.close()
 END
 
-for i in `cat ${TESTFILE1}`
-do
-  M=`echo ${i} | awk -F"_" '{print $1}'`
-  N=`echo ${i} | awk -F"_" '{print $2}'`
-  LD=`echo ${i} | awk -F"_" '{print $3}'`
+for i in $(cat ${TESTFILE1}); do
+  M=$(echo ${i} | awk -F"_" '{print $1}')
+  N=$(echo ${i} | awk -F"_" '{print $2}')
+  LD=$(echo ${i} | awk -F"_" '{print $3}')
   echo ${M} ${N} ${LD}
   if [ ! "${PEXEC_NI}" ]; then
     ./equation_splitSGD ${M} ${N} ${LD} 0
@@ -40,4 +40,3 @@ do
     if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
   fi
 done
-rm ${TESTFILE1}

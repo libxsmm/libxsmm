@@ -3,6 +3,7 @@
 source setup_eqn_tpp_prec_list.sh equation_layernorm
 
 TESTFILE1=$(mktemp)
+trap "rm ${TESTFILE1}" EXIT
 
 if [ -x "$(command -v python3)" ]; then
   PYTHON=$(command -v python3)
@@ -25,14 +26,12 @@ for m in randnum:
 f1.close()
 END
 
-for i in `cat ${TESTFILE1}`
-do
-  M=`echo ${i} | awk -F"_" '{print $1}'`
-  N=`echo ${i} | awk -F"_" '{print $2}'`
-  K=`echo ${i} | awk -F"_" '{print $3}'`
+for i in $(cat ${TESTFILE1}); do
+  M=$(echo ${i} | awk -F"_" '{print $1}')
+  N=$(echo ${i} | awk -F"_" '{print $2}')
+  K=$(echo ${i} | awk -F"_" '{print $3}')
   echo ${M} ${N} ${K}
-  for PREC in ${EQN_PREC_LIST}
-  do
+  for PREC in ${EQN_PREC_LIST}; do
     if [ ! "${PEXEC_NI}" ]; then
       ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0
     else
@@ -42,4 +41,3 @@ do
     fi
   done
 done
-rm ${TESTFILE1}
