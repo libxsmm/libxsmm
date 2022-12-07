@@ -19,7 +19,7 @@
 #define BWD_SMAX 2
 #define FWD_BWD_SMAX 3
 
-/*#define USE_SUM 1*/
+/*#define USE_SUM*/
 
 #if defined(__AVX512F__)
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
@@ -445,7 +445,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matdiff_info norms_out;
   float *tmp = NULL, *inp = NULL, *out = NULL, *eqn_out = NULL, *gout = NULL, *cache_fl = NULL;
   libxsmm_bfloat16 *bf16_inp = NULL, *bf16_out = NULL, *bf16_eqn_out = NULL;
-#if USE_SUM
+#if defined(USE_SUM)
   float sum = 0.0;
 #endif
   int S1 = 64;
@@ -585,7 +585,7 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0) {
       if (datatype_mode == 0) {
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
@@ -598,7 +598,7 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time FWD  = %.5g\n", ((double)(l_total)));
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
@@ -613,7 +613,7 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup FWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
@@ -626,7 +626,7 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time FWD = %.5g\n", ((double)(l_total)));
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
@@ -672,7 +672,9 @@ int main( int argc, char* argv[] ) {
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
 #else
     my_eqn3 = libxsmm_matrix_eqn_create();
-    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn3, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD, LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32);
+    libxsmm_matrix_eqn_push_back_ternary_op( my_eqn3, LIBXSMM_MELTW_TYPE_TERNARY_NMULADD,
+      (libxsmm_meltw_ternary_flags)(LIBXSMM_MELTW_FLAG_TERNARY_BCAST_SCALAR_IN_0 | LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT),
+      LIBXSMM_DATATYPE_F32);
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 0, 0, LIBXSMM_DATATYPE_F32 );
@@ -726,7 +728,7 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0 ) {
       if (datatype_mode == 0) {
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
@@ -739,7 +741,7 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time BWD  = %.5g\n", ((double)(l_total)));
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
@@ -754,7 +756,7 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup BWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
@@ -767,7 +769,7 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time BWD = %.5g\n", ((double)(l_total)));
-#if USE_SUM
+#if defined(USE_SUM)
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
@@ -782,7 +784,7 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup BWD is %.5g\n", l_total/l_total2);
       }
-#if USE_SUM
+#if defined(USE_SUM)
       printf("Running sum is %.5f\n", sum);
 #endif
       t_tpp += l_total2;
