@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -eo pipefail
+
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+EXEC=${HERE}/../../scripts/tool_pexec.sh
 
 # Arguments M N K beta reps
 # l_r is fixed to 16, when we FP32
@@ -7,34 +9,29 @@ set -eo pipefail
 
 ITERS=10
 
-echo "scatter, element, f32"
+cd ${HERE} && cat <<EOM | ${EXEC} "$@"
+# scatter, element, f32
 ./dense_packedacrm_f32 9 729 35 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 729 35 1.0 ${ITERS}
-
-echo "scatter, surface, f32"
+# scatter, surface, f32
 ./dense_packedacrm_f32 9 81 35 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 81 35 1.0 ${ITERS}
-
-echo "gather, element, f32"
+# gather, element, f32
 ./dense_packedacrm_f32 9 35 729 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 35 729 1.0 ${ITERS}
-
-echo "gather, surface, f32"
+# gather, surface, f32
 ./dense_packedacrm_f32 9 35 81 0.0 ${ITERS}
 ./dense_packedacrm_f32 9 35 81 1.0 ${ITERS}
-
-echo "scatter, element, f64"
+# scatter, element, f64
 ./dense_packedacrm_f64 9 729 35 0.0 ${ITERS}
 ./dense_packedacrm_f64 9 729 35 1.0 ${ITERS}
-
-echo "scatter, surface, f64"
+# scatter, surface, f64
 ./dense_packedacrm_f64 9 81 35 0.0 ${ITERS}
 ./dense_packedacrm_f64 9 81 35 1.0 ${ITERS}
-
-echo "gather, element, f64"
+# gather, element, f64
 ./dense_packedacrm_f64 9 35 729 0.0 ${ITERS}
 ./dense_packedacrm_f64 9 35 729 1.0 ${ITERS}
-
-echo "gather, surface, f64"
+# gather, surface, f64
 ./dense_packedacrm_f64 9 35 81 0.0 ${ITERS}
 ./dense_packedacrm_f64 9 35 81 1.0 ${ITERS}
+EOM

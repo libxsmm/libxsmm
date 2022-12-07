@@ -13,5 +13,5 @@ set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
-"${HERE}"/../samples/edge/test_dense_packedacrm.sh
-"${HERE}"/../samples/edge/test_dense_packedbcrm.sh
+"${HERE}"/../samples/edge/test_dense_packedacrm.sh -o /dev/null "$@"
+"${HERE}"/../samples/edge/test_dense_packedbcrm.sh -o /dev/null "$@"
