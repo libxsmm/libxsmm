@@ -249,10 +249,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc_orig ) {
   if ( ( i_xgemm_desc_orig->flags & LIBXSMM_GEMM_FLAG_TRANS_A) && (i_xgemm_desc_orig->m != 0) && (i_xgemm_desc_orig->k != 0) ) {
     /* if A needs to be transposed, use sratch in stack */
-    libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ));
+    libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ));
   } else if (( i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Now setup A and B tensors in stack as FP32 flat tensors */
-    libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack_as_fp32( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ));
+    libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack_as_fp32( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ));
   }
 }
 
