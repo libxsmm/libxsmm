@@ -176,7 +176,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         }
       }
       if (0 == result_nan) {
-        info->rsq = LIBXSMM_MAX(0.0, 1.0 - LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->l2_abs));
+        const double resrel = LIBXSMM_MATDIFF_DIV(info->l2_abs, info->var_ref, info->l2_abs);
+        info->rsq = LIBXSMM_MAX(0.0, 1.0 - resrel);
         if (0 != ntotal) { /* final variance */
           info->var_ref /= ntotal;
           info->var_tst /= ntotal;

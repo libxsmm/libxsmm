@@ -14,7 +14,7 @@ fi
 
 if [ $# -ne 1 ]
 then
-  MAXM=101
+  MAXM=64
 else
   MAXM=$1
 fi

@@ -179,16 +179,8 @@ TESTSIZE ?= 1
 # Delay for user-interaction (sleep)
 WAIT ?= 12
 
-# PYMOD=1: enable Python module development
-PYMOD ?= 0
-
 # Static or shared binary
-ifneq (0,$(PYMOD))
-  override PEDANTIC := 0
-  override STATIC := 0
-else
-  STATIC ?= 0
-endif
+STATIC ?= 0
 
 # PIC: PIC or pic
 PIC ?= pic
@@ -258,6 +250,9 @@ OMP ?= 0
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
+# Static code analysis (linking is not intended)
+ANALYZE ?= 0
+
 # Warning about unused functions
 UNUSED ?= 0
 
@@ -316,6 +311,10 @@ HEREDIR := $(call qapath,.)
 
 # pick the last of wildcard's sorted results
 wildcard1 = $(strip $(lastword $(sort $(wildcard $1))))
+# tail of list
+tailwords = $(wordlist 2, $(words \
+  $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}), \
+  $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifeq (NaN,$(call qnum,$(OMP),NaN))
@@ -686,10 +685,23 @@ ifneq (,$(findstring -ar?,$(CCAR)?))
   endif
 endif
 
-ifneq (,$(FORCE_CXX))
-ifneq (0,$(FORCE_CXX))
-  override CC := $(CXX) $(call ctest,$(CC),-xc++)
+ifneq (0,$(ANALYZE))
+  ifeq (1,$(ANALYZE))
+    ANALYZE_FLAG := $(call ctest,$(CC),--analyze)
+    ifeq (,$(ANALYZE_FLAG))
+      EFLAGS += $(call ctest,$(CC),-fanalyzer)
+    else
+      EFLAGS += $(ANALYZE_FLAG)
+    endif
+  else
+    PEDANTIC := 3
+  endif
+  FORCE_CXX := 1
 endif
+
+ifneq (,$(filter-out 0,$(FORCE_CXX)))
+  override EFLAGS := $(EFLAGS) $(call ctest,$(CXX),-xc++)
+  override CC := $(CXX)
 endif
 
 WCHECK ?= 0
@@ -958,6 +970,8 @@ ifneq (Darwin,$(UNAME))
     $(call linkopt,--rpath,$(call qxdir,$(call qapath,$1)))))
   XGROUP_BEGIN := $(call linkopt,--start-group)
   XGROUP_END := $(call linkopt,--end-group)
+  WHOLE_BEGIN := $(call linkopt,--whole-archive)
+  WHOLE_END := $(call linkopt,--no-whole-archive)
   XLIB_BEGIN_FORCE := $(call linkopt,--as-needed)
   XLIB_END_FORCE := $(call linkopt,--no-as-needed)
 else # OSX
@@ -1003,24 +1017,27 @@ else
 endif
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
+LIB_SOLD := $(LD) -shared $(PICFLAG)
 ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared $(PICFLAG)
   LIB_XLD := $(XLD) -shared $(PICFLAG)
+  LIB_LD := $(LIB_SOLD)
 else
-  LIB_LD := $(LD)
   LIB_XLD := $(XLD)
+  LIB_LD := $(LD)
 endif
 
 ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD := $(FC) $(XLIB_END)
+  LIB_SFLD := $(FLD) -shared $(PICFLAG)
   ifeq (0,$(DEPSTATIC))
-    LIB_FLD := $(FLD) -shared $(PICFLAG)
+    LIB_FLD := $(LIB_SFLD)
   else
     LIB_FLD := $(FLD)
   endif
 endif
 endif
+LIB_SFLD ?= $(LIB_SOLD)
 LIB_FLD ?= $(LIB_LD)
 FLD ?= $(LD)
 
@@ -1079,25 +1096,25 @@ endif
 
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    solink = -o "$1.$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
+    solink = -o "$(basename $1).$(DLIBEXT).$2.$3.$4" $(call linkopt,-soname,$(strip $(call qndir,$(basename $1))).$(DLIBEXT).$5)
     ifneq (0,$(SONAMELNK))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$2.$3.$4) $(call qndir,$1.$5) 2>/dev/null)
+        ln -fs $(call qndir,$(basename $1).$(DLIBEXT).$2.$3.$4) $(call qndir,$(basename $1).$(DLIBEXT).$5) 2>/dev/null)
     endif
     ifneq (0,$(shell echo "$$((1<$(SONAMELNK)||0>$(SONAMELNK)))"))
       solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-        ln -fs $(call qndir,$1.$5) $(call qndir,$1) 2>/dev/null)
+        ln -fs $(call qndir,$(basename $1).$(DLIBEXT).$5) $(call qndir,$(basename $1).$(DLIBEXT)) 2>/dev/null)
     endif
   else # MinGW
-    solink = -o $(call quote,$1) $(call linkopt,-soname,$(strip $(call qndir,$1).$5))
+    solink = -o $(call quote,$(basename $1).$(DLIBEXT)) $(call linkopt,-soname,$(strip $(call qndir,$(basename $1)).$(DLIBEXT).$5))
   endif
 else # macOS
-  solink = -o $(call qbname,$1).$2$(call qsuffix,$1) \
-           -install_name $(call qbname,$(call qapath,$1)).$2$(call qsuffix,$1) \
+  solink = -o $(call qbname,$1).$2.$(DLIBEXT) \
+           -install_name $(call qbname,$(call qapath,$1)).$2.$(DLIBEXT) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
     solink += $(shell cd $(call qdir,$1) 2>/dev/null && \
-      ln -fs $(call qndir,$(call qbname,$1).$2$(call qsuffix,$1)) $(call qndir,$1) 2>/dev/null)
+      ln -fs $(call qndir,$(call qbname,$1).$2.$(DLIBEXT)) $(call qndir,$(basename $1)).$(DLIBEXT) 2>/dev/null)
   endif
 endif
 
@@ -1134,27 +1151,6 @@ else
   endif
 endif
 SLDFLAGS ?= $(NULL)
-
-ifneq (0,$(PYMOD))
-ifneq (,$(PYTHON))
-    PYVERSION_STRING := $(shell $(PYTHON) --version 2>&1 | head -n1 | sed -n "$(REVERSION1)p")
-    PYVERSION := $(shell echo "$(PYVERSION_STRING)" | cut -d. -f1,2)
-    TESTRESA := $(call qapath,$(call qdir,$(call which,$(PYTHON)))/..)
-    TESTRESA := $(wildcard $(TESTRESA)/include/python$(PYVERSION)/Python.h)
-    TESTLIB := $(call ldclib,$(LD),$(SLDFLAGS),python$(PYVERSION))
-    ifneq (,$(TESTRESA))
-    ifneq (,$(TESTLIB))
-      LDFLAGS += $(TESTLIB)
-      IFLAGS += -I$(call qdir,$(TESTRESA))
-      DFLAGS += -D__PYTHON
-      # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
-      ifeq (,$(filter environment% override command%,$(origin BLAS))$(BLAS))
-        NOBLAS := 1
-      endif
-    endif
-    endif
-endif
-endif
 
 LIBATOMIC ?= 0
 ifneq (0,$(THREADS))
@@ -1539,9 +1535,12 @@ else # GCC assumed
       ifeq (,$(filter-out 0,$(FORCE_CXX)))
         CSTD := -std=c99
       endif
+      ifeq (0,$(ANALYZE))
+        CFLAGS += -Wstrict-prototypes
+      endif
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
-      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
+      CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC)) # 2<=PEDANTIC
@@ -1592,8 +1591,11 @@ else # GCC assumed
         endif
         CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       endif
+      ifeq (0,$(ANALYZE))
+        CFLAGS += -Wstrict-prototypes
+      endif
       #CXXFLAGS += -Wno-missing-field-initializers #-Wzero-as-null-pointer-constant
-      CFLAGS += $(CSTD) $(CPEDANTIC) -Wstrict-prototypes
+      CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
@@ -1830,19 +1832,8 @@ ifeq (undefined,$(origin TARGET))
                 ifeq (0,$(MAINTAINER))
                   CTARGET := -msse4.2
                 else # maintainer build
-                  ifeq (0,$(DEPSTATIC))
-                    TARGET := -msse4.2
-                    CTARGET := -msse2
-                  else ifneq (0,$(SHARED))
-                    ifneq (,$(SHARED))
-                      TARGET := -msse4.2
-                      CTARGET := -msse2
-                    else
-                      CTARGET := -msse4.2
-                    endif
-                  else
-                    CTARGET := -msse4.2
-                  endif
+                  TARGET := -msse4.2
+                  CTARGET := -msse2
                 endif
               else
                 CTARGET := -msse2
@@ -2548,13 +2539,13 @@ objname = $(foreach ARG,$(1),$(addprefix $(BLDDIR)/,$(patsubst %$(call qsuffix,$
 MAKSTATE := $(sort $(shell grep -how '$(VNAME)' $(ROOTDIR)/Makefile.inc $(MAKEFILE_LIST) 2>/dev/null))
 STATE := $(sort $(foreach V,$(filter $(MAKSTATE),$(filter-out \
   $(EXCLUDE_STATE) EXCLUDE_% .% _% XSMM_% HAVE_% LIB_% %STATE MAKE_% MAKELEVEL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLDDIR REVERSION% AVX SSE \
-  COMPILER_VERSION_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
   DLIBEXT FLOCK LIBEXT ICX ILIBEXT LIBNAME LICFILE MAKEINC MV ROOTDIR SLIBEXT XLNK% CHAR_OPEN CHAR_CLOSE CHAR_HASH MKTEMP OMPLIBFILE BLAS_INCFILE \
-  CPEDANTIC FREEFORM FFORM_FLAG FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% TMUX \
-  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
   NOBLAS% DNOBLAS MAINLIB FLDFLAGS OPSYS LIBDEP LIBFIND LIBDL LIBRT LIBM LIBCPP BLAS_FLAGS BLAS_LDFLAGS BLAS_THREADS SUITE PEDANTIC CMAIN \
-  LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST NO_OFFLOAD_FLAG FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
-  HEREDIR HOMEDIR UNUSED TEST% SHARED PYMOD MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
+  GNU CCAR CLDFLAGS LIBGFORTRAN PGI FPEDANTIC FWARNEXTRA %_BEGIN% %_END% SLDFLAGS PICFLAG PIC OPTFLAGS OPT OMPFLAG_FORCE FORCE_CXX VNAME \
+  CPEDANTIC FREEFORM FORTLIB FIXFC INCDIR OUTDIR SRCDIR XLIB_% GFC CLANG INTEL CRAY GCCBIN FMFLAGS FCLDFLAGS EXTLIB PYTHON% HOST% TMUX \
+  %_FLAG CC_VERSION_% CXX_VERSION_% FC_VERSION_% GCC_VERSION_% CINFO CP DEPDIR DFLAGS FINFO ENVBIN EXTDEP FORTDEP FSTD GINFO DYNAMIC \
+  HEREDIR HOMEDIR UNUSED TEST% MINGW FMAIN VERSION ACC% LESS% HOME% USER NAME LOGNAME LANG %PWD %PATH TERM% MOTD% SHLVL %COLORS \
+  LIBPTHREAD CSTD CWARNEXTRA QUADMATH BLASDIR BLASLIBEXT BLASTEST FYPPEXE INCLUDEMAKE LIBDIR OBJDIR ONEVERSION XDG_DATA_DIRS \
   $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET) \
   $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC) \
   $(if $(filter 0,$(TBB_MALLOC)),TBB_%) \

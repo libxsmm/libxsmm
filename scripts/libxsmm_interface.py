@@ -30,8 +30,8 @@ if __name__ == "__main__":
         # optional argument(s)
         if 2 < argc:
             ivalue = int(sys.argv[2])
-            ifversion = (ivalue >> 2)
-            precision = (ivalue & 3)
+            ifversion = ivalue >> 2
+            precision = ivalue & 3
         if 3 < argc:
             prefetch = int(sys.argv[3])
         if 4 < argc:
@@ -49,7 +49,7 @@ if __name__ == "__main__":
                         ",\n  "
                         "const float* pa, "
                         "const float* pb, "
-                        "const float* pc);"
+                        "const float* pc);",
                     ][0 < prefetch]
                     substitute["MNK_INTERFACE_LIST"] += (
                         "\nLIBXSMM_API void libxsmm_smm_"
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                         ",\n  "
                         "const double* pa, "
                         "const double* pb, "
-                        "const double* pc);"
+                        "const double* pc);",
                     ][0 < prefetch]
                     substitute["MNK_INTERFACE_LIST"] += (
                         "\nLIBXSMM_API void libxsmm_dmm_"
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 "UPDATE": update,
                 "PATCH": patch,
                 "MNK_INTERFACE_LIST": "",
-                "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion]
+                "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
                 substitute["MNK_INTERFACE_LIST"] += "\n"
@@ -133,7 +133,7 @@ if __name__ == "__main__":
                             + "&".rjust(26 - len(mnkstr))
                             + "\n     &    pa, pb, pc) "
                             + bindc
-                            + "\n"
+                            + "\n",
                         ][0 != prefetch]
                         pfsigb = [
                             "",
@@ -141,7 +141,7 @@ if __name__ == "__main__":
                             "INTENT(IN)" + optional + " :: "
                             "pa(*), "
                             "pb(*), "
-                            "pc(*)\n"
+                            "pc(*)\n",
                         ][0 != prefetch]
                         substitute["MNK_INTERFACE_LIST"] += (
                             "\n          "
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                             + "&".rjust(26 - len(mnkstr))
                             + "\n     &    pa, pb, pc) "
                             + bindc
-                            + "\n"
+                            + "\n",
                         ][0 != prefetch]
                         pfsigb = [
                             "",
@@ -172,7 +172,7 @@ if __name__ == "__main__":
                             "INTENT(IN)" + optional + " :: "
                             "pa(*), "
                             "pb(*), "
-                            "pc(*)\n"
+                            "pc(*)\n",
                         ][0 != prefetch]
                         substitute["MNK_INTERFACE_LIST"] += (
                             "\n          "

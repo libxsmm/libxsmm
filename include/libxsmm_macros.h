@@ -325,10 +325,6 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
-# define __STATIC
-#endif
-
 /* may include Clang and other compatible compilers */
 #if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
@@ -349,7 +345,7 @@
 #endif
 
 /* Windows Dynamic Link Library (DLL) */
-#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
+#if defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport)
 # define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
 #endif
@@ -786,13 +782,12 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
+#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && defined(LIBXSMM_BUILD) && \
     (defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)) && \
-    (defined(LIBXSMM_BUILD) && !defined(__STATIC)) && \
     (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# define LIBXSMM_CTOR
+/*# define LIBXSMM_CTOR*/
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
