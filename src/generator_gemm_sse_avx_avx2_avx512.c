@@ -279,12 +279,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
   /* Local variables used for A transpose case */
   libxsmm_gemm_descriptor *         l_xgemm_desc_opa;
   libxsmm_gemm_descriptor           l_new_xgemm_desc_opa;
-  libxsmm_descriptor_blob           l_meltw_blob;
-  libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
-  libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
   unsigned int                      lda_transpose;
-  /* Local variables used only for older gemm setup (not LIBXSMM_GEMM_FLAG_USE_XGEMM_EXT_ABI) */
-  const libxsmm_meltw_descriptor *  l_mateltwise_desc;
   unsigned int                      l_max_n_blocking = 0;
   unsigned int a_in_vnni = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ? 1 : 0;
 

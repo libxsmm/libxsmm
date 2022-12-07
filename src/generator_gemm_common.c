@@ -904,8 +904,6 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch( libxsmm_generate
     libxsmm_micro_kernel_config*        i_micro_kernel_config ) {
   unsigned int gemm_scratch_size      = 0;
   unsigned int scratch_pad_size       = 0;
-  unsigned int transpose_scratch_size = 0;
-  unsigned int transpose_pad_size     = 0;
   unsigned int avx2_mask_size         = 64;
   unsigned int avx2_ones_size         = 64;
   short sixteen_ones[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };
