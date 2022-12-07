@@ -14,4 +14,4 @@ set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
-"${HERE}/../samples/eltwise/run_test.sh" -o /dev/null -k 0 -n 80 "$@"
+"${HERE}/../samples/eltwise/run_test.sh" -o /dev/null -n 80 "$@"
