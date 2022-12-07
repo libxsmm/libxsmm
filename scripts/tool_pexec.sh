@@ -127,11 +127,13 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     exit 1
   fi
   while read -r LINE; do
-    if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
-      COUNTER=$((COUNTER+1))
-      COUNTED="${COUNTED}"$'\n'"${LINE}"
-    elif [ "0" != "$((COUNTER<MIN))" ]; then
-      ATLEAST="${ATLEAST}"$'\n'"${LINE}"
+    if [ ! "$(echo "${LINE}" | ${SED} -n '/[[:space:]]*#/p')" ]; then # ignore comments
+      if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
+        COUNTER=$((COUNTER+1))
+        COUNTED="${COUNTED}"$'\n'"${LINE}"
+      elif [ "0" != "$((COUNTER<MIN))" ]; then
+        ATLEAST="${ATLEAST}"$'\n'"${LINE}"
+      fi
     fi
   done
   IFS=$'\n' && for LINE in ${ATLEAST}; do
