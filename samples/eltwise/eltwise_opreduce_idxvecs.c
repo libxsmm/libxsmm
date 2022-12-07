@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
   unsigned int avoid_small_vals = 0;
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
+  const double check = LIBXSMM_ABS(NULL == env_check ? 1 : atof(env_check));
 
   libxsmm_init();
   libxsmm_matdiff_clear(&norms_elts);
@@ -683,7 +683,7 @@ int main(int argc, char* argv[])
 
   {
     const char *const env_check_scale = getenv("CHECK_SCALE");
-    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
+    const double check_scale = LIBXSMM_ABS(NULL == env_check_scale ? 1.0 : atof(env_check_scale));
     if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel)) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);

@@ -315,7 +315,7 @@ void libxsmm_generator_transform_Xway_quarter_load_blend_avx512( libxsmm_generat
                                           i_gp_reg_in, LIBXSMM_X86_GP_REG_UNDEF, 0, l_i * i_ld + l_stride_offset * l_q,
                                           i_vector_name, tmp_dst, i_mask_reg[0], 0, 0 );
         libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VINSERTI32X4, i_vector_name,
-                                                                l_dst, l_dst, tmp_dst, 0, 0, 0, l_q );
+                                                                tmp_dst, l_dst, l_dst, 0, 0, 0, l_q );
       }
     } else {
       for ( l_q = 0; l_q < l_way_quarters; ++l_q ) {

@@ -1,78 +1,3 @@
-os: linux # default
-language: cpp
-#dist: xenial
-
-branches:
-  except:
-  - develop
-  - results
-  - wip
-
-jobs:
-  fast_finish: true
-  include:
-  - os: linux
-    compiler: gcc
-    env: INSTALL=install-artifacts OPT=1 PYTHON=python2 MALLOC=-1 LIBXSMM_MALLOC=1
-  - os: linux
-    compiler: gcc
-    env: INSTALL=install DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0 ANALYZE=1
-  - os: linux
-    compiler: clang
-    env: INSTALL=install DBG=1 LIBXSMM_TARGET=sse MALLOC=1 LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
-  - os: osx
-    osx_image: xcode12.2
-    compiler: clang
-    env: SYM=1 OPT=1 SPACES=1 TIMER_DELTA=-1
-  - os: osx
-    osx_image: xcode7.3
-    compiler: clang
-    env: DBG=1 INSTALL=install-artifacts LIBXSMM_SE=1
-
-env:
-  global:
-  - PEDANTIC_HIGH="PEDANTIC=2"
-  - PEDANTIC_TEST="PEDANTIC=1"
-  - LIBXSMM_VERBOSE=3
-  - RUN_LINUX_PERF=0
-
-addons:
-  apt:
-    update: true
-    packages:
-    - gfortran
-    - libblas-dev
-    - liblapack-dev
-    - python3
-  coverity_scan:
-    project:
-      name: "libxsmm/libxsmm"
-      description: "Matrix operations and deep learning primitives"
-    build_command_prepend: "source .env/travis.env; make -e clean"
-    # consider ${MAKEJ} to potentially accelerate the build
-    build_command: "make -e"
-    branch_pattern: coverity
-
-before_install:
-  - source .env/travis.env
-  - if [ -e /proc/cpuinfo ]; then
-      grep -m1 "flags" /proc/cpuinfo | cut -d":" -f2-;
-    elif [ "" != "$(command -v sysctl)" ]; then
-      sysctl -a machdep.cpu.features
-        machdep.cpu.extfeatures
-        machdep.cpu.leaf7_features
-      | cut -d":" -f2- | tr -s "\n" " "
-      | tr "[:upper:]" "[:lower:]";
-    fi
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] && [ -e /etc/ssl/certs/ca-certificates.crt ]; then
-      echo -n | openssl s_client -connect scan.coverity.com:443 2>/dev/null
-      | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' 2>/dev/null
-      | sudo tee -a /etc/ssl/certs/ca-certificates.crt 2>/dev/null;
-    fi
-
-before_script:
-  - source .env/travis.env
-
 # avoid any dashes at the begin of a line within a test section
 script:
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 MIX=0
@@ -81,19 +6,19 @@ script:
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23"
         EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" ${INSTALL} test-cp2k
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SYM=1 MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
         EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} test-nek
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 JITDUMP=${RUN_LINUX_PERF}
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0 JITDUMP=${RUN_LINUX_PERF}
         EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SYM=1 MNK="9 3, 23" STATIC=0
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="9 3, 23" STATIC=0
         EFLAGS="-DLIBXSMM_MALLOC_MMAP" ${INSTALL} test-smm
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SYM=1 INTRINSICS=1 MIX=0 JITDUMP=${RUN_LINUX_PERF}
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0 JITDUMP=${RUN_LINUX_PERF}
         EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SYM=1 SSE=0 AVX=0 JIT=0
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
         EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
@@ -115,16 +40,16 @@ script:
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
     make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     make -e STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
 
-  - if [ ! "${ANALYZE}" ] || [ "0" = "${ANALYZE}" ]; then exit 0; fi;
+  - if [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     if [ ! "${COVERITY_SCAN_BINDIR}" ] || [ ! "${COVERITY_SCAN_USER}" ] || [ ! "${COVERITY_SCAN_TOKEN}" ]; then
       echo "Please setup COVERITY_SCAN_BINDIR, COVERITY_SCAN_USER, and COVERITY_SCAN_TOKEN.";
       exit 1;

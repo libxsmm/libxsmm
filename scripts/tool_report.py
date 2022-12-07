@@ -181,7 +181,8 @@ def main(args):
     nselect = sum(
         1
         for e in template
-        if not select or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        if not select
+        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
     )
     figure, axes = plot.subplots(
         max(nselect, 1), sharex=True, figsize=(9, 6), dpi=300
@@ -193,7 +194,8 @@ def main(args):
     for entry in (
         e
         for e in template
-        if not select or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        if not select
+        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
     ):
         for value in (
             v

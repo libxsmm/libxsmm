@@ -215,7 +215,6 @@
     <ClCompile Include="..\src\libxsmm_memory.c" />
     <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
-    <ClCompile Include="..\src\libxsmm_python.c" />
     <ClCompile Include="..\src\libxsmm_rng.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />

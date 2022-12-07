@@ -12,6 +12,8 @@
 import itertools
 import operator
 import inspect
+import ctypes
+import ctypes.util
 import sys
 import os
 
@@ -79,7 +81,7 @@ def load_mnklist(argv, threshold, inputformat=0, resultset=None):
                         2
                         + int(argv[0]) : 2  # noqa: E203
                         + int(argv[0])
-                        + int(argv[1])
+                        + int(argv[1])  # noqa: E203
                     ],
                 ),
             )
@@ -283,6 +285,46 @@ def version_branch(max_strlen=-1):
     return (version, branch, realversion)
 
 
+def libxsmm_target_arch():
+    libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
+    uname = os.uname()
+    oname = uname.sysname if not isinstance(uname, tuple) else uname[0]
+    if "Darwin" == oname:
+        os.environ["DYLD_LIBRARY_PATH"] = libpath
+        libext = ".dylib"
+    else:
+        os.environ["LD_LIBRARY_PATH"] = libpath
+        libext = ".so"
+    os.environ["LIBXSMM_VERBOSE"] = "0"
+    xsmmnoblas = (
+        "libxsmmnoblas" + libext
+        if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
+        else ctypes.util.find_library("xsmmnoblas")
+    )
+    xsmm = (
+        "libxsmm" + libext
+        if os.path.exists(os.path.join(libpath, "libxsmm" + libext))
+        else ctypes.util.find_library("xsmm")
+    )
+    target = "generic"
+    try:
+        libxsmm = ctypes.CDLL(
+            os.path.join(libpath, xsmmnoblas), mode=ctypes.RTLD_GLOBAL
+        )
+        libxsmm = ctypes.CDLL(
+            os.path.join(libpath, xsmm), mode=ctypes.RTLD_GLOBAL
+        )
+        libxsmm_get_target_arch = libxsmm.libxsmm_get_target_arch
+        libxsmm_get_target_arch.restype = ctypes.c_char_p
+        target = libxsmm_get_target_arch().decode("ascii")
+    except:  # noqa: E722
+        sys.stderr.write(
+            "WARNING: falling back to {0} target.\n".format(target)
+        )
+        pass
+    return target
+
+
 if __name__ == "__main__":
     argc = len(sys.argv)
     if 1 < argc:
@@ -295,10 +337,10 @@ if __name__ == "__main__":
             mnk_size = int(sys.argv[3])
             dims = load_mnklist(
                 sys.argv[4 : 4 + mnk_size], 0, -1  # noqa: E203
-            )
+            )  # noqa: E203
             dims = load_mnklist(
                 sys.argv[4 + mnk_size :], 0, -2, dims  # noqa: E203
-            )
+            )  # noqa: E203
             mnklist = map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))
             print(" ".join(mnklist))
         elif 3 == argc:
@@ -310,6 +352,8 @@ if __name__ == "__main__":
         if 0 == arg1 and 3 == argc:
             major, minor, update, patch = version_numbers(sys.argv[2])
             print(major)  # soname version
+        elif 0 == arg1 and 1 == argc:
+            print(libxsmm_target_arch())
         else:
             version, branch, realversion = version_branch()
             major, minor, update, patch = version_numbers(version)
