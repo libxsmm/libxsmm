@@ -13,13 +13,8 @@ set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
-if [ "${HERE}" ]; then
-  # adjust test properties
-  export LIBXSMM_FSSPMDM_HINT=$((RANDOM%3+1))
-  export TEST_N=48
+# adjust test properties
+export LIBXSMM_FSSPMDM_HINT=$((RANDOM%3+1))
+export TEST_N=48
 
-  "${HERE}/../samples/pyfr/test.sh" -o /dev/null -n 5 "$@"
-else
-  >&2 echo "ERROR: missing prerequisites!"
-  exit 1
-fi
+"${HERE}/../samples/pyfr/test.sh" -o /dev/null -n 5 "$@"

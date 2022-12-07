@@ -13,10 +13,5 @@ set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
-if [ "${HERE}" ]; then
-  "${HERE}"/../samples/edge/test_dense_packedacrm.sh
-  "${HERE}"/../samples/edge/test_dense_packedbcrm.sh
-else
-  >&2 echo "ERROR: missing prerequisites!"
-  exit 1
-fi
+"${HERE}"/../samples/edge/test_dense_packedacrm.sh
+"${HERE}"/../samples/edge/test_dense_packedbcrm.sh
