@@ -19,6 +19,8 @@
 #define BWD_SMAX 2
 #define FWD_BWD_SMAX 3
 
+/*#define USE_SUM 1*/
+
 #if defined(__AVX512F__)
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
@@ -441,8 +443,11 @@ int main( int argc, char* argv[] ) {
   double l_total = 0, l_total2 = 0;
   double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;
-  float *tmp = NULL, *inp = NULL, *out = NULL, *eqn_out = NULL, *gout = NULL, *cache_fl = NULL, sum = 0.0;
+  float *tmp = NULL, *inp = NULL, *out = NULL, *eqn_out = NULL, *gout = NULL, *cache_fl = NULL;
   libxsmm_bfloat16 *bf16_inp = NULL, *bf16_out = NULL, *bf16_eqn_out = NULL;
+#if USE_SUM
+  float sum = 0.0;
+#endif
   int S1 = 64;
   int S2 = 64;
   int S3 = 64;
@@ -580,9 +585,11 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0) {
       if (datatype_mode == 0) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -591,9 +598,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time FWD  = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -604,9 +613,11 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time FWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup FWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_out, tmp);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -615,9 +626,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time FWD = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_softmax_fwd_bf16(S1, S2, S3, bf16_inp, bf16_eqn_out, tmp, func0 );
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -713,9 +726,11 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0 ) {
       if (datatype_mode == 0) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_softmax_bwd(S1, S2, S3, out, inp, gout);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -724,9 +739,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time BWD  = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_softmax_bwd(S1, S2, S3, eqn_out, inp, gout, tmp, func2, func3);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -737,9 +754,11 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup BWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_softmax_bwd_bf16(S1, S2, S3, out, inp, bf16_out);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -748,9 +767,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics softmax time BWD = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_softmax_bwd_bf16(S1, S2, S3, eqn_out, inp, bf16_out, tmp, func2, func3);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -761,8 +782,9 @@ int main( int argc, char* argv[] ) {
         printf("TPP softmax time BWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup BWD is %.5g\n", l_total/l_total2);
       }
-      /* printf("Running sum is %.5f\n", sum); */
-
+#if USE_SUM
+      printf("Running sum is %.5f\n", sum);
+#endif
       t_tpp += l_total2;
       t_vec += l_total;
     }

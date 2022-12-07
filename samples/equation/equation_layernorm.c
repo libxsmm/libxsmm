@@ -18,7 +18,9 @@
 #define FWD_LNORM 1
 #define BWD_LNORM 2
 #define FWD_BWD_LNORM 3
+
 /*#define USE_VECTORIZED_PATH 1*/
+/*#define USE_SUM 1*/
 
 #if defined(__AVX512F__)
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
@@ -617,8 +619,11 @@ int main( int argc, char* argv[] ) {
   double l_total = 0, l_total2 = 0;
   double t_vec = 0, t_tpp = 0;
   libxsmm_matdiff_info norms_out;
-  float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var, sum = 0.0;
+  float *inp, *out, *dinp, *dout, *eqn_dinp, *eqn_dout, *dbeta, *eqn_dbeta, *dgamma, *eqn_dgamma, *eqn_out, *gamma, *beta, *cache_fl, *mean, *var;
   libxsmm_bfloat16 *bf16_inp, *bf16_out, *bf16_dinp, *bf16_dout, *bf16_eqn_dinp, *bf16_eqn_dout, *bf16_gamma, *bf16_beta, *bf16_eqn_out;
+#if USE_SUM
+  float sum = 0.0;
+#endif
   int S1 = 64;
   int S2 = 64;
   int S3 = 64;
@@ -779,9 +784,11 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0) {
       if (datatype_mode == 0) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, out, eps);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -790,9 +797,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_layernorm_fwd_fp32(S1, S2, S3, inp, gamma, beta, mean, var, eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -803,9 +812,11 @@ int main( int argc, char* argv[] ) {
         printf("TPP layernorm time FWD  = %.5g\n", ((double)(l_total2)));
         printf("Speedup FWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_out, eps);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -814,9 +825,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics layernorm time FWD  = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_layernorm_fwd_bf16(S1, S2, S3, bf16_inp, bf16_gamma, bf16_beta, mean, var, bf16_eqn_out, eps, func0, reduce_rows_kernel, reduce_cols_kernel);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -993,9 +1006,11 @@ int main( int argc, char* argv[] ) {
 
     if (iters > 0 ) {
       if (datatype_mode == 0) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -1004,9 +1019,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics layernorm time BWD = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -1017,9 +1034,11 @@ int main( int argc, char* argv[] ) {
         printf("TPP layernorm time BWD = %.5g\n", ((double)(l_total2)));
         printf("Speedup BWD is %.5g\n", l_total/l_total2);
       } else if (datatype_mode == 1) {
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i];
         }
+#endif
         vectorized_layernorm_bwd_bf16(S1, S2, S3, bf16_dout, bf16_inp, mean, var, bf16_gamma, bf16_dinp, dgamma, dbeta);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -1028,9 +1047,11 @@ int main( int argc, char* argv[] ) {
         l_end = libxsmm_timer_tick();
         l_total = libxsmm_timer_duration(l_start, l_end);
         printf("Intrinsics layernorm time BWD  = %.5g\n", ((double)(l_total)));
+#if USE_SUM
         for (i = 0; i < 1024 * 1024; i++ ) {
           sum += cache_fl[i] + (float)l_total;
         }
+#endif
         tpp_layernorm_bwd_bf16(S1, S2, S3, bf16_eqn_dout, bf16_inp, mean, var, bf16_gamma, bf16_eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);
         l_start = libxsmm_timer_tick();
         for (it = 0; it < iters; it++) {
@@ -1043,8 +1064,9 @@ int main( int argc, char* argv[] ) {
       }
     }
   }
-  /* printf("Running sum is %.5f\n", sum); */
-
+#if USE_SUM
+  printf("Running sum is %.5f\n", sum);
+#endif
   t_tpp += l_total2;
   t_vec += l_total;
 
