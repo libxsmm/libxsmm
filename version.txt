@@ -1,1 +1,1 @@
-vnni4_16bit_trans_x86-1.17-3242
+vnni4_16bit_trans_x86-1.17-3279
