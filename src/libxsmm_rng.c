@@ -321,4 +321,3 @@ LIBXSMM_API double libxsmm_rng_f64(void)
   return scale * (double)rand();
 #endif
 }
-

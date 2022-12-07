@@ -405,4 +405,3 @@ private:
 #endif /*defined(__cplusplus)*/
 
 #endif /*LIBXSMM_MALLOC_H*/
-

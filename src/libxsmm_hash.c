@@ -592,4 +592,3 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32(unsigned int seed, const void* dat
   return internal_hash_function(seed, data, size);
 #endif
 }
-
