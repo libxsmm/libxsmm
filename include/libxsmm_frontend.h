@@ -170,7 +170,8 @@
 #endif
 
 #if defined(LIBXSMM_BUILD)
-# if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)
+# if defined(LIBXSMM_BUILD_EXT) && defined(_WINDLL) && \
+    (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 #   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_APIEXT
 # elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
 #   define LIBXSMM_BLAS_SYMBOL_VISIBILITY LIBXSMM_API

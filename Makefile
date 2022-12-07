@@ -252,7 +252,7 @@ VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
-VERSION_ALL ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py)
+VERSION_ALL ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0)
 VERSION_RELEASED ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(VERSION_ALL))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
@@ -264,14 +264,12 @@ endif
 TGT ?= 0
 
 ifeq (0,$(BLAS))
-ifeq (0,$(STATIC))
 ifneq (0,$(LNKSOFT))
 ifeq (Darwin,$(UNAME))
   LDFLAGS += $(call linkopt,-U,_dgemm_)
   LDFLAGS += $(call linkopt,-U,_sgemm_)
   LDFLAGS += $(call linkopt,-U,_dgemv_)
   LDFLAGS += $(call linkopt,-U,_sgemv_)
-endif
 endif
 endif
 endif

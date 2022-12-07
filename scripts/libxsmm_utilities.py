@@ -287,12 +287,15 @@ def version_branch(max_strlen=-1):
 
 def libxsmm_target_arch():
     libpath = os.path.join(os.path.dirname(__file__), "..", "lib")
-    if "Darwin" == os.uname().sysname:
+    uname = os.uname()
+    oname = uname.sysname if not isinstance(uname, tuple) else uname[0]
+    if "Darwin" == oname:
         os.environ["DYLD_LIBRARY_PATH"] = libpath
         libext = ".dylib"
     else:
         os.environ["LD_LIBRARY_PATH"] = libpath
         libext = ".so"
+    os.environ["LIBXSMM_VERBOSE"] = "0"
     xsmmnoblas = (
         "libxsmmnoblas" + libext
         if os.path.exists(os.path.join(libpath, "libxsmmnoblas" + libext))
@@ -315,6 +318,9 @@ def libxsmm_target_arch():
         libxsmm_get_target_arch.restype = ctypes.c_char_p
         target = libxsmm_get_target_arch().decode("ascii")
     except:  # noqa: E722
+        sys.stderr.write(
+            "WARNING: falling back to {0} target.\n".format(target)
+        )
         pass
     return target
 

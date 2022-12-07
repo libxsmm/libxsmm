@@ -22,6 +22,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   HERE=$(cd "$(dirname "$0")" && pwd -P)
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
+  PYTHON=$(command -v python3)
   LG_DEFAULT="./${NAME}.log"
   QT_DEFAULT=0; SP_DEFAULT=2
   CONSUMED=0
@@ -30,13 +31,14 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     UMASK_CMD="umask ${UMASK};"
     eval "${UMASK_CMD}"
   fi
+  if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
+  if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
+    TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
+  fi
   if [ "${PPID}" ] && [ "$(command -v ps)" ]; then
     PARENT=$(ps -o args= ${PPID} | ${SED} -n "s/[^[:space:]]*[[:space:]]*\(..*\)\.sh.*/\1/p")
     if [ "${PARENT}" ]; then
-      if [ "$(command -v python3)" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
-        TARGET=$(python3 "${HERE}/libxsmm_utilities.py")
-      fi
-      if [ -e "${PARENT}_${TARGET}.txt" ]; then
+      if [ "${TARGET}" ] && [ -e "${PARENT}_${TARGET}.txt" ]; then
         WHITE=${PARENT}_${TARGET}.txt
       elif [ -e "${PARENT}.txt" ]; then
         WHITE=${PARENT}.txt
@@ -228,11 +230,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        local ERROR=\"ERROR\"; \
-        if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
         if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" ${WHITE})\" ]; then \
-          1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY} -> OK\n\" \${RESULT}; \
+          1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 0; \
         else \
+          local ERROR=\"ERROR\"; \
+          if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
         exit 0; \
@@ -253,15 +255,18 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     fi >\"\${_PEXEC_LOG}\" 2>&1"
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
+      if [ "${TARGET}" ]; then AT=$(echo "@${TARGET}" | tr "[:lower:]" "[:upper:]"); fi
       if [ "${BUILDKITE_LABEL}" ]; then
         LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
-        | ${SED} 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]") "
+        | ${SED} 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]")${AT} "
       else
-        LABEL="$(basename "$(pwd -P)" \
-        | tr "[:lower:]" "[:upper:]") "
+        LABEL="$(basename "$(pwd -P)" | tr "[:lower:]" "[:upper:]")${AT} "
       fi
     fi
     1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}x${NJ}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
+    if [ "${WHITE}" ]; then
+      1>&2 echo "Whitelist: ${WHITE}"
+    fi
   fi
   echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
   RESULT=$?

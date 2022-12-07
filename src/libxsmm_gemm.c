@@ -455,12 +455,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(void)
 #if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
   { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     const char *const env_wrap = getenv("LIBXSMM_GEMM_WRAP");
-# if defined(__STATIC) /* with static library the user controls interceptor already */
-    libxsmm_gemm_wrap = ((NULL == env_wrap || 0 == *env_wrap) /* LIBXSMM_WRAP=0: no promotion */
-      ? (0 < (LIBXSMM_WRAP) ? (LIBXSMM_WRAP + 2) : (LIBXSMM_WRAP - 2)) : atoi(env_wrap));
-# else
     libxsmm_gemm_wrap = ((NULL == env_wrap || 0 == *env_wrap) ? (LIBXSMM_WRAP) : atoi(env_wrap));
-# endif
   }
 #endif
 #if (0 != LIBXSMM_SYNC)
