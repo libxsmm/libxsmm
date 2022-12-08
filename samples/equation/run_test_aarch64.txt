@@ -3,3 +3,4 @@ equation_layernorm
 equation_relu
 equation_simple
 equation_softmax
+equation_split_sgd
