@@ -403,7 +403,7 @@ if __name__ == "__main__":
         "--summary",
         type=str,
         default="gflops",
-        help="Summarized values",
+        help='If "", plot per-layer history',
     )
     argparser.add_argument(
         "-a",
