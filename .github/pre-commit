@@ -19,7 +19,7 @@ REPO=${GIT_DIR}/..
 FMTSTYLE=${REPO}/.clang-format
 # separate multiple patterns with space
 FMTDIRS=${2:-"samples src tests"}
-FMTXPAT="/gxm/"
+#FMTXPAT="/gxm/"
 # used by degraded policy
 CODEFILE=${REPO}/.codefile
 BANNED_CHARS="\t"
