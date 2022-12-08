@@ -2368,7 +2368,7 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS := p
       endif
     endif
-    BLASDIR ?= $(wildcard $(LIBFIND) /usr/lib /usr/lib64)
+    BLASDIR ?= $(wildcard $(LIBFIND) /usr/lib /usr/lib64 $(subst :, ,$(LD_LIBRARY_PATH)))
     BLASROOT := $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
       BLASTEST := $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
