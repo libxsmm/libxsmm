@@ -791,17 +791,15 @@ else
   GCC_VERSION_NUM := 0
 endif
 
+# Manually enable maintainer build (aka x86_64v1).
+# Previously, it was automatically detected.
+# Old logic:
+#   ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
+#   ifeq (,$(SPACK_ENV_PATH)) # not under Spack
+#   ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
+#   ifneq (0,$(shell echo "$$((100000<=$(GCC_VERSION_NUM)))"))
+#
 MAINTAINER ?= 0
-# detect maintainer build and limit to SSE3
-ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
-ifeq (,$(SPACK_ENV_PATH)) # not under Spack
-ifeq (3,$(XSMM_GCC)) # pure GNU toolchain
-ifneq (0,$(shell echo "$$((60000<=$(GCC_VERSION_NUM)))"))
-  MAINTAINER := 1
-endif
-endif
-endif
-endif
 
 # Select x86 code path (if not selected otherwise)
 CPUFLAGS_X86 := $(strip $(shell if [ -e /proc/cpuinfo ]; then \
