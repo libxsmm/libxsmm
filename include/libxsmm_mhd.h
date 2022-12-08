@@ -166,4 +166,3 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   size_t extension_size);
 
 #endif /*LIBXSMM_MHD_H*/
-

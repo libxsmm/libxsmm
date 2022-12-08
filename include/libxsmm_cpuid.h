@@ -114,4 +114,3 @@ LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
 #define libxsmm_cpuid_vlen(ID) (4 * libxsmm_cpuid_vlen32(ID))
 
 #endif /*LIBXSMM_CPUID_H*/
-
