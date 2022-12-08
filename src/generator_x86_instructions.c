@@ -1349,12 +1349,11 @@ void libxsmm_x86_instruction_evex_compute_2reg_mem( libxsmm_generated_code*     
   /* we need a local non-const i_scale copy */
   unsigned int l_scale;
 
-#if !defined(NDEBUG)
+  /* check if all register args are in bound */
   if ( (i_vec_reg_number_dst > 31) || (i_vec_reg_number_src > 31) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
     return;
   }
-#endif
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
@@ -1536,13 +1535,11 @@ void libxsmm_x86_instruction_evex_compute_3reg( libxsmm_generated_code*     io_g
   /* index for VL look-ups */
   unsigned int l_vl_idx = (unsigned int)i_vector_name;
 
-#if !defined(NDEBUG)
+  /* check if all register args are in bound */
   if ( (i_vec_reg_number_0 > 31) || (i_vec_reg_number_1 > 31) || (i_vec_reg_number_2 > 31) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_REGNUM);
     return;
   }
-#endif
-
   /* check if we have enough code buffer space left */
   if ( (io_generated_code->buffer_size - io_generated_code->code_size) < 20 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
