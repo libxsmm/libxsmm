@@ -141,4 +141,3 @@ LIBXSMM_API unsigned char libxsmm_diff_48(const void* a, const void* b, ...);
 LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...);
 
 #endif /*LIBXSMM_DIFF_H*/
-

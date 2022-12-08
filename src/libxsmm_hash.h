@@ -46,4 +46,3 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u512(unsigned int seed, const void
 LIBXSMM_API_INTERN unsigned int libxsmm_crc32(unsigned int seed, const void* data, size_t size);
 
 #endif /*LIBXSMM_HASH_H*/
-

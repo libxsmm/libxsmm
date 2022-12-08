@@ -38,4 +38,3 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy(libxsmm_dfsspmdm* handle);
 LIBXSMM_API void libxsmm_sfsspmdm_destroy(libxsmm_sfsspmdm* handle);
 
 #endif /*LIBXSMM_FSSPMDM_H*/
-

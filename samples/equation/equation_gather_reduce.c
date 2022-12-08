@@ -145,7 +145,9 @@ int main( int argc, char* argv[] ) {
   op_metadata   = libxsmm_create_matrix_eqn_op_metadata(my_eqn0, -1);
   arg_shape_in  = libxsmm_create_meqn_arg_shape( M, N, ld, in_dt );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, 1, ld, out_dt);
-  unary_flags   = (idx_type == 0) ? LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES : LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
+  unary_flags   = (libxsmm_meltw_unary_flags)(idx_type == 0
+    ? (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_4BYTES)
+    : (LIBXSMM_MELTW_FLAG_UNARY_GS_COLS | LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES));
 
   libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, in_dt, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS);
   libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
