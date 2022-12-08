@@ -35,7 +35,7 @@ if [ ! "$*" ]; then
   TESTS="$(cd "${HERE}" && ${GREP} -l "main[[:space:]]*(.*)" *.c 2>/dev/null) \
     dispatch.sh eltwise.sh equation.sh \
     fsspmdm.sh memcmp.sh opreduce.sh \
-    packed.sh wrap.sh"
+    packed.sh smm.sh wrap.sh"
   if [ "${SORT}" ]; then
     TESTS=$(echo "${TESTS}" | ${TR} -s " " "\n" | ${SORT})
   fi

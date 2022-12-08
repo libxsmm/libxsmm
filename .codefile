@@ -13,3 +13,4 @@
 *.env
 *.yml
 *.slurm
+*.txt
