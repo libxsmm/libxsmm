@@ -218,4 +218,3 @@ LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_se);
 
 #endif /*LIBXSMM_GENERATOR_H*/
-

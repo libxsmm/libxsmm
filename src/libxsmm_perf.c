@@ -284,4 +284,3 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
 #endif
   }
 }
-
