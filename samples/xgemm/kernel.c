@@ -1330,7 +1330,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   libxsmm_gemm_shape l_shape;
-  libxsmm_gemm_batch_reduce_config l_brconfig = { 0 };
+  libxsmm_gemm_batch_reduce_config l_brconfig;
   libxsmm_gemm_ext_unary_argops l_argops;
   libxsmm_gemm_ext_binary_postops l_postops;
   libxsmm_bitfield l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
@@ -1711,7 +1711,7 @@ int main(int argc, char* argv []) {
   int l_unary_postop = OP_NONE;
   int cvt_C_to_vnni = 0;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  gemm_def l_gemm_def = { 0 };
+  gemm_def l_gemm_def;
   int l_n_threads = 1;
   unsigned int l_keep_going = 0;
 
