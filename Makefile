@@ -405,9 +405,9 @@ ifneq (0,$(VERSION_RELEASED))
   WERROR := 0
 endif
 # no warning conversion for non-x86
-ifneq (x86_64,$(MNAME))
-  WERROR := 0
-endif
+#ifneq (x86_64,$(MNAME))
+#  WERROR := 0
+#endif
 # no warning conversion
 ifneq (,$(filter-out 0 1,$(INTEL)))
   WERROR := 0
