@@ -385,7 +385,6 @@ ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
     ifneq (0,$(SYM))
       LIBJITPROFILING := $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      OBJJITPROFILING := $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
       IFLAGS += -I$(call quote,$(VTUNEROOT)/include)
       WERROR := 0
@@ -888,7 +887,7 @@ endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.pc
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifneq (0,$(STATIC))
 	@-rm -f $@
 	$(AR) -rs $@ $(call tailwords,$^)
