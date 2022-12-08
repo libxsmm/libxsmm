@@ -1121,19 +1121,9 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   unsigned int l_ldc_saved = 0;
 
   /* Local variables used for A transpose case */
-  libxsmm_descriptor_blob           l_blob_opa;
   libxsmm_gemm_descriptor*          l_xgemm_desc_opa;
   libxsmm_gemm_descriptor           l_new_xgemm_desc_opa;
-
-  libxsmm_descriptor_blob           l_meltw_blob;
-  libxsmm_mateltwise_kernel_config  l_mateltwise_kernel_config;
-  libxsmm_mateltwise_gp_reg_mapping l_mateltwise_gp_reg_mapping;
   unsigned int                      lda_transpose;
-  /* Local variables used only for older gemm setup (without stack frame) */
-  unsigned int                      l_trans_a_stack_size       = 0;
-  unsigned int                      l_trans_extra_stack_size   = 80;
-  unsigned int                      l_transpose_stack_register = LIBXSMM_AARCH64_GP_REG_UNDEF;
-  const libxsmm_meltw_descriptor *  l_mateltwise_desc;
 
   /* TODO (MMLA): clean up integration */
   int l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();

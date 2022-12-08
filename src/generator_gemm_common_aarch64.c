@@ -18,6 +18,7 @@
 #include "generator_common_aarch64.h"
 #include "generator_mateltwise_aarch64.h"
 #include "generator_mateltwise_aarch64_sve.h"
+#include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"
 
@@ -204,7 +205,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
     i_xgemm_desc->c1 = LIBXSMM_TYPESIZE(i_in_dtype) * i_xgemm_desc->m * i_xgemm_desc->k;
   }
 
-  libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xe0f );
+  libxsmm_aarch64_instruction_restore_regs( io_generated_code, 0xe0f );
 }
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB_aarch64( libxsmm_generated_code*        io_generated_code,
