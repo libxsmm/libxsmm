@@ -116,15 +116,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   fi
 
   # setup CONFIGS (multiple configurations)
-  if [ ! "${CONFIGS}" ]; then
+  # singular CONFIG takes precedence
+  if [ "${CONFIG}" ]; then
+    CONFIGS=${CONFIG}
+  elif [ ! "${CONFIGS}" ]; then
     if [ "${CONFIG}" ]; then
       CONFIGS=${CONFIG}
     else
       CONFIGS=none
     fi
-  elif [ "${CONFIG}" ]; then
-    # singular CONFIG replaces set of CONFIGS
-    CONFIGS=${CONFIG}
   fi
   read -ra ARRAY <<<"${CONFIGS}"
   NCONFIGS=${#ARRAY[@]}
