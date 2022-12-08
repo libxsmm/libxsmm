@@ -61,6 +61,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
   int is_offset_brgemm        = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm       = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm               = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
+  LIBXSMM_UNUSED(i_micro_kernel_config);
 
   l_mateltwise_gp_reg_mapping.gp_reg_param_struct = i_struct_gp_reg;
   libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_MELTW_STRUCT_PTR, i_struct_gp_reg);
@@ -81,7 +82,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_
   }
   if (is_address_brgemm > 0) {
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, i_gp_reg_in, i_tmp_reg2, 0, 0 );
-    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_R, i_tmp_reg, i_loop_reg, 0, i_gp_reg_in);
+    libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_R, i_gp_reg_in, i_loop_reg, 0, i_gp_reg_in);
   }
 
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, i_struct_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, i_gp_reg_in );
@@ -157,11 +158,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
   int is_offset_brgemm        = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) > 0) ? 1 : 0;
   int is_address_brgemm       = ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) > 0) ? 1 : 0;
   int is_brgemm               = ((is_stride_brgemm == 1) || (is_offset_brgemm == 1) || (is_address_brgemm == 1)) ? 1 : 0;
-  unsigned int struct_gp_reg  = LIBXSMM_AARCH64_GP_REG_X9;
+  unsigned int struct_gp_reg  = LIBXSMM_AARCH64_GP_REG_X6;
   unsigned int tmp_reg        = LIBXSMM_AARCH64_GP_REG_X10;
-  unsigned int loop_reg       = LIBXSMM_AARCH64_GP_REG_X11;
+  unsigned int loop_reg       = LIBXSMM_AARCH64_GP_REG_X28;
   unsigned int bound_reg      = LIBXSMM_AARCH64_GP_REG_X27;
-  unsigned int tmp_reg2       = LIBXSMM_AARCH64_GP_REG_X28;
+  unsigned int tmp_reg2       = LIBXSMM_AARCH64_GP_REG_X11;
   unsigned int tmp_reg3       = LIBXSMM_AARCH64_GP_REG_X26;
 
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xe0f );
