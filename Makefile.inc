@@ -708,7 +708,7 @@ WCHECK ?= 1
 WERROR_CFLAG := $(call ctest,$(CC),-Werror)
 WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
 ifneq (0,$(WCHECK))
-  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck) $(WERROR_CFLAG)
+  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck)
   ifneq (,$(WCHECK_CFLAG))
     WCHECK_CFLAG := $(WCHECK_CFLAG) $(WERROR_CFLAG)
     ifneq (0,$(INTEL))
@@ -1211,8 +1211,8 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION_NUM)))"))
     CXXFLAGS += -std=c++11
   endif
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003,13379
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,10441,11074,11076,13003,13379
   ifneq (0,$(UNUSED))
     CXXFLAGS += -Wno-unused-function
     CFLAGS += -Wno-unused-function
