@@ -650,6 +650,9 @@ int main( int argc, char* argv[] ) {
     if (1 == S1 && 1 == S3) {
       error_bound = LIBXSMM_MAX(0.005, error_bound);
     }
+    else if (1 == S2) {
+      error_bound = LIBXSMM_MAX(0.0006, error_bound);
+    }
   } else if (datatype_mode == 1) {
     in_dt = LIBXSMM_DATATYPE_BF16;
     out_dt = LIBXSMM_DATATYPE_BF16;
