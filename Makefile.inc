@@ -704,11 +704,21 @@ ifneq (,$(filter-out 0,$(FORCE_CXX)))
   override CC := $(CXX)
 endif
 
-WCHECK ?= 0
+WCHECK ?= 1
 WERROR_CFLAG := $(call ctest,$(CC),-Werror)
 WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
 ifneq (0,$(WCHECK))
-  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck $(WERROR_CFLAG))
+  WCHECK_CFLAG := $(call ctest,$(CC),-Wcheck) $(WERROR_CFLAG)
+  ifneq (,$(WCHECK_CFLAG))
+    WCHECK_CFLAG := $(WCHECK_CFLAG) $(WERROR_CFLAG)
+    ifneq (0,$(INTEL))
+    ifeq (1,$(WCHECK))
+      WCHECK_CFLAG := -diag-disable 2259 $(WCHECK_CFLAG)
+    endif
+    endif
+  else
+    WCHECK_CFLAG := $(WERROR_CFLAG)
+  endif
 endif
 
 ifeq (0,$(ICX))
