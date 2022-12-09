@@ -84,7 +84,7 @@ endif
 	@-rm -f .make .state
 
 .PHONY: realclean
-realclean: clean
+realclean:
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
@@ -94,3 +94,6 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
+
+.PHONY: deepclean
+deepclean: clean realclean

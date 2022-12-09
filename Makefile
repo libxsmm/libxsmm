@@ -1418,7 +1418,7 @@ endif
 	@-rm -rf $(ROOTDIR)/$(SCRDIR)/__pycache__
 
 .PHONY: realclean
-realclean: clean
+realclean:
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(HEREDIR))
 	@-rm -rf $(OUTDIR)
@@ -1461,8 +1461,11 @@ realclean-all: realclean
 	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
 		"$(MAKE) --no-print-directory realclean" \; 2>/dev/null || true
 
+.PHONY: deepclean
+deepclean: clean realclean
+
 .PHONY: distclean
-distclean: realclean-all
+distclean: clean-all realclean-all
 	@-rm -rf libxsmm*
 
 # keep original prefix (:)

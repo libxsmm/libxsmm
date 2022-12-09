@@ -39,10 +39,14 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg $(OUTDIR)/gimmik
+XTESTS := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
+XFILES := $(XTESTS) $(OUTDIR)/gimmik
 
 .PHONY: all
 all: $(XFILES)
+
+.PHONY: tests
+tests: $(XTESTS)
 
 .PHONY: compile
 compile: $(OBJECTS)
@@ -73,7 +77,7 @@ endif
 	@-rm -f .make .state
 
 .PHONY: realclean
-realclean: clean
+realclean:
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)

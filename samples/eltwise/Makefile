@@ -104,7 +104,7 @@ endif
 	@-rm -f .make .state
 
 .PHONY: realclean
-realclean: clean
+realclean:
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
@@ -115,3 +115,6 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(XFILES) $(MODULES)
 endif
 	@-rm -f $(TSTDIR)/.create_new_opreduce_simple_test
+
+.PHONY: deepclean
+deepclean: clean realclean

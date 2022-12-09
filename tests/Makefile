@@ -170,7 +170,7 @@ endif
 	@-rm -f .make .state
 
 .PHONY: realclean
-realclean: clean
+realclean:
 	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory realclean"
 	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
@@ -188,3 +188,6 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
+
+.PHONY: deepclean
+deepclean: clean realclean
