@@ -979,24 +979,22 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   unsigned int l_k_blocking = 0;
   unsigned int l_k_threshold = 0;
   unsigned int l_k_pack_factor = 1;
-  /* calculate m_blocking such that we choose the right AVX512 kernel */
-  unsigned int l_m_vector = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
 
   /* a very simple k unrolling model */
-  if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_AVX512_KNM ) && ( l_m_vector == 1 ) ) {
+  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) && ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) ) {
     l_k_blocking = 16;
     l_k_threshold = 47;
   } else {
     l_k_blocking = 4;
     l_k_threshold = 23;
   }
+  /* VNNI kenrel should maintain the same amount of unrolled instructions */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
     l_k_blocking = l_k_blocking*l_k_pack_factor;
     l_k_threshold = ((l_k_threshold+1)*l_k_pack_factor)-1;
   }
-
-  /* for BF8 we need to limit the unrolling */
+  /* for BF8 we need to limit the unrolling, software emualtion code is very large */
   if (  LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) || LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) ) {
     l_k_blocking = 8;
     l_k_threshold = 23;
