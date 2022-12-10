@@ -24,6 +24,22 @@ void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*          
 {
   unsigned int l_k = 0;
   unsigned int l_k_pack_factor = 1;
+  void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
+                                  const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
+
+  /* select correct micro kernel */
+  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) &&
+       (io_generated_code->arch < LIBXSMM_X86_AVX2_ADL) ) {
+    l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu;
+  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+              ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
+    l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu;
+  } else if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+              ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
+    l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel_bf16_flat_emu;
+  } else {
+    l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel;
+  }
 
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
@@ -31,13 +47,13 @@ void libxsmm_generator_gemm_avx2_kloop_kernel( libxsmm_generated_code*          
 
   if ( i_k_blocking == (unsigned int)i_xgemm_desc->k ) {
     for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
-      libxsmm_generator_gemm_avx2_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                              i_xgemm_desc, i_m_blocking, i_n_blocking, (int)l_k);
+      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                              i_xgemm_desc, i_m_blocking, i_n_blocking, (int)l_k);
     }
   } else {
     for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
-      libxsmm_generator_gemm_avx2_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                              i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
+      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                              i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
     }
   }
 }
@@ -63,25 +79,6 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
   int l_b_offset = 0;
   /* k packing factor for VNNI */
   unsigned int l_k_pack_factor = 1;
-
-  if ( ( (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) || (LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) &&
-       (io_generated_code->arch < LIBXSMM_X86_AVX2_ADL) ) {
-    libxsmm_generator_gemm_avx2_microkernel_int8_int16_vnni_emu( io_generated_code, i_gp_reg_mapping,
-        i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, i_offset );
-    return;
-  }
-  if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
-       ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) > 0) ) {
-    libxsmm_generator_gemm_avx2_microkernel_bf16_vnni_emu( io_generated_code, i_gp_reg_mapping,
-        i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, i_offset );
-    return;
-  }
-  if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
-       ((i_xgemm_desc->flags &  LIBXSMM_GEMM_FLAG_VNNI_A) == 0) ) {
-    libxsmm_generator_gemm_avx2_microkernel_bf16_flat_emu( io_generated_code, i_gp_reg_mapping,
-        i_micro_kernel_config, i_xgemm_desc, i_m_blocking, i_n_blocking, i_offset );
-    return;
-  }
 
   if ( i_micro_kernel_config->use_masking_a_c != 0 ) {
     libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_AVX2_MASK_PTR, i_gp_reg_mapping->gp_reg_help_0 );
