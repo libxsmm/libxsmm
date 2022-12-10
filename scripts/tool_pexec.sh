@@ -119,7 +119,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   NI=${PEXEC_NI:-${NI}};
   NI=""
-  if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS}; else NIFIX=1; fi
+  if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS:-1}; else NIFIX=1; fi
   NP=${PEXEC_NP:-${NP}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
   CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
   MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
@@ -184,7 +184,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   fi
   # select inner parallelism
   export OMP_NUM_THREADS=1
-  if [ "1" != "${NK}" ] && [ "/dev/null" = "${LOG}" ]; then
+  if [[ ("1" != "${NK}") && ("/dev/null" = "${LOG}" || "0" != "$((0<NI))") ]]; then
     if [ "${NIFIX}" ] && [ "0" != "${NIFIX}" ]; then
       if [ "0" != "$((0<NI))" ]; then
         export OMP_NUM_THREADS=$(((NK+NJ-1)/NJ))
