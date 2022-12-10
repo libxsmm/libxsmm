@@ -148,16 +148,8 @@ $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPD
 #$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
 #$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
-.PHONY: clean
-clean:
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory clean"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory clean"
+.PHONY: clean-private
+clean-private:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
@@ -167,18 +159,9 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@-rm -f .make .state
 
-.PHONY: realclean
-realclean:
-	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory realclean"
-	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory realclean"
+.PHONY: realclean-private
+realclean-private: clean-private
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
@@ -189,5 +172,36 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(XFILES) $(MODULES)
 endif
 
+.PHONY: clean
+clean: clean-private
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory clean"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory clean"
+
+.PHONY: realclean
+realclean: realclean-private
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory realclean"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory realclean"
+
 .PHONY: deepclean
-deepclean: clean realclean
+deepclean: realclean-private
+	@$(FLOCK) $(DEPDIR)/samples/pyfr "$(MAKE) REALTYPE=$(REALTYPE) BLAS=0 --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/dispatch "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/memcmp "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/utilities/wrap "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/equation "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/eltwise "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/xgemm "$(MAKE) --no-print-directory deepclean"
+	@$(FLOCK) $(DEPDIR)/samples/edge "$(MAKE) --no-print-directory deepclean"
+	@-rm -f .make .state
