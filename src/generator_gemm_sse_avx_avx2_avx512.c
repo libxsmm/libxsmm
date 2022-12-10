@@ -973,9 +973,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
                                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                            const unsigned int                 i_m_blocking,
                                                                            const unsigned int                 i_n_blocking ) {
-  void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                  const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
-
+  void (*l_generator_kloop_kernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
+                                   const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const unsigned int);
   /* some hard coded parameters for k-blocking */
   unsigned int l_k_blocking = 0;
   unsigned int l_k_threshold = 0;
@@ -983,15 +982,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   /* calculate m_blocking such that we choose the right AVX512 kernel */
   unsigned int l_m_vector = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
 
-  /* in case of 1d blocking and KNL/KNM we unroll aggressively */
-  /*
-   if ( (( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CLX) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX) ||
-         ( io_generated_code->arch == LIBXSMM_X86_AVX512_VL256)
-        ) && ( LIBXSMM_DATATYPE_F64 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype))
-      ) {
-    l_k_blocking = 4;
-    l_k_threshold = 12;
-  } else */
+  /* a very simple k unrolling model */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_AVX512_KNM ) && ( l_m_vector == 1 ) ) {
     l_k_blocking = 16;
     l_k_threshold = 47;
@@ -999,7 +990,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     l_k_blocking = 4;
     l_k_threshold = 23;
   }
-
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
     l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
     l_k_blocking = l_k_blocking*l_k_pack_factor;
@@ -1017,13 +1007,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   } else if ( io_generated_code->arch <= LIBXSMM_X86_SSE42 ) {
-    l_generator_microkernel = libxsmm_generator_gemm_sse_microkernel;
+    l_generator_kloop_kernel = libxsmm_generator_gemm_sse_kloop_kernel;
   } else if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
-    l_generator_microkernel = libxsmm_generator_gemm_avx_microkernel;
+    l_generator_kloop_kernel = libxsmm_generator_gemm_avx_kloop_kernel;
   } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 || io_generated_code->arch == LIBXSMM_X86_AVX2_ADL ) {
-    l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel;
+    l_generator_kloop_kernel = libxsmm_generator_gemm_avx2_kloop_kernel;
   } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
-    l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nofsdbcst;
+    l_generator_kloop_kernel = libxsmm_generator_gemm_avx512_kloop_kernel;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -1032,89 +1022,37 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   /* apply multiple k_blocking strategies */
   /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
   if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k)) {
-    unsigned int l_k;
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_m_blocking, l_k_blocking);
 
-    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( l_m_vector == 1 ) ) {
-      if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
-        libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-          i_xgemm_desc, i_n_blocking, l_k_blocking );
-      } else {
-        libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-          i_xgemm_desc, i_n_blocking, l_k_blocking );
-      }
-    } else {
-      for ( l_k = 0; l_k < l_k_blocking; l_k += l_k_pack_factor ) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-          i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
-      }
-    }
+    l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+      i_xgemm_desc, i_m_blocking, i_n_blocking, l_k_blocking);
 
     libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
       i_xgemm_desc, i_m_blocking, i_xgemm_desc->k, 1 );
   } else {
     /* 2. we want to fully unroll below the threshold */
     if ((unsigned int)i_xgemm_desc->k <= l_k_threshold) {
-      unsigned int l_k;
-
-      if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( l_m_vector == 1 ) ) {
-        if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
-          libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_n_blocking, (unsigned int)i_xgemm_desc->k );
-        } else {
-          libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_n_blocking, (unsigned int)i_xgemm_desc->k );
-        }
-      } else {
-        for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k += l_k_pack_factor) {
-          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_m_blocking, i_n_blocking, l_k);
-        }
-      }
-      /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
+      l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+        i_xgemm_desc, i_m_blocking, i_n_blocking, (unsigned int)i_xgemm_desc->k);
+    /* 3. we are larger than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
     } else {
       unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
-      unsigned int l_k;
       int l_b_offset = 0;
 
       /* we can block as k is large enough */
       if ( l_max_blocked_k > 0 ) {
         libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_m_blocking, l_k_blocking);
 
-        if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( l_m_vector == 1 ) ) {
-          if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
-            libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-              i_xgemm_desc, i_n_blocking, l_k_blocking );
-          } else {
-            libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-              i_xgemm_desc, i_n_blocking, l_k_blocking );
-          }
-        } else {
-          for ( l_k = 0; l_k < l_k_blocking; l_k += l_k_pack_factor) {
-            l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-              i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
-          }
-        }
+        l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+          i_xgemm_desc, i_m_blocking, i_n_blocking, l_k_blocking);
 
         libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
           i_xgemm_desc, i_m_blocking, l_max_blocked_k, 0 );
       }
 
       /* now we handle the remainder handling */
-      if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( l_m_vector == 1 ) ) {
-        if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
-          libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_n_blocking, ((unsigned int)i_xgemm_desc->k) - l_max_blocked_k );
-        } else {
-          libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_n_blocking, ((unsigned int)i_xgemm_desc->k) - l_max_blocked_k );
-        }
-      } else {
-        for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k += l_k_pack_factor) {
-          l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-            i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
-        }
-      }
+      l_generator_kloop_kernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+        i_xgemm_desc, i_m_blocking, i_n_blocking, ((unsigned int)i_xgemm_desc->k) - l_max_blocked_k );
 
       /* reset B pointer */
       if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
