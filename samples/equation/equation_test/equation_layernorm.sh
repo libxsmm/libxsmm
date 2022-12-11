@@ -35,8 +35,10 @@ for i in $(cat ${TESTFILE1}); do
       ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0
     else
       ./equation_layernorm ${M} ${N} ${K} ${PREC} 3 0 &
-      if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
-      if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+      PEXEC_PID+=("$!")
+      if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
+        for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID
+      fi
     fi
   done
 done
