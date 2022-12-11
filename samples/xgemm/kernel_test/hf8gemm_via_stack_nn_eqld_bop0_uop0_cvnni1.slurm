@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
 export LIBXSMM_HF8_GEMM_VIA_STACK=1
 
-if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
-  exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "hsw" ]]; then
-  exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
-  exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
-  exit 0;
-fi
+
+
+
+
 
 TESTFILE1=$(mktemp)
 TESTFILE2=$(mktemp)
