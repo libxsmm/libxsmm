@@ -122,17 +122,39 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
   MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
   WHITE=${PEXEC_WL:-${WHITE}}
+  MAKE_PRETTY_FUNCTION="_PEXEC_MAKE_PRETTY() { \
+    local HERE PRE CMD ARGS WORDS INPUT=\$*; \
+    HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
+    for WORD in \${INPUT}; do \
+      local PRETTY; \
+      PRETTY=\$(echo \"\${WORD}\" \
+      | ${SED} \"s/\/\.\//\//;s/.*\${HERE}\///\" \
+      | ${SED} 's/\(.*\)\..*/\1/'); \
+      if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
+        PRE=\${WORDS}; CMD=\${PRETTY}; ARGS=\"\"; \
+        continue; \
+      fi; \
+      WORDS=\"\${WORDS} \${PRETTY}\"; \
+      ARGS=\"\${ARGS} \${PRETTY}\"; \
+    done; \
+    echo \"\${CMD}\${PRE}\${ARGS}\" \
+    | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
+    | if [ \"${CT}\" ]; then ${CUT} -d_ -f\"${CT}\"; else ${CAT}; fi; \
+  }"
   if [ "${WHITE}" ] && [ ! -e "${WHITE}" ]; then
     1>&2 echo "ERROR: \"${WHITE}\" whitelist file not found!"
     exit 1
   fi
   while read -r LINE; do
     if [ ! "$(echo "${LINE}" | ${SED} -n '/[[:space:]]*#/p')" ]; then # ignore comments
-      if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
-        COUNTER=$((COUNTER+1))
-        COUNTED="${COUNTED}"$'\n'"${LINE}"
-      elif [ "0" != "$((COUNTER<MIN))" ]; then
-        ATLEAST="${ATLEAST}"$'\n'"${LINE}"
+      PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\"")
+      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -n "/${PRETTY}/p" ${WHITE})" ]; then
+        if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
+          COUNTER=$((COUNTER+1))
+          COUNTED="${COUNTED}"$'\n'"${LINE}"
+        elif [ "0" != "$((COUNTER<MIN))" ]; then
+          ATLEAST="${ATLEAST}"$'\n'"${LINE}"
+        fi
       fi
     fi
   done
@@ -209,25 +231,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     LOG_OUTER=${LOG}
   fi
   PEXEC_SCRIPT="set -eo pipefail; ${UMASK_CMD} \
-    _PEXEC_MAKE_PRETTY() { \
-      local HERE PRE CMD ARGS WORDS INPUT=\$*; \
-      HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
-      for WORD in \${INPUT}; do \
-        local PRETTY; \
-        PRETTY=\$(echo \"\${WORD}\" \
-        | ${SED} \"s/\/\.\//\//;s/.*\${HERE}\///\" \
-        | ${SED} 's/\(.*\)\..*/\1/'); \
-        if [ \"\$(command -v \"\${WORD}\" 2>/dev/null)\" ]; then \
-          PRE=\${WORDS}; CMD=\${PRETTY}; ARGS=\"\"; \
-          continue; \
-        fi; \
-        WORDS=\"\${WORDS} \${PRETTY}\"; \
-        ARGS=\"\${ARGS} \${PRETTY}\"; \
-      done; \
-      echo \"\${CMD}\${PRE}\${ARGS}\" \
-      | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
-      | if [ \"${CT}\" ]; then ${CUT} -d_ -f\"${CT}\"; else ${CAT}; fi; \
-    }; \
+    ${MAKE_PRETTY_FUNCTION}; \
     _PEXEC_PRETTY=\$(_PEXEC_MAKE_PRETTY \$0); \
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
