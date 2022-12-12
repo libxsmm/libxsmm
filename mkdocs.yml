@@ -26,6 +26,7 @@ nav:
 - Q&A: libxsmm_qna.md
 - LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
+  - "TPP: Tensor Processing Primitives": libxsmm_tpp.md
   - "DNN: Deep Neural Networks": https://libxsmm.readthedocs.io/#deep-learning
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
