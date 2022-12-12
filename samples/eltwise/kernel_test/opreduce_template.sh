@@ -50,8 +50,10 @@ for i in $(cat ${TESTFILE1}); do
           ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16}
         else
           ./eltwise_opreduce_idxvecs ${M} ${N_ADJ} ${N} ${LDI_ADJ} ${OP} ${OPORDER} ${SCALE} ${OPRED} ${REGVECIN} ${IMPLICITIDX} ${OPARG} ${IDXTYPE} 0 ${USE_BF16} &
-          if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
-          if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+          PEXEC_PID+=("$!")
+          if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
+            for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID
+          fi
         fi
       done
     done

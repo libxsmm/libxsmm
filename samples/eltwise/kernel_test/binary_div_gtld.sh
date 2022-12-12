@@ -42,8 +42,10 @@ for i in $(cat ${TESTFILE1}); do
         ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100
       else
         ./eltwise_binary_simple ${BINARY_OP} ${BCAST} ${PREC_IN0} ${PREC_IN1} ${PREC_COMP} ${PREC_OUT} ${M} ${N} 100 100 &
-        if [ "${NI}" ]; then NI=$((NI+1)); else NI=1; fi
-        if [ "0" != "$((PEXEC_NI<=NI))" ]; then wait; unset NI; fi
+        PEXEC_PID+=("$!")
+        if [ "0" != "$((PEXEC_NI<=${PEXEC_PID[@]}))" ]; then
+          for PID in "${PEXEC_PID[@]}"; do wait "${PID}"; done; unset PEXEC_PID
+        fi
       fi
     done
   done
