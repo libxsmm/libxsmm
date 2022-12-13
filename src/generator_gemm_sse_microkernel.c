@@ -13,7 +13,30 @@
 #include "libxsmm_main.h"
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_sse_kloop_kernel( libxsmm_generated_code*            io_generated_code,
+                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                              const unsigned int                 i_m_blocking,
+                                              const unsigned int                 i_n_blocking,
+                                              const unsigned int                 i_k_blocking )
+{
+  unsigned int l_k = 0;
+  unsigned int l_k_pack_factor = 1;
+
+  if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );;
+  }
+
+  for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
+    libxsmm_generator_gemm_sse_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                                           i_xgemm_desc, i_m_blocking, i_n_blocking,
+                                           ( i_k_blocking == (unsigned int)i_xgemm_desc->k ) ? (int)l_k : -1);
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_sse_microkernel( libxsmm_generated_code*            io_generated_code,
                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
