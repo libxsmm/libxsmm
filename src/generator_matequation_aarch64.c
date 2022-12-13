@@ -284,7 +284,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
 
 
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
-      /*TODO: Now we allocate tmps with dsize float */
+      /* TODO: Now we allocate tmps with dsize float */
       /* Extra tmp for ternary accommodation */
       int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score + 1;

@@ -16,7 +16,7 @@
 #include "libxsmm_main.h"
 #include "libxsmm_matrixeqn.h"
 
-/*TODO: check if we want to use enums here? Has this implications in the encoder? */
+/* TODO: check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX               0
 #define LIBXSMM_X86_GP_REG_RCX               1

@@ -289,7 +289,7 @@ void libxsmm_generator_matequation_setup_stack_frame( libxsmm_generated_code*   
     libxsmm_x86_instruction_alu_reg( io_generated_code, LIBXSMM_X86_INSTR_ANDQ, temp_reg, LIBXSMM_X86_GP_REG_RSP);
 
     if (i_strategy == JIT_STRATEGY_USING_TMP_SCRATCH_BLOCKS) {
-      /*TODO: Now we allocate tmps with dsize float */
+      /* TODO: Now we allocate tmps with dsize float */
       int tree_max_comp_tsize = i_eqn->eqn_root->tree_max_comp_tsize;
       libxsmm_blasint n_tmp = i_eqn->eqn_root->reg_score;
       libxsmm_blasint tmp_size = i_eqn->eqn_root->max_tmp_size * tree_max_comp_tsize;
