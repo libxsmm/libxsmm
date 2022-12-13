@@ -981,7 +981,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kloop( libxsm
   unsigned int l_k_pack_factor = 1;
 
   /* a very simple k unrolling model */
-  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) && ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) ) {
+  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) ) {
     l_k_blocking = 16;
     l_k_threshold = 47;
   } else {
