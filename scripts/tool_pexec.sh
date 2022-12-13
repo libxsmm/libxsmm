@@ -42,9 +42,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     PARENT=$(ps -o args= ${PPID} | ${SED} -n "s/[^[:space:]]*[[:space:]]*\(..*\)\.sh.*/\1/p")
     if [ "${PARENT}" ]; then
       if [ "${TARGET}" ] && [ -e "${PARENT}_${TARGET}.txt" ]; then
-        WHITE=${PARENT}_${TARGET}.txt
+        ALLOW=${PARENT}_${TARGET}.txt
       elif [ -e "${PARENT}.txt" ]; then
-        WHITE=${PARENT}.txt
+        ALLOW=${PARENT}.txt
       fi
     fi
   fi
@@ -54,8 +54,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       if [ "0" != "${PEXEC_QT:-${QUIET:-${QT_DEFAULT}}}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
       echo "       -x|--xfail  N [PEXEC_XF]: results 2..254 are failures; default: ${PEXEC_XF:-${XFAIL:-${XF_DEFAULT}}}"
-      echo "       -b|--black  N [PEXEC_BL]: whitelisted cases must fail; default: ${PEXEC_BL:-${BLACK:-${XF_DEFAULT}}}"
-      echo "       -w|--white  F [PEXEC_WL]: whitelist; default: ${WHITE:-filename not defined}"
+      echo "       -y|--shaky  N [PEXEC_BL]: allowed failures must fail; default: ${PEXEC_BL:-${SHAKY:-${BL_DEFAULT}}}"
+      echo "       -w|--allow  F [PEXEC_WL]: allowed failures (filename); default: ${ALLOW:--}"
       echo "       -q|--quiet  - [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
       echo "       -o|--log    F [PEXEC_LG]: logfile combining output to stdout/stderr"
       echo "       -c|--cut    S [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
@@ -74,11 +74,11 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     -x|--xfail)
       XFAIL=$2
       shift 2;;
-    -b|--black)
-      BLACK=$2
+    -y|--shaky)
+      SHAKY=$2
       shift 2;;
-    -w|--white)
-      WHITE=$2
+    -w|--allow)
+      ALLOW=$2
       shift 2;;
     -q|--quiet)
       QUIET=1
@@ -128,13 +128,13 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   COUNTER=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
   XFAIL=${PEXEC_XF:-${XFAIL}}; if [ ! "${XFAIL}" ]; then XFAIL=${XF_DEFAULT}; fi
-  BLACK=${PEXEC_BL:-${BLACK}}; if [ ! "${BLACK}" ]; then BLACK=${BL_DEFAULT}; fi
+  SHAKY=${PEXEC_BL:-${SHAKY}}; if [ ! "${SHAKY}" ]; then SHAKY=${BL_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   NI=${PEXEC_NI:-${NI}}; if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS:-1}; else NIFIX=1; fi
   NP=${PEXEC_NP:-${NP}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
   CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
   MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
-  WHITE=${PEXEC_WL:-${WHITE}}
+  ALLOW=${PEXEC_WL:-${ALLOW}}
   MAKE_PRETTY_FUNCTION="_PEXEC_MAKE_PRETTY() { \
     local HERE PRE CMD ARGS WORDS INPUT=\$*; \
     HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
@@ -154,14 +154,14 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     | ${SED} 's/[^[:alnum:]]/_/g;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;s/__*/_/g;s/^_//;s/_$//' \
     | if [ \"${CT}\" ]; then ${CUT} -d_ -f\"${CT}\"; else ${CAT}; fi; \
   }"
-  if [ "${WHITE}" ] && [ ! -e "${WHITE}" ]; then
-    1>&2 echo "ERROR: \"${WHITE}\" whitelist file not found!"
+  if [ "${ALLOW}" ] && [ ! -e "${ALLOW}" ]; then
+    1>&2 echo "ERROR: \"${ALLOW}\" file not found!"
     exit 1
   fi
   while read -r LINE; do
     if [ ! "$(echo "${LINE}" | ${SED} -n '/^[[:space:]]*#/p')" ]; then # ignore comments
       PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\"")
-      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -En "/^${PRETTY}([[:space:]]|$)/p" "${WHITE}")" ]; then
+      if [ ! "${ALLOW}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -En "/^${PRETTY}([[:space:]]|$)/p" "${ALLOW}")" ]; then
         if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
           COUNTER=$((COUNTER+1))
           COUNTED="${COUNTED}"$'\n'"${LINE}"
@@ -249,10 +249,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        if [ \"${WHITE}\" ] && [ \"0\" = \"\$((0!=${XFAIL}&&2<=RESULT&&RESULT<=254))\" ] && \
-           [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${WHITE}\")\" ]; \
+        if [ \"${ALLOW}\" ] && [ \"0\" = \"\$((0!=${XFAIL}&&2<=RESULT&&RESULT<=254))\" ] && \
+           [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
         then \
-          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
+          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> ALLOW[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
         else \
           local ERROR=\"ERROR\"; \
           if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
@@ -260,12 +260,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
         fi; \
         exit 0; \
       else \
-        if [ ! \"${WHITE}\" ] || [ \"0\" = \"${BLACK}\" ] || [ \"no\" = \"${BLACK}\" ] || \
-           [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${WHITE}\")\" ]; \
+        if [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \
+           [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
         then \
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; fi; \
         else \
-          1>&2 printf \" -> BLACK[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
+          1>&2 printf \" -> SHAKY[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       fi; \
     }; \
@@ -292,9 +292,6 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       fi
     fi
     1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}x${NJ}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
-    if [ "${WHITE}" ]; then
-      1>&2 echo "Whitelist: ${WHITE}"
-    fi
   fi
   echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
   RESULT=$?
