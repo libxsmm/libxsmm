@@ -57,16 +57,10 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
       l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nofsdbcst;
     }
 
-    if ( i_k_blocking == (unsigned int)i_xgemm_desc->k ) {
-      for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                i_xgemm_desc, i_m_blocking, i_n_blocking, (int)l_k);
-      }
-    } else {
-      for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
-        l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                i_xgemm_desc, i_m_blocking, i_n_blocking, -1);
-      }
+    for ( l_k = 0; l_k < i_k_blocking; l_k += l_k_pack_factor) {
+      l_generator_microkernel(io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                              i_xgemm_desc, i_m_blocking, i_n_blocking,
+                              ( i_k_blocking == (unsigned int)i_xgemm_desc->k ) ? (int)l_k : -1);
     }
   }
 }
