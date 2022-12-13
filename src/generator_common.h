@@ -16,7 +16,7 @@
 #include "libxsmm_main.h"
 #include "libxsmm_matrixeqn.h"
 
-/*TODO: check if we want to use enums here? Has this implications in the encoder? */
+/* TODO: check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX               0
 #define LIBXSMM_X86_GP_REG_RCX               1
@@ -1272,6 +1272,11 @@
 #define LIBXSMM_ERR_BRGEMM_TRANS          90051
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
+
+/* LIBXSMM_EXIT_ERROR() shall be used instead of exit(-1) */
+#if !defined(LIBXSMM_EXIT_ERROR)
+# define LIBXSMM_EXIT_ERROR() exit(0xF)
+#endif
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)

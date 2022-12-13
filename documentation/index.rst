@@ -1,11 +1,19 @@
 .. mdinclude:: index.md
 
 .. toctree::
+   :caption: Overview
+
+   Compatibility <libxsmm_compat.md>
+   Validation <libxsmm_valid.md>
+   Q&A <libxsmm_qna.md>
+
+.. toctree::
    :caption: LIBXSMM Domains
    :hidden:
 
    MM: Matrix Multiplication <libxsmm_mm.md>
-   DNN: Deep Neural Networks <libxsmm_dl.md>
+   TPP: Tensor Processing Primitives <libxsmm_tpp.md>
+   DNN: Deep Neural Networks <https://libxsmm.readthedocs.io/#deep-learning>
    AUX: Service Functions <libxsmm_aux.md>
    PROF: Performance Profiling <libxsmm_prof.md>
    TUNE: Customization <libxsmm_tune.md>
@@ -21,7 +29,7 @@
    :caption: Machine Learning (ML)
 
    PlaidML tensor compiler <https://github.com/plaidml/plaidml>
-   Intel Extension for PyTorch <https://github.com/intel/intel-extension-for-pytorch>
+   Extension for PyTorch <https://github.com/libxsmm/libxsmm/tree/main/samples/deeplearning/conv1dopti_layer>
 
 .. toctree::
    :caption: Scientific (HPC)
@@ -31,8 +39,8 @@
    SpECTRE <https://sxs-collaboration.github.io/spectre/installation.html>
    libCEED <https://ceed.exascaleproject.org/ceed-code/>
    Fastor <https://github.com/romeric/Fastor/wiki/9.-Using-the-LIBXSMM-MKL-JIT-backend>
-   EDGE <http://usr.dial3343.org/en/master/chapters/install/edge.html#libxsmm>
-   PyFR <http://pyfr.org/user_guide.php>
+   EDGE <https://usr.dial3343.org/en/master/chapters/install/edge.html#edge>
+   PyFR <https://pyfr.readthedocs.io/en/latest/performance_tuning.html#libxsmm>
 
 .. toctree::
    :caption: About

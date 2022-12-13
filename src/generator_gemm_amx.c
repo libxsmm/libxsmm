@@ -1010,7 +1010,7 @@ void libxsmm_setup_tile( unsigned int tile_id, unsigned int n_rows, unsigned int
       break;
     default:
       fprintf(stderr, "Invalid tile id in setp tile!!!\n");
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
   }
 }
 

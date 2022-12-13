@@ -28,7 +28,7 @@ void libxsmm_strncpy( char*                  o_dest,
                       unsigned int           i_src_length ) {
   if ( i_dest_length < i_src_length ) {
     fprintf( stderr, "LIBXSMM fatal error: libxsmm_strncpy destination buffer is too small!\n" );
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 
   /* TODO: check for aliasing? */
@@ -174,7 +174,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
       break;
     default:
       fprintf(stderr, "libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
   }
 }
 
@@ -559,7 +559,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
   }
 }
 
@@ -744,7 +744,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
     /* default, we did not had a match */
     default:
       fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
   }
 
   return l_return;

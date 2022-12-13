@@ -24,7 +24,10 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
   LG_DEFAULT="./${NAME}.log"
-  QT_DEFAULT=0; SP_DEFAULT=2
+  XF_DEFAULT=0
+  BL_DEFAULT=1
+  QT_DEFAULT=0
+  SP_DEFAULT=2
   CONSUMED=0
   # ensure proper permissions
   if [ "${UMASK}" ]; then
@@ -48,17 +51,19 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   while test $# -gt 0; do
     case "$1" in
     -h|--help)
-      if [ "0" != "${QT_DEFAULT}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
+      if [ "0" != "${PEXEC_QT:-${QUIET:-${QT_DEFAULT}}}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
-      echo "       -q|--quiet    [PEXEC_QT]: no info/progress output; default=${QT_YESNO} (stderr)"
-      echo "       -w|--white    [PEXEC_WL]: whitelist (default: ${WHITE:-filename not defined})"
-      echo "       -o|--log      [PEXEC_LG]: combined stdout/stderr of commands (stdout)"
-      echo "       -c|--cut      [PEXEC_CT]: cut output of each case (-f argument of cut)"
+      echo "       -x|--xfail  N [PEXEC_XF]: results 2..254 are failures; default: ${PEXEC_XF:-${XFAIL:-${XF_DEFAULT}}}"
+      echo "       -b|--black  N [PEXEC_BL]: whitelisted cases must fail; default: ${PEXEC_BL:-${BLACK:-${XF_DEFAULT}}}"
+      echo "       -w|--white  F [PEXEC_WL]: whitelist; default: ${WHITE:-filename not defined}"
+      echo "       -q|--quiet  - [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
+      echo "       -o|--log    F [PEXEC_LG]: logfile combining output to stdout/stderr"
+      echo "       -c|--cut    S [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
       echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
       echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
       echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
       echo "       -k|--ninner N [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
-      echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default=${SP_DEFAULT}"
+      echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
@@ -66,12 +71,18 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       echo "                 | tool_pexec.sh"
       echo
       exit 0;;
-    -q|--quiet)
-      QUIET=1
-      shift 1;;
+    -x|--xfail)
+      XFAIL=$2
+      shift 2;;
+    -b|--black)
+      BLACK=$2
+      shift 2;;
     -w|--white)
       WHITE=$2
       shift 2;;
+    -q|--quiet)
+      QUIET=1
+      shift 1;;
     -o|--log)
       LOG=$2
       shift 2;;
@@ -116,6 +127,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   NIFIX=0
   COUNTER=0
   LOG=${PEXEC_LG:-${LOG}}; if [ ! "${LOG}" ]; then LOG=${LG_DEFAULT}; fi
+  XFAIL=${PEXEC_XF:-${XFAIL}}; if [ ! "${XFAIL}" ]; then XFAIL=${XF_DEFAULT}; fi
+  BLACK=${PEXEC_BL:-${BLACK}}; if [ ! "${BLACK}" ]; then BLACK=${BL_DEFAULT}; fi
   QUIET=${PEXEC_QT:-${QUIET}}; if [ ! "${QUIET}" ]; then QUIET=${QT_DEFAULT}; fi
   NI=${PEXEC_NI:-${NI}}; if [ ! "${NI}" ]; then NI=${OMP_NUM_THREADS:-1}; else NIFIX=1; fi
   NP=${PEXEC_NP:-${NP}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
@@ -146,9 +159,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     exit 1
   fi
   while read -r LINE; do
-    if [ ! "$(echo "${LINE}" | ${SED} -n '/[[:space:]]*#/p')" ]; then # ignore comments
+    if [ ! "$(echo "${LINE}" | ${SED} -n '/^[[:space:]]*#/p')" ]; then # ignore comments
       PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\"")
-      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -n "/${PRETTY}/p" ${WHITE})" ]; then
+      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -En "/^${PRETTY}([[:space:]]|$)/p" "${WHITE}")" ]; then
         if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
           COUNTER=$((COUNTER+1))
           COUNTED="${COUNTED}"$'\n'"${LINE}"
@@ -236,16 +249,24 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" ${WHITE})\" ]; then \
-          1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 0; \
+        if [ \"${WHITE}\" ] && [ \"0\" = \"\$((0!=${XFAIL}&&2<=RESULT&&RESULT<=254))\" ] && \
+           [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${WHITE}\")\" ]; \
+        then \
+          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
         else \
           local ERROR=\"ERROR\"; \
           if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
         exit 0; \
-      elif [ \"0\" = \"${QUIET}\" ]; then \
-        1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; \
+      else \
+        if [ ! \"${WHITE}\" ] || [ \"0\" = \"${BLACK}\" ] || [ \"no\" = \"${BLACK}\" ] || \
+           [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${WHITE}\")\" ]; \
+        then \
+          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; fi; \
+        else \
+          1>&2 printf \" -> BLACK[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
+        fi; \
       fi; \
     }; \
     if [[ ${LOG} != /dev/* ]]; then \
@@ -256,7 +277,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     trap '_PEXEC_TRAP_EXIT' EXIT; trap 'exit 0' TERM INT; \
     if [ \"\$(${FILE} -bL --mime \"\${0%% *}\" | ${SED} -n '/^text\//p')\" ]; then \
       source \$0; \
-      if [ \"${PEXEC_PID}\" ]; then for PID in ${PEXEC_PID[@]}; do wait ${PID}; done; fi; \
+      if [ \"\${PEXEC_PID}\" ]; then for PID in \${PEXEC_PID[@]}; do wait \${PID}; done; fi; \
     else \
       \$0; \
     fi >\"\${_PEXEC_LOG}\" 2>&1"
