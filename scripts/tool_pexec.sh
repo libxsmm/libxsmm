@@ -52,7 +52,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     -h|--help)
       if [ "0" != "${QT_DEFAULT}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
-      echo "       -b|--black  N [PEXEC_BL]: whitelisted cases can pass; default: ${BL_DEFAULT}"
+      echo "       -b|--black  N [PEXEC_BL]: whitelisted cases must fail; default: ${BL_DEFAULT}"
       echo "       -w|--white  F [PEXEC_WL]: whitelist; default: ${WHITE:-filename not defined}"
       echo "       -q|--quiet  - [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
       echo "       -o|--log    F [PEXEC_LG]: logfile combining output to stdout/stderr"
@@ -153,9 +153,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     exit 1
   fi
   while read -r LINE; do
-    if [ ! "$(echo "${LINE}" | ${SED} -n '/[[:space:]]*#/p')" ]; then # ignore comments
+    if [ ! "$(echo "${LINE}" | ${SED} -n '/^[[:space:]]*#/p')" ]; then # ignore comments
       PRETTY=$(eval "${MAKE_PRETTY_FUNCTION}; echo \"\$(_PEXEC_MAKE_PRETTY ${LINE})\"")
-      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -n "/${PRETTY}/p" "${WHITE}")" ]; then
+      if [ ! "${WHITE}" ] || [ "0" != "$((1>=NTH))" ] || [ "" = "$(${SED} -n "/^${PRETTY}\([[:space:]]\|$\)/p" "${WHITE}")" ]; then
         if [ ! "${NTH}" ] || [ "0" != "$((1>=NTH))" ] || [ "0" = "$(((RANDOM+1)%NTH))" ]; then
           COUNTER=$((COUNTER+1))
           COUNTED="${COUNTED}"$'\n'"${LINE}"
@@ -243,7 +243,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" \"${WHITE}\")\" ]; then \
+        if [ \"${WHITE}\" ] && [ \"\$(${SED} -n \"/^\${_PEXEC_PRETTY}\([[:space:]]\|$\)/p\" \"${WHITE}\")\" ]; then \
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> WHITE[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
         else \
           local ERROR=\"ERROR\"; \
@@ -253,7 +253,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
         exit 0; \
       else \
         if [ ! \"${WHITE}\" ] || [ \"0\" = \"${BLACK}\" ] || [ \"no\" = \"${BLACK}\" ] || \
-           [ ! \"\$(${SED} -n \"/\${_PEXEC_PRETTY}/p\" \"${WHITE}\")\" ]; \
+           [ ! \"\$(${SED} -n \"/^\${_PEXEC_PRETTY}\([[:space:]]\|$\)/p\" \"${WHITE}\")\" ]; \
         then \
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; fi; \
         else \
