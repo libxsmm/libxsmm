@@ -91,7 +91,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
     }
     /* something bad happened... */
     fprintf(stderr, "LIBXSMM fatal error: B sparse for CSR data structure is not yet available!\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   } else {
     /* something bad happened... */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
@@ -151,7 +151,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
     }
     /* something bad happened... */
     fprintf(stderr, "LIBXSMM fatal error:B sparse for CSR data structure is not yet available!\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   } else {
     /* something bad happened... */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
@@ -203,7 +203,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
       if (l_tmp == NULL) {
         fprintf(stderr, "LIBXSMM fatal error:Could allocate dense value array to test CSC data structure!\n");
-        exit(-1);
+        LIBXSMM_EXIT_ERROR();
       }
 
       for ( l_n = 0; l_n < (l_row_count * l_column_count); l_n++) {
@@ -265,7 +265,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
 
       if (l_tmp == NULL) {
         fprintf(stderr, "LIBXSMM fatal error:Could allocate dense value array to test CSR data structure!\n");
-        exit(-1);
+        LIBXSMM_EXIT_ERROR();
       }
 
       for ( l_n = 0; l_n < (l_row_count * l_column_count); l_n++) {
@@ -331,7 +331,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
     LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 
   /* append code to source file */
@@ -342,7 +342,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_spgemm could not write to into destination source file\n");
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
     }
   }
 

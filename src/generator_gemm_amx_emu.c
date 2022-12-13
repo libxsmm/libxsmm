@@ -92,7 +92,7 @@ void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned 
       break;
     default:
       fprintf(stderr, "Invalid tile id!!!\n");
-      exit(-1);
+      LIBXSMM_EXIT_ERROR();
   }
 }
 
@@ -111,7 +111,7 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
 
   if (i_vec_instr != LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) {
     fprintf(stderr, "Invalid instruction for vec compute emulation, can emulate only VCVTNEPS2BF16..\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
@@ -340,7 +340,7 @@ void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_gen
   LIBXSMM_UNUSED(i_use_broadcast);
   if (i_vec_instr != LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) {
     fprintf(stderr, "Invalid instruction for vec compute emulation, can emulate only VCVTNEPS2BF16..\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 
   libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -557,7 +557,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
     }
   } else {
     fprintf(stderr, "AMX emulation supported only for BF16 datatype\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 
 

@@ -38,7 +38,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse( libxsmm_generated_code*       
                                                          i_packed_width );
   } else {
     fprintf( stderr, "PACKED CSR is only available for AVX/AVX2/AVX512 or AARCH64_V81 at this point\n" );
-    exit(-1);
+    LIBXSMM_EXIT_ERROR();
   }
 }
 
