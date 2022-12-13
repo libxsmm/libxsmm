@@ -24,7 +24,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
   LG_DEFAULT="./${NAME}.log"
-  XF_DEFAULT=0
+  XF_DEFAULT=1
   BL_DEFAULT=1
   QT_DEFAULT=0
   SP_DEFAULT=2
