@@ -1413,9 +1413,6 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(FTNOBJS) $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@find . -type f \( -name .make -or -name .state \) -exec rm {} \;
-	@-rm -f $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.pyc
-	@-rm -rf $(ROOTDIR)/$(SCRDIR)/__pycache__
 
 .PHONY: realclean
 realclean: clean
@@ -1440,29 +1437,27 @@ endif
 ifneq (,$(wildcard $(BINDIR))) # still exists
 	@-rm -f $(BINDIR)/libxsmm_*_generator
 endif
+	@-rm -f $(INCDIR)/libxsmm_version.h
+	@-rm -f $(INCDIR)/libxsmm.modmic
+	@-rm -f $(INCDIR)/libxsmm.mod
+	@-rm -f $(INCDIR)/libxsmm.f
+
+.PHONY: deepclean
+deepclean: realclean
+	@find . -type f \( -name .make -or -name .state \) -exec rm {} \;
+	@-rm -f $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.pyc
+	@-rm -rf $(ROOTDIR)/$(SCRDIR)/__pycache__
 	@-rm -f $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh
 	@-rm -f $(ROOTDIR)/$(UTLDIR)/smmbench/smmf-perf.sh
 	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh
 	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh
 	@-rm -f $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
-	@-rm -f $(INCDIR)/libxsmm_version.h
-	@-rm -f $(INCDIR)/libxsmm.modmic
-	@-rm -f $(INCDIR)/libxsmm.mod
-	@-rm -f $(INCDIR)/libxsmm.f
 	@-rm -f $(HEREDIR)/python3
 
-.PHONY: clean-all
-clean-all: clean
-	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory clean" \; 2>/dev/null || true
-
-.PHONY: realclean-all
-realclean-all: realclean
-	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory realclean" \; 2>/dev/null || true
-
 .PHONY: distclean
-distclean: realclean-all
+distclean: deepclean
+	@find $(ROOTDIR)/$(SPLDIR) $(ROOTDIR)/$(TSTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+		"$(MAKE) --no-print-directory deepclean" \; 2>/dev/null || true
 	@-rm -rf libxsmm*
 
 # keep original prefix (:)

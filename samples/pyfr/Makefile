@@ -39,10 +39,14 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-XFILES := $(OUTDIR)/$(OUTNAME)_driver_asp_reg $(OUTDIR)/gimmik
+XTESTS := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
+XFILES := $(XTESTS) $(OUTDIR)/gimmik
 
 .PHONY: all
 all: $(XFILES)
+
+.PHONY: tests
+tests: $(XTESTS)
 
 .PHONY: compile
 compile: $(OBJECTS)
@@ -70,7 +74,6 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
@@ -83,3 +86,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES)
 endif
+
+.PHONY: deepclean
+deepclean: realclean
+	@-rm -f .make .state

@@ -647,7 +647,7 @@ int main( int argc, char* argv[] ) {
   if (datatype_mode == 0) {
     in_dt = LIBXSMM_DATATYPE_F32;
     out_dt = LIBXSMM_DATATYPE_F32;
-    if (1 == S1 && 1 == S3) {
+    if ((1 == S1 || 1 == S2 || 1 == S3) && (16 < S1 || 16 < S2 || 16 < S3)) {
       error_bound = LIBXSMM_MAX(0.005, error_bound);
     }
   } else if (datatype_mode == 1) {
