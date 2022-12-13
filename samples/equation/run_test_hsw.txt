@@ -1,4 +1,1 @@
-equation_gather_reduce
-equation_relu
-equation_simple
 equation_split_sgd
