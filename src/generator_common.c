@@ -991,14 +991,19 @@ void libxsmm_set_handle_error(int enable)
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char* context,
+                           const char* context, int linenum,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
       if (NULL != context && '\0' != *context) {
-        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+        if (0 < linenum) {
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", context, linenum, libxsmm_strerror(i_error_code));
+        }
+        else {
+          fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+        }
       }
       else {
         fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
