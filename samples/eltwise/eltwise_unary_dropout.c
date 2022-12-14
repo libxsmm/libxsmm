@@ -262,7 +262,7 @@ int test_dropout_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
-    exit(-1);
+    exit(LIBXSMM_EXIT_ERROR);
   }
   unary_kernel( &unary_param );
 
@@ -380,7 +380,7 @@ int test_dropout_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const li
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV, unary_shape, unary_flags );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for DROPOUT TPP. Bailing...!\n");
-    exit(-1);
+    exit(LIBXSMM_EXIT_ERROR);
   }
   unary_kernel( &unary_param );
 
