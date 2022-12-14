@@ -21,7 +21,7 @@
 
 /*#define USE_SUM*/
 
-#if defined(__AVX512F__) && defined(LIBXSMM_INTRINSICS_AVX512)
+#if 0
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
 LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
@@ -42,7 +42,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);
-#if defined(__AVX512F__) && defined(LIBXSMM_INTRINSICS_AVX512)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float max = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3));
     float sum = 0.0;
@@ -124,7 +124,7 @@ void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
-#if defined(__AVX512F__) && defined(LIBXSMM_INTRINSICS_AVX512)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
@@ -180,7 +180,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout,
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);
-#if defined(__AVX512F__) && defined(LIBXSMM_INTRINSICS_AVX512)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float max = LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     float sum = 0.0;
@@ -259,7 +259,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
-#if defined(__AVX512F__) && defined(LIBXSMM_INTRINSICS_AVX512)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
