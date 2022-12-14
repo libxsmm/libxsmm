@@ -268,7 +268,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
   if (has_inp_or_out_fp8 > 0) {
     is_valid_arch_prec = 0;
   }
-  if ((is_unary_simple_tpp == 0) && (has_inp_or_out_fp64 > 0)) {
+  if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (is_transform_tpp == 0) && (is_unary_simple_tpp == 0) && (has_inp_or_out_fp64 > 0)) {
     is_valid_arch_prec = 0;
   }
   if (has_inp_or_out_bf16 > 0) {
