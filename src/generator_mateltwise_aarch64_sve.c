@@ -17,8 +17,8 @@
 #include "libxsmm_matrixeqn.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"
+#include "generator_mateltwise_common.h"
 #include "libxsmm_main.h"
-
 
 LIBXSMM_API_INTERN
 libxsmm_aarch64_sve_type libxsmm_generator_aarch64_get_sve_type(unsigned char i_size) {

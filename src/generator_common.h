@@ -2132,12 +2132,6 @@ typedef enum libxsmm_ulp_precision {
   LIBXSMM_ULP_PRECISION_ESTIMATE /* can be pretty bad, but should have the correct order of magnitude */
 } libxsmm_ulp_precision;
 
-LIBXSMM_API_INTERN
-libxsmm_blasint libxsmm_generator_mateltwise_all_inp_comp_out_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype );
-
-LIBXSMM_API_INTERN
-libxsmm_blasint libxsmm_generator_mateltwise_involves_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype );
-
 /** returns the targeted precision for kernels, e.g. 1 for 1 ulp (close to perfect), 0.5 for half an ulp (perfect), or estimate for just an estimate
  * can be set with the environment variable LIBXSMM_ULP_PRECISION={0.5, 1, ESTIMATE}
  */

@@ -1295,66 +1295,6 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   return l_ret;
 }
 
-LIBXSMM_API_INTERN
-libxsmm_blasint libxsmm_generator_mateltwise_all_inp_comp_out_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype ) {
-  libxsmm_blasint result = 0;
-  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY )  {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else {
-    /* Should not happen */
-  }
-  return result;
-}
-
-LIBXSMM_API_INTERN
-libxsmm_blasint libxsmm_generator_mateltwise_involves_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype ) {
-  libxsmm_blasint result = 0;
-  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY )  {
-    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
-        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
-      result = 1;
-    }
-  } else {
-    /* Should not happen */
-  }
-  return result;
-}
-
 LIBXSMM_API_INTERN libxsmm_ulp_precision libxsmm_get_ulp_precision(void) {
   static libxsmm_ulp_precision precision = LIBXSMM_ULP_PRECISION_HALF_ULP;
   static int hasBeenInited = 0;
