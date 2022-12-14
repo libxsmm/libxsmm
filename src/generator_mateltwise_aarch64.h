@@ -16,6 +16,9 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
+                                                                           const libxsmm_meltw_descriptor*   i_mateltwise_desc);
+LIBXSMM_API_INTERN
 void libxsmm_generator_mateltwise_aarch64_kernel( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_meltw_descriptor* i_mateltw_desc );
 
