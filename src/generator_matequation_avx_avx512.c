@@ -894,43 +894,54 @@ void libxsmm_generator_decompose_equation_tree_x86( libxsmm_matrix_eqn *eqn, lib
                                            ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) && (libxsmm_generator_matequation_is_ternary_with_bcast(cur_node->up->info.t_op.flags) > 0) && (libxsmm_generator_matequation_is_ternary_bcast_arg_an_inputarg(cur_node->up->info.t_op.flags, cur_node->up) == 0)))) {
 
       libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern = LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE;
-      libxsmm_matrix_eqn_elem                *new_arg_node  = (libxsmm_matrix_eqn_elem*) malloc( sizeof(libxsmm_matrix_eqn_elem) );
-      libxsmm_matrix_eqn                     *new_eqn       = (libxsmm_matrix_eqn*) malloc( sizeof(libxsmm_matrix_eqn) );
-      union libxsmm_matrix_eqn_info info;
-      info.arg.m = cur_node->tmp.m;
-      info.arg.n = cur_node->tmp.n;
-      info.arg.ld = cur_node->tmp.ld;
-      info.arg.in_pos = -(cur_node->tmp.id + 1);  /*(cur_node->tmp.id >= 0) ? -(cur_node->tmp.id + 1) : cur_node->tmp.id;*/
-      info.arg.dtype = cur_node->tmp.dtype;
-      assert(NULL != new_arg_node);
-      new_arg_node->le = NULL;
-      new_arg_node->ri = NULL;
-      new_arg_node->r2 = NULL;
-      new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
-      new_arg_node->info = info;
-      new_arg_node->reg_score = 0;
-      new_arg_node->tmp.dtype = cur_node->tmp.dtype;
-      new_arg_node->tmp.m = cur_node->tmp.m;
-      new_arg_node->tmp.n = cur_node->tmp.n;
-      new_arg_node->tmp.ld = cur_node->tmp.ld;
-      fusion_pattern = libxsmm_generator_matequation_find_fusion_pattern_with_ancestors( cur_node, fusion_knobs );
+      libxsmm_matrix_eqn_elem                *new_arg_node  = NULL;
+      libxsmm_matrix_eqn                     *new_eqn       = NULL;
+#if !defined(__clang_analyzer__)
+      new_arg_node = (libxsmm_matrix_eqn_elem*)malloc(sizeof(libxsmm_matrix_eqn_elem));
+      new_eqn = (libxsmm_matrix_eqn*)malloc(sizeof(libxsmm_matrix_eqn));
+#endif
 
-      if (fusion_pattern != LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE) {
-        libxsmm_generator_matequation_apply_fusion_pattern_transformation( fusion_pattern, cur_node, new_arg_node, &timestamp, last_timestamp );
-      } else {
-        new_arg_node->up = cur_node->up;
-        if (cur_node->up->le == cur_node) {
-          cur_node->up->le = new_arg_node;
-        } else if (cur_node->up->ri == cur_node)  {
-          cur_node->up->ri = new_arg_node;
+      if (NULL != new_arg_node && NULL != new_eqn) {
+        union libxsmm_matrix_eqn_info info;
+        info.arg.m = cur_node->tmp.m;
+        info.arg.n = cur_node->tmp.n;
+        info.arg.ld = cur_node->tmp.ld;
+        info.arg.in_pos = -(cur_node->tmp.id + 1); /*(cur_node->tmp.id >= 0) ? -(cur_node->tmp.id + 1) : cur_node->tmp.id;*/
+        info.arg.dtype = cur_node->tmp.dtype;
+
+        new_arg_node->le = NULL;
+        new_arg_node->ri = NULL;
+        new_arg_node->r2 = NULL;
+        new_arg_node->type = LIBXSMM_MATRIX_EQN_NODE_ARG;
+        new_arg_node->info = info;
+        new_arg_node->reg_score = 0;
+        new_arg_node->tmp.dtype = cur_node->tmp.dtype;
+        new_arg_node->tmp.m = cur_node->tmp.m;
+        new_arg_node->tmp.n = cur_node->tmp.n;
+        new_arg_node->tmp.ld = cur_node->tmp.ld;
+
+        fusion_pattern = libxsmm_generator_matequation_find_fusion_pattern_with_ancestors( cur_node, fusion_knobs );
+
+        if (fusion_pattern != LIBXSMM_MATRIX_EQN_FUSION_PATTERN_NONE) {
+          libxsmm_generator_matequation_apply_fusion_pattern_transformation( fusion_pattern, cur_node, new_arg_node, &timestamp, last_timestamp );
         } else {
-          cur_node->up->r2 = new_arg_node;
+          new_arg_node->up = cur_node->up;
+          if (cur_node->up->le == cur_node) {
+            cur_node->up->le = new_arg_node;
+          } else if (cur_node->up->ri == cur_node)  {
+            cur_node->up->ri = new_arg_node;
+          } else {
+            cur_node->up->r2 = new_arg_node;
+          }
         }
+        new_eqn->eqn_root = cur_node;
+        new_eqn->is_constructed = 1;
+        libxsmm_generator_matequation_enqueue_equation(new_eqn, jiting_queue, queue_size);
       }
-      assert(NULL != new_eqn);
-      new_eqn->eqn_root = cur_node;
-      new_eqn->is_constructed = 1;
-      libxsmm_generator_matequation_enqueue_equation(new_eqn, jiting_queue, queue_size);
+      else { /* error */
+        free(new_arg_node);
+        free(new_eqn);
+      }
     }
     timestamp++;
   }
