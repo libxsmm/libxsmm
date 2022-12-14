@@ -301,7 +301,6 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxs
   }
   if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX) {
     unsigned int record_argops = (((i_mateltwise_desc->param & 0x1) > 0) || ((i_mateltwise_desc->param & 0x2) > 0)) ? 1 : 0;
-    unsigned int is_bf16_inp = (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
     unsigned int is_fp32_inp = (LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) ? 1 : 0;
 
     if (is_fp32_inp == 0) {
