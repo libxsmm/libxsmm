@@ -15,6 +15,66 @@ LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
 
+LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_mateltwise_all_inp_comp_out_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype ) {
+  libxsmm_blasint result = 0;
+  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY )  {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) &&
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else {
+    /* Should not happen */
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_mateltwise_involves_prec(const libxsmm_meltw_descriptor*   i_mateltwise_desc, libxsmm_datatype i_dtype ) {
+  libxsmm_blasint result = 0;
+  if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY ) {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY ) {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else if (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_TERNARY )  {
+    if (i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN1) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN2) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_COMP) ||
+        i_dtype == (libxsmm_datatype) libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) {
+      result = 1;
+    }
+  } else {
+    /* Should not happen */
+  }
+  return result;
+}
+
 LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_contains_opcode(libxsmm_matrix_eqn_elem *node, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode, unsigned int *result) {
   if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
     return;
