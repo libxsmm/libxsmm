@@ -310,6 +310,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   unary_type  = (use_gather_or_scatter == GATHER) ? LIBXSMM_MELTW_TYPE_UNARY_GATHER :LIBXSMM_MELTW_TYPE_UNARY_SCATTER;
   unary_shape = libxsmm_create_meltw_unary_shape( m_kernel, n_kernel, ld_in_kernel, ld_out_kernel, dtype, dtype, dtype );
   l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    if ( l_kernel == NULL ) {
+    fprintf( stderr, "JIT for GATHER-SCATTER TPP failed. Bailing...!\n");
+    exit(LIBXSMM_ERROR_CODE);
+  }
   l_unary_param.in.primary   = (use_16bit_dtype == DTYPE_32BIT) ? (void*)sinp : (void*)binp;
   if (use_gather_or_scatter == GATHER) {
     l_unary_param.in.secondary = (use_64bit_index == IDX_64BIT) ? (void*)ind_array_64bit : (void*)ind_array_32bit;

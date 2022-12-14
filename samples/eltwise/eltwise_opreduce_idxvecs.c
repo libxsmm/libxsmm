@@ -262,6 +262,10 @@ int main(int argc, char* argv[])
   } else {
     kernel = libxsmm_dispatch_meltw_opreduce_vecs_idx(m, &ld_in, &ld_in, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, idx_dtype, opredop_flags, bcast_factor);
   }
+  if ( kernel == NULL ) {
+    fprintf( stderr, "JIT for OPREDUCE TPP failed. Bailing...!\n");
+    exit(LIBXSMM_ERROR_CODE);
+  }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   _n = (use_regular_vecin > 0) ? 1 : n;

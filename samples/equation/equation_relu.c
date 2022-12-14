@@ -211,6 +211,10 @@ int main( int argc, char* argv[] ) {
   arg_metadata  = libxsmm_create_matrix_eqn_arg_metadata(my_eqn0, 2);
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  if ( func0 == NULL ) {
+    printf( stderr, "JIT for func0 failed. Bailing...!\n");
+    exit(LIBXSMM_ERROR_CODE);
+  }
 
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;

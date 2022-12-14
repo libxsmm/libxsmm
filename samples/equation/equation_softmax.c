@@ -549,7 +549,10 @@ int main( int argc, char* argv[] ) {
     /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
-
+    if ( func0 == NULL ) {
+      printf( stderr, "JIT for func0 failed. Bailing...!\n");
+      exit(LIBXSMM_ERROR_CODE);
+    }
     if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);
       tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
@@ -659,6 +662,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
+    if ( func2 == NULL ) {
+      printf( stderr, "JIT for func2 failed. Bailing...!\n");
+      exit(LIBXSMM_ERROR_CODE);
+    }
 #if 0
     my_eqn3 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -682,6 +689,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    if ( func3 == NULL ) {
+      printf( stderr, "JIT for func3 failed. Bailing...!\n");
+      exit(LIBXSMM_ERROR_CODE);
+    }
 #endif
 #else
     ld = S2*S3;
