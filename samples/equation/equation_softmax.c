@@ -550,7 +550,7 @@ int main( int argc, char* argv[] ) {
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
     if ( func0 == NULL ) {
-      printf( stderr, "JIT for func0 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
       exit(LIBXSMM_ERROR_CODE);
     }
     if (datatype_mode == 0) {
@@ -663,7 +663,7 @@ int main( int argc, char* argv[] ) {
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
     if ( func2 == NULL ) {
-      printf( stderr, "JIT for func2 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
       exit(LIBXSMM_ERROR_CODE);
     }
 #if 0
@@ -690,7 +690,7 @@ int main( int argc, char* argv[] ) {
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
     if ( func3 == NULL ) {
-      printf( stderr, "JIT for func3 failed. Bailing...!\n");
+      fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
       exit(LIBXSMM_ERROR_CODE);
     }
 #endif

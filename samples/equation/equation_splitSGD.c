@@ -187,7 +187,7 @@ int main( int argc, char* argv[] ) {
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_I16 );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
-    printf( stderr, "JIT for func0 failed. Bailing...!\n");
+    fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(LIBXSMM_ERROR_CODE);
   }
   arg_array[0].primary = (void*)eqn_wt_lo;
