@@ -218,7 +218,7 @@ int test_relu_fwd( const libxsmm_blasint bitm, const libxsmm_blasint M, const li
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -363,7 +363,7 @@ int test_relu_bwd( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 

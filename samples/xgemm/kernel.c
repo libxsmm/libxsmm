@@ -135,7 +135,7 @@ float fsigmoid(float x) {
   float in = x, out;
   if( unary_kernel == NULL ) {
     printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_param.in.primary  = (void*)&in;
   unary_param.out.primary = (void*)&out;
@@ -1473,7 +1473,7 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   if (l_test_jit.xmm == NULL) {
     printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
 
   /* receive kernel information */

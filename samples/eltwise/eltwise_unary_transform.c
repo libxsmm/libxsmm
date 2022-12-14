@@ -93,7 +93,7 @@ int test_normal_to_normalT( const libxsmm_blasint M, const libxsmm_blasint N, co
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_NORMT TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   /* run TPP */
   unary_kernel( &unary_param );
@@ -208,7 +208,7 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2_TO_VNNI2T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI2_TO_VNNI2T TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 #if 0
@@ -330,7 +330,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI4T TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -440,7 +440,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI4T, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI4T TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -545,7 +545,7 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -641,7 +641,7 @@ int test_norm_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4T TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -747,7 +747,7 @@ int test_norm_to_vnni4_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -852,7 +852,7 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for NORM_TO_VNNI4 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -941,7 +941,7 @@ int test_vnni4_to_norm_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_NORM TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1030,7 +1030,7 @@ int test_vnni4_to_vnni2_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for VNNI4_TO_VNNI2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1122,7 +1122,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1214,7 +1214,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADM_MOD2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1307,7 +1307,7 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADNM_MOD2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1399,7 +1399,7 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADN_MOD2 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1491,7 +1491,7 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADM_MOD4 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 
@@ -1584,7 +1584,7 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for PADNM_MOD4 TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel( &unary_param );
 

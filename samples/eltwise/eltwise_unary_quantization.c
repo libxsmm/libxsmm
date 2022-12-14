@@ -91,7 +91,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_quant( &unary_param );
 
@@ -106,7 +106,7 @@ int test_float_to_int8_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_b
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_dequant( &unary_param );
 
@@ -225,7 +225,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_quant( &unary_param );
 
@@ -240,7 +240,7 @@ int test_float_to_int16_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_dequant( &unary_param );
 
@@ -359,7 +359,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_kernel_quant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_QUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_quant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_quant( &unary_param );
 
@@ -374,7 +374,7 @@ int test_float_to_int32_to_float( libxsmm_blasint M, libxsmm_blasint N, libxsmm_
   unary_kernel_dequant = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_DEQUANT, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   if ( unary_kernel_dequant == NULL ) {
     fprintf( stderr, "JIT for IDENTITY TPP. Bailing...!\n");
-    exit(LIBXSMM_EXIT_ERROR);
+    exit(LIBXSMM_ERROR_CODE);
   }
   unary_kernel_dequant( &unary_param );
 
