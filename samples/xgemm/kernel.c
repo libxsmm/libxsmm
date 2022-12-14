@@ -133,6 +133,10 @@ float fsigmoid(float x) {
   libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   libxsmm_meltw_unary_param unary_param;
   float in = x, out;
+  if( unary_kernel == 0 ) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(EXIT_FAILURE);
+  }
   unary_param.in.primary  = (void*)&in;
   unary_param.out.primary = (void*)&out;
   unary_kernel( &unary_param );

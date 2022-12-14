@@ -171,7 +171,7 @@
 #define LIBXSMM_AARCH64_SVE_REG_UNDEF                 127
 
 /* special instruction */
-#define LIBXSMM_AARCH64_INSTR_UNDEF                    9999
+#define LIBXSMM_AARCH64_INSTR_UNDEF                  9999
 
 /* Descriptor
  * 4th byte

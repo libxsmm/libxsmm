@@ -235,7 +235,7 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
   if ( l_simd_packed_remainder != 0 ) {
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop right now only supports multiples of SIMD length!\n" );
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* check if we have a single SIMD devisor */

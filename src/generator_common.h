@@ -1273,15 +1273,18 @@
 #define LIBXSMM_ERR_ILLEGAL_REGNUM        90052
 #define LIBXSMM_ERR_UNSUP_SIZE            90053
 
-/* LIBXSMM_EXIT_ERROR() shall be used instead of exit(-1) */
-#if !defined(LIBXSMM_EXIT_ERROR)
-# define LIBXSMM_EXIT_ERROR() exit(0xF)
-#endif
-
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1 < libxsmm_ninit ? libxsmm_verbosity : 1)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
+
+/* LIBXSMM_EXIT_ERROR(io_generated_code) instead of exit(-1) */
+#if !defined(LIBXSMM_EXIT_HARD)
+# define LIBXSMM_EXIT_ERROR(GENERATED_CODE) \
+    LIBXSMM_HANDLE_ERROR(GENERATED_CODE, LIBXSMM_ERR_GENERAL)
+#else /* hard exit */
+# define LIBXSMM_EXIT_ERROR(GENERATED_CODE) exit(0xF)
+#endif
 
 #if defined(NDEBUG)
 # define LIBXSMM_HANDLE_ERROR_OFF_BEGIN() libxsmm_set_handle_error(0)

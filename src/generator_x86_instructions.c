@@ -99,13 +99,13 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   if ( i_src_location < 0 )
   {
      fprintf(stderr,"Bogus source location for internal jumping routine: %i\n", i_src_location);
-     LIBXSMM_EXIT_ERROR();
+     LIBXSMM_EXIT_ERROR(io_generated_code);
   }
   /* Make sure i_src_location is no bigger than the end of the code */
   if ( (unsigned int)i_src_location > io_generated_code->code_size )
   {
      fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n", i_src_location, io_generated_code->code_size);
-     LIBXSMM_EXIT_ERROR();
+     LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( i_dest_location < 0 )
@@ -135,7 +135,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   if ( i_src_location==i_dest_location || (i_src_location==i_dest_location+1) )
   {
      fprintf(stderr,"i_src_location=%i is physically too close to i_dest_location=%i\n",i_src_location,i_dest_location);
-     LIBXSMM_EXIT_ERROR();
+     LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( i_src_location > i_dest_location )
@@ -1618,7 +1618,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: unexpected instruction number: 0x%08x\n", i_vmove_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* select the code generator REX/VEX/EVEX */
@@ -1643,11 +1643,11 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     if ( (((i_vmove_instr >> 24) & 0x2) == 0x2) ) {
       if (i_reg_idx > 15) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: SIB addressing mode is required for instruction number: 0x%08x\n", i_vmove_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       if ( (i_vec_reg_mask_0 == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_number_0) || (i_reg_idx == i_vec_reg_mask_0) ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: same register names cannot be used multiple times: 0x%08x\n", i_vmove_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
 
@@ -1672,11 +1672,11 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
   } else if ( io_generated_code->code_type < 2 ) {
     /* add inline/assembly printing */
     fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: ASM/inline ASM is not supported\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   } else {
     /* general encoder error */
     fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 }
 
@@ -1701,19 +1701,19 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPS) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQ)   )) {
     fprintf(stderr, "libxsmm_instruction_vec_move: streaming stores are only available when setting storing option to true!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* check that we are not masking 'y' */
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only available for AVX512!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* check zero masking */
   if ( (i_use_zero_masking != 0) && (i_mask_reg_number != 0) && (i_is_store != 0) ) {
     fprintf(stderr, "libxsmm_instruction_vec_move: zero-masked store cannot operate on memory destination!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* select the code generator REX/VEX/EVEX */
@@ -1862,13 +1862,13 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )  == 0) &&
        (libxsmm_x86_instruction_vec_is_regonly( i_vec_instr ) == 0)    ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: unexpected instruction number: 0x%08x\n", i_vec_instr);
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* check that we are not masking 'y' */
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: Masking is only available for AVX512!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* select the code generator REX/VEX/EVEX */
@@ -1899,13 +1899,13 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 2 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_reg_number_src1 = 0;
     } else if ( ((i_vec_instr >> 28) & 3) == 1 ) {
       if ( i_reg_number_src0 != LIBXSMM_X86_VEC_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a 1 src operand instruction (0x%08x), i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_reg_number_src0 = 0;
     } else {
@@ -1931,7 +1931,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: In case of a op-code modrm/reg extended instruction (0x%08x), i_reg_number_src1 or i_reg_number_src0 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
 
@@ -1995,7 +1995,7 @@ void libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( libxsmm_generated_c
         code[io_generated_code->code_size++] = (unsigned char)i_imm8;
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8: imm8 required by instr, but LIBXSMM_X86_IMM_UNDEF was provided!\n");
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
   } else {
@@ -2148,13 +2148,13 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
   if ( (libxsmm_x86_instruction_vec_is_hybrid( i_vec_instr )     == 0) &&
        (libxsmm_x86_instruction_vec_is_regmemonly( i_vec_instr ) == 0)    ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: unexpected instruction number: 0x%08x\n", i_vec_instr);
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* check that we are not masking 'y' */
   if ( (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) && (i_mask_reg_number != 0) ) {
     fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: Masking is only available for AVX512!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* select the code generator REX/VEX/EVEX */
@@ -2184,7 +2184,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     if ( ((i_vec_instr >> 28) & 3) == 2 ) {
       if ( i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 1 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_reg_number_src1 = 0;
     } else {
@@ -2195,7 +2195,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
     if ( ((i_vec_instr >> 28) & 3) == 1 ) {
       if ( (i_reg_number_src1 != LIBXSMM_X86_VEC_REG_UNDEF) || (i_reg_number_dst != LIBXSMM_X86_VEC_REG_UNDEF) ) {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a 0 src operand instruction (0x%08x), i_reg_number_src1 and i_reg_number_dst needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_reg_number_src1 = 0;
       l_reg_number_dst = 0;
@@ -2208,7 +2208,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
         l_reg_number_dst = ((i_vec_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: In case of a op-code modrm/reg extended instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_vec_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
 
@@ -2228,11 +2228,11 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
       if ( (((i_vec_instr >> 24) & 0x2) == 0x2) ) {
         if (i_gp_reg_idx > 32) {
           fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: SIB addressing mode is required for instruction number: 0x%08x\n", i_vec_instr);
-          LIBXSMM_EXIT_ERROR();
+          LIBXSMM_EXIT_ERROR(io_generated_code);
         }
         if ( (i_mask_rnd_exp_cntl != 0) || (0 == i_mask_reg_number) ) {
           fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: merge masking with a valid mask registers (>k0) is required for instruction number: 0x%08x\n", i_vec_instr);
-          LIBXSMM_EXIT_ERROR();
+          LIBXSMM_EXIT_ERROR(io_generated_code);
         }
       }
 
@@ -2286,7 +2286,7 @@ void libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( libxsmm_generated_c
         code[io_generated_code->code_size++] = (unsigned char)i_imm8;
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8: imm8 required by instr, but LIBXSMM_X86_IMM_UNDEF was provided!\n");
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
   } else {
@@ -2534,7 +2534,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_prefetch: Unknown instruction type: 0x%08x\n", i_prefetch_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -2546,11 +2546,11 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         l_reg_op_ext = ((i_prefetch_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) must have only one operand!\n", i_prefetch_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) has no op-code modrm/reg extension!\n", i_prefetch_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
 
     libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
@@ -2617,7 +2617,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_mem: Unknown instruction type: 0x%08x\n", i_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 )
@@ -2709,7 +2709,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Unknown instruction type: 0x%08x\n", i_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -2753,7 +2753,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
         l_reg_number_dst = ((l_alu_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_alu_imm: In case of a op-code modrm/reg extended instruction (0x%08x) only one register operand is allowed!\n", l_alu_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
 
@@ -2780,7 +2780,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
   } else {
     char l_new_code[512];
@@ -2816,7 +2816,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Unknown instruction type: 0x%08x\n", i_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -2844,7 +2844,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
       }
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_alu_imm_i64: Instruction (0x%08x) is not an imm-instruction!\n", l_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
   } else {
     char l_new_code[512];
@@ -3016,7 +3016,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_alu_reg: Unknown instruction type: 0x%08x\n", i_alu_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3052,7 +3052,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
       if ( i_gp_reg_number_src != LIBXSMM_X86_GP_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a 1 src operand instruction (0x%08x), i_gp_reg_number_src needs to be LIBXSMM_X86_GP_REG_UNDEF!\n", i_alu_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_gp_reg_number_src = 0;
     }
@@ -3070,7 +3070,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
         l_gp_reg_number_dest = ((i_alu_instr >> 20) & 0x07);
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (0x%08x) we need a single operand instruction!\n", i_alu_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
 
@@ -3169,7 +3169,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_mask_move: unexpected instruction number: 0x%08x\n", i_mask_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3255,7 +3255,7 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_mask_move_mem: unexpected instruction number: 0x%08x\n", i_mask_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3374,7 +3374,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: unexpected instruction number: 0x%08x\n", i_mask_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -3386,13 +3386,13 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
     if ( ((i_mask_instr >> 28) & 3) == 2 ) {
       if ( i_mask_reg_number_src_1 != LIBXSMM_X86_VEC_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 1 src operand instruction (0x%08x), i_reg_number_src1 needs to be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
       l_src1 = 0;
     } else {
       if ( i_mask_reg_number_src_1 == LIBXSMM_X86_VEC_REG_UNDEF ) {
         fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: In case of a 2 src operand instruction (0x%08x), i_reg_number_src1 cannot be LIBXSMM_X86_VEC_REG_UNDEF!\n", i_mask_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       } else {
         l_src1 = i_mask_reg_number_src_1;
       }
@@ -3409,7 +3409,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
         code[io_generated_code->code_size++] = (unsigned char)i_imm8;
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: imm8 required by instr, but LIBXSMM_X86_IMM_UNDEF was provided!\n");
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
   } else {
@@ -3449,7 +3449,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
 
   if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config == NULL) && (i_tcontrol_instr != LIBXSMM_X86_INSTR_TILERELEASE) ) {
     fprintf(stderr, "invalid tile control!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG && i_tile_config != NULL) {
@@ -3531,7 +3531,7 @@ void libxsmm_x86_instruction_tile_control( libxsmm_generated_code*    io_generat
     if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) && ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
     {
        fprintf(stderr,"libxsmm_x86_instruction_tile_control is using a bogus i_gp_reg_idx\n");
-       LIBXSMM_EXIT_ERROR();
+       LIBXSMM_EXIT_ERROR(io_generated_code);
     }
 #endif
     if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) && (i_tile_config != NULL) && (i_tcontrol_instr == LIBXSMM_X86_INSTR_LDTILECFG) )
@@ -3713,7 +3713,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_tile_move: unexpected instruction number: 0x%08x\n", i_tmove_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( (io_generated_code->code_type > 1) &&
@@ -3735,7 +3735,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
               i_displacement, LIBXSMM_X86_SIMD_NAME_XMM, 0, i_tile_reg_number );
       } else {
         fprintf(stderr, "libxsmm_x86_instruction_tile_move: instruction 0x%08x requires SIB addressing\n", i_tmove_instr);
-        LIBXSMM_EXIT_ERROR();
+        LIBXSMM_EXIT_ERROR(io_generated_code);
       }
     }
   } else if ( io_generated_code->code_type < 2 )  {
@@ -3798,7 +3798,7 @@ void libxsmm_x86_instruction_tile_move( libxsmm_generated_code* io_generated_cod
   } else {
     /* general encoder error */
     fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 }
 
@@ -3823,7 +3823,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: 0x%08x\n", i_tcompute_instr);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( (io_generated_code->code_type > 1) &&
@@ -3840,7 +3840,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
             i_tile_src_reg_number_1, i_tile_src_reg_number_0, i_tile_dst_reg_number );
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
   } else if ( io_generated_code->code_type < 2 ) {
     char l_new_code[512];
@@ -3860,7 +3860,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
   } else {
     /* general encoder error */
     fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 }
 
@@ -4096,7 +4096,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: strange input for i_vector_name: %c\n",i_vector_name);
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   if ( io_generated_code->code_type > 1 )
@@ -4115,7 +4115,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     /* TODO: fix max. size error */
     if ( l_maxsize - i < 139 ) {
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: Most constant jumps need at most 139 bytes\n");
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
 
 #define DISABLE_ALIGNMENT
@@ -4132,7 +4132,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     }
     if ( (l_stop == -1) || (l_stop < i+2) ) {
       fprintf(stderr, "libxsmm_x86_instruction_full_vec_load_of_constants: never found correct alignment\n");
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
     j = l_stop;
 #endif
@@ -4266,7 +4266,7 @@ void libxsmm_x86_instruction_rdseed_load ( libxsmm_generated_code *io_generated_
   } else {
     /* general encoder error */
     fprintf(stderr, "libxsmm_x86_instruction_vec_mask_move: GENERAL ERROR\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 }
 
@@ -4519,7 +4519,7 @@ void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_
     /* Ensure we have space in the fixup buffer */
     if ( 128 == io_const_data->const_data_nload_insns ) {
       fprintf( stderr, "libxsmm_x86_instruction_lea_data out of fixup space!\n" );
-      LIBXSMM_EXIT_ERROR();
+      LIBXSMM_EXIT_ERROR(io_generated_code);
     }
 
     /* lea i_reg, [rip + i_off + <FIXUP>] */
@@ -4534,7 +4534,7 @@ void libxsmm_x86_instruction_lea_data( libxsmm_generated_code*     io_generated_
     io_generated_code->code_size += 7;
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_lea_data: inline/pure assembly print is not supported!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 }
 
@@ -4580,7 +4580,8 @@ unsigned int libxsmm_x86_instruction_add_data( libxsmm_generated_code*     io_ge
     return l_dsize + l_npad;
   } else {
     fprintf(stderr, "libxsmm_x86_instruction_add_data: inline/pure assembly print is not supported!\n");
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return 0;
   }
 }
 
