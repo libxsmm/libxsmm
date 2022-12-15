@@ -255,7 +255,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> ALLOW[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
         else \
           local ERROR=\"ERROR\"; \
-          if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
+            if [ \"132\" = \"\${RESULT}\" ]; then ERROR=\"ILLEG\"; \
+          elif [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
         exit 0; \
