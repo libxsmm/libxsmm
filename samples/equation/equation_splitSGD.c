@@ -59,7 +59,7 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
   }
 }
 
-#if defined(__AVX512F__)
+#if 0
 LIBXSMM_INLINE __m512 convert_split_bf16_to_fp32(const __m256i src_hi, const __m256i src_lo) {
   __m512i y1 = _mm512_cvtepu16_epi32(src_hi);
   __m512i y2 = _mm512_cvtepu16_epi32(src_lo);
@@ -242,7 +242,7 @@ int main( int argc, char* argv[] ) {
   printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
   printf("Speedup over compiler is %.5g\n", l_total/l_total2);
 
-#if defined(__AVX512F__)
+#if 0
   vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {
