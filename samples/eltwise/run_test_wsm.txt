@@ -62,6 +62,8 @@ unary_rcp_sqrt_eqld
 unary_rcp_sqrt_gtld
 unary_relu_eqld
 unary_relu_gtld
+unary_replicate_col_var_eqld
+unary_replicate_col_var_gtld
 unary_scatter_16b_eqld
 unary_scatter_16b_gtld
 unary_scatter_32b_eqld

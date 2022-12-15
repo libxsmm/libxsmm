@@ -78,6 +78,8 @@ unary_tanh_eqld
 unary_tanh_gtld
 unary_tanh_inv_eqld
 unary_tanh_inv_gtld
+unary_trans_08b_eqld
+unary_trans_08b_gtld
 unary_trans_padm_mod4_08b_eqld
 unary_trans_padm_mod4_08b_gtld
 unary_trans_padn_mod4_08b_eqld
