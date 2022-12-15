@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
   }
   if ( kernel == NULL ) {
     fprintf( stderr, "JIT for OPREDUCE TPP failed. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);

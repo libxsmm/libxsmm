@@ -527,7 +527,7 @@ int main( int argc, char* argv[] ) {
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;

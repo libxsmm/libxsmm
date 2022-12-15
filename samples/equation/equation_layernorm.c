@@ -728,7 +728,7 @@ int main( int argc, char* argv[] ) {
     reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
     if ( reduce_cols_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_cols_kernel failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
     ld = S3;
     tmp_ld = 1;
@@ -738,7 +738,7 @@ int main( int argc, char* argv[] ) {
     reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
     if ( reduce_rows_kernel == NULL ) {
       fprintf( stderr, "JIT for reduce_rows_kernel failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
     /* TPP for scaling */
     ld = S2*S3;
@@ -758,7 +758,7 @@ int main( int argc, char* argv[] ) {
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 
     /* Check correctness */
@@ -885,7 +885,7 @@ int main( int argc, char* argv[] ) {
     func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
     if ( func1 == NULL ) {
       fprintf( stderr, "JIT for func1 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 
     /* dbeta function  */
@@ -897,7 +897,7 @@ int main( int argc, char* argv[] ) {
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 
     /* db equation */
@@ -910,7 +910,7 @@ int main( int argc, char* argv[] ) {
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 
 #else
@@ -935,7 +935,7 @@ int main( int argc, char* argv[] ) {
     func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape_out );
     if ( func4 == NULL ) {
       fprintf( stderr, "JIT for func4 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 #else
     my_eqn4 = libxsmm_matrix_eqn_create();
@@ -966,7 +966,7 @@ int main( int argc, char* argv[] ) {
     func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape_out );
     if ( func5 == NULL ) {
       fprintf( stderr, "JIT for func5 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
     if (datatype_mode == 0) {
       vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);

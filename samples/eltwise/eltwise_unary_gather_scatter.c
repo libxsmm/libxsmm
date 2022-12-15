@@ -312,7 +312,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *kernel, lib
   l_kernel    = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
     if ( l_kernel == NULL ) {
     fprintf( stderr, "JIT for GATHER-SCATTER TPP failed. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   l_unary_param.in.primary   = (use_16bit_dtype == DTYPE_32BIT) ? (void*)sinp : (void*)binp;
   if (use_gather_or_scatter == GATHER) {

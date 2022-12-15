@@ -155,7 +155,7 @@ int main( int argc, char* argv[] ) {
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for equation failed. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
 
   if (datatype_mode == 0) {

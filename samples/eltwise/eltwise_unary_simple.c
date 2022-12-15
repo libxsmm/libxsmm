@@ -434,7 +434,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   if ( unary_kernel == NULL ) {
     fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   unary_kernel( &unary_param );
 

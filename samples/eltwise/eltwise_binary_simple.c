@@ -377,7 +377,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   binary_kernel = libxsmm_dispatch_meltw_binary_v2( binary_type, binary_shape, binary_flags );
   if ( binary_kernel == NULL ) {
     fprintf( stderr, "JIT for BINARY TPP. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   binary_kernel( &binary_param );
 

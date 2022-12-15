@@ -551,7 +551,7 @@ int main( int argc, char* argv[] ) {
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
     if ( func0 == NULL ) {
       fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
     if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);
@@ -664,7 +664,7 @@ int main( int argc, char* argv[] ) {
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
     if ( func2 == NULL ) {
       fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 #if 0
     my_eqn3 = libxsmm_matrix_eqn_create();
@@ -691,7 +691,7 @@ int main( int argc, char* argv[] ) {
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
     if ( func3 == NULL ) {
       fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
 #endif
 #else

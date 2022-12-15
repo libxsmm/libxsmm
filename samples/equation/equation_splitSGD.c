@@ -188,7 +188,7 @@ int main( int argc, char* argv[] ) {
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
-    exit(LIBXSMM_ERROR_CODE);
+    exit(-1);
   }
   arg_array[0].primary = (void*)eqn_wt_lo;
   arg_array[1].primary = (void*)eqn_wt_hi;

@@ -346,7 +346,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
     if ( kernel == NULL ) {
       fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-      exit(LIBXSMM_ERROR_CODE);
+      exit(-1);
     }
   } else {
     if (idx_type == 0) {
@@ -362,7 +362,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
       if ( kernel2 == NULL ) {
         fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-        exit(LIBXSMM_ERROR_CODE);
+        exit(-1);
       }
     } else {
       unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
@@ -377,7 +377,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
       if ( kernel2 == NULL ) {
         fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
-        exit(LIBXSMM_ERROR_CODE);
+        exit(-1);
       }
     }
   }
