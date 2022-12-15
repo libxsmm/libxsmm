@@ -273,7 +273,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        if [ \"${ALLOW}\" ] && [ \"0\" = \"\$((0!=${XFAIL}&&2<=RESULT&&RESULT<=254))\" ] && \
+        local PERMIT=\$((0==${XFAIL}||1==RESULT||255==RESULT)); \
+        if [ \"${ALLOW}\" ] && [ \"0\" != \"\${PERMIT}\" ] && \
            [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
         then \
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> ALLOW[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
@@ -281,7 +282,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
           local ERROR=\"ERROR\"; \
             if [ \"132\" = \"\${RESULT}\" ]; then ERROR=\"ILLEG\"; \
           elif [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
-          if [ \"${BUILD}\" ]; then ${FLOCK} ${BUILD} \"echo \${_PEXEC_PRETTY} >>${BUILD}\"; fi; \
+          if [ \"${BUILD}\" ] && [ \"0\" != \"\${PERMIT}\" ]; then \
+            ${FLOCK} ${BUILD} \"echo \${_PEXEC_PRETTY} >>${BUILD}\"; \
+          fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       else \
