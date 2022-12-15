@@ -70,3 +70,5 @@ unary_tanh_inv_eqld
 unary_tanh_inv_gtld
 unary_x2_eqld
 unary_x2_gtld
+unary_xor_eqld
+unary_xor_gtld
