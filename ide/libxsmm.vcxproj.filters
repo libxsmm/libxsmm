@@ -291,6 +291,9 @@
     <ClInclude Include="..\src\generator_mateltwise_transform_aarch64_sve.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_mateltwise_common.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -555,6 +558,9 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_mateltwise_transform_aarch64_sve.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_mateltwise_common.c">
       <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
