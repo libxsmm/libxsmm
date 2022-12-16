@@ -2568,13 +2568,19 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
     /* check if we have op-code extension in modrm/reg and correct operand count */
     if ( ((i_prefetch_instr >> 24) & 0x04 ) == 0x04 ) {
-      if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 ) {
+#if 0 /* dead condition */
+      if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 )
+#endif
+      {
         l_reg_op_ext = ((i_prefetch_instr >> 20) & 0x07);
-      } else {
+      }
+#if 0 /* dead condition */
+      else {
         fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) must have only one operand!\n", i_prefetch_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;
       }
+#endif
     } else {
       fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) has no op-code modrm/reg extension!\n", i_prefetch_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
@@ -2779,13 +2785,19 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
 
     /* check if we have op-code extension in modrm/reg */
     if ( ((l_alu_instr >> 24) & 0x04 ) == 0x04 ) {
-      if ( ((l_alu_instr >> 28) & 0x3) == 0x1 ) {
+#if 0 /* dead condition */
+      if ( ((l_alu_instr >> 28) & 0x3) == 0x1 )
+#endif
+      {
         l_reg_number_dst = ((l_alu_instr >> 20) & 0x07);
-      } else {
+      }
+#if 0 /* dead condition */
+      else {
         fprintf(stderr, "libxsmm_x86_instruction_alu_imm: In case of a op-code modrm/reg extended instruction (0x%08x) only one register operand is allowed!\n", l_alu_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;
       }
+#endif
     }
 
     /* TODO: fix! for IMUL we have a ternay instrucation */
@@ -2795,7 +2807,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
       l_reg_number_dst = i_gp_reg_number;
     }
 
-    /* generatoe the main instruction */
+    /* generate the main instruction */
     libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
             l_reg_number_src0, l_reg_number_dst );
 
@@ -2861,7 +2873,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
         break;
     }
 
-    /* generatoe the main instruction */
+    /* generate the main instruction */
     libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
             0, i_gp_reg_number );
 
@@ -3102,16 +3114,22 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
 
     /* check if we have op-code extension in modrm/reg */
     if ( ((i_alu_instr >> 24) & 0x04 ) == 0x04 ) {
-      if ( ((i_alu_instr >> 28) & 0x3) == 0x1 ) {
+#if 0 /* dead condition */
+      if ( ((i_alu_instr >> 28) & 0x3) == 0x1 )
+#endif
+      {
         l_gp_reg_number_dest = ((i_alu_instr >> 20) & 0x07);
-      } else {
+      }
+#if 0 /* dead condition */
+      else {
         fprintf(stderr, "libxsmm_x86_instruction_alu_reg: In case of a op-code modrm/reg extended instruction (0x%08x) we need a single operand instruction!\n", i_alu_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
         return;
       }
+#endif
     }
 
-    /* generatoe the main instruction */
+    /* generate the main instruction */
     libxsmm_x86_instruction_rex_compute_2reg( io_generated_code, l_alu_instr,
             l_gp_reg_number_src, l_gp_reg_number_dest );
   } else {
@@ -3210,9 +3228,14 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
       return;
   }
 
+  assert((i_mask_instr & 0x300) != 0x300);
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
+#if 0 /* see above assertion */
     const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
+#else
+    const libxsmm_x86_simd_name l_vname = LIBXSMM_X86_SIMD_NAME_XMM;
+#endif
     unsigned int l_src;
     unsigned int l_dst;
 
@@ -3297,10 +3320,14 @@ void libxsmm_x86_instruction_mask_move_mem( libxsmm_generated_code* io_generated
       return;
   }
 
+  assert((i_mask_instr & 0x300) != 0x300);
   if ( io_generated_code->code_type > 1 ) {
     /* get L bit override */
+#if 0 /* see above assertion */
     const libxsmm_x86_simd_name l_vname = ( (i_mask_instr & 0x300) == 0x300) ? LIBXSMM_X86_SIMD_NAME_YMM : LIBXSMM_X86_SIMD_NAME_XMM;
-
+#else
+    const libxsmm_x86_simd_name l_vname = LIBXSMM_X86_SIMD_NAME_XMM;
+#endif
     libxsmm_x86_instruction_vex_compute_2reg_mem( io_generated_code, i_mask_instr,
             i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, l_vname,
             0, i_mask_reg_number );
@@ -3884,14 +3911,20 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
     }
 
     /* invoke VEX encoder */
-    if ( ((i_tcompute_instr >> 28) & 0x3) == 3 ) {
+#if 0 /* dead condition */
+    if ( ((i_tcompute_instr >> 28) & 0x3) == 3 )
+#endif
+    {
       libxsmm_x86_instruction_vex_compute_3reg ( io_generated_code, i_tcompute_instr, LIBXSMM_X86_SIMD_NAME_XMM,
             i_tile_src_reg_number_1, i_tile_src_reg_number_0, i_tile_dst_reg_number );
-    } else {
+    }
+#if 0 /* dead condition */
+    else {
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: every insturction needs to have 3 operands\n");
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
+#endif
   } else if ( io_generated_code->code_type < 2 ) {
     char l_new_code[512];
     int l_max_code_length = 511;

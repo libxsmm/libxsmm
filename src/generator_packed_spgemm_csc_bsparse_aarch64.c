@@ -194,6 +194,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
     unsigned int l_n_count = 0;
     unsigned int l_n_processed = 0;
 
+    /* coverity[dead_error_line] */
     if ( (l_simd_packed_remainder != 0) && (l_packed_count == 0) ) {
       if ( l_packed_reg_block[1] > 0 ) {
         l_packed_remainder = 0;
