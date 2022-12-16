@@ -77,6 +77,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_spgemm_csc_bsparse_aarch64 right now only supports multiples of SIMD length!\n" );
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* get max column in C */

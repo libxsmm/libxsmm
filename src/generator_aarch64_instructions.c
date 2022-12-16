@@ -18,6 +18,7 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generat
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* allocate callee save space on the stack */
@@ -88,6 +89,7 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* restor lower 64bit of v8-v15 from stack */
@@ -171,6 +173,7 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -238,9 +241,10 @@ void libxsmm_aarch64_instruction_adr_data( libxsmm_generated_code*     io_genera
     }
 
     /* Ensure we have space in the fixup buffer */
-    if ( 128 == io_const_data->const_data_nload_insns ) {
+    if ( 128 <= io_const_data->const_data_nload_insns ) {
       fprintf( stderr, "libxsmm_aarch64_instruction_adr_data out of fixup space!\n" );
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
     }
 
     /* Save the offset and register in the code */
@@ -254,6 +258,7 @@ void libxsmm_aarch64_instruction_adr_data( libxsmm_generated_code*     io_genera
   } else {
     fprintf(stderr, "libxsmm_aarch64_instruction_adr_data: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -315,6 +320,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -330,6 +336,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: unexpected instruction number: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -388,12 +395,14 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
         if ( (l_imm > 0x0fff) || (i_offset < 0) ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: offset for unsigned offnset addressing mode out of range: %i, %i!\n", l_imm, i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         code[code_head] |= (unsigned int)((0x00000fff & l_imm) << 10);
       } else {
         if ( (i_offset < -256) || (i_offset > 255) ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: offset for per-index/post-index addressing mode out of range: %i!\n", i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         code[code_head] |= (unsigned int)((0x000001ff & i_offset) << 12);
       }
@@ -405,6 +414,7 @@ void libxsmm_aarch64_instruction_asimd_move( libxsmm_generated_code*           i
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -418,6 +428,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -429,6 +440,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected instruction number: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -468,6 +480,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
       /* should not happen */
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: unexpected datatype for instruction: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
     }
     /* setting imm5 */
     code[code_head] |= (unsigned int)( l_imm5 << 16 );
@@ -478,6 +491,7 @@ void libxsmm_aarch64_instruction_asimd_gpr_move( libxsmm_generated_code*        
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_gpr_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -491,6 +505,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -500,6 +515,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: unexpected instruction number: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -535,6 +551,7 @@ void libxsmm_aarch64_instruction_asimd_struct_r_move( libxsmm_generated_code*   
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_r_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -552,6 +569,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -561,6 +579,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected instruction number: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -593,6 +612,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
         if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 4 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         break;
       case LIBXSMM_AARCH64_ASIMD_WIDTH_D:
@@ -602,11 +622,13 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
         if ( (0x3 & i_vmove_instr) != 0x3 && i_offset != 8 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected i_offset: %d\n", i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         break;
       default:
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: unexpected asimdwidth number: %u\n", i_asimdwidth);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
     }
 
     /* setting Q */
@@ -622,6 +644,7 @@ void libxsmm_aarch64_instruction_asimd_struct_move( libxsmm_generated_code*     
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_struct_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -636,6 +659,7 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -651,6 +675,7 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: unexpected instruction number: %u\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -681,11 +706,13 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
       default:
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: unexpected asimdwidth number: %u\n", i_asimdwidth);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
     }
 
     if ( (l_imm < -64) || (l_imm > 63) ) {
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: offset out of range: %i!\n", i_offset);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
     }
 
     /* fix bits */
@@ -707,6 +734,7 @@ void libxsmm_aarch64_instruction_asimd_pair_move( libxsmm_generated_code*       
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_pair_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -721,6 +749,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vec_instr ) {
@@ -805,11 +834,13 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( ((0x3 & i_vec_instr) == 2) && (i_vec_reg_src_1 != LIBXSMM_AARCH64_ASIMD_REG_UNDEF) ) {
       fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: got 3 registers, but instruction has only 2: 0x%08x\n", i_vec_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -848,6 +879,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       if ( (i_tupletype == LIBXSMM_AARCH64_ASIMD_TUPLETYPE_2D && i_idx_shf > 2) || (i_idx_shf > 4) ) {
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for fmla instruction: 0x%08x\n", i_vec_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
       }
 
       /* setting L */
@@ -869,6 +901,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
       } else {
         fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: incompatible tuple and index type for shift nstruction: 0x%08x\n", i_vec_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
       }
       code[code_head] |= (unsigned int)(l_shift << 16);
     }
@@ -879,6 +912,7 @@ void libxsmm_aarch64_instruction_asimd_compute( libxsmm_generated_code*         
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_asimd_compute: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -893,6 +927,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: at least ARM SVE128 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_vmove_instr ) {
@@ -923,6 +958,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: unexpected instruction number: %x\n", i_vmove_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -957,6 +993,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         if ( i_offset < 0 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1RW, LD1RD only positive offsets are allowed!\n");
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
 
         if ( i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF ) {
@@ -968,6 +1005,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         if ( l_offset > 63 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1RW, LD1RD offset is out of range!\n");
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
 
         code[code_head] |= (unsigned int)((0x3f & l_offset) << 16);
@@ -976,6 +1014,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         if ( i_offset < -256 || i_offset > 256 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for STR/LDR offset is out of range!\n");
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
 
         code[code_head] |= (unsigned int)((0x7 & i_offset) << 10);
@@ -991,6 +1030,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
         if ( l_offset < -8 || l_offset > 7 ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_sve_move: for LD1W/D, LD1RQD, ST[NT]1W/D, offset is out of range!\n");
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
 
         code[code_head] |= (unsigned int)((0xf & l_offset) << 16);
@@ -1008,6 +1048,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_struct_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1024,6 +1065,7 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: at least ARM SVE128 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_prefetch_instr ) {
@@ -1033,6 +1075,7 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: unexpected instruction number: %u\n", i_prefetch_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1059,6 +1102,7 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
       if ( (i_offset < -32) || (i_offset > 31) ) {
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: offset out of range: %d!\n", i_offset);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
       }
 
       code[code_head] |= (unsigned int)(i_offset << 16);
@@ -1070,6 +1114,7 @@ void libxsmm_aarch64_instruction_sve_prefetch( libxsmm_generated_code*          
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_prefetch: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1101,6 +1146,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: at least ARM SVE needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* this is a check whether the instruction is valid; it could removed for better performance */
@@ -1170,6 +1216,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: unexpected instruction number: 0x%08x\n", i_vec_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   /* fp compare less than is a pseudo instruction: greater than or equal with switched source registers */
@@ -1186,6 +1233,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     if ( l_vec_reg_src_0 > 1) {
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: immediate for FADD may be 0 for 0.5 for 1 for 1.0, but nothing else! Received %x\n", l_vec_reg_src_1 );
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
     }
   }
 
@@ -1208,6 +1256,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
       } else {
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: instruction 0x%08x only supports i_vec_reg_src_0 == i_vec_reg_dst, but %u != %u\n", i_vec_instr, i_vec_reg_src_0, i_vec_reg_dst);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
       }
     } else if ( l_has_two_sources ||
               (l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P ||
@@ -1246,6 +1295,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
         /* the index must be within bounds */
         fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: (instr: 0x%08x) index %d is too large for type %d, max allowed: %d!\n", i_vec_instr, i_index, (int)i_type, l_elementSizeBits);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
       }
 
       code[code_head] |= (unsigned int)((l_shifted_size >> 2) << 22); /* tszh in ARM docs */
@@ -1289,6 +1339,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_compute: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1304,6 +1355,7 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
   if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: at least ARM SVE128 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_pred_instr ) {
@@ -1314,6 +1366,7 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: unexpected instruction number: %u\n", i_pred_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1351,6 +1404,7 @@ void libxsmm_aarch64_instruction_sve_pcompute( libxsmm_generated_code*          
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_sve_pcompute: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1364,6 +1418,7 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_move_instr ) {
@@ -1385,6 +1440,7 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: unexpected instruction number: %u\n", i_move_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1429,12 +1485,14 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
         if ( (l_imm > 0x0fff) || (i_offset < 0) ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: offset for unsigned offnset addressing mode out of range: %i, %i!\n", l_imm, i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         code[code_head] |= (unsigned int)((0x00000fff & l_imm) << 10);
       } else {
         if ( (i_offset < -256) || (i_offset > 255) ) {
           fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: offset for per-index/post-index addressing mode out of range: %i!\n", i_offset);
           LIBXSMM_EXIT_ERROR(io_generated_code);
+          return;
         }
         code[code_head] |= (unsigned int)((0x000001ff & i_offset) << 12);
       }
@@ -1446,6 +1504,7 @@ void libxsmm_aarch64_instruction_alu_move( libxsmm_generated_code* io_generated_
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1459,6 +1518,7 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_pair_move: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_move_instr ) {
@@ -1474,6 +1534,7 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_pair_move: unexpected instruction number: %u\n", i_move_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1499,6 +1560,7 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     if ( (l_imm < -64) || (l_imm > 63) ) {
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_move: offset out of range: %i!\n", i_offset);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
     }
 
     /* fix bits */
@@ -1520,6 +1582,7 @@ void libxsmm_aarch64_instruction_alu_pair_move( libxsmm_generated_code*         
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_pair_move: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1532,6 +1595,7 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move_imm16: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_alu_instr ) {
@@ -1542,11 +1606,13 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_move_imm16: unexpected instruction number: %u\n", i_alu_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( ((i_gp_reg_dst < LIBXSMM_AARCH64_GP_REG_X0) && (i_shift > 1)) || (i_shift > 3) ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move_imm16: unexpected shift: %u %u %u\n", i_alu_instr, i_gp_reg_dst, (unsigned int)i_shift);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1578,6 +1644,7 @@ void libxsmm_aarch64_instruction_alu_move_imm16( libxsmm_generated_code* io_gene
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_move_imm16: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1622,6 +1689,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_alu_instr ) {
@@ -1639,12 +1707,14 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: unexpected instruction number: %u\n", i_alu_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   /* check for imm being in range */
   if ( (i_imm12 > 0xfff) || (i_imm12_lsl12 > 1) ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: unexpected imm/shift: %u %u %u\n", i_alu_instr, (unsigned int)i_imm12, (unsigned int)i_imm12_lsl12);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* check that all regs are either 32 or 64 bit */
@@ -1655,6 +1725,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
   } else {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: all regsiters need to be either 32 or 64bit; instr: %u\n", i_alu_instr);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1686,6 +1757,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm12( libxsmm_generated_code* io_g
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm12: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1698,6 +1770,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm24( libxsmm_generated_code* io_g
   if ( i_imm24 > 0xffffff ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm24: unexpected imm/shift: %u %u\n", i_alu_instr, i_imm24);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   if ( i_imm24 <= 0xfff ) {
@@ -1725,6 +1798,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_alu_instr ) {
@@ -1742,12 +1816,14 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: unexpected instruction number: %u\n", i_alu_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   /* check for imm being in range */
   if ( (i_imm6 > 0x3f) && ((i_alu_instr & 0x4) == 0x4) ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: unexpected imm: %u %u\n", i_alu_instr, (unsigned int)i_imm6);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* check that all regs are either 32 or 64 bit */
@@ -1758,6 +1834,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
   } else {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: all regsiters need to be either 32 or 64bit; instr: %u\n", i_alu_instr);
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1797,6 +1874,7 @@ void libxsmm_aarch64_instruction_alu_compute_shifted_reg( libxsmm_generated_code
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_shifted_reg: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1812,6 +1890,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*     
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_alu_meta_instr ) {
@@ -1821,6 +1900,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*     
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number: %u\n", i_alu_meta_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   /* check for imm being in range */
@@ -1838,6 +1918,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*     
       default:
         fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number (24bit imm): %u\n", i_alu_meta_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
     }
     l_imm24 = (unsigned int)(i_imm64 & 0xffffff);
 
@@ -1855,6 +1936,7 @@ void libxsmm_aarch64_instruction_alu_compute_imm64( libxsmm_generated_code*     
       default:
         fprintf(stderr, "libxsmm_aarch64_instruction_alu_compute_imm64: unexpected instruction number (64bit imm): %u\n", i_alu_meta_instr);
         LIBXSMM_EXIT_ERROR(io_generated_code);
+        return;
     }
 
     /* move imm64 into the temp register */
@@ -1873,10 +1955,11 @@ void libxsmm_aarch64_instruction_register_jump_back_label( libxsmm_generated_cod
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
-  /* check if we still have label we can jump to */
-  if ( io_loop_label_tracker->label_count == 512 ) {
+  /* check if we still have a label we can jump to */
+  if ( 512 <= io_loop_label_tracker->label_count ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -1889,6 +1972,7 @@ void libxsmm_aarch64_instruction_register_jump_back_label( libxsmm_generated_cod
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1900,6 +1984,7 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   switch ( i_jmp_instr ) {
@@ -1909,6 +1994,7 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   if ( io_generated_code->code_type > 1 ) {
@@ -1939,6 +2025,7 @@ void libxsmm_aarch64_instruction_cond_jump_back_to_label( libxsmm_generated_code
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1949,6 +2036,7 @@ void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*   
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_label: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* check if the label we try to set is still available */
@@ -1976,6 +2064,7 @@ void libxsmm_aarch64_instruction_register_jump_label( libxsmm_generated_code*   
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_register_jump_back_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
 
@@ -1990,15 +2079,16 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_to_label: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
-  /* check if the label we are trying to set inside of bounds */
-  if ( (i_label_no < 512) == 0 ) {
+  /* check if the label we are trying to set is in bounds */
+  if ( 512 <= i_label_no ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
 
-  /* check if we still have label we can jump to */
+  /* check if we still have a label we can jump to */
   if ( io_jump_label_tracker->label_source[i_label_no].ref_count == 512-1 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
@@ -2011,6 +2101,7 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
     default:
       fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_back_to_label: unexpected instruction number: %u\n", i_jmp_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
+      return;
   }
 
   /* add addr at current position and instruction to tracking structure */
@@ -2047,5 +2138,6 @@ void libxsmm_aarch64_instruction_cond_jump_to_label( libxsmm_generated_code*    
     /* assembly not supported right now */
     fprintf(stderr, "libxsmm_aarch64_instruction_cond_jump_to_label: inline/pure assembly print is not supported!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }

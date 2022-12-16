@@ -237,6 +237,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop( libxs
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed__gemm_ac_rm_aarch64_kloop right now only supports multiples of SIMD length!\n" );
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* check if we have a single SIMD devisor */
@@ -524,4 +525,3 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_aarch64_kloop_simd_p
                                                  i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1, i_gp_reg_mapping->gp_reg_b,
                                                  (long long)i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size_in );
 }
-

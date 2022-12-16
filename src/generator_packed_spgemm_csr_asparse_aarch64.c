@@ -89,6 +89,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_spgemm_csr_asparse_aarch64 right now only supports multiples of SIMD length!\n" );
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* select N blocking width as we have 32 ASIMD registers */
@@ -592,4 +593,3 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64_m_loop_sve( libxsmm_gen
                                                    (long long)i_micro_kernel_config->datatype_size_in*i_row_idx[i_gen_m_trips] );
   }
 }
-

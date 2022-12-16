@@ -39,6 +39,6 @@ void libxsmm_generator_packed_spgemm_csc_bsparse( libxsmm_generated_code*       
   } else {
     fprintf( stderr, "PACKED CSC is only available for AVX/AVX2/AVX512 or AARCH64 at this point\n" );
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
-

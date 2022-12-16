@@ -29,6 +29,6 @@ LIBXSMM_API void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*   
   } else {
     fprintf( stderr, "PACKED RM AC is only available for AVX/AVX2/AVX512 or AARCH64 at this point\n" );
     LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 }
-
