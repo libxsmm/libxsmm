@@ -1524,6 +1524,8 @@ void libxsmm_configure_reserved_zmms_and_masks_aarch64(libxsmm_generated_code* i
   i_micro_kernel_config->meltw_kernel_config.datatype_size_in = (LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) == LIBXSMM_DATATYPE_F64) ? 8 : 4; /* Default to SP computations  */
   meltw_config = (libxsmm_mateltwise_kernel_config*) &(i_micro_kernel_config->meltw_kernel_config);
 
+  if (l_is_sve) libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, 0, -1, i_gp_reg_mapping->gp_reg_scratch_0 );
+
   /* TODO: some diagnostic if we need excessive number of required zmms for the equation and bail out */
   for (i = 0 ; i < 64; i++) {
     if (i_micro_kernel_config->unary_ops_pool[i] > 0) {
