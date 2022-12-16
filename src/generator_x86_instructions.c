@@ -2567,7 +2567,10 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     unsigned int l_reg_op_ext = 0;
 
     /* check if we have op-code extension in modrm/reg and correct operand count */
-    if ( ((i_prefetch_instr >> 24) & 0x04 ) == 0x04 ) {
+#if 0 /* dead condition */
+    if ( ((i_prefetch_instr >> 24) & 0x04 ) == 0x04 )
+#endif
+    {
 #if 0 /* dead condition */
       if ( ((i_prefetch_instr >> 28) & 0x3) == 0x1 )
 #endif
@@ -2581,12 +2584,14 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         return;
       }
 #endif
-    } else {
+    }
+#if 0 /* dead condition */
+    else {
       fprintf(stderr, "libxsmm_x86_instruction_prefetch: Instruction (0x%08x) has no op-code modrm/reg extension!\n", i_prefetch_instr);
       LIBXSMM_EXIT_ERROR(io_generated_code);
       return;
     }
-
+#endif
     libxsmm_x86_instruction_rex_compute_1reg_mem ( io_generated_code,
                                                    i_prefetch_instr, i_gp_reg_base,
                                                    i_gp_reg_idx, i_scale, i_displacement, l_reg_op_ext );
