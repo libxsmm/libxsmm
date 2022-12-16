@@ -1718,7 +1718,7 @@ void libxsmm_generator_load_vreg_minus_infinity_double(libxsmm_generated_code* i
   /* load constant register with minus infinity */
   libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ_R_IMM64, i_gp_reg_tmp, 0xfff0000000000000 );
   libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_tmp );
-  if (io_generated_code->arch > LIBXSMM_X86_AVX512_VL256) {
+  if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
     libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                       LIBXSMM_X86_INSTR_VPBROADCASTQ,
                                       LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
