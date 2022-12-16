@@ -1299,7 +1299,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
       { const unsigned int ninit = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
         LIBXSMM_UNUSED_NDEBUG(ninit);
+#if 0
         assert(2 == ninit); /* !LIBXSMM_ASSERT */
+#endif
       }
     }
     else /*if (gid != tid)*/ { /* avoid recursion */
