@@ -153,6 +153,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata, LIBXSMM_MELTW_TYPE_UNARY_GATHER, in_dt, unary_flags);
   libxsmm_matrix_eqn_push_back_arg_v2(arg_metadata, arg_shape_in, arg_singular_attr);
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  if ( func0 == NULL ) {
+    fprintf( stderr, "JIT for equation failed. Bailing...!\n");
+    exit(-1);
+  }
 
   if (datatype_mode == 0) {
     arg_array[0].primary = large_input;

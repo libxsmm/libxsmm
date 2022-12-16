@@ -59,7 +59,7 @@ void reference_equation(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld
   }
 }
 
-#if defined(__AVX512F__)
+#if 0
 LIBXSMM_INLINE __m512 convert_split_bf16_to_fp32(const __m256i src_hi, const __m256i src_lo) {
   __m512i y1 = _mm512_cvtepu16_epi32(src_hi);
   __m512i y2 = _mm512_cvtepu16_epi32(src_lo);
@@ -186,7 +186,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_push_back_arg( my_eqn0, M, N, ld, 1, 0, LIBXSMM_DATATYPE_I16 );  /* This is the tensor with hi bits  */
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, LIBXSMM_DATATYPE_I16 );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
-
+  if ( func0 == NULL ) {
+    fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
+    exit(-1);
+  }
   arg_array[0].primary = (void*)eqn_wt_lo;
   arg_array[1].primary = (void*)eqn_wt_hi;
   arg_array[2].primary = (void*)&lr;
@@ -239,7 +242,7 @@ int main( int argc, char* argv[] ) {
   printf("JITed TPP equation time = %.5g\n", ((double)(l_total2)));
   printf("Speedup over compiler is %.5g\n", l_total/l_total2);
 
-#if defined(__AVX512F__)
+#if 0
   vec_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
   l_start = libxsmm_timer_tick();
   for (it = 0; it < iters; it++) {

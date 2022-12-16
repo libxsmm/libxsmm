@@ -387,7 +387,7 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
       target_arch = "knl";
     } break;
     case LIBXSMM_X86_AVX512: {
-      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "avx3") */
+      /* TODO: target_arch = "avx3" */
       target_arch = "hsw";
     } break;
     case LIBXSMM_X86_AVX512_VL256: {

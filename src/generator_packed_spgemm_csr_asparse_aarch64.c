@@ -88,7 +88,7 @@ void libxsmm_generator_packed_spgemm_csr_asparse_aarch64( libxsmm_generated_code
   if ( l_simd_packed_remainder != 0 ) {
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_spgemm_csr_asparse_aarch64 right now only supports multiples of SIMD length!\n" );
-    LIBXSMM_EXIT_ERROR();
+    LIBXSMM_EXIT_ERROR(io_generated_code);
   }
 
   /* select N blocking width as we have 32 ASIMD registers */

@@ -133,6 +133,10 @@ float fsigmoid(float x) {
   libxsmm_meltwfunction_unary unary_kernel  = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_SIGMOID, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
   libxsmm_meltw_unary_param unary_param;
   float in = x, out;
+  if( unary_kernel == NULL ) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(-1);
+  }
   unary_param.in.primary  = (void*)&in;
   unary_param.out.primary = (void*)&out;
   unary_kernel( &unary_param );
@@ -1467,9 +1471,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   l_test_jit.gemm = libxsmm_dispatch_brgemm_v2( l_shape, l_flags, l_prefetch_flags, l_brconfig );
 #endif
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  if (l_test_jit.xmm == 0) {
+  if (l_test_jit.xmm == NULL) {
     printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
-    exit(EXIT_FAILURE);
+    exit(-1);
   }
 
   /* receive kernel information */

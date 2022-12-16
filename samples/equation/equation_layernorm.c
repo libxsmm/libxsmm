@@ -22,7 +22,7 @@
 /*#define USE_VECTORIZED_PATH*/
 /*#define USE_SUM*/
 
-#if defined(__AVX512F__)
+#if 0
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
 LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
@@ -44,7 +44,7 @@ void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, beta, pbeta, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
@@ -132,7 +132,7 @@ void vectorized_layernorm_bwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float a = var[s2];
     float b = -a*mean[s2];
@@ -234,7 +234,7 @@ void vectorized_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, beta, pbeta, S3);
-#if defined(USE_VECTORIZED_PATH) && defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     __m512 vm = _mm512_setzero_ps();
     __m512 vv = _mm512_setzero_ps();
@@ -320,7 +320,7 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
   LIBXSMM_VLA_DECL(2, float, gamma, pgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dgamma, pdgamma, S3);
   LIBXSMM_VLA_DECL(2, float, dbeta, pdbeta, S3);
-#if defined(USE_VECTORIZED_PATH) && defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float a = var[s2];
     float b = -a*mean[s2];
@@ -726,13 +726,20 @@ int main( int argc, char* argv[] ) {
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_COLS;
     reduce_cols_shape = libxsmm_create_meltw_unary_shape( S3, S1, ld, tmp_ld, in_dt, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     reduce_cols_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_cols_shape, jit_reduce_flags );
+    if ( reduce_cols_kernel == NULL ) {
+      fprintf( stderr, "JIT for reduce_cols_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
     ld = S3;
     tmp_ld = 1;
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD;
     jit_reduce_flags = LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS;
     reduce_rows_shape = libxsmm_create_meltw_unary_shape( S3, 1, ld, tmp_ld, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32 );
     reduce_rows_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, reduce_rows_shape, jit_reduce_flags );
-
+    if ( reduce_rows_kernel == NULL ) {
+      fprintf( stderr, "JIT for reduce_rows_kernel failed. Bailing...!\n");
+      exit(-1);
+    }
     /* TPP for scaling */
     ld = S2*S3;
     tmp_ld = 1;
@@ -749,6 +756,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn0, S3, S1, tmp_ld2, 4, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+    if ( func0 == NULL ) {
+      fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
+      exit(-1);
+    }
 
     /* Check correctness */
     if (datatype_mode == 0) {
@@ -872,6 +883,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn1, S3, S1, tmp_ld, 4, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape_out );
+    if ( func1 == NULL ) {
+      fprintf( stderr, "JIT for func1 failed. Bailing...!\n");
+      exit(-1);
+    }
 
     /* dbeta function  */
     my_eqn2 = libxsmm_matrix_eqn_create();
@@ -880,6 +895,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, tmp_ld, 5, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
+    if ( func2 == NULL ) {
+      fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
+      exit(-1);
+    }
 
     /* db equation */
 #if 1
@@ -889,6 +908,11 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, tmp_ld, 6, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    if ( func3 == NULL ) {
+      fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
+      exit(-1);
+    }
+
 #else
     my_eqn3 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn3, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
@@ -909,6 +933,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn4, S3, S1, ld, 0, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( 1, 1, tmp_ld2, LIBXSMM_DATATYPE_F32 );
     func4 = libxsmm_dispatch_matrix_eqn_v2( my_eqn4, arg_shape_out );
+    if ( func4 == NULL ) {
+      fprintf( stderr, "JIT for func4 failed. Bailing...!\n");
+      exit(-1);
+    }
 #else
     my_eqn4 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_unary_op( my_eqn4, LIBXSMM_MELTW_TYPE_UNARY_REDUCE_X_OP_ADD, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_ROWS, LIBXSMM_DATATYPE_F32 );
@@ -936,7 +964,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn5, 1, 1, 1, 7, 0, LIBXSMM_DATATYPE_F32 );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, in_dt );
     func5 = libxsmm_dispatch_matrix_eqn_v2( my_eqn5, arg_shape_out );
-
+    if ( func5 == NULL ) {
+      fprintf( stderr, "JIT for func5 failed. Bailing...!\n");
+      exit(-1);
+    }
     if (datatype_mode == 0) {
       vectorized_layernorm_bwd_fp32(S1, S2, S3, dout, inp, mean, var, gamma, dinp, dgamma, dbeta);
       tpp_layernorm_bwd_fp32(S1, S2, S3, eqn_dout, inp, mean, var, gamma, eqn_dinp, eqn_dgamma, eqn_dbeta, func1, func2, func3, func4, func5);

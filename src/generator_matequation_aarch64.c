@@ -378,6 +378,76 @@ void libxsmm_generator_decompose_equation_tree_aarch64( libxsmm_matrix_eqn *eqn,
 }
 
 LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
+                                                                        libxsmm_matrix_eqn*               i_eqn,
+                                                                        const libxsmm_meqn_descriptor*    i_mateqn_desc) {
+  libxsmm_blasint is_valid_arch_prec = 1;
+  unsigned int has_inp_or_out_fp8 = ((libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF8) > 0) || (libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_HF8) > 0) ||
+                                     (LIBXSMM_DATATYPE_BF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || (LIBXSMM_DATATYPE_HF8 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int has_inp_or_out_fp64= ((libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64) > 0) || (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int has_inp_or_out_bf16= ((libxsmm_generator_matequation_any_args_dtype(i_eqn, LIBXSMM_DATATYPE_BF16) > 0) || (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+  unsigned int all_nodes_fp64 = libxsmm_generator_matequation_all_nodes_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
+  unsigned int all_args_fp64 = libxsmm_generator_matequation_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
+  unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
+
+  /* Unary not supported for fp64  */
+  libxsmm_meltw_unary_type non_fp64_unary[21] = { LIBXSMM_MELTW_TYPE_UNARY_RELU,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_RELU_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_TANH,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_TANH_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_SIGMOID,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_SIGMOID_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_GELU,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_GELU_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_EXP,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_DROPOUT,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_DROPOUT_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_ELU,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_ELU_INV,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_STOCHASTIC_ROUND,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_QUANT,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_DEQUANT,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_GATHER,
+                                                  LIBXSMM_MELTW_TYPE_UNARY_SCATTER };
+
+  /* Binary not supported for fp64  */
+  libxsmm_meltw_binary_type non_fp64_binary[2] = { LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD,
+                                                   LIBXSMM_MELTW_TYPE_BINARY_PACK };
+
+  if ((libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_TYPE_BINARY_PACK, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+    is_valid_arch_prec = 0;
+  }
+  if ((has_inp_or_out_bf16 > 0) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
+    is_valid_arch_prec = 0;
+  }
+  if (has_inp_or_out_fp8 > 0) {
+    is_valid_arch_prec = 0;
+  }
+  if ((has_inp_or_out_fp64 > 0) && (all_fp64 == 0)) {
+    is_valid_arch_prec = 0;
+  }
+  if (has_inp_or_out_fp64 > 0) {
+    unsigned int i = 0;
+    for (i = 0; i < 21; i++) {
+      if (libxsmm_generator_matequation_contains_opcode(i_eqn, non_fp64_unary[i], LIBXSMM_MELTW_TYPE_BINARY_NONE, LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
+        is_valid_arch_prec = 0;
+        break;
+      }
+    }
+    for (i = 0; i < 2; i++) {
+      if (libxsmm_generator_matequation_contains_opcode(i_eqn, LIBXSMM_MELTW_TYPE_UNARY_NONE, non_fp64_binary[i], LIBXSMM_MELTW_TYPE_TERNARY_NONE) > 0) {
+        is_valid_arch_prec = 0;
+        break;
+      }
+    }
+  }
+  return is_valid_arch_prec;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_meqn_descriptor* i_mateqn_desc) {
   libxsmm_matequation_gp_reg_mapping  l_gp_reg_mapping;
@@ -398,8 +468,6 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
 #endif
   unsigned int eqn_tree_id = 0;
   unsigned int temp_reg = LIBXSMM_AARCH64_GP_REG_X6;
-  unsigned int all_nodes_f32 = 1;
-  unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
   libxsmm_matrix_eqn_fusion_knobs fusion_knobs;
   memset(&fusion_knobs, 0, sizeof(libxsmm_matrix_eqn_fusion_knobs));
 
@@ -408,14 +476,9 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
     return;
   }
 
-  /* Check if equation is purely F32 */
-  libxsmm_generator_matequation_are_nodes_pure_f32(eqn->eqn_root, &all_nodes_f32);
-  if ( !((LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) || ((LIBXSMM_DATATYPE_F32 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype )) && (all_nodes_f32 == 1)))) {
-    if (l_is_sve == 0) {
-      fprintf( stderr, "For now BF16 dtype is supported only on SVE enabled archs\n" );
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
-      return;
-    }
+  if ( libxsmm_generator_matequation_aarch64_valid_arch_precision( io_generated_code, eqn, i_mateqn_desc) == 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
   }
 
   /* Some basic initialization of the config kernel */

@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_MATRIXEQN_H
 #define LIBXSMM_MATRIXEQN_H
@@ -184,6 +184,24 @@ LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_transform_kernel (unsi
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar (unsigned int opcode);
 LIBXSMM_API_INTERN int libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar (unsigned int opcode);
 
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_contains_opcode(libxsmm_matrix_eqn_elem *node, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode, unsigned int *result);
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_contains_opcode(libxsmm_matrix_eqn *eqn, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode );
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_all_nodes_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result);
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_all_nodes_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype);
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_all_args_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result);
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_all_args_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype);
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_any_args_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result);
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_any_args_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype);
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result);
+
 LIBXSMM_API_INTERN
 libxsmm_matrix_eqn_bcast_type libxsmm_matrix_eqn_get_bcast_type_unary(libxsmm_bitfield flags);
 
@@ -197,5 +215,4 @@ LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_bcast_tmp(libxsmm_matrix_eqn
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_reassign_children_bcast_tmp(libxsmm_matrix_eqn *eqn, libxsmm_matrix_eqn_elem* cur_node);
 
 LIBXSMM_API_INTERN void libxsmm_matrix_eqn_trv_dbg_print( libxsmm_matrix_eqn_elem* cur_node, libxsmm_blasint indent );
-
 #endif /*LIBXSMM_MATRIXEQN_H*/

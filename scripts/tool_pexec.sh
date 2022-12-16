@@ -23,8 +23,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   NAME=$(echo "$0" | ${SED} 's/.*\///;s/\(.*\)\..*/\1/')
   INFO=${HERE}/tool_cpuinfo.sh
   PYTHON=$(command -v python3)
+  FLOCK=${HERE}/../.flock.sh
   LG_DEFAULT="./${NAME}.log"
-  XF_DEFAULT=0
+  XF_DEFAULT=1
   BL_DEFAULT=1
   QT_DEFAULT=0
   SP_DEFAULT=2
@@ -34,6 +35,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     UMASK_CMD="umask ${UMASK};"
     eval "${UMASK_CMD}"
   fi
+  # ensure consistent sort
+  export LC_ALL=C
   if [ ! "${PYTHON}" ]; then PYTHON=$(command -v python); fi
   if [ "${PYTHON}" ] && [ -e "${HERE}/libxsmm_utilities.py" ]; then
     TARGET=$(${PYTHON} "${HERE}/libxsmm_utilities.py")
@@ -41,9 +44,13 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   if [ "${PPID}" ] && [ "$(command -v ps)" ]; then
     PARENT=$(ps -o args= ${PPID} | ${SED} -n "s/[^[:space:]]*[[:space:]]*\(..*\)\.sh.*/\1/p")
     if [ "${PARENT}" ]; then
-      if [ "${TARGET}" ] && [ -e "${PARENT}_${TARGET}.txt" ]; then
-        ALLOW=${PARENT}_${TARGET}.txt
-      elif [ -e "${PARENT}.txt" ]; then
+      if [ "${TARGET}" ]; then
+        FNAME=${PARENT}_${TARGET}.txt
+        if [ -e "${FNAME}" ]; then
+          ALLOW=${FNAME}
+        fi
+      fi
+      if [ ! "${ALLOW}" ] && [ -e "${PARENT}.txt" ]; then
         ALLOW=${PARENT}.txt
       fi
     fi
@@ -53,17 +60,18 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     -h|--help)
       if [ "0" != "${PEXEC_QT:-${QUIET:-${QT_DEFAULT}}}" ]; then QT_YESNO="yes"; else QT_YESNO="no"; fi
       echo "Usage: ${NAME}.sh [options]"
-      echo "       -x|--xfail  N [PEXEC_XF]: results 2..254 are failures; default: ${PEXEC_XF:-${XFAIL:-${XF_DEFAULT}}}"
-      echo "       -y|--shaky  N [PEXEC_BL]: allowed failures must fail; default: ${PEXEC_BL:-${SHAKY:-${BL_DEFAULT}}}"
-      echo "       -w|--allow  F [PEXEC_WL]: allowed failures (filename); default: ${ALLOW:--}"
-      echo "       -q|--quiet  - [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
-      echo "       -o|--log    F [PEXEC_LG]: logfile combining output to stdout/stderr"
-      echo "       -c|--cut    S [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
-      echo "       -m|--min    N [PEXEC_MT]: minimum number of tasks; see --nth argument"
-      echo "       -n|--nth    N [PEXEC_NT]: only every Nth task; randomized selection"
-      echo "       -j|--nprocs N [PEXEC_NP]: number of processes (scaled by nscale)"
-      echo "       -k|--ninner N [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
-      echo "       -s|--nscale N [PEXEC_SP]: oversubscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
+      echo "       -x|--xfail  N* [PEXEC_XF]: results 2..254 are failures; default: ${PEXEC_XF:-${XFAIL:-${XF_DEFAULT}}}"
+      echo "       -y|--shaky  N* [PEXEC_BL]: allowed failures must fail; default: ${PEXEC_BL:-${SHAKY:-${BL_DEFAULT}}}"
+      echo "       -w|--allow  F  [PEXEC_WL]: allowed failures (filename); default: ${PEXEC_WL:-${ALLOW:--}}"
+      echo "       -u|--build  F* [PEXEC_UP]: collect failures (filename); default: ${PEXEC_UP:-${FNAME:--}}"
+      echo "       -q|--quiet  -  [PEXEC_QT]: no progress output (valid cases); default: ${QT_YESNO}"
+      echo "       -o|--log    F  [PEXEC_LG]: logfile combining output to stdout/stderr"
+      echo "       -c|--cut    S  [PEXEC_CT]: cut name of case (-f argument of \"cut\")"
+      echo "       -m|--min    N  [PEXEC_MT]: minimum number of tasks; see --nth argument"
+      echo "       -n|--nth    N  [PEXEC_NT]: only every Nth task; randomized selection"
+      echo "       -j|--nprocs N  [PEXEC_NP]: number of processes (scaled by nscale)"
+      echo "       -k|--ninner N  [PEXEC_NI]: inner processes (N=0: auto, N=-1: max)"
+      echo "       -s|--nscale N  [PEXEC_SP]: oversubscription; default: ${PEXEC_SP:-${SP:-${SP_DEFAULT}}}"
       echo "       Environment [variables] will precede command line arguments."
       echo "       ${NAME}.sh reads stdin and spawns one task per line."
       echo
@@ -73,13 +81,28 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
       exit 0;;
     -x|--xfail)
       XFAIL=$2
-      shift 2;;
+      if [ ! "${XFAIL}" ] || [ "-" = "${XFAIL:0:1}" ]; then
+        XFAIL=1; shift 1
+      else
+        shift 2
+      fi;;
     -y|--shaky)
       SHAKY=$2
-      shift 2;;
+      if [ ! "${SHAKY}" ] || [ "-" = "${SHAKY:0:1}" ]; then
+        SHAKY=1; shift 1
+      else
+        shift 2
+      fi;;
     -w|--allow)
       ALLOW=$2
       shift 2;;
+    -u|--build)
+      BUILD=$2
+      if [ ! "${BUILD}" ] || [ "-" = "${BUILD:0:1}" ]; then
+        BUILD="-"; shift 1
+      else
+        shift 2
+      fi;;
     -q|--quiet)
       QUIET=1
       shift 1;;
@@ -134,7 +157,8 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   NP=${PEXEC_NP:-${NP}}; NJ=$((0<NI?NI:1)); SP=${PEXEC_SP:-${SP}}
   CT=${PEXEC_CT:-${CT}}; NTH=${PEXEC_NT:-${NTH}}
   MIN=${PEXEC_MT:-${MIN}}; MIN=$((1<MIN?MIN:1))
-  ALLOW=${PEXEC_WL:-${ALLOW}}
+  BUILD=${PEXEC_UP:-${BUILD}}; if [ "-" = "${BUILD:0:1}" ]; then BUILD=${FNAME}; fi
+  ALLOW=${PEXEC_WL:-${ALLOW}}; if [ "${BUILD}" ]; then unset ALLOW; fi
   MAKE_PRETTY_FUNCTION="_PEXEC_MAKE_PRETTY() { \
     local HERE PRE CMD ARGS WORDS INPUT=\$*; \
     HERE=\$(pwd -P | ${SED} 's/\//\\\\\//g'); \
@@ -249,16 +273,20 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     _PEXEC_TRAP_EXIT() { \
       local RESULT=\$?; \
       if [ \"0\" != \"\${RESULT}\" ]; then \
-        if [ \"${ALLOW}\" ] && [ \"0\" = \"\$((0!=${XFAIL}&&2<=RESULT&&RESULT<=254))\" ] && \
+        local PERMIT=\$((0==${XFAIL}||1==RESULT||255==RESULT)); \
+        if [ \"${ALLOW}\" ] && [ \"0\" != \"\${PERMIT}\" ] && \
            [ \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
         then \
           if [ \"0\" = \"${QUIET}\" ]; then 1>&2 printf \" -> ALLOW[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; fi; \
         else \
           local ERROR=\"ERROR\"; \
-          if [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
+            if [ \"132\" = \"\${RESULT}\" ]; then ERROR=\"ILLEG\"; \
+          elif [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
+          if [ \"${BUILD}\" ] && [ \"0\" != \"\${PERMIT}\" ]; then \
+            ${FLOCK} ${BUILD} \"echo \${_PEXEC_PRETTY} >>${BUILD}\"; \
+          fi; \
           1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
-        exit 0; \
       else \
         if [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \
            [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
@@ -268,6 +296,7 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
           1>&2 printf \" -> SHAKY[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       fi; \
+      exit 0; \
     }; \
     if [[ ${LOG} != /dev/* ]]; then \
       _PEXEC_LOG=\$(echo \"${LOG}\" | ${SED} -n \"s/\(.*[^.]\)\(\..*\)/\1-\${_PEXEC_PRETTY}\2/p\"); \
@@ -293,10 +322,14 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
     fi
     1>&2 echo "Execute ${LABEL}with NTASKS=${COUNTER}, NPROCS=${NP}x${NJ}, and OMP_NUM_THREADS=${OMP_NUM_THREADS}"
   fi
+  if [ "${BUILD}" ]; then ${CAT} /dev/null >"${BUILD}"; fi # truncate file
   echo -e "${COUNTED}" | ${XARGS} >"${LOG_OUTER}" -P${NP} -I{} bash -c "${PEXEC_SCRIPT}" "{}"
   RESULT=$?
   if [ "0" != "${RESULT}" ]; then
     1>&2 echo "--------------------------------------------------------------------------------"
+    if [ "${BUILD}" ] && [ -f "${BUILD}" ] && [ "$(command -v sort)" ]; then
+      sort -u "${BUILD}" -o "${BUILD}"
+    fi
     exit ${RESULT}
   fi
 else

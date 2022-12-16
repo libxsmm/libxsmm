@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 
-if [[ ${LIBXSMM_TARGET} == "knm" ]]; then
-  exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "snb" ]]; then
-  exit 0;
-fi
-if [[ ${LIBXSMM_TARGET} == "wsm" ]]; then
-  exit 0;
-fi
+
+
+
 
 TESTFILE1=$(mktemp)
 TESTFILE2=$(mktemp)

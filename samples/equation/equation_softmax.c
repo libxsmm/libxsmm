@@ -21,7 +21,7 @@
 
 /*#define USE_SUM*/
 
-#if defined(__AVX512F__)
+#if 0
 LIBXSMM_INLINE __m512 _mm512_loadu_ps_auto(libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_loadu_si256((__m256i*)mem_addr)); }
 LIBXSMM_INLINE __m512 _mm512_maskz_loadu_ps_auto(__mmask16 k, libxsmm_bfloat16 const* mem_addr) { return LIBXSMM_INTRINSICS_MM512_CVTPBH_PS(_mm256_maskz_loadu_epi16(k, (__m256i*)mem_addr)); }
 LIBXSMM_INLINE void _mm512_storeu_ps_auto(libxsmm_bfloat16* mem_addr, __m512 a) { _mm256_storeu_si256((__m256i*)mem_addr, LIBXSMM_INTRINSICS_MM512_CVT_FP32_BF16(a)); }
@@ -42,7 +42,7 @@ void vectorized_softmax_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pi
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float max = upconvert_bf16(LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3));
     float sum = 0.0;
@@ -124,7 +124,7 @@ void vectorized_softmax_bwd_bf16(long S1, long S2, long S3, float *pgradinp, flo
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, out, pout, S2, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
@@ -180,7 +180,7 @@ void vectorized_softmax_fwd(long S1, long S2, long S3, float *pinp, float *pout,
   LIBXSMM_VLA_DECL(3, float, inp, pinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
   LIBXSMM_VLA_DECL(2, float, tmp, ptmp, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float max = LIBXSMM_VLA_ACCESS(3, inp, 0, s2, 0, S2, S3);
     float sum = 0.0;
@@ -259,7 +259,7 @@ void vectorized_softmax_bwd(long S1, long S2, long S3, float *pgradinp, float *p
   LIBXSMM_VLA_DECL(3, float, ginp, pgradinp, S2, S3);
   LIBXSMM_VLA_DECL(3, float, gout, pgradout, S2, S3);
   LIBXSMM_VLA_DECL(3, float, out, pout, S2, S3);
-#if defined(__AVX512F__)
+#if 0
   for (s2 = 0; s2 < S2; s2++) {
     float sum = 0.0;
     __m512 vsum = _mm512_setzero_ps();
@@ -549,7 +549,10 @@ int main( int argc, char* argv[] ) {
     /*libxsmm_matrix_eqn_tree_print( my_eqn0 );*/
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, out_dt );
     func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
-
+    if ( func0 == NULL ) {
+      fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
+      exit(-1);
+    }
     if (datatype_mode == 0) {
       vectorized_softmax_fwd(S1, S2, S3, inp, out, tmp);
       tpp_softmax_fwd(S1, S2, S3, inp, eqn_out, tmp, func0 );
@@ -659,6 +662,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 1, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, tmp_ld, LIBXSMM_DATATYPE_F32 );
     func2 = libxsmm_dispatch_matrix_eqn_v2( my_eqn2, arg_shape_out );
+    if ( func2 == NULL ) {
+      fprintf( stderr, "JIT for func2 failed. Bailing...!\n");
+      exit(-1);
+    }
 #if 0
     my_eqn3 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_binary_op( my_eqn3, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -682,6 +689,10 @@ int main( int argc, char* argv[] ) {
     libxsmm_matrix_eqn_push_back_arg( my_eqn3, S3, S1, ld, 1, 0, in_dt );
     arg_shape_out = libxsmm_create_meqn_arg_shape( S3, S1, ld, LIBXSMM_DATATYPE_F32 );
     func3 = libxsmm_dispatch_matrix_eqn_v2( my_eqn3, arg_shape_out );
+    if ( func3 == NULL ) {
+      fprintf( stderr, "JIT for func3 failed. Bailing...!\n");
+      exit(-1);
+    }
 #endif
 #else
     ld = S2*S3;
