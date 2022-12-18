@@ -31,5 +31,5 @@ do
   lda=$M
   ldb=$K
   ldc=$M
-  ./kernel $M $N $K $lda $ldb $ldc 1 1 0 0 0 0 nopf ${PREC} nobr 1 0 ${REPS}
+  ./gemm_kernel $M $N $K $lda $ldb $ldc 1 1 0 0 0 0 nopf ${PREC} nobr 1 0 ${REPS}
 done
