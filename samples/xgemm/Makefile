@@ -110,7 +110,7 @@ endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@-rm -f $(XFILES) $(MODULES)
+	@-rm -f $(XFILES) $(MODULES) scripts
 endif
 
 .PHONY: deepclean
