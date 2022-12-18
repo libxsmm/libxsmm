@@ -159,7 +159,8 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
                                                const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
     fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   libxsmm_aarch64_instruction_restore_regs( io_generated_code, i_callee_save_bitmask );
