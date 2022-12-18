@@ -206,13 +206,6 @@ for BINARY_POSTOP in 0 1; do
                   sed -i 's/ ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}//g' ${OUTNAME}
                 fi
 
-                # FIXME BRGEMM for TRA is broken
-                if [ "$TRA" == '1' ] ; then
-                  sed -i "/addrbr/d" ${OUTNAME}
-                  sed -i "/offsbr/d" ${OUTNAME}
-                  sed -i "/strdbr/d" ${OUTNAME}
-                fi
-
                 chmod 755 ${OUTNAME}
 
                 # for certain prericsion we are adding some special scripts for more restricted hardware
