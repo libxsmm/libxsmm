@@ -219,7 +219,7 @@ for BINARY_POSTOP in 0 1; do
                 # QVNNI for I16I32
                 if [ "$PREC" == 'I16I32' ] ; then
                   cp ${OUTNAME} qvnni_${OUTNAME}
-                  sed -i 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(8,101,8)/g' qvnni_${OUTNAME}
+                  sed -i 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 8)/g' qvnni_${OUTNAME}
                   chmod 755 qvnni_${OUTNAME}
                 fi
 

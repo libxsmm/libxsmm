@@ -15,7 +15,7 @@ import time as time
 rnd.seed(time.time())
 randnumm = rnd.sample(range(1,101,1), 18)
 randnumn = rnd.sample(range(1,101,1), 18)
-randnumk = rnd.sample(range(8,101,8), 18)
+randnumk = rnd.sample(range(8,101,8), 8)
 f1 = open("${TESTFILE1}", "w+")
 f2 = open("${TESTFILE2}", "w+")
 i = 0
