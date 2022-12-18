@@ -13,6 +13,6 @@
 #if defined(_OPENMP)
 #include "omp.h"
 #endif
-#include "kernel.c"
+#include "gemm_kernel.c"
 #undef USE_GEMM_EXT_FRONTEND
 

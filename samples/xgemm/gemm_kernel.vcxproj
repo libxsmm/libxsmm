@@ -39,17 +39,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="kernel_fused.c" />
+    <ClCompile Include="gemm_kernel.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="kernel_appsizes.sh" />
+    <None Include="gemm_kernel_appsizes.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>kernel_fused</ProjectName>
+    <ProjectName>gemm_kernel</ProjectName>
+    <ProjectGuid>{5528C759-B5AD-4325-8A45-EFE647B1702E}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectGuid>{6CB03F3E-89F3-4864-87A8-BE2288EA5FE7}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

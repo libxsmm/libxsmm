@@ -1,4 +1,5 @@
 .kernel_test_??????.slurm
-kernel
-kernel_fused
-kernel_parallel
+gemm_kernel
+gemm_kernel_fused
+gemm_kernel_parallel
+kernel_test/.generate_gemm_test_scripts

@@ -40,21 +40,21 @@ BINARY_POSTOP=0
 UNARY_POSTOP=2
 CVNNI=0
 
-./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} nobr   1 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} addrbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} addrbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} offsbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} offsbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} strdbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE1} 1 1 0 0 ${TRA} ${TRB} ${PREC} strdbr 5 0 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} addrbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} addrbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} offsbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} offsbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
-./kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} strdbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
+./gemm_kernel_fused ${TESTFILE2} 1 1 0 0 ${TRA} ${TRB} ${PREC} strdbr 5 1 1 1 0 ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}
 
 rm ${TESTFILE1}
 rm ${TESTFILE2}

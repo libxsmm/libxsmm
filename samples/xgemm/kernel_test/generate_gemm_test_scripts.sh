@@ -157,7 +157,7 @@ for BINARY_POSTOP in 0 1; do
                 fi
 
                 #echo "Copying "$TPLNAME" to "$OUTNAME
-                sed "s/PREC=0/PREC=\"${PREC}\"/g" kernel_fused.tpl \
+                sed "s/PREC=0/PREC=\"${PREC}\"/g" gemm_kernel_fused.tpl \
                 | sed "s/TRA=0/TRA=${TRA}/g" \
                 | sed "s/TRB=0/TRB=${TRB}/g" \
                 | sed "s/BINARY_POSTOP=0/BINARY_POSTOP=${BINARY_POSTOP}/g" \
@@ -202,7 +202,7 @@ for BINARY_POSTOP in 0 1; do
 
                 # nofusion, we use the regular kernel
                 if [ "$NOFUSION" == '1' ] ; then
-                  sed -i 's/kernel_fused/kernel/g' ${OUTNAME}
+                  sed -i 's/gemm_kernel_fused/gemm_kernel/g' ${OUTNAME}
                   sed -i 's/ ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}//g' ${OUTNAME}
                 fi
 
