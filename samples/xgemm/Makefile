@@ -1,5 +1,6 @@
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
+TSTDIR = ./kernel_test
 SRCDIR = .
 INCDIR = .
 BLDDIR = obj
@@ -46,22 +47,29 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/kernel $(OUTDIR)/kernel_fused $(OUTDIR)/kernel_parallel
+XFILES := $(OUTDIR)/gemm_kernel $(OUTDIR)/gemm_kernel_fused $(OUTDIR)/gemm_kernel_parallel
 
 .PHONY: all
-all: $(XFILES)
+all: $(XFILES) scripts
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/kernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+.PHONY: scripts
+scripts: $(TSTDIR)/.generate_gemm_test_scripts
+$(TSTDIR)/.generate_gemm_test_scripts: $(TSTDIR)/generate_gemm_test_scripts.sh Makefile
+	$(info Creating gemm test scripts...)
+	@cd $(TSTDIR) && ./generate_gemm_test_scripts.sh >/dev/null
+	@-touch $@
 
-$(OUTDIR)/kernel_fused: $(OUTDIR)/.make $(BLDDIR)/kernel_fused-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/kernel_fused-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/gemm_kernel: $(OUTDIR)/.make $(BLDDIR)/gemm_kernel-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/gemm_kernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/kernel_parallel: $(OUTDIR)/.make $(BLDDIR)/kernel_parallel-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/kernel_parallel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/gemm_kernel_fused: $(OUTDIR)/.make $(BLDDIR)/gemm_kernel_fused-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/gemm_kernel_fused-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/gemm_kernel_parallel: $(OUTDIR)/.make $(BLDDIR)/gemm_kernel_parallel-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/gemm_kernel_parallel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
@@ -86,11 +94,13 @@ clean:
 ifneq ($(call qapath,$(BLDDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(BLDDIR)),$(call qapath,.))
 	@-rm -rf $(BLDDIR)
+	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 endif
 
 .PHONY: realclean
@@ -98,11 +108,12 @@ realclean: clean
 ifneq ($(call qapath,$(OUTDIR)),$(ROOTDIR))
 ifneq ($(call qapath,$(OUTDIR)),$(call qapath,.))
 	@-rm -rf $(OUTDIR)
+	@-rm -f $(TSTDIR)/.generate_gemm_test_scripts
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
-	@-rm -f $(XFILES) $(MODULES)
+	@-rm -f $(XFILES) $(MODULES) $(TSTDIR)/.generate_gemm_test_scripts
 endif
 
 .PHONY: deepclean

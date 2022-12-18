@@ -231,12 +231,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   l_simd_packed_remainder = i_packed_width % l_simd_packed_width;
   l_simd_packed_iters = i_packed_width/l_simd_packed_width;
 
-  /* check if we have a single SIMD devisor */
+  /* check if we have a single SIMD divisor */
   if ( l_simd_packed_width == i_packed_width ) {
     /* run inner compute kernel */
     libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloop_simd_packed( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_width, i_n_blocking );
-  /* check if we have a perfect SIMD devisor */
+  /* check if we have a perfect SIMD divisor */
   } else if ( l_simd_packed_remainder == 0 ) {
     /* initilize packed loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, 0 );

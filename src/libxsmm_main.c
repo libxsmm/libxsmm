@@ -42,6 +42,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* used internally to reimplement certain exit-handler */
+#if !defined(LIBXSMM_EXIT_SUCCESS)
+# define LIBXSMM_EXIT_SUCCESS() exit(EXIT_SUCCESS)
+#endif
 #if !defined(LIBXSMM_CODE_MAXSIZE)
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
@@ -822,7 +826,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
 }
 
-
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
@@ -835,7 +838,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 
@@ -850,7 +853,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 
@@ -865,7 +868,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
     if (NULL != stop.dlsym) {
       stop.ptr();
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 #endif
@@ -1295,8 +1298,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         }
       }
       { const unsigned int ninit = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+#if 1
+        LIBXSMM_UNUSED(ninit);
+#else
         LIBXSMM_UNUSED_NDEBUG(ninit);
         assert(2 == ninit); /* !LIBXSMM_ASSERT */
+#endif
       }
     }
     else /*if (gid != tid)*/ { /* avoid recursion */

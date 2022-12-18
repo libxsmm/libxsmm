@@ -48,6 +48,7 @@ Plain [C code](https://github.com/libxsmm/libxsmm/blob/main/samples/hello/hello.
 Please have a look at [https://github.com/libxsmm/libxsmm/tree/main/include](https://github.com/libxsmm/libxsmm/tree/main/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
 * MM: [Matrix Multiplication](#matrix-multiplication)
+* TPP: [Tensor Processing Primitives](libxsmm_tpp.md)
 * DNN: [Deep Neural Networks](#deep-neural-networks)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)

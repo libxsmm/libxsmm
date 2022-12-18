@@ -202,7 +202,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE unsigned int libxsmm_backtrace(const void* /*buffer*/[], unsigned int /*size*/, unsigned int /*skip*/);
 LIBXSMM_API
 #if defined(_WIN32)
-/*TODO: no inline*/
+/*LIBXSMM_ATTRIBUTE(noinline)*/
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
 #endif
@@ -273,7 +273,7 @@ const char* libxsmm_trace_info(unsigned int* /*depth*/, unsigned int* /*threadid
 
 LIBXSMM_API
 #if defined(_WIN32)
-/*TODO: no inline*/
+/*LIBXSMM_ATTRIBUTE(noinline)*/
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
 #endif

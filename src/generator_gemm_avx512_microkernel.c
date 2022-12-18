@@ -30,12 +30,13 @@ void libxsmm_generator_gemm_avx512_kloop_kernel( libxsmm_generated_code*        
   }
 
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256 ) && ( l_m_vector == 1 ) && ( LIBXSMM_DATATYPE_BF8 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    if ( io_generated_code->arch != LIBXSMM_X86_AVX512_KNM ) {
-      libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
-                                                         i_xgemm_desc, i_n_blocking, i_k_blocking );
-    } else {
+    if ( (io_generated_code->arch == LIBXSMM_X86_AVX512_KNM) && ( ( LIBXSMM_DATATYPE_F32 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ||
+                                                                  ( LIBXSMM_DATATYPE_I16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )    ) ) {
       libxsmm_generator_gemm_avx512_microkernel_fsdbcst_qfma( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
                                                               i_xgemm_desc, i_n_blocking, i_k_blocking );
+    } else {
+      libxsmm_generator_gemm_avx512_microkernel_fsdbcst( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
+                                                         i_xgemm_desc, i_n_blocking, i_k_blocking );
     }
   } else {
     void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,

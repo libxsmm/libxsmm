@@ -26,9 +26,26 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   int l_emu_amx = 0;
   int l_aarch64_bfdot = libxsmm_cpuid_arm_use_bfdot();
   const char *const l_env_emu_amx = getenv("EMULATE_AMX");
+  unsigned int l_saved_arch = io_generated_code->arch;
   if ( 0 == l_env_emu_amx ) {
   } else {
     l_emu_amx = atoi(l_env_emu_amx);
+  }
+
+  /* for low precision lets make KNL/KNM an AVX2 machine */
+  if ( ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) ) &&
+       ( ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
+         ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) ) {
+    io_generated_code->arch = LIBXSMM_X86_AVX2;
+  }
+  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) &&
+       ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
+       ( l_xgemm_desc_mod.k % 8 != 0) ) {
+    io_generated_code->arch = LIBXSMM_X86_AVX2;
+  }
+  if ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) &&
+       ( LIBXSMM_DATATYPE_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
+    io_generated_code->arch = LIBXSMM_X86_AVX2;
   }
 
   /* overwrite VNNI Flag when K == 1 */
@@ -400,6 +417,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
+
+  /* restore arch */
+  io_generated_code->arch = l_saved_arch;
 }
 
 
