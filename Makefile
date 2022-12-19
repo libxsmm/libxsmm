@@ -1650,7 +1650,7 @@ $(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (,$(ALIAS_PRIVLIBS))
 ifneq (Windows_NT,$(UNAME))
-	@echo "Libs: -L\$${libdir} -l:libxsmm.$(SLIBEXT) $(ALIAS_PRIVLIBS)" >>$@
+	@echo "Libs: -L\$${libdir}/libxsmm.$(SLIBEXT) $(ALIAS_PRIVLIBS)" >>$@
 else
 	@echo "Libs: -L\$${libdir} -lxsmm $(ALIAS_PRIVLIBS)" >>$@
 endif
@@ -1671,7 +1671,7 @@ $(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Requires: libxsmmext-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (Windows_NT,$(UNAME))
-	@echo "Libs: -L\$${libdir} -l:libxsmmf.$(SLIBEXT)" >>$@
+	@echo "Libs: \$${libdir}/libxsmmf.$(SLIBEXT)" >>$@
 else
 	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
 endif
@@ -1690,7 +1690,7 @@ $(OUTDIR)/libxsmmext-static.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (,$(ALIAS_PRIVLIBS_EXT))
 ifneq (Windows_NT,$(UNAME))
-	@echo "Libs: -L\$${libdir} -l:libxsmmext.$(SLIBEXT) $(ALIAS_PRIVLIBS_EXT)" >>$@
+	@echo "Libs: -L\$${libdir}/libxsmmext.$(SLIBEXT) $(ALIAS_PRIVLIBS_EXT)" >>$@
 else
 	@echo "Libs: -L\$${libdir} -lxsmmext $(ALIAS_PRIVLIBS_EXT)" >>$@
 endif
@@ -1711,7 +1711,7 @@ $(OUTDIR)/libxsmmnoblas-static.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Requires: libxsmm-static" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (Windows_NT,$(UNAME))
-	@echo "Libs: -L\$${libdir} -l:libxsmmnoblas.$(SLIBEXT)" >>$@
+	@echo "Libs: -L\$${libdir}/libxsmmnoblas.$(SLIBEXT)" >>$@
 else
 	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >>$@
 endif
