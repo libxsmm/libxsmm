@@ -886,7 +886,7 @@ endif
 endif
 
 .PHONY: clib_hst
-clib_hst: $(OUTDIR)/libxsmm.pc
+clib_hst: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm.pc
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifneq (0,$(STATIC))
 	@-rm -f $@
@@ -919,7 +919,7 @@ endif
 
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
-flib_hst: $(OUTDIR)/libxsmmf.pc
+flib_hst: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf.pc
 ifneq (,$(filter-out Darwin,$(UNAME))$(filter-out 0,$(STATIC))$(filter-out 0,$(LNKSOFT)))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
 else
@@ -945,6 +945,7 @@ else # macOS
 endif
 endif
 else
+.PHONY: $(OUTDIR)/libxsmmf-static.pc
 .PHONY: $(OUTDIR)/libxsmmf.pc
 endif
 
@@ -965,7 +966,7 @@ endif
 endif
 
 .PHONY: ext_hst
-ext_hst: $(OUTDIR)/libxsmmext.pc
+ext_hst: $(OUTDIR)/libxsmmext-static.pc $(OUTDIR)/libxsmmext.pc
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
 ifneq (0,$(STATIC))
 	@-rm -f $@
@@ -993,7 +994,7 @@ endif
 endif
 
 .PHONY: noblas_hst
-noblas_hst: $(OUTDIR)/libxsmmnoblas.pc
+noblas_hst: $(OUTDIR)/libxsmmnoblas-static.pc $(OUTDIR)/libxsmmnoblas.pc
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(NOBLAS_HST)
 ifneq (0,$(STATIC))
 	@-rm -f $@
@@ -1636,6 +1637,85 @@ endif
 ALIAS_INCLUDEDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(PINCDIR)))
 ALIAS_LIBDIR := $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(ALIAS_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
+$(OUTDIR)/libxsmm-static.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
+	@echo "Name: libxsmm" >$@
+	@echo "Description: Specialized tensor operations" >>$@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
+	@echo "Version: $(VERSION_STRING)" >>$@
+	@echo >>$@
+	@echo "prefix=$(ALIAS_PREFIX)" >>$@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo >>$@
+	@echo "Cflags: -I\$${includedir}" >>$@
+ifneq (,$(ALIAS_PRIVLIBS))
+ifneq (Windows_NT,$(UNAME))
+	@echo "Libs: -L\$${libdir} -l:libxsmm.$(SLIBEXT) $(ALIAS_PRIVLIBS)" >>$@
+else
+	@echo "Libs: -L\$${libdir} -lxsmm $(ALIAS_PRIVLIBS)" >>$@
+endif
+else # no private libraries
+	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
+endif
+
+$(OUTDIR)/libxsmmf-static.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
+	@echo "Name: libxsmm/f" >$@
+	@echo "Description: LIBXSMM for Fortran" >>$@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
+	@echo "Version: $(VERSION_STRING)" >>$@
+	@echo >>$@
+	@echo "prefix=$(ALIAS_PREFIX)" >>$@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo >>$@
+	@echo "Requires: libxsmmext-static" >>$@
+	@echo "Cflags: -I\$${includedir}" >>$@
+ifneq (Windows_NT,$(UNAME))
+	@echo "Libs: -L\$${libdir} -l:libxsmmf.$(SLIBEXT)" >>$@
+else
+	@echo "Libs: -L\$${libdir} -lxsmmf" >>$@
+endif
+
+$(OUTDIR)/libxsmmext-static.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
+	@echo "Name: libxsmm/ext" >$@
+	@echo "Description: LIBXSMM/multithreaded for OpenMP" >>$@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
+	@echo "Version: $(VERSION_STRING)" >>$@
+	@echo >>$@
+	@echo "prefix=$(ALIAS_PREFIX)" >>$@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo >>$@
+	@echo "Requires: libxsmm-static" >>$@
+	@echo "Cflags: -I\$${includedir}" >>$@
+ifneq (,$(ALIAS_PRIVLIBS_EXT))
+ifneq (Windows_NT,$(UNAME))
+	@echo "Libs: -L\$${libdir} -l:libxsmmext.$(SLIBEXT) $(ALIAS_PRIVLIBS_EXT)" >>$@
+else
+	@echo "Libs: -L\$${libdir} -lxsmmext $(ALIAS_PRIVLIBS_EXT)" >>$@
+endif
+else # no private libraries
+	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
+endif
+
+$(OUTDIR)/libxsmmnoblas-static.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+	@echo "Name: libxsmm/noblas" >$@
+	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >>$@
+	@echo "URL: https://github.com/libxsmm/libxsmm/" >>$@
+	@echo "Version: $(VERSION_STRING)" >>$@
+	@echo >>$@
+	@echo "prefix=$(ALIAS_PREFIX)" >>$@
+	@echo "includedir=$(ALIAS_INCLUDEDIR)" >>$@
+	@echo "libdir=$(ALIAS_LIBDIR)" >>$@
+	@echo >>$@
+	@echo "Requires: libxsmm-static" >>$@
+	@echo "Cflags: -I\$${includedir}" >>$@
+ifneq (Windows_NT,$(UNAME))
+	@echo "Libs: -L\$${libdir} -l:libxsmmnoblas.$(SLIBEXT)" >>$@
+else
+	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >>$@
+endif
+
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" >$@
 	@echo "Description: Specialized tensor operations" >>$@
@@ -1648,12 +1728,8 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (,$(ALIAS_PRIVLIBS))
-	@if [ -e $(OUTDIR)/libxsmm.$(DLIBEXT) ]; then \
-		echo "Libs: -L\$${libdir} -lxsmm" >>$@; \
-		echo "Libs.private: $(ALIAS_PRIVLIBS)" >>$@; \
-	else \
-		echo "Libs: -L\$${libdir} -lxsmm $(ALIAS_PRIVLIBS)" >>$@; \
-	fi
+	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
+	@echo "Libs.private: $(ALIAS_PRIVLIBS)" >>$@
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >>$@
 endif
@@ -1685,12 +1761,8 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Requires: libxsmm" >>$@
 	@echo "Cflags: -I\$${includedir}" >>$@
 ifneq (,$(ALIAS_PRIVLIBS_EXT))
-	@if [ -e $(OUTDIR)/libxsmmext.$(DLIBEXT) ]; then \
-		echo "Libs: -L\$${libdir} -lxsmmext" >>$@; \
-		echo "Libs.private: $(ALIAS_PRIVLIBS_EXT)" >>$@; \
-	else \
-		echo "Libs: -L\$${libdir} -lxsmmext $(ALIAS_PRIVLIBS_EXT)" >>$@; \
-	fi
+	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
+	@echo "Libs.private: $(ALIAS_PRIVLIBS_EXT)" >>$@
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >>$@
 endif
