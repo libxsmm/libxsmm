@@ -84,10 +84,10 @@ void libxsmm_aarch64_instruction_open_stream( libxsmm_generated_code* io_generat
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
+void libxsmm_aarch64_instruction_restore_regs( libxsmm_generated_code* io_generated_code,
                                                const unsigned short    i_callee_save_bitmask ) {
   if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
-    fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
+    fprintf(stderr, "libxsmm_aarch64_instruction_restore_regs: at least ARM V81 needs to be specified as target arch!\n");
     LIBXSMM_EXIT_ERROR(io_generated_code);
     return;
   }
@@ -152,6 +152,18 @@ void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_genera
   libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I,
                                                  LIBXSMM_AARCH64_GP_REG_XSP, LIBXSMM_AARCH64_GP_REG_XSP,
                                                  192, 0 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_aarch64_instruction_close_stream( libxsmm_generated_code* io_generated_code,
+                                               const unsigned short    i_callee_save_bitmask ) {
+  if ( io_generated_code->arch < LIBXSMM_AARCH64_V81 ) {
+    fprintf(stderr, "libxsmm_aarch64_instruction_close_stream: at least ARM V81 needs to be specified as target arch!\n");
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
+  }
+
+  libxsmm_aarch64_instruction_restore_regs( io_generated_code, i_callee_save_bitmask );
 
   /* generate return instruction */
   if ( io_generated_code->code_type > 1 ) {

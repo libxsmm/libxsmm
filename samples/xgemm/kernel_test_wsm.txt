@@ -416,6 +416,10 @@ sgemm_tn_gtld_bop1_uop0_cvnni0
 sgemm_tn_gtld_bop1_uop1_cvnni0
 sgemm_tn_gtld_bop1_uop2_cvnni0
 sgemm_tn_gtld_bop1_uop3_cvnni0
+dgemm_tn_eqld
+sgemm_tn_eqld
+dgemm_tn_gtld
+sgemm_tn_gtld
 sui8f32gemm_nn_eqld
 sui8f32gemm_nn_gtld
 sui8i32gemm_nn_eqld
