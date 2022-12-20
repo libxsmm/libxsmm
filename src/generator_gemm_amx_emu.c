@@ -370,7 +370,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
   unsigned int im, l_n, i;
-  unsigned int M, N;
+  unsigned int M = 0, N = 0;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14;
   unsigned int k_loop_gp       = LIBXSMM_X86_GP_REG_R15;
   unsigned int n_loop_gp       = LIBXSMM_X86_GP_REG_R13;
@@ -593,7 +593,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                         unsigned int                  is_stride_0 ) {
   unsigned int ir, ic, _ic, ld;
-  unsigned int n_rows, n_cols;
+  unsigned int n_rows = 0, n_cols = 0;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   unsigned int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
