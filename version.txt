@@ -1,1 +1,1 @@
-feature_reduce_cols_idx_max_aarch64-1.17-3342
+feature_gather_scatter_offs_sve256-1.17-3343
