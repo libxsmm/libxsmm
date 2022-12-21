@@ -88,12 +88,12 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
     }
     if ( l_ld_bytes_idx != l_m_adjust_idx ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                    gp_idx_base_reg, i_gp_reg_mapping->gp_reg_scratch_0,gp_idx_base_reg,
+                                                    gp_idx_base_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_idx_base_reg,
                                                     ((long long)l_ld_bytes_idx - l_m_adjust_idx) );
     }
     if ( l_ld_bytes_reg != l_m_adjust_reg ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                    gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0,gp_idx_base_reg,
+                                                    gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_reg_mat_reg,
                                                     ((long long)l_ld_bytes_reg - l_m_adjust_reg) );
     }
   }
