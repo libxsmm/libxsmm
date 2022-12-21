@@ -14,6 +14,7 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_misc_aarch64.h"
+#include "generator_mateltwise_gather_scatter_aarch64.h"
 #include "libxsmm_matrixeqn.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common.h"

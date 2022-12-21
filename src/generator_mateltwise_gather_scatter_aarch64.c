@@ -118,9 +118,9 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
   unsigned int idx_mask_reg = 2;
   unsigned int mask_reg_full_16b = 3;
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned int vlen = i_micro_kernel_config->vlen_in;
   unsigned int l_vector_length = libxsmm_cpuid_vlen(io_generated_code->arch);
   unsigned int idx_vlen = l_vector_length/idx_tsize;
+  unsigned int vlen = l_vector_length/i_micro_kernel_config->datatype_size_in;
   unsigned int is_gather = 1;
   unsigned int ld_reg_mat = 0;
   unsigned int dtype_size_idx_mat = 0;
@@ -163,7 +163,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
 
   gp_idx_mat_base_reg   = LIBXSMM_AARCH64_GP_REG_X12;
   gp_reg_mat_reg        = LIBXSMM_AARCH64_GP_REG_X13;
-  gp_idx_mat_reg        = LIBXSMM_AARCH64_GP_REG_X14;
+  gp_idx_mat_reg        = LIBXSMM_AARCH64_GP_REG_X12;
 
   if (is_gather == 1) {
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct,
