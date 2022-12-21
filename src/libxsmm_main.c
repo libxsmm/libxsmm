@@ -1148,7 +1148,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
+LIBXSMM_API_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) {
     static unsigned int counter = 0, gid = 0;
@@ -1320,7 +1320,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void libxsmm_finalize(void);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
+LIBXSMM_API_DTOR void libxsmm_finalize(void)
 {
   void *const regaddr = &internal_registry;
   uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);

@@ -782,7 +782,7 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && defined(LIBXSMM_BUILD) && \
+#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
     (defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)) && \
     (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
@@ -791,6 +791,14 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
+#endif
+
+#if defined(LIBXSMM_BUILD)
+# define LIBXSMM_API_CTOR LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR
+# define LIBXSMM_API_DTOR LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR
+#else
+# define LIBXSMM_API_CTOR LIBXSMM_API
+# define LIBXSMM_API_DTOR LIBXSMM_API
 #endif
 
 #if defined(__GNUC__) && !defined(__PGI) && !defined(__ibmxl__)
