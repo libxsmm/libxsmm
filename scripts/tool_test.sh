@@ -220,6 +220,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   fi
 
   RESULT=0
+  LOGFILE_INIT=${LOGFILE}
   while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -426,16 +427,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "$(command -v tee)" ]; then
-        if [ "${LOGFILE}" ]; then
-          if [ "." = "$(dirname "${LOGFILE}")" ]; then
-            LOGFILE=${PWD}/${LOGFILE}
+        if [ "${LOGFILE_INIT}" ]; then
+          if [ "." = "$(dirname "${LOGFILE_INIT}")" ]; then
+            LOGFILE=${PWD}/${LOGFILE_INIT}
           fi
         elif [ "${LABEL}" ]; then
           LOGFILE=${PWD}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
         else
           LOGFILE=${PWD}/.test.log
         fi
-        export LOGFILE
         LOGPATH=$(dirname "${LOGFILE}")
         LOGBASE=$(basename "${LOGFILE}" .log)
         if [ "1" != "${NPARTITIONS}" ]; then
@@ -447,11 +447,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         if [ "1" != "${NENVS}" ]; then
           LOGBASE=${LOGBASE}-${COUNT_ENV}
         fi
-        LOG=${LOGPATH}/${LOGBASE}.log
+        export LOGFILE=${LOGPATH}/${LOGBASE}.log
         if [ -t 0 ]; then
-          eval "${COMMAND} 2>&1 | tee ${LOG}"
+          eval "${COMMAND} 2>&1 | tee ${LOGFILE}"
         else
-          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOG}"
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOGFILE}"
         fi
       else
         eval "${COMMAND}"
