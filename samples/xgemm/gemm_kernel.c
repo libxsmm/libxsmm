@@ -2120,15 +2120,6 @@ int main(int argc, char* argv []) {
       }
       if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
 
-      while ((cvt_C_to_vnni > 0) && (l_keep_going > 0) && (((l_n % 2 != 0) && (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16)) || ((l_n % 4 != 0) && ((l_gemm_def.out_type == LIBXSMM_DATATYPE_HF8) || (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8))))  ) {
-        if ( fgets( l_line, 512, l_file_handle) == NULL ) {
-          l_keep_going = 0;
-          break;
-        } else {
-          l_keep_going = 1;
-        }
-        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
-      }
       if (l_keep_going == 0) break;
     }
 

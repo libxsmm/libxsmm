@@ -134,6 +134,21 @@ for BINARY_POSTOP in 0 1; do
                   continue
                 fi
 
+                if [ "$CVNNI" == '1' ] ; then
+                  if [ "$PREC" == 'BF16' ] ; then
+                    NSTART=2
+                    NSTEP=2
+                  elif [ "$PREC" == 'BF8' ] ; then
+                    NSTART=4
+                    NSTEP=4
+                  elif [ "$PREC" == 'HF8' ] ; then
+                    NSTART=4
+                    NSTEP=4
+                  else
+                    continue
+                  fi
+                fi
+
                 if [ "$STACK" == '1' ] ; then
                   OUTNAME=$OUTNAME"via_stack_"
                 fi
