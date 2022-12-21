@@ -87,7 +87,7 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   }
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16, i_micro_kernel_config->datatype_size_in * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16,  (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   /* Register allocation: Registers zmm8-zmm15 are accumulators, zmm0-zmm7 are used for loading input */
@@ -311,7 +311,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16,
-    i_micro_kernel_config->datatype_size_in * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   m_trips           = (m + vlen - 1) / vlen;
@@ -966,7 +966,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   }
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16, i_micro_kernel_config->datatype_size_in * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16, (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   if ((use_m_masking > 0) && ( flag_reduce_op_max > 0 )) {
@@ -1575,7 +1575,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
   if (is_sve) libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, pred_reg_argidx, idx_tsize * mask_argidx64, i_gp_reg_mapping->gp_reg_scratch_0);
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
-    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16, i_micro_kernel_config->datatype_size_in * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16, (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   /* In this case we have to generate a loop for m */
@@ -2867,7 +2867,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16,
-    i_micro_kernel_config->datatype_size_in * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   /* In this case we have to generate a loop for m */
