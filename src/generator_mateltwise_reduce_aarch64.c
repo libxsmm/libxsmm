@@ -311,7 +311,7 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
 
   if ((is_sve > 0) && (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0)) {
     libxsmm_generator_set_p_register_aarch64_sve( io_generated_code, pred_reg_all_bf16,
-    (l_is_inp_bf16 > 0) : i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
+    (l_is_inp_bf16 > 0) ? i_micro_kernel_config->datatype_size_in * vlen : i_micro_kernel_config->datatype_size_out * vlen, i_gp_reg_mapping->gp_reg_scratch_0 );
   }
 
   m_trips           = (m + vlen - 1) / vlen;
