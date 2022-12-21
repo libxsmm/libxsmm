@@ -357,6 +357,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF     0xa4a0a086 /* load 16 bit elements into vector register */
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR        0xa5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF     0xa540a086 /* load 32 bit elements into vector register */
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF     0x85004083
+#define LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE 0x85204083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR        0xa5e04083
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF     0xa5e0a086 /* load 64 bit elements into vector register */
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1D_SR        0xe5e04083
@@ -364,6 +366,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF   0xe590e086
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR        0xe5404083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF     0xe540e086
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF     0xe5408083
+#define LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF_SCALE 0xe5608083
 #define LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF     0xe4a0e086
 #define LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF   0xe510e086
 #define LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF    0x84408086 /* load 1 byte,  broadcast to all active elements; set inactive to zero */
@@ -713,7 +717,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*                io_generated_code,
                                            const unsigned int                     i_vmove_instr,
                                            const unsigned int                     i_gp_reg_addr,
-                                           const unsigned int                     i_gp_reg_offset,
+                                           const unsigned int                     i_reg_offset_idx,
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg );

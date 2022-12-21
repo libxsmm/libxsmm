@@ -51,6 +51,7 @@
 #include "../src/generator_mateltwise_aarch64.c"
 #include "../src/generator_mateltwise_aarch64_sve.c"
 #include "../src/generator_mateltwise_common.c"
+#include "../src/generator_mateltwise_gather_scatter_aarch64.c"
 #include "../src/generator_mateltwise_gather_scatter_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_aarch64.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"

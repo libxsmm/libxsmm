@@ -932,7 +932,7 @@ LIBXSMM_API_INTERN
 void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*                io_generated_code,
                                            const unsigned int                     i_vmove_instr,
                                            const unsigned int                     i_gp_reg_addr,
-                                           const unsigned int                     i_gp_reg_offset,
+                                           const unsigned int                     i_reg_offset_idx,
                                            const int                              i_offset,
                                            const unsigned int                     i_vec_reg,
                                            const unsigned int                     i_pred_reg ) {
@@ -952,6 +952,8 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_LD1W_V_OFF_SCALE:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1H_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF:
@@ -960,6 +962,8 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     case LIBXSMM_AARCH64_INSTR_SVE_STNT1D_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_SR:
     case LIBXSMM_AARCH64_INSTR_SVE_ST1W_I_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF:
+    case LIBXSMM_AARCH64_INSTR_SVE_ST1W_V_OFF_SCALE:
     case LIBXSMM_AARCH64_INSTR_SVE_STNT1W_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RB_I_OFF:
     case LIBXSMM_AARCH64_INSTR_SVE_LD1RH_I_OFF:
@@ -997,7 +1001,7 @@ void libxsmm_aarch64_instruction_sve_move( libxsmm_generated_code*              
     /* load/store with offset register */
     if ( (i_vmove_instr & 0x3) == 0x3 ) {
       /* setting Rm */
-      code[code_head] |= (unsigned int)((0x1f & i_gp_reg_offset) << 16);
+      code[code_head] |= (unsigned int)((0x1f & i_reg_offset_idx) << 16);
     }
     if ( (i_vmove_instr & 0x4) == 0x4 ) {
       if ( (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RW_I_OFF) || (i_vmove_instr == LIBXSMM_AARCH64_INSTR_SVE_LD1RD_I_OFF) ) {
