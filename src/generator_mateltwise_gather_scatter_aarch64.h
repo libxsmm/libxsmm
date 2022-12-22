@@ -29,11 +29,10 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
     unsigned int                                   vlen,
     unsigned int                                   m_remainder_elements,
     unsigned int                                   mask_reg,
-    unsigned int                                   mask_reg_full_16b,
+    unsigned int                                   mask_reg_full_frac_vlen,
     unsigned int                                   is_gather,
     unsigned int                                   gp_idx_mat_reg,
     unsigned int                                   gp_reg_mat_reg,
-    unsigned int                                   dtype_size_idx_mat,
     unsigned int                                   dtype_size_reg_mat,
     unsigned int                                   ld_reg_mat );
 
