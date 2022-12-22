@@ -19,6 +19,7 @@
 #include "libxsmm_main.h"
 #include "generator_common_aarch64.h"
 #include "generator_matequation_scratch_aarch64.h"
+#include "generator_mateltwise_gather_scatter_aarch64.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_mateltwise_transform_common.h"
 
@@ -64,6 +65,21 @@ void libxsmm_generator_matequation_set_input_in_stack_param_struct_aarch64( libx
   } else {
     libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR8, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
   }
+
+  /* Setup secondaries if need be */
+  if ((cur_node->up->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
+      ((cur_node->up->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER) ||
+       (libxsmm_matrix_eqn_is_unary_opcode_reduce_cols_idx_kernel(cur_node->up->info.u_op.type) > 0))) {
+    if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_node->info.arg.in_pos >= 0)) {
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 8, temp_reg );
+      libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD, temp_reg, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg, (long long)cur_node->info.arg.in_pos*32+8 );
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, temp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, temp_reg );
+      libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR5, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
+    } else {
+      fprintf( stderr, "The requested GATHER operation accepts arguments given by the user only...\n" );
+      return;
+    }
+  }
 }
 
 LIBXSMM_API_INTERN
@@ -87,12 +103,15 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct_aarch64(libx
   /* Setup secondaries if need be */
   if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
       ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) ||
+       (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ||
        ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ) )) {
     if (is_last_op > 0) {
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 24, temp_reg );
       libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
     } else {
-      if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+      if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
+        fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
+      } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
         fprintf( stderr, "The requested UNPACK_TO_BLOCKS operation can only be the head of the equation...\n" );
       } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
         fprintf( stderr, "The requested RELU operation with bitmask can only be the head of the equation...\n" );
@@ -431,6 +450,8 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
       }
     } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_transform_kernel(meltw_desc->param) > 0)) {
       libxsmm_generator_transform_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
+    } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && ((cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_GATHER) || (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) )) {
+      libxsmm_generator_gather_scatter_aarch64_microkernel( io_generated_code, io_loop_label_tracker, &i_gp_reg_mapping->gp_reg_mapping_eltwise, &i_micro_kernel_config->meltw_kernel_config, meltw_desc );
     } else if ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) ||
                ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD)) ||
                ((cur_op->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_REDUCE_TO_SCALAR_OP_ADD))) {
