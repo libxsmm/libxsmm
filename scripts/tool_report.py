@@ -88,6 +88,7 @@ def main(args, argd):
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
     nerrors = nentries = 0
+    match = set()
 
     try:
         with open(args.filepath, "r") as file:
@@ -204,6 +205,7 @@ def main(args, argd):
             meanvl = []  # determined by --summary
             sunit = aunit = None
             analyze = dict()
+            match.add(value)
             for build in (
                 b
                 for b in database
@@ -213,33 +215,33 @@ def main(args, argd):
                 values = database[build][entry][value]
                 # match --result primarily against "unit"
                 for v in reversed(values):  # match last entry
-                    match = parseval(v)
-                    if match and match.group(3):
-                        unit = v[match.end(3) :].strip()  # noqa: E203
+                    parsed = parseval(v)
+                    if parsed and parsed.group(3):
+                        unit = v[parsed.end(3) :].strip()  # noqa: E203
                         ulow = unit.lower()
                         if not ylabel and matchstr(rslt, ulow):
-                            yvalue.append(float(match.group(3)))
+                            yvalue.append(float(parsed.group(3)))
                             ylabel = unit
                         if not slabel and sdo and matchstr(smry, ulow):
-                            meanvl.append(float(match.group(3)))
+                            meanvl.append(float(parsed.group(3)))
                             slabel = unit
                 # match --result secondary against "init"
                 for v in reversed(values):  # match last entry
-                    match = parseval(v)
-                    if match and match.group(3):
+                    parsed = parseval(v)
+                    if parsed and parsed.group(3):
                         init = (
-                            match.group(1).strip(": ")
-                            if match.group(1)
+                            parsed.group(1).strip(": ")
+                            if parsed.group(1)
                             else ""  # noqa: E501
                         )
-                        unit = v[match.end(3) :].strip()  # noqa: E203
+                        unit = v[parsed.end(3) :].strip()  # noqa: E203
                         ulab = unit if unit else init
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
-                            yvalue.append(float(match.group(3)))
+                            yvalue.append(float(parsed.group(3)))
                             ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
-                            meanvl.append(float(match.group(3)))
+                            meanvl.append(float(parsed.group(3)))
                             slabel = ulab
                         if (not aunit or ulab == aunit) and matchstr(
                             args.analyze, ilow
@@ -248,7 +250,7 @@ def main(args, argd):
                                 if not aunit:
                                     aunit = ulab
                                 analyze[init] = []
-                            analyze[init].append(float(match.group(3)))
+                            analyze[init].append(float(parsed.group(3)))
 
             if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
@@ -356,6 +358,12 @@ def main(args, argd):
         figloc = argfig.parent
         figext = deffig.suffix
         figstm = argfig.stem if argfig.stem else deffig.stem
+    if 0 < len(match):
+        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
+        clean = "-".join(
+            [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
+        )
+        figstm = f"{figstm}-{clean.lower()}"
     figout = figloc / f"{figstm}{figext}"
     # save graphics file
     figure.savefig(figout)
