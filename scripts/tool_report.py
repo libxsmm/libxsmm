@@ -38,8 +38,10 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 database[strbuild][match.group(1)] = dict()
             if jobname not in database[strbuild][match.group(1)]:
                 database[strbuild][match.group(1)][jobname] = dict()
-            database[strbuild][match.group(1)][jobname] = values
-            nentries = nentries + 1
+            oldval = database[strbuild][match.group(1)][jobname]
+            if values != oldval:
+                database[strbuild][match.group(1)][jobname] = values
+                nentries = nentries + 1
         else:
             nerrors = nerrors + 1
     return nentries, nerrors
@@ -87,8 +89,9 @@ def main(args, argd):
     smry = args.summary.lower()
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
+    inflight = max(args.inflight, 0)
     nerrors = nentries = 0
-    match = set()
+    match = []
 
     try:
         with open(args.filepath, "r") as file:
@@ -97,7 +100,9 @@ def main(args, argd):
         print(f"Create new database {args.filepath}")
         database = dict()
         pass
-    latest = max(int(e) for e in database) if database else 0
+    latest = (
+        max(max(int(e) for e in database) - inflight, 0) if database else 0
+    )
 
     if args.infile:
         try:
@@ -110,7 +115,12 @@ def main(args, argd):
     if args.infile:
         outfile = f"{args.infile.stem}.json"
         nentries, nerrors = parselog(
-            database, str(latest + 1), args.infile.stem, txt, nentries, nerrors
+            database,
+            str(latest + inflight + 1),
+            args.infile.stem,
+            txt,
+            nentries,
+            nerrors,
         )
         if 0 < nentries:
             latest = latest + 1
@@ -135,11 +145,16 @@ def main(args, argd):
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
-                running = "running" == build["state"]
                 nbuild = build["number"]
                 # JSON stores integers as string
                 strbuild = str(nbuild)
-                if not running and strbuild in database:
+                if (
+                    nbuild <= latest
+                    and "running" != build["state"]
+                    and strbuild in database
+                ):
+                    latest = nbuild
+                    builds = None
                     break
                 jobs = build["jobs"]
                 n = 0
@@ -154,9 +169,7 @@ def main(args, argd):
                     )
                     n = n + 1
                 njobs = njobs + n
-                if not running and latest < nbuild:
-                    latest = nbuild
-            if 1 < nbuild:
+            if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
@@ -189,6 +202,8 @@ def main(args, argd):
     if 2 > nselect:
         axes = [axes]
     i = 0
+    infneg = float("-inf")
+    infpos = float("inf")
     yunit = None
     for entry in (
         e
@@ -205,7 +220,8 @@ def main(args, argd):
             meanvl = []  # determined by --summary
             sunit = aunit = None
             analyze = dict()
-            match.add(value)
+            if value not in match:
+                match.append(value)
             for build in (
                 b
                 for b in database
@@ -276,8 +292,8 @@ def main(args, argd):
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
-                            amax = float("-inf")
-                            amin = float("inf")
+                            amax = infneg
+                            amin = infpos
                             for a in analyze:
                                 values = [v for v in analyze[a] if 0 < v]
                                 vnew = values[0 : args.mean]  # noqa: E203
@@ -295,10 +311,10 @@ def main(args, argd):
                                         analyze_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
-                            if analyze_min and 0 != vmin and 0 != amin:
+                            if analyze_min and 0 != vmin and infpos != amin:
                                 vlabel = analyze_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
-                            if analyze_max and 0 != vmax and 0 != amax:
+                            if analyze_max and 0 != vmax and infneg != amax:
                                 vlabel = analyze_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
                 else:
@@ -360,10 +376,9 @@ def main(args, argd):
         figstm = argfig.stem if argfig.stem else deffig.stem
     if 0 < len(match):
         punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
-        clean = "-".join(
-            [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
-        )
-        figstm = f"{figstm}-{clean.lower()}"
+        clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
+        parts = [s.lower() for c in clean for s in c.split("_")]
+        figstm = f"{figstm}-{'_'.join(dict.fromkeys(parts))}"
     figout = figloc / f"{figstm}{figext}"
     # save graphics file
     figure.savefig(figout)
@@ -466,6 +481,13 @@ if __name__ == "__main__":
         type=int,
         default=30,
         help="Number of builds",
+    )
+    argparser.add_argument(
+        "-k",
+        "--inflight",
+        type=int,
+        default=2,
+        help="Re-scan builds",
     )
     args = argparser.parse_args()
     argd = argparser.parse_args([])
