@@ -22,7 +22,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     for match in (
         match
         for match in re.finditer(
-            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+]+)*", txt, re.MULTILINE
+            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+-]+)*", txt, re.MULTILINE
         )
         if match and match.group(1) and match.group(2)
     ):
@@ -77,7 +77,7 @@ def num2str(num):
     )
 
 
-def main(args):
+def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
@@ -88,7 +88,6 @@ def main(args):
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
     nerrors = nentries = 0
-    fig = "png"
 
     try:
         with open(args.filepath, "r") as file:
@@ -108,7 +107,6 @@ def main(args):
             pass
 
     if args.infile:
-        figfile = f"{args.infile.stem}.{fig}"
         outfile = f"{args.infile.stem}.json"
         nentries, nerrors = parselog(
             database, str(latest + 1), args.infile.stem, txt, nentries, nerrors
@@ -116,7 +114,6 @@ def main(args):
         if 0 < nentries:
             latest = latest + 1
     else:  # connect to URL
-        figfile = f"{args.filepath.stem}.{fig}"
         outfile = args.filepath
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -136,11 +133,12 @@ def main(args):
         njobs = 0
         while builds:
             # iterate over all builds (latest first)
-            for build in (b for b in builds if "running" != b["state"]):
+            for build in builds:
+                running = "running" == build["state"]
                 nbuild = build["number"]
                 # JSON stores integers as string
                 strbuild = str(nbuild)
-                if strbuild in database:
+                if not running and strbuild in database:
                     break
                 jobs = build["jobs"]
                 n = 0
@@ -153,10 +151,10 @@ def main(args):
                     nentries, nerrors = parselog(
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
-                    if latest < nbuild and 0 < nentries:
-                        latest = nbuild
                     n = n + 1
                 njobs = njobs + n
+                if not running and latest < nbuild:
+                    latest = nbuild
             if 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
@@ -334,11 +332,39 @@ def main(args):
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
-    figure.savefig(figfile)
+    # determine filename (graphics)
+    figtypes = plot.gcf().canvas.get_supported_filetypes()
+    argfig = pathlib.Path(args.figure)
+    deffig = pathlib.Path(argd.figure)
+    if argfig.is_dir():
+        figloc = argfig
+        figext = deffig.suffix
+        figstm = deffig.stem
+    elif argfig.suffix[1:] in figtypes.keys():
+        figloc = argfig.parent
+        figext = argfig.suffix
+        figstm = argfig.stem
+    elif "." == str(argfig.parent):
+        figloc = argfig.parent
+        figext = (
+            f".{argfig.name}"
+            if argfig.name in figtypes.keys()
+            else deffig.suffix
+        )
+        figstm = deffig.stem
+    else:
+        figloc = argfig.parent
+        figext = deffig.suffix
+        figstm = argfig.stem if argfig.stem else deffig.stem
+    figout = figloc / f"{figstm}{figext}"
+    # save graphics file
+    figure.savefig(figout)
 
 
 if __name__ == "__main__":
-    here = pathlib.Path(__file__).absolute().parent
+    path = pathlib.Path(__file__)
+    here = path.absolute().parent
+    base = path.stem
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -347,8 +373,15 @@ if __name__ == "__main__":
         "-f",
         "--filepath",
         type=pathlib.Path,
-        default=here / "tool_report.json",
+        default=here / f"{base}.json",
         help="JSON-database used to cache results",
+    )
+    argparser.add_argument(
+        "-g",
+        "--figure",
+        type=str,
+        default=f"{base}.png",
+        help="Graphics format, filename, or path",
     )
     argparser.add_argument(
         "-i",
@@ -427,4 +460,5 @@ if __name__ == "__main__":
         help="Number of builds",
     )
     args = argparser.parse_args()
-    main(args)
+    argd = argparser.parse_args([])
+    main(args, argd)
