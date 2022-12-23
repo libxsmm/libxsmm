@@ -115,9 +115,9 @@ if [ "${RESULT[0]}" ] && [ "${RESULT[1]}" ]; then
     LAYER=0
     while read -r LINE; do
       if [ "0" != "${LAYER}" ]; then # skip header line
-        RESULT=($(echo "${LINE}" | ${SED} 2>/dev/null -e "${NUMPAT}" -e "s/${SEP}/ /"))
-        if [ "${RESULT[0]}" ] && [ "${RESULT[1]}" ]; then
-          printf "Layer %i: %f ms\n" "${LAYER}" "$(${BC} 2>/dev/null -l <<<"1000*${RESULT[1]}")"
+        DETAIL=($(echo "${LINE}" | ${SED} 2>/dev/null -e "${NUMPAT}" -e "s/${SEP}/ /"))
+        if [ "${DETAIL[0]}" ] && [ "${DETAIL[1]}" ]; then
+          printf "Layer %i: %f ms\n" "${LAYER}" "$(${BC} 2>/dev/null -l <<<"1000*${DETAIL[1]}")"
         fi
       fi
       LAYER=$((LAYER+1))
