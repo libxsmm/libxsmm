@@ -1715,20 +1715,12 @@ else # GCC assumed
         FLDFLAGS := -fopenmp $(FLDFLAGS)
         FCFLAGS += -fopenmp
       else # mixed toolchain
-        TESTRESC := $(strip $(if $(GFC), \
-          $(call libpath,$(FLD),$(SLDFLAGS) -fopenmp,gomp), \
-          $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))))
+        TESTRESC := $(call libpath,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT))
         ifeq (,$(TESTRESC))
-          TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) \
-            $(if $(GFC),-fopenmp,$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))), \
-            $(if $(GFC),gomp,$(OMPRT))))
+          TESTRESC := $(strip $(call ldflib,$(FLD),$(SLDFLAGS) $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))),$(OMPRT)))
         endif
         ifneq (,$(TESTRESC))
-          ifeq (0,$(CLANG))
-            FLDFLAGS += $(if $(GFC),$(NULL),$(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB)))) $(TESTRESC)
-          else ifneq (,$(OMPRT))
-            FLDFLAGS += -l$(OMPRT)
-          endif
+          FLDFLAGS += $(foreach LIB,$(LIBFIND),$(call abslibpath,$(LIB))) $(TESTRESC)
         else
           TESTRESC := $(call ftest,$(FLD),$(NULL),-fopenmp)
           ifneq (,$(TESTRESC))
