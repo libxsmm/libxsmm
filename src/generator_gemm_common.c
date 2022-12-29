@@ -3380,9 +3380,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       }
       libxsmm_generator_vcvtneps2bf16_avx512_clean_stack( io_generated_code, i_gp_reg_mapping->gp_reg_help_2 );
     }
-  } else if ( ( (i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT)
-                && ((i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CPX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CPX))
-              ) &&
+  } else if ( ( ((i_micro_kernel_config->instruction_set <= LIBXSMM_X86_ALLFEAT) && (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CPX)) ||
+                ((i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512)   && (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256_CPX)) )
+              &&
               ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) )
             ) {
     const unsigned int relu_bitmask_gpr = i_gp_reg_mapping->gp_reg_help_2;
