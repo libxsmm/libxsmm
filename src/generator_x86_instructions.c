@@ -430,6 +430,8 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VSQRTSS:
     case LIBXSMM_X86_INSTR_VPXORD:
     case LIBXSMM_X86_INSTR_VPORD:
+    case LIBXSMM_X86_INSTR_VPXORQ:
+    case LIBXSMM_X86_INSTR_VPORQ:
     case LIBXSMM_X86_INSTR_VPANDD:
     case LIBXSMM_X86_INSTR_VPANDQ:
     case LIBXSMM_X86_INSTR_VPADDQ:
