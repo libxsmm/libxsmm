@@ -10,7 +10,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
   for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
-      OUTNAME="new_unary_"
+      OUTNAME="unary_"
       PRECLC=`echo "$PREC" | awk '{print tolower($0)}'`
 
       # approximations are not supportted for the time being in FP64
