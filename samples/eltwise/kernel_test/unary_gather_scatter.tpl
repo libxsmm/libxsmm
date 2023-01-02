@@ -12,7 +12,7 @@ ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(1,101), 18)
+randnum = rnd.sample(range(1,101), SAMPLESIZE)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
@@ -21,6 +21,9 @@ for m in randnum:
         f1.write(line)
 f1.close()
 END
+
+NUMPREC=X
+GS_OP=X
 
 for i in `cat ${TESTFILE1}`
 do
@@ -33,7 +36,7 @@ do
   do
     for IDXTYPE in 0 1
     do
-      ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDI} 1 ${ROWSCOLSOFFS} 0 ${IDXTYPE} 1
+      ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDI} ${GS_OP} ${ROWSCOLSOFFS} ${NUMPREC} ${IDXTYPE} 1
     done
   done
 done
