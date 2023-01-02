@@ -51,7 +51,7 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.create_new_opreduce_simple_test $(TSTDIR)/.generate_unary_simple_test_scripts
+scripts: $(TSTDIR)/.create_new_opreduce_simple_test $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts
 
 $(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple_test.sh Makefile
 	$(info Creating opreduce test scripts...)
@@ -61,6 +61,11 @@ $(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple
 $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
 	$(info Creating unary simple test scripts...)
 	@cd $(TSTDIR) && ./generate_unary_simple_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_transform_test_scripts: $(TSTDIR)/generate_unary_transform_test_scripts.sh Makefile
+	$(info Creating unary transform test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_transform_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
@@ -121,6 +126,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 endif
 	@-rm -f $(TSTDIR)/.create_new_opreduce_simple_test
 	@-rm -f $(TSTDIR)/.generate_unary_simple_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_transform_test_scripts
 
 .PHONY: deepclean
 deepclean: realclean

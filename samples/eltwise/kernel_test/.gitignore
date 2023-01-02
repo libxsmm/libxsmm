@@ -1,4 +1,5 @@
 .create_new_opreduce_simple_test
 .generate_unary_simple_test_scripts
+.generate_unary_transform_test_scripts
 opreduce_op_*_redop_*.sh
 unary_*.sh
