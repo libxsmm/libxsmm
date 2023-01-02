@@ -151,6 +151,9 @@ endif
 	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
 	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
+	@-rm -f $(TSTDIR)/opreduce_op_*.sh
+	@-rm -f $(TSTDIR)/unary_*.sh
+	@-rm -f $(TSTDIR)/binary_*.sh
 
 .PHONY: deepclean
 deepclean: realclean
