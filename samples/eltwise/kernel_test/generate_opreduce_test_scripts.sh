@@ -82,7 +82,7 @@ do
 
               echo $NAME
 
-              sed "s/OP=0/OP=${op}/g" opreduce_template.sh \
+              sed "s/OP=0/OP=${op}/g" opreduce.tpl \
               | sed "s/OPRED=1/OPRED=${redop}/g" \
               | sed "s/OPORDER=1/OPORDER=${oporder}/g" \
               | sed "s/REGVECIN=1/REGVECIN=${regvecin}/g" \

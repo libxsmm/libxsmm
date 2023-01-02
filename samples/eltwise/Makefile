@@ -51,11 +51,11 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.create_new_opreduce_simple_test $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts
+scripts: $(TSTDIR)/.generate_opreduce_test_scripts $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts
 
-$(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple_test.sh Makefile
+$(TSTDIR)/.generate_opreduce_test_scripts: $(TSTDIR)/generate_opreduce_test_scripts.sh Makefile
 	$(info Creating opreduce test scripts...)
-	@cd $(TSTDIR) && ./create_new_opreduce_simple_test.sh >/dev/null
+	@cd $(TSTDIR) && ./generate_opreduce_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
@@ -124,7 +124,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-	@-rm -f $(TSTDIR)/.create_new_opreduce_simple_test
+	@-rm -f $(TSTDIR)/.generate_opreduce_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_simple_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_transform_test_scripts
 
