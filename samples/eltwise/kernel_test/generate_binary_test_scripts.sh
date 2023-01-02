@@ -43,7 +43,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed -i "s/+ str(m) + '_' + str(n)/+ '100_100'/g" ${OUTNAME}
+        sed -i "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME}
       fi
 
       chmod 755 ${OUTNAME}

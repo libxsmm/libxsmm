@@ -17,7 +17,7 @@ f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
         line = str(m) + '_' + str(n) + '_' \
-             + str(m) + '_' + str(n) + '\n'
+             + str(m) + '_' + str(m) + '\n'
         f1.write(line)
 f1.close()
 END
@@ -36,7 +36,7 @@ do
   do
     for IDXTYPE in 0 1
     do
-      ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDI} ${GS_OP} ${ROWSCOLSOFFS} ${NUMPREC} ${IDXTYPE} 1
+      ./eltwise_unary_gather_scatter ${M} ${N} ${LDI} ${LDO} ${GS_OP} ${ROWSCOLSOFFS} ${NUMPREC} ${IDXTYPE} 1
     done
   done
 done

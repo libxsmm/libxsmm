@@ -17,7 +17,7 @@ f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
         line = str(m) + '_' + str(n) + '_' \
-             + str(m) + '_' + str(n) + '\n'
+             + str(m) + '_' + str(m) + '\n'
         f1.write(line)
 f1.close()
 END
@@ -35,7 +35,7 @@ for i in $(cat ${TESTFILE1}); do
   PREC_OUT=$(echo ${PREC} | awk -F"_" '{print $2}')
   PREC_COMP=$(echo ${PREC} | awk -F"_" '{print $3}')
   for BCAST_IN in 0 1 2 3; do
-    ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+    ./eltwise_unary_simple ${UNARY_OP} ${BCAST_IN} ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
   done
 done
 

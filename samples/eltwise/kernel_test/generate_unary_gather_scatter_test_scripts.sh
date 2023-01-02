@@ -46,7 +46,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed -i "s/+ str(m) + '_' + str(n)/+ '100_100'/g" ${OUTNAME}
+        sed -i "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME}
       fi
 
       chmod 755 ${OUTNAME}

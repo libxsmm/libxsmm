@@ -17,7 +17,7 @@ f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
         line = str(m) + '_' + str(n) + '_' \
-             + str(m) + '_' + str(n) + '\n'
+             + str(m) + '_' + str(m) + '\n'
         f1.write(line)
 f1.close()
 END
@@ -36,9 +36,9 @@ do
   PREC_COMP=`echo ${PREC} | awk -F"_" '{print $3}'`
   for RELU_OP in D L E
   do
-    ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-    ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-    ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+    ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+    ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+    ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
   done
 done
 
