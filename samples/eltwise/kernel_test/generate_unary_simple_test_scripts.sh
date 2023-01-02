@@ -55,7 +55,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
       elif [ "$TYPE" == '17' ] ; then
         TPPNAME="exp"
       elif [ "$TYPE" == '27' ] ; then
-        TPPNAME="replicat_col_vat"
+        TPPNAME="replicate_col_var"
       else
         continue
       fi
