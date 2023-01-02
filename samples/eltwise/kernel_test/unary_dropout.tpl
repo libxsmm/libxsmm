@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-source setup_tpp_prec_list.sh unary_no_simple
-
-
-
 TESTFILE1=$(mktemp)
 
 if [ -x "$(command -v python3)" ]; then
@@ -12,18 +8,11 @@ else
   PYTHON=$(command -v python)
 fi
 
-if [ $# -ne 1 ]
-then
-  MAXM=64
-else
-  MAXM=$1
-fi
-
 ${PYTHON} << END
 import random as rnd
 import time as time
 rnd.seed(time.time())
-randnum = rnd.sample(range(1,${MAXM}), 18)
+randnum = rnd.sample(range(1,64), SAMPLESIZE)
 f1 = open("${TESTFILE1}", "w+")
 for m in randnum:
     for n in randnum:
@@ -33,6 +22,8 @@ for m in randnum:
 f1.close()
 END
 
+PREC=0
+
 for i in `cat ${TESTFILE1}`
 do
   M=`echo ${i} | awk -F"_" '{print $1}'`
@@ -40,15 +31,12 @@ do
   LDI=`echo ${i} | awk -F"_" '{print $3}'`
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
-  for PREC in ${PREC_LIST}
-  do
-    PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
-    PREC_OUT=`echo ${PREC} | awk -F"_" '{print $2}'`
-    PREC_COMP=`echo ${PREC} | awk -F"_" '{print $3}'`
-    ./eltwise_unary_dropout F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-    ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-    ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
-  done
+  PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
+  PREC_OUT=`echo ${PREC} | awk -F"_" '{print $2}'`
+  PREC_COMP=`echo ${PREC} | awk -F"_" '{print $3}'`
+  ./eltwise_unary_dropout F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_dropout F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
+  ./eltwise_unary_dropout B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDI}
 done
 
 rm ${TESTFILE1}

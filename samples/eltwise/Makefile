@@ -51,7 +51,7 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.generate_opreduce_test_scripts $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts
+scripts: $(TSTDIR)/.generate_opreduce_test_scripts $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts
 
 $(TSTDIR)/.generate_opreduce_test_scripts: $(TSTDIR)/generate_opreduce_test_scripts.sh Makefile
 	$(info Creating opreduce test scripts...)
@@ -66,6 +66,16 @@ $(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_t
 $(TSTDIR)/.generate_unary_transform_test_scripts: $(TSTDIR)/generate_unary_transform_test_scripts.sh Makefile
 	$(info Creating unary transform test scripts...)
 	@cd $(TSTDIR) && ./generate_unary_transform_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_relu_test_scripts: $(TSTDIR)/generate_unary_relu_test_scripts.sh Makefile
+	$(info Creating unary relu test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_relu_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_dropout_test_scripts: $(TSTDIR)/generate_unary_dropout_test_scripts.sh Makefile
+	$(info Creating unary dropout test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_dropout_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
@@ -127,6 +137,8 @@ endif
 	@-rm -f $(TSTDIR)/.generate_opreduce_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_simple_test_scripts
 	@-rm -f $(TSTDIR)/.generate_unary_transform_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_relu_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
 
 .PHONY: deepclean
 deepclean: realclean
