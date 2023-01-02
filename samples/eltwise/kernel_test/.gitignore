@@ -2,6 +2,7 @@
 .generate_opreduce_test_scripts
 .generate_unary_simple_test_scripts
 .generate_unary_transform_test_scripts
+.generate_unary_reduce_test_scripts
 .generate_unary_relu_test_scripts
 .generate_unary_dropout_test_scripts
 .generate_unary_gather_scatter_test_scripts
