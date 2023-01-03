@@ -370,9 +370,13 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
       mask_out_count = vlen - (m % vlen);
       libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_inout, mask_out_count, precision);
     } else {
-      mask_inout = 15;
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen, LIBXSMM_DATATYPE_F32);
-      max_m_unrolling--;
+      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) || LIBXSMM_DATATYPE_F16 == LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype )) {
+        mask_inout = m % vlen;
+      } else {
+        mask_inout = 15;
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen, LIBXSMM_DATATYPE_F32);
+        max_m_unrolling--;
+      }
     }
   }
 
