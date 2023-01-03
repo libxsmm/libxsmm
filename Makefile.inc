@@ -2170,6 +2170,15 @@ ifeq (0,$(OMP))
 endif
 OMPFLAG ?= $(NULL)
 
+# some stand-alone libomp versions can cause warnings
+ifneq (,$(filter 1 2,$(PEDANTIC)))
+ifneq (,$(OMPFLAG))
+ifneq (0,$(CLANG))
+  CFLAGS += -Wno-strict-prototypes
+endif
+endif
+endif
+
 ifneq (0,$(TBB_MALLOC))
 ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
