@@ -25,7 +25,7 @@
 #define omp_get_max_threads() (1)
 #endif
 
-const int alignment = 64;
+const int alignment = 2*1024*1024;
 typedef long ITyp;
 typedef float FTyp;
 typedef uint16_t Half;

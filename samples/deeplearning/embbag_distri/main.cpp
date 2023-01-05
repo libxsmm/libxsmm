@@ -25,6 +25,11 @@
 #include "utils.h"
 #include "EmbeddingBag.h"
 #include "dist.h"
+#include <sys/time.h>
+#include <sys/resource.h>
+#ifdef USE_DSA
+#include "dsa.h"
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -305,6 +310,15 @@ int main(int argc, char * argv[]) {
 
   printf("Using: iters: %d N: %d E: %d M: %d S: %d P: %d alpha: %.3f\n", iters, N, E, M, S, P, alpha);
 
+#ifdef USE_DSA
+  dsa_interface dsa(N, P, E*sizeof(DTyp));
+  assert(dsa.init());
+  double fwdTime_minus_dsaprep = 0.0;
+#endif
+
+  struct rusage ru;
+  long tot_pf=0, s_pf, e_pf;
+
 #ifdef USE_RTM
   int use_rtm = 1;
 #else
@@ -368,12 +382,21 @@ int main(int argc, char * argv[]) {
   double packTime = 0.0, unpackTime = 0.0, fwdA2ATime = 0.0, bwdA2ATime = 0.0;
 
   for (int i = 0; i < iters; i++) {
+    getrusage(RUSAGE_SELF, &ru);
+    s_pf = ru.ru_minflt + ru.ru_majflt;
     double t0 = get_time();
     for (int s = 0; s < LS; s++) {
+#ifdef USE_DSA
+      eb[s]->forward(N, eio[i][s]->NS, eio[i][s]->offsets, eio[i][s]->indices, eio[i][s]->output, dsa);
+#else
       eb[s]->forward(N, eio[i][s]->NS, eio[i][s]->offsets, eio[i][s]->indices, eio[i][s]->output);
+#endif
     }
 
     double t1 = get_time();
+    getrusage(RUSAGE_SELF, &ru);
+    e_pf = ru.ru_minflt + ru.ru_majflt;
+    tot_pf += e_pf - s_pf;
     pack_for_a2a(LS, N, E, eio[i], A2Asrc);
     double t2 = get_time();
     alltoall(LS*N*E, A2Asrc, A2Adst);
@@ -393,6 +416,17 @@ int main(int argc, char * argv[]) {
     double t7 = get_time();
     //printf("Iter %4d: F = %.3f   B = %.3f   U = %.3f\n", i, t1-t0, t2-t1, t3-t2);
     fwdTime += t1-t0;
+#ifdef USE_DSA
+    double prepTime_this_iter = 0;
+    for(int s = 0; s < LS; s++) {
+      for (int t = 0;  t < omp_get_max_threads(); t++) {
+        prepTime_this_iter += eb[s]->dsaPrepTime[t];
+        eb[s]->dsaPrepTime[t]=0;
+      }
+    }
+    //avg across the 'n' threads
+    fwdTime_minus_dsaprep += t1-t0-prepTime_this_iter/omp_get_max_threads();;
+#endif
     bwdTime += t6-t5;
     updTime += t7-t6;
     packTime += t2-t1;
@@ -415,6 +449,12 @@ int main(int argc, char * argv[]) {
 #endif
 
   size_t fwdBytes = ((size_t)tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
+#ifdef USE_DSA
+  size_t fwdBytes_dsa = ((size_t)rfo*tNS*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp);
+  size_t fwdBytes_dsa_U = ((size_t)rfo*tU*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp);
+#else
+  size_t fwdBytes_cpu = ((size_t)tNS*E + (size_t)rfo*iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS + (size_t)iters*LS*N) * sizeof(ITyp);
+#endif
   size_t bwdBytes = ((size_t)rfo*tNS*E + (size_t)iters*LS*N*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
   size_t updBytes = ((size_t)2*tU*E + (size_t)tNS*E) * sizeof(DTyp) + ((size_t)tNS) * sizeof(ITyp);
 
@@ -429,7 +469,16 @@ int main(int argc, char * argv[]) {
   my_printf("Per Table Time: Fwd: %.3f ms Bwd: %.3f ms Upd: %.3f  Total: %.3f ms\n", fwdTime/(iters*LS), bwdTime/(iters*LS), updTime/(iters*LS), (t1-t0)/(iters*LS));
 
   my_printf("Per Iter  A2ATime: Fwd: %.3f ms Bwd: %.3f ms Pack: %.3f ms Unpack: %.3f ms \n", fwdA2ATime/(iters), bwdA2ATime/(iters), packTime/(iters), unpackTime/(iters));
-  my_printf("BW: FWD: %.3f   BWD: %.3f GB/s   UPD: %.3f GB/s\n", fwdBytes*1e-6/fwdTime, bwdBytes*1e-6/bwdTime, updBytes*1e-6/updTime);
+
+#ifdef USE_DSA
+  my_printf("BW: FWD: %.3f FWD_DSA: %.3f FWD_DSA_U: %.3f BWD: %.3f GB/s   UPD: %.3f GB/s\n", fwdBytes*1e-6/fwdTime, fwdBytes_dsa*1e-6/fwdTime, fwdBytes_dsa_U*1e-6/fwdTime, bwdBytes*1e-6/bwdTime, updBytes*1e-6/updTime);
+ //my_printf("FWD lookup rate: %.3f rows/msec, poll: %.3f%%\n", tNS/fwdTime, fwdTime_minus_dsaprep*100/fwdTime);
+ my_printf("FWD lookup rate: %.3f rows/msec, poll: %.3f%%\n", iters*eio[0][0]->NS/fwdTime, fwdTime_minus_dsaprep*100/fwdTime);
+#else
+  my_printf("BW: FWD: %.3f FWD_CPU: %.3f  BWD: %.3f GB/s   UPD: %.3f GB/s\n", fwdBytes*1e-6/fwdTime, fwdBytes_cpu*1e-6/fwdTime, bwdBytes*1e-6/bwdTime, updBytes*1e-6/updTime);
+  my_printf("FWD lookup rate: %.3f rows/msec\n", tNS/fwdTime);
+#endif
+  my_printf("PFs: %ld\n",tot_pf);
 
 
 #ifdef VERIFY_CORRECTNESS

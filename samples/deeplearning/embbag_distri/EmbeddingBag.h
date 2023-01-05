@@ -13,6 +13,9 @@
 #endif
 #include "utils.h"
 #include "rtm.h"
+#ifdef USE_DSA
+#include "dsa.h"
+#endif
 
 template <typename T>
 class EmbeddingBagImpl
@@ -38,6 +41,14 @@ public:
     weight_ = (T*)my_malloc((size_t)M * E * sizeof(T), alignment);
 #endif
 
+#ifdef USE_DSA
+    dsaPrepTime = (double *)my_malloc(omp_get_max_threads() * sizeof(double), sizeof(double));
+    pending_desc_cnt = (int *)my_malloc(omp_get_max_threads() * sizeof(int), sizeof(int));
+    for (int i = 0; i < omp_get_max_threads(); i++) {
+      dsaPrepTime[i] = 0.0;
+      pending_desc_cnt[i] = 0;
+    }
+#endif
   }
 
   ~EmbeddingBagImpl()
@@ -52,11 +63,18 @@ public:
   }
 
 #ifdef USE_LIBXSMM_JIT
+#ifdef USE_DSA
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_, dsa_interface &dsa)
+#else
   void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
+#endif
   {
     T(*__restrict weight)[E] = (T(*)[E])weight_;
     T(*__restrict output)[E] = (T(*)[E])output_;
 
+#ifdef USE_DSA
+#define _DSA_MAX_QD 128
+#endif
     #pragma omp parallel for
     for (int n = 0; n < N; n++)
     {
@@ -73,14 +91,44 @@ public:
     }
   }
 #else
+#ifdef USE_DSA
+  void forward(long N, long NS, const long *offsets, const long *indices, T *output_, dsa_interface &dsa)
+#else
   void forward(long N, long NS, const long *offsets, const long *indices, T *output_)
+#endif
   {
     T(*__restrict weight)[E] = (T(*)[E])weight_;
     T(*__restrict output)[E] = (T(*)[E])output_;
 
+#ifdef USE_DSA
+    static int do_prep = 1;
+#define DSA_MAX_QD (128*dsa.get_num_devices())
+    memset(pending_desc_cnt, 0, omp_get_max_threads()*sizeof(int));
+    int max_t_qd = DSA_MAX_QD/omp_get_max_threads();
+    assert(max_t_qd >= 1);
+#endif
 #pragma omp parallel for
     for (long n = 0; n < N; n++)
     {
+#ifdef USE_DSA
+      int my_tid = omp_get_thread_num();
+      double dsaPrepStart = get_time();
+      if (do_prep) {
+        dsa.prep_gather(n, offsets, indices, (unsigned char*)weight, (unsigned char *)output, NS, E*sizeof(T));
+      }
+      dsaPrepTime[my_tid] += get_time() - dsaPrepStart;
+
+      while (pending_desc_cnt[my_tid] >= max_t_qd) {
+        int ret=0;
+        if(dsa.poll_comp(n-pending_desc_cnt[my_tid], &ret)) {
+          printf("desc %ld did not complete successfully, status=0x%x\n",n,ret);
+          assert(0);
+        }
+        pending_desc_cnt[my_tid]--;
+      }
+
+      if (dsa.desc_submit(n)) pending_desc_cnt[my_tid]++;
+#else
       auto start = offsets[n];
       auto end = (n < N - 1 ? offsets[n + 1] : NS);
 #pragma omp simd
@@ -89,13 +137,27 @@ public:
       for (long s = start; s < end; s++)
       {
         auto ind = indices[s];
+        /*printf("NS=%ld, indices[%ld]=ind: %ld, 0x%8lx, o/p: %ld, 0x%8lx\n", NS, s, ind, (unsigned long)&weight[ind], n, (unsigned long)&output[n]);*/
 #pragma omp simd
         for (long v = 0; v < E; v++)
         {
           output[n][v] += weight[ind][v];
         }
       }
+#endif
     }
+#ifdef USE_DSA
+#pragma omp parallel for
+    for (long n = 0; n < N; n++)
+    {
+        int ret=0;
+        if(dsa.poll_comp(n, &ret)) {
+          printf("desc %ld did not complete successfully, status=0x%x\n",n,ret);
+          assert(0);
+        }
+    }
+    do_prep = 0;
+#endif
   }
 #endif
 
@@ -237,6 +299,10 @@ public:
   libxsmm_meltwfunction_unary kernel;
   libxsmm_meltwfunction_unary kernel1;
   libxsmm_meltwfunction_binary kernel2;
+#endif
+#ifdef USE_DSA
+  double *dsaPrepTime;
+  int *pending_desc_cnt;
 #endif
 };
 
