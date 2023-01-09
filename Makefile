@@ -582,7 +582,7 @@ endif
 $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
                                                 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(wildcard $(ROOTDIR)/.github/*) \
                                                 $(ROOTDIR)/version.txt
-	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT).*
+	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-touch $@
 
 .PHONY: config
@@ -833,9 +833,9 @@ module: module_hst module_mic
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
-	$(AR) $(ARFLAGS) $@ $(OBJFILES_GEN_LIB)
+	$(AR) $(ARFLAGS) $(OUTDIR)/libxsmmgen.$(SLIBEXT) $(OBJFILES_GEN_LIB)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmgen.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 endif
 
@@ -856,9 +856,9 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
-	$(AR) $(ARFLAGS) $@ $(call tailwords,$^)
+	$(AR) $(ARFLAGS) $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(call tailwords,$^)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) -mmic $(call solink,$(OUTDIR)/mic/libxsmm.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(call tailwords,$^) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 endif
 endif
@@ -867,9 +867,9 @@ endif
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm.pc
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
-	$(AR) $(ARFLAGS) $@ $(call tailwords,$^)
+	$(AR) $(ARFLAGS) $(OUTDIR)/libxsmm.$(SLIBEXT) $(call tailwords,$^)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmm.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(call tailwords,$^) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 endif
 
@@ -879,9 +879,9 @@ ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(AR) $(ARFLAGS) $@ $(BLDDIR)/mic/libxsmm-mod.o
+	$(AR) $(ARFLAGS) $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(BLDDIR)/mic/libxsmm-mod.o
 ifeq (0,$(ANALYZE))
-	$(LIB_SFLD) -mmic $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) -mmic $(FCMTFLAGS) $(call solink,$(OUTDIR)/mic/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 endif
 else
@@ -894,18 +894,18 @@ endif
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf.pc
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.$(LIBEXT)
-	$(AR) $(ARFLAGS) $@ $(BLDDIR)/intel64/libxsmm-mod.o
+	$(AR) $(ARFLAGS) $(OUTDIR)/libxsmmf.$(SLIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o
 ifeq (0,$(ANALYZE))
 ifneq (Darwin,$(UNAME))
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 else ifneq (0,$(LNKSOFT)) # macOS
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS)) $(call linkopt,-U,_libxsmm_gemm_batch_omp_)
 else # macOS
-	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SFLD) $(FCMTFLAGS) $(call solink,$(OUTDIR)/libxsmmf.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmmext.$(ILIBEXT)) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) \
 		$(call cleanld,$(LDFLAGS) $(FLDFLAGS))
 endif
@@ -920,9 +920,9 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(AR) $(ARFLAGS) $@ $(EXTOBJS_MIC)
+	$(AR) $(ARFLAGS) $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) $(EXTOBJS_MIC)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) -mmic $(EXTLDFLAGS) $(call solink,$(OUTDIR)/mic/libxsmmext.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 endif
 endif
@@ -931,9 +931,9 @@ endif
 .PHONY: ext_hst
 ext_hst: $(OUTDIR)/libxsmmext-static.pc $(OUTDIR)/libxsmmext.pc
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
-	$(AR) $(ARFLAGS) $@ $(EXTOBJS_HST)
+	$(AR) $(ARFLAGS) $(OUTDIR)/libxsmmext.$(SLIBEXT) $(EXTOBJS_HST)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) $(EXTLDFLAGS) $(call solink,$(OUTDIR)/libxsmmext.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(call cleanld,$(LDFLAGS) $(CLDFLAGS))
 endif
 
@@ -942,9 +942,9 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(NOBLAS_MIC)
-	$(AR) $(ARFLAGS) $@ $(NOBLAS_MIC)
+	$(AR) $(ARFLAGS) $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) $(NOBLAS_MIC)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) -mmic $(call solink,$(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(NOBLAS_MIC) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 endif
 endif
@@ -953,9 +953,9 @@ endif
 .PHONY: noblas_hst
 noblas_hst: $(OUTDIR)/libxsmmnoblas-static.pc $(OUTDIR)/libxsmmnoblas.pc
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(NOBLAS_HST)
-	$(AR) $(ARFLAGS) $@ $(NOBLAS_HST)
+	$(AR) $(ARFLAGS) $(OUTDIR)/libxsmmnoblas.$(SLIBEXT) $(NOBLAS_HST)
 ifeq (0,$(ANALYZE))
-	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_SOLD) $(call solink,$(OUTDIR)/libxsmmnoblas.$(DLIBEXT),$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(NOBLAS_HST) $(call cleanld,$(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS))
 endif
 
@@ -1377,11 +1377,8 @@ ifneq ($(call qapath,$(OUTDIR)),$(HEREDIR))
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR))) # still exists
-	@-rm -f $(OUTDIR)/libxsmm.$(LIBEXT)* $(OUTDIR)/mic/libxsmm.$(LIBEXT)*
-	@-rm -f $(OUTDIR)/libxsmmf.$(LIBEXT)* $(OUTDIR)/mic/libxsmmf.$(LIBEXT)*
-	@-rm -f $(OUTDIR)/libxsmmext.$(LIBEXT)* $(OUTDIR)/mic/libxsmmext.$(LIBEXT)*
-	@-rm -f $(OUTDIR)/libxsmmnoblas.$(LIBEXT)* $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)*
-	@-rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)*
+	@-rm -f $(OUTDIR)/mic/libxsmm*.$(SLIBEXT) $(OUTDIR)/mic/libxsmm*.$(DLIBEXT)*
+	@-rm -f $(OUTDIR)/libxsmm*.$(SLIBEXT) $(OUTDIR)/libxsmm*.$(DLIBEXT)*
 	@-rm -f $(OUTDIR)/libxsmm*.pc
 endif
 ifneq ($(call qapath,$(BINDIR)),$(ROOTDIR))
