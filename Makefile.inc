@@ -185,6 +185,10 @@ STATIC ?= 0
 # PIC: PIC or pic
 PIC ?= pic
 
+# Add object files to archive (not "?=")
+#MAKE_AR ?= rm -f $(basename $@).$(SLIBEXT); $(AR) -rs
+MAKE_AR ?= $(AR) -rs
+
 PLATFORM ?= 0
 ifneq (0,$(call qnum,$(PLATFORM))) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
@@ -2045,7 +2049,7 @@ ifeq (0,$(COMPATIBLE))
     endif
     ifneq (ld,$(call qndir,$(LD)))
     ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(DEPSTATIC))
+      ifneq (,$(filter-out 0,$(DEPSTATIC) $(DYNAMIC)))
         EXCLUDE_VALUE += $(call linkopt,--export-dynamic)
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
