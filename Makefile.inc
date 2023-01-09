@@ -179,7 +179,7 @@ TESTSIZE ?= 1
 # Delay for user-interaction (sleep)
 WAIT ?= 12
 
-# Static or shared binary
+# Prefer static or shared dependencies
 STATIC ?= 0
 
 # PIC: PIC or pic
