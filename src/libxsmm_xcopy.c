@@ -16,7 +16,7 @@
 
 
 /* definition of corresponding variables */
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_xcopy_jit);
 #endif
 LIBXSMM_APIVAR_PUBLIC_DEF(int libxsmm_xcopy_taskscale);
@@ -95,7 +95,7 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
       }
     }
   }
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
   { /* check if JIT-code generation is permitted */
     const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     libxsmm_xcopy_jit = ((NULL == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
@@ -267,7 +267,7 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
           tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
         }
       }
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
 # if !defined(LIBXSMM_MCOPY_JIT_TINY)
       else
 # endif
@@ -371,7 +371,7 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
         }
         if ((unsigned int)m < tm || (unsigned int)n < tn) {
           if (1 == ntasks) {
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
               switch (typesize) {
                 case 8: {
@@ -413,7 +413,7 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
             const unsigned int mm = (unsigned int)(libxsmm_tcopy_nscale * nn);
             tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
             tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
               switch (typesize) {
                 case 8: {
@@ -685,7 +685,7 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
         }
       }
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
       if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
         /* avoid outgrown transpose kernel upfront */
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))

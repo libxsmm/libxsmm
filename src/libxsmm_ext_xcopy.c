@@ -42,7 +42,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         libxsmm_xcopykernel kernel;
         kernel.ptr = NULL;
-# if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 2))
+# if defined(LIBXSMM_XCOPY_JIT)
         if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
           const libxsmm_meltw_unary_shape unary_shape_f64 = libxsmm_create_meltw_unary_shape(
             (libxsmm_blasint)tm, (libxsmm_blasint)tn, ldi, ldo,
@@ -254,7 +254,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         else
 #endif /*defined(_OPENMP)*/
         { /* no MT, or small problem-size */
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
+#if defined(LIBXSMM_XCOPY_JIT)
           libxsmm_xcopykernel kernel;
           kernel.ptr = NULL;
           if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
@@ -355,7 +355,7 @@ LIBXSMM_APIEXT void libxsmm_itrans_batch_omp(void* inout, unsigned int typesize,
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate buffer for in-place transpose!\n");
         }
       }
-#if (defined(LIBXSMM_XCOPY_JIT) && 0 != (LIBXSMM_XCOPY_JIT & 1))
+#if defined(LIBXSMM_XCOPY_JIT)
       if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
         /* avoid outgrown transpose kernel upfront */
         && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))

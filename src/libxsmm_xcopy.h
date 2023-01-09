@@ -32,11 +32,7 @@
 #endif
 /* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
 #if !defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_JIT)
-# if defined(NDEBUG) && 0
-#   define LIBXSMM_XCOPY_JIT 3
-# else
-#   define LIBXSMM_XCOPY_JIT 0
-# endif
+# define LIBXSMM_XCOPY_JIT 0
 #endif
 
 /* like LIBXSMM_ACCESS (LIBXSMM_INDEX1), but based on Byte-measured index/stride; returns the value */
@@ -270,7 +266,7 @@ LIBXSMM_API void libxsmm_itrans_internal(char* inout, void* scratch, unsigned in
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride[],
   libxsmm_xcopykernel kernel, libxsmm_blasint begin, libxsmm_blasint end);
 
-#if defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_XCOPY_JIT)
+#if defined(LIBXSMM_XCOPY_JIT)
 /** Determines whether JIT-kernels are used or not; values see LIBXSMM_XCOPY_JIT. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_xcopy_jit);
 #endif
