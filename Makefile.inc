@@ -186,7 +186,8 @@ STATIC ?= 0
 PIC ?= pic
 
 # Add object files to archive (not "?=")
-ARFLAGS := -q
+#MAKE_AR ?= rm -f $(basename $@).$(SLIBEXT); $(AR) -rs
+MAKE_AR ?= $(AR) -rs
 
 PLATFORM ?= 0
 ifneq (0,$(call qnum,$(PLATFORM))) # NaN
