@@ -833,7 +833,6 @@ module: module_hst module_mic
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB) $(OUTDIR)/libxsmm.env
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(OBJFILES_GEN_LIB)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -857,7 +856,6 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(call tailwords,$^)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -869,7 +867,6 @@ endif
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm-static.pc $(OUTDIR)/libxsmm.pc
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(call tailwords,$^)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -882,7 +879,6 @@ ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(BLDDIR)/mic/libxsmm-mod.o
 ifeq (0,$(ANALYZE))
 	$(LIB_SFLD) -mmic $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -898,7 +894,6 @@ endif
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf-static.pc $(OUTDIR)/libxsmmf.pc
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.$(LIBEXT)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(BLDDIR)/intel64/libxsmm-mod.o
 ifeq (0,$(ANALYZE))
 ifneq (Darwin,$(UNAME))
@@ -925,7 +920,6 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(EXTOBJS_MIC)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -937,7 +931,6 @@ endif
 .PHONY: ext_hst
 ext_hst: $(OUTDIR)/libxsmmext-static.pc $(OUTDIR)/libxsmmext.pc
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(EXTOBJS_HST)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -949,7 +942,6 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(NOBLAS_MIC)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(NOBLAS_MIC)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
@@ -961,7 +953,6 @@ endif
 .PHONY: noblas_hst
 noblas_hst: $(OUTDIR)/libxsmmnoblas-static.pc $(OUTDIR)/libxsmmnoblas.pc
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(NOBLAS_HST)
-	@-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(NOBLAS_HST)
 ifeq (0,$(ANALYZE))
 	$(LIB_SOLD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
