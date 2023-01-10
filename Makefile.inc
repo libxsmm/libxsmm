@@ -1206,10 +1206,7 @@ ifneq (0,$(INTEL))
   endif
   CPEDANTIC += $(WCHECK_CFLAG) -diag-disable 177,981,1419,1572,2547,10382
   ifeq (0,$(ICX))
-    CPEDANTIC += -diag-disable 593,1599,2415,2591
-    ifeq (0,$(WCHECK))
-      CPEDANTIC += -diag-disable 2259
-    endif
+    CPEDANTIC += -diag-disable 593,1599,2259,2415,2591
   endif
   CWARNEXTRA := -Wremarks
   ifeq (1,$(PEDANTIC))
