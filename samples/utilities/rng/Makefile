@@ -43,7 +43,7 @@ endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/rng $(OUTDIR)/rng_avx512
 
