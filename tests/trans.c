@@ -62,8 +62,9 @@ int main(void)
   };
   void (*itrans[])(void*, unsigned int, libxsmm_blasint,
     libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
-    libxsmm_itrans, libxsmm_itrans/*_omp*/
+    libxsmm_itrans/*, libxsmm_itrans_omp*/
   };
+  const int nfun = sizeof(otrans) / sizeof(*otrans);
 
   for (test = start; test < ntests; ++test) {
     const libxsmm_blasint size_a = ldi[test] * n[test], size_b = ldo[test] * m[test];
@@ -85,7 +86,7 @@ int main(void)
     batchidx[i] = i * max_size_b;
   }
 
-  for (fun = 0; fun < 2; ++fun) {
+  for (fun = 0; fun < nfun; ++fun) {
     for (test = start; test < ntests; ++test) {
       memcpy(c, b, typesize * max_size_b); /* prepare */
       otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
@@ -100,9 +101,6 @@ int main(void)
       ++ntotal;
 #endif
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-      if (1 /*(LIBXSMM_DATATYPE_F64 == elemtype || LIBXSMM_DATATYPE_F32 == elemtype)*/
-        /*&& LIBXSMM_X86_AVX2 <= libxsmm_get_target_archid()*/
-        /*&& LIBXSMM_X86_ALLFEAT >= libxsmm_get_target_archid()*/)
       {
         const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
           m[test], n[test], ldi[test], ldo[test], elemtype, elemtype, elemtype);
