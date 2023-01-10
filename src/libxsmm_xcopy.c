@@ -10,10 +10,6 @@
 ******************************************************************************/
 #include "libxsmm_xcopy.h"
 
-#if !defined(LIBXSMM_MCOPY_JIT_TINY) && 0
-# define LIBXSMM_MCOPY_JIT_TINY
-#endif
-
 
 /* definition of corresponding variables */
 #if defined(LIBXSMM_XCOPY_JIT)
@@ -239,7 +235,7 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
   {
     if (0 < m && 0 < n) {
       libxsmm_xcopykernel kernel = { NULL };
-      unsigned int tm, tn, ts;
+      unsigned int tm, tn, ts, permit;
       if (NULL != in) { /* mcopy */
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
@@ -255,7 +251,8 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
       if (0 != ts && ts < (tm * tn * typesize)) {
         tm = LIBXSMM_MAX(ts / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
       }
-      if ((unsigned int)m < tm || (unsigned int)n < tn) {
+      permit = ((unsigned int)m < tm || (unsigned int)n < tn);
+      if (0 != permit) {
         if (1 == ntasks) {
           tm = (unsigned int)m; tn = (unsigned int)n;
         }
@@ -268,10 +265,10 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
         }
       }
 #if defined(LIBXSMM_XCOPY_JIT)
-# if !defined(LIBXSMM_MCOPY_JIT_TINY)
-      else
-# endif
-      if (0 != (2 & libxsmm_xcopy_jit)) { /* JIT'ted matrix-copy permitted? */
+      if (0 != (2 & libxsmm_xcopy_jit) /* JIT'ted matrix-copy permitted? */
+        /* eventually apply threshold (avoid overhead of small kernels) */
+        && (0 != permit || 0 != (8 & libxsmm_xcopy_jit)))
+      {
         switch (typesize) {
           case 8: {
             const libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape(
@@ -369,7 +366,12 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
         if (0 != libxsmm_tcopy_mbytes && libxsmm_tcopy_mbytes < (tm * tn * typesize)) {
           tm = LIBXSMM_MAX(libxsmm_tcopy_mbytes / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
         }
-        if ((unsigned int)m < tm || (unsigned int)n < tn) {
+        if ( /* eventually apply threshold */
+#if defined(LIBXSMM_XCOPY_JIT)
+          0 != (4 & libxsmm_xcopy_jit) ||
+#endif
+          (unsigned int)m < tm || (unsigned int)n < tn)
+        {
           if (1 == ntasks) {
 #if defined(LIBXSMM_XCOPY_JIT)
             if (0 != (1 & libxsmm_xcopy_jit)) { /* JIT'ted transpose permitted? */
@@ -687,8 +689,8 @@ LIBXSMM_API void libxsmm_itrans_batch(void* inout, unsigned int typesize,
       }
 #if defined(LIBXSMM_XCOPY_JIT)
       if (0 != (1 & libxsmm_xcopy_jit) /* JIT'ted transpose permitted? */
-        /* avoid outgrown transpose kernel upfront */
-        && (m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
+        /* eventually apply threshold (avoid outgrown transpose kernel) */
+        && (0 != (4 & libxsmm_xcopy_jit) || m <= LIBXSMM_CONFIG_MAX_DIM || n <= LIBXSMM_CONFIG_MAX_DIM))
       {
         switch (typesize) {
           case 8: {

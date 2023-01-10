@@ -135,14 +135,19 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       }
       else
 #endif /*defined(_OPENMP)*/
-      if (NULL != in) { /* no MT, or small problem-size */
-        LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL,
-          typesize, out, in, ldi, ldo, 0, m, 0, n);
+      if (0 == (8 & libxsmm_xcopy_jit)) {
+        if (NULL != in) { /* no MT, or small problem-size */
+          LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL,
+            typesize, out, in, ldi, ldo, 0, m, 0, n);
+        }
+        else { /* no MT, or small problem-size */
+          /* coverity[ptr_arith] */
+          LIBXSMM_XCOPY_NONJIT(LIBXSMM_MZERO_KERNEL,
+            typesize, out, in, ldi, ldo, 0, m, 0, n);
+        }
       }
-      else { /* no MT, or small problem-size */
-        /* coverity[ptr_arith] */
-        LIBXSMM_XCOPY_NONJIT(LIBXSMM_MZERO_KERNEL,
-          typesize, out, in, ldi, ldo, 0, m, 0, n);
+      else {
+        libxsmm_matcopy_task(out, in, typesize, m, n, ldi, ldo, 0/*tid*/, 1/*ntasks*/);
       }
     }
   }
@@ -286,9 +291,12 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           }
           else
 #endif
-          {
+          if (0 == (8 & libxsmm_xcopy_jit)) {
             LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL,
               typesize, out, in, ldi, ldo, 0, m, 0, n);
+          }
+          else {
+            libxsmm_otrans_task(out, in, typesize, m, n, ldi, ldo, 0/*tid*/, 1/*ntasks*/);
           }
         }
       }

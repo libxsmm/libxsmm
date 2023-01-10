@@ -30,7 +30,12 @@
 #if !defined(LIBXSMM_XCOPY_TILE_MIN)
 # define LIBXSMM_XCOPY_TILE_MIN 2
 #endif
-/* 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy */
+/**
+ * 0: none, 1: transpose, 2: matcopy, 3: transpose+matcopy
+ * Additional/optional flags (remove certain thresholds):
+ * 4: allow large tiles
+ * 8: allow small tiles
+ */
 #if !defined(LIBXSMM_XCOPY_JIT) && (0 != LIBXSMM_JIT)
 # define LIBXSMM_XCOPY_JIT 0
 #endif
