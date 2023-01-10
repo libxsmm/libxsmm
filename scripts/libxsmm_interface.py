@@ -75,7 +75,8 @@ if __name__ == "__main__":
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if mnklist and 0 != precision:
                 substitute["MNK_INTERFACE_LIST"] += "\n"
-            print(template.substitute(substitute))
+            # print without trailing newline
+            sys.stdout.write(template.safe_substitute(substitute))
         else:  # Fortran interface
             if 1 > ifversion and 0 != ifversion:
                 raise ValueError("Fortran interface level is inconsistent!")
@@ -98,8 +99,7 @@ if __name__ == "__main__":
                 "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
-                #substitute["MNK_INTERFACE_LIST"] += "\n"
-                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n\n        INTERFACE"
                 optional = [", OPTIONAL", ""][0 < prefetch]
                 bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
@@ -167,7 +167,8 @@ if __name__ == "__main__":
                             + "          END SUBROUTINE"
                         )
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
-            print(template.safe_substitute(substitute))
+            # print without trailing newline
+            sys.stdout.write(template.safe_substitute(substitute))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

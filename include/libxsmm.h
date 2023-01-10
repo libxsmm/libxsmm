@@ -721,4 +721,3 @@ inline void libxsmm_blas_gemm(const char* transa, const char* transb,
 
 #endif /*__cplusplus*/
 #endif /*LIBXSMM_H*/
-
