@@ -35,9 +35,6 @@
 # define EIGEN_USE_THREADS
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if defined(__EIGEN_UNSUPPORTED)
 # include <unsupported/Eigen/CXX11/Tensor>
 # include <unsupported/Eigen/CXX11/ThreadPool>
@@ -47,9 +44,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(ITYPE)
 # define ITYPE float
@@ -83,68 +77,64 @@ int main(int argc, char* argv[])
     const int max_nthreads = Eigen::nbThreads();
     const int env_nthreads = (0 == getenv("NTHREADS") ? max_nthreads : atoi(getenv("NTHREADS")));
     const int nthreads = LIBXSMM_CLMP(env_nthreads, 1, max_nthreads);
-# if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
-# endif
+
+    Eigen::ThreadPool threadpool(nthreads);
+    Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
+    typedef Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> tensor_type;
+    tensor_type ta(m, k), tb(k, n), tc(m, n);
+    LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
+    LIBXSMM_BLAS_CONST ITYPE alpha(1), beta(0);
+    unsigned long long start;
+    double d1;
     {
-      Eigen::ThreadPool threadpool(nthreads);
-      Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      typedef Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> tensor_type;
-      tensor_type ta(m, k), tb(k, n), tc(m, n);
-      LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';
-      LIBXSMM_BLAS_CONST ITYPE alpha(1), beta(0);
-      unsigned long long start;
-      double d1;
-      {
-        std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {
-          Eigen::IndexPair<libxsmm_blasint>(1, 0),
-        };
-        ta.setRandom(); tb.setRandom();
-        start = libxsmm_timer_tick();
-        for (int i = 0; i < nrepeat; ++i) {
-          const tensor_type& tt = ta.contract(tb, product_dims);
-          tc.device(device) = tt;
-        }
-        d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {
+        Eigen::IndexPair<libxsmm_blasint>(1, 0),
+      };
+      ta.setRandom(); tb.setRandom();
+      start = libxsmm_timer_tick();
+      for (int i = 0; i < nrepeat; ++i) {
+        const tensor_type& tt = ta.contract(tb, product_dims);
+        tc.device(device) = tt;
       }
-      libxsmm_gemm_print(stdout, libxsmm_datatype_enum<ITYPE>::value, &transa, &transb,
-        &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
-      fprintf(stdout, "\n\n");
-# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
-      Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
-      double d2;
-      {
-        start = libxsmm_timer_tick();
-        for (int i = 0; i < nrepeat; ++i) {
-          LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k,
-            &alpha, ta.data(), &m, tb.data(), &k,
-             &beta, td.data(), &m);
-        }
-        d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      }
-# endif
-      if (0 < d1) {
-        fprintf(stdout, "\tEigen"
-# if !defined(USE_LIBXSMM)
-          "+XSMM"
-# endif
-          ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
-      }
-# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
-      if (0 < d2) {
-        fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
-      }
-      libxsmm_matdiff_info diff;
-      result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m);
-      if (EXIT_SUCCESS == result) {
-        fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < diff.l2_rel) {
-          fprintf(stderr, "FAILED.\n");
-          result = EXIT_FAILURE;
-        }
-      }
-# endif
+      d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
+    libxsmm_gemm_print(stdout, libxsmm_datatype_enum<ITYPE>::value, &transa, &transb,
+      &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
+    fprintf(stdout, "\n\n");
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
+    Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
+    double d2;
+    {
+      start = libxsmm_timer_tick();
+      for (int i = 0; i < nrepeat; ++i) {
+        LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k,
+          &alpha, ta.data(), &m, tb.data(), &k,
+            &beta, td.data(), &m);
+      }
+      d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    }
+# endif
+    if (0 < d1) {
+      fprintf(stdout, "\tEigen"
+# if !defined(USE_LIBXSMM)
+        "+XSMM"
+# endif
+        ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
+    }
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
+    if (0 < d2) {
+      fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
+    }
+    libxsmm_matdiff_info diff;
+    result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m);
+    if (EXIT_SUCCESS == result) {
+      fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      if (check < diff.l2_rel) {
+        fprintf(stderr, "FAILED.\n");
+        result = EXIT_FAILURE;
+      }
+    }
+# endif
     fprintf(stdout, "Finished\n");
 #endif /*defined(__EIGEN_UNSUPPORTED)*/
   }

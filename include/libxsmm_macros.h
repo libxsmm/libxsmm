@@ -175,7 +175,7 @@
 # define LIBXSMM_CAST_BLASINT(VALUE) LIBXSMM_CAST_INT(VALUE)
 #endif
 
-#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
+#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || \
   (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
 # define LIBXSMM_UNPACKED
 #endif
@@ -312,19 +312,6 @@
 # endif
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_BUILD) && \
-  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= LIBXSMM_INTEL_COMPILER))
-# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
-# if !defined(LIBXSMM_OFFLOAD_TARGET)
-#   define LIBXSMM_OFFLOAD_TARGET mic
-# endif
-#else
-# define LIBXSMM_OFFLOAD(A)
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) (FN)(__VA_ARGS__)
-#endif
-#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
-
 /* may include Clang and other compatible compilers */
 #if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
@@ -360,7 +347,7 @@
 # define LIBXSMM_API_VISIBILITY_EXPORT
 # define LIBXSMM_API_VISIBILITY_IMPORT
 # define LIBXSMM_API_VISIBILITY_INTERN
-# define LIBXSMM_API_COMMON LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_COMMON
+# define LIBXSMM_API_COMMON LIBXSMM_ATTRIBUTE_COMMON
 # define LIBXSMM_API_TARGET LIBXSMM_API_INLINE
 # define LIBXSMM_API_EXTERN LIBXSMM_EXTERN_C
 #else /* classic ABI */
@@ -377,14 +364,14 @@
 #   define LIBXSMM_API_VISIBILITY_IMPORT LIBXSMM_VISIBILITY_IMPORT
 #   define LIBXSMM_API_VISIBILITY_INTERN
 # endif
-# define LIBXSMM_API_COMMON LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_TARGET LIBXSMM_RETARGETABLE
+# define LIBXSMM_API_COMMON
+# define LIBXSMM_API_TARGET
 # define LIBXSMM_API_EXTERN LIBXSMM_EXTERN
 #endif
 
 #define LIBXSMM_API_VISIBILITY(VISIBILITY) LIBXSMM_CONCATENATE(LIBXSMM_API_VISIBILITY_, VISIBILITY)
 #define LIBXSMM_APIVAR(DECL, VISIBILITY, EXTERN) EXTERN LIBXSMM_API_COMMON LIBXSMM_API_VISIBILITY(VISIBILITY) DECL
-#define LIBXSMM_API_INLINE LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+#define LIBXSMM_API_INLINE LIBXSMM_INLINE
 #define LIBXSMM_API_DEF
 
 #if (!defined(__INTEL_COMPILER) || !defined(_WIN32))
@@ -889,10 +876,6 @@ LIBXSMM_API_INLINE int libxsmm_nonconst_int(int i) { return i; }
 # define __has_builtin(A) 0
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-
 #if (0 != LIBXSMM_SYNC)
 # if defined(_WIN32) || defined(__CYGWIN__)
 #   include <windows.h>
@@ -1067,10 +1050,6 @@ LIBXSMM_EXTERN double erf(double) LIBXSMM_NOTHROW;
 #endif
 #if !defined(M_PI)
 # define M_PI 3.14159265358979323846
-#endif
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/

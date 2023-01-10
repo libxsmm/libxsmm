@@ -723,7 +723,7 @@ LIBXSMM_EXTERN void funlockfile(FILE*) LIBXSMM_NOTHROW;
 
 
 /** Opaque type which represents a barrier. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
+LIBXSMM_EXTERN_C typedef struct libxsmm_barrier libxsmm_barrier;
 
 /** Create barrier from one of the threads. */
 LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core);

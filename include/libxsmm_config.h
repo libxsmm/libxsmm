@@ -11,7 +11,6 @@
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && (!defined(LIBXSMM_SOURCE_H) || defined(LIBXSMM_CONFIGURED))
 # include "libxsmm_version.h"
 
-
 #else
 # define LIBXSMM_CONFIG_VERSION ""
 # define LIBXSMM_CONFIG_BRANCH ""

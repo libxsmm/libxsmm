@@ -98,29 +98,7 @@ if __name__ == "__main__":
                 "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
-                substitute["MNK_INTERFACE_LIST"] += "\n"
-                for mnk in mnklist:
-                    mnkstr = "_".join(map(str, mnk))
-                    if 0 == precision:
-                        substitute["MNK_INTERFACE_LIST"] += (
-                            "\n        "
-                            "!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_"
-                            + mnkstr
-                            + ", libxsmm_dmm_"
-                            + mnkstr
-                        )
-                    elif 2 != precision:
-                        substitute["MNK_INTERFACE_LIST"] += (
-                            "\n        "
-                            "!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_"
-                            + mnkstr
-                        )
-                    elif 1 != precision:
-                        substitute["MNK_INTERFACE_LIST"] += (
-                            "\n        "
-                            "!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_"
-                            + mnkstr
-                        )
+                #substitute["MNK_INTERFACE_LIST"] += "\n"
                 substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 optional = [", OPTIONAL", ""][0 < prefetch]
                 bindc = ["", "BIND(C)"][0 < prefetch]
