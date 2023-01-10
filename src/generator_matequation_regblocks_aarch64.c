@@ -1587,17 +1587,23 @@ LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_tmp_register_block_aarch64_kernel( libxsmm_generated_code* io_generated_code,
     const libxsmm_meqn_descriptor*          i_mateqn_desc,
     libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
-    libxsmm_matequation_kernel_config*      i_micro_kernel_config,
+    libxsmm_matequation_kernel_config*      i_micro_kernel_config_orig,
     libxsmm_loop_label_tracker*             io_loop_label_tracker,
     libxsmm_matrix_eqn*                     eqn ) {
   libxsmm_matrix_eqn_arg_v2              *arg_info;
   libxsmm_matrix_eqn_tmp_info            *oparg_info;
   unsigned int arg_id = 0, i = 0, oparg_id = 0;
   unsigned int m_blocking = 0, n_blocking = 0, cur_n = 0, cur_m = 0, n_microkernel = 0, m_microkernel = 0, adjusted_aux_vars = 0;
+  libxsmm_matequation_kernel_config l_meqn_kernel_config = *i_micro_kernel_config_orig;
+  libxsmm_matequation_kernel_config *i_micro_kernel_config = &l_meqn_kernel_config;
+
   if ( eqn == NULL ) {
     fprintf( stderr, "The requested equation does not exist... nothing to JIT,,,\n" );
     return;
   }
+
+  /* Adjusting n_args for the current equation */
+  i_micro_kernel_config->n_args = eqn->eqn_root->n_args;
 
   for (i = 0 ; i < 64; i++) {
     i_micro_kernel_config->unary_ops_pool[i] = 0;

@@ -23,7 +23,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # default configuration if no arguments are given
-        ilp64 = offload = precision = flags = threshold = 0
+        ilp64 = precision = flags = threshold = 0
         sync = jit = 1
         alpha = beta = 1
         cacheline = 64
@@ -36,31 +36,29 @@ if __name__ == "__main__":
         if 2 < argc:
             ilp64 = int(sys.argv[2])
         if 3 < argc:
-            offload = int(sys.argv[3])
+            cacheline = libxsmm_utilities.sanitize_alignment(int(sys.argv[3]))
         if 4 < argc:
-            cacheline = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
+            precision = int(sys.argv[4])
         if 5 < argc:
-            precision = int(sys.argv[5])
+            prefetch = int(sys.argv[5])
         if 6 < argc:
-            prefetch = int(sys.argv[6])
+            threshold = int(sys.argv[6])
         if 7 < argc:
-            threshold = int(sys.argv[7])
+            sync = int(sys.argv[7])
         if 8 < argc:
-            sync = int(sys.argv[8])
+            jit = int(sys.argv[8])
         if 9 < argc:
-            jit = int(sys.argv[9])
+            flags = int(sys.argv[9])
         if 10 < argc:
-            flags = int(sys.argv[10])
+            alpha = int(sys.argv[10])
         if 11 < argc:
-            alpha = int(sys.argv[11])
+            beta = int(sys.argv[11])
         if 12 < argc:
-            beta = int(sys.argv[12])
+            wrap = int(sys.argv[12])
         if 13 < argc:
-            wrap = int(sys.argv[13])
+            malloc = int(sys.argv[13])
         if 14 < argc:
-            malloc = int(sys.argv[14])
-        if 15 < argc:
-            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[15:], 0))
+            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], 0))
 
         version, branch, realversion = libxsmm_utilities.version_branch()
         major, minor, update, patch = libxsmm_utilities.version_numbers(
@@ -111,9 +109,6 @@ if __name__ == "__main__":
             "MALLOC": malloc,
             "SYNC": [0, 1][0 != sync],
             "JIT": [0, 1][0 != jit],
-            "LIBXSMM_OFFLOAD_BUILD": ["", "\n#define LIBXSMM_OFFLOAD_BUILD"][
-                0 != offload
-            ],
             "MNK_PREPROCESSOR_LIST": "",
         }
 

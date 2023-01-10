@@ -37,7 +37,7 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter \
           $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_binary_simple \
           $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \

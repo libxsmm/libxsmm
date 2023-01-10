@@ -14,14 +14,8 @@
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <signal.h>
 #include <setjmp.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_CPUID_ARM_BASELINE) && 0
 # define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_NEOV1

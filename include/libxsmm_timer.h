@@ -16,7 +16,7 @@
 
 typedef unsigned long long libxsmm_timer_tickint;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_timer_info {
+LIBXSMM_EXTERN_C typedef struct libxsmm_timer_info {
   int tsc;
 } libxsmm_timer_info;
 

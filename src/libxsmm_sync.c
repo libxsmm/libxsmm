@@ -14,9 +14,6 @@
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <stdint.h>
 #if defined(_WIN32)
 # include <process.h>
@@ -26,9 +23,6 @@
 # endif
 # include <unistd.h>
 # include <time.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #if !defined(LIBXSMM_SYNC_RWLOCK_BITS)
@@ -40,7 +34,7 @@
 #endif
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
+LIBXSMM_EXTERN_C typedef struct internal_sync_core_tag { /* per-core */
   uint8_t id;
   volatile uint8_t core_sense;
   volatile uint8_t* thread_senses;
@@ -50,12 +44,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /*
   uint8_t sense;
 } internal_sync_core_tag;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_thread_tag { /* per-thread */
+LIBXSMM_EXTERN_C typedef struct internal_sync_thread_tag { /* per-thread */
   int core_tid;
   internal_sync_core_tag *core;
 } internal_sync_thread_tag;
 
-struct LIBXSMM_RETARGETABLE libxsmm_barrier {
+struct libxsmm_barrier {
   internal_sync_core_tag** cores;
   internal_sync_thread_tag** threads;
   int ncores, nthreads_per_core;
