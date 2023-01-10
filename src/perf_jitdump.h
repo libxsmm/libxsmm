@@ -12,7 +12,6 @@
 #define PERF_JITDUMP_H
 
 #if defined(PERF_JITDUMP_NOLIBXSMM)
-# define LIBXSMM_RETARGETABLE
 # define LIBXSMM_EXTERN_C
 # define PERF_JITDUMP_GLOBAL_VARIABLE(VARIABLE, INIT) VARIABLE = (INIT)
 #else
@@ -21,7 +20,7 @@
 #endif
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
+LIBXSMM_EXTERN_C typedef struct jitdump_file_header {
   uint32_t magic;
   uint32_t version;
   uint32_t total_size;
@@ -33,14 +32,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
 } jitdump_file_header;
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_header {
+LIBXSMM_EXTERN_C typedef struct jitdump_record_header {
   uint32_t id;
   uint32_t total_size;
   uint64_t timestamp;
 } jitdump_record_header;
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_load {
+LIBXSMM_EXTERN_C typedef struct jitdump_record_code_load {
   uint32_t pid;
   uint32_t tid;
   uint64_t vma;
@@ -51,7 +50,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_load {
 } jitdump_record_code_load;
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_move {
+LIBXSMM_EXTERN_C typedef struct jitdump_record_code_move {
   uint32_t pid;
   uint32_t tid;
   uint64_t vma;
@@ -62,7 +61,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_move {
 } jitdump_record_code_move;
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_debug_entry {
+LIBXSMM_EXTERN_C typedef struct jitdump_debug_entry {
   uint64_t code_addr;
   uint32_t line;
   uint32_t discrim;
@@ -70,7 +69,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_debug_entry {
 } jitdump_debug_entry;
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_debug_info {
+LIBXSMM_EXTERN_C typedef struct jitdump_record_code_debug_info {
   uint64_t code_addr;
   uint64_t nr_entry;
   /* Followed by nr_entry jitdump_debug_entry structures. */
@@ -78,7 +77,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_debug_i
 
 
 /* Currently empty */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_close {
+LIBXSMM_EXTERN_C typedef struct jitdump_record_code_close {
   int dummy; /* avoid warning about struct without member */
 } jitdump_record_code_close;
 

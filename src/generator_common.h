@@ -459,6 +459,8 @@
 /* integer compute */
 #define LIBXSMM_X86_INSTR_VPXORD           0x300516ef
 #define LIBXSMM_X86_INSTR_VPORD            0x300516eb
+#define LIBXSMM_X86_INSTR_VPXORQ           0x308516ef
+#define LIBXSMM_X86_INSTR_VPORQ            0x308516eb
 #define LIBXSMM_X86_INSTR_VPANDD           0x300516db
 #define LIBXSMM_X86_INSTR_VPANDQ           0x308516db
 #define LIBXSMM_X86_INSTR_VPADDQ           0x308516d4

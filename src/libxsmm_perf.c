@@ -13,9 +13,6 @@
 #include <libxsmm_timer.h>
 #include <libxsmm_sync.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include "perf_jitdump.h"
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
@@ -42,9 +39,6 @@
 #   define LIBXSMM_MAX_PATH 1024
 # endif
 # include <unistd.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #if !defined(NDEBUG)

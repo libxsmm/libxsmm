@@ -190,35 +190,6 @@
           INTEGER(LIBXSMM_BLASINT_KIND) m, n, i, r
         END TYPE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_kernel
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff_reduce
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff_clear
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch2
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xclear
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xrelease
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmatcopy
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xitrans
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xotrans
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch_task
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xgemm_batch_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xhash
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdiff
         INTERFACE
           !> Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -784,13 +755,11 @@
         !> Returns the name of the target architecture as determined by
         !> the CPUID flags, as set by the libxsmm_get_target_arch* functions,
         !> or as set by the LIBXSMM_TARGET environment variable.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
         FUNCTION libxsmm_get_target_arch()
           !CHARACTER(LEN=:), POINTER :: libxsmm_get_target_arch
           CHARACTER, POINTER :: libxsmm_get_target_arch(:)
           INTEGER(C_INT) :: length(1)
           TYPE(C_PTR) :: arch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmmf_get_target_arch
           INTERFACE
             FUNCTION libxsmmf_get_target_arch(length) BIND(C)
               IMPORT :: C_INT, C_PTR
@@ -803,26 +772,22 @@
         END FUNCTION
 
         !> Returns C_NULL_PTR.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_null
         PURE FUNCTION libxsmm_ptr_null()
           TYPE(C_PTR) :: libxsmm_ptr_null
           libxsmm_ptr_null = C_NULL_PTR
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
         FUNCTION libxsmm_ptr_z0(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_z0
           libxsmm_ptr_z0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z1
         FUNCTION libxsmm_ptr_z1(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_z1
           libxsmm_ptr_z1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
         FUNCTION libxsmm_ptr_z2(a)
           COMPLEX(C_DOUBLE_COMPLEX), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_z2
@@ -830,19 +795,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c0
         FUNCTION libxsmm_ptr_c0(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_c0
           libxsmm_ptr_c0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c1
         FUNCTION libxsmm_ptr_c1(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_c1
           libxsmm_ptr_c1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
         FUNCTION libxsmm_ptr_c2(a)
           COMPLEX(C_FLOAT_COMPLEX), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_c2
@@ -850,19 +812,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d0
         FUNCTION libxsmm_ptr_d0(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_d0
           libxsmm_ptr_d0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d1
         FUNCTION libxsmm_ptr_d1(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_d1
           libxsmm_ptr_d1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d2
         FUNCTION libxsmm_ptr_d2(a)
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_d2
@@ -870,19 +829,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s0
         FUNCTION libxsmm_ptr_s0(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_s0
           libxsmm_ptr_s0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s1
         FUNCTION libxsmm_ptr_s1(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_s1
           libxsmm_ptr_s1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s2
         FUNCTION libxsmm_ptr_s2(a)
           REAL(C_FLOAT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_s2
@@ -890,19 +846,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i0
         FUNCTION libxsmm_ptr_i0(a)
           INTEGER(C_INT), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_i0
           libxsmm_ptr_i0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i1
         FUNCTION libxsmm_ptr_i1(a)
           INTEGER(C_INT), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_i1
           libxsmm_ptr_i1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i2
         FUNCTION libxsmm_ptr_i2(a)
           INTEGER(C_INT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_i2
@@ -910,19 +863,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w0
         FUNCTION libxsmm_ptr_w0(a)
           INTEGER(C_SHORT), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_w0
           libxsmm_ptr_w0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w1
         FUNCTION libxsmm_ptr_w1(a)
           INTEGER(C_SHORT), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_w1
           libxsmm_ptr_w1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w2
         FUNCTION libxsmm_ptr_w2(a)
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_w2
@@ -930,19 +880,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j0
         FUNCTION libxsmm_ptr_j0(a)
           INTEGER(C_INT8_T), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_j0
           libxsmm_ptr_j0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j1
         FUNCTION libxsmm_ptr_j1(a)
           INTEGER(C_INT8_T), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_j1
           libxsmm_ptr_j1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j2
         FUNCTION libxsmm_ptr_j2(a)
           INTEGER(C_INT8_T), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_j2
@@ -950,19 +897,16 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b0
         FUNCTION libxsmm_ptr_b0(a)
           CHARACTER(C_CHAR), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_b0
           libxsmm_ptr_b0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b1
         FUNCTION libxsmm_ptr_b1(a)
           CHARACTER(C_CHAR), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_b1
           libxsmm_ptr_b1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b2
         FUNCTION libxsmm_ptr_b2(a)
           CHARACTER(C_CHAR), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_b2
@@ -970,33 +914,28 @@
         END FUNCTION
 
         !> Determines the C-address of the given array.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l0
         FUNCTION libxsmm_ptr_l0(a)
           INTEGER(C_LONG_LONG), INTENT(IN), TARGET :: a
           TYPE(C_PTR) :: libxsmm_ptr_l0
           libxsmm_ptr_l0 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l1
         FUNCTION libxsmm_ptr_l1(a)
           INTEGER(C_LONG_LONG), INTENT(IN), TARGET :: a(*)
           TYPE(C_PTR) :: libxsmm_ptr_l1
           libxsmm_ptr_l1 = C_LOC(a)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l2
         FUNCTION libxsmm_ptr_l2(a)
           INTEGER(C_LONG_LONG), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_l2
           libxsmm_ptr_l2 = libxsmm_ptr_l1(a)
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_dmm
         FUNCTION libxsmm_ptr_dmm(a)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN), TARGET :: a(:)
           TYPE(LIBXSMM_DMMFUNCTION), POINTER :: p
           TYPE(C_PTR) :: libxsmm_ptr_dmm
           p => a(LBOUND(a,1)); libxsmm_ptr_dmm = C_LOC(p%handle)
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_smm
         FUNCTION libxsmm_ptr_smm(a)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN), TARGET :: a(:)
           TYPE(LIBXSMM_SMMFUNCTION), POINTER :: p
@@ -1006,7 +945,6 @@
 
         !> Deallocate JIT'ted code created by libxsmm_create routines. To
         !> unregister code generated with libxsmm_dispatch is unnecessary.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
         SUBROUTINE libxsmm_release_dmmkernel(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
@@ -1014,14 +952,12 @@
 
         !> Deallocate JIT'ted code created by libxsmm_create routines. To
         !> unregister code generated with libxsmm_dispatch is unnecessary.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_smmkernel
         SUBROUTINE libxsmm_release_smmkernel(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           CALL libxsmm_release_kernel(kernel%handle)
         END SUBROUTINE
 
         !> Query or JIT-generate an SMM-kernel (double-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: kernel
@@ -1038,7 +974,6 @@
         END SUBROUTINE
 
         !> Query or JIT-generate an SMM-kernel (single-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
         SUBROUTINE libxsmm_smmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: kernel
@@ -1057,7 +992,6 @@
         !> Checks if the given kernel was generated. JIT code is guaranteed
         !> to be generated if JIT support was enabled at build-time of the
         !> library (default). This overload belongs to libxsmm_(mm)available.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
@@ -1066,7 +1000,6 @@
         !> Checks if the given kernel was generated. JIT code is guaranteed
         !> to be generated if JIT support was enabled at build-time of the
         !> library (default). This overload belongs to libxsmm_(mm)available.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
@@ -1076,7 +1009,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3). The libxsmm_xmmcall
         !> routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
         SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN),    TARGET :: a(*), b(*)
@@ -1092,7 +1024,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION6). The libxsmm_xmmcall
         !> routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
         SUBROUTINE libxsmm_dmmcall_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN),    TARGET ::  a(*), b(*)
@@ -1109,7 +1040,6 @@
         END SUBROUTINE
 
         !> See also libxsmm_dmmcall_abc and libxsmm_dmmcall_prf.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
         SUBROUTINE libxsmm_dmmcall(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION),        INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN),           TARGET ::  a(*), b(*)
@@ -1132,7 +1062,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION3). The libxsmm_xmmcall
         !> routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
         SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_FLOAT), INTENT(IN),     TARGET :: a(*), b(*)
@@ -1148,7 +1077,6 @@
         !> PROCPOINTER can be used as shown by the inner comments
         !> of this routine (LIBXSMM_FUNCTION6). The libxsmm_xmmcall
         !> routines can be used in FORTRAN77.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
         SUBROUTINE libxsmm_smmcall_prf(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_FLOAT), INTENT(IN),     TARGET ::  a(*), b(*)
@@ -1165,7 +1093,6 @@
         END SUBROUTINE
 
         !> See also libxsmm_smmcall_abc and libxsmm_smmcall_prf.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall
         SUBROUTINE libxsmm_smmcall(kernel, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION),       INTENT(IN) :: kernel
           REAL(C_FLOAT), INTENT(IN),           TARGET ::  a(*), b(*)
@@ -1192,13 +1119,11 @@
         !> can be initialized prior to registration or whenever queried. Registered data
         !> is released when the program terminates but can be also released if needed
         !> (libxsmm_xrelease), .e.g., in case of a larger value reusing the same key.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xregister
         FUNCTION libxsmm_xregister(key, keysize, valsize, valinit)
           TYPE(C_PTR),    INTENT(IN), VALUE     :: key
           INTEGER(C_INT), INTENT(IN)            :: keysize, valsize
           TYPE(C_PTR),    INTENT(IN),  OPTIONAL :: valinit
           TYPE(C_PTR) :: libxsmm_xregister
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xregister
           INTERFACE
             SUBROUTINE internal_xregister(regval,                       &
      &      key, keysize, valsize, valinit)                             &
@@ -1214,12 +1139,10 @@
         END FUNCTION
 
         !> Query user-defined value from LIBXSMM's code registry.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xdispatch
         FUNCTION libxsmm_xdispatch(key, keysize)
           TYPE(C_PTR), INTENT(IN), VALUE :: key
           INTEGER(C_INT), INTENT(IN) :: keysize
           TYPE(C_PTR) :: libxsmm_xdispatch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xdispatch
           INTERFACE
             SUBROUTINE internal_xdispatch(regval, key, keysize)         &
      &      BIND(C, NAME="libxsmm_xdispatch_")
@@ -1234,7 +1157,6 @@
 
         !> Auto-dispatched general dense MM (double-precision).
         !> This overload belongs to libxsmm_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm0
         PURE SUBROUTINE libxsmm_dgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1245,7 +1167,6 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a, b
           REAL(C_DOUBLE), INTENT(INOUT) :: c
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
@@ -1267,7 +1188,6 @@
 
         !> Auto-dispatched general dense MM (double-precision).
         !> This overload belongs to libxsmm_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm1
         PURE SUBROUTINE libxsmm_dgemm1(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1288,7 +1208,6 @@
 
         !> Auto-dispatched general dense MM (double-precision).
         !> This overload belongs to libxsmm_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm2
         PURE SUBROUTINE libxsmm_dgemm2(transa, transb, m, n, k,         &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1306,7 +1225,6 @@
 
         !> Auto-dispatched general dense MM (double-precision).
         !> This overload belongs to libxsmm_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm3
         PURE SUBROUTINE libxsmm_dgemm3(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1325,7 +1243,6 @@
 
         !> Auto-dispatched general dense MM (single-precision).
         !> This overload belongs to libxsmm_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm0
         PURE SUBROUTINE libxsmm_sgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1336,7 +1253,6 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN)    :: a, b
           REAL(C_FLOAT), INTENT(INOUT) :: c
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
@@ -1358,7 +1274,6 @@
 
         !> Auto-dispatched general dense MM (single-precision).
         !> This overload belongs to libxsmm_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm1
         PURE SUBROUTINE libxsmm_sgemm1(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1379,7 +1294,6 @@
 
         !> Auto-dispatched general dense MM (single-precision).
         !> This overload belongs to libxsmm_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm2
         PURE SUBROUTINE libxsmm_sgemm2(transa, transb, m, n, k,         &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1397,7 +1311,6 @@
 
         !> Auto-dispatched general dense MM (single-precision).
         !> This overload belongs to libxsmm_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm3
         PURE SUBROUTINE libxsmm_sgemm3(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1416,7 +1329,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm0
         PURE SUBROUTINE libxsmm_blas_dgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1427,7 +1339,6 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN)    :: a, b
           REAL(C_DOUBLE), INTENT(INOUT) :: c
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
@@ -1449,7 +1360,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm1
         PURE SUBROUTINE libxsmm_blas_dgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1470,7 +1380,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm2
         PURE SUBROUTINE libxsmm_blas_dgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1488,7 +1397,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(d)gemm. This overload belongs to libxsmm_blas_(d)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm3
         PURE SUBROUTINE libxsmm_blas_dgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1507,7 +1415,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm0
         PURE SUBROUTINE libxsmm_blas_sgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1518,7 +1425,6 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN)    :: a, b
           REAL(C_FLOAT), INTENT(INOUT) :: c
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
@@ -1540,7 +1446,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm1
         PURE SUBROUTINE libxsmm_blas_sgemm1(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1561,7 +1466,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm2
         PURE SUBROUTINE libxsmm_blas_sgemm2(transa, transb, m, n, k,    &
      &  a, b, c, alpha, beta)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1579,7 +1483,6 @@
 
         !> Re-exposes BLAS based GEMM routine with an interfaces similar to
         !> libxsmm_(s)gemm. This overload belongs to libxsmm_blas_(s)gemm.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm3
         PURE SUBROUTINE libxsmm_blas_sgemm3(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
@@ -1598,7 +1501,6 @@
 
         !> Matrix-copy (2-dimensional copy) routine. If the input (optional)
         !> is not present, the routine is used to zero-fill the out-matrix.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_p0
         PURE SUBROUTINE libxsmm_matcopy_p0(output, input, typesize,     &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
@@ -1612,7 +1514,6 @@
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (DP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_d1
         SUBROUTINE libxsmm_matcopy_d1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1625,7 +1526,6 @@
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (DP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_d2
         SUBROUTINE libxsmm_matcopy_d2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND),    INTENT(IN) :: m, n, ldi, ldo
           REAL(C_DOUBLE), INTENT(OUT),          TARGET :: output(ldo,*)
@@ -1635,7 +1535,6 @@
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (SP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_s1
         SUBROUTINE libxsmm_matcopy_s1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1648,7 +1547,6 @@
         END SUBROUTINE
 
         !> Matrix-copy (2-dimensional copy) routine (SP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy_s2
         SUBROUTINE libxsmm_matcopy_s2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND),    INTENT(IN) :: m, n, ldi, ldo
           REAL(C_FLOAT),  INTENT(OUT),          TARGET :: output(ldo,*)
@@ -1658,7 +1556,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_p0
         PURE SUBROUTINE libxsmm_itrans_p0(matrix, typesize,             &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
@@ -1671,7 +1568,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, DP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_d1
         SUBROUTINE libxsmm_itrans_d1(matrix, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1682,7 +1578,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, DP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_d2
         SUBROUTINE libxsmm_itrans_d2(matrix, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(ld,*)
@@ -1690,7 +1585,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, SP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_s1
         SUBROUTINE libxsmm_itrans_s1(matrix, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1701,7 +1595,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (in-place form, SP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans_s2
         SUBROUTINE libxsmm_itrans_s2(matrix, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(ld,*)
@@ -1709,7 +1602,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_p0
         PURE SUBROUTINE libxsmm_otrans_p0(output, input, typesize,      &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
@@ -1722,7 +1614,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form, DP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_d1
         SUBROUTINE libxsmm_otrans_d1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1735,7 +1626,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form, DP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_d2
         SUBROUTINE libxsmm_otrans_d2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
           REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(ldo,*)
@@ -1745,7 +1635,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form, SP/rank-1).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_s1
         SUBROUTINE libxsmm_otrans_s1(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
@@ -1758,7 +1647,6 @@
         END SUBROUTINE
 
         !> Transpose a matrix (out-of-place form, SP/rank-2).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_s2
         SUBROUTINE libxsmm_otrans_s2(output, input, m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
           REAL(C_FLOAT), INTENT(OUT), TARGET :: output(ldo,*)
@@ -1842,11 +1730,9 @@
 
         !> Returns the difference between two timer ticks (cycles).
         !> Implicit FORTRAN 77 interface: subroutine available.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_ncycles
         PURE FUNCTION libxsmm_timer_ncycles(tick0, tick1)
           INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN) :: tick0, tick1
           INTEGER(LIBXSMM_TICKINT_KIND) :: libxsmm_timer_ncycles
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
           INTERFACE
             PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
      &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
@@ -1869,7 +1755,6 @@
         !> INTEGER(4)   :: datatype
         !> INTEGER(4|8) :: m, n, ldref, ldtst
         !> ARRAY        :: ref, tst
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff
         PURE SUBROUTINE libxsmm_matdiff(info, datatype, m, n,           &
      &  ref, tst, ldref, ldtst)
           INTEGER(C_INT),                INTENT(IN) :: datatype
@@ -1878,7 +1763,6 @@
      &                                     OPTIONAL :: n, ldref, ldtst
           TYPE(C_PTR), INTENT(IN),         OPTIONAL :: ref, tst
           TYPE(LIBXSMM_MATDIFF_INFO),   INTENT(OUT) :: info
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matdiff
           INTERFACE
             PURE SUBROUTINE internal_matdiff(info, datatype, m, n,      &
      &      ref, tst, ldref, ldtst) BIND(C, NAME="libxsmm_matdiff_")
@@ -1898,11 +1782,9 @@
         !> Calculate co-prime number <= n/2 (except: libxsmm_coprime2(0|1) == 0).
         !> Implicit FORTRAN 77 interface:
         !> INTEGER(8) :: coprime (OUT), n (IN)
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_coprime2
         ELEMENTAL FUNCTION libxsmm_coprime2(n)
           INTEGER(C_LONG_LONG) :: libxsmm_coprime2
           INTEGER(C_LONG_LONG), INTENT(IN) :: n
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_coprime2
           INTERFACE
             PURE SUBROUTINE internal_coprime2(coprime, n)               &
      &      BIND(C, NAME="libxsmm_coprime2_")
@@ -1917,7 +1799,6 @@
 
         !> Calculates a hash value for the given array and seed.
         !> FORTRAN 77: see libxsmm_xhash
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
         FUNCTION libxsmm_hash_char(key, seed)
           CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
@@ -1929,7 +1810,6 @@
 
         !> Calculates a hash value for the given array and seed.
         !> FORTRAN 77: see libxsmm_xhash
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i8
         FUNCTION libxsmm_hash_i8(key, seed)
           INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
@@ -1941,7 +1821,6 @@
 
         !> Calculates a hash value for the given array and seed.
         !> FORTRAN 77: see libxsmm_xhash
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i32
         FUNCTION libxsmm_hash_i32(key, seed)
           INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
@@ -1953,7 +1832,6 @@
 
         !> Calculates a hash value for the given array and seed.
         !> FORTRAN 77: see libxsmm_xhash
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i64
         FUNCTION libxsmm_hash_i64(key, seed)
           INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: key(:)
           INTEGER(C_INT), INTENT(IN) :: seed
@@ -1965,7 +1843,6 @@
 
         !> Calculates if there is a difference between two arrays.
         !> FORTRAN 77: see libxsmm_xdiff
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_char
         FUNCTION libxsmm_diff_char(a, b)
           CHARACTER(C_CHAR), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_char
@@ -1981,7 +1858,6 @@
 
         !> Calculates if there is a difference between two arrays.
         !> FORTRAN 77: see libxsmm_xdiff
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i8
         FUNCTION libxsmm_diff_i8(a, b)
           INTEGER(C_INT8_T), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i8
@@ -1997,7 +1873,6 @@
 
         !> Calculates if there is a difference between two arrays.
         !> FORTRAN 77: see libxsmm_xdiff
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i32
         FUNCTION libxsmm_diff_i32(a, b)
           INTEGER(C_INT), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i32
@@ -2013,7 +1888,6 @@
 
         !> Calculates if there is a difference between two arrays.
         !> FORTRAN 77: see libxsmm_xdiff
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i64
         FUNCTION libxsmm_diff_i64(a, b)
           INTEGER(C_LONG_LONG), INTENT(IN)$CONTIGUOUS :: a(:), b(:)
           LOGICAL(C_BOOL) :: libxsmm_diff_i64
@@ -2030,14 +1904,12 @@
         !> Check if location is SIMD-aligned and optionally consider the next
         !> access as if reached by incrementing the location (in Bytes).
         !> Optionally calculates the alignment of the given location in Bytes.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_aligned
         FUNCTION libxsmm_aligned(location, increment, alignment)
           TYPE(C_PTR), INTENT(IN), VALUE :: location
           INTEGER(C_INT),  INTENT(IN), OPTIONAL :: increment
           INTEGER(C_INT), INTENT(OUT), OPTIONAL :: alignment
           LOGICAL :: libxsmm_aligned ! C_BOOL (GNU Fortran issue)
           INTEGER(C_INT) :: aligned
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_aligned
           INTERFACE
             SUBROUTINE internal_aligned(is_aligned, location,           &
      &      increment, alignment) BIND(C, NAME="libxsmm_aligned_")

@@ -12,9 +12,6 @@
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
 # include <features.h>
 # include <malloc.h>
@@ -118,9 +115,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif /*defined(LIBXSMM_VTUNE)*/
 #if !defined(LIBXSMM_MALLOC_XMAP_TEMPLATE)
 # define LIBXSMM_MALLOC_XMAP_TEMPLATE ".libxsmm_jit." LIBXSMM_MKTEMP_PATTERN
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
@@ -363,7 +357,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
+LIBXSMM_EXTERN_C typedef struct internal_malloc_info_type {
   libxsmm_free_function free;
   void *pointer, *reloc;
   const void* context;
@@ -382,7 +376,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #endif
 } internal_malloc_info_type;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
+LIBXSMM_EXTERN_C typedef union internal_malloc_pool_type {
   char pad[LIBXSMM_MALLOC_SCRATCH_PADDING];
   struct {
     size_t minsize, counter, incsize;

@@ -10,9 +10,6 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -77,18 +74,15 @@
 #   endif
 # endif
 #endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE ELEM_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
+LIBXSMM_INLINE ELEM_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
   return (ELEM_TYPE)i * ld + j;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_blasint randstart(libxsmm_blasint start, libxsmm_blasint value)
+LIBXSMM_INLINE libxsmm_blasint randstart(libxsmm_blasint start, libxsmm_blasint value)
 {
   const libxsmm_blasint s = (start < value ? start : 0), r = LIBXSMM_MIN(s + (rand() % (value - s)) + 1, value);
   assert(0 < r && s <= r && r <= value);
@@ -128,15 +122,7 @@ int main(int argc, char* argv[])
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = ldo;
   int result = EXIT_SUCCESS, k;
 
-  if (0 == strchr("oOiI", t)) {
-    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|nruns] [lbound]\n", argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload target(LIBXSMM_OFFLOAD_TARGET)
-#endif
-  {
+  if (0 != strchr("oOiI", t)) {
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (NULL == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     const int check = (NULL == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
@@ -343,6 +329,11 @@ int main(int argc, char* argv[])
     libxsmm_free(a);
     libxsmm_free(b);
   }
+  else {
+    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|nruns] [lbound]\n", argv[0]);
+    result = EXIT_FAILURE;
+  }
+
   return result;
 }
 

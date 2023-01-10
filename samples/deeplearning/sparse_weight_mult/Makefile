@@ -44,7 +44,7 @@ endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/sparse_weight_B_mult $(OUTDIR)/sparse_weight_A_mult $(OUTDIR)/parallel_sparse_weight_B_mult $(OUTDIR)/sparse_weight_C_redmult $(OUTDIR)/parallel_sparse_weight_C_redmult $(OUTDIR)/parallel_sparse_weight_B_conv
 .PHONY: all

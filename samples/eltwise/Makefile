@@ -37,7 +37,7 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 XFILES := $(OUTDIR)/eltwise_unary_reduce $(OUTDIR)/eltwise_unary_gather_scatter \
           $(OUTDIR)/eltwise_opreduce_idxvecs $(OUTDIR)/eltwise_binary_simple \
           $(OUTDIR)/eltwise_unary_dropout $(OUTDIR)/eltwise_unary_transform \
@@ -51,10 +51,46 @@ all: $(XFILES) scripts
 compile: $(OBJECTS)
 
 .PHONY: scripts
-scripts: $(TSTDIR)/.create_new_opreduce_simple_test
-$(TSTDIR)/.create_new_opreduce_simple_test: $(TSTDIR)/create_new_opreduce_simple_test.sh Makefile
+scripts: $(TSTDIR)/.generate_opreduce_test_scripts $(TSTDIR)/.generate_unary_simple_test_scripts $(TSTDIR)/.generate_unary_transform_test_scripts $(TSTDIR)/.generate_unary_reduce_test_scripts $(TSTDIR)/.generate_unary_relu_test_scripts $(TSTDIR)/.generate_unary_dropout_test_scripts $(TSTDIR)/.generate_unary_gather_scatter_test_scripts $(TSTDIR)/.generate_binary_test_scripts
+
+$(TSTDIR)/.generate_opreduce_test_scripts: $(TSTDIR)/generate_opreduce_test_scripts.sh Makefile
 	$(info Creating opreduce test scripts...)
-	@cd $(TSTDIR) && ./create_new_opreduce_simple_test.sh >/dev/null
+	@cd $(TSTDIR) && ./generate_opreduce_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_simple_test_scripts: $(TSTDIR)/generate_unary_simple_test_scripts.sh Makefile
+	$(info Creating unary simple test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_simple_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_transform_test_scripts: $(TSTDIR)/generate_unary_transform_test_scripts.sh Makefile
+	$(info Creating unary transform test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_transform_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_reduce_test_scripts: $(TSTDIR)/generate_unary_reduce_test_scripts.sh Makefile
+	$(info Creating unary reduce test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_reduce_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_relu_test_scripts: $(TSTDIR)/generate_unary_relu_test_scripts.sh Makefile
+	$(info Creating unary relu test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_relu_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_dropout_test_scripts: $(TSTDIR)/generate_unary_dropout_test_scripts.sh Makefile
+	$(info Creating unary dropout test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_dropout_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_unary_gather_scatter_test_scripts: $(TSTDIR)/generate_unary_gather_scatter_test_scripts.sh Makefile
+	$(info Creating unary gather scatter test scripts...)
+	@cd $(TSTDIR) && ./generate_unary_gather_scatter_test_scripts.sh >/dev/null
+	@-touch $@
+
+$(TSTDIR)/.generate_binary_test_scripts: $(TSTDIR)/generate_binary_test_scripts.sh Makefile
+	$(info Creating binary test scripts...)
+	@cd $(TSTDIR) && ./generate_binary_test_scripts.sh >/dev/null
 	@-touch $@
 
 $(OUTDIR)/eltwise_unary_reduce: $(OUTDIR)/.make $(BLDDIR)/eltwise_unary_reduce-c.o $(LIBDEP)
@@ -113,7 +149,17 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
-	@-rm -f $(TSTDIR)/.create_new_opreduce_simple_test
+	@-rm -f $(TSTDIR)/.generate_opreduce_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_simple_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_transform_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_reduce_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_relu_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_dropout_test_scripts
+	@-rm -f $(TSTDIR)/.generate_unary_gather_scatter_test_scripts
+	@-rm -f $(TSTDIR)/.generate_binary_test_scripts
+	@-rm -f $(TSTDIR)/opreduce_op_*.sh
+	@-rm -f $(TSTDIR)/unary_*.sh
+	@-rm -f $(TSTDIR)/binary_*.sh
 
 .PHONY: deepclean
 deepclean: realclean

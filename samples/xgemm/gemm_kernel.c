@@ -597,7 +597,7 @@ void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
     libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
     /* Copy to tmp_c */
     memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat16));
-    /* convert to vnni  */
+    /* convert to vnni */
     for (l_i = 0; l_i < n/2; l_i++) {
       for (l_j = 0; l_j < m; l_j++) {
         for (l_i2 = 0; l_i2 < 2; l_i2++) {
@@ -607,7 +607,7 @@ void convert_output_to_vnni2(gemm_def* i_gemm_def, void* l_c_gold ) {
     }
     libxsmm_free(tmp_c);
   } else {
-    /* Should not come here  */
+    /* Should not happen */
   }
 }
 
@@ -623,7 +623,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     libxsmm_bfloat8* tmp_c = (libxsmm_bfloat8*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat8), 64);
     /* Copy to tmp_c */
     memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat8));
-    /* convert to vnni  */
+    /* convert to vnni */
     for (l_i = 0; l_i < n/4; l_i++) {
       for (l_j = 0; l_j < m; l_j++) {
         for (l_i2 = 0; l_i2 < 4; l_i2++) {
@@ -637,7 +637,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     libxsmm_hfloat8* tmp_c = (libxsmm_hfloat8*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_hfloat8), 64);
     /* Copy to tmp_c */
     memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_hfloat8));
-    /* convert to vnni  */
+    /* convert to vnni */
     for (l_i = 0; l_i < n/4; l_i++) {
       for (l_j = 0; l_j < m; l_j++) {
         for (l_i2 = 0; l_i2 < 4; l_i2++) {
@@ -651,7 +651,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     libxsmm_bfloat16* tmp_c = (libxsmm_bfloat16*) libxsmm_aligned_malloc((size_t)ldc*n*sizeof(libxsmm_bfloat16), 64);
     /* Copy to tmp_c */
     memcpy(tmp_c, h_c, (size_t)ldc*n*sizeof(libxsmm_bfloat16));
-    /* convert to vnni  */
+    /* convert to vnni */
     for (l_i = 0; l_i < n/4; l_i++) {
       for (l_j = 0; l_j < m; l_j++) {
         for (l_i2 = 0; l_i2 < 4; l_i2++) {
@@ -661,7 +661,7 @@ void convert_output_to_vnni4(gemm_def* i_gemm_def, void* l_c_gold ) {
     }
     libxsmm_free(tmp_c);
   } else {
-    /* Should not come here  */
+    /* Should not happen */
   }
 }
 
@@ -1912,7 +1912,7 @@ int main(int argc, char* argv []) {
   }
 
   if ( LIBXSMM_NEQ(l_beta, 0.0) && (cvt_C_to_vnni > 0) ) {
-    fprintf(stderr, "Warning: beta needs to be 0.0 when C_vnni fusion is requested... seting beta to 0.0...\n");
+    fprintf(stderr, "Warning: beta needs to be 0.0 when C_vnni fusion is requested... setting beta to 0.0...\n");
     l_beta = 0.0;
   }
 
@@ -2120,15 +2120,6 @@ int main(int argc, char* argv []) {
       }
       if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
 
-      while ((cvt_C_to_vnni > 0) && (l_keep_going > 0) && (((l_n % 2 != 0) && (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF16)) || ((l_n % 4 != 0) && ((l_gemm_def.out_type == LIBXSMM_DATATYPE_HF8) || (l_gemm_def.out_type == LIBXSMM_DATATYPE_BF8))))  ) {
-        if ( fgets( l_line, 512, l_file_handle) == NULL ) {
-          l_keep_going = 0;
-          break;
-        } else {
-          l_keep_going = 1;
-        }
-        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
-      }
       if (l_keep_going == 0) break;
     }
 

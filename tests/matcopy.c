@@ -61,6 +61,7 @@ int main(void)
   void (*matcopy[])(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint) = {
     libxsmm_matcopy, libxsmm_matcopy_omp
   };
+  const int nfun = sizeof(matcopy) / sizeof(*matcopy);
   int test, fun;
 
   for (test = start; test < ntests; ++test) {
@@ -79,7 +80,7 @@ int main(void)
   assert(NULL != c);
 # endif
 
-  for (fun = 0; fun < 2; ++fun) {
+  for (fun = 0; fun < nfun; ++fun) {
     for (test = start; test < ntests; ++test) {
       ELEM_TYPE pattern;
       memset(b, -1, (size_t)(max_size_b * sizeof(ELEM_TYPE)));

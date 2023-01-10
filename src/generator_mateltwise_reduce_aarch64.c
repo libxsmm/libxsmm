@@ -46,11 +46,15 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   unsigned int l_masked_elements = 0;
   unsigned int l_is_inp_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
   unsigned int l_is_out_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_OUT)) ? 1 : 0;
+  unsigned int l_bn_loop_reg = 0;
+  unsigned int max_bn_unroll = 32;
+  unsigned int bn_unroll_iters = 0;
 
   bc  = i_mateltwise_desc->m;
   bn  = i_mateltwise_desc->n;
   C   = i_mateltwise_desc->ldi;
   N   = i_mateltwise_desc->ldo;
+  bn_unroll_iters = bn;
 
   Nb  = N/bn;
 
@@ -65,6 +69,7 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   i_gp_reg_mapping->gp_reg_out    = LIBXSMM_AARCH64_GP_REG_X10;
   i_gp_reg_mapping->gp_reg_n_loop = LIBXSMM_AARCH64_GP_REG_X11;
   i_gp_reg_mapping->gp_reg_scratch_0  = LIBXSMM_AARCH64_GP_REG_X12;
+  l_bn_loop_reg = LIBXSMM_AARCH64_GP_REG_X13;
 
   /* load the input pointer and output pointer */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 32, i_gp_reg_mapping->gp_reg_in );
@@ -93,6 +98,11 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   /* Register allocation: Registers zmm8-zmm15 are accumulators, zmm0-zmm7 are used for loading input */
   for (iM = 0; iM < m_outer_trips; iM++) {
     m_inner_trips = (iM == m_outer_trips - 1) ? m_trips - iM * m_unroll_factor : m_unroll_factor;
+    if (bn * m_inner_trips > 100) {
+      max_bn_unroll = LIBXSMM_UPDIV(100, m_inner_trips);
+    } else {
+      max_bn_unroll = bn;
+    }
     for (im = 0; im < m_inner_trips; im++) {
       cur_acc0 = m_unroll_factor + im;
       if (is_sve){
@@ -109,7 +119,17 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
       libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, Nb);
     }
 
-    for (in = 0; in < bn; in++ ) {
+    if (bn > max_bn_unroll) {
+      bn_unroll_iters = max_bn_unroll;
+      while (bn % bn_unroll_iters != 0) {
+        bn_unroll_iters--;
+      }
+      libxsmm_generator_loop_header_aarch64(io_generated_code, io_loop_label_tracker, l_bn_loop_reg, bn/bn_unroll_iters);
+    } else {
+      bn_unroll_iters = bn;
+    }
+
+    for (in = 0; in < bn_unroll_iters; in++ ) {
       int extra_bytes = bc * i_micro_kernel_config->datatype_size_in - vlen * i_micro_kernel_config->datatype_size_in * m_inner_trips;
       if ((use_m_masking == 1) && (iM == m_outer_trips-1)) {
         extra_bytes = extra_bytes + (vlen - mask_count) * i_micro_kernel_config->datatype_size_in;
@@ -138,6 +158,10 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                         i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in, extra_bytes );
       }
+    }
+
+    if (bn > max_bn_unroll) {
+      libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, l_bn_loop_reg, 1);
     }
 
     if (Nb > 1) {

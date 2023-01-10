@@ -26,9 +26,6 @@
  * code for every (internal) change of LIBXSMM. Please make sure to only rely on the
  * public interface as the internal implementation may change without notice.
  */
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include "../src/generator_aarch64_instructions.c"
 #include "../src/generator_common.c"
 #include "../src/generator_common_aarch64.c"
@@ -122,8 +119,5 @@
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
 #include "../src/libxsmm_xcopy.c"
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #endif /*LIBXSMM_SOURCE_H*/

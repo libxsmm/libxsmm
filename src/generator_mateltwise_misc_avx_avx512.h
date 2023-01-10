@@ -25,7 +25,8 @@ void libxsmm_generator_mn_code_block_replicate_col_var_avx_avx512( libxsmm_gener
     unsigned int                                   m_unroll_factor,
     unsigned int                                   peeled_m_trips,
     unsigned int                                   i_use_masking,
-    unsigned int                                   mask_inout );
+    unsigned int                                   mask_in,
+    unsigned int                                   mask_out );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generated_code*                        io_generated_code,

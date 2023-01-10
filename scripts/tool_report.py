@@ -22,7 +22,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     for match in (
         match
         for match in re.finditer(
-            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+]+)*", txt, re.MULTILINE
+            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+-]+)*", txt, re.MULTILINE
         )
         if match and match.group(1) and match.group(2)
     ):
@@ -38,8 +38,10 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 database[strbuild][match.group(1)] = dict()
             if jobname not in database[strbuild][match.group(1)]:
                 database[strbuild][match.group(1)][jobname] = dict()
-            database[strbuild][match.group(1)][jobname] = values
-            nentries = nentries + 1
+            oldval = database[strbuild][match.group(1)][jobname]
+            if values != oldval:
+                database[strbuild][match.group(1)][jobname] = values
+                nentries = nentries + 1
         else:
             nerrors = nerrors + 1
     return nentries, nerrors
@@ -77,7 +79,7 @@ def num2str(num):
     )
 
 
-def main(args):
+def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
@@ -87,8 +89,9 @@ def main(args):
     smry = args.summary.lower()
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
+    inflight = max(args.inflight, 0)
     nerrors = nentries = 0
-    fig = "png"
+    match = []
 
     try:
         with open(args.filepath, "r") as file:
@@ -97,7 +100,9 @@ def main(args):
         print(f"Create new database {args.filepath}")
         database = dict()
         pass
-    latest = max(int(e) for e in database) if database else 0
+    latest = (
+        max(max(int(e) for e in database) - inflight, 0) if database else 0
+    )
 
     if args.infile:
         try:
@@ -108,15 +113,18 @@ def main(args):
             pass
 
     if args.infile:
-        figfile = f"{args.infile.stem}.{fig}"
         outfile = f"{args.infile.stem}.json"
         nentries, nerrors = parselog(
-            database, str(latest + 1), args.infile.stem, txt, nentries, nerrors
+            database,
+            str(latest + inflight + 1),
+            args.infile.stem,
+            txt,
+            nentries,
+            nerrors,
         )
         if 0 < nentries:
             latest = latest + 1
     else:  # connect to URL
-        figfile = f"{args.filepath.stem}.{fig}"
         outfile = args.filepath
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
@@ -136,11 +144,17 @@ def main(args):
         njobs = 0
         while builds:
             # iterate over all builds (latest first)
-            for build in (b for b in builds if "running" != b["state"]):
+            for build in builds:
                 nbuild = build["number"]
                 # JSON stores integers as string
                 strbuild = str(nbuild)
-                if strbuild in database:
+                if (
+                    nbuild <= latest
+                    and "running" != build["state"]
+                    and strbuild in database
+                ):
+                    latest = nbuild
+                    builds = None
                     break
                 jobs = build["jobs"]
                 n = 0
@@ -153,11 +167,9 @@ def main(args):
                     nentries, nerrors = parselog(
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
-                    if latest < nbuild and 0 < nentries:
-                        latest = nbuild
                     n = n + 1
                 njobs = njobs + n
-            if 1 < nbuild:
+            if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
@@ -190,6 +202,8 @@ def main(args):
     if 2 > nselect:
         axes = [axes]
     i = 0
+    infneg = float("-inf")
+    infpos = float("inf")
     yunit = None
     for entry in (
         e
@@ -206,6 +220,8 @@ def main(args):
             meanvl = []  # determined by --summary
             sunit = aunit = None
             analyze = dict()
+            if value not in match:
+                match.append(value)
             for build in (
                 b
                 for b in database
@@ -215,33 +231,33 @@ def main(args):
                 values = database[build][entry][value]
                 # match --result primarily against "unit"
                 for v in reversed(values):  # match last entry
-                    match = parseval(v)
-                    if match and match.group(3):
-                        unit = v[match.end(3) :].strip()  # noqa: E203
+                    parsed = parseval(v)
+                    if parsed and parsed.group(3):
+                        unit = v[parsed.end(3) :].strip()  # noqa: E203
                         ulow = unit.lower()
                         if not ylabel and matchstr(rslt, ulow):
-                            yvalue.append(float(match.group(3)))
+                            yvalue.append(float(parsed.group(3)))
                             ylabel = unit
                         if not slabel and sdo and matchstr(smry, ulow):
-                            meanvl.append(float(match.group(3)))
+                            meanvl.append(float(parsed.group(3)))
                             slabel = unit
                 # match --result secondary against "init"
                 for v in reversed(values):  # match last entry
-                    match = parseval(v)
-                    if match and match.group(3):
+                    parsed = parseval(v)
+                    if parsed and parsed.group(3):
                         init = (
-                            match.group(1).strip(": ")
-                            if match.group(1)
+                            parsed.group(1).strip(": ")
+                            if parsed.group(1)
                             else ""  # noqa: E501
                         )
-                        unit = v[match.end(3) :].strip()  # noqa: E203
+                        unit = v[parsed.end(3) :].strip()  # noqa: E203
                         ulab = unit if unit else init
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
-                            yvalue.append(float(match.group(3)))
+                            yvalue.append(float(parsed.group(3)))
                             ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
-                            meanvl.append(float(match.group(3)))
+                            meanvl.append(float(parsed.group(3)))
                             slabel = ulab
                         if (not aunit or ulab == aunit) and matchstr(
                             args.analyze, ilow
@@ -250,7 +266,7 @@ def main(args):
                                 if not aunit:
                                     aunit = ulab
                                 analyze[init] = []
-                            analyze[init].append(float(match.group(3)))
+                            analyze[init].append(float(parsed.group(3)))
 
             if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
@@ -276,8 +292,8 @@ def main(args):
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
-                            amax = float("-inf")
-                            amin = float("inf")
+                            amax = infneg
+                            amin = infpos
                             for a in analyze:
                                 values = [v for v in analyze[a] if 0 < v]
                                 vnew = values[0 : args.mean]  # noqa: E203
@@ -295,10 +311,10 @@ def main(args):
                                         analyze_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
-                            if analyze_min and 0 != vmin and 0 != amin:
+                            if analyze_min and 0 != vmin and infpos != amin:
                                 vlabel = analyze_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
-                            if analyze_max and 0 != vmax and 0 != amax:
+                            if analyze_max and 0 != vmax and infneg != amax:
                                 vlabel = analyze_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
                 else:
@@ -334,11 +350,44 @@ def main(args):
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
-    figure.savefig(figfile)
+    # determine filename (graphics)
+    figtypes = plot.gcf().canvas.get_supported_filetypes()
+    argfig = pathlib.Path(args.figure)
+    deffig = pathlib.Path(argd.figure)
+    if argfig.is_dir():
+        figloc = argfig
+        figext = deffig.suffix
+        figstm = deffig.stem
+    elif argfig.suffix[1:] in figtypes.keys():
+        figloc = argfig.parent
+        figext = argfig.suffix
+        figstm = argfig.stem
+    elif "." == str(argfig.parent):
+        figloc = argfig.parent
+        figext = (
+            f".{argfig.name}"
+            if argfig.name in figtypes.keys()
+            else deffig.suffix
+        )
+        figstm = deffig.stem
+    else:
+        figloc = argfig.parent
+        figext = deffig.suffix
+        figstm = argfig.stem if argfig.stem else deffig.stem
+    if 0 < len(match):
+        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
+        clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
+        parts = [s.lower() for c in clean for s in c.split("_")]
+        figstm = f"{figstm}-{'_'.join(dict.fromkeys(parts))}"
+    figout = figloc / f"{figstm}{figext}"
+    # save graphics file
+    figure.savefig(figout)
 
 
 if __name__ == "__main__":
-    here = pathlib.Path(__file__).absolute().parent
+    path = pathlib.Path(__file__)
+    here = path.absolute().parent
+    base = path.stem
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -347,8 +396,15 @@ if __name__ == "__main__":
         "-f",
         "--filepath",
         type=pathlib.Path,
-        default=here / "tool_report.json",
+        default=here / f"{base}.json",
         help="JSON-database used to cache results",
+    )
+    argparser.add_argument(
+        "-g",
+        "--figure",
+        type=str,
+        default=f"{base}.png",
+        help="Graphics format, filename, or path",
     )
     argparser.add_argument(
         "-i",
@@ -426,5 +482,13 @@ if __name__ == "__main__":
         default=30,
         help="Number of builds",
     )
+    argparser.add_argument(
+        "-k",
+        "--inflight",
+        type=int,
+        default=2,
+        help="Re-scan builds",
+    )
     args = argparser.parse_args()
-    main(args)
+    argd = argparser.parse_args([])
+    main(args, argd)

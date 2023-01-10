@@ -1017,6 +1017,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_3reg_general( "evex_reg_VSQRTSS", &mycode, LIBXSMM_X86_INSTR_VSQRTSS, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPXORD", &mycode, LIBXSMM_X86_INSTR_VPXORD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPORD", &mycode, LIBXSMM_X86_INSTR_VPORD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPXORQ", &mycode, LIBXSMM_X86_INSTR_VPXORQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
+  test_evex_compute_3reg_general( "evex_reg_VPORQ", &mycode, LIBXSMM_X86_INSTR_VPORQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPANDD", &mycode, LIBXSMM_X86_INSTR_VPANDD, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPANDQ", &mycode, LIBXSMM_X86_INSTR_VPANDQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
   test_evex_compute_3reg_general( "evex_reg_VPADDQ", &mycode, LIBXSMM_X86_INSTR_VPADDQ, 0, LIBXSMM_X86_IMM_UNDEF, 32 );
@@ -1435,6 +1437,8 @@ int main( /*int argc, char* argv[]*/ ) {
   test_evex_compute_mem_2reg_general( "evex_mem_VSUBSS", &mycode, LIBXSMM_X86_INSTR_VSUBSS, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPXORD", &mycode, LIBXSMM_X86_INSTR_VPXORD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPORD", &mycode, LIBXSMM_X86_INSTR_VPORD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPXORQ", &mycode, LIBXSMM_X86_INSTR_VPXORQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
+  test_evex_compute_mem_2reg_general( "evex_mem_VPORQ", &mycode, LIBXSMM_X86_INSTR_VPORQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPANDD", &mycode, LIBXSMM_X86_INSTR_VPANDD, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPANDQ", &mycode, LIBXSMM_X86_INSTR_VPANDQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
   test_evex_compute_mem_2reg_general( "evex_mem_VPADDQ", &mycode, LIBXSMM_X86_INSTR_VPADDQ, 2, LIBXSMM_X86_IMM_UNDEF, 32, 0, 1 );
