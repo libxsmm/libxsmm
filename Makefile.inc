@@ -194,27 +194,8 @@ ifneq (0,$(call qnum,$(PLATFORM))) # NaN
   DFLAGS += -DLIBXSMM_PLATFORM_FORCE
 endif
 
-OFFLOAD ?= 0
-ifneq (0,$(OFFLOAD))
-  MPSS ?= 1
-  KNC ?= 1
-else
-  MPSS ?= 0
-  KNC ?= 0
-endif
-
 DEPDIR ?= $(ROOTDIR)
-ifeq (0,$(KNC))
-  LIBNAME ?= $(DEPDIR)/lib/libxsmm
-else ifneq (3,$(AVX))
-  ifeq (0,$(OFFLOAD))
-    LIBNAME ?= $(DEPDIR)/lib/mic/libxsmm
-  else
-    LIBNAME ?= $(DEPDIR)/lib/libxsmm
-  endif
-else
-  LIBNAME ?= $(DEPDIR)/lib/libxsmm
-endif
+LIBNAME ?= $(DEPDIR)/lib/libxsmm
 
 # Additional library search paths
 LIBFIND ?= /usr/local/lib
@@ -852,8 +833,6 @@ else ifeq (1,$(SSE)) # discover SSE
   else ifneq (,$(CPUFLAGS_X86))
     SSE := 0
   endif
-else ifneq (0,$(KNC))
-  MPSS := 1
 endif
 AVX ?= 0
 MIC ?= 0
@@ -1227,10 +1206,7 @@ ifneq (0,$(INTEL))
   endif
   CPEDANTIC += $(WCHECK_CFLAG) -diag-disable 177,981,1419,1572,2547,10382
   ifeq (0,$(ICX))
-    CPEDANTIC += -diag-disable 593,1599,2415,2591
-    ifeq (0,$(WCHECK))
-      CPEDANTIC += -diag-disable 2259
-    endif
+    CPEDANTIC += -diag-disable 593,1599,2259,2415,2591
   endif
   CWARNEXTRA := -Wremarks
   ifeq (1,$(PEDANTIC))
@@ -1276,26 +1252,14 @@ ifneq (0,$(INTEL))
       FCFLAGS += $(FFORM_FLAG)
     endif
   endif
-  ifeq (0,$(OFFLOAD))
-  ifeq (0,$(ICX))
-    ifneq (0,$(shell echo "$$((150000<=$(CC_VERSION_NUM)))"))
-      NO_OFFLOAD_FLAG := -qno-offload
-    else
-      NO_OFFLOAD_FLAG := -no-offload
-    endif
-  endif
-  endif
-  CXXFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
-  CFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
+  CXXFLAGS += $(OPTFLAGS)
+  CFLAGS += $(OPTFLAGS)
+  FCFLAGS += $(OPTFLAGS)
   ifeq (,$(strip $(GFC)))
-    FCFLAGS += $(OPTFLAGS) $(NO_OFFLOAD_FLAG)
     # flag specifying output directory must be last
     FMFLAGS += -module
-  else
-    FCFLAGS += $(OPTFLAGS)
-    ifeq (0,$(ICX))
-      FMFLAGS += -J
-    endif
+  else ifeq (0,$(ICX))
+    FMFLAGS += -J
   endif
   # avoid turning OpenMP limits into an error (-Werror)
   ifneq (,$(WERROR_CFLAG))
@@ -2125,13 +2089,8 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   endif
   ifneq (Windows_NT,$(UNAME))
     ifneq (0,$(INTEL))
-      ifeq (0,$(OFFLOAD))
-        FLDFLAGS += $(XLIB_BEGIN) $(call ldflib,$(FLD),$(SLDFLAGS),pthread) $(XLIB_END)
-        CLDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
-      else
-        FLDFLAGS += -pthread
-        CLDFLAGS += -pthread
-      endif
+      FLDFLAGS += -pthread
+      CLDFLAGS += -pthread
     else ifneq (Darwin,$(UNAME))
       FLDFLAGS += -pthread
       CLDFLAGS += -pthread
@@ -2290,11 +2249,6 @@ endif
 ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   MKL_THREADS := sequential
-  ifneq (0,$(INTEL))
-  ifneq (0,$(OFFLOAD))
-    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM) $(LIBDL)"
-  endif
-  endif
 else ifneq (0,$(MKL)) # multi-threaded
   BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   MKL_THREADS := $(MKL_OMPRTL)_thread
@@ -2309,14 +2263,6 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(THREADS))
     BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBPTHREAD) $(XLIB_END)
-  endif
-  ifneq (0,$(INTEL))
-  ifneq (0,$(OFFLOAD))
-    BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(LIBM) $(LIBDL)"
-    ifeq (0,$(OMP))
-      BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
-    endif
-  endif
   endif
 endif
 
@@ -2333,26 +2279,12 @@ ifneq (0,$(MKL))
       $(call abslibfile,libmkl_core.$(ILIBEXT)) \
       $(call abslibfile,libmkl_$(MKL_THREADS).$(ILIBEXT)) \
       $(BLAS_LDFLAGS)
-    ifneq (0,$(INTEL))
-    ifneq (0,$(OFFLOAD))
-      BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS)"
-    endif
-    endif
   else # static
     BLAS_LDFLAGS := $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_THREADS).$(SLIBEXT) \
     $(XGROUP_END) $(BLAS_LDFLAGS)
-    ifneq (0,$(INTEL))
-    ifneq (0,$(OFFLOAD))
-      BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
-        $(MKLROOT)/lib/mic/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/mic/libmkl_$(MKL_THREADS).$(SLIBEXT) \
-      --end-group"
-    endif
-    endif
   endif
 else ifneq (0,$(BLAS)) # generic
   ifneq (,$(AOCL_ROOT))

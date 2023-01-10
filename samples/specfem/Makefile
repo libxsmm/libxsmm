@@ -46,12 +46,12 @@ endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/$(OUTNAME)
 
 # specfem example specific
-MODULES += my_libxsmm.mod constants.mod specfem_par.mod my_libxsmm.modmic constants.modmic specfem_par.modmic
+MODULES += my_libxsmm.mod constants.mod specfem_par.mod
 DFLAGS += -DFORCE_VECTORIZATION
 
 # OpenMP directives support
@@ -59,19 +59,9 @@ ifneq (0,$(OMP))
 DFLAGS += -DUSE_OPENMP
 endif
 
-# fixes library paths: substitutes path name from ../mkl/lib/intel64/.. to ../mkl/lib/mic/..
-ifneq (0,$(KNC))
-ifneq (0,$(MPSS))
-lib_intel := mkl/lib/intel64
-lib_mic := mkl/lib/mic
-LDFLAGS_MIC = $(subst $(lib_intel),$(lib_mic),$(LDFLAGS))
-endif
-endif
-
 ##
 ## targets
 ##
-
 .PHONY: all
 all: $(XFILES)
 
@@ -80,22 +70,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP)
-ifneq (0,$(KNC))
-ifneq (0,$(MPSS))
-	@echo ""
-	@echo "building MIC/KNC version"
-	@echo ""
-	$(FLD) -o $@ -mmic $(FTNOBJS) $(FORTLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS_MIC) $(FLDFLAGS) $(ELDFLAGS)
-endif
-endif
-ifeq (0,$(KNC))
-ifeq (0,$(MPSS))
-	@echo ""
-	@echo "building host version"
-	@echo ""
 	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
-endif
-endif
 else
 .PHONY: $(OUTDIR)/specfem
 endif
@@ -141,22 +116,9 @@ $(BLDDIR)/compute_forces_xsmm_static-f90.o: $(BLDDIR)/specfem-f90.o
 ## rules
 ##
 ifneq (,$(strip $(FC)))
-ifneq (0,$(KNC))
-ifneq (0,$(MPSS))
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) -mmic -c $< -o $@
-
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) -mmic -c $< -o $@
-endif
-endif
-ifeq (0,$(KNC))
-ifeq (0,$(MPSS))
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
 
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(FCFLAGS) $(FTARGET) -c $< -o $@
-endif
-endif
 endif

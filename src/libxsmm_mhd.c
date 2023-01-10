@@ -11,13 +11,7 @@
 #include <libxsmm_mhd.h>
 #include "libxsmm_main.h" /* libxsmm_typesize */
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <ctype.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_MHD_MAX_LINELENGTH)
 # define LIBXSMM_MHD_MAX_LINELENGTH 1024

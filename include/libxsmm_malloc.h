@@ -25,17 +25,17 @@
 
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_fun)(size_t /*size*/);
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_malloc_fun)(size_t /*size*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_malloc_function {
   libxsmm_malloc_ctx ctx_form;
   libxsmm_malloc_fun function;
 } libxsmm_malloc_function;
 
 /** Function types accepted for releasing memory (see libxsmm_*_allocator). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*buffer*/, const void* /*context*/);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_fun)(void* /*buffer*/);
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_ctx)(void* /*buffer*/, const void* /*context*/);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_free_fun)(void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef union libxsmm_free_function {
   libxsmm_free_ctx ctx_form;
   libxsmm_free_fun function;
 } libxsmm_free_function;
@@ -130,7 +130,7 @@ LIBXSMM_API void libxsmm_pfree(void* pointer, void* pool[], size_t* i);
 LIBXSMM_API void libxsmm_release_scratch(void);
 
 /** Information about a buffer (default memory domain). */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
+LIBXSMM_EXTERN_C typedef struct libxsmm_malloc_info {
   /** Size of the buffer. */
   size_t size;
 } libxsmm_malloc_info;
@@ -139,7 +139,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
 LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
 
 /** Information about the scratch memory domain. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
+LIBXSMM_EXTERN_C typedef struct libxsmm_scratch_info {
   /** Watermark memory across pools (size), unsatisfied (local), and library-internal memory. */
   size_t size, local, internal;
   /** Pending allocations (not released). */
@@ -188,7 +188,7 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
 #if defined(__cplusplus)
 
 /** RAII idiom to temporarily setup an allocator for the lifetime of the scope. */
-template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_scoped_allocator {
+template<typename kind> class libxsmm_scoped_allocator {
 public:
   /** C'tor, which instantiates the new allocator (plain form). */
   libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn) {
@@ -222,7 +222,7 @@ protected: /* saved/previous allocator */
 };
 
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
-struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
+struct libxsmm_default_allocator {
   static void set(const void* context,
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
@@ -245,7 +245,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
 };
 
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
-struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
+struct libxsmm_scratch_allocator {
   static void set(const void* context,
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
@@ -287,7 +287,7 @@ namespace tensorflow {
  * of kind "libxsmm_default_allocator" makes the default memory
  * allocation of LIBXSMM subject to TensorFlow as well.
  */
-template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_tf_allocator:
+template<typename kind> class libxsmm_tf_allocator:
   public libxsmm_scoped_allocator<kind>
 {
 public:

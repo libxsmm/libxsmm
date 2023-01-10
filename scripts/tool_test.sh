@@ -291,10 +291,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     CONFIGFILE=""
     if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
       CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
-      if [ ! "${CONFIGFILES[@]}" ]; then
+      if [[ ! "${CONFIGFILES[@]}" ]]; then
         CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
       fi
-      if [ "${CONFIGFILES[@]}" ]; then
+      if [[ "${CONFIGFILES[@]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
           CONFIGFILES=($(echo "${CONFIGFILES}" | ${SED} "/\(${CONFIGPAT}\)/d"))

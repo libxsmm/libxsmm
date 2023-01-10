@@ -307,7 +307,7 @@ unsigned int internal_crc32_sse4(unsigned int seed, const void* data, size_t siz
 LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch)
 {
   /* table-based implementation taken from http://dpdk.org/. */
-  static const LIBXSMM_RETARGETABLE internal_crc32_entry_type crc32_table[] = {
+  static const internal_crc32_entry_type crc32_table[] = {
     { /*table0*/
       0x00000000, 0xF26B8303, 0xE13B70F7, 0x1350F3F4, 0xC79A971F, 0x35F1141C, 0x26A1E7E8, 0xD4CA64EB,
       0x8AD958CF, 0x78B2DBCC, 0x6BE22838, 0x9989AB3B, 0x4D43CFD0, 0xBF284CD3, 0xAC78BF27, 0x5E133C24,

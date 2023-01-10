@@ -38,7 +38,7 @@ typedef enum libxsmm_mhd_elemtype {
  * The value-range (src_min, src_max) may be used to scale values
  * in case of a type-conversion.
  */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE int (*libxsmm_mhd_element_handler)(
+LIBXSMM_EXTERN_C typedef int (*libxsmm_mhd_element_handler)(
   void* dst, libxsmm_mhd_elemtype dst_type, libxsmm_mhd_elemtype src_type,
   const void* src, const void* src_min, const void* src_max);
 
