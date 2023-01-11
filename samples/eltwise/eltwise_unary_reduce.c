@@ -110,7 +110,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
           for (jj = 0; jj < n_cols_idx; jj++) {
             j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
             if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
                 ref_result_reduce_elts[i] = sinp[j*ld_in + i];
                 ref_argop_off[i] = j;
               }
@@ -235,7 +235,7 @@ void reference_reduce_kernel( libxsmm_blasint m, libxsmm_blasint n, libxsmm_blas
           for (jj = 0; jj < n_cols_idx; jj++) {
             j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
             if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
                 ref_result_reduce_elts[i] = sinp[j*ld_in + i];
                 ref_argop_off[i] = j;
               }

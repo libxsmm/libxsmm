@@ -1245,7 +1245,8 @@ void libxsmm_aarch64_extract_mask2_from_mask4( libxsmm_generated_code* io_genera
     unsigned int input_vec_mask,
     unsigned int output_vec_mask,
     unsigned int lohi) {
-  if (io_generated_code->arch == LIBXSMM_AARCH64_A64FX){
+  unsigned char is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
+  if (is_sve > 0){
     libxsmm_aarch64_instruction_sve_compute( io_generated_code, lohi == 0 ? LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_L : LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H,
                                              input_vec_mask, input_vec_mask, 0, output_vec_mask, 0, LIBXSMM_AARCH64_SVE_TYPE_S );
   } else {
