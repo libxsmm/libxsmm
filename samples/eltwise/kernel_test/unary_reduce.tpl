@@ -29,6 +29,8 @@ REDUCE_ROWS=0
 REDUCE_OP=0
 N_IDX=0
 USE_ACC=0
+IDX_TYPE=0
+RECORD_IDX=0
 
 for i in `cat ${TESTFILE1}`
 do
@@ -38,7 +40,7 @@ do
   LDO=`echo ${i} | awk -F"_" '{print $4}'`
   echo ${M} ${N} ${LDI} ${LDI}
   N_ADJ=$((${N} + ${N_IDX}))
-  ./eltwise_unary_reduce ${M} ${N_ADJ} ${LDI} ${REDUCE_X} ${REDUCE_X2} ${REDUCE_ROWS} ${REDUCE_OP} ${PREC} ${N_IDX} 0 0 0 ${USE_ACC}
+  ./eltwise_unary_reduce ${M} ${N_ADJ} ${LDI} ${REDUCE_X} ${REDUCE_X2} ${REDUCE_ROWS} ${REDUCE_OP} ${PREC} ${N_IDX} 0 ${IDX_TYPE} ${RECORD_IDX} ${USE_ACC}
 done
 
 rm ${TESTFILE1}
