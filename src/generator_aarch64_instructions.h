@@ -451,6 +451,7 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V      0x65004093 /* 0x10 belongs to the instruction, not to the flags! */
                                                             /* fp compare greater than, store result into predicate register (dst is predicate register!) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V      0x65004183 /* fp compare less than, store result into pred reg (dst is pred reg) */
+#define LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V      0x65004193 /* fp compare less than, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V      0x65004083 /* fp compare greater than or equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V      0x65102092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
 #define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V        0x64608003 /* BF16 dot-product */

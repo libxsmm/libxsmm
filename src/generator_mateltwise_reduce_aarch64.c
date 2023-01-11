@@ -1548,7 +1548,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       reduceop_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FADD_V : LIBXSMM_AARCH64_INSTR_ASIMD_FADD_V;
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
       reduceop_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
-      argop_cmp_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
+      argop_cmp_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V : LIBXSMM_AARCH64_INSTR_ASIMD_FCMGE_R_V;
       argop_blend_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_SEL_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_BIT_V;
     } else if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MIN) > 0) {
       reduceop_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMIN_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMIN_V;

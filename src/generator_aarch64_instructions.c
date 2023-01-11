@@ -1213,6 +1213,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
@@ -1247,6 +1248,14 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
   if ( l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V ) {
     unsigned char l_tmp = l_vec_reg_src_0;
     l_vec_instr = LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V;
+    l_vec_reg_src_0 = l_vec_reg_src_1;
+    l_vec_reg_src_1 = l_tmp;
+  }
+
+  /* fp compare less equal than is a pseudo instruction: greater than with switched source registers */
+  if ( l_vec_instr == LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V ) {
+    unsigned char l_tmp = l_vec_reg_src_0;
+    l_vec_instr = LIBXSMM_AARCH64_INSTR_SVE_FCMGT_P_V;
     l_vec_reg_src_0 = l_vec_reg_src_1;
     l_vec_reg_src_1 = l_tmp;
   }
