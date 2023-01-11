@@ -58,12 +58,13 @@ def parseval(string):
     )
 
 
-def matchstr(s1, s2):
+def matchstr(s1, s2, exact=True):
     if s1:
-        if not re.search(r"\d+$", s1) or not re.search(r"\d+$", s2):
-            return s1 in s2
-        else:  # avoid matching, e.g. "a12" if "a1" is searched
+        if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
+            # avoid matching, e.g. "a12" if "a1" is searched
             return (s1 + ".") in (s2 + ".")
+        else:
+            return s1 in s2
     else:
         return False
 
@@ -92,8 +93,21 @@ def main(args, argd):
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
-    select = args.select.lower().split() if args.select else []
-    query = args.query.lower().split()
+    if args.select:
+        select = (
+            args.select.lower().split()
+            if not args.exact_select
+            else [args.select.lower()]
+        )
+    else:
+        select = []
+    query = (
+        args.query.lower().split()
+        if not args.exact_query
+        else [args.query.lower()]
+        if args.query
+        else []
+    )
     smry = args.summary.lower()
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
@@ -213,7 +227,7 @@ def main(args, argd):
         1
         for e in template
         if not select
-        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     )
     figure, axes = plot.subplots(
         max(nselect, 1), sharex=True, figsize=(9, 6), dpi=300
@@ -228,7 +242,7 @@ def main(args, argd):
         e
         for e in template
         if not select
-        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     ):
         for value in (
             v
@@ -239,6 +253,8 @@ def main(args, argd):
             meanvl = []  # determined by --summary
             sunit = aunit = None
             analyze = dict()
+            analyze_min = ""
+            analyze_max = ""
             if value not in match:
                 match.append(value)
             for build in (
@@ -311,6 +327,7 @@ def main(args, argd):
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
+                            vmax = vmin = 0
                             amax = infneg
                             amin = infpos
                             for a in analyze:
@@ -472,6 +489,18 @@ if __name__ == "__main__":
         type=str,
         default="resnet",
         help="Set of values",
+    )
+    argparser.add_argument(
+        "-x",
+        "--exact-query",
+        action="store_true",
+        help="Exact query",
+    )
+    argparser.add_argument(
+        "-y",
+        "--exact-select",
+        action="store_true",
+        help="Exact select",
     )
     argparser.add_argument(
         "-r",
