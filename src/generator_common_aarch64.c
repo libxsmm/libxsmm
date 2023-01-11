@@ -174,7 +174,7 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
   unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
   unsigned int l_shift_amount = (i_datatype_size == 4) ? 2 : 1;
   libxsmm_aarch64_asimd_width l_idx_move_asimd_width = (i_idx_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
-  libxsmm_aarch64_asimd_width l_data_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+  libxsmm_aarch64_asimd_width l_data_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H;
   unsigned int l_active_elements = (i_masked_elems == 0) ? libxsmm_cpuid_vlen(io_generated_code->arch)/i_idx_datatype_size : i_masked_elems;
 
   for (i = 0; i < l_active_elements; i++) {
