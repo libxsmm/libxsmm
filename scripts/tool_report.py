@@ -225,7 +225,8 @@ def main(args, argd):
             json.dump(database, file, indent=2)
             file.write("\n")  # append newline at EOF
 
-    templkey = dbkeys[-inflight - 1]  # string
+    templidx = min(inflight + 1, len(dbkeys))
+    templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
     nselect = sum(
         1
