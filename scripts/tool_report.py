@@ -108,9 +108,8 @@ def main(args, argd):
         print(f"Create new database {args.filepath}")
         database = dict()
         pass
-    latest = (
-        max(max(int(e) for e in database) - inflight, 0) if database else 0
-    )
+    dbkeys = list(database.keys())
+    latest = int(dbkeys[-1]) if dbkeys else 0
 
     if args.infile:
         try:
@@ -123,18 +122,23 @@ def main(args, argd):
     if args.infile:
         outfile = f"{args.infile.stem}.json"
         ofmtime = mtime(outfile)
-        next = latest + inflight + 1
+        next = latest + 1
+        nbld = (
+            args.nbuild
+            if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
+            else next
+        )
+        name = args.query if args.query and args.nbuild else args.infile.stem
         nentries, nerrors = parselog(
             database,
-            str(args.nbuild if (args.nbuild and args.nbuild < next) else next),
-            args.query if args.query and args.nbuild else args.infile.stem,
+            str(nbld),
+            name,
             txt,
             nentries,
             nerrors,
             select=args.select,
         )
         if 0 < nentries:
-            # latest = latest + 1
             latest = next
     else:  # connect to URL
         outfile = args.filepath
@@ -162,7 +166,7 @@ def main(args, argd):
                 # JSON stores integers as string
                 strbuild = str(nbuild)
                 if (
-                    nbuild <= latest
+                    nbuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
                 ):
@@ -203,7 +207,8 @@ def main(args, argd):
                 json.dump(database, file, indent=2)
                 file.write("\n")  # append newline at EOF
 
-    template = database[str(latest)] if str(latest) in database else []
+    templkey = dbkeys[-inflight - 1]  # string
+    template = database[templkey] if templkey in database else []
     nselect = sum(
         1
         for e in template
