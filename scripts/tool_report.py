@@ -101,6 +101,19 @@ def main(args, argd):
     nerrors = nentries = 0
     match = []
 
+    if args.infile:
+        try:
+            with open(args.infile, "r") as file:
+                txt = file.read()
+        except:  # noqa: E722
+            args.infile = None
+            pass
+        outfile = f"{args.infile.stem}.json"
+    else:  # connect to URL
+        outfile = args.filepath
+
+    # timestamp before loading database
+    ofmtime = mtime(outfile)
     try:
         with open(args.filepath, "r") as file:
             database = json.load(file)
@@ -112,16 +125,6 @@ def main(args, argd):
     latest = int(dbkeys[-1]) if dbkeys else 0
 
     if args.infile:
-        try:
-            with open(args.infile, "r") as file:
-                txt = file.read()
-        except:  # noqa: E722
-            args.infile = None
-            pass
-
-    if args.infile:
-        outfile = f"{args.infile.stem}.json"
-        ofmtime = mtime(outfile)
         next = latest + 1
         nbld = (
             args.nbuild
@@ -141,8 +144,6 @@ def main(args, argd):
         if 0 < nentries:
             latest = next
     else:  # connect to URL
-        outfile = args.filepath
-        ofmtime = mtime(outfile)
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -201,11 +202,10 @@ def main(args, argd):
     print(f"Found {nentries} new entr{y}.")
     if database:
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-    if 0 != nentries:
-        if ofmtime == mtime(outfile):  # avoid concurrent modification
-            with open(outfile, "w") as file:
-                json.dump(database, file, indent=2)
-                file.write("\n")  # append newline at EOF
+    if 0 != nentries and ofmtime == mtime(outfile):  # avoid concurrent change
+        with open(outfile, "w") as file:
+            json.dump(database, file, indent=2)
+            file.write("\n")  # append newline at EOF
 
     templkey = dbkeys[-inflight - 1]  # string
     template = database[templkey] if templkey in database else []
