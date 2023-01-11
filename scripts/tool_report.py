@@ -79,12 +79,19 @@ def num2str(num):
     )
 
 
+def mtime(filename):
+    try:
+        return pathlib.Path(filename).stat().st_mtime
+    except:  # noqa: E722
+        return 0
+
+
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
-    select = args.select.lower().split()
+    select = str(args.select).lower().split()
     query = args.query.lower().split()
     smry = args.summary.lower()
     rslt = args.result.lower()
@@ -114,6 +121,7 @@ def main(args, argd):
 
     if args.infile:
         outfile = f"{args.infile.stem}.json"
+        ofmtime = mtime(outfile)
         nentries, nerrors = parselog(
             database,
             str(latest + inflight + 1),
@@ -126,6 +134,7 @@ def main(args, argd):
             latest = latest + 1
     else:  # connect to URL
         outfile = args.filepath
+        ofmtime = mtime(outfile)
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -185,9 +194,10 @@ def main(args, argd):
     if database:
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
     if 0 != nentries:
-        with open(outfile, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
+        if ofmtime == mtime(outfile):  # avoid concurrent modification
+            with open(outfile, "w") as file:
+                json.dump(database, file, indent=2)
+                file.write("\n")  # append newline at EOF
 
     template = database[str(latest)] if str(latest) in database else []
     nselect = sum(
@@ -437,8 +447,8 @@ if __name__ == "__main__":
         "-e",
         "--select",
         type=str,
-        default="",
-        help="Select entry",
+        default=None,
+        help="Category, all if none",
     )
     argparser.add_argument(
         "-q",
