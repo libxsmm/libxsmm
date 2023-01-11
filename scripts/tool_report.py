@@ -18,7 +18,7 @@ import json
 import re
 
 
-def parselog(database, strbuild, jobname, txt, nentries, nerrors):
+def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
     for match in (
         match
         for match in re.finditer(
@@ -26,6 +26,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         )
         if match and match.group(1) and match.group(2)
     ):
+        category = match.group(1) if not select else select
         values = [
             line.group(1)
             for line in re.finditer(r"([^\n\r]+)", match.group(2))
@@ -34,13 +35,13 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         if not any("syntax error" in v for v in values):
             if strbuild not in database:
                 database[strbuild] = dict()
-            if match.group(1) not in database[strbuild]:
-                database[strbuild][match.group(1)] = dict()
-            if jobname not in database[strbuild][match.group(1)]:
-                database[strbuild][match.group(1)][jobname] = dict()
-            oldval = database[strbuild][match.group(1)][jobname]
+            if category not in database[strbuild]:
+                database[strbuild][category] = dict()
+            if jobname not in database[strbuild][category]:
+                database[strbuild][category][jobname] = dict()
+            oldval = database[strbuild][category][jobname]
             if values != oldval:
-                database[strbuild][match.group(1)][jobname] = values
+                database[strbuild][category][jobname] = values
                 nentries = nentries + 1
         else:
             nerrors = nerrors + 1
@@ -122,16 +123,19 @@ def main(args, argd):
     if args.infile:
         outfile = f"{args.infile.stem}.json"
         ofmtime = mtime(outfile)
+        next = latest + inflight + 1
         nentries, nerrors = parselog(
             database,
-            str(latest + inflight + 1),
-            args.infile.stem,
+            str(args.nbuild if (args.nbuild and args.nbuild < next) else next),
+            args.query if args.query and args.nbuild else args.infile.stem,
             txt,
             nentries,
             nerrors,
+            select=args.select,
         )
         if 0 < nentries:
-            latest = latest + 1
+            # latest = latest + 1
+            latest = next
     else:  # connect to URL
         outfile = args.filepath
         ofmtime = mtime(outfile)
@@ -421,7 +425,14 @@ if __name__ == "__main__":
         "--infile",
         type=pathlib.Path,
         default=None,
-        help="Input as if loaded from Buildkite",
+        help="Input data as if loaded from Buildkite",
+    )
+    argparser.add_argument(
+        "-j",
+        "--nbuild",
+        type=int,
+        default=None,
+        help="Where to insert, not limited to infile",
     )
     argparser.add_argument(
         "-c",
