@@ -122,7 +122,11 @@ def main(args, argd):
         except:  # noqa: E722
             args.infile = None
             pass
-        outfile = f"{args.infile.stem}.json"
+        outfile = (
+            f"{args.infile.stem}.json"
+            if args.filepath == argd.filepath
+            else args.filepath
+        )
     else:  # connect to URL
         outfile = args.filepath
 
