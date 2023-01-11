@@ -92,7 +92,7 @@ def main(args, argd):
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
-    select = str(args.select).lower().split()
+    select = args.select.lower().split() if args.select else []
     query = args.query.lower().split()
     smry = args.summary.lower()
     rslt = args.result.lower()
