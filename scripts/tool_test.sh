@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2064,SC2129,SC2153,SC2207
+# shellcheck disable=SC1090,SC2129,SC2153,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
@@ -84,8 +84,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     export TRAVIS_OS_NAME
   fi
+  if [ "${HOSTNAME}" ]; then
+    HOSTNAME=$(echo "${HOSTNAME}" | cut -d. -f1 2>/dev/null)
+  fi
   if [ ! "${HOSTNAME}" ]; then
     HOSTNAME=$(hostname -s 2>/dev/null)
+  fi
+  HOSTDELIMCHAR="-"
+  HOSTPREFIX=$(echo "${HOSTNAME}" | cut -d${HOSTDELIMCHAR} -f1 2>/dev/null)
+  if [ "${HOSTPREFIX}" ]; then
+    HOSTPREFIX="${HOSTPREFIX}${HOSTDELIMCHAR}"
   fi
 
   # setup PARTITIONS for multi-tests
@@ -170,8 +178,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   rm -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
-    if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" \
+    STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
+    if [ "${STEPNAME}" ]; then
+      LABEL=$(echo "${STEPNAME}" \
         | ${TR} -s "[:punct:][:space:]" "-" \
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
@@ -214,9 +223,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   if [[ "${UMASK}" && (! "${TESTSCRIPT}" || ! -e "${TESTSCRIPT}") ]]; then
     # TODO: derive permissions from UMASK
-    trap "rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)" EXIT
+    trap 'rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)' EXIT
   else
-    trap "rm ${TESTSCRIPT} ${ENVFILE}" EXIT
+    trap 'rm ${TESTSCRIPT} ${ENVFILE}' EXIT
   fi
 
   RESULT=0
@@ -281,20 +290,24 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${ROOT}/.env/${HOSTNAME}" ]; then
-      CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
-      if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
-      else
-        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+    if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
+      CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
+      if [[ ! "${CONFIGFILES[@]}" ]]; then
+        CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
       fi
-      CONFIGCOUNT=${#CONFIGFILES[@]}
-      if [ "0" != "${CONFIGCOUNT}" ]; then
-        CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
-        CONFIG=$(basename "${CONFIGFILE}" .env)
-      else
-        echo "WARNING: configuration \"${CONFIG}\" not found!"
-        CONFIGFILE=""
+      if [[ "${CONFIGFILES[@]}" ]]; then
+        CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
+        if [ "${CONFIGPAT}" ]; then
+          CONFIGFILES=($(echo "${CONFIGFILES}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        fi
+        CONFIGCOUNT=${#CONFIGFILES[@]}
+        if [ "0" != "${CONFIGCOUNT}" ]; then
+          CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+          CONFIG=$(basename "${CONFIGFILE}" .env)
+        else
+          echo "WARNING: configuration \"${CONFIG}\" not found!"
+          CONFIGFILE=""
+        fi
       fi
     fi
     COUNT_ENV=0; for ENV in ${ENVS}; do
@@ -329,7 +342,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
           EXIT_TRAP="(${EXIT_TRAP}); (chmod -Rf g+u,o=u-w ${REPOREMOTE} || true)"
         fi
-        echo "trap \"${EXIT_TRAP}\" EXIT" >>"${TESTSCRIPT}"
+        echo "trap '${EXIT_TRAP}' EXIT" >>"${TESTSCRIPT}"
         echo "${UMASK_CMD}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"

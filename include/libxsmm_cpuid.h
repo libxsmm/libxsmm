@@ -51,7 +51,7 @@
 #define LIBXSMM_AARCH64_ALLFEAT       2999
 
  /** Zero-initialized structure; assumes conservative properties. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_cpuid_info {
+LIBXSMM_EXTERN_C typedef struct libxsmm_cpuid_info {
   char model[1024]; /** CPU-name (OS-specific implementation). */
 #if defined(LIBXSMM_PLATFORM_X86)
   int constant_tsc; /** Timer stamp counter is monotonic. */

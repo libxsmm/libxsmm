@@ -27,9 +27,6 @@
 # define LIBXSMM_TRACE_DLINFO
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -106,9 +103,6 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 #   endif
 # endif
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 LIBXSMM_APIVAR_DEFINE(int internal_trace_mindepth);

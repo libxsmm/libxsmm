@@ -41,9 +41,6 @@ cat << EOM
  * code for every (internal) change of LIBXSMM. Please make sure to only rely on the
  * public interface as the internal implementation may change without notice.
  */
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 EOM
 
 if [ "" = "$1" ]; then
@@ -64,9 +61,6 @@ for FILE in $(cd "${HERE}/${SRCDIR}" && ${GREP} -L "main[[:space:]]*(.*)" ./*.c)
 done
 
 cat << EOM
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #endif /*LIBXSMM_SOURCE_H*/
 EOM

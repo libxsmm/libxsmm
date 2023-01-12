@@ -36,9 +36,9 @@ script:
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
     make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 JITDUMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
-    make -e ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
+    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
-    make -e ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
+    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
@@ -47,7 +47,7 @@ script:
     ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
-    make -e STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
+    make -e ${MAKEJ} STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
 
   - if [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
     if [ ! "${COVERITY_SCAN_BINDIR}" ] || [ ! "${COVERITY_SCAN_USER}" ] || [ ! "${COVERITY_SCAN_TOKEN}" ]; then
