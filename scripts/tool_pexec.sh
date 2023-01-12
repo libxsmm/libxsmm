@@ -313,8 +313,9 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
   if [ "0" = "${QUIET}" ]; then
     if [ "$(command -v tr)" ]; then
       if [ "${TARGET}" ]; then AT=$(echo "@${TARGET}" | tr "[:lower:]" "[:upper:]"); fi
-      if [ "${BUILDKITE_LABEL}" ]; then
-        LABEL="$(echo "${BUILDKITE_LABEL}" | tr -s "[:punct:][:space:]" - \
+      STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
+      if [ "${STEPNAME}" ]; then
+        LABEL="$(echo "${STEPNAME}" | tr -s "[:punct:][:space:]" - \
         | ${SED} 's/^-//;s/-$//' | tr "[:lower:]" "[:upper:]")${AT} "
       else
         LABEL="$(basename "$(pwd -P)" | tr "[:lower:]" "[:upper:]")${AT} "

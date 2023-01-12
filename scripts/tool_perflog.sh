@@ -105,6 +105,7 @@ RESULT=($(${DATAMASH} 2>/dev/null <"${OFILE}" --header-in -t"${SEP}" --output-de
   | ${SED} 2>/dev/null "${NUMPAT}"))
 
 if [ "${RESULT[0]}" ] && [ "${RESULT[1]}" ]; then
+  echo # separating line
   if [ "${SLURM_JOB_PARTITION}" ]; then
     echo "+++ PERFORMANCE ${SLURM_JOB_PARTITION}"
   else
