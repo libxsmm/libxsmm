@@ -15,10 +15,11 @@ import requests
 import argparse
 import pathlib
 import json
+import sys
 import re
 
 
-def parselog(database, strbuild, jobname, txt, nentries, nerrors):
+def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
     for match in (
         match
         for match in re.finditer(
@@ -26,6 +27,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         )
         if match and match.group(1) and match.group(2)
     ):
+        category = match.group(1) if not select else select
         values = [
             line.group(1)
             for line in re.finditer(r"([^\n\r]+)", match.group(2))
@@ -34,13 +36,13 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         if not any("syntax error" in v for v in values):
             if strbuild not in database:
                 database[strbuild] = dict()
-            if match.group(1) not in database[strbuild]:
-                database[strbuild][match.group(1)] = dict()
-            if jobname not in database[strbuild][match.group(1)]:
-                database[strbuild][match.group(1)][jobname] = dict()
-            oldval = database[strbuild][match.group(1)][jobname]
+            if category not in database[strbuild]:
+                database[strbuild][category] = dict()
+            if jobname not in database[strbuild][category]:
+                database[strbuild][category][jobname] = dict()
+            oldval = database[strbuild][category][jobname]
             if values != oldval:
-                database[strbuild][match.group(1)][jobname] = values
+                database[strbuild][category][jobname] = values
                 nentries = nentries + 1
         else:
             nerrors = nerrors + 1
@@ -57,12 +59,13 @@ def parseval(string):
     )
 
 
-def matchstr(s1, s2):
+def matchstr(s1, s2, exact=True):
     if s1:
-        if not re.search(r"\d+$", s1) or not re.search(r"\d+$", s2):
-            return s1 in s2
-        else:  # avoid matching, e.g. "a12" if "a1" is searched
+        if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
+            # avoid matching, e.g. "a12" if "a1" is searched
             return (s1 + ".") in (s2 + ".")
+        else:
+            return s1 in s2
     else:
         return False
 
@@ -79,30 +82,39 @@ def num2str(num):
     )
 
 
+def mtime(filename):
+    try:
+        return pathlib.Path(filename).stat().st_mtime
+    except:  # noqa: E722
+        return 0
+
+
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
-    select = args.select.lower().split()
-    query = args.query.lower().split()
+    if args.select:
+        select = (
+            args.select.lower().split()
+            if not args.exact_select
+            else [args.select.lower()]
+        )
+    else:
+        select = []
+    query = (
+        args.query.lower().split()
+        if not args.exact_query
+        else [args.query.lower()]
+        if args.query
+        else []
+    )
     smry = args.summary.lower()
     rslt = args.result.lower()
     sdo = 0 < args.mean and smry != rslt
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     match = []
-
-    try:
-        with open(args.filepath, "r") as file:
-            database = json.load(file)
-    except:  # noqa: E722
-        print(f"Create new database {args.filepath}")
-        database = dict()
-        pass
-    latest = (
-        max(max(int(e) for e in database) - inflight, 0) if database else 0
-    )
 
     if args.infile:
         try:
@@ -111,21 +123,47 @@ def main(args, argd):
         except:  # noqa: E722
             args.infile = None
             pass
+        outfile = (
+            f"{args.infile.stem}.json"
+            if args.filepath == argd.filepath
+            else args.filepath
+        )
+    else:  # connect to URL
+        outfile = args.filepath
+
+    # timestamp before loading database
+    ofmtime = mtime(outfile)
+    try:
+        with open(args.filepath, "r") as file:
+            database = json.load(file)
+    except:  # noqa: E722
+        if 2 <= args.verbosity or 0 > args.verbosity:
+            print(f"{args.filepath} new database created.")
+        database = dict()
+        pass
+    dbkeys = list(database.keys())
+    latest = int(dbkeys[-1]) if dbkeys else 0
 
     if args.infile:
-        outfile = f"{args.infile.stem}.json"
+        next = latest + 1
+        nbld = (
+            args.nbuild
+            if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
+            else next
+        )
+        name = args.query if args.query and args.nbuild else args.infile.stem
         nentries, nerrors = parselog(
             database,
-            str(latest + inflight + 1),
-            args.infile.stem,
+            str(nbld),
+            name,
             txt,
             nentries,
             nerrors,
+            select=args.select,
         )
         if 0 < nentries:
-            latest = latest + 1
+            latest = next
     else:  # connect to URL
-        outfile = args.filepath
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -133,13 +171,13 @@ def main(args, argd):
             pass
         if builds and "message" in builds:
             message = builds["message"]
-            print(f"ERROR: {message}")
+            print(f"ERROR: {message}", file=sys.stderr)
             exit(1)
         elif not args.token:
-            print("ERROR: token is missing!")
+            print("ERROR: token is missing!", file=sys.stderr)
             exit(1)
         elif not builds:
-            print(f"WARNING: failed to connect to {url}.")
+            print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
         njobs = 0
         while builds:
@@ -149,7 +187,7 @@ def main(args, argd):
                 # JSON stores integers as string
                 strbuild = str(nbuild)
                 if (
-                    nbuild <= latest
+                    nbuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
                 ):
@@ -159,9 +197,10 @@ def main(args, argd):
                 jobs = build["jobs"]
                 n = 0
                 for job in (job for job in jobs if 0 == job["exit_status"]):
-                    if 0 == n:
-                        print(f"[{nbuild}]", end="", flush=True)
-                    print(".", end="", flush=True)
+                    if 2 <= args.verbosity or 0 > args.verbosity:
+                        if 0 == n:
+                            print(f"[{nbuild}]", end="", flush=True)
+                        print(".", end="", flush=True)
                     log = requests.get(job["log_url"], headers=auth)
                     txt = json.loads(log.text)["content"]
                     nentries, nerrors = parselog(
@@ -174,27 +213,33 @@ def main(args, argd):
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if 0 < njobs:
+        if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
             print("[OK]")
 
-    if 0 != nerrors:
-        y = "ies" if 1 != nerrors else "y"
-        print(f"Ignored {nerrors} erroneous entr{y}!")
-    y = "ies" if 1 != nentries else "y"
-    print(f"Found {nentries} new entr{y}.")
+    if 2 <= args.verbosity or 0 > args.verbosity:
+        if 0 != nerrors:
+            y = "ies" if 1 != nerrors else "y"
+            print(
+                f"WARNING: ignored {nerrors} erroneous entr{y}!",
+                file=sys.stderr,
+            )
+        y = "ies" if 1 != nentries else "y"
+        print(f"Found {nentries} new entr{y}.")
     if database:
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-    if 0 != nentries:
+    if 0 != nentries and ofmtime == mtime(outfile):  # avoid concurrent change
         with open(outfile, "w") as file:
             json.dump(database, file, indent=2)
             file.write("\n")  # append newline at EOF
 
-    template = database[str(latest)] if str(latest) in database else []
+    templidx = min(inflight + 1, len(dbkeys))
+    templkey = dbkeys[-templidx] if dbkeys else ""  # string
+    template = database[templkey] if templkey in database else []
     nselect = sum(
         1
         for e in template
         if not select
-        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     )
     figure, axes = plot.subplots(
         max(nselect, 1), sharex=True, figsize=(9, 6), dpi=300
@@ -209,7 +254,7 @@ def main(args, argd):
         e
         for e in template
         if not select
-        or any(matchstr(s, e.lower()) for s in select)  # noqa: E501
+        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     ):
         for value in (
             v
@@ -220,6 +265,8 @@ def main(args, argd):
             meanvl = []  # determined by --summary
             sunit = aunit = None
             analyze = dict()
+            analyze_min = ""
+            analyze_max = ""
             if value not in match:
                 match.append(value)
             for build in (
@@ -292,6 +339,7 @@ def main(args, argd):
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
+                            vmax = vmin = 0
                             amax = infneg
                             amin = infpos
                             for a in analyze:
@@ -382,6 +430,8 @@ def main(args, argd):
     figout = figloc / f"{figstm}{figext}"
     # save graphics file
     figure.savefig(figout)
+    if 1 == args.verbosity or 0 > args.verbosity:
+        print(f"{figout} created.")
 
 
 if __name__ == "__main__":
@@ -391,6 +441,13 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    argparser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=2,
+        help="0: quiet, 1: automation, 2: progress",
     )
     argparser.add_argument(
         "-f",
@@ -411,7 +468,14 @@ if __name__ == "__main__":
         "--infile",
         type=pathlib.Path,
         default=None,
-        help="Input as if loaded from Buildkite",
+        help="Input data as if loaded from Buildkite",
+    )
+    argparser.add_argument(
+        "-j",
+        "--nbuild",
+        type=int,
+        default=None,
+        help="Where to insert, not limited to infile",
     )
     argparser.add_argument(
         "-c",
@@ -434,18 +498,30 @@ if __name__ == "__main__":
         help="Authorization token",
     )
     argparser.add_argument(
-        "-e",
-        "--select",
-        type=str,
-        default="",
-        help="Select entry",
+        "-x",
+        "--exact-query",
+        action="store_true",
+        help="Exact query",
     )
     argparser.add_argument(
-        "-q",
+        "-y",
         "--query",
         type=str,
         default="resnet",
         help="Set of values",
+    )
+    argparser.add_argument(
+        "-z",
+        "--exact-select",
+        action="store_true",
+        help="Exact select",
+    )
+    argparser.add_argument(
+        "-s",
+        "--select",
+        type=str,
+        default=None,
+        help="Category, all if none",
     )
     argparser.add_argument(
         "-r",
@@ -455,18 +531,18 @@ if __name__ == "__main__":
         help="Plotted values",
     )
     argparser.add_argument(
-        "-s",
-        "--summary",
-        type=str,
-        default="gflops",
-        help='If "", plot per-layer history',
-    )
-    argparser.add_argument(
         "-a",
         "--analyze",
         type=str,
         default="layer",
         help="Analyze common property",
+    )
+    argparser.add_argument(
+        "-b",
+        "--summary",
+        type=str,
+        default="gflops",
+        help='If "", plot per-layer history',
     )
     argparser.add_argument(
         "-m",
