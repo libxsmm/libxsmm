@@ -15,6 +15,7 @@ import requests
 import argparse
 import pathlib
 import json
+import sys
 import re
 
 
@@ -136,7 +137,8 @@ def main(args, argd):
         with open(args.filepath, "r") as file:
             database = json.load(file)
     except:  # noqa: E722
-        print(f"Create new database {args.filepath}")
+        if 2 <= args.verbosity or 0 > args.verbosity:
+            print(f"{args.filepath} new database created.")
         database = dict()
         pass
     dbkeys = list(database.keys())
@@ -169,13 +171,13 @@ def main(args, argd):
             pass
         if builds and "message" in builds:
             message = builds["message"]
-            print(f"ERROR: {message}")
+            print(f"ERROR: {message}", file=sys.stderr)
             exit(1)
         elif not args.token:
-            print("ERROR: token is missing!")
+            print("ERROR: token is missing!", file=sys.stderr)
             exit(1)
         elif not builds:
-            print(f"WARNING: failed to connect to {url}.")
+            print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
         njobs = 0
         while builds:
@@ -195,9 +197,10 @@ def main(args, argd):
                 jobs = build["jobs"]
                 n = 0
                 for job in (job for job in jobs if 0 == job["exit_status"]):
-                    if 0 == n:
-                        print(f"[{nbuild}]", end="", flush=True)
-                    print(".", end="", flush=True)
+                    if 2 <= args.verbosity or 0 > args.verbosity:
+                        if 0 == n:
+                            print(f"[{nbuild}]", end="", flush=True)
+                        print(".", end="", flush=True)
                     log = requests.get(job["log_url"], headers=auth)
                     txt = json.loads(log.text)["content"]
                     nentries, nerrors = parselog(
@@ -210,14 +213,18 @@ def main(args, argd):
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if 0 < njobs:
+        if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
             print("[OK]")
 
-    if 0 != nerrors:
-        y = "ies" if 1 != nerrors else "y"
-        print(f"Ignored {nerrors} erroneous entr{y}!")
-    y = "ies" if 1 != nentries else "y"
-    print(f"Found {nentries} new entr{y}.")
+    if 2 <= args.verbosity or 0 > args.verbosity:
+        if 0 != nerrors:
+            y = "ies" if 1 != nerrors else "y"
+            print(
+                f"WARNING: ignored {nerrors} erroneous entr{y}!",
+                file=sys.stderr,
+            )
+        y = "ies" if 1 != nentries else "y"
+        print(f"Found {nentries} new entr{y}.")
     if database:
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
     if 0 != nentries and ofmtime == mtime(outfile):  # avoid concurrent change
@@ -423,6 +430,8 @@ def main(args, argd):
     figout = figloc / f"{figstm}{figext}"
     # save graphics file
     figure.savefig(figout)
+    if 1 == args.verbosity or 0 > args.verbosity:
+        print(f"{figout} created.")
 
 
 if __name__ == "__main__":
@@ -432,6 +441,13 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    argparser.add_argument(
+        "-v",
+        "--verbosity",
+        type=int,
+        default=2,
+        help="0: quiet, 1: automation, 2: progress",
     )
     argparser.add_argument(
         "-f",
@@ -482,20 +498,6 @@ if __name__ == "__main__":
         help="Authorization token",
     )
     argparser.add_argument(
-        "-e",
-        "--select",
-        type=str,
-        default=None,
-        help="Category, all if none",
-    )
-    argparser.add_argument(
-        "-q",
-        "--query",
-        type=str,
-        default="resnet",
-        help="Set of values",
-    )
-    argparser.add_argument(
         "-x",
         "--exact-query",
         action="store_true",
@@ -503,9 +505,23 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-y",
+        "--query",
+        type=str,
+        default="resnet",
+        help="Set of values",
+    )
+    argparser.add_argument(
+        "-z",
         "--exact-select",
         action="store_true",
         help="Exact select",
+    )
+    argparser.add_argument(
+        "-s",
+        "--select",
+        type=str,
+        default=None,
+        help="Category, all if none",
     )
     argparser.add_argument(
         "-r",
@@ -515,18 +531,18 @@ if __name__ == "__main__":
         help="Plotted values",
     )
     argparser.add_argument(
-        "-s",
-        "--summary",
-        type=str,
-        default="gflops",
-        help='If "", plot per-layer history',
-    )
-    argparser.add_argument(
         "-a",
         "--analyze",
         type=str,
         default="layer",
         help="Analyze common property",
+    )
+    argparser.add_argument(
+        "-b",
+        "--summary",
+        type=str,
+        default="gflops",
+        help='If "", plot per-layer history',
     )
     argparser.add_argument(
         "-m",
