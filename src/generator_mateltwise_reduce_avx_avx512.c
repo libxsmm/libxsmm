@@ -5082,6 +5082,9 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
       libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_inout, mask_out_count, LIBXSMM_DATATYPE_F32);
     } else {
       libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, m % vlen, LIBXSMM_DATATYPE_F32);
+      if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype )) {
+        mask_inout = m % vlen;
+      }
     }
   }
 
