@@ -1305,9 +1305,10 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
   unsigned int  bcast_param = 0;
   unsigned int gp_reg_index_64bit = 0, gp_reg_index = 0, gp_reg_ldi = 0, gp_reg_impl_index = 0;
   unsigned char pred_reg_all = 0; /* sve predicate registers with all elements enabled; set by caller */
-  unsigned char pred_reg_mask = 1;
-  unsigned char pred_reg_argidx = 2;
-  unsigned char pred_reg_all_bf16 = 3;
+  unsigned char pred_reg_mask = 3;
+  unsigned char pred_reg_argidx = 4;
+  unsigned char pred_reg_all_bf16 = 5;
+  unsigned char pred_reg_argidx32 = 6;
   unsigned char pred_reg_mask_use = 0;
   unsigned int l_masked_elements = 0;
   unsigned int l_is_inp_bf16 = (LIBXSMM_DATATYPE_BF16 == libxsmm_meltw_getenum_precision(i_mateltwise_desc, LIBXSMM_MELTW_FIELD_IN0)) ? 1 : 0;
@@ -1591,7 +1592,11 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
   if (use_m_masking == 1) {
     mask_count = m % vlen;
     if (is_sve) libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, pred_reg_mask, i_micro_kernel_config->datatype_size_in * mask_count, i_gp_reg_mapping->gp_reg_scratch_0);
+    if (idx_tsize == 4) {
+      if (is_sve) libxsmm_generator_set_p_register_aarch64_sve(io_generated_code, pred_reg_argidx32, idx_tsize * mask_count, i_gp_reg_mapping->gp_reg_scratch_0);
+    }
   }
+
   /* todo sve: why is the default for mask_argidx64 == 2 ? */
   LIBXSMM_ASSERT(0 != (vlen / 2));
   if ((idx_tsize == 8) && (m % (vlen/2) != 0) && ((record_argop_off_vec0 > 0) || (record_argop_off_vec1 > 0))) {
@@ -2597,7 +2602,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
           unsigned int vreg_id = im + vecargop_vec0_offset;
           mask_count2 = ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_count : 0;
           libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, temp_gpr,
-            i_gp_reg_mapping->gp_reg_scratch_0, vreg_id, 4, mask_count2, 1, 1, mask_count2 ? pred_reg_mask : pred_reg_all );
+            i_gp_reg_mapping->gp_reg_scratch_0, vreg_id, 4, mask_count2, 1, 1, mask_count2 ? pred_reg_argidx32 : pred_reg_all );
         }
       } else {
         unsigned int use_idx_masking = 0;
@@ -2627,7 +2632,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
           unsigned int vreg_id = im + vecargop_vec1_offset;
           mask_count2 = ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_count : 0;
           libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, temp_gpr,
-            i_gp_reg_mapping->gp_reg_scratch_0, vreg_id, 4, mask_count2, 1, 1, mask_count2 == 0 ? pred_reg_all : pred_reg_mask );
+            i_gp_reg_mapping->gp_reg_scratch_0, vreg_id, 4, mask_count2, 1, 1, mask_count2 == 0 ? pred_reg_all : pred_reg_argidx32 );
         }
       } else {
         unsigned int use_idx_masking = 0;
