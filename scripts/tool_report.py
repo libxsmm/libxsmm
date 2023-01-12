@@ -59,7 +59,7 @@ def parseval(string):
     )
 
 
-def matchstr(s1, s2, exact=True):
+def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
             # avoid matching, e.g. "a12" if "a1" is searched
@@ -84,7 +84,7 @@ def num2str(num):
 
 def mtime(filename):
     try:
-        return pathlib.Path(filename).stat().st_mtime
+        return pathlib.Path(filename).stat().st_mtime if filename else 0
     except:  # noqa: E722
         return 0
 
@@ -114,9 +114,10 @@ def main(args, argd):
     sdo = 0 < args.mean and smry != rslt
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
+    outfile = None
     match = []
 
-    if args.infile:
+    if args.infile and args.infile.is_file():
         try:
             with open(args.infile, "r") as file:
                 txt = file.read()
@@ -128,7 +129,7 @@ def main(args, argd):
             if args.filepath == argd.filepath
             else args.filepath
         )
-    else:  # connect to URL
+    elif args.infile is None:  # connect to URL
         outfile = args.filepath
 
     # timestamp before loading database
@@ -137,14 +138,12 @@ def main(args, argd):
         with open(args.filepath, "r") as file:
             database = json.load(file)
     except:  # noqa: E722
-        if 2 <= args.verbosity or 0 > args.verbosity:
-            print(f"{args.filepath} new database created.")
         database = dict()
         pass
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
-    if args.infile:
+    if args.infile and args.infile.is_file():
         next = latest + 1
         nbld = (
             args.nbuild
@@ -163,7 +162,7 @@ def main(args, argd):
         )
         if 0 < nentries:
             latest = next
-    else:  # connect to URL
+    elif args.infile is None:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -227,7 +226,11 @@ def main(args, argd):
         print(f"Found {nentries} new entr{y}.")
     if database:
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-    if 0 != nentries and ofmtime == mtime(outfile):  # avoid concurrent change
+    if 0 != nentries and ofmtime == mtime(outfile):
+        if not outfile.exists() and (
+            2 <= args.verbosity or 0 > args.verbosity
+        ):
+            print(f"{args.filepath} new database created.")
         with open(outfile, "w") as file:
             json.dump(database, file, indent=2)
             file.write("\n")  # append newline at EOF
