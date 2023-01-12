@@ -4620,7 +4620,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
   unsigned int m, im, _im, use_m_masking, m_trips, max_m_unrolling = 4, m_unroll_factor = 1, m_trips_loop = 0, peeled_m_trips = 0, mask_out_count = 0, vecin_offset = 0, vecidxin_offset = 0, vecout_offset = 0, temp_vreg = 31, use_stack_vars = 0;
   unsigned int vlen = 16;
   unsigned int mask_inout = 1;
-  unsigned int mask_argidx64 = 2;
+  unsigned int mask_argidx64 = 2, mask_argidx32 = mask_inout;
   unsigned int use_indexed_vec = 0, use_indexed_vecidx = 1;
   unsigned int use_implicitly_indexed_vec = 0;
   unsigned int use_implicitly_indexed_vecidx = 0;
@@ -4693,6 +4693,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
     vlen = 8;
     max_m_unrolling = 2;
     mask_inout = 15;
+    mask_argidx32 = mask_inout;
     mask_argidx64 = 14;
     argop_mask = 13;
     temp_vreg = 12;
@@ -6667,7 +6668,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               im * vlen * 4,
               vname,
-              vreg_id, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_inout : 0, 1 );
+              vreg_id, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_argidx32 : 0, 1 );
         }
       } else {
         unsigned int use_idx_masking = 0;
@@ -6706,7 +6707,7 @@ void libxsmm_generator_opreduce_vecs_index_avx512_microkernel_block( libxsmm_gen
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               im * vlen * 4,
               vname,
-              vreg_id, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_inout : 0, 1 );
+              vreg_id, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? 1 : 0, ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_argidx32 : 0, 1 );
         }
       } else {
         unsigned int use_idx_masking = 0;
