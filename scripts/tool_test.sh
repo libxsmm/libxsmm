@@ -311,6 +311,10 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         fi
       fi
     fi
+    if [ "${CONFIGFILE}" ]; then
+      source "${CONFIGFILE}"
+    fi
+
     COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
@@ -434,11 +438,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         fi
         echo >>"${TESTSCRIPT}"
         if [ "${SYNC}" ]; then ${SYNC}; fi
-      elif [ "${CONFIGFILE}" ]; then # setup environment on a per-test basis
-        if [ -e "${ENVFILE}" ]; then
-          eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
-        fi
-        source "${CONFIGFILE}" ""
+      elif [ "${CONFIGFILE}" ] && [ -e "${ENVFILE}" ]; then # setup environment on a per-test basis
+        eval "${REPOROOT}/scripts/tool_envrestore.sh" "${ENVFILE}"
       fi
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
