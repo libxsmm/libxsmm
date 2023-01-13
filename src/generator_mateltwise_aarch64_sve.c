@@ -107,7 +107,10 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_sve_valid_arch_precision( l
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
     is_valid_arch_prec = 0;
   }
-  if (has_inp_or_out_fp8 > 0 || has_inp_or_out_f16 > 0) {
+  if (has_inp_or_out_fp8 > 0) {
+    is_valid_arch_prec = 0;
+  }
+  if ((has_inp_or_out_f16 > 0) && !((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT)) ) {
     is_valid_arch_prec = 0;
   }
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (is_transform_tpp == 0) && (is_unary_simple_tpp == 0) && (has_inp_or_out_fp64 > 0)) {

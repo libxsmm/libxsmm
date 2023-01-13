@@ -750,7 +750,7 @@ void libxsmm_generator_transform_aarch64_sve_microkernel( libxsmm_generated_code
         i_mateltwise_desc->ldi/4, i_mateltwise_desc->ldo, 0, 0,
         (unsigned short)LIBXSMM_MELTW_FLAG_UNARY_NONE, (unsigned short)LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, LIBXSMM_MELTW_OPERATION_UNARY);
       libxsmm_mateltwise_kernel_config l_trans_config;
-      libxsmm_generator_mateltwise_aarch64_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, mock_desc);
+      libxsmm_generator_mateltwise_aarch64_sve_init_micro_kernel_config_fullvector( io_generated_code, &l_trans_config, mock_desc);
       libxsmm_generator_transform_norm_to_normt_64bit_aarch64_asimd_microkernel( io_generated_code, io_loop_label_tracker,
                                                                                  i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_out,
                                                                                  i_gp_reg_mapping->gp_reg_m_loop, i_gp_reg_mapping->gp_reg_n_loop,
