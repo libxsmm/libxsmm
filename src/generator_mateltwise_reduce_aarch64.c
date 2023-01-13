@@ -1085,7 +1085,11 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
       if ( compute_plain_vals_reduce > 0 ) {
         unsigned int pred_reg_compute = pred_reg_all;
         if ((flag_reduce_op_max > 0) && (im == m_trips-1) && (use_m_masking > 0)) {
-          pred_reg_compute = pred_reg_mask;
+          if (l_is_inp_bf16 > 0 || l_is_out_bf16 > 0) {
+            pred_reg_compute = pred_reg_mask_compute_f32;
+          } else {
+            pred_reg_compute = pred_reg_mask;
+          }
         }
 
         libxsmm_aarch64_instruction_sve_compute( io_generated_code, reduce_instr,
