@@ -211,7 +211,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     LAUNCH="\${TEST}"
   fi
   if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
+    # avoid preserving environment (wrong HOME)
+    LAUNCH="su ${LAUNCH_USER} ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
   # eventually cleanup environment snapshots
@@ -380,9 +381,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
           ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
-          echo "RESULT=\$?" >>"${TESTSCRIPT}"
-          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          if [ "${REPOREMOTE}" != "${ABSREM}" ]; then
+            echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+            echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          fi
           echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
