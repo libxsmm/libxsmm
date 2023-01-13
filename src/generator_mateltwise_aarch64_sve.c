@@ -98,6 +98,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_sve_valid_arch_precision( l
   unsigned int has_inp_or_out_fp8 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_BF8) > 0 || libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_HF8) > 0) ? 1 : 0;
   unsigned int has_inp_or_out_fp64 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_F64) > 0) ? 1 : 0;
   unsigned int has_inp_or_out_bf16 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_BF16) > 0) ? 1 : 0;
+  unsigned int has_inp_or_out_f16 = (libxsmm_generator_mateltwise_involves_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_F16) > 0) ? 1 : 0;
   unsigned int has_all_inp_and_out_fp64 = (libxsmm_generator_mateltwise_all_inp_comp_out_prec(i_mateltwise_desc, LIBXSMM_DATATYPE_F64) > 0) ? 1 : 0;
 
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
@@ -106,7 +107,7 @@ libxsmm_blasint libxsmm_generator_mateltwise_aarch64_sve_valid_arch_precision( l
   if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK) && (io_generated_code->arch != LIBXSMM_AARCH64_NEOV1)) {
     is_valid_arch_prec = 0;
   }
-  if (has_inp_or_out_fp8 > 0) {
+  if (has_inp_or_out_fp8 > 0 || has_inp_or_out_f16 > 0) {
     is_valid_arch_prec = 0;
   }
   if ( (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && (is_transform_tpp == 0) && (is_unary_simple_tpp == 0) && (has_inp_or_out_fp64 > 0)) {
