@@ -211,7 +211,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     LAUNCH="\${TEST}"
   fi
   if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
+    # avoid preserving environment (wrong HOME)
+    LAUNCH="su ${LAUNCH_USER} ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
   # eventually cleanup environment snapshots
