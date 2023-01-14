@@ -82,6 +82,10 @@ def num2str(num):
     )
 
 
+def divup(a, b):
+    return int((a + b - 1) / b)
+
+
 def mtime(filename):
     try:
         return pathlib.Path(filename).stat().st_mtime if filename else 0
@@ -244,9 +248,24 @@ def main(args, argd):
         if not select
         or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     )
+    rdef = [int(r) for r in argd.resolution.split("x")]
+    if 2 == len(rdef):
+        rdef.append(100)
+    rstr = args.resolution.split("x")
+    rint = []
+    for i in range(len(rdef)):
+        try:
+            rint.append(int(rstr[i]))
+        except:  # noqa: E722
+            rint.append(
+                rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
+            )
     figure, axes = plot.subplots(
-        max(nselect, 1), sharex=True, figsize=(9, 6), dpi=300
-    )  # noqa: E501
+        max(nselect, 1),
+        sharex=True,
+        figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
+        dpi=rint[2],
+    )
     if 2 > nselect:
         axes = [axes]
     i = 0
@@ -465,6 +484,13 @@ if __name__ == "__main__":
         type=str,
         default=f"{base}.png",
         help="Graphics format, filename, or path",
+    )
+    argparser.add_argument(
+        "-d",
+        "--resolution",
+        type=str,
+        default="900x600",
+        help="Graphics WxH[xDPI]",
     )
     argparser.add_argument(
         "-i",
