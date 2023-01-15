@@ -9,13 +9,13 @@ script:
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
         EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} test-nek
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0 JITDUMP=${RUN_LINUX_PERF}
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0
         EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="9 3, 23" STATIC=0
         EFLAGS="-DLIBXSMM_MALLOC_MMAP" ${INSTALL} test-smm
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0 JITDUMP=${RUN_LINUX_PERF}
+  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0
         EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
@@ -34,7 +34,7 @@ script:
         make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test
 
   - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
-    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 JITDUMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
+    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
     make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
     cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
