@@ -14,8 +14,10 @@ set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=${HERE}/..
+ENVDIR=${ROOT}/.env
+
 # TODO: map to CI-provider (abstract environment)
-source "${ROOT}/.env/buildkite.env" ""
+source "${ENVDIR}/buildkite.env" ""
 
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
@@ -289,12 +291,14 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
-    # make execution environment locally available (always)
-    CONFIGFILE=""
-    if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
-      CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
+    # determine configuration files once according to pattern
+    if [[ (! "${CONFIGFILES[@]}") && \
+          ("none" != "${CONFIG}") && \
+          ("${HOSTNAME}" || "${HOSTPREFIX}") ]];
+    then
+      CONFIGFILES=($(ls -1 ${ENVDIR}/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
       if [[ ! "${CONFIGFILES[@]}" ]]; then
-        CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
+        CONFIGFILES=($(ls -1 ${ENVDIR}/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
       fi
       if [[ "${CONFIGFILES[@]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
@@ -302,15 +306,18 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           CONFIGFILES=($(echo "${CONFIGFILES}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
         CONFIGCOUNT=${#CONFIGFILES[@]}
-        if [ "0" != "${CONFIGCOUNT}" ]; then
-          CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
-          CONFIG=$(basename "${CONFIGFILE}" .env)
-        else
-          echo "WARNING: configuration \"${CONFIG}\" not found!"
-          CONFIGFILE=""
-        fi
       fi
     fi
+    # determine actual configuration for every test/iteration
+    if [ "${CONFIGCOUNT}" ] && [ "0" != "${CONFIGCOUNT}" ]; then
+      CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+      CONFIG=$(basename "${CONFIGFILE}" .env)
+    else
+      echo "WARNING: configuration \"${CONFIG}\" not found!"
+      CONFIGFILE=""
+      CONFIG="none"
+    fi
+    # iterate over all given environments
     COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
