@@ -266,6 +266,8 @@ def main(args, argd):
         if not select
         or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
     ]
+    if entries and not select and args.exact_select:
+        entries = [entries[-1]]  # assume insertion order is preserved
     rdef = [int(r) for r in argd.resolution.split("x")]
     if 2 == len(rdef):
         rdef.append(100)
