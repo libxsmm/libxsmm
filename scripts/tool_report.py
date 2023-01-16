@@ -14,6 +14,7 @@ import statistics
 import requests
 import argparse
 import pathlib
+import pickle
 import json
 import sys
 import re
@@ -131,7 +132,7 @@ def main(args, argd):
             args.infile = None
             pass
         outfile = (
-            pathlib.Path(f"{args.infile.stem}.json")
+            pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
             if args.filepath == argd.filepath
             else args.filepath
         )
@@ -142,13 +143,15 @@ def main(args, argd):
     ofmtime = mtime(outfile)
     if args.filepath.is_file():
         try:
-            with open(args.filepath, "r") as file:
-                database = json.load(file)
+            if ".json" == args.filepath.suffix:
+                with open(args.filepath, "r") as file:
+                    database = json.load(file)
+            else:  # pickle
+                with open(args.filepath, "rb") as file:
+                    database = pickle.load(file)
         except Exception as error:
-            print(
-                f"ERROR: {str(error).replace(': ', ' in JSON-database: ')}",
-                file=sys.stderr,
-            )
+            msg = str(error).replace(": ", f" in {args.filepath.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
             exit(1)
     else:
         database = dict()
@@ -199,9 +202,8 @@ def main(args, argd):
             # iterate over all builds (latest first)
             for build in builds:
                 nbuild = build["number"]
-                # JSON stores integers as string
-                strbuild = str(nbuild)
-                if (
+                strbuild = str(nbuild)  # JSON stores integers as string
+                if (  # consider early exit
                     nbuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
@@ -222,6 +224,10 @@ def main(args, argd):
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
                     n = n + 1
+                if 0 == n and nbuild <= latest and "running" != build["state"]:
+                    latest = nbuild
+                    builds = None
+                    break
                 njobs = njobs + n
             if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
@@ -247,17 +253,17 @@ def main(args, argd):
             2 <= args.verbosity or 0 > args.verbosity
         ):
             print(f"{outfile} new database created.")
-        with open(outfile, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
+        if ".json" == outfile.suffix:
+            with open(outfile, "w") as file:
+                json.dump(database, file, indent=2)
+                file.write("\n")  # append newline at EOF
+        else:  # pickle
+            with open(outfile, "wb") as file:
+                pickle.dump(database, file)
 
-    # ensure correct template/categories and update dbkeys
+    # update dbkeys and collect categories (template)
     dbkeys = list(database.keys())
-    templidx = (
-        min(inflight + 1, len(dbkeys))
-        if (args.select == argd.select and not args.exact_select)
-        else 1
-    )
+    templidx = min(inflight + 1, len(dbkeys))
     templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
     entries = [
@@ -268,6 +274,8 @@ def main(args, argd):
     ]
     if entries and not select and args.exact_select:
         entries = [entries[-1]]  # assume insertion order is preserved
+
+    # determine image resolution
     rdef = [int(r) for r in argd.resolution.split("x")]
     if 2 == len(rdef):
         rdef.append(100)
@@ -280,6 +288,8 @@ def main(args, argd):
             rint.append(
                 rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
             )
+
+    # setup figure
     figure, axes = plot.subplots(
         max(len(entries), 1),
         sharex=True,
@@ -288,6 +298,8 @@ def main(args, argd):
     )
     if 2 > len(entries):
         axes = [axes]
+
+    # build figure
     i = 0
     infneg = float("-inf")
     infpos = float("inf")
@@ -459,6 +471,8 @@ def main(args, argd):
         figloc = argfig.parent
         figext = deffig.suffix
         figstm = argfig.stem if argfig.stem else deffig.stem
+
+    # determine filename and save figure
     punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
     figcat = (
         ""
@@ -472,8 +486,7 @@ def main(args, argd):
     else:
         fixqry = ""
     figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
-    # save graphics file
-    figure.savefig(figout)
+    figure.savefig(figout)  # save graphics file
     if 1 == args.verbosity or 0 > args.verbosity:
         print(f"{figout} created.")
 
