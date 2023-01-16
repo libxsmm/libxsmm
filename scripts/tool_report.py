@@ -34,7 +34,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
             and line.group(1)
             and all(32 <= ord(c) for c in line.group(1))
         ]
-        if not any("syntax error" in v for v in values):
+        if values and not any("syntax error" in v for v in values):
             category = match.group(1) if not select else select
             if strbuild not in database:
                 database[strbuild] = dict()
