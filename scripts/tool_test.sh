@@ -312,6 +312,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     if [ "${CONFIGCOUNT}" ] && [ "0" != "${CONFIGCOUNT}" ]; then
       CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
       CONFIG=$(basename "${CONFIGFILE}" .env)
+      # setup Python environment if LAUNCH_USER cannot access orig. user's site-directory
+      if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
+        PYTHONSITE=$(su ${LAUNCH_USER} ${RUN_CMD} "python3 -m site --user-site 2>/dev/null")
+        if [ ! "${PYTHONSITE}" ]; then
+          PYTHONSITE=$(su ${LAUNCH_USER} ${RUN_CMD} "python -m site --user-site 2>/dev/null")
+        fi
+        if [ "${PYTHONSITE}" ]; then
+          export PYTHONPATH=${PYTHONSITE}:${PYTHONPATH}
+        fi
+      fi
     else
       echo "WARNING: configuration \"${CONFIG}\" not found!"
       CONFIGFILE=""
@@ -377,7 +387,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
         fi
         echo "fi" >>"${TESTSCRIPT}"
-        if [ -e "${CONFIGFILE}" ]; then
+        if [ "${CONFIGFILE}" ]; then
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
