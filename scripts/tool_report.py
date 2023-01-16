@@ -27,13 +27,15 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
         )
         if match and match.group(1) and match.group(2)
     ):
-        category = match.group(1) if not select else select
         values = [
             line.group(1)
             for line in re.finditer(r"([^\n\r]+)", match.group(2))
-            if line and line.group(1)
+            if line
+            and line.group(1)
+            and all(32 <= ord(c) for c in line.group(1))
         ]
         if not any("syntax error" in v for v in values):
+            category = match.group(1) if not select else select
             if strbuild not in database:
                 database[strbuild] = dict()
             if category not in database[strbuild]:
@@ -129,7 +131,7 @@ def main(args, argd):
             args.infile = None
             pass
         outfile = (
-            f"{args.infile.stem}.json"
+            pathlib.Path(f"{args.infile.stem}.json")
             if args.filepath == argd.filepath
             else args.filepath
         )
@@ -138,12 +140,18 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    try:
-        with open(args.filepath, "r") as file:
-            database = json.load(file)
-    except:  # noqa: E722
+    if args.filepath.is_file():
+        try:
+            with open(args.filepath, "r") as file:
+                database = json.load(file)
+        except Exception as error:
+            print(
+                f"ERROR: {str(error).replace(': ', ' in JSON-database: ')}",
+                file=sys.stderr,
+            )
+            exit(1)
+    else:
         database = dict()
-        pass
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
@@ -154,7 +162,11 @@ def main(args, argd):
             if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
             else next
         )
-        name = args.query if args.query and args.nbuild else args.infile.stem
+        name = (
+            args.query
+            if args.query and (args.query != argd.query or args.exact_query)
+            else args.infile.stem
+        )
         nentries, nerrors = parselog(
             database,
             str(nbld),
@@ -234,20 +246,26 @@ def main(args, argd):
         if not outfile.exists() and (
             2 <= args.verbosity or 0 > args.verbosity
         ):
-            print(f"{args.filepath} new database created.")
+            print(f"{outfile} new database created.")
         with open(outfile, "w") as file:
             json.dump(database, file, indent=2)
             file.write("\n")  # append newline at EOF
 
-    templidx = min(inflight + 1, len(dbkeys))
+    # ensure correct template/categories and update dbkeys
+    dbkeys = list(database.keys())
+    templidx = (
+        min(inflight + 1, len(dbkeys))
+        if (args.select == argd.select and not args.exact_select)
+        else 1
+    )
     templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
-    nselect = sum(
-        1
+    entries = [
+        e
         for e in template
         if not select
         or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
-    )
+    ]
     rdef = [int(r) for r in argd.resolution.split("x")]
     if 2 == len(rdef):
         rdef.append(100)
@@ -261,23 +279,18 @@ def main(args, argd):
                 rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
             )
     figure, axes = plot.subplots(
-        max(nselect, 1),
+        max(len(entries), 1),
         sharex=True,
         figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
         dpi=rint[2],
     )
-    if 2 > nselect:
+    if 2 > len(entries):
         axes = [axes]
     i = 0
     infneg = float("-inf")
     infpos = float("inf")
     yunit = None
-    for entry in (
-        e
-        for e in template
-        if not select
-        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
-    ):
+    for entry in entries:
         for value in (
             v
             for v in template[entry]
@@ -444,12 +457,19 @@ def main(args, argd):
         figloc = argfig.parent
         figext = deffig.suffix
         figstm = argfig.stem if argfig.stem else deffig.stem
+    punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
+    figcat = (
+        ""
+        if 1 < len(entries) or 0 == len(entries)
+        else f"-{entries[0].translate(punct)}"
+    )
     if 0 < len(match):
-        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
         clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
         parts = [s.lower() for c in clean for s in c.split("_")]
-        figstm = f"{figstm}-{'_'.join(dict.fromkeys(parts))}"
-    figout = figloc / f"{figstm}{figext}"
+        fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
+    else:
+        fixqry = ""
+    figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
     # save graphics file
     figure.savefig(figout)
     if 1 == args.verbosity or 0 > args.verbosity:
