@@ -18,15 +18,15 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code* io_generated_code,
-                                                       const unsigned int      i_is_gather,
-                                                       const unsigned int      i_gp_reg_addr,
-                                                       const unsigned int      i_gp_reg_scratch0,
-                                                       const unsigned int      i_gp_reg_scratch1,
-                                                       const unsigned int      i_idx_vec_reg,
-                                                       const unsigned int      i_idx_datatype_size,
-                                                       const unsigned int      i_srcdst_vec_reg,
-                                                       const unsigned int      i_datatype_size,
-                                                       const unsigned int      i_masked_elems );
+                                                          const unsigned int      i_gp_reg_addr,
+                                                          const unsigned int      i_gp_reg_scratch0,
+                                                          const unsigned int      i_gp_reg_scratch1,
+                                                          const unsigned int      i_idx_vec_reg,
+                                                          const unsigned int      i_idx_datatype_size,
+                                                          const unsigned int      i_srcdst_vec_reg,
+                                                          const unsigned int      i_datatype_size,
+                                                          const unsigned int      i_masked_elems,
+                                                          const unsigned int      i_is_gather );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_vcvt_bf16f32_aarch64_sve( libxsmm_generated_code* io_generated_code,

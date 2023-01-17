@@ -160,15 +160,15 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code* io_generated_code,
-                                                       const unsigned int      i_is_gather,
-                                                       const unsigned int      i_gp_reg_addr,
-                                                       const unsigned int      i_gp_reg_scratch0,
-                                                       const unsigned int      i_gp_reg_scratch1,
-                                                       const unsigned int      i_idx_vec_reg,
-                                                       const unsigned int      i_idx_datatype_size,
-                                                       const unsigned int      i_srcdst_vec_reg,
-                                                       const unsigned int      i_datatype_size,
-                                                       const unsigned int      i_masked_elems ) {
+                                                          const unsigned int      i_gp_reg_addr,
+                                                          const unsigned int      i_gp_reg_scratch0,
+                                                          const unsigned int      i_gp_reg_scratch1,
+                                                          const unsigned int      i_idx_vec_reg,
+                                                          const unsigned int      i_idx_datatype_size,
+                                                          const unsigned int      i_srcdst_vec_reg,
+                                                          const unsigned int      i_datatype_size,
+                                                          const unsigned int      i_masked_elems,
+                                                          const unsigned int      i_is_gather ) {
   unsigned int i = 0;
   unsigned int l_load_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF;
   unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
