@@ -105,14 +105,14 @@ def main(args, argd):
     if args.select:
         select = (
             args.select.lower().split()
-            if not args.exact_select
+            if not args.select_exact
             else [args.select.lower()]
         )
     else:
         select = []
     query = (
         args.query.lower().split()
-        if not args.exact_query
+        if not args.query_exact
         else [args.query.lower()]
         if args.query
         else []
@@ -168,7 +168,7 @@ def main(args, argd):
         )
         name = (
             args.query
-            if args.query and (args.query != argd.query or args.exact_query)
+            if args.query and (args.query != argd.query or args.query_exact)
             else args.infile.stem
         )
         nentries, nerrors = parselog(
@@ -253,7 +253,7 @@ def main(args, argd):
         if not outfile.exists() and (
             2 <= args.verbosity or 0 > args.verbosity
         ):
-            print(f"{outfile} new database created.")
+            print(f"{outfile} database created.")
         if ".json" == outfile.suffix:
             with open(outfile, "w") as file:
                 json.dump(database, file, indent=2)
@@ -264,16 +264,20 @@ def main(args, argd):
 
     # update dbkeys and collect categories (template)
     dbkeys = list(database.keys())
-    templidx = min(inflight + 1, len(dbkeys))
+    templidx = (
+        1  # file-based input (just added) shall determine template
+        if (args.infile and args.infile.is_file())
+        else min(inflight + 1, len(dbkeys))
+    )
     templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
     entries = [
-        e
+        e  # category (one level below build number)
         for e in template
         if not select
-        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
+        or any(matchstr(s, e.lower(), exact=args.select_exact) for s in select)
     ]
-    if entries and not select and args.exact_select:
+    if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
 
     # determine image resolution
@@ -576,7 +580,7 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-x",
-        "--exact-query",
+        "--query-exact",
         action="store_true",
         help="Exact query",
     )
@@ -589,7 +593,7 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-z",
-        "--exact-select",
+        "--select-exact",
         action="store_true",
         help="Exact select",
     )
