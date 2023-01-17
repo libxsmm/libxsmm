@@ -274,6 +274,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
+    if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
+      return;
+    }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
@@ -342,11 +346,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         return;
       }
     }
-  }
-
-  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) == 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_A );
-    return;
   }
 
   /* check for VNNI flag being set in case of low precision GEMM */
