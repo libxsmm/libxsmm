@@ -16,6 +16,7 @@ import argparse
 import pathlib
 import pickle
 import json
+import PIL
 import sys
 import re
 
@@ -447,8 +448,10 @@ def main(args, argd):
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
-    # determine filename (graphics)
-    figtypes = plot.gcf().canvas.get_supported_filetypes()
+
+    # determine supported file types and filename components
+    figcanvas = figure.canvas
+    figtypes = figcanvas.get_supported_filetypes()
     argfig = pathlib.Path(args.figure)
     deffig = pathlib.Path(argd.figure)
     if argfig.is_dir():
@@ -472,7 +475,7 @@ def main(args, argd):
         figext = deffig.suffix
         figstm = argfig.stem if argfig.stem else deffig.stem
 
-    # determine filename and save figure
+    # determine filename from components
     punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
     figcat = (
         ""
@@ -486,7 +489,17 @@ def main(args, argd):
     else:
         fixqry = ""
     figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
-    figure.savefig(figout)  # save graphics file
+
+    # reduce file size (png) and save figure
+    if ".png" == figout.suffix:
+        figcanvas.draw()  # otherwise the image is empty
+        image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
+        image = image.convert(
+            "P", palette=PIL.Image.Palette.ADAPTIVE, colors=16
+        )
+        image.save(figout, "PNG", optimize=True)
+    else:
+        figure.savefig(figout)  # save graphics file
     if 1 == args.verbosity or 0 > args.verbosity:
         print(f"{figout} created.")
 
