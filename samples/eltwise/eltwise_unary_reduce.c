@@ -416,7 +416,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 0, reduce_op = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
   unsigned int record_idx = 0;
@@ -462,12 +462,12 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) reduce_op = atoi(argv[7]);
   if ( argc > 8 ) dt = argv[8];
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
-  if ( argc > 10 ) iters = atoi(argv[10]);
-  if ( argc > 11 ) idx_type = atoi(argv[11]);
-  if ( argc > 12 ) record_idx = atoi(argv[12]);
-  if ( argc > 13 ) reduce_on_outputs = atoi(argv[13]);
+  if ( argc > 10 ) idx_type = atoi(argv[10]);
+  if ( argc > 11 ) record_idx = atoi(argv[11]);
+  if ( argc > 12 ) reduce_on_outputs = atoi(argv[12]);
+  if ( argc > 13 ) iters = atoi(argv[13]);
 
-  printf("CL is: %u %u %i %u %u %u %u %s %llu %u %u %u %u\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
+  printf("CL is: %u %u %i %u %u %u %u %s %llu %u %u %u %u\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, idx_type, record_idx, reduce_on_outputs, iters);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
