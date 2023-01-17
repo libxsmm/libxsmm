@@ -205,94 +205,94 @@ void libxsmm_generator_gather_scatter_cols_aarch64_microkernel( libxsmm_generate
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_generated_code*                        io_generated_code,
-    libxsmm_mateltwise_gp_reg_mapping*             i_gp_reg_mapping,
-    unsigned int                                   m_unroll_factor,
-    unsigned int                                   n_unroll_factor,
-    unsigned int                                   idx_vreg_start,
-    unsigned int                                   idx_tsize,
-    unsigned int                                   idx_mask_reg,
-    unsigned int                                   ld_idx_mat,
-    unsigned int                                   gather_instr,
-    unsigned int                                   scatter_instr,
-    unsigned int                                   vlen,
-    unsigned int                                   m_remainder_elements,
-    unsigned int                                   mask_reg,
-    unsigned int                                   mask_reg_full_frac_vlen,
-    unsigned int                                   is_gather,
-    unsigned int                                   gp_idx_mat_reg,
-    unsigned int                                   gp_reg_mat_reg,
-    unsigned int                                   dtype_size_reg_mat,
-    unsigned int                                   ld_reg_mat ) {
+void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_generated_code*                              io_generated_code,
+                                                                     libxsmm_mateltwise_gp_reg_mapping*                   i_gp_reg_mapping,
+                                                                     const unsigned int                                   i_m_unroll_factor,
+                                                                     const unsigned int                                   i_n_unroll_factor,
+                                                                     const unsigned int                                   i_idx_vreg_start,
+                                                                     const unsigned int                                   i_idx_tsize,
+                                                                     const unsigned int                                   i_idx_mask_reg,
+                                                                     const unsigned int                                   i_ld_idx_mat,
+                                                                     const unsigned int                                   i_gather_instr,
+                                                                     const unsigned int                                   i_scatter_instr,
+                                                                     const unsigned int                                   i_vlen,
+                                                                     const unsigned int                                   i_m_remainder_elements,
+                                                                     const unsigned int                                   i_mask_reg,
+                                                                     const unsigned int                                   i_mask_reg_full_frac_vlen,
+                                                                     const unsigned int                                   i_is_gather,
+                                                                     const unsigned int                                   i_gp_idx_mat_reg,
+                                                                     const unsigned int                                   i_gp_reg_mat_reg,
+                                                                     const unsigned int                                   i_dtype_size_reg_mat,
+                                                                     const unsigned int                                   i_ld_reg_mat ) {
   unsigned char l_is_sve = (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT);
-  unsigned int im = 0, in = 0;
-  unsigned int l_ld_bytes_reg = ld_reg_mat * dtype_size_reg_mat;
-  unsigned int l_m_adjust_reg = ( m_remainder_elements == 0 ) ? vlen * dtype_size_reg_mat * m_unroll_factor : dtype_size_reg_mat * ( (vlen * (m_unroll_factor-1)) + m_remainder_elements );
-  unsigned int l_is_16bit_gs = (dtype_size_reg_mat == 2) ? 1 : 0;
-  unsigned int l_is_64bit_idx = (idx_tsize == 8) ? 1 : 0;
+  unsigned int l_im = 0, l_in = 0;
+  unsigned int l_ld_bytes_reg = i_ld_reg_mat * i_dtype_size_reg_mat;
+  unsigned int l_m_adjust_reg = ( i_m_remainder_elements == 0 ) ? i_vlen * i_dtype_size_reg_mat * i_m_unroll_factor : i_dtype_size_reg_mat * ( (i_vlen * (i_m_unroll_factor-1)) + i_m_remainder_elements );
+  unsigned int l_is_16bit_gs = (i_dtype_size_reg_mat == 2) ? 1 : 0;
+  unsigned int l_is_64bit_idx = (i_idx_tsize == 8) ? 1 : 0;
 
-  for (in = 0; in < n_unroll_factor; in++) {
-    for (im = 0; im < m_unroll_factor; im++) {
-      unsigned int idx_vreg_id = idx_vreg_start + im;
-      unsigned int aux_vreg = idx_vreg_start + m_unroll_factor + im + in * m_unroll_factor;
-      unsigned int l_idx_masked_elements = (im == m_unroll_factor - 1) ? m_remainder_elements : 0;
-      unsigned int l_idx_mask_load = (im == m_unroll_factor - 1) ? ((m_remainder_elements > 0) ? idx_mask_reg : 0) : 0;
+  for (l_in = 0; l_in < i_n_unroll_factor; l_in++) {
+    for (l_im = 0; l_im < i_m_unroll_factor; l_im++) {
+      unsigned int idx_vreg_id = i_idx_vreg_start + l_im;
+      unsigned int aux_vreg = i_idx_vreg_start + i_m_unroll_factor + l_im + l_in * i_m_unroll_factor;
+      unsigned int l_idx_masked_elements = (l_im == i_m_unroll_factor - 1) ? i_m_remainder_elements : 0;
+      unsigned int l_idx_mask_load = (l_im == i_m_unroll_factor - 1) ? ((i_m_remainder_elements > 0) ? i_idx_mask_reg : 0) : 0;
 
-      unsigned int l_masked_reg_elements = ((l_is_16bit_gs == 0) && (l_is_64bit_idx == 0)) ? (im == m_unroll_factor - 1) ? m_remainder_elements : 0
-                                                                                           : (im == m_unroll_factor - 1) ? (m_remainder_elements > 0) ? m_remainder_elements : vlen : vlen;
-      unsigned int l_mask_reg = ((l_is_16bit_gs == 0) && (l_is_64bit_idx == 0)) ? (im == m_unroll_factor - 1) ? (m_remainder_elements > 0) ? mask_reg : 0 : 0
-                                                                                : (im == m_unroll_factor - 1) ? (m_remainder_elements > 0) ? mask_reg : mask_reg_full_frac_vlen : mask_reg_full_frac_vlen;
-      if (is_gather == 1) {
+      unsigned int l_masked_reg_elements = ((l_is_16bit_gs == 0) && (l_is_64bit_idx == 0)) ? (l_im == i_m_unroll_factor - 1) ? i_m_remainder_elements : 0
+                                                                                           : (l_im == i_m_unroll_factor - 1) ? (i_m_remainder_elements > 0) ? i_m_remainder_elements : i_vlen : i_vlen;
+      unsigned int l_i_mask_reg = ((l_is_16bit_gs == 0) && (l_is_64bit_idx == 0)) ? (l_im == i_m_unroll_factor - 1) ? (i_m_remainder_elements > 0) ? i_mask_reg : 0 : 0
+                                                                                : (l_im == i_m_unroll_factor - 1) ? (i_m_remainder_elements > 0) ? i_mask_reg : i_mask_reg_full_frac_vlen : i_mask_reg_full_frac_vlen;
+      if (i_is_gather == 1) {
         /* Gather based on index vector im*/
         if (l_is_sve > 0) {
-          libxsmm_aarch64_instruction_sve_move( io_generated_code, gather_instr, gp_idx_mat_reg, idx_vreg_id, 0, aux_vreg, l_idx_mask_load);
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, i_gather_instr, i_gp_idx_mat_reg, idx_vreg_id, 0, aux_vreg, l_idx_mask_load);
           if (l_is_16bit_gs || l_is_64bit_idx) {
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
           }
         } else {
-          libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
-              idx_vreg_id, idx_tsize, aux_vreg, dtype_size_reg_mat, l_idx_masked_elements, is_gather);
+          libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
+              idx_vreg_id, i_idx_tsize, aux_vreg, i_dtype_size_reg_mat, l_idx_masked_elements, i_is_gather);
         }
         /* Store gathered vector  */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg,
-                                                          dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg,
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
       } else {
         /* Load vector to be scattered */
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg,
-                                                          dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_mask_reg) );
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, aux_vreg,
+                                                          i_dtype_size_reg_mat, l_masked_reg_elements, 1, 0, LIBXSMM_CAST_UCHAR(l_i_mask_reg) );
         /* Scatter based on index vector im*/
         if (l_is_sve > 0) {
           if (l_is_16bit_gs || l_is_64bit_idx) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, aux_vreg, aux_vreg, 0, aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
           }
-          libxsmm_aarch64_instruction_sve_move( io_generated_code, scatter_instr, gp_idx_mat_reg, idx_vreg_id, 0, aux_vreg, l_idx_mask_load);
+          libxsmm_aarch64_instruction_sve_move( io_generated_code, i_scatter_instr, i_gp_idx_mat_reg, idx_vreg_id, 0, aux_vreg, l_idx_mask_load);
         } else {
-          libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
-              idx_vreg_id, idx_tsize, aux_vreg, dtype_size_reg_mat, l_idx_masked_elements, is_gather);
+          libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
+              idx_vreg_id, i_idx_tsize, aux_vreg, i_dtype_size_reg_mat, l_idx_masked_elements, i_is_gather);
         }
       }
     }
     libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                  gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_idx_mat_reg,
-                                                  ((long long)ld_idx_mat) * dtype_size_reg_mat);
+                                                  i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_idx_mat_reg,
+                                                  ((long long)i_ld_idx_mat) * i_dtype_size_reg_mat);
     if ( l_ld_bytes_reg != l_m_adjust_reg ) {
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                    gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_reg_mat_reg,
+                                                    i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mat_reg,
                                                     ((long long)l_ld_bytes_reg - l_m_adjust_reg) );
     }
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-                                               gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_idx_mat_reg,
-                                               (long long)ld_idx_mat*dtype_size_reg_mat*n_unroll_factor );
+                                               i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_idx_mat_reg,
+                                               (long long)i_ld_idx_mat*i_dtype_size_reg_mat*i_n_unroll_factor );
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
-                                               gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, gp_reg_mat_reg,
-                                               (long long)l_ld_bytes_reg*n_unroll_factor );
+                                               i_gp_reg_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mat_reg,
+                                               (long long)l_ld_bytes_reg*i_n_unroll_factor );
 }
 
 LIBXSMM_API_INTERN
