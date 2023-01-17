@@ -298,7 +298,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   /* register blocking counter in m */
   unsigned int l_m = 0;
   unsigned int l_m_blocks[2] = { 0 }; /* 0: #full vector stores, 1: #predicate stores (0 or 1) */
-  unsigned int l_n_blocks = (i_is_mmla_regblock > 0) ? i_n_blocking / 2 : i_n_blocking;
+  unsigned int l_n_blocks = (i_is_mmla_regblock > 0) ? (i_n_blocking + 1) / 2 : i_n_blocking;
 
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
