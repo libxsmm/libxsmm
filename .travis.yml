@@ -1,69 +1,71 @@
 # avoid any dashes at the begin of a line within a test section
 script:
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 MIX=0
-        EFLAGS="-DITYPE=double -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 BLAS=1 ABSLIBS=1 MIX=0
+      EFLAGS="-DITYPE=double -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23"
-        EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" ${INSTALL} test-cp2k
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} TRACE=1 MNK="19 27, 23"
+      EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" ${INSTALL} test-cp2k
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
-        EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} test-nek
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0
+      EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} test-nek
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0 JITDUMP=${RUN_LINUX_PERF}
-        EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} STATIC=0
+      EFLAGS="-DLIBXSMM_NO_CTOR -DINCLUDE_LIBXSMM_LAST" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="9 3, 23" STATIC=0
-        EFLAGS="-DLIBXSMM_MALLOC_MMAP" ${INSTALL} test-smm
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} MNK="9 3, 23" STATIC=0
+      EFLAGS="-DLIBXSMM_MALLOC_MMAP" ${INSTALL} test-smm
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0 JITDUMP=${RUN_LINUX_PERF}
-        EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} INTRINSICS=1 MIX=0
+      EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
-        EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
+  - make -e ${MAKEJ} ${PEDANTIC_HIGH} SSE=0 AVX=0 JIT=0
+      EFLAGS="-DELEM_TYPE=short" ${INSTALL} tests
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
-        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test
+  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 &&
+      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 INTRINSICS=0 test
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 &&
-        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test
+  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 &&
+      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 STATIC=1 test
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 &&
-        cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
-        make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test
+  - make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 &&
+      cd ${TRAVIS_BUILD_DIR}/samples/utilities/wrap &&
+    make -e ${MAKEJ} ${PEDANTIC_TEST} VLA=0 PREC=2 STATIC=0 BLAS=2 test
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ]; then exit 0; fi && cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
-    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 JITDUMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
-    cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
+  - cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
+    make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=3 MIC=0 OMP=1 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
     make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=2 THREADS=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile &&
-    cd ${TRAVIS_BUILD_DIR}/samples/cp2k &&
     make -e ${MAKEJ} ${PEDANTIC_HIGH} AVX=1 VLA=0 ECXXFLAGS='-DUSE_HEADER_ONLY' compile
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
-    ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh
+  - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
+      ${TRAVIS_BUILD_DIR}/scripts/tool_analyze.sh;
+    fi
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
-    ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh
+  - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
+      ${TRAVIS_BUILD_DIR}/scripts/tool_normalize.sh;
+    fi
 
-  - if [ "1" = "${COVERITY_SCAN_BRANCH}" ] || [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
-    make -e ${MAKEJ} STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh
+  - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
+      make -e ${MAKEJ} STATIC=0 DBG=1 && ${TRAVIS_BUILD_DIR}/scripts/tool_checkabi.sh;
+    fi
 
-  - if [ ! "${STATIC_ANALYSIS}" ] || [ "0" = "${STATIC_ANALYSIS}" ]; then exit 0; fi;
-    if [ ! "${COVERITY_SCAN_BINDIR}" ] || [ ! "${COVERITY_SCAN_USER}" ] || [ ! "${COVERITY_SCAN_TOKEN}" ]; then
-      echo "Please setup COVERITY_SCAN_BINDIR, COVERITY_SCAN_USER, and COVERITY_SCAN_TOKEN.";
-      exit 1;
-    fi;
-    if [ "${COVERITY_SCAN_TMPDIR_CLEAR}" ] && [ "0" != "${COVERITY_SCAN_TMPDIR_CLEAR}" ] &&
-       [ "." != ""${COVERITY_SCAN_TMPDIR}"" ] && [ -e "${COVERITY_SCAN_TMPDIR}" ];
-    then
-      rm -rf "${COVERITY_SCAN_TMPDIR}";
-    fi;
-    ${COVERITY_SCAN_BINDIR}/cov-build --dir ${COVERITY_SCAN_TMPDIR} make -e ${MAKEJ} &&
-    tar cvfz "${COVERITY_SCAN_TGZDIR}/cov-int.tgz" -C "$(dirname "${COVERITY_SCAN_TMPDIR}")" --transform
-      "s/^$(basename "${COVERITY_SCAN_TMPDIR}")/cov-int/" $(basename ${COVERITY_SCAN_TMPDIR}) &&
-    curl https://scan.coverity.com/builds?project=hfp-libxsmm --form
-      token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER} --form
-      file=@${COVERITY_SCAN_TGZDIR}/cov-int.tgz --form
-      version="$(${TRAVIS_BUILD_DIR}/scripts/libxsmm_version.sh)" --form
-      description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)"
+  - if [ "${STATIC_ANALYSIS}" ] && [ "0" != "${STATIC_ANALYSIS}" ]; then
+      if [ ! "${COVERITY_SCAN_BINDIR}" ] || [ ! "${COVERITY_SCAN_USER}" ] || [ ! "${COVERITY_SCAN_TOKEN}" ]; then
+        echo "Please setup COVERITY_SCAN_BINDIR, COVERITY_SCAN_USER, and COVERITY_SCAN_TOKEN.";
+        exit 1;
+      fi;
+      if [ "${COVERITY_SCAN_TMPDIR_CLEAR}" ] && [ "0" != "${COVERITY_SCAN_TMPDIR_CLEAR}" ] &&
+         [ "." != ""${COVERITY_SCAN_TMPDIR}"" ] && [ -e "${COVERITY_SCAN_TMPDIR}" ];
+      then
+        rm -rf "${COVERITY_SCAN_TMPDIR}";
+      fi;
+      ${COVERITY_SCAN_BINDIR}/cov-build --dir ${COVERITY_SCAN_TMPDIR} make -e ${MAKEJ} &&
+      tar cvfz "${COVERITY_SCAN_TGZDIR}/cov-int.tgz" -C "$(dirname "${COVERITY_SCAN_TMPDIR}")" --transform
+        "s/^$(basename "${COVERITY_SCAN_TMPDIR}")/cov-int/" $(basename ${COVERITY_SCAN_TMPDIR}) &&
+      curl https://scan.coverity.com/builds?project=hfp-libxsmm --form
+        token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER} --form
+        file=@${COVERITY_SCAN_TGZDIR}/cov-int.tgz --form
+        version="$(${TRAVIS_BUILD_DIR}/scripts/libxsmm_version.sh)" --form
+        description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)";
+    fi
