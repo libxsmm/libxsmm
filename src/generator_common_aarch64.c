@@ -11,13 +11,11 @@
 ******************************************************************************/
 
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_gemm_common_aarch64.h"
 
 LIBXSMM_API_INTERN

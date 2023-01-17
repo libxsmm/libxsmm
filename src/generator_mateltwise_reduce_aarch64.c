@@ -11,7 +11,6 @@
 ******************************************************************************/
 #include "generator_common_aarch64.h"
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_mateltwise_reduce_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"

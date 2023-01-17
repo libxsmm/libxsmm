@@ -17,7 +17,6 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"

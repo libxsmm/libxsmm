@@ -13,7 +13,6 @@
 #include "generator_common.h"
 #include "generator_mateltwise_sse_avx_avx512.h"
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 
 LIBXSMM_API
 void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*          io_generated_code,
@@ -21,10 +20,9 @@ void libxsmm_generator_mateltwise_kernel( libxsmm_generated_code*          io_ge
   /* generate kernel */
   if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) && (io_generated_code->arch <= LIBXSMM_X86_ALLFEAT) ) {
     libxsmm_generator_mateltwise_sse_avx_avx512_kernel( io_generated_code, i_mateltw_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82) ) {
+  } else if ( ((io_generated_code->arch >= LIBXSMM_AARCH64_V81) && (io_generated_code->arch <= LIBXSMM_AARCH64_V82)) ||
+              ((io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch <= LIBXSMM_AARCH64_A64FX)) ) {
     libxsmm_generator_mateltwise_aarch64_kernel( io_generated_code, i_mateltw_desc );
-  } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE256) && (io_generated_code->arch <= LIBXSMM_AARCH64_A64FX) ) {
-    libxsmm_generator_mateltwise_aarch64_sve_kernel( io_generated_code, i_mateltw_desc );
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_APPL_M1 && io_generated_code->arch <= LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_mateltwise_aarch64_kernel(io_generated_code, i_mateltw_desc);
   } else {
