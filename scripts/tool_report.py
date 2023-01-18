@@ -273,7 +273,7 @@ def main(args, argd):
         if (  # backup database and prune according to retention
             0 < args.retention
             and args.history < args.retention
-            and args.retention < dbsize
+            and args.history < dbsize
         ):
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
@@ -281,9 +281,10 @@ def main(args, argd):
             retfile = outfile.parent / newname
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - args.retention]:  # noqa: E203
+                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
                     del database[key]
-                dbsize = args.retention  # update
+                dbkeys = list(database.keys())
+                dbsize = args.history
         savedb(outfile, database)
 
     # collect categories for template (figure)
