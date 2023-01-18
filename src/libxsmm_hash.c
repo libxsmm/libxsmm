@@ -490,7 +490,7 @@ LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch)
 
 LIBXSMM_API_INTERN void libxsmm_hash_finalize(void)
 {
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && 0
   internal_crc32_table = NULL;
   internal_hash_u32_function = NULL;
   internal_hash_u64_function = NULL;

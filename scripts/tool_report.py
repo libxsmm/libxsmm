@@ -13,6 +13,7 @@ import matplotlib.pyplot as plot
 import statistics
 import requests
 import argparse
+import datetime
 import pathlib
 import pickle
 import json
@@ -95,6 +96,16 @@ def mtime(filename):
         return pathlib.Path(filename).stat().st_mtime if filename else 0
     except:  # noqa: E722
         return 0
+
+
+def savedb(filename, database):
+    if ".json" == filename.suffix:
+        with open(filename, "w") as file:
+            json.dump(database, file, indent=2)
+            file.write("\n")  # append newline at EOF
+    else:  # pickle
+        with open(filename, "wb") as file:
+            pickle.dump(database, file)
 
 
 def main(args, argd):
@@ -238,6 +249,7 @@ def main(args, argd):
         if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
             print("[OK]")
 
+    # conclude loading data from latest CI
     if 2 <= args.verbosity or 0 > args.verbosity:
         if 0 != nerrors:
             y = "ies" if 1 != nerrors else "y"
@@ -247,27 +259,39 @@ def main(args, argd):
             )
         y = "ies" if 1 != nentries else "y"
         print(f"Found {nentries} new entr{y}.")
-    if database:
-        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
+
+    # save database (consider retention), and update dbkeys
+    dbkeys = list(database.keys())
+    dbsize = len(dbkeys)
     if 0 != nentries and ofmtime == mtime(outfile):
         if not outfile.exists() and (
             2 <= args.verbosity or 0 > args.verbosity
         ):
             print(f"{outfile} database created.")
-        if ".json" == outfile.suffix:
-            with open(outfile, "w") as file:
-                json.dump(database, file, indent=2)
-                file.write("\n")  # append newline at EOF
-        else:  # pickle
-            with open(outfile, "wb") as file:
-                pickle.dump(database, file)
+        # sort by top-level key if database is to be stored (build number)
+        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
+        if (  # backup database and prune according to retention
+            0 < args.retention
+            and args.history < args.retention
+            and args.history < dbsize
+        ):
+            nowutc = datetime.datetime.now(datetime.timezone.utc)
+            nowstr = nowutc.strftime("%Y%m%d")  # day
+            newname = f"{outfile.stem}-{nowstr}{outfile.suffix}"
+            retfile = outfile.parent / newname
+            if not retfile.exists():
+                savedb(retfile, database)  # unpruned
+                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
+                    del database[key]
+                dbkeys = list(database.keys())
+                dbsize = args.history
+        savedb(outfile, database)
 
-    # update dbkeys and collect categories (template)
-    dbkeys = list(database.keys())
+    # collect categories for template (figure)
     templidx = (
         1  # file-based input (just added) shall determine template
         if (args.infile and args.infile.is_file())
-        else min(inflight + 1, len(dbkeys))
+        else min(inflight + 1, dbsize)
     )
     templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
@@ -308,8 +332,10 @@ def main(args, argd):
     i = 0
     infneg = float("-inf")
     infpos = float("inf")
+    nvalues = 0
     yunit = None
     for entry in entries:
+        n = 0
         for value in (
             v
             for v in template[entry]
@@ -444,6 +470,8 @@ def main(args, argd):
                         xvalue, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
                 axes[i].set_ylabel(aunit)
+            n = n + 1
+        nvalues = max(nvalues, n)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
@@ -498,9 +526,9 @@ def main(args, argd):
     if ".png" == figout.suffix:
         figcanvas.draw()  # otherwise the image is empty
         image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
-        image = image.convert(
-            "P", palette=PIL.Image.Palette.ADAPTIVE, colors=16
-        )
+        ncolors = divup(nvalues + 2, 8) * 8
+        palette = PIL.Image.Palette.ADAPTIVE
+        image = image.convert("P", palette=palette, colors=ncolors)
         image.save(figout, "PNG", optimize=True)
     else:
         figure.savefig(figout)  # save graphics file
@@ -615,8 +643,8 @@ if __name__ == "__main__":
         "-a",
         "--analyze",
         type=str,
-        default="layer",
-        help="Analyze common property",
+        default=None,
+        help='Common property, e.g., "layer"',
     )
     argparser.add_argument(
         "-b",
@@ -638,6 +666,13 @@ if __name__ == "__main__":
         type=int,
         default=30,
         help="Number of builds",
+    )
+    argparser.add_argument(
+        "-u",
+        "--retention",
+        type=int,
+        default=60,
+        help="Keep history",
     )
     argparser.add_argument(
         "-k",
