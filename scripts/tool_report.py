@@ -308,8 +308,10 @@ def main(args, argd):
     i = 0
     infneg = float("-inf")
     infpos = float("inf")
+    nvalues = 0
     yunit = None
     for entry in entries:
+        n = 0
         for value in (
             v
             for v in template[entry]
@@ -444,6 +446,8 @@ def main(args, argd):
                         xvalue, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
                 axes[i].set_ylabel(aunit)
+            n = n + 1
+        nvalues = max(nvalues, n)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
@@ -498,9 +502,9 @@ def main(args, argd):
     if ".png" == figout.suffix:
         figcanvas.draw()  # otherwise the image is empty
         image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
-        image = image.convert(
-            "P", palette=PIL.Image.Palette.ADAPTIVE, colors=16
-        )
+        ncolors = divup(nvalues + 2, 8) * 8
+        palette = PIL.Image.Palette.ADAPTIVE
+        image = image.convert("P", palette=palette, colors=ncolors)
         image.save(figout, "PNG", optimize=True)
     else:
         figure.savefig(figout)  # save graphics file
@@ -615,8 +619,8 @@ if __name__ == "__main__":
         "-a",
         "--analyze",
         type=str,
-        default="layer",
-        help="Analyze common property",
+        default=None,
+        help='Common property, e.g., "layer"',
     )
     argparser.add_argument(
         "-b",
