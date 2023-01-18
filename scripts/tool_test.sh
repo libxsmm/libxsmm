@@ -322,7 +322,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           export PYTHONPATH=${PYTHONSITE}:${PYTHONPATH}
         fi
       fi
-    else
+    elif [ "none" != "${CONFIG}" ]; then
       echo "WARNING: configuration \"${CONFIG}\" not found!"
       CONFIGFILE=""
       CONFIG="none"
