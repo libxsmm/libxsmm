@@ -244,7 +244,7 @@ LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
 
 LIBXSMM_API_INTERN void libxsmm_memory_finalize(void)
 {
-#if !defined(NDEBUG) && !defined(LIBXSMM_MEMORY_SW)
+#if !defined(NDEBUG) && !defined(LIBXSMM_MEMORY_SW) && 0
   internal_diff_function = NULL;
   internal_memcmp_function = NULL;
 #endif
