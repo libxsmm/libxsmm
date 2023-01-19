@@ -440,33 +440,37 @@ def main(args, argd):
                             if analyze_min and 0 != vmin and infpos != amin:
                                 vlabel = analyze_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
+                            else:
+                                analyze_min = ""
                             if analyze_max and 0 != vmax and infneg != amax:
                                 vlabel = analyze_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
+                            else:
+                                analyze_max = ""
                 else:
                     label = value
             else:
                 label = value
 
-            if smry or (not analyze_min and not analyze_max):
+            if yunit == aunit or (not analyze_min and not analyze_max):
                 xvalue = [*range(0, len(yvalue))]
                 axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
                 axes[i].set_ylabel(yunit)
-            else:
-                if analyze_min:
-                    yvalue = analyze[analyze_min]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_min}"
-                    axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                if analyze_max:
-                    yvalue = analyze[analyze_max]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_max}"
-                    axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
+            if analyze_min:
+                yvalue = analyze[analyze_min]
+                xvalue = [*range(0, len(yvalue))]
+                label = f"{value}: {analyze_min}"
+                axes[i].step(
+                    xvalue, yvalue, ".:", where="mid", label=label
+                )  # noqa: E501
+                axes[i].set_ylabel(aunit)
+            if analyze_max:
+                yvalue = analyze[analyze_max]
+                xvalue = [*range(0, len(yvalue))]
+                label = f"{value}: {analyze_max}"
+                axes[i].step(
+                    xvalue, yvalue, ".:", where="mid", label=label
+                )  # noqa: E501
                 axes[i].set_ylabel(aunit)
             n = n + 1
         nvalues = max(nvalues, n)
@@ -649,7 +653,7 @@ if __name__ == "__main__":
         "--summary",
         type=str,
         default="gflops",
-        help='If "", plot per-layer history',
+        help='If "", same unit as result',
     )
     argparser.add_argument(
         "-m",
