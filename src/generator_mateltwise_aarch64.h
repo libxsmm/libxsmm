@@ -14,6 +14,10 @@
 #define GENERATOR_MATELTWISE_AARCH64_H
 
 #include "generator_common.h"
+#include "generator_aarch64_instructions.h"
+
+LIBXSMM_API_INTERN
+libxsmm_aarch64_sve_type libxsmm_generator_aarch64_get_sve_type(unsigned char i_size);
 
 LIBXSMM_API_INTERN
 libxsmm_blasint libxsmm_generator_mateltwise_aarch64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
