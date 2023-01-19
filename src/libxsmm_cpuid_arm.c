@@ -26,6 +26,8 @@
 
 #if defined(LIBXSMM_PLATFORM_AARCH64)
 # if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 4611)
 #   define LIBXSMM_CPUID_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
       (((OP0) & 1) << 14) | \
       (((OP1) & 7) << 11) | \
@@ -200,3 +202,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 #endif
   return result;
 }
+
+#if defined(LIBXSMM_PLATFORM_AARCH64) && defined(_MSC_VER)
+# pragma warning(pop)
+#endif

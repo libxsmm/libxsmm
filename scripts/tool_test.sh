@@ -14,8 +14,10 @@ set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=${HERE}/..
+ENVDIR=${ROOT}/.env
+
 # TODO: map to CI-provider (abstract environment)
-source "${ROOT}/.env/buildkite.env" ""
+source "${ENVDIR}/buildkite.env" ""
 
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
@@ -289,28 +291,43 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
-    # make execution environment locally available (always)
-    CONFIGFILE=""
-    if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
-      CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
-      if [[ ! "${CONFIGFILES[@]}" ]]; then
-        CONFIGFILES=($(ls -1 ${ROOT}/.env/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
+    # determine configuration files once according to pattern
+    if [[ (! "${CONFIGFILES[*]}") && \
+          ("none" != "${CONFIG}") && \
+          ("${HOSTNAME}" || "${HOSTPREFIX}") ]];
+    then
+      CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
+      if [[ ! "${CONFIGFILES[*]}" ]]; then
+        CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
       fi
-      if [[ "${CONFIGFILES[@]}" ]]; then
+      if [[ "${CONFIGFILES[*]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
-          CONFIGFILES=($(echo "${CONFIGFILES}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+          CONFIGFILES=($(echo "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
         CONFIGCOUNT=${#CONFIGFILES[@]}
-        if [ "0" != "${CONFIGCOUNT}" ]; then
-          CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
-          CONFIG=$(basename "${CONFIGFILE}" .env)
-        else
-          echo "WARNING: configuration \"${CONFIG}\" not found!"
-          CONFIGFILE=""
-        fi
       fi
     fi
+    # determine actual configuration for every test/iteration
+    if [ "${CONFIGCOUNT}" ] && [ "0" != "${CONFIGCOUNT}" ]; then
+      CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+      CONFIG=$(basename "${CONFIGFILE}" .env)
+      # setup Python environment if LAUNCH_USER cannot access orig. user's site-directory
+      if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
+        PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python3 -m site --user-site 2>/dev/null")
+        if [ ! "${PYTHONSITE}" ]; then
+          PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python -m site --user-site 2>/dev/null")
+        fi
+        if [ "${PYTHONSITE}" ]; then
+          export PYTHONPATH=${PYTHONSITE}:${PYTHONPATH}
+        fi
+      fi
+    elif [ "none" != "${CONFIG}" ]; then
+      echo "WARNING: configuration \"${CONFIG}\" not found!"
+      CONFIGFILE=""
+      CONFIG="none"
+    fi
+    # iterate over all given environments
     COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
@@ -370,7 +387,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
         fi
         echo "fi" >>"${TESTSCRIPT}"
-        if [ -e "${CONFIGFILE}" ]; then
+        if [ "${CONFIGFILE}" ]; then
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case

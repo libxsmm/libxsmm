@@ -13,8 +13,11 @@ import matplotlib.pyplot as plot
 import statistics
 import requests
 import argparse
+import datetime
 import pathlib
+import pickle
 import json
+import PIL
 import sys
 import re
 
@@ -27,13 +30,15 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
         )
         if match and match.group(1) and match.group(2)
     ):
-        category = match.group(1) if not select else select
         values = [
             line.group(1)
             for line in re.finditer(r"([^\n\r]+)", match.group(2))
-            if line and line.group(1)
+            if line
+            and line.group(1)
+            and all(32 <= ord(c) for c in line.group(1))
         ]
-        if not any("syntax error" in v for v in values):
+        if values and not any("syntax error" in v for v in values):
+            category = match.group(1) if not select else select
             if strbuild not in database:
                 database[strbuild] = dict()
             if category not in database[strbuild]:
@@ -93,6 +98,16 @@ def mtime(filename):
         return 0
 
 
+def savedb(filename, database):
+    if ".json" == filename.suffix:
+        with open(filename, "w") as file:
+            json.dump(database, file, indent=2)
+            file.write("\n")  # append newline at EOF
+    else:  # pickle
+        with open(filename, "wb") as file:
+            pickle.dump(database, file)
+
+
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
@@ -101,14 +116,14 @@ def main(args, argd):
     if args.select:
         select = (
             args.select.lower().split()
-            if not args.exact_select
+            if not args.select_exact
             else [args.select.lower()]
         )
     else:
         select = []
     query = (
         args.query.lower().split()
-        if not args.exact_query
+        if not args.query_exact
         else [args.query.lower()]
         if args.query
         else []
@@ -129,7 +144,7 @@ def main(args, argd):
             args.infile = None
             pass
         outfile = (
-            f"{args.infile.stem}.json"
+            pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
             if args.filepath == argd.filepath
             else args.filepath
         )
@@ -138,12 +153,20 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    try:
-        with open(args.filepath, "r") as file:
-            database = json.load(file)
-    except:  # noqa: E722
+    if args.filepath.is_file():
+        try:
+            if ".json" == args.filepath.suffix:
+                with open(args.filepath, "r") as file:
+                    database = json.load(file)
+            else:  # pickle
+                with open(args.filepath, "rb") as file:
+                    database = pickle.load(file)
+        except Exception as error:
+            msg = str(error).replace(": ", f" in {args.filepath.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
+            exit(1)
+    else:
         database = dict()
-        pass
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
@@ -154,7 +177,11 @@ def main(args, argd):
             if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
             else next
         )
-        name = args.query if args.query and args.nbuild else args.infile.stem
+        name = (
+            args.query
+            if args.query and (args.query != argd.query or args.query_exact)
+            else args.infile.stem
+        )
         nentries, nerrors = parselog(
             database,
             str(nbld),
@@ -187,9 +214,8 @@ def main(args, argd):
             # iterate over all builds (latest first)
             for build in builds:
                 nbuild = build["number"]
-                # JSON stores integers as string
-                strbuild = str(nbuild)
-                if (
+                strbuild = str(nbuild)  # JSON stores integers as string
+                if (  # consider early exit
                     nbuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
@@ -210,6 +236,10 @@ def main(args, argd):
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
                     n = n + 1
+                if 0 == n and nbuild <= latest and "running" != build["state"]:
+                    latest = nbuild
+                    builds = None
+                    break
                 njobs = njobs + n
             if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
@@ -219,6 +249,7 @@ def main(args, argd):
         if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
             print("[OK]")
 
+    # conclude loading data from latest CI
     if 2 <= args.verbosity or 0 > args.verbosity:
         if 0 != nerrors:
             y = "ies" if 1 != nerrors else "y"
@@ -228,26 +259,52 @@ def main(args, argd):
             )
         y = "ies" if 1 != nentries else "y"
         print(f"Found {nentries} new entr{y}.")
-    if database:
-        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
+
+    # save database (consider retention), and update dbkeys
+    dbkeys = list(database.keys())
+    dbsize = len(dbkeys)
     if 0 != nentries and ofmtime == mtime(outfile):
         if not outfile.exists() and (
             2 <= args.verbosity or 0 > args.verbosity
         ):
-            print(f"{args.filepath} new database created.")
-        with open(outfile, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
+            print(f"{outfile} database created.")
+        # sort by top-level key if database is to be stored (build number)
+        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
+        if (  # backup database and prune according to retention
+            0 < args.retention
+            and args.history < args.retention
+            and args.history < dbsize
+        ):
+            nowutc = datetime.datetime.now(datetime.timezone.utc)
+            nowstr = nowutc.strftime("%Y%m%d")  # day
+            newname = f"{outfile.stem}-{nowstr}{outfile.suffix}"
+            retfile = outfile.parent / newname
+            if not retfile.exists():
+                savedb(retfile, database)  # unpruned
+                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
+                    del database[key]
+                dbkeys = list(database.keys())
+                dbsize = args.history
+        savedb(outfile, database)
 
-    templidx = min(inflight + 1, len(dbkeys))
+    # collect categories for template (figure)
+    templidx = (
+        1  # file-based input (just added) shall determine template
+        if (args.infile and args.infile.is_file())
+        else min(inflight + 1, dbsize)
+    )
     templkey = dbkeys[-templidx] if dbkeys else ""  # string
     template = database[templkey] if templkey in database else []
-    nselect = sum(
-        1
+    entries = [
+        e  # category (one level below build number)
         for e in template
         if not select
-        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
-    )
+        or any(matchstr(s, e.lower(), exact=args.select_exact) for s in select)
+    ]
+    if entries and not select and args.select_exact:
+        entries = [entries[-1]]  # assume insertion order is preserved
+
+    # determine image resolution
     rdef = [int(r) for r in argd.resolution.split("x")]
     if 2 == len(rdef):
         rdef.append(100)
@@ -260,24 +317,25 @@ def main(args, argd):
             rint.append(
                 rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
             )
+
+    # setup figure
     figure, axes = plot.subplots(
-        max(nselect, 1),
+        max(len(entries), 1),
         sharex=True,
         figsize=(divup(rint[0], rint[2]), divup(rint[1], rint[2])),
         dpi=rint[2],
     )
-    if 2 > nselect:
+    if 2 > len(entries):
         axes = [axes]
+
+    # build figure
     i = 0
     infneg = float("-inf")
     infpos = float("inf")
+    nvalues = 0
     yunit = None
-    for entry in (
-        e
-        for e in template
-        if not select
-        or any(matchstr(s, e.lower(), exact=args.exact_select) for s in select)
-    ):
+    for entry in entries:
+        n = 0
         for value in (
             v
             for v in template[entry]
@@ -412,6 +470,8 @@ def main(args, argd):
                         xvalue, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
                 axes[i].set_ylabel(aunit)
+            n = n + 1
+        nvalues = max(nvalues, n)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
@@ -420,8 +480,10 @@ def main(args, argd):
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
-    # determine filename (graphics)
-    figtypes = plot.gcf().canvas.get_supported_filetypes()
+
+    # determine supported file types and filename components
+    figcanvas = figure.canvas
+    figtypes = figcanvas.get_supported_filetypes()
     argfig = pathlib.Path(args.figure)
     deffig = pathlib.Path(argd.figure)
     if argfig.is_dir():
@@ -444,14 +506,32 @@ def main(args, argd):
         figloc = argfig.parent
         figext = deffig.suffix
         figstm = argfig.stem if argfig.stem else deffig.stem
+
+    # determine filename from components
+    punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
+    figcat = (
+        ""
+        if 1 < len(entries) or 0 == len(entries)
+        else f"-{entries[0].translate(punct)}"
+    )
     if 0 < len(match):
-        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
         clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
         parts = [s.lower() for c in clean for s in c.split("_")]
-        figstm = f"{figstm}-{'_'.join(dict.fromkeys(parts))}"
-    figout = figloc / f"{figstm}{figext}"
-    # save graphics file
-    figure.savefig(figout)
+        fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
+    else:
+        fixqry = ""
+    figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
+
+    # reduce file size (png) and save figure
+    if ".png" == figout.suffix:
+        figcanvas.draw()  # otherwise the image is empty
+        image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
+        ncolors = divup(nvalues + 2, 8) * 8
+        palette = PIL.Image.Palette.ADAPTIVE
+        image = image.convert("P", palette=palette, colors=ncolors)
+        image.save(figout, "PNG", optimize=True)
+    else:
+        figure.savefig(figout)  # save graphics file
     if 1 == args.verbosity or 0 > args.verbosity:
         print(f"{figout} created.")
 
@@ -528,7 +608,7 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-x",
-        "--exact-query",
+        "--query-exact",
         action="store_true",
         help="Exact query",
     )
@@ -541,7 +621,7 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-z",
-        "--exact-select",
+        "--select-exact",
         action="store_true",
         help="Exact select",
     )
@@ -563,8 +643,8 @@ if __name__ == "__main__":
         "-a",
         "--analyze",
         type=str,
-        default="layer",
-        help="Analyze common property",
+        default=None,
+        help='Common property, e.g., "layer"',
     )
     argparser.add_argument(
         "-b",
@@ -586,6 +666,13 @@ if __name__ == "__main__":
         type=int,
         default=30,
         help="Number of builds",
+    )
+    argparser.add_argument(
+        "-u",
+        "--retention",
+        type=int,
+        default=60,
+        help="Keep history",
     )
     argparser.add_argument(
         "-k",
