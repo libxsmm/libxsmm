@@ -1152,18 +1152,18 @@ $(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Q&A.md"
 	@echo >>$@
 
-$(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
-$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_aux.md $(ROOTDIR)/documentation/libxsmm_prof.md \
-$(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md $(ROOTDIR)/documentation/libxsmm_compat.md \
-$(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.md
-	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
+$(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/$(DOCDIR)/index.md \
+$(ROOTDIR)/$(DOCDIR)/libxsmm_mm.md $(ROOTDIR)/$(DOCDIR)/libxsmm_aux.md $(ROOTDIR)/$(DOCDIR)/libxsmm_prof.md \
+$(ROOTDIR)/$(DOCDIR)/libxsmm_tune.md $(ROOTDIR)/$(DOCDIR)/libxsmm_be.md $(ROOTDIR)/$(SCRDIR)/README.md \
+$(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(ROOTDIR)/$(DOCDIR)/libxsmm_qna.md
+	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/$(DOCDIR)/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		>$(TMPFILE)
-	@cd $(ROOTDIR)/documentation && ( \
+	@cd $(ROOTDIR)/$(DOCDIR) && ( \
 		iconv -t utf-8 index.md && echo && \
 		echo "# LIBXSMM Domains" && \
 		iconv -t utf-8 libxsmm_mm.md && echo && \
@@ -1176,6 +1176,7 @@ $(ROOTDIR)/documentation/libxsmm_valid.md $(ROOTDIR)/documentation/libxsmm_qna.m
 		sed "s/^\(##*\) /#\1 /" libxsmm_compat.md | iconv -t utf-8 && \
 		echo "## Validation" && \
 		sed "s/^\(##*\) /#\1 /" libxsmm_valid.md | iconv -t utf-8 && \
+		iconv -t utf-8 ../$(SCRDIR)/README.md && \
 		echo "## Q&A" && \
 		sed "s/^\(##*\) /#\1 /" libxsmm_qna.md | iconv -t utf-8; ) \
 	| sed \
@@ -1210,7 +1211,7 @@ $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.
 		-e '1s/^/# [LIBXSMM Samples](https:\/\/github.com\/libxsmm\/libxsmm\/raw\/main\/documentation\/libxsmm_samples.pdf)\n\n/' \
 		>$@
 
-$(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
+$(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/$(DOCDIR)/libxsmm_samples.md
 	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1218,7 +1219,7 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily,showstringspaces=false}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		>$(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
+	@iconv -t utf-8 $(ROOTDIR)/$(DOCDIR)/libxsmm_samples.md \
 	| pandoc \
 		--template=$(TMPFILE) --listings \
 		-f gfm+subscript+superscript \
@@ -1237,7 +1238,7 @@ $(DOCDIR)/libxsmm.$(DOCEXT) \
 $(DOCDIR)/libxsmm_samples.$(DOCEXT)
 
 .PHONY: mkdocs
-mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md
+mkdocs: $(ROOTDIR)/$(DOCDIR)/index.md $(ROOTDIR)/$(DOCDIR)/libxsmm_samples.md
 	@mkdocs build --clean
 	@mkdocs serve
 

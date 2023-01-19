@@ -270,21 +270,19 @@ def main(args, argd):
             print(f"{outfile} database created.")
         # sort by top-level key if database is to be stored (build number)
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-        if (  # backup database and prune according to retention
-            0 < args.retention
-            and args.history < args.retention
-            and args.history < dbsize
-        ):
+        # backup database and prune according to retention
+        retention = max(args.retention, args.history)
+        if 0 < retention and (2 * retention) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
             newname = f"{outfile.stem}-{nowstr}{outfile.suffix}"
             retfile = outfile.parent / newname
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
+                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
                     del database[key]
                 dbkeys = list(database.keys())
-                dbsize = args.history
+                dbsize = retention
         savedb(outfile, database)
 
     # collect categories for template (figure)
@@ -341,6 +339,7 @@ def main(args, argd):
             for v in template[entry]
             if not query or any(matchstr(p, v.lower()) for p in query)
         ):
+            xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
             meanvl = []  # determined by --summary
             sunit = aunit = None
@@ -364,6 +363,7 @@ def main(args, argd):
                         ulow = unit.lower()
                         if not ylabel and matchstr(rslt, ulow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = unit
                         if not slabel and sdo and matchstr(smry, ulow):
                             meanvl.append(float(parsed.group(3)))
@@ -382,6 +382,7 @@ def main(args, argd):
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(parsed.group(3)))
@@ -397,6 +398,7 @@ def main(args, argd):
 
             if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+                xvalue = xvalue[: -args.history - 1 : -1]  # noqa: E203
             for a in analyze:  # (re-)reverse and trim collected values
                 analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
 
@@ -442,41 +444,57 @@ def main(args, argd):
                             if analyze_min and 0 != vmin and infpos != amin:
                                 vlabel = analyze_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
+                            else:
+                                analyze_min = ""
                             if analyze_max and 0 != vmax and infneg != amax:
                                 vlabel = analyze_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
+                            else:
+                                analyze_max = ""
                 else:
                     label = value
             else:
                 label = value
 
-            if smry or (not analyze_min and not analyze_max):
-                xvalue = [*range(0, len(yvalue))]
-                axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+            # determine size of shared x-axis
+            xsize = args.history
+            if yunit == aunit or (not analyze_min and not analyze_max):
+                xsize = min(len(yvalue), xsize)
+            if analyze_min:
+                xsize = min(len(analyze[analyze_min]), xsize)
+            if analyze_max:
+                xsize = min(len(analyze[analyze_max]), xsize)
+            xrange = range(0, xsize)
+
+            # plot values and legend as collected above
+            if yunit == aunit or (not analyze_min and not analyze_max):
+                axes[i].step(
+                    xrange, yvalue[0:xsize], ".:", where="mid", label=label
+                )
                 axes[i].set_ylabel(yunit)
-            else:
-                if analyze_min:
-                    yvalue = analyze[analyze_min]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_min}"
-                    axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                if analyze_max:
-                    yvalue = analyze[analyze_max]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_max}"
-                    axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
+            if analyze_min:
+                yvalue = analyze[analyze_min][0:xsize]
+                label = f"{value}: {analyze_min}"
+                axes[i].step(
+                    xrange, yvalue, ".:", where="mid", label=label
+                )  # noqa: E501
                 axes[i].set_ylabel(aunit)
+            if analyze_max:
+                yvalue = analyze[analyze_max][0:xsize]
+                label = f"{value}: {analyze_max}"
+                axes[i].step(
+                    xrange, yvalue, ".:", where="mid", label=label
+                )  # noqa: E501
+                axes[i].set_ylabel(aunit)
+            axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
+            axes[i].set_xticklabels(xvalue[0:xsize])
             n = n + 1
         nvalues = max(nvalues, n)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
-    axes[i - 1].set_xlabel("Number of Builds")
+    axes[i - 1].set_xlabel("Build Number")
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
@@ -526,7 +544,7 @@ def main(args, argd):
     if ".png" == figout.suffix:
         figcanvas.draw()  # otherwise the image is empty
         image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
-        ncolors = divup(nvalues + 2, 8) * 8
+        ncolors = divup(nvalues + 2, 16) * 16
         palette = PIL.Image.Palette.ADAPTIVE
         image = image.convert("P", palette=palette, colors=ncolors)
         image.save(figout, "PNG", optimize=True)
@@ -651,7 +669,7 @@ if __name__ == "__main__":
         "--summary",
         type=str,
         default="gflops",
-        help='If "", plot per-layer history',
+        help='If "", same unit as result',
     )
     argparser.add_argument(
         "-m",

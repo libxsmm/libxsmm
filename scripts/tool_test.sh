@@ -292,18 +292,18 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # determine configuration files once according to pattern
-    if [[ (! "${CONFIGFILES[@]}") && \
+    if [[ (! "${CONFIGFILES[*]}") && \
           ("none" != "${CONFIG}") && \
           ("${HOSTNAME}" || "${HOSTPREFIX}") ]];
     then
-      CONFIGFILES=($(ls -1 ${ENVDIR}/${HOSTNAME}/${CONFIG}.env 2>/dev/null))
-      if [[ ! "${CONFIGFILES[@]}" ]]; then
-        CONFIGFILES=($(ls -1 ${ENVDIR}/${HOSTPREFIX}*/${CONFIG}.env 2>/dev/null))
+      CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
+      if [[ ! "${CONFIGFILES[*]}" ]]; then
+        CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
       fi
-      if [[ "${CONFIGFILES[@]}" ]]; then
+      if [[ "${CONFIGFILES[*]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
-          CONFIGFILES=($(echo "${CONFIGFILES}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+          CONFIGFILES=($(echo "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
         CONFIGCOUNT=${#CONFIGFILES[@]}
       fi
@@ -314,15 +314,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       CONFIG=$(basename "${CONFIGFILE}" .env)
       # setup Python environment if LAUNCH_USER cannot access orig. user's site-directory
       if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
-        PYTHONSITE=$(su ${LAUNCH_USER} ${RUN_CMD} "python3 -m site --user-site 2>/dev/null")
+        PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python3 -m site --user-site 2>/dev/null")
         if [ ! "${PYTHONSITE}" ]; then
-          PYTHONSITE=$(su ${LAUNCH_USER} ${RUN_CMD} "python -m site --user-site 2>/dev/null")
+          PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python -m site --user-site 2>/dev/null")
         fi
         if [ "${PYTHONSITE}" ]; then
           export PYTHONPATH=${PYTHONSITE}:${PYTHONPATH}
         fi
       fi
-    else
+    elif [ "none" != "${CONFIG}" ]; then
       echo "WARNING: configuration \"${CONFIG}\" not found!"
       CONFIGFILE=""
       CONFIG="none"

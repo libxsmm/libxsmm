@@ -603,9 +603,6 @@
     <None Include="..\src\template\libxsmm.f">
       <Filter>include</Filter>
     </None>
-    <None Include="..\scripts\libxsmm_version.sh">
-      <Filter>scripts</Filter>
-    </None>
     <None Include="..\scripts\tool_getenvars.sh">
       <Filter>scripts</Filter>
     </None>

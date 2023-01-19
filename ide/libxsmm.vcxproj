@@ -240,7 +240,6 @@
     <None Include="..\scripts\libxsmm_source.sh" />
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
-    <None Include="..\scripts\libxsmm_version.sh" />
     <None Include="..\scripts\tool_analyze.sh" />
     <None Include="..\scripts\tool_cpuinfo.sh" />
     <None Include="..\scripts\tool_getenvars.sh" />
