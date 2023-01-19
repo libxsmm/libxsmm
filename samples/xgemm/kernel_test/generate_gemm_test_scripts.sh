@@ -136,8 +136,8 @@ for BINARY_POSTOP in 0 1; do
 
                 if [ "$CVNNI" == '1' ] ; then
                   if [ "$PREC" == 'BF16' ] ; then
-                    NSTART=4
-                    NSTEP=4
+                    NSTART=2
+                    NSTEP=2
                   elif [ "$PREC" == 'BF8' ] ; then
                     NSTART=4
                     NSTEP=4
