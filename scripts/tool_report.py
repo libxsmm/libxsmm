@@ -339,6 +339,7 @@ def main(args, argd):
             for v in template[entry]
             if not query or any(matchstr(p, v.lower()) for p in query)
         ):
+            xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
             meanvl = []  # determined by --summary
             sunit = aunit = None
@@ -362,6 +363,7 @@ def main(args, argd):
                         ulow = unit.lower()
                         if not ylabel and matchstr(rslt, ulow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = unit
                         if not slabel and sdo and matchstr(smry, ulow):
                             meanvl.append(float(parsed.group(3)))
@@ -380,6 +382,7 @@ def main(args, argd):
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(parsed.group(3)))
@@ -395,6 +398,7 @@ def main(args, argd):
 
             if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+                xvalue = xvalue[: -args.history - 1 : -1]  # noqa: E203
             for a in analyze:  # (re-)reverse and trim collected values
                 analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
 
@@ -452,33 +456,45 @@ def main(args, argd):
             else:
                 label = value
 
+            # determine size of shared x-axis
+            xsize = args.history
             if yunit == aunit or (not analyze_min and not analyze_max):
-                xvalue = [*range(0, len(yvalue))]
-                axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+                xsize = min(len(yvalue), xsize)
+            if analyze_min:
+                xsize = min(len(analyze[analyze_min]), xsize)
+            if analyze_max:
+                xsize = min(len(analyze[analyze_max]), xsize)
+            xrange = range(0, xsize)
+
+            # plot values and legend as collected above
+            if yunit == aunit or (not analyze_min and not analyze_max):
+                axes[i].step(
+                    xrange, yvalue[0:xsize], ".:", where="mid", label=label
+                )
                 axes[i].set_ylabel(yunit)
             if analyze_min:
-                yvalue = analyze[analyze_min]
-                xvalue = [*range(0, len(yvalue))]
+                yvalue = analyze[analyze_min][0:xsize]
                 label = f"{value}: {analyze_min}"
                 axes[i].step(
-                    xvalue, yvalue, ".:", where="mid", label=label
+                    xrange, yvalue, ".:", where="mid", label=label
                 )  # noqa: E501
                 axes[i].set_ylabel(aunit)
             if analyze_max:
-                yvalue = analyze[analyze_max]
-                xvalue = [*range(0, len(yvalue))]
+                yvalue = analyze[analyze_max][0:xsize]
                 label = f"{value}: {analyze_max}"
                 axes[i].step(
-                    xvalue, yvalue, ".:", where="mid", label=label
+                    xrange, yvalue, ".:", where="mid", label=label
                 )  # noqa: E501
                 axes[i].set_ylabel(aunit)
+            axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
+            axes[i].set_xticklabels(xvalue[0:xsize])
             n = n + 1
         nvalues = max(nvalues, n)
         axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
         axes[i].set_title(entry.upper())
         axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
-    axes[i - 1].set_xlabel("Number of Builds")
+    axes[i - 1].set_xlabel("Build Number")
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
