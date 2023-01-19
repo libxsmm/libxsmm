@@ -235,6 +235,9 @@ for BINARY_POSTOP in 0 1; do
                 if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
                   cp ${OUTNAME} mmla_${OUTNAME}
                   sed -i 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME}
+                  if [ "$CVNNI" == '1' ] ; then
+                    sed -i 's/randnumn = rnd.sample(range(2,101,2)/randnumn = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME}
+                  fi
                   chmod 755 mmla_${OUTNAME}
                 fi
               done
