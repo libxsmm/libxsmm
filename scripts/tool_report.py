@@ -270,21 +270,19 @@ def main(args, argd):
             print(f"{outfile} database created.")
         # sort by top-level key if database is to be stored (build number)
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-        if (  # backup database and prune according to retention
-            0 < args.retention
-            and args.history < args.retention
-            and args.history < dbsize
-        ):
+        # backup database and prune according to retention
+        retention = max(args.retention, args.history)
+        if 0 < retention and (2 * retention) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
             newname = f"{outfile.stem}-{nowstr}{outfile.suffix}"
             retfile = outfile.parent / newname
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
+                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
                     del database[key]
                 dbkeys = list(database.keys())
-                dbsize = args.history
+                dbsize = retention
         savedb(outfile, database)
 
     # collect categories for template (figure)
@@ -526,7 +524,7 @@ def main(args, argd):
     if ".png" == figout.suffix:
         figcanvas.draw()  # otherwise the image is empty
         image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
-        ncolors = divup(nvalues + 2, 8) * 8
+        ncolors = divup(nvalues + 2, 16) * 16
         palette = PIL.Image.Palette.ADAPTIVE
         image = image.convert("P", palette=palette, colors=ncolors)
         image.save(figout, "PNG", optimize=True)
