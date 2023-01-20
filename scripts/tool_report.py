@@ -23,6 +23,7 @@ import re
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
+    invalid = ["syntax error", "ERROR:"]
     for match in (
         match
         for match in re.finditer(
@@ -35,9 +36,10 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
             for line in re.finditer(r"([^\n\r]+)", match.group(2))
             if line
             and line.group(1)
+            and all(i not in line.group(1) for i in invalid)
             and all(32 <= ord(c) for c in line.group(1))
         ]
-        if values and not any("syntax error" in v for v in values):
+        if values:
             category = match.group(1) if not select else select
             if strbuild not in database:
                 database[strbuild] = dict()
@@ -169,6 +171,35 @@ def main(args, argd):
         database = dict()
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
+
+    # attempt to load weights
+    if args.weights.is_file():
+        try:
+            if ".json" == args.weights.suffix:
+                with open(args.weights, "r") as file:
+                    weights = json.load(file)
+            else:  # pickle
+                with open(args.weights, "rb") as file:
+                    weights = pickle.load(file)
+        except Exception as error:
+            msg = str(error).replace(": ", f" in {args.weights.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
+            exit(1)
+    else:
+        weights = {}
+
+    # populate default weights
+    write = None
+    for build in database.values():
+        for entries in build.values():
+            for key, entry in entries.items():
+                name = key.split()[0]
+                if not name in weights:
+                    write = [1.0 for e in entry if ":" in e]
+                    if write:
+                        weights[name] = write
+    if write:  # only write weights if modified
+        savedb(args.weights, weights)
 
     if args.infile and args.infile.is_file():
         next = latest + 1
@@ -581,9 +612,9 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-w",
-        "--wfile",
+        "--weights",
         type=pathlib.Path,
-        default=rdir / f"{base}-weights.json",
+        default=rdir / f"{base}.weights.json",
         help="Database to load weights",
     )
     argparser.add_argument(
