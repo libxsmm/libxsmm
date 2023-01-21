@@ -37,7 +37,7 @@ fi
 
 # control version-update
 LOCKFILE=${GIT_DIR}/.commit
-VSCRIPT=${REPO}/scripts/libxsmm_version.sh
+VSCRIPT=${REPO}/scripts/tool_version.sh
 if [ -e ${VSCRIPT} ] && [ "" = "$(${GIT} diff --cached --name-only | ${SED} -n '/version.txt/p')" ]; then
   # update version file (since this is a pre-commit hook, shift by one to next version)
   ${VSCRIPT} 1 > version.txt

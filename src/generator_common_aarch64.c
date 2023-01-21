@@ -11,13 +11,11 @@
 ******************************************************************************/
 
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
 #include "generator_mateltwise_unary_binary_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_gemm_common_aarch64.h"
 
 LIBXSMM_API_INTERN
@@ -156,6 +154,48 @@ void libxsmm_generator_vloadstore_masked_vreg_aarch64_asimd( libxsmm_generated_c
   libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_addr, i_gp_reg_scratch,
                                                     i_vec_reg, i_datatype_size, i_masked_elems, i_adv_gpr, i_is_store,
                                                     i_masked_elems == 0 ? 0 : 1 );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code* io_generated_code,
+                                                          const unsigned int      i_gp_reg_addr,
+                                                          const unsigned int      i_gp_reg_scratch0,
+                                                          const unsigned int      i_gp_reg_scratch1,
+                                                          const unsigned int      i_idx_vec_reg,
+                                                          const unsigned int      i_idx_datatype_size,
+                                                          const unsigned int      i_srcdst_vec_reg,
+                                                          const unsigned int      i_datatype_size,
+                                                          const unsigned int      i_masked_elems,
+                                                          const unsigned int      i_is_gather ) {
+  unsigned int i = 0;
+  unsigned int l_load_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_LDRH_I_OFF;
+  unsigned int l_store_move_instr = (i_datatype_size == 4) ? LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF : LIBXSMM_AARCH64_INSTR_GP_STRH_I_OFF;
+  unsigned int l_shift_amount = (i_datatype_size == 4) ? 2 : 1;
+  libxsmm_aarch64_asimd_width l_idx_move_asimd_width = (i_idx_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_D;
+  libxsmm_aarch64_asimd_width l_data_move_asimd_width = (i_datatype_size == 4) ? LIBXSMM_AARCH64_ASIMD_WIDTH_S : LIBXSMM_AARCH64_ASIMD_WIDTH_H;
+  unsigned int l_active_elements = (i_masked_elems == 0) ? libxsmm_cpuid_vlen(io_generated_code->arch)/i_idx_datatype_size : i_masked_elems;
+
+  for (i = 0; i < l_active_elements; i++) {
+    /* Move index i from index asimd reg to GPR0 */
+    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch0, i_idx_vec_reg, i, l_idx_move_asimd_width);
+
+    /* Add (index * elem_size) to base_addr -> GPR0 */
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_addr, i_gp_reg_scratch0, i_gp_reg_scratch0, l_shift_amount, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+
+    if (i_is_gather > 0) {
+      /* Load element to GPR1 from GPR0 */
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, l_load_move_instr, i_gp_reg_scratch0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0x1f & i_gp_reg_scratch1 );
+
+      /* Move GPR1 to position i of dest asimd reg */
+      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, i_gp_reg_scratch1, i_srcdst_vec_reg, i, l_data_move_asimd_width);
+    } else {
+      /* Move position i of src asimd reg to GPR1 */
+      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch1, i_srcdst_vec_reg, i, l_data_move_asimd_width);
+
+      /* Store element from GPR1 to GPR0  */
+      libxsmm_aarch64_instruction_alu_move( io_generated_code, l_store_move_instr, i_gp_reg_scratch0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0x1f & i_gp_reg_scratch1 );
+    }
+  }
 }
 
 LIBXSMM_API_INTERN

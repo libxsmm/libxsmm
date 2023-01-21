@@ -66,6 +66,6 @@ script:
       curl https://scan.coverity.com/builds?project=hfp-libxsmm --form
         token=${COVERITY_SCAN_TOKEN} --form email=${COVERITY_SCAN_USER} --form
         file=@${COVERITY_SCAN_TGZDIR}/cov-int.tgz --form
-        version="$(${TRAVIS_BUILD_DIR}/scripts/libxsmm_version.sh)" --form
+        version="$(${TRAVIS_BUILD_DIR}/scripts/tool_version.sh)" --form
         description="$(date -I): $(git log -1 --pretty=oneline | cut -d' ' -f2-)";
     fi

@@ -270,21 +270,18 @@ def main(args, argd):
             print(f"{outfile} database created.")
         # sort by top-level key if database is to be stored (build number)
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
-        if (  # backup database and prune according to retention
-            0 < args.retention
-            and args.history < args.retention
-            and args.history < dbsize
-        ):
+        # backup database and prune according to retention
+        retention = max(args.retention, args.history)
+        if 0 < retention and (2 * retention) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
-            newname = f"{outfile.stem}-{nowstr}{outfile.suffix}"
-            retfile = outfile.parent / newname
+            retfile = outfile.with_stem(f"{outfile.stem}-{nowstr}")
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
-                for key in dbkeys[0 : dbsize - args.history]:  # noqa: E203
+                for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
                     del database[key]
                 dbkeys = list(database.keys())
-                dbsize = args.history
+                dbsize = retention
         savedb(outfile, database)
 
     # collect categories for template (figure)
@@ -329,10 +326,9 @@ def main(args, argd):
         axes = [axes]
 
     # build figure
-    i = 0
+    ngraphs = i = 0
     infneg = float("-inf")
     infpos = float("inf")
-    nvalues = 0
     yunit = None
     for entry in entries:
         n = 0
@@ -341,6 +337,7 @@ def main(args, argd):
             for v in template[entry]
             if not query or any(matchstr(p, v.lower()) for p in query)
         ):
+            xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
             meanvl = []  # determined by --summary
             sunit = aunit = None
@@ -364,6 +361,7 @@ def main(args, argd):
                         ulow = unit.lower()
                         if not ylabel and matchstr(rslt, ulow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = unit
                         if not slabel and sdo and matchstr(smry, ulow):
                             meanvl.append(float(parsed.group(3)))
@@ -382,6 +380,7 @@ def main(args, argd):
                         ilow = init.lower()
                         if not ylabel and matchstr(rslt, ilow):
                             yvalue.append(float(parsed.group(3)))
+                            xvalue.append(build)  # string
                             ylabel = ulab
                         if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(parsed.group(3)))
@@ -397,6 +396,7 @@ def main(args, argd):
 
             if yvalue:  # (re-)reverse and trim collected values
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+                xvalue = xvalue[: -args.history - 1 : -1]  # noqa: E203
             for a in analyze:  # (re-)reverse and trim collected values
                 analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
 
@@ -442,104 +442,132 @@ def main(args, argd):
                             if analyze_min and 0 != vmin and infpos != amin:
                                 vlabel = analyze_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
+                            else:
+                                analyze_min = ""
                             if analyze_max and 0 != vmax and infneg != amax:
                                 vlabel = analyze_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
+                            else:
+                                analyze_max = ""
                 else:
                     label = value
             else:
                 label = value
 
-            if smry or (not analyze_min and not analyze_max):
-                xvalue = [*range(0, len(yvalue))]
-                axes[i].step(xvalue, yvalue, ".:", where="mid", label=label)
+            # determine size of shared x-axis
+            xsize = args.history
+            if smry and yunit == aunit:
+                xsize = min(len(yvalue), xsize)
+            for a in analyze:
+                if a == analyze_min or not smry:
+                    xsize = min(len(analyze[a]), xsize)
+                if a == analyze_max and smry:
+                    xsize = min(len(analyze[a]), xsize)
+            xrange = range(0, xsize)
+
+            # plot values and legend as collected above
+            if smry and (not aunit or yunit == aunit):
+                axes[i].step(
+                    xrange, yvalue[0:xsize], ".:", where="mid", label=label
+                )
                 axes[i].set_ylabel(yunit)
-            else:
-                if analyze_min:
-                    yvalue = analyze[analyze_min]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_min}"
+                n = n + 1
+            for a in analyze:
+                if a == analyze_min or not smry:
+                    yvalue = analyze[a][0:xsize]
+                    label = f"{value}: {a}"
                     axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
+                        xrange, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
-                if analyze_max:
-                    yvalue = analyze[analyze_max]
-                    xvalue = [*range(0, len(yvalue))]
-                    label = f"{value}: {analyze_max}"
+                    axes[i].set_ylabel(aunit)
+                    n = n + 1
+                if a == analyze_max and smry:
+                    yvalue = analyze[a][0:xsize]
+                    label = f"{value}: {a}"
                     axes[i].step(
-                        xvalue, yvalue, ".:", where="mid", label=label
+                        xrange, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
-                axes[i].set_ylabel(aunit)
-            n = n + 1
-        nvalues = max(nvalues, n)
-        axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
-        axes[i].set_title(entry.upper())
-        axes[i].legend(loc="center left", fontsize="x-small")
+                    axes[i].set_ylabel(aunit)
+                    n = n + 1
+            axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
+            axes[i].set_xticklabels(xvalue[0:xsize])
+        ngraphs = max(ngraphs, n)
+        if 0 < ngraphs:
+            axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
+            axes[i].set_title(entry.upper())
+            axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
-    axes[i - 1].set_xlabel("Number of Builds")
+    axes[i - 1].set_xlabel("Build Number")
     figure.suptitle("Performance History", fontsize="x-large")
     figure.gca().invert_xaxis()
     figure.tight_layout()
 
-    # determine supported file types and filename components
-    figcanvas = figure.canvas
-    figtypes = figcanvas.get_supported_filetypes()
-    argfig = pathlib.Path(args.figure)
-    deffig = pathlib.Path(argd.figure)
-    if argfig.is_dir():
-        figloc = argfig
-        figext = deffig.suffix
-        figstm = deffig.stem
-    elif argfig.suffix[1:] in figtypes.keys():
-        figloc = argfig.parent
-        figext = argfig.suffix
-        figstm = argfig.stem
-    elif "." == str(argfig.parent):
-        figloc = argfig.parent
-        figext = (
-            f".{argfig.name}"
-            if argfig.name in figtypes.keys()
-            else deffig.suffix
+    if 0 < ngraphs:
+        # determine supported file types and filename components
+        figcanvas = figure.canvas
+        figtypes = figcanvas.get_supported_filetypes()
+        argfig = pathlib.Path(args.figure)
+        deffig = pathlib.Path(argd.figure)
+        if argfig.is_dir():
+            figloc = argfig
+            figext = deffig.suffix
+            figstm = deffig.stem
+        elif argfig.suffix[1:] in figtypes.keys():
+            figloc = argfig.parent
+            figext = argfig.suffix
+            figstm = argfig.stem
+        elif "." == str(argfig.parent):
+            figloc = argfig.parent
+            figext = (
+                f".{argfig.name}"
+                if argfig.name in figtypes.keys()
+                else deffig.suffix
+            )
+            figstm = deffig.stem
+        else:
+            figloc = argfig.parent
+            figext = deffig.suffix
+            figstm = argfig.stem if argfig.stem else deffig.stem
+
+        # determine filename from components
+        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
+        figcat = (
+            ""
+            if 1 < len(entries) or 0 == len(entries)
+            else f"-{entries[0].translate(punct)}"
         )
-        figstm = deffig.stem
-    else:
-        figloc = argfig.parent
-        figext = deffig.suffix
-        figstm = argfig.stem if argfig.stem else deffig.stem
+        if 0 < len(match):
+            clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
+            parts = [s.lower() for c in clean for s in c.split("_")]
+            fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
+        else:
+            fixqry = ""
+        figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
 
-    # determine filename from components
-    punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
-    figcat = (
-        ""
-        if 1 < len(entries) or 0 == len(entries)
-        else f"-{entries[0].translate(punct)}"
-    )
-    if 0 < len(match):
-        clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
-        parts = [s.lower() for c in clean for s in c.split("_")]
-        fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
-    else:
-        fixqry = ""
-    figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
-
-    # reduce file size (png) and save figure
-    if ".png" == figout.suffix:
-        figcanvas.draw()  # otherwise the image is empty
-        image = PIL.Image.frombytes("RGB", rint[0:2], figcanvas.tostring_rgb())
-        ncolors = divup(nvalues + 2, 8) * 8
-        palette = PIL.Image.Palette.ADAPTIVE
-        image = image.convert("P", palette=palette, colors=ncolors)
-        image.save(figout, "PNG", optimize=True)
-    else:
-        figure.savefig(figout)  # save graphics file
-    if 1 == args.verbosity or 0 > args.verbosity:
-        print(f"{figout} created.")
+        # reduce file size (png) and save figure
+        if ".png" == figout.suffix:
+            figcanvas.draw()  # otherwise the image is empty
+            imageraw = figcanvas.tostring_rgb()
+            image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
+            ncolors = divup(ngraphs + 2, 8) * 8  # back/foreground
+            palette = PIL.Image.Palette.ADAPTIVE
+            image = image.convert("P", palette=palette, colors=ncolors)
+            image.save(figout, "PNG", optimize=True)
+        else:
+            figure.savefig(figout)  # save graphics file
+        if 1 == args.verbosity or 0 > args.verbosity:
+            print(f"{figout} created.")
 
 
 if __name__ == "__main__":
     path = pathlib.Path(__file__)
     here = path.absolute().parent
+    try:
+        rdir = here.relative_to(pathlib.Path.cwd())
+    except ValueError:
+        rdir = here
     base = path.stem
+
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -552,11 +580,18 @@ if __name__ == "__main__":
         help="0: quiet, 1: automation, 2: progress",
     )
     argparser.add_argument(
+        "-w",
+        "--wfile",
+        type=pathlib.Path,
+        default=rdir / f"{base}-weights.json",
+        help="Database to load weights",
+    )
+    argparser.add_argument(
         "-f",
         "--filepath",
         type=pathlib.Path,
-        default=here / f"{base}.json",
-        help="JSON-database used to cache results",
+        default=rdir / f"{base}.json",
+        help="Database to store results",
     )
     argparser.add_argument(
         "-g",

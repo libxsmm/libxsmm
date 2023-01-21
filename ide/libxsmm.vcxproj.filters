@@ -276,9 +276,6 @@
     <ClInclude Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_mateltwise_aarch64_sve.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_lpflt_quant.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -548,9 +545,6 @@
     <ClCompile Include="..\src\generator_mateltwise_gather_scatter_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_mateltwise_aarch64_sve.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_lpflt_quant.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -608,9 +602,6 @@
     </None>
     <None Include="..\src\template\libxsmm.f">
       <Filter>include</Filter>
-    </None>
-    <None Include="..\scripts\libxsmm_version.sh">
-      <Filter>scripts</Filter>
     </None>
     <None Include="..\scripts\tool_getenvars.sh">
       <Filter>scripts</Filter>
