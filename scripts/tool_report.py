@@ -23,7 +23,7 @@ import re
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
-    invalid = ["syntax error", "ERROR:"]
+    invalid = ["syntax error", "ERROR:", "Traceback", '\"']
     for match in (
         match
         for match in re.finditer(
@@ -306,7 +306,9 @@ def main(args, argd):
         if 0 < retention and (2 * retention) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_stem(f"{outfile.stem}-{nowstr}")
+            retfile = outfile.with_name(
+                f"{outfile.stem}-{nowstr}{outfile.suffix}"
+            )
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
                 for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
@@ -428,12 +430,13 @@ def main(args, argd):
 
             j = 0
             s = args.history
-            name = value.split()[0]  # used to lookup weights
+            wname = value.split()[0]
+            wlist = weights[wname] if wname in weights else []
             # (re-)reverse, trim, and apply weights
             for a in reversed(layers):
                 y = layers[a]
                 s = min(s, len(y))
-                w = weights[name][j] if name in weights else 1.0
+                w = wlist[j] if j < len(wlist) else 1.0
                 layers[a] = [w * y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
             if not yunit:
@@ -593,9 +596,8 @@ def main(args, argd):
             figcanvas.draw()  # otherwise the image is empty
             imageraw = figcanvas.tostring_rgb()
             image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
-            ncolors = divup(ngraphs + 2, 8) * 8  # back/foreground
-            palette = PIL.Image.Palette.ADAPTIVE
-            image = image.convert("P", palette=palette, colors=ncolors)
+            # avoid Palette.ADAPTIVE, consider back/foreground color
+            image = image.convert("P", colors=ngraphs + 2)
             image.save(figout, "PNG", optimize=True)
         else:
             figure.savefig(figout)  # save graphics file
@@ -760,6 +762,11 @@ if __name__ == "__main__":
         default=2,
         help="Re-scan builds",
     )
-    args = argparser.parse_args()
+    args = argparser.parse_args()  # 1st pass
+    weights = args.filepath.with_name(
+        f"{args.filepath.stem}.weights{args.filepath.suffix}"
+    )
+    argparser.set_defaults(weights=weights)
+    args = argparser.parse_args()  # 2nd pass
     argd = argparser.parse_args([])
     main(args, argd)
