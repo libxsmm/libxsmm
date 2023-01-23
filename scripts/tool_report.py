@@ -194,7 +194,7 @@ def main(args, argd):
         for entries in build.values():
             for key, entry in entries.items():
                 name = key.split()[0]
-                if not name in weights:
+                if name not in weights:
                     write = [1.0 for e in entry if ":" in e]
                     if write:
                         weights[name] = write
@@ -372,11 +372,12 @@ def main(args, argd):
             yvalue = []  # determined by --result
             meanvl = []  # determined by --summary
             sunit = aunit = None
-            analyze = dict()
-            analyze_min = ""
-            analyze_max = ""
+            layers = dict()
+            layers_min = ""
+            layers_max = ""
             if value not in match:
                 match.append(value)
+            # collect data to be plotted
             for build in (
                 b
                 for b in database
@@ -416,23 +417,35 @@ def main(args, argd):
                         if not slabel and sdo and matchstr(smry, ilow):
                             meanvl.append(float(parsed.group(3)))
                             slabel = ulab
-                        if (not aunit or ulab == aunit) and matchstr(
-                            args.analyze, ilow
+                        if (init and (not aunit or ulab == aunit)) and (
+                            not args.analyze or matchstr(args.analyze, ilow)
                         ):
-                            if init not in analyze:
+                            if init not in layers:
                                 if not aunit:
                                     aunit = ulab
-                                analyze[init] = []
-                            analyze[init].append(float(parsed.group(3)))
+                                layers[init] = []
+                            layers[init].append(float(parsed.group(3)))
 
-            if yvalue:  # (re-)reverse and trim collected values
-                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
-                xvalue = xvalue[: -args.history - 1 : -1]  # noqa: E203
-            for a in analyze:  # (re-)reverse and trim collected values
-                analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
-
+            j = 0
+            s = args.history
+            name = value.split()[0]  # used to lookup weights
+            # (re-)reverse, trim, and apply weights
+            for a in reversed(layers):
+                y = layers[a]
+                s = min(s, len(y))
+                w = weights[name][j] if name in weights else 1.0
+                layers[a] = [w * y[len(y) - k - 1] for k in range(s)]
+                j = j + 1
             if not yunit:
                 yunit = (ylabel if ylabel else args.result).split()[0]
+            if not aunit or aunit == yunit:
+                yvalue = [sum(y) for y in zip(*layers.values())]
+            elif yvalue:  # (re-)reverse and trim
+                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+            if xvalue and yvalue:  # (re-)reverse and trim
+                xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
+
+            # collect statistics and perform some analysis
             if 0 < args.mean:
                 if meanvl:  # (re-)reverse and trim collected values
                     meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
@@ -453,8 +466,8 @@ def main(args, argd):
                             vmax = vmin = 0
                             amax = infneg
                             amin = infpos
-                            for a in analyze:
-                                values = [v for v in analyze[a] if 0 < v]
+                            for a in layers:
+                                values = [v for v in layers[a] if 0 < v]
                                 vnew = values[0 : args.mean]  # noqa: E203
                                 vold = values[args.mean :]  # noqa: E203
                                 if vnew and vold:
@@ -463,23 +476,23 @@ def main(args, argd):
                                     perc = num2int(100 * (anew - aold) / aold)
                                     if perc > amax:
                                         vmax = num2int(anew)
-                                        analyze_max = a
+                                        layers_max = a
                                         amax = perc
                                     elif perc < amin:
                                         vmin = num2int(anew)
-                                        analyze_min = a
+                                        layers_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
-                            if analyze_min and 0 != vmin and infpos != amin:
-                                vlabel = analyze_min.replace(" ", "")
+                            if layers_min and 0 != vmin and infpos != amin:
+                                vlabel = layers_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
                             else:
-                                analyze_min = ""
-                            if analyze_max and 0 != vmax and infneg != amax:
-                                vlabel = analyze_max.replace(" ", "")
+                                layers_min = ""
+                            if layers_max and 0 != vmax and infneg != amax:
+                                vlabel = layers_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
                             else:
-                                analyze_max = ""
+                                layers_max = ""
                 else:
                     label = value
             else:
@@ -487,33 +500,33 @@ def main(args, argd):
 
             # determine size of shared x-axis
             xsize = args.history
-            if smry and yunit == aunit:
+            if smry and (not aunit or aunit == yunit):
                 xsize = min(len(yvalue), xsize)
-            for a in analyze:
-                if a == analyze_min or not smry:
-                    xsize = min(len(analyze[a]), xsize)
-                if a == analyze_max and smry:
-                    xsize = min(len(analyze[a]), xsize)
-            xrange = range(0, xsize)
+            for a in layers:
+                if a == layers_min or not smry:
+                    xsize = min(len(layers[a]), xsize)
+                if a == layers_max and smry:
+                    xsize = min(len(layers[a]), xsize)
+            xrange = range(xsize)
 
             # plot values and legend as collected above
-            if smry and (not aunit or yunit == aunit):
+            if smry and (not aunit or aunit == yunit):
                 axes[i].step(
                     xrange, yvalue[0:xsize], ".:", where="mid", label=label
                 )
                 axes[i].set_ylabel(yunit)
                 n = n + 1
-            for a in analyze:
-                if a == analyze_min or not smry:
-                    yvalue = analyze[a][0:xsize]
+            for a in layers:
+                if a == layers_min or not smry:
+                    yvalue = layers[a][0:xsize]
                     label = f"{value}: {a}"
                     axes[i].step(
                         xrange, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
                     axes[i].set_ylabel(aunit)
                     n = n + 1
-                if a == analyze_max and smry:
-                    yvalue = analyze[a][0:xsize]
+                if a == layers_max and smry:
+                    yvalue = layers[a][0:xsize]
                     label = f"{value}: {a}"
                     axes[i].step(
                         xrange, yvalue, ".:", where="mid", label=label
@@ -716,7 +729,7 @@ if __name__ == "__main__":
         "-b",
         "--summary",
         type=str,
-        default="gflops",
+        default="ms",
         help='If "", plot per-layer history',
     )
     argparser.add_argument(
