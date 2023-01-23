@@ -651,7 +651,7 @@ void libxsmm_generator_gemm_load_colbias_to_2D_block( libxsmm_generated_code*   
                                                    l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m );
         } else {
           libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS,
-              ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_VL256) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
+              ( ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX2) && ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512 ) ) ? 'y' : 'z',
               l_vec_reg_acc_start + l_m, l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       } else if (colbias_precision == LIBXSMM_DATATYPE_BF8) {
