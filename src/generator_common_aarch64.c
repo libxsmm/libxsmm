@@ -177,7 +177,7 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
 
   for (i = 0; i < l_active_elements; i++) {
     /* Move index i from index asimd reg to GPR0 */
-    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch0, i_idx_vec_reg, i, l_idx_move_asimd_width);
+    libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch0, i_idx_vec_reg, LIBXSMM_CAST_USHORT(i), l_idx_move_asimd_width);
 
     /* Add (index * elem_size) to base_addr -> GPR0 */
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_addr, i_gp_reg_scratch0, i_gp_reg_scratch0, l_shift_amount, LIBXSMM_AARCH64_SHIFTMODE_LSL );
@@ -187,10 +187,10 @@ void libxsmm_generator_gather_scatter_vreg_asimd_aarch64( libxsmm_generated_code
       libxsmm_aarch64_instruction_alu_move( io_generated_code, l_load_move_instr, i_gp_reg_scratch0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0x1f & i_gp_reg_scratch1 );
 
       /* Move GPR1 to position i of dest asimd reg */
-      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, i_gp_reg_scratch1, i_srcdst_vec_reg, i, l_data_move_asimd_width);
+      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_MOV_G_V, i_gp_reg_scratch1, i_srcdst_vec_reg, LIBXSMM_CAST_USHORT(i), l_data_move_asimd_width);
     } else {
       /* Move position i of src asimd reg to GPR1 */
-      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch1, i_srcdst_vec_reg, i, l_data_move_asimd_width);
+      libxsmm_aarch64_instruction_asimd_gpr_move( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_UMOV_V_G, i_gp_reg_scratch1, i_srcdst_vec_reg, LIBXSMM_CAST_USHORT(i), l_data_move_asimd_width);
 
       /* Store element from GPR1 to GPR0  */
       libxsmm_aarch64_instruction_alu_move( io_generated_code, l_store_move_instr, i_gp_reg_scratch0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, 0x1f & i_gp_reg_scratch1 );
