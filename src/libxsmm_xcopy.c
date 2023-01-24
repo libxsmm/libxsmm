@@ -57,8 +57,10 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_mcopy_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 < n && 0 != libxsmm_mcopy_mbytes) {
+      libxsmm_mcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mcopy_mbytes;
+    }
     if (0 != libxsmm_mcopy_mbytes && 0 != libxsmm_mcopy_nscale) {
-      if (0 < n) libxsmm_mcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mcopy_mbytes;
       if (1 > (libxsmm_mcopy_nscale * libxsmm_mcopy_mbytes)) {
         const float stretch = 1.f / libxsmm_mcopy_mbytes;
         libxsmm_mcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_mcopy_nscale);
@@ -70,8 +72,10 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 < n && 0 != libxsmm_tcopy_mbytes) {
+      libxsmm_mzero_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mzero_mbytes;
+    }
     if (0 != libxsmm_mzero_mbytes && 0 != libxsmm_mzero_nscale) {
-      if (0 < n) libxsmm_mzero_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mzero_mbytes;
       if (1 > (libxsmm_mzero_nscale * libxsmm_mzero_mbytes)) {
         const float stretch = 1.f / libxsmm_mzero_mbytes;
         libxsmm_mzero_nscale = LIBXSMM_MAX(stretch, libxsmm_mzero_nscale);
@@ -83,8 +87,10 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_tcopy_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
+    if (0 < n && 0 != libxsmm_tcopy_mbytes) {
+      libxsmm_tcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_tcopy_mbytes;
+    }
     if (0 != libxsmm_tcopy_mbytes && 0 != libxsmm_tcopy_nscale) {
-      if (0 < n) libxsmm_tcopy_nscale = ((float)(n * 8/*DP*/)) / libxsmm_tcopy_mbytes;
       if (1 > (libxsmm_tcopy_nscale * libxsmm_tcopy_mbytes)) {
         const float stretch = 1.f / libxsmm_tcopy_mbytes;
         libxsmm_tcopy_nscale = LIBXSMM_MAX(stretch, libxsmm_tcopy_nscale);
@@ -236,19 +242,22 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
     if (0 < m && 0 < n) {
       libxsmm_xcopykernel kernel = { NULL };
       unsigned int tm, tn, ts, permit;
+      float tf;
       if (NULL != in) { /* mcopy */
         tm = LIBXSMM_UPDIV(libxsmm_mcopy_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mcopy_nscale * tm);
         ts = libxsmm_mcopy_mbytes;
+        tf = libxsmm_mcopy_nscale;
       }
       else { /* mzero */
         tm = LIBXSMM_UPDIV(libxsmm_mzero_mbytes, typesize);
         tn = (unsigned int)(libxsmm_mzero_nscale * tm);
         ts = libxsmm_mzero_mbytes;
+        tf = libxsmm_mzero_nscale;
       }
       if (0 == tm) tm = m;
       if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
-      if (0 != ts && ts < (tm * tn * typesize)) {
+      if (0 != ts && 0 == tf && ts < (tm * tn * typesize)) {
         tm = LIBXSMM_MAX(ts / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
       }
       permit = ((unsigned int)m < tm || (unsigned int)n < tn);
@@ -257,9 +266,9 @@ LIBXSMM_API void libxsmm_matcopy_task(void* out, const void* in, unsigned int ty
           tm = (unsigned int)m; tn = (unsigned int)n;
         }
         else {
-          const unsigned int tasksize = (((unsigned int)m) * (unsigned int)n) / ((unsigned int)(ntasks * libxsmm_mcopy_nscale));
+          const unsigned int tasksize = (((unsigned int)m) * (unsigned int)n) / ((unsigned int)(ntasks * tf));
           const unsigned int nn = libxsmm_isqrt_u32(tasksize);
-          const unsigned int mm = (unsigned int)(libxsmm_mcopy_nscale * nn);
+          const unsigned int mm = (unsigned int)(tf * nn);
           tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
           tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
         }
@@ -363,7 +372,9 @@ LIBXSMM_API void libxsmm_otrans_task(void* out, const void* in, unsigned int typ
         libxsmm_xcopykernel kernel = { NULL };
         if (0 == tm) tm = m;
         if (0 == tn) tn = LIBXSMM_MIN(LIBXSMM_XCOPY_TILE_MIN, n);
-        if (0 != libxsmm_tcopy_mbytes && libxsmm_tcopy_mbytes < (tm * tn * typesize)) {
+        if (0 != libxsmm_tcopy_mbytes && 0 == libxsmm_tcopy_nscale
+          && libxsmm_tcopy_mbytes < (tm * tn * typesize))
+        {
           tm = LIBXSMM_MAX(libxsmm_tcopy_mbytes / (tn * typesize), LIBXSMM_XCOPY_TILE_MIN);
         }
         if ( /* eventually apply threshold */
