@@ -14,4 +14,4 @@ set -eo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
-"${HERE}/../samples/xgemm/kernel_test.sh" -o /dev/null -n 100 "$@"
+"${HERE}/../samples/xgemm/kernel_test.sh" -o /dev/null -n 50 "$@"

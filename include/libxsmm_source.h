@@ -26,9 +26,6 @@
  * code for every (internal) change of LIBXSMM. Please make sure to only rely on the
  * public interface as the internal implementation may change without notice.
  */
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include "../src/generator_aarch64_instructions.c"
 #include "../src/generator_common.c"
 #include "../src/generator_common_aarch64.c"
@@ -49,7 +46,8 @@
 #include "../src/generator_gemm_sse_microkernel.c"
 #include "../src/generator_mateltwise.c"
 #include "../src/generator_mateltwise_aarch64.c"
-#include "../src/generator_mateltwise_aarch64_sve.c"
+#include "../src/generator_mateltwise_common.c"
+#include "../src/generator_mateltwise_gather_scatter_aarch64.c"
 #include "../src/generator_mateltwise_gather_scatter_avx_avx512.c"
 #include "../src/generator_mateltwise_misc_aarch64.c"
 #include "../src/generator_mateltwise_misc_avx_avx512.c"
@@ -120,8 +118,5 @@
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
 #include "../src/libxsmm_xcopy.c"
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #endif /*LIBXSMM_SOURCE_H*/

@@ -23,6 +23,11 @@
 #define BINARY_OP_POOL 1
 
 LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
+                                                                        libxsmm_matrix_eqn*               i_eqn,
+                                                                        const libxsmm_meqn_descriptor*    i_mateqn_desc);
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_aarch64_init_micro_kernel_config( libxsmm_generated_code*         io_generated_code,
     libxsmm_matequation_kernel_config*    io_micro_kernel_config);
 

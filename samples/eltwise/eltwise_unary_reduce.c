@@ -110,7 +110,7 @@ void reference_reduce_kernel_f64( libxsmm_blasint m, libxsmm_blasint n, libxsmm_
           for (jj = 0; jj < n_cols_idx; jj++) {
             j = LIBXSMM_CAST_BLASINT(cols_ind_array[jj]);
             if (record_idx > 0) {
-              if (sinp[j*ld_in + i] >= ref_result_reduce_elts[i] ) {
+              if (sinp[j*ld_in + i] > ref_result_reduce_elts[i] ) {
                 ref_result_reduce_elts[i] = sinp[j*ld_in + i];
                 ref_argop_off[i] = j;
               }
@@ -344,6 +344,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
   /* JIT kernel */
   if (n_cols_idx == 0) {
     kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+    if ( kernel == NULL ) {
+      fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+      exit(-1);
+    }
   } else {
     if (idx_type == 0) {
       unary_flags = LIBXSMM_MELTW_FLAG_UNARY_IDX_SIZE_8BYTES;
@@ -356,6 +360,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
     unary_shape.n = 0;
     if (reduce_op == 0) {
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_ADD, unary_shape, unary_flags );
+      if ( kernel2 == NULL ) {
+        fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+        exit(-1);
+      }
     } else {
       unary_flags = LIBXSMM_EOR(libxsmm_meltw_unary_flags, unary_flags, LIBXSMM_MELTW_FLAG_UNARY_REDUCE_NEG_INF_ACC);
       if (record_idx > 0) {
@@ -367,6 +375,10 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
         }
       }
       kernel2 = libxsmm_dispatch_meltw_unary_v2( LIBXSMM_MELTW_TYPE_UNARY_REDUCE_COLS_IDX_OP_MAX, unary_shape, unary_flags );
+      if ( kernel2 == NULL ) {
+        fprintf( stderr, "JIT for REDUCE TPP failed. Bailing...!\n");
+        exit(-1);
+      }
     }
   }
 
@@ -404,7 +416,7 @@ void setup_tpp_kernel_and_param_struct( libxsmm_meltwfunction_unary *res_kernel,
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 1000, reduce_op = 0;
+  unsigned int m = 64, n = 64, reduce_elts = 1, reduce_elts_squared = 1, reduce_rows = 1, result_size, result_size_check, j, k, iters = 0, reduce_op = 0;
   unsigned long long n_cols_idx = 0;
   unsigned int idx_type = 0;
   unsigned int record_idx = 0;
@@ -450,12 +462,12 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) reduce_op = atoi(argv[7]);
   if ( argc > 8 ) dt = argv[8];
   if ( argc > 9 ) n_cols_idx = atoi(argv[9]);
-  if ( argc > 10 ) iters = atoi(argv[10]);
-  if ( argc > 11 ) idx_type = atoi(argv[11]);
-  if ( argc > 12 ) record_idx = atoi(argv[12]);
-  if ( argc > 13 ) reduce_on_outputs = atoi(argv[13]);
+  if ( argc > 10 ) idx_type = atoi(argv[10]);
+  if ( argc > 11 ) record_idx = atoi(argv[11]);
+  if ( argc > 12 ) reduce_on_outputs = atoi(argv[12]);
+  if ( argc > 13 ) iters = atoi(argv[13]);
 
-  printf("CL is: %u %u %i %u %u %u %u %s %llu %u %u %u %u\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, iters, idx_type, record_idx, reduce_on_outputs);
+  printf("CL is: %u %u %i %u %u %u %u %s %llu %u %u %u %u\n", m, n, ld_in, reduce_elts, reduce_elts_squared, reduce_rows, reduce_op, dt, n_cols_idx, idx_type, record_idx, reduce_on_outputs, iters);
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);

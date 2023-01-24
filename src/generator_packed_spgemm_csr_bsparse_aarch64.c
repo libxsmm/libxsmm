@@ -75,7 +75,8 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
   if ( l_simd_packed_remainder != 0 ) {
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_spgemm_csr_bsparse_aarch64 right now only supports multiples of SIMD length!\n" );
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   /* get max column in C */
@@ -192,6 +193,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
     unsigned int l_n_count = 0;
     unsigned int l_n_processed = 0;
 
+    /* coverity[dead_error_line] */
     if ( (l_simd_packed_remainder != 0) && (l_packed_count == 0) ) {
       if ( l_packed_reg_block[1] > 0 ) {
         l_packed_remainder = 0;

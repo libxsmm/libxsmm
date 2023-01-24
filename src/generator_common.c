@@ -27,8 +27,7 @@ void libxsmm_strncpy( char*                  o_dest,
                       unsigned int           i_dest_length,
                       unsigned int           i_src_length ) {
   if ( i_dest_length < i_src_length ) {
-    fprintf( stderr, "LIBXSMM fatal error: libxsmm_strncpy destination buffer is too small!\n" );
-    exit(-1);
+    LIBXSMM_ASSERT_MSG(0, "sufficient size of destination buffer");
   }
 
   /* TODO: check for aliasing? */
@@ -173,8 +172,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
       libxsmm_strncpy(o_gp_reg_name, "r15", i_gp_reg_name_max_length, 3 );
       break;
     default:
-      fprintf(stderr, "libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
-      exit(-1);
+      LIBXSMM_ASSERT_MSG(0, "GP register number");
   }
 }
 
@@ -558,8 +556,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     /* default, we did not had a match */
     default:
-      fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
-      exit(-1);
+      LIBXSMM_ASSERT_MSG(0, "instruction number");
   }
 }
 
@@ -743,8 +740,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       break;
     /* default, we did not had a match */
     default:
-      fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
-      exit(-1);
+      LIBXSMM_ASSERT_MSG(0, "instruction number is x86 FP vector instruction");
   }
 
   return l_return;
@@ -995,14 +991,19 @@ void libxsmm_set_handle_error(int enable)
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char* context,
+                           const char* context, int linenum,
                            int emit_message ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message && 0 != libxsmm_get_handle_error()) {
       LIBXSMM_STDIO_ACQUIRE();
       if (NULL != context && '\0' != *context) {
-        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+        if (0 < linenum) {
+          fprintf(stderr, "LIBXSMM ERROR (%s:%i): %s\n", context, linenum, libxsmm_strerror(i_error_code));
+        }
+        else {
+          fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+        }
       }
       else {
         fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
@@ -1011,6 +1012,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
     }
     last_error_code = i_error_code;
   }
+  LIBXSMM_ASSERT(NULL != io_generated_code);
   io_generated_code->last_error = i_error_code;
 }
 

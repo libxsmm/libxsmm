@@ -13,13 +13,7 @@
 #include "libxsmm_diff.h"
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <ctype.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_MEMORY_STDLIB) && 0
 # define LIBXSMM_MEMORY_STDLIB
@@ -250,7 +244,7 @@ LIBXSMM_API_INTERN void libxsmm_memory_init(int target_arch)
 
 LIBXSMM_API_INTERN void libxsmm_memory_finalize(void)
 {
-#if !defined(NDEBUG) && !defined(LIBXSMM_MEMORY_SW)
+#if !defined(NDEBUG) && !defined(LIBXSMM_MEMORY_SW) && 0
   internal_diff_function = NULL;
   internal_memcmp_function = NULL;
 #endif

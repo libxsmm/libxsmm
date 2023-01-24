@@ -525,7 +525,10 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_rpn_print( my_eqn0 );
   arg_shape_out = libxsmm_create_meqn_arg_shape( M, N, ld, out_dt );
   func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
-
+  if ( func0 == NULL ) {
+    fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
+    exit(-1);
+  }
   if ( in_dt == LIBXSMM_DATATYPE_F32 ) {
     eqn_param.inputs = arg_array;
   } else if ( in_dt == LIBXSMM_DATATYPE_BF16  ) {

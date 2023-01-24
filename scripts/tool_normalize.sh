@@ -23,8 +23,9 @@ HERE=$(cd "$(dirname "$0")" && pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
+SRCDIR="src"
 # separate multiple patterns with space
-FMTDIRS=${2:-"samples src tests"}
+FMTDIRS=${2:-"${SRCDIR} tests samples"}
 FMTXPAT="/gxm/ /mlpcell/"
 # limiter
 DIR=$1
@@ -37,6 +38,7 @@ DIFF=$(command -v diff)
 SED=$(command -v gsed)
 GIT=$(command -v git)
 CUT=$(command -v cut)
+CPP=$(command -v cpp)
 TR=$(command -v tr)
 CP=$(command -v cp)
 RM=$(command -v rm)
@@ -50,6 +52,11 @@ if [ "${ICONV}" ]; then
   CAT="${ICONV} -t ASCII"
 else
   CAT=$(command -v cat)
+fi
+
+# If CPP, then -fpreprocessed shall be available
+if [ "${CPP}" ] && [ "$(${CPP} -fpreprocessed /dev/null)" ]; then
+  unset CPP
 fi
 
 if [ "${CAT}" ] && [ -e "${CODEFILE}" ]; then
@@ -130,7 +137,7 @@ then
     then
       echo " : has banned characters"
       exit 1
-    elif [[ ${FILE} = "src/"* ]] && \
+    elif [[ ${FILE} = "${SRCDIR}/"* ]] && \
          [[ (${FILE} = *".c"*) || (${FILE} = *".h"*) ]] && \
          [ "$(${SED} -n "${PATPRE}x/p" "${FILE}" 2>/dev/null)" ];
     then
@@ -175,6 +182,15 @@ then
       echo -n " : marked non-executable"
       REFORMAT=1
     fi
+    #
+    # Reject code calling "exit" directly
+    #
+    if [ "${CPP}" ] && [[ ${FILE} = "${SRCDIR}/"* ]] && \
+       [ "$(${CPP} 2>/dev/null -fpreprocessed "${FILE}" | ${SED} -n "/[^[:alnum:]_]exit[[:space:]]*(..*)/p")" ];
+    then
+      echo " : use LIBXSMM_EXIT_ERROR() instead of exit(...)"
+      exit 1
+    fi
     if [ "0" != "${REFORMAT}" ]; then
       echo
     else
@@ -189,4 +205,3 @@ fi
 
 >&2 echo "ERROR: missing prerequisites!"
 exit 1
-

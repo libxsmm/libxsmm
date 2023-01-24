@@ -20,7 +20,6 @@ ABINEW=.abi.log
 ABITMP=.abi.tmp
 ABICUR=.abi.txt
 
-#LIBARGS="--defined-only"
 if [ -e "${LIBS}"/${INCLUDE}.so ]; then
   LIBARGS="${LIBARGS} -D"
   LIBTYPE=so
@@ -58,8 +57,15 @@ then
     for LIBFILE in "${LIBS}"/*."${LIBTYPE}"; do
       LIB=$(${BASENAME} "${LIBFILE}" .${LIBTYPE})
       if [ ! "${EXCLUDE}" ] || [ "$(echo "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
+        if [ ! "${CMD}" ]; then # try certain flags only once
+          if ${NM} --defined-only -p "${LIBARGS}" "${LIBFILE}" >/dev/null 2>/dev/null; then
+            CMD="${NM} --defined-only --no-sort ${LIBARGS}"
+          else
+            CMD="${NM} ${LIBARGS}"
+          fi
+        fi
         echo "Checking ${LIB}..."
-        for LINE in $(${NM} "${LIBARGS}" "${LIBFILE}" 2>/dev/null); do
+        for LINE in $(eval "${CMD} ${LIBFILE} 2>/dev/null"); do
           SYMBOL=$(echo "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
           if [ "${SYMBOL}" ]; then
             # cleanup compiler-specific symbols (Intel Fortran, GNU Fortran)

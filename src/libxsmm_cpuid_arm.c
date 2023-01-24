@@ -14,14 +14,8 @@
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <signal.h>
 #include <setjmp.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_CPUID_ARM_BASELINE) && 0
 # define LIBXSMM_CPUID_ARM_BASELINE LIBXSMM_AARCH64_NEOV1
@@ -32,6 +26,8 @@
 
 #if defined(LIBXSMM_PLATFORM_AARCH64)
 # if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 4611)
 #   define LIBXSMM_CPUID_ARM_ENC16(OP0, OP1, CRN, CRM, OP2) ( \
       (((OP0) & 1) << 14) | \
       (((OP1) & 7) << 11) | \
@@ -206,3 +202,7 @@ LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 #endif
   return result;
 }
+
+#if defined(LIBXSMM_PLATFORM_AARCH64) && defined(_MSC_VER)
+# pragma warning(pop)
+#endif

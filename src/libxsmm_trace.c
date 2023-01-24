@@ -27,9 +27,6 @@
 # define LIBXSMM_TRACE_DLINFO
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -106,9 +103,6 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 #   endif
 # endif
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 LIBXSMM_APIVAR_DEFINE(int internal_trace_mindepth);
@@ -202,7 +196,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE unsigned int libxsmm_backtrace(const void* /*buffer*/[], unsigned int /*size*/, unsigned int /*skip*/);
 LIBXSMM_API
 #if defined(_WIN32)
-/*TODO: no inline*/
+/*LIBXSMM_ATTRIBUTE(noinline)*/
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
 #endif
@@ -273,7 +267,7 @@ const char* libxsmm_trace_info(unsigned int* /*depth*/, unsigned int* /*threadid
 
 LIBXSMM_API
 #if defined(_WIN32)
-/*TODO: no inline*/
+/*LIBXSMM_ATTRIBUTE(noinline)*/
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
 #endif

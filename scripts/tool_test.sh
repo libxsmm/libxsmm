@@ -9,13 +9,15 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC1090,SC2064,SC2129,SC2153,SC2207
+# shellcheck disable=SC1090,SC2129,SC2153,SC2207
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=${HERE}/..
+ENVDIR=${ROOT}/.env
+
 # TODO: map to CI-provider (abstract environment)
-source "${ROOT}/.env/buildkite.env" ""
+source "${ENVDIR}/buildkite.env" ""
 
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
@@ -84,8 +86,16 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     export TRAVIS_OS_NAME
   fi
+  if [ "${HOSTNAME}" ]; then
+    HOSTNAME=$(echo "${HOSTNAME}" | cut -d. -f1 2>/dev/null)
+  fi
   if [ ! "${HOSTNAME}" ]; then
     HOSTNAME=$(hostname -s 2>/dev/null)
+  fi
+  HOSTDELIMCHAR="-"
+  HOSTPREFIX=$(echo "${HOSTNAME}" | cut -d${HOSTDELIMCHAR} -f1 2>/dev/null)
+  if [ "${HOSTPREFIX}" ]; then
+    HOSTPREFIX="${HOSTPREFIX}${HOSTDELIMCHAR}"
   fi
 
   # setup PARTITIONS for multi-tests
@@ -170,8 +180,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   rm -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
-    if [ "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(echo "${BUILDKITE_LABEL}" \
+    STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
+    if [ "${STEPNAME}" ]; then
+      LABEL=$(echo "${STEPNAME}" \
         | ${TR} -s "[:punct:][:space:]" "-" \
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
@@ -202,7 +213,8 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     LAUNCH="\${TEST}"
   fi
   if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
+    # avoid preserving environment (wrong HOME)
+    LAUNCH="su ${LAUNCH_USER} ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
   # eventually cleanup environment snapshots
@@ -214,12 +226,13 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
 
   if [[ "${UMASK}" && (! "${TESTSCRIPT}" || ! -e "${TESTSCRIPT}") ]]; then
     # TODO: derive permissions from UMASK
-    trap "rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)" EXIT
+    trap 'rm ${TESTSCRIPT} ${ENVFILE} && (chmod -Rf g+u,o=u-w ${REPOROOT} || true)' EXIT
   else
-    trap "rm ${TESTSCRIPT} ${ENVFILE}" EXIT
+    trap 'rm ${TESTSCRIPT} ${ENVFILE}' EXIT
   fi
 
   RESULT=0
+  LOGFILE_INIT=${LOGFILE}
   while [ "${TEST}" ] || TEST=$(eval " \
     ${SED} -n '/^ *script: *$/,\$p' ${REPOROOT}/${TESTSETFILE} | ${SED} '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -278,24 +291,43 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     fi
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
-    # make execution environment locally available (always)
-    CONFIGFILE=""
-    if [ "${HOSTNAME}" ] && [ "none" != "${CONFIG}" ] && [ -d "${ROOT}/.env/${HOSTNAME}" ]; then
-      CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
-      if [ "${CONFIGPAT}" ]; then
-        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null" | ${SED} "/\(${CONFIGPAT}\)/d"))
-      else
-        CONFIGFILES=($(bash -c "ls -1 ${ROOT}/.env/${HOSTNAME}/${CONFIG}.env 2>/dev/null"))
+    # determine configuration files once according to pattern
+    if [[ (! "${CONFIGFILES[*]}") && \
+          ("none" != "${CONFIG}") && \
+          ("${HOSTNAME}" || "${HOSTPREFIX}") ]];
+    then
+      CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
+      if [[ ! "${CONFIGFILES[*]}" ]]; then
+        CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
       fi
-      CONFIGCOUNT=${#CONFIGFILES[@]}
-      if [ "0" != "${CONFIGCOUNT}" ]; then
-        CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
-        CONFIG=$(basename "${CONFIGFILE}" .env)
-      else
-        echo "WARNING: configuration \"${CONFIG}\" not found!"
-        CONFIGFILE=""
+      if [[ "${CONFIGFILES[*]}" ]]; then
+        CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
+        if [ "${CONFIGPAT}" ]; then
+          CONFIGFILES=($(echo "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+        fi
+        CONFIGCOUNT=${#CONFIGFILES[@]}
       fi
     fi
+    # determine actual configuration for every test/iteration
+    if [ "${CONFIGCOUNT}" ] && [ "0" != "${CONFIGCOUNT}" ]; then
+      CONFIGFILE=${CONFIGFILES[RANDOM%CONFIGCOUNT]}
+      CONFIG=$(basename "${CONFIGFILE}" .env)
+      # setup Python environment if LAUNCH_USER cannot access orig. user's site-directory
+      if [ "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
+        PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python3 -m site --user-site 2>/dev/null")
+        if [ ! "${PYTHONSITE}" ]; then
+          PYTHONSITE=$(su "${LAUNCH_USER}" ${RUN_CMD} "python -m site --user-site 2>/dev/null")
+        fi
+        if [ "${PYTHONSITE}" ]; then
+          export PYTHONPATH=${PYTHONSITE}:${PYTHONPATH}
+        fi
+      fi
+    elif [ "none" != "${CONFIG}" ]; then
+      echo "WARNING: configuration \"${CONFIG}\" not found!"
+      CONFIGFILE=""
+      CONFIG="none"
+    fi
+    # iterate over all given environments
     COUNT_ENV=0; for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         ENVVAL=$(echo "${ENV}" | cut -d= -f2)
@@ -328,7 +360,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         if [ "${UMASK}" ]; then # TODO: derive permissions from UMASK
           EXIT_TRAP="(${EXIT_TRAP}); (chmod -Rf g+u,o=u-w ${REPOREMOTE} || true)"
         fi
-        echo "trap \"${EXIT_TRAP}\" EXIT" >>"${TESTSCRIPT}"
+        echo "trap '${EXIT_TRAP}' EXIT" >>"${TESTSCRIPT}"
         echo "${UMASK_CMD}" >>"${TESTSCRIPT}"
         echo "cd ${REPOREMOTE}" >>"${TESTSCRIPT}"
         echo "if [ \"\$(command -v sync)\" ]; then sync; fi" >>"${TESTSCRIPT}"
@@ -355,7 +387,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           echo "  eval ${ENVRST} \"${ENVREM}\"" >>"${TESTSCRIPT}"
         fi
         echo "fi" >>"${TESTSCRIPT}"
-        if [ -e "${CONFIGFILE}" ]; then
+        if [ "${CONFIGFILE}" ]; then
           echo "  source \"$(echo "${CONFIGFILE}" | ${SED} "s/${REPPAT}/${REMPAT}/")\" \"\"" >>"${TESTSCRIPT}"
         fi
         # record the current test case
@@ -366,9 +398,12 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
           fi
           ABSDIR=$(cd "${ABSDIR}" && pwd -P)
           ABSREM=$(echo "${ABSDIR}" | ${SED} "s/${REPPAT}/${REMPAT}/")
-          echo "cd ${REPOREMOTE} && make -e \${MAKEJ} && cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
-          echo "RESULT=\$?" >>"${TESTSCRIPT}"
-          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          echo "cd ${REPOREMOTE} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+          echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          if [ "${REPOREMOTE}" != "${ABSREM}" ]; then
+            echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
+            echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
+          fi
           echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
@@ -426,16 +461,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "$(command -v tee)" ]; then
-        if [ "${LOGFILE}" ]; then
-          if [ "." = "$(dirname "${LOGFILE}")" ]; then
-            LOGFILE=${PWD}/${LOGFILE}
+        if [ "${LOGFILE_INIT}" ]; then
+          if [ "." = "$(dirname "${LOGFILE_INIT}")" ]; then
+            LOGFILE=${PWD}/${LOGFILE_INIT}
           fi
         elif [ "${LABEL}" ]; then
           LOGFILE=${PWD}/.test-$(echo "${LABEL}" | ${TR} "[:upper:]" "[:lower:]").log
         else
           LOGFILE=${PWD}/.test.log
         fi
-        export LOGFILE
         LOGPATH=$(dirname "${LOGFILE}")
         LOGBASE=$(basename "${LOGFILE}" .log)
         if [ "1" != "${NPARTITIONS}" ]; then
@@ -447,11 +481,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
         if [ "1" != "${NENVS}" ]; then
           LOGBASE=${LOGBASE}-${COUNT_ENV}
         fi
-        LOG=${LOGPATH}/${LOGBASE}.log
+        export LOGFILE=${LOGPATH}/${LOGBASE}.log
         if [ -t 0 ]; then
-          eval "${COMMAND} 2>&1 | tee ${LOG}"
+          eval "${COMMAND} 2>&1 | tee ${LOGFILE}"
         else
-          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOG}"
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee ${LOGFILE}"
         fi
       else
         eval "${COMMAND}"

@@ -18,16 +18,10 @@
 #include "generator_gemm_amx_microkernel.h"
 #include "generator_gemm_amx_microkernel_emu.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 #if !defined(LIBXSMM_GENERATOR_GEMM_AMX_EMU_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_GEMM_AMX_EMU_JUMP_LABEL_TRACKER_MALLOC
@@ -91,8 +85,7 @@ void libxsmm_get_tileinfo( unsigned int tile_id, unsigned int *n_rows, unsigned 
       (*n_cols) = (int) tc->tile7cols;
       break;
     default:
-      fprintf(stderr, "Invalid tile id!!!\n");
-      exit(-1);
+      LIBXSMM_ASSERT_MSG(0, "valid tile id");
   }
 }
 
@@ -111,7 +104,8 @@ void libxsmm_x86_instruction_vec_compute_convert_emu( libxsmm_generated_code* io
 
   if (i_vec_instr != LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) {
     fprintf(stderr, "Invalid instruction for vec compute emulation, can emulate only VCVTNEPS2BF16..\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   libxsmm_x86_instruction_push_reg( io_generated_code, LIBXSMM_X86_GP_REG_R12 );
@@ -340,7 +334,8 @@ void libxsmm_x86_instruction_vec_compute_mem_emu( libxsmm_generated_code* io_gen
   LIBXSMM_UNUSED(i_use_broadcast);
   if (i_vec_instr != LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) {
     fprintf(stderr, "Invalid instruction for vec compute emulation, can emulate only VCVTNEPS2BF16..\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
   libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -369,7 +364,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                            libxsmm_micro_kernel_config*  i_micro_kernel_config) {
 
   unsigned int im, l_n, i;
-  unsigned int M, N;
+  unsigned int M = 0, N = 0;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14;
   unsigned int k_loop_gp       = LIBXSMM_X86_GP_REG_R15;
   unsigned int n_loop_gp       = LIBXSMM_X86_GP_REG_R13;
@@ -557,7 +552,8 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
     }
   } else {
     fprintf(stderr, "AMX emulation supported only for BF16 datatype\n");
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
 
@@ -591,7 +587,7 @@ void libxsmm_x86_instruction_tile_move_emu( libxsmm_generated_code*   io_generat
                                         libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                         unsigned int                  is_stride_0 ) {
   unsigned int ir, ic, _ic, ld;
-  unsigned int n_rows, n_cols;
+  unsigned int n_rows = 0, n_cols = 0;
   unsigned int tile_scratch_gp = LIBXSMM_X86_GP_REG_R14 ;
   unsigned int tile_scratch_offset = i_micro_kernel_config->emulation_scratch_offset + i_tile_reg_number * 32 * 32;
   unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
@@ -1923,4 +1919,3 @@ void libxsmm_generator_gemm_amx_kernel_nloop_emu( libxsmm_generated_code*       
     l_n_count++;
   }
 }
-

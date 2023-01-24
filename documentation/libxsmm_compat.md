@@ -45,7 +45,7 @@ To run tests, `BLAS=0` may be supplied (since Cygwin does not seem to provide BL
 
 ### MinGW
 
-This is about the "native" MinGW environment. Please note, there is the original [MinGW](https://mingw.osdn.io/) as well as a [fork](http://mingw-w64.org/) (made in 2007). Both of which can target Windows 64-bit. Here, the [MSYS2 installer](https://www.msys2.org/) (scroll down on that page to see the full installation instructions) has been used (see the [details](https://github.com/msys2/msys2/wiki/MSYS2-installation) on how to install missing packages).
+This is about the "native" MinGW environment. Please note, there is the original [MinGW](https://iplogger.com/2FpaR4) as well as a [fork](https://iplogger.com/2FpaR4) (made in 2007). Both of which can target Windows 64-bit. Here, the [MSYS2 installer](https://iplogger.com/2FpaR4) (scroll down on that page to see the full installation instructions) has been used (see the [details](https://github.com/msys2/msys2/wiki/MSYS2-installation) on how to install missing packages).
 
 ```bash
 pacman -S msys/make msys/python msys/diffutils \

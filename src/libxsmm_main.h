@@ -118,13 +118,7 @@
 #endif
 
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-# if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-# endif
 # include <dlfcn.h>
-# if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload_attribute(pop)
-# endif
 # if !defined(RTLD_NEXT)
 #   define LIBXSMM_RTLD_NEXT ((void*)-1l)
 # else
@@ -211,7 +205,7 @@
 * Packed structure, which stores the argument description of GEMM routines.
 * The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descriptor {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_gemm_descriptor {
   /** Extents of the matrix. */
   unsigned int m, n, k;
   /** Leading dimensions. */
@@ -259,7 +253,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
 };
 
 /** Packed structure storing the mateltw argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descriptor {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meltw_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo, ldi2, ldi3;
   /** Size of data element. */
@@ -274,7 +268,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meltw_descr
   unsigned char operation;
 };
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csr_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csr_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
@@ -282,7 +276,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_p
   unsigned int packed_width;
 } libxsmm_pspgemm_csr_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pspgemm_csc_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
@@ -290,29 +284,29 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_p
   unsigned int packed_width;
 } libxsmm_pspgemm_csc_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   unsigned int packed_width;
 } libxsmm_pgemm_ac_rm_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_bc_rm_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_pgemm_bc_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   unsigned int packed_width;
 } libxsmm_pgemm_bc_rm_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
 } libxsmm_csr_reg_descriptor;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xcopykernel {
+LIBXSMM_EXTERN_C typedef union libxsmm_xcopykernel {
   libxsmm_meltwfunction_unary function;
   const void *ptr_const, *ptr;
 } libxsmm_xcopykernel;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
+LIBXSMM_EXTERN_C typedef union libxsmm_code_pointer {
   /*void (*ptr_fn)(const void*, ...);*/
   const void* ptr_const;
   void* ptr;
@@ -323,7 +317,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_matrix_eqn_function xmateqn;
 } libxsmm_code_pointer;
 
-struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm {
+struct libxsmm_fsspmdm {
   int M, N, K, ldb, ldc, N_chunksize;
   libxsmm_gemmfunction kernel;
   libxsmm_datatype datatype;
@@ -331,7 +325,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm {
 };
 
 /** Packed structure storing the mateltw argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_meqn_descriptor {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct) libxsmm_meqn_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldo;
   /** Size of data element. */
@@ -366,14 +360,14 @@ typedef unsigned char libxsmm_descriptor_kind;
 #endif
 
 /** All descriptor types, which are valid for code-registration. */
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
+LIBXSMM_EXTERN_C typedef union libxsmm_descriptor {
   unsigned char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
   libxsmm_descriptor_kind kind; /* kind: must be the first member after "data" entry (above) */
   LIBXSMM_REGDESC(LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
   LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; unsigned char size; unsigned char desc[1]; } user;
 } libxsmm_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
+LIBXSMM_EXTERN_C typedef struct libxsmm_build_request {
   union {
     const void *ptr_const, *ptr; /* raw content */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
@@ -408,10 +402,10 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_realloc_fun)(void* /*ptr*/, size_t /*size*/);
+LIBXSMM_EXTERN_C typedef void* (*libxsmm_realloc_fun)(void* /*ptr*/, size_t /*size*/);
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_fntype {
+LIBXSMM_EXTERN_C typedef struct libxsmm_malloc_fntype {
   union { const void* dlsym; void* (*ptr)(size_t, size_t);  } alignmem;
   union { const void* dlsym; void* (*ptr)(size_t, size_t);  } memalign;
   union { const void* dlsym; libxsmm_malloc_fun ptr;        } malloc;
@@ -428,15 +422,15 @@ LIBXSMM_APIVAR_PRIVATE(libxsmm_malloc_fntype libxsmm_malloc_fn);
 
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
 /* prototypes for GLIBC internal implementation */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_memalign(size_t alignment, size_t size);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_malloc(size_t size);
+LIBXSMM_EXTERN_C void* __libc_memalign(size_t alignment, size_t size);
+LIBXSMM_EXTERN_C void* __libc_malloc(size_t size);
 #if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_calloc(size_t num, size_t size);
+LIBXSMM_EXTERN_C void* __libc_calloc(size_t num, size_t size);
 #endif
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_realloc(void* ptr, size_t size);
+LIBXSMM_EXTERN_C void* __libc_realloc(void* ptr, size_t size);
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void  __libc_free(void* ptr);
+LIBXSMM_EXTERN_C void  __libc_free(void* ptr);
 #endif /*(defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))*/
 
 LIBXSMM_API_INTERN void* libxsmm_memalign_internal(size_t alignment, size_t size);
@@ -521,7 +515,7 @@ LIBXSMM_API_INTERN void libxsmm_cpuid_model(char model[], size_t* model_size);
 /** Returns the type-size of data-type (can be also libxsmm_datatype). */
 LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_xinfo {
+LIBXSMM_EXTERN_C typedef struct libxsmm_kernel_xinfo {
   /** Non-zero if kernel is registered. */
   unsigned int registered;
   /** Number of FLoating Point OPerationS (FLOPS). */

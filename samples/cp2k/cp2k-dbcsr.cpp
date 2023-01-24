@@ -13,9 +13,6 @@
 #else
 # include <libxsmm_source.h>
 #endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>
@@ -25,9 +22,6 @@
 #include <cmath>
 #if defined(_OPENMP)
 # include <omp.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #if !defined(ITYPE)
@@ -53,7 +47,7 @@
 
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
-LIBXSMM_RETARGETABLE class LIBXSMM_RETARGETABLE lock_type {
+class lock_type {
 public:
   lock_type() {
     for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
@@ -75,7 +69,7 @@ private:
 
 
 template<typename T>
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+LIBXSMM_INLINE
 void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld_src = 0)
 {
   const libxsmm_blasint ld = (0 == ld_src ? ncols : ld_src);
@@ -136,7 +130,7 @@ int main(int argc, char* argv[])
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
 
-    LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
+    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
       raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
         : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
@@ -155,197 +149,190 @@ int main(int argc, char* argv[])
       LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, k, scale);
     }
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
-#endif
-    {
-      // initialize LIBXSMM
-      libxsmm_init();
-#if !defined(LIBXSMM_OFFLOAD_TARGET)
-      // some more setup similar to CP2K/intel branch
-      libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
-#endif
-      //libxsmm_set_dispatch_trylock(1);
+    // initialize LIBXSMM
+    libxsmm_init();
+    // some more setup similar to CP2K/intel branch
+    libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
+    //libxsmm_set_dispatch_trylock(1);
 
-      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
-        static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
-        1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
+    fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+      static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
+      1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
-      LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii_expect { // avoid std::vector (first-touch init. causes NUMA issue)
-        T *expect;
-        explicit raii_expect(libxsmm_blasint size): expect(0 < size ? new T[static_cast<size_t>(size)] : 0) {}
-        ~raii_expect() { delete[] expect; }
-      } expect_buffer(LIBXSMM_FEQ(0, check) ? 0 : csize);
-      T *const expect = (0 == expect_buffer.expect ? c : expect_buffer.expect);
-      libxsmm_matdiff_info d, diff;
-      const T zero = 0;
+    struct raii_expect { // avoid std::vector (first-touch init. causes NUMA issue)
+      T *expect;
+      explicit raii_expect(libxsmm_blasint size): expect(0 < size ? new T[static_cast<size_t>(size)] : 0) {}
+      ~raii_expect() { delete[] expect; }
+    } expect_buffer(LIBXSMM_FEQ(0, check) ? 0 : csize);
+    T *const expect = (0 == expect_buffer.expect ? c : expect_buffer.expect);
+    libxsmm_matdiff_info d, diff;
+    const T zero = 0;
 
-      // eventually JIT-compile the requested kernel
-      const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
+    // eventually JIT-compile the requested kernel
+    const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
 
-      libxsmm_matdiff_clear(&diff);
-      { // LAPACK/BLAS3 (warmup BLAS Library)
-        std::fill_n(expect, csize, zero);
+    libxsmm_matdiff_clear(&diff);
+    { // LAPACK/BLAS3 (warmup BLAS Library)
+      std::fill_n(expect, csize, zero);
 #if defined(_OPENMP)
-#       pragma omp parallel for CP2K_SCHEDULE
+#     pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (libxsmm_blasint i = 0; i < s; i += u) {
-          T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
-          const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_blas_gemm(&transa, &transb, m, n, k,
-              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
-            ai = aij;
-            bi = bij;
-          }
-          add(expect, tmp, m, n); // atomic
+      for (libxsmm_blasint i = 0; i < s; i += u) {
+        T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
+        const T *ai = a + i * asize, *bi = b + i * bsize;
+        for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          const T *const aij = ai + asize, *const bij = bi + bsize;
+          libxsmm_blas_gemm(&transa, &transb, m, n, k,
+            &alpha, ai, &m, bi, &k, &beta, tmp, &m);
+          ai = aij;
+          bi = bij;
         }
+        add(expect, tmp, m, n); // atomic
       }
+    }
 
-      { // LAPACK/BLAS3 (reference)
-        fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(c, csize, zero);
-        const unsigned long long start = libxsmm_timer_tick();
+    { // LAPACK/BLAS3 (reference)
+      fprintf(stdout, "LAPACK/BLAS...\n");
+      std::fill_n(c, csize, zero);
+      const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for CP2K_SCHEDULE
+#     pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (libxsmm_blasint i = 0; i < s; i += u) {
-          T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
-          const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_blas_gemm(&transa, &transb, &m, &n, &k,
-              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
-            ai = aij;
-            bi = bij;
-          }
-          add(c, tmp, m, n); // atomic
+      for (libxsmm_blasint i = 0; i < s; i += u) {
+        T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
+        const T *ai = a + i * asize, *bi = b + i * bsize;
+        for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          const T *const aij = ai + asize, *const bij = bi + bsize;
+          libxsmm_blas_gemm(&transa, &transb, &m, &n, &k,
+            &alpha, ai, &m, bi, &k, &beta, tmp, &m);
+          ai = aij;
+          bi = bij;
         }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
-          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
-          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
-          libxsmm_matdiff_reduce(&diff, &d);
-        }
+        add(c, tmp, m, n); // atomic
       }
-
-      { // inline an optimized implementation
-        fprintf(stdout, "Inlined...\n");
-        std::fill_n(c, csize, zero);
-        const unsigned long long start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#       pragma omp parallel for CP2K_SCHEDULE
-#endif
-        for (libxsmm_blasint i = 0; i < s; i += u) {
-          T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
-          const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            const T *const aij = ai + asize, *const bij = bi + bsize;
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
-              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
-            ai = aij;
-            bi = bij;
-          }
-          add(c, tmp, m, n); // atomic
-        }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
-          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
-          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
-          libxsmm_matdiff_reduce(&diff, &d);
-        }
+      const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+        fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
       }
-
-      { // auto-dispatched
-        fprintf(stdout, "Dispatched...\n");
-        std::fill_n(c, csize, zero);
-        const unsigned long long start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#       pragma omp parallel for CP2K_SCHEDULE
-#endif
-        for (libxsmm_blasint i = 0; i < s; i += u) {
-          T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
-          const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_gemm(&transa, &transb, m, n, k,
-              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
-            ai = aij;
-            bi = bij;
-          }
-          add(c, tmp, m, n); // atomic
-        }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
-          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
-          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
-          libxsmm_matdiff_reduce(&diff, &d);
-        }
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+        fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
+        libxsmm_matdiff_reduce(&diff, &d);
       }
+    }
 
-      if (xmm) { // specialized routine
-        fprintf(stdout, "Specialized...\n");
-        std::fill_n(c, csize, zero);
-        const unsigned long long start = libxsmm_timer_tick();
+    { // inline an optimized implementation
+      fprintf(stdout, "Inlined...\n");
+      std::fill_n(c, csize, zero);
+      const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for CP2K_SCHEDULE
+#     pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (libxsmm_blasint i = 0; i < s; i += u) {
-          T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
-          const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            const T *const aij = ai + asize, *const bij = bi + bsize;
+      for (libxsmm_blasint i = 0; i < s; i += u) {
+        T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
+        const T *ai = a + i * asize, *bi = b + i * bsize;
+        for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          const T *const aij = ai + asize, *const bij = bi + bsize;
+          LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            &alpha, ai, &m, bi, &k, &beta, tmp, &m);
+          ai = aij;
+          bi = bij;
+        }
+        add(c, tmp, m, n); // atomic
+      }
+      const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+        fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
+      }
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+        fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
+        libxsmm_matdiff_reduce(&diff, &d);
+      }
+    }
+
+    { // auto-dispatched
+      fprintf(stdout, "Dispatched...\n");
+      std::fill_n(c, csize, zero);
+      const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#     pragma omp parallel for CP2K_SCHEDULE
+#endif
+      for (libxsmm_blasint i = 0; i < s; i += u) {
+        T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
+        const T *ai = a + i * asize, *bi = b + i * bsize;
+        for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          const T *const aij = ai + asize, *const bij = bi + bsize;
+          libxsmm_gemm(&transa, &transb, m, n, k,
+            &alpha, ai, &m, bi, &k, &beta, tmp, &m);
+          ai = aij;
+          bi = bij;
+        }
+        add(c, tmp, m, n); // atomic
+      }
+      const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+        fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
+      }
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+        fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
+        libxsmm_matdiff_reduce(&diff, &d);
+      }
+    }
+
+    if (xmm) { // specialized routine
+      fprintf(stdout, "Specialized...\n");
+      std::fill_n(c, csize, zero);
+      const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#     pragma omp parallel for CP2K_SCHEDULE
+#endif
+      for (libxsmm_blasint i = 0; i < s; i += u) {
+        T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
+        const T *ai = a + i * asize, *bi = b + i * bsize;
+        for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            xmm(ai, bi, tmp,
-              LIBXSMM_GEMM_PREFETCH_A(aij + asize),
-              LIBXSMM_GEMM_PREFETCH_B(bij + bsize),
-              LIBXSMM_GEMM_PREFETCH_C(tmp));
+          xmm(ai, bi, tmp,
+            LIBXSMM_GEMM_PREFETCH_A(aij + asize),
+            LIBXSMM_GEMM_PREFETCH_B(bij + bsize),
+            LIBXSMM_GEMM_PREFETCH_C(tmp));
 #else
-            xmm(ai, bi, tmp);
+          xmm(ai, bi, tmp);
 #endif
-            ai = aij;
-            bi = bij;
-          }
-          add(c, tmp, m, n); // atomic
+          ai = aij;
+          bi = bij;
         }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
-          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
-          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
-          libxsmm_matdiff_reduce(&diff, &d);
-        }
+        add(c, tmp, m, n); // atomic
       }
+      const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+        fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
+      }
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
+        fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
+        libxsmm_matdiff_reduce(&diff, &d);
+      }
+    }
 
-      // finalize LIBXSMM
-      libxsmm_finalize();
-      fprintf(stdout, "Finished\n");
+    // finalize LIBXSMM
+    libxsmm_finalize();
+    fprintf(stdout, "Finished\n");
 
-      if (!LIBXSMM_FEQ(0, check)) {
-        if (check < 100.0 * diff.normf_rel) {
-          fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
-          result = EXIT_FAILURE;
-        }
+    if (!LIBXSMM_FEQ(0, check)) {
+      if (check < 100.0 * diff.normf_rel) {
+        fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+        result = EXIT_FAILURE;
       }
     }
   }

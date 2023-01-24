@@ -1,7 +1,7 @@
 name: "LIBXSMM"
 author: "Hans Pabst"
 github: "libxsmm/libxsmm"
-copyright: "Copyright (c) 2009-2022, LIBXSMM Contributors."
+copyright: "Copyright (c) 2009-2023, LIBXSMM Contributors."
 license: "BSD-3-Clause"
 description: "Library for specialized dense and sparse matrix operations, and deep learning primitives."
 categories = ["numerical"]

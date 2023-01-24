@@ -23,6 +23,10 @@
 #define BINARY_OP_POOL 1
 
 LIBXSMM_API_INTERN
+libxsmm_blasint libxsmm_generator_matequation_x86_valid_arch_precision( libxsmm_generated_code*           io_generated_code,
+                                                                        libxsmm_matrix_eqn*               i_eqn,
+                                                                        const libxsmm_meqn_descriptor*    i_mateqn_desc);
+LIBXSMM_API_INTERN
 void libxsmm_generator_matequation_apply_fusion_pattern_transformation(libxsmm_matrix_eqn_fusion_pattern_type fusion_pattern,
                                                libxsmm_matrix_eqn_elem                *cur_node,
                                                libxsmm_matrix_eqn_elem                *new_arg_node,

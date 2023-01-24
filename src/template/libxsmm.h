@@ -439,25 +439,25 @@ $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
 /** Map built-in type to libxsmm_datatype (libxsmm_datatype_enum). */
-template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<unsigned char>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_datatype_enum<char>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<typename T> struct libxsmm_datatype_enum          { static const libxsmm_datatype value = static_cast<libxsmm_datatype>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct libxsmm_datatype_enum<double>            { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F64; };
+template<> struct libxsmm_datatype_enum<float>             { static const libxsmm_datatype value = LIBXSMM_DATATYPE_F32; };
+template<> struct libxsmm_datatype_enum<int>               { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I32; };
+template<> struct libxsmm_datatype_enum</*signed*/short>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I16; };
+template<> struct libxsmm_datatype_enum<libxsmm_bfloat16>  { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<Eigen::bfloat16>   { static const libxsmm_datatype value = LIBXSMM_DATATYPE_BF16; };
+template<> struct libxsmm_datatype_enum<signed char>       { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<unsigned char>     { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
+template<> struct libxsmm_datatype_enum<char>              { static const libxsmm_datatype value = LIBXSMM_DATATYPE_I8; };
 
 /** Determine default output type based on the input-type. */
-template<typename INP_TYPE> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output   { typedef INP_TYPE type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output</*signed*/short>   { typedef int type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
+template<typename INP_TYPE> struct libxsmm_gemm_default_output   { typedef INP_TYPE type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>   { typedef int type; };
+template<> struct libxsmm_gemm_default_output<libxsmm_bfloat16>  { typedef float type; };
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type>
-class LIBXSMM_RETARGETABLE libxsmm_mmfunction {
+class libxsmm_mmfunction {
   mutable/*retargetable*/ libxsmm_xmmfunction m_function;
 public:
   typedef INP_TYPE itype;
@@ -538,117 +538,117 @@ public:
 };
 
 /** Matrix copy function ("in" can be NULL to zero the destination). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_matcopy(out, in, sizeof(T), m, n, ldi, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   return libxsmm_matcopy(out, in, m, n, ldi, ldi);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n)
 {
   return libxsmm_matcopy(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy(T* out, const T* in,
   libxsmm_blasint n)
 {
   return libxsmm_matcopy(out, in, n, n);
 }
 
 /** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_matcopy_omp(out, in, sizeof(T), m, n, ldi, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   return libxsmm_matcopy_omp(out, in, m, n, ldi, ldi);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n)
 {
   return libxsmm_matcopy_omp(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_matcopy_omp(T* out, const T* in,
   libxsmm_blasint n)
 {
   return libxsmm_matcopy_omp(out, in, n, n);
 }
 
 /** Matrix transposition (out-of-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_otrans(out, in, sizeof(T), m, n, ldi, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   return libxsmm_trans(out, in, m, n, ldi, ldi);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n)
 {
   return libxsmm_trans(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* out, const T* in,
   libxsmm_blasint n)
 {
   return libxsmm_trans(out, in, n, n);
 }
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_otrans_omp(out, in, sizeof(T), m, n, ldi, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   return libxsmm_trans_omp(out, in, m, n, ldi, ldi);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans_omp(T* out, const T* in,
   libxsmm_blasint m, libxsmm_blasint n)
 {
   return libxsmm_trans_omp(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in,
+template<typename T> inline/*superfluous*/ int libxsmm_trans_omp(T* out, const T* in,
   libxsmm_blasint n)
 {
   return libxsmm_trans_omp(out, in, n, n);
 }
 
 /** Matrix transposition (in-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_itrans(inout, sizeof(T), m, n, ldi, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   return libxsmm_itrans(inout, sizeof(T), m, n, ldi, n);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* inout,
   libxsmm_blasint m, libxsmm_blasint n)
 {
   return libxsmm_itrans(inout, sizeof(T), m, n, m, n);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout,
+template<typename T> inline/*superfluous*/ int libxsmm_trans(T* inout,
   libxsmm_blasint m)
 {
   return libxsmm_itrans(inout, sizeof(T), m, m, m, m);
 }
 
 /** Dispatched general dense matrix multiplication (double-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+inline void libxsmm_gemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
@@ -656,7 +656,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
 {
   libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+inline void libxsmm_gemm(const char* transa, const char* transb,
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
@@ -666,7 +666,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
 }
 
 /** Dispatched general dense matrix multiplication (single-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+inline void libxsmm_gemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
@@ -674,7 +674,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
 {
   libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+inline void libxsmm_gemm(const char* transa, const char* transb,
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
@@ -684,7 +684,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const char* transb,
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
@@ -692,7 +692,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 {
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const char* transb,
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
                        const double* b, const libxsmm_blasint* ldb,
@@ -702,7 +702,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
-inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const char* transb,
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,
@@ -710,7 +710,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 {
   libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const char* transb,
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
                       const float* b, const libxsmm_blasint* ldb,

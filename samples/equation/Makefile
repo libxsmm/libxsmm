@@ -36,7 +36,7 @@ CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 XFILES := $(OUTDIR)/equation_simple $(OUTDIR)/equation_gather_reduce  $(OUTDIR)/equation_relu $(OUTDIR)/equation_simple_layernorm $(OUTDIR)/equation_matmul $(OUTDIR)/equation_softmax $(OUTDIR)/equation_layernorm $(OUTDIR)/equation_splitSGD
 .PHONY: all
 all: $(XFILES)
@@ -85,7 +85,6 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
@@ -98,3 +97,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
+
+.PHONY: deepclean
+deepclean: realclean
+	@-rm -f .make .state

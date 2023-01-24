@@ -13,14 +13,8 @@
 #include "libxsmm_hash.h"
 #include <libxsmm_mhd.h>
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if !defined(LIBXSMM_NO_LIBM)
 # include <math.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
@@ -53,12 +47,12 @@
 #   define LIBXSMM_GEMM_LOCKFWD
 # endif
 # if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_GEMM_LOCK)
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
+LIBXSMM_EXTERN_C typedef union internal_gemm_locktype {
   char pad[LIBXSMM_CACHELINE];
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 # else
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
+LIBXSMM_EXTERN_C typedef union internal_gemm_locktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 # endif

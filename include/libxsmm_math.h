@@ -18,7 +18,7 @@
  * Structure of differences with matrix norms according
  * to http://www.netlib.org/lapack/lug/node75.html).
  */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
+LIBXSMM_EXTERN_C typedef struct libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_rel;

@@ -28,7 +28,7 @@
 
 
 /** Function type representing the CRC32 functionality. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(
+LIBXSMM_EXTERN_C typedef unsigned int (*libxsmm_hash_function)(
   unsigned int /*seed*/, const void* /*data*/, ... /*size*/);
 
 /** Initialize hash function module; not thread-safe. */

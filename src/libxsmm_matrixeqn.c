@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Hans Pabst, Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_matrixeqn.h"
 
@@ -14,6 +14,110 @@
 LIBXSMM_APIVAR_DEFINE(libxsmm_matrix_eqn* libxsmm_matrix_eqns[256]);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_init);
 LIBXSMM_APIVAR_DEFINE(libxsmm_blasint libxsmm_matrix_eqns_count);
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_contains_opcode(libxsmm_matrix_eqn_elem *node, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode, unsigned int *result) {
+  if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    return;
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    if (node->info.u_op.type == u_opcode) {
+      *result = 1;
+    }
+    libxsmm_generator_matequation_tree_contains_opcode(node->le, u_opcode, b_opcode, t_opcode, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    if (node->info.b_op.type == b_opcode) {
+      *result = 1;
+    }
+    libxsmm_generator_matequation_tree_contains_opcode(node->le, u_opcode, b_opcode, t_opcode, result);
+    libxsmm_generator_matequation_tree_contains_opcode(node->ri, u_opcode, b_opcode, t_opcode, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    if (node->info.t_op.type == t_opcode) {
+      *result = 1;
+    }
+    libxsmm_generator_matequation_tree_contains_opcode(node->le, u_opcode, b_opcode, t_opcode, result);
+    libxsmm_generator_matequation_tree_contains_opcode(node->ri, u_opcode, b_opcode, t_opcode, result);
+    libxsmm_generator_matequation_tree_contains_opcode(node->r2, u_opcode, b_opcode, t_opcode, result);
+  }
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_contains_opcode(libxsmm_matrix_eqn *eqn, libxsmm_meltw_unary_type u_opcode, libxsmm_meltw_binary_type b_opcode, libxsmm_meltw_ternary_type t_opcode ) {
+  unsigned int result = 0;
+  libxsmm_generator_matequation_tree_contains_opcode(eqn->eqn_root, u_opcode, b_opcode, t_opcode, &result);
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_all_nodes_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result) {
+  if (node->tmp.dtype != dtype) {
+    *result = 0;
+  }
+  if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    return;
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->le, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->ri, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->ri, dtype, result);
+    libxsmm_generator_matequation_tree_all_nodes_dtype(node->r2, dtype, result);
+  }
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_all_nodes_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype) {
+  unsigned int result = 1;
+  libxsmm_generator_matequation_tree_all_nodes_dtype(eqn->eqn_root, dtype, &result);
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_all_args_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result) {
+  if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if (node->info.arg.dtype != dtype) {
+      *result = 0;
+    }
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_generator_matequation_tree_all_args_dtype(node->le, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    libxsmm_generator_matequation_tree_all_args_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_all_args_dtype(node->ri, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_generator_matequation_tree_all_args_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_all_args_dtype(node->ri, dtype, result);
+    libxsmm_generator_matequation_tree_all_args_dtype(node->r2, dtype, result);
+  }
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_all_args_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype) {
+  unsigned int result = 1;
+  libxsmm_generator_matequation_tree_all_args_dtype(eqn->eqn_root, dtype, &result);
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_tree_any_args_dtype(libxsmm_matrix_eqn_elem *node, libxsmm_datatype dtype, unsigned int *result) {
+  if ( node->type == LIBXSMM_MATRIX_EQN_NODE_ARG ) {
+    if (node->info.arg.dtype == dtype) {
+      *result = 1;
+    }
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY ) {
+    libxsmm_generator_matequation_tree_any_args_dtype(node->le, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_BINARY ) {
+    libxsmm_generator_matequation_tree_any_args_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_any_args_dtype(node->ri, dtype, result);
+  } else if ( node->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY ) {
+    libxsmm_generator_matequation_tree_any_args_dtype(node->le, dtype, result);
+    libxsmm_generator_matequation_tree_any_args_dtype(node->ri, dtype, result);
+    libxsmm_generator_matequation_tree_any_args_dtype(node->r2, dtype, result);
+  }
+}
+
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_matequation_any_args_dtype(libxsmm_matrix_eqn *eqn, libxsmm_datatype dtype) {
+  unsigned int result = 0;
+  libxsmm_generator_matequation_tree_any_args_dtype(eqn->eqn_root, dtype, &result);
+  return result;
+}
+
+LIBXSMM_API_INTERN void libxsmm_generator_matequation_are_nodes_pure_f32(libxsmm_matrix_eqn_elem *node, unsigned int *result) {
+  libxsmm_generator_matequation_tree_all_nodes_dtype(node, LIBXSMM_DATATYPE_F32, result);
+}
 
 LIBXSMM_API_INTERN libxsmm_matrix_eqn* libxsmm_matrix_eqn_get_equation( libxsmm_blasint eqn_idx ) {
   return libxsmm_matrix_eqns[eqn_idx];

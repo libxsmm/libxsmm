@@ -13,9 +13,6 @@
 
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if defined(_OPENMP)
 # if defined(LIBXSMM_PRAGMA_DIAG)
 #   if defined(__clang__)
@@ -34,9 +31,6 @@
 #     pragma GCC diagnostic pop
 #   endif
 # endif
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_EXT_H*/

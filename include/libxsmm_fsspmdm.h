@@ -17,7 +17,7 @@
 #define libxsmm_sfsspmdm libxsmm_fsspmdm
 
 /** Opaque type for Fixed-size Sparse Matrix x Dense Matrix (FsSpMDM). */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_fsspmdm libxsmm_fsspmdm;
+LIBXSMM_EXTERN_C typedef struct libxsmm_fsspmdm libxsmm_fsspmdm;
 
 LIBXSMM_API libxsmm_fsspmdm* libxsmm_fsspmdm_create(libxsmm_datatype datatype,
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,

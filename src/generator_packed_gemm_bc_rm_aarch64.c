@@ -235,16 +235,21 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
   if ( l_simd_packed_remainder != 0 ) {
     /* this is for now a general error */
     fprintf( stderr, "libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop right now only supports multiples of SIMD length!\n" );
-    exit(-1);
+    LIBXSMM_EXIT_ERROR(io_generated_code);
+    return;
   }
 
-  /* check if we have a single SIMD devisor */
+  /* check if we have a single SIMD divisor */
   if ( l_simd_packed_width == i_packed_width ) {
     /* run inner compute kernel */
     l_generator_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
                              i_packed_width, l_simd_packed_width, l_simd_packed_width, i_n_blocking );
-  /* check if we have a perfect SIMD devisor */
-  } else if ( l_simd_packed_remainder == 0 ) {
+  /* check if we have a perfect SIMD divisor */
+  } else
+#if 0 /* TODO: see return statement above (error condition for l_simd_packed_remainder) */
+    if ( l_simd_packed_remainder == 0 )
+#endif
+  {
     /* initilize packed loop */
     libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_help_3, i_packed_width );
 
@@ -276,13 +281,15 @@ void libxsmm_generator_packed_gemm_bc_rm_aarch64_kloop( libxsmm_generated_code* 
                                                    (long long)l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size_out );
 
   /* we need masking and have less than SIMD width */
-  } else if ( l_simd_packed_width > i_packed_width  ) {
+  }
+#if 0 /* TODO: see return statement above (error condition for l_simd_packed_remainder) */
+  else if ( l_simd_packed_width > i_packed_width  ) {
     /* TODO: */
   /* we need the general case */
   } else {
     /* TODO: */
   }
-
+#endif
   /* advance B and C pointers if N is bigger than our register blocking */
   if ( i_xgemm_desc->n != i_n_blocking ) {
     /* advance B pointer */

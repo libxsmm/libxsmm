@@ -19,9 +19,6 @@
 #endif
 #include "generator_common.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -38,10 +35,11 @@
 # include <libkern/OSCacheControl.h>
 # include <pthread.h>
 #endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
+/* used internally to reimplement certain exit-handler */
+#if !defined(LIBXSMM_EXIT_SUCCESS)
+# define LIBXSMM_EXIT_SUCCESS() exit(EXIT_SUCCESS)
+#endif
 #if !defined(LIBXSMM_CODE_MAXSIZE)
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
@@ -123,12 +121,12 @@ LIBXSMM_EXTERN int posix_memalign(void**, size_t, size_t) LIBXSMM_NOTHROW;
 #     define LIBXSMM_CLEANUP_NTRY 7
 #   endif
 #   if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_REGLOCK)
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+LIBXSMM_EXTERN_C typedef union internal_reglocktype {
   char pad[LIBXSMM_CACHELINE];
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) state;
 } internal_reglocktype;
 #   else
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+LIBXSMM_EXTERN_C typedef union internal_reglocktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) state;
 } internal_reglocktype;
 #   endif
@@ -201,19 +199,19 @@ LIBXSMM_APIVAR_DEFINE(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 #endif
 
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
+LIBXSMM_EXTERN_C typedef struct internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;
 
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
+LIBXSMM_EXTERN_C typedef struct internal_cache_entry_type {
   libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
   libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
   unsigned int id; /* to invalidate */
   unsigned char size, hit;
 } internal_cache_entry_type;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_cache_type {
+LIBXSMM_EXTERN_C typedef union internal_cache_type {
 # if defined(LIBXSMM_CACHE_PAD)
   char pad[LIBXSMM_UP2(sizeof(internal_cache_entry_type),LIBXSMM_CACHELINE)];
 # endif
@@ -226,7 +224,7 @@ LIBXSMM_APIVAR_DEFINE(internal_cache_type* internal_cache_buffer);
 LIBXSMM_APIVAR_DEFINE(int internal_cache_size);
 #endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
+LIBXSMM_EXTERN_C typedef union internal_regkey_type {
 #if defined(LIBXSMM_REGKEY_PAD)
   char pad[LIBXSMM_UP2(sizeof(libxsmm_descriptor), LIBXSMM_CACHELINE)];
 #endif
@@ -822,7 +820,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
 }
 
-
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
@@ -835,7 +832,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 
@@ -850,7 +847,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 
@@ -865,7 +862,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
     if (NULL != stop.dlsym) {
       stop.ptr();
     }
-    else exit(EXIT_SUCCESS); /* statically linked runtime */
+    else LIBXSMM_EXIT_SUCCESS(); /* statically linked runtime */
   }
 }
 #endif
@@ -1145,20 +1142,21 @@ LIBXSMM_API_INTERN void internal_init(void)
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
+LIBXSMM_API_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) {
-    static unsigned int ninit = 0, gid = 0;
-    const unsigned int tid = LIBXSMM_ATOMIC_ADD_FETCH(&ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+    static unsigned int counter = 0, gid = 0;
+    const unsigned int tid = LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ASSERT(0 < tid);
     /* libxsmm_ninit (1: initialization started, 2: library initialized, higher: to invalidate code-TLS) */
     if (1 == tid) {
       libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(); /* warm-up */
       libxsmm_timer_tickint t0 = libxsmm_timer_tick_tsc(); /* warm-up */
       s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick_tsc(); /* start timing */
-      assert(0 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)); /* !LIBXSMM_ASSERT */
-      /* coverity[check_return] */
-      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+      { const unsigned int ninit = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+        LIBXSMM_UNUSED_NDEBUG(ninit);
+        assert(1 == ninit); /* !LIBXSMM_ASSERT */
+      }
       gid = tid; /* protect initialization */
       LIBXSMM_UNUSED_NDEBUG(gid);
 #if (0 != LIBXSMM_SYNC)
@@ -1293,9 +1291,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           }
         }
       }
-      assert(1 == LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_SEQ_CST)); /* !LIBXSMM_ASSERT */
-      /* coverity[check_return] */
-      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
+      LIBXSMM_EXPECT(0 < LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST));
     }
     else /*if (gid != tid)*/ { /* avoid recursion */
       LIBXSMM_ASSERT(gid != tid);
@@ -1306,12 +1302,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     libxsmm_perf_init();
 #endif
   }
-  LIBXSMM_ASSERT(1 < libxsmm_ninit);
 }
 
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_NO_TRACE void libxsmm_finalize(void);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
+LIBXSMM_API_DTOR void libxsmm_finalize(void)
 {
   void *const regaddr = &internal_registry;
   uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
@@ -1928,7 +1923,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           }
         }
 # endif
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm);
+        libxsmm_generator_gemm_kernel(&generated_code, request->descriptor.gemm);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2058,7 +2053,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             request->descriptor.pspgemm_csr->row_ptr[request->descriptor.pspgemm_csr->gemm->m] : request->descriptor.pspgemm_csr->row_ptr[request->descriptor.pspgemm_csr->gemm->k];
         const unsigned int gemm_factor = (request->descriptor.pspgemm_csr->gemm->lda == 0) ? request->descriptor.pspgemm_csr->gemm->n : request->descriptor.pspgemm_csr->gemm->m;
         extra.nflops = 2 * nnz * gemm_factor * request->descriptor.pspgemm_csr->packed_width;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_spgemm_csr_kernel, &generated_code, request->descriptor.pspgemm_csr->gemm,
+        libxsmm_generator_packed_spgemm_csr_kernel(&generated_code, request->descriptor.pspgemm_csr->gemm,
           request->descriptor.pspgemm_csr->row_ptr, request->descriptor.pspgemm_csr->column_idx, request->descriptor.pspgemm_csr->values, request->descriptor.pspgemm_csr->packed_width);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2089,7 +2084,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->k] : request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->n];
         const unsigned int gemm_factor = (request->descriptor.pspgemm_csc->gemm->lda == 0) ? request->descriptor.pspgemm_csc->gemm->n : request->descriptor.pspgemm_csc->gemm->m;
         extra.nflops = 2 * nnz * gemm_factor * request->descriptor.pspgemm_csc->packed_width;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_spgemm_csc_kernel, &generated_code, request->descriptor.pspgemm_csc->gemm,
+        libxsmm_generator_packed_spgemm_csc_kernel(&generated_code, request->descriptor.pspgemm_csc->gemm,
           request->descriptor.pspgemm_csc->row_idx, request->descriptor.pspgemm_csc->column_ptr, request->descriptor.pspgemm_csc->values, request->descriptor.pspgemm_csc->packed_width);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -2116,7 +2111,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmacrm->gemm->datatype))
       {
         extra.nflops = 2 * request->descriptor.pgemmacrm->packed_width * request->descriptor.pgemmacrm->gemm->m * request->descriptor.pgemmacrm->gemm->n * request->descriptor.pgemmacrm->gemm->k;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_gemm_ac_rm, &generated_code, request->descriptor.pgemmacrm->gemm, request->descriptor.pgemmacrm->packed_width);
+        libxsmm_generator_packed_gemm_ac_rm(&generated_code, request->descriptor.pgemmacrm->gemm, request->descriptor.pgemmacrm->packed_width);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2142,7 +2137,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_DATATYPE_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pgemmbcrm->gemm->datatype))
       {
         extra.nflops = 2 * request->descriptor.pgemmbcrm->packed_width * request->descriptor.pgemmbcrm->gemm->m * request->descriptor.pgemmbcrm->gemm->n * request->descriptor.pgemmbcrm->gemm->k;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_packed_gemm_bc_rm, &generated_code, request->descriptor.pgemmbcrm->gemm, request->descriptor.pgemmbcrm->packed_width);
+        libxsmm_generator_packed_gemm_bc_rm(&generated_code, request->descriptor.pgemmbcrm->gemm, request->descriptor.pgemmbcrm->packed_width);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2170,7 +2165,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       {
         const unsigned int nnz = request->descriptor.sreg->row_ptr[request->descriptor.sreg->gemm->m];
         extra.nflops = 2 * libxsmm_cpuid_vlen32(libxsmm_target_archid)/2 * request->descriptor.sreg->gemm->n * nnz;
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm,
+        libxsmm_generator_spgemm_csr_reg_kernel(&generated_code, request->descriptor.sreg->gemm,
           request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
           (const double*)request->descriptor.sreg->values);
 # if !defined(LIBXSMM_VTUNE)
@@ -2206,7 +2201,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             generated_code.arch = libxsmm_cpuid(NULL);
           }
         }
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_mateltwise_kernel, &generated_code, request->descriptor.meltw);
+        libxsmm_generator_mateltwise_kernel(&generated_code, request->descriptor.meltw);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2240,7 +2235,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             generated_code.arch = libxsmm_cpuid(NULL);
           }
         }
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matequation_kernel, &generated_code, request->descriptor.meqn);
+        libxsmm_generator_matequation_kernel(&generated_code, request->descriptor.meqn);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif

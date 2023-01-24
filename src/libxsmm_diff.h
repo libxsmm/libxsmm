@@ -124,7 +124,7 @@
 
 
 /** Function type representing the diff-functionality. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_diff_function)(
+LIBXSMM_EXTERN_C typedef unsigned int (*libxsmm_diff_function)(
   const void* /*a*/, const void* /*b*/, ... /*size*/);
 
 /** Compare two data blocks of 4 Byte each. */

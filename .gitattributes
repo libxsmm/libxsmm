@@ -22,8 +22,8 @@ scripts/tool_normalize.sh export-ignore
 scripts/tool_changelog.sh export-ignore
 scripts/tool_gitauthors.sh export-ignore
 scripts/tool_gitaddforks.sh export-ignore
-scripts/libxsmm_version.sh  export-ignore
 scripts/tool_envrestore.sh export-ignore
+scripts/tool_version.sh  export-ignore
 PULL_REQUEST_TEMPLATE.md export-ignore
 samples/seissol/*.orient export-ignore
 samples/seissol/*.bound export-ignore

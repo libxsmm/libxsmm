@@ -50,7 +50,7 @@
     } while(0)
 # elif defined(__GNUC__) || !defined(_CRAYC)
 #   if (64 > (LIBXSMM_BITS))
-      LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid( /* prototype */
+      LIBXSMM_EXTERN int __get_cpuid( /* prototype */
         unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
 #     define LIBXSMM_XGETBV(XCR, EAX, EDX) (EAX) = (EDX) = 0xFFFFFFFF
 #     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
@@ -387,7 +387,7 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
       target_arch = "knl";
     } break;
     case LIBXSMM_X86_AVX512: {
-      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "avx3") */
+      /* TODO: target_arch = "avx3" */
       target_arch = "hsw";
     } break;
     case LIBXSMM_X86_AVX512_VL256: {

@@ -17,7 +17,6 @@
 #include "generator_mateltwise_unary_binary_aarch64.h"
 #include "generator_common_aarch64.h"
 #include "generator_mateltwise_aarch64.h"
-#include "generator_mateltwise_aarch64_sve.h"
 #include "generator_mateltwise_transform_common.h"
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"
@@ -170,7 +169,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
   /* Setup A in stack (if A in vnni perform vnni4->norm and then fp8->fp32, else perform fp8->fp32 only) */
   libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
       i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2, tmp_reg3,
-      LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc_orig->k, i_xgemm_desc_orig->m, i_xgemm_desc_orig->lda, i_xgemm_desc_orig->m, i_xgemm_desc_orig->c1,
+      LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_NORMT, i_xgemm_desc_orig->k, i_xgemm_desc_orig->m, i_xgemm_desc_orig->lda, i_xgemm_desc_orig->m, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
       i_in_dtype, i_in_dtype, i_in_dtype,
       LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_TRANSPOSE_PTR,
       LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
@@ -183,7 +182,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
   if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2, tmp_reg3,
-        LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, i_xgemm_desc_orig->c2,
+        LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, i_xgemm_desc->k, i_xgemm_desc->n, i_xgemm_desc_orig->ldb, i_xgemm_desc->k, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
         i_in_dtype, i_in_dtype, i_in_dtype,
         LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
         LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);
@@ -196,11 +195,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack_aar
     if (is_offset_brgemm > 0) {
       i_xgemm_desc->flags = i_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET;
       i_xgemm_desc->flags = i_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+      i_xgemm_desc->ldb = i_xgemm_desc->k;
       i_xgemm_desc->c2 = (long long)LIBXSMM_TYPESIZE(i_in_dtype) * i_xgemm_desc->n * i_xgemm_desc->k;
     }
     if (is_address_brgemm > 0) {
       i_xgemm_desc->flags = i_xgemm_desc->flags ^ LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
       i_xgemm_desc->flags = i_xgemm_desc->flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE;
+      i_xgemm_desc->ldb = i_xgemm_desc->k;
       i_xgemm_desc->c2 = (long long)LIBXSMM_TYPESIZE(i_in_dtype) * i_xgemm_desc->n * i_xgemm_desc->k;
     }
     i_xgemm_desc->c1 = (long long)LIBXSMM_TYPESIZE(i_in_dtype) * i_xgemm_desc->m * i_xgemm_desc->k;
@@ -378,7 +379,7 @@ void libxsmm_generator_gemm_apply_sigmoid_fusion_2dregblock_aarch64_sve(  libxsm
   /* register blocking counter in m */
   unsigned int l_m = 0;
   unsigned int l_m_blocks[2] = { 0 }; /* 0: #full vector stores, 1: #predicate stores (0 or 1) */
-  unsigned int l_n_blocks = (i_is_mmla_regblock > 0) ? i_n_blocking / 2 : i_n_blocking;
+  unsigned int l_n_blocks = (i_is_mmla_regblock > 0) ? (i_n_blocking + 1) / 2 : i_n_blocking;
 
   unsigned int l_m_total_blocks = 0;
   unsigned int l_vec_reg_acc_start = 0;
@@ -1446,6 +1447,7 @@ void libxsmm_generator_gemm_setup_stack_frame_allocate_scratch_aarch64( libxsmm_
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, temp_reg, LIBXSMM_AARCH64_GP_REG_XSP, 0, 0 );
     libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, temp_reg2, temp_reg );
   }
+
 }
 
 LIBXSMM_API_INTERN

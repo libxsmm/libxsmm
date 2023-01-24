@@ -11,15 +11,9 @@
 #include <libxsmm_lpflt_quant.h>
 #include "libxsmm_main.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
 #include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
 #endif
 
 LIBXSMM_API_INLINE float libxsmm_internal_get_max( float* in_buffer, int length ) {

@@ -47,7 +47,7 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(call qndir,$(F90OBJS:.F90=-f90.o)))
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 
 ifneq (,$(strip $(FC)))
@@ -104,7 +104,6 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@-rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* *.dat *.log
 	@-rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
-	@-rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
@@ -117,3 +116,7 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@-rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
 	@-rm -f $(XFILES) $(MODULES)
 endif
+
+.PHONY: deepclean
+deepclean: realclean
+	@-rm -f .make .state
