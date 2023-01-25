@@ -23,7 +23,7 @@ import re
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
-    invalid = ["syntax error", "ERROR:", "Traceback", '\"']
+    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
     for match in (
         match
         for match in re.finditer(
@@ -77,8 +77,9 @@ def matchstr(s1, s2, exact=False):
         return False
 
 
-def num2int(num):
-    return int((num + 0.5) if 0 <= num else (num - 0.5))
+def num2fix(num, decimals=0):
+    dec = pow(10, decimals)
+    return int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5)) / dec
 
 
 def num2str(num):
@@ -136,6 +137,7 @@ def main(args, argd):
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     outfile = None
+    accuracy = 1
     match = []
 
     if args.infile and args.infile.is_file():
@@ -307,7 +309,7 @@ def main(args, argd):
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
             retfile = outfile.with_name(
-                f"{outfile.stem}-{nowstr}{outfile.suffix}"
+                f"{outfile.stem}.{nowstr}{outfile.suffix}"
             )
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
@@ -459,10 +461,10 @@ def main(args, argd):
                         sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {num2int(mnew)} {sunit}"
+                    label = f"{value} = {num2fix(mnew, accuracy)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
-                        perc = num2int(100 * (mnew - mold) / mold)
+                        perc = num2fix(100 * (mnew - mold) / mold)
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
@@ -476,13 +478,13 @@ def main(args, argd):
                                 if vnew and vold:
                                     anew = statistics.geometric_mean(vnew)
                                     aold = statistics.geometric_mean(vold)
-                                    perc = num2int(100 * (anew - aold) / aold)
+                                    perc = num2fix(100 * (anew - aold) / aold)
                                     if perc > amax:
-                                        vmax = num2int(anew)
+                                        vmax = num2fix(anew, accuracy)
                                         layers_max = a
                                         amax = perc
                                     elif perc < amin:
-                                        vmin = num2int(anew)
+                                        vmin = num2fix(anew, accuracy)
                                         layers_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
