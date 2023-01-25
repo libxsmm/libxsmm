@@ -285,15 +285,15 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
           if [ \"${BUILD}\" ] && [ \"0\" != \"\${PERMIT}\" ]; then \
             ${FLOCK} ${BUILD} \"echo \${_PEXEC_PRETTY} >>${BUILD}\"; \
           fi; \
-          1>&2 printf \" -> \${ERROR}[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
+          1>&2 printf \" -> \033[91m\${ERROR}\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       else \
         if [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \
            [ ! \"\$(${SED} -En \"/^\${_PEXEC_PRETTY}([[:space:]]|$)/p\" \"${ALLOW}\")\" ]; \
         then \
-          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo \" -> VALID[000]: \${_PEXEC_PRETTY}\"; fi; \
+          if [ \"0\" = \"${QUIET}\" ]; then 1>&2 echo -e \" -> \033[92mVALID\033[0m[000]: \${_PEXEC_PRETTY}\"; fi; \
         else \
-          1>&2 printf \" -> SHAKY[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
+          1>&2 printf \" -> \033[33mSHAKY\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       fi; \
       exit 0; \
