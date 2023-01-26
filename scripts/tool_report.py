@@ -175,16 +175,17 @@ def main(args, argd):
     latest = int(dbkeys[-1]) if dbkeys else 0
 
     # attempt to load weights
-    if args.weights.is_file():
+    wfile = args.weights if args.weights.is_file() else argd.weights
+    if wfile.is_file():
         try:
-            if ".json" == args.weights.suffix:
-                with open(args.weights, "r") as file:
+            if ".json" == wfile.suffix:
+                with open(wfile, "r") as file:
                     weights = json.load(file)
             else:  # pickle
-                with open(args.weights, "rb") as file:
+                with open(wfile, "rb") as file:
                     weights = pickle.load(file)
         except Exception as error:
-            msg = str(error).replace(": ", f" in {args.weights.name}: ")
+            msg = str(error).replace(": ", f" in {wfile.name}: ")
             print(f"ERROR: {msg}", file=sys.stderr)
             exit(1)
     else:
@@ -200,7 +201,7 @@ def main(args, argd):
                     write = [1.0 for e in entry if ":" in e]
                     if write:
                         weights[name] = write
-    if write:  # only write weights if modified
+    if write:  # write weights if modified (not wfile)
         savedb(args.weights, weights)
 
     if args.infile and args.infile.is_file():
