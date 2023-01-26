@@ -1,1 +1,1 @@
-generalize_opA_opB_in_gemm_bfmmla_via_B_in_stack-1.17-3451
+feature_mmla_with_b_in_vnnit-1.17-3452
