@@ -23,7 +23,7 @@ import re
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
-    invalid = ["syntax error", "ERROR:", "Traceback", '\"']
+    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
     for match in (
         match
         for match in re.finditer(
@@ -77,8 +77,9 @@ def matchstr(s1, s2, exact=False):
         return False
 
 
-def num2int(num):
-    return int((num + 0.5) if 0 <= num else (num - 0.5))
+def num2fix(num, decimals=0):
+    dec = pow(10, decimals)
+    return int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5)) / dec
 
 
 def num2str(num):
@@ -136,6 +137,7 @@ def main(args, argd):
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     outfile = None
+    accuracy = 1
     match = []
 
     if args.infile and args.infile.is_file():
@@ -173,16 +175,17 @@ def main(args, argd):
     latest = int(dbkeys[-1]) if dbkeys else 0
 
     # attempt to load weights
-    if args.weights.is_file():
+    wfile = args.weights if args.weights.is_file() else argd.weights
+    if wfile.is_file():
         try:
-            if ".json" == args.weights.suffix:
-                with open(args.weights, "r") as file:
+            if ".json" == wfile.suffix:
+                with open(wfile, "r") as file:
                     weights = json.load(file)
             else:  # pickle
-                with open(args.weights, "rb") as file:
+                with open(wfile, "rb") as file:
                     weights = pickle.load(file)
         except Exception as error:
-            msg = str(error).replace(": ", f" in {args.weights.name}: ")
+            msg = str(error).replace(": ", f" in {wfile.name}: ")
             print(f"ERROR: {msg}", file=sys.stderr)
             exit(1)
     else:
@@ -198,7 +201,7 @@ def main(args, argd):
                     write = [1.0 for e in entry if ":" in e]
                     if write:
                         weights[name] = write
-    if write:  # only write weights if modified
+    if write:  # write weights if modified (not wfile)
         savedb(args.weights, weights)
 
     if args.infile and args.infile.is_file():
@@ -307,7 +310,7 @@ def main(args, argd):
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
             retfile = outfile.with_name(
-                f"{outfile.stem}-{nowstr}{outfile.suffix}"
+                f"{outfile.stem}.{nowstr}{outfile.suffix}"
             )
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
@@ -459,10 +462,10 @@ def main(args, argd):
                         sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {num2int(mnew)} {sunit}"
+                    label = f"{value} = {num2fix(mnew, accuracy)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
-                        perc = num2int(100 * (mnew - mold) / mold)
+                        perc = num2fix(100 * (mnew - mold) / mold)
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
@@ -476,13 +479,13 @@ def main(args, argd):
                                 if vnew and vold:
                                     anew = statistics.geometric_mean(vnew)
                                     aold = statistics.geometric_mean(vold)
-                                    perc = num2int(100 * (anew - aold) / aold)
+                                    perc = num2fix(100 * (anew - aold) / aold)
                                     if perc > amax:
-                                        vmax = num2int(anew)
+                                        vmax = num2fix(anew, accuracy)
                                         layers_max = a
                                         amax = perc
                                     elif perc < amin:
-                                        vmin = num2int(anew)
+                                        vmin = num2fix(anew, accuracy)
                                         layers_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
