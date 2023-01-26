@@ -32,6 +32,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_emu_amx = atoi(l_env_emu_amx);
   }
 
+  if ( ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ( io_generated_code->arch >= LIBXSMM_X86_GENERIC ) &&  ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+    return;
+  }
+
   /* for low precision lets make KNL/KNM an AVX2 machine */
   if ( ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) ) &&
        ( ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
