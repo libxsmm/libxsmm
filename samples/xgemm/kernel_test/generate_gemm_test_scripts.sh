@@ -239,6 +239,15 @@ for BINARY_POSTOP in 0 1; do
                     sed -i 's/randnumn = rnd.sample(range(2,101,2)/randnumn = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME}
                   fi
                   chmod 755 mmla_${OUTNAME}
+
+                  # create MMLA scripts with B in VNNIT
+                  NEWNAME=mmla_bvnni_${OUTNAME}
+                  NEWNAME="${NEWNAME/_nn_/_nt_}"
+                  cp mmla_${OUTNAME} ${NEWNAME}
+                  sed -i "s/PREC=\"${PREC}\"/PREC=\"${PREC}_BVNNI\"/g" ${NEWNAME}
+                  sed -i 's/TRB=0/TRB=1/g' ${NEWNAME}
+                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${NEWNAME}
+                  chmod 755 ${NEWNAME}
                 fi
               done
             done
