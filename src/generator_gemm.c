@@ -341,7 +341,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       /* we are fine, we have transpose support */
     }
     if ( ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
-      if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
+      if ( (l_aarch64_bfdot == 0 ) && ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 )) {
+        /* we are fine, we do support mmla kernels with B in vnni4t  */
+      } else if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
         return;
       }

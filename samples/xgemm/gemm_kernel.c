@@ -897,8 +897,11 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               tmp_a_f.i[0] = 0;
               tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_f.i[0] = 0;
-              tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
-
+              if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
+                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              } else {
+                tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              }
               f_c[(l_j * ldc) + l_i] += tmp_a_f.f * tmp_b_f.f;
             }
           }
@@ -933,8 +936,11 @@ void ref_matmul( const gemm_def* i_gemm_def, const void* a, const void* b, void*
               tmp_a_f.i[0] = 0;
               tmp_a_f.i[1] = h_a[(l_r * lda * k) + (l_s * (lda*l_k_block)) + (l_i*l_k_block) + l_k2];
               tmp_b_f.i[0] = 0;
-              tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
-
+              if ((i_gemm_def->trans_b > 0) && (i_gemm_def->vnni_b > 0)) {
+                tmp_b_f.i[1] = h_b[(l_r * ldb * k) + (l_j * l_k_block) + (l_s * (ldb*l_k_block)) + l_k2];
+              } else {
+                tmp_b_f.i[1] = h_b[(l_r * ldb * n) + (l_j * ldb) + (l_s*l_k_block) + l_k2];
+              }
               acc += tmp_a_f.f * tmp_b_f.f;
             }
           }
@@ -1385,6 +1391,9 @@ double jit_matmul( const gemm_def*    i_gemm_def,
   }
   if ( i_gemm_def->vnni_a != 0 ) {
     l_flags |= LIBXSMM_GEMM_FLAG_VNNI_A;
+  }
+  if ( i_gemm_def->vnni_b != 0 ) {
+    l_flags |= LIBXSMM_GEMM_FLAG_VNNI_B;
   }
   if ( i_gemm_def->unsigned_a != 0 ) {
     l_flags |= LIBXSMM_GEMM_FLAG_A_UNSIGNED;
@@ -1995,6 +2004,13 @@ int main(int argc, char* argv []) {
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
+  } else if (strcmp(l_precision, "BF16F32_BVNNI") == 0) {
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_BF16;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.vnni_a = 1;
+    l_gemm_def.vnni_b = 1;
+    l_gemm_def.trans_a = 0;
   } else if (strcmp(l_precision, "BF16") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_BF16;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_BF16;
@@ -2002,6 +2018,13 @@ int main(int argc, char* argv []) {
     l_gemm_def.vnni_a = 1;
     l_gemm_def.trans_a = 0;
     l_gemm_def.trans_b = 0;
+  } else if (strcmp(l_precision, "BF16_BVNNI") == 0) {
+    l_gemm_def.in_type = LIBXSMM_DATATYPE_BF16;
+    l_gemm_def.out_type = LIBXSMM_DATATYPE_BF16;
+    l_gemm_def.comp_type = LIBXSMM_DATATYPE_F32;
+    l_gemm_def.vnni_a = 1;
+    l_gemm_def.vnni_b = 1;
+    l_gemm_def.trans_a = 0;
   } else if (strcmp(l_precision, "BF16F32_FLAT") == 0) {
     l_gemm_def.in_type = LIBXSMM_DATATYPE_BF16;
     l_gemm_def.out_type = LIBXSMM_DATATYPE_F32;
