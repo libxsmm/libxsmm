@@ -267,7 +267,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  li
   if (a_in_vnni > 0) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
-
         (i_target_dtype == LIBXSMM_DATATYPE_F32) ? LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_NORM : LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4_TO_VNNI2, i_xgemm_desc->m, i_xgemm_desc->k, i_xgemm_desc_orig->lda, i_xgemm_desc->lda, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c1),
         i_in_dtype, i_in_dtype, i_in_dtype,
         LIBXSMM_GEMM_STACK_VAR_A_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_A_EMU_PTR,
