@@ -36,35 +36,37 @@ else
   FRAC=$7
 fi
 
-if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ]; then
-  if [ "$(command -v lscpu)" ]; then
-    NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
-    if [ ! "${NS}" ]; then NS=1; fi
-    NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
-  elif [ -e /proc/cpuinfo ]; then
-    NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-    if [ ! "${NS}" ] || [ ! "${NS}" ]; then NS=1; fi
-    NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$(${GREP} "core id" /proc/cpuinfo  | ${WC} -l | ${TR} -d " ")
-  elif [ "Darwin" = "$(uname)" ]; then
-    NS=$(sysctl hw.packages    | ${CUT} -d: -f2 | ${TR} -d " ")
-    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | ${TR} -d " ")
-    NT=$(sysctl hw.logicalcpu  | ${CUT} -d: -f2 | ${TR} -d " ")
+if [ "${UNAME}" ] && [ "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
+  if [ "${GREP}" ] && [ "${CUT}" ] && [ "${SORT}" ] && [ "${WC}" ] && [ -e /proc/cpuinfo ]; then
+    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
+    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
+  elif [ "${UNAME}" ] && [ "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
+    export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
+    export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
+    export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
   fi
-  if [ "${NC}" ] && [ "${NT}" ]; then
-    HT=$((NT/NC))
-  else
-    NS=1 NC=1 NT=1 HT=1
-  fi
-  if [ "$(command -v numactl)" ]; then
-    NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
-  else
-    NN=${NS}
-  fi
+elif [ "${UNAME}" ] && [ "${CUT}" ] && [ "aarch64" = "$(${UNAME} -m)" ]; then
+  export NS=1
+  export NC=$(${GREP} "Features" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
+  export NT=$NC
+fi
+if [ "${NC}" ] && [ "${NT}" ]; then
+  export HT=$((NT/(NC)))
+else
+  export NS=1 NC=1 NT=1 HT=1
+fi
+if [ "${GREP}" ] && [ "${CUT}" ] && [ "$(command -v numactl)" ]; then
+  export NN=$(numactl -H | ${GREP} "available:" | ${CUT} -d' ' -f2)
+else
+  export NN=${NS}
 fi
 
-CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
+if [ "${UNAME}" ] && [ "${CUT}" ] && [ "x86_64" = "$(${UNAME} -m)" ]; then
+  CPUFLAGS=$(if [ "${GREP}" ] && [ "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2- || true; fi)
+else
+  CPUFLAGS=
+fi
 if [ "${GREP}" ] && [ "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
   if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
     NUMACTL="numactl --preferred=${NS} ${TOOL_COMMAND}"
@@ -79,8 +81,10 @@ else
 fi
 
 if [ ! "${OMP_NUM_THREADS}" ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
-  if [ ! "${KMP_AFFINITY}" ]; then
+  if [ "${NUMACTL}" ] && [ ! "${KMP_AFFINITY}" ] && [ ! "${OMP_PROC_BIND}" ]; then
     export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
+  elif [ ! "${OMP_PROC_BIND}" ]; then
+    export OMP_PROC_BIND=close OMP_PLACES=threads
   fi
   export OMP_NUM_THREADS=$((NC))
 fi
@@ -116,4 +120,3 @@ ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}  14  14  1024  512 1 1 0 0 2 2 $
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7   512  512 3 3 1 1 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7   512 2048 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
 ${NUMACTL} ./parallel_sparse_weight_B_conv ${N}   7   7  2048  512 1 1 0 0 1 1 ${NB} ${CB} ${KB} ${NNB} ${FRAC} ${ITERS}
-
