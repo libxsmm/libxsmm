@@ -6,6 +6,9 @@ else
   SAMPLESIZE=${SSIZE}
 fi
 
+TMPFILE=$(mktemp)
+trap 'rm ${TMPFILE}' EXIT
+
 for BINARY_POSTOP in 0 1; do
   for UNARY_POSTOP in 0 1 2 3; do
     for PREC in 'F64' 'F32' 'BF16' 'I16I32' 'USI8I32' 'SUI8I32' 'USI8F32' 'SUI8F32' 'BF16F32' 'BF16_FLAT' 'BF16F32_FLAT' 'BF8' 'BF8F32' 'HF8' 'HF8F32' 'BF8_FLAT' 'BF8F32_FLAT' 'HF8_FLAT' 'HF8F32_FLAT'; do
@@ -189,36 +192,44 @@ for BINARY_POSTOP in 0 1; do
 
                 # for gt we need to touch up the script
                 if [ "$LD" == 'gtld' ] ; then
-                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '100 100 100'/g" ${OUTNAME}
+                  sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ '100 100 100'/g" ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 # trB we need to switch LDB
                 if [ "$TRA" == '1' ] ; then
-                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(k) + ' ' + str(m)/g" ${OUTNAME}
+                  sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(k) + ' ' + str(k) + ' ' + str(m)/g" ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 # trB we need to switch LDB
                 if [ "$TRB" == '1' ] ; then
-                  sed -i "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${OUTNAME}
+                  sed "s/+ str(m) + ' ' + str(k) + ' ' + str(m)/+ str(m) + ' ' + str(n) + ' ' + str(m)/g" ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 # remove env variable
                 if [ "$STACK" == '0' ] ; then
-                  sed -i "/export LIBXSMM_ENV_VAR=1/d" ${OUTNAME}
+                  sed "/export LIBXSMM_ENV_VAR=1/d" ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 # stack exports
                 if [[ ( "$PREC" == 'BF8' || "$PREC" == 'BF8_FLAT' || "$PREC" == 'BF8F32' || "$PREC" == 'BF8F32_FLAT' ) && ( "$STACK" == '1' ) ]]; then
-                  sed -i 's/LIBXSMM_ENV_VAR/LIBXSMM_BF8_GEMM_VIA_STACK/g' ${OUTNAME}
+                  sed 's/LIBXSMM_ENV_VAR/LIBXSMM_BF8_GEMM_VIA_STACK/g' ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
                 if [[ ( "$PREC" == 'HF8' || "$PREC" == 'HF8_FLAT' || "$PREC" == 'HF8F32' || "$PREC" == 'HF8F32_FLAT' ) && ( "$STACK" == '1' ) ]]; then
-                  sed -i 's/LIBXSMM_ENV_VAR/LIBXSMM_HF8_GEMM_VIA_STACK/g' ${OUTNAME}
+                  sed 's/LIBXSMM_ENV_VAR/LIBXSMM_HF8_GEMM_VIA_STACK/g' ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 # nofusion, we use the regular kernel
                 if [ "$NOFUSION" == '1' ] ; then
-                  sed -i 's/gemm_kernel_fused/gemm_kernel/g' ${OUTNAME}
-                  sed -i 's/ ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}//g' ${OUTNAME}
+                  sed 's/gemm_kernel_fused/gemm_kernel/g' ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
+                  sed 's/ ${BINARY_POSTOP} ${UNARY_POSTOP} ${CVNNI}//g' ${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} ${OUTNAME}
                 fi
 
                 chmod 755 ${OUTNAME}
@@ -227,16 +238,19 @@ for BINARY_POSTOP in 0 1; do
                 # QVNNI for I16I32
                 if [ "$PREC" == 'I16I32' ] ; then
                   cp ${OUTNAME} qvnni_${OUTNAME}
-                  sed -i 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 8)/g' qvnni_${OUTNAME}
+                  sed 's/randnumk = rnd.sample(range(2,101,2), .*)/randnumk = rnd.sample(range(8,101,8), 8)/g' qvnni_${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} qvnni_${OUTNAME}
                   chmod 755 qvnni_${OUTNAME}
                 fi
 
                 # MMLA for BF16
                 if [[ ( "$PREC" == 'BF16' || "$PREC" == 'BF16F32' ) ]] ; then
                   cp ${OUTNAME} mmla_${OUTNAME}
-                  sed -i 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME}
+                  sed 's/randnumk = rnd.sample(range(2,101,2)/randnumk = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME} >${TMPFILE}
+                  cp ${TMPFILE} mmla_${OUTNAME}
                   if [ "$CVNNI" == '1' ] ; then
-                    sed -i 's/randnumn = rnd.sample(range(2,101,2)/randnumn = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME}
+                    sed 's/randnumn = rnd.sample(range(2,101,2)/randnumn = rnd.sample(range(4,101,4)/g' mmla_${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} mmla_${OUTNAME}
                   fi
                   chmod 755 mmla_${OUTNAME}
                 fi

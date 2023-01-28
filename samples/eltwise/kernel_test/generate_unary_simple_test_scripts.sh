@@ -6,12 +6,15 @@ else
   SAMPLESIZE=${SSIZE}
 fi
 
+TMPFILE=$(mktemp)
+trap 'rm ${TMPFILE}' EXIT
+
 for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_F32_F32' 'F16_F16_F16' 'F16_F16_F32' 'F32_F16_F32' 'F16_F32_F32' 'BF8_BF8_BF8' 'BF8_BF8_F32' 'F32_BF8_F32' 'BF8_F32_F32' 'HF8_HF8_HF8' 'HF8_HF8_F32' 'F32_HF8_F32' 'HF8_F32_F32' 'F64_F64_F64'; do
   for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_"
-      PRECLC=`echo "$PREC" | awk '{print tolower($0)}'`
+      PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
 
       # approximations are not supportted for the time being in FP64
       if [[ (("$TYPE" == '7') || ("$TYPE" == '8') || ("$TYPE" == '9') || ("$TYPE" == '10') || ("$TYPE" == '11') || ("$TYPE" == '12') || ("$TYPE" == '17') || ("$TYPE" == '27')) && ("$PREC" == 'F64_F64_F64') ]]; then
@@ -70,7 +73,8 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed -i "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME}
+        sed "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       fi
 
       chmod 755 ${OUTNAME}
