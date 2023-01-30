@@ -6,13 +6,16 @@ else
   SAMPLESIZE=${SSIZE}
 fi
 
+TMPFILE=$(mktemp)
+trap 'rm ${TMPFILE}' EXIT
+
 for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
   for TYPE in 0 1; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_"
       NUMPREC=10
-      PRECLC=`echo "$PREC" | awk '{print tolower($0)}'`
+      PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
 
       # only 16 and 32bit support
       if [[ (("$PREC" == 'I8') || ("$PREC" == 'BF8') || ("$PREC" == 'HF8') || ("$PREC" == 'F64') || ("$PREC" == 'I64')) ]]; then
@@ -46,7 +49,8 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed -i "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME}
+        sed "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       fi
 
       chmod 755 ${OUTNAME}

@@ -20,10 +20,19 @@ if [ "${GREP}" ] && [ "${SORT}" ] && [ "${CUT}" ] && [ "${TR}" ] && [ "${WC}" ];
   if [ "$(command -v lscpu)" ]; then
     NS=$(lscpu | ${GREP} -m1 "Socket(s)" | ${TR} -d " " | ${CUT} -d: -f2)
     if [ ! "${NS}" ]; then NS=1; fi
-    NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
-    NT=$(lscpu | ${GREP} -m1 "CPU(s)" | ${TR} -d " " | ${CUT} -d: -f2)
-    if [ ! "${NT}" ]; then
-      NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+    if [[ ${NS} =~ ^[1-9][0-9]*$ ]]; then
+      NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per socket" | ${TR} -d " " | ${CUT} -d: -f2)))
+      NT=$(lscpu | ${GREP} -m1 "CPU(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+      if [ ! "${NT}" ]; then
+        NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+      fi
+    else
+      NS=$(lscpu | ${GREP} -m1 "Cluster(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+      NC=$((NS*$(lscpu | ${GREP} -m1 "Core(s) per cluster" | ${TR} -d " " | ${CUT} -d: -f2)))
+      NT=$(lscpu | ${GREP} -m1 "CPU(s)" | ${TR} -d " " | ${CUT} -d: -f2)
+      if [ ! "${NT}" ]; then
+        NT=$((NC*$(lscpu | ${GREP} -m1 "Thread(s) per core" | ${TR} -d " " | ${CUT} -d: -f2)))
+      fi
     fi
   elif [ -e /proc/cpuinfo ]; then
     NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")

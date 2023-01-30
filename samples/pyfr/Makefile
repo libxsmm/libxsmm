@@ -11,6 +11,7 @@ DFLAGS = $(NULL)
 
 BLAS = 1
 SIMD = 1
+VMAX = 1
 SYM = 1
 OMP = 0
 
@@ -42,11 +43,11 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 XTESTS := $(OUTDIR)/$(OUTNAME)_driver_asp_reg
 XFILES := $(XTESTS) $(OUTDIR)/gimmik
 
-.PHONY: all
-all: $(XFILES)
-
 .PHONY: tests
 tests: $(XTESTS)
+
+.PHONY: all
+all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS)

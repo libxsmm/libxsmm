@@ -20,6 +20,7 @@ import json
 import PIL
 import sys
 import re
+import os
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
@@ -96,6 +97,7 @@ def divup(a, b):
 
 def mtime(filename):
     try:
+        os.sync()  # flush pending buffers
         return pathlib.Path(filename).stat().st_mtime if filename else 0
     except:  # noqa: E722
         return 0

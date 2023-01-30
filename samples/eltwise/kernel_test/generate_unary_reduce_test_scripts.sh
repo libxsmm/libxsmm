@@ -6,6 +6,9 @@ else
   SAMPLESIZE=${SSIZE}
 fi
 
+TMPFILE=$(mktemp)
+trap 'rm ${TMPFILE}' EXIT
+
 for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
   for RED_OP in 0 1; do
     for LD in 'eqld' 'gtld'; do
@@ -17,7 +20,7 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
                 for RECORD_IDX in 0 1; do
                   TPPNAME="none"
                   OUTNAME="unary_reduce_"
-                  PRECLC=`echo "$PREC" | awk '{print tolower($0)}'`
+                  PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
                   RED_X=0
                   RED_X2=0
 
@@ -126,7 +129,8 @@ for PREC in 'BF8' 'HF8' 'F16' 'BF16' 'F32' 'F64'; do
 
                   # for gt we need to touch up the script
                   if [ "$LD" == 'gtld' ] ; then
-                    sed -i "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME}
+                    sed "s/+ str(m) + '_' + str(m)/+ '100_100'/g" ${OUTNAME} >${TMPFILE}
+                    cp ${TMPFILE} ${OUTNAME}
                   fi
 
                   chmod 755 ${OUTNAME}

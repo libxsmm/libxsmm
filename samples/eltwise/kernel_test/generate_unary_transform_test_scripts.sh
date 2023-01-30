@@ -6,12 +6,15 @@ else
   SAMPLESIZE=${SSIZE}
 fi
 
+TMPFILE=$(mktemp)
+trap 'rm ${TMPFILE}' EXIT
+
 for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
   for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z'; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_transform_"
-      PRECLC=`echo "$PREC" | awk '{print tolower($0)}'`
+      PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
       MSTART=1
       MSTEP=1
 
@@ -89,31 +92,43 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
 
       # for gt we need to touch up the script
       if [ "$LD" == 'gtld' ] ; then
-        sed -i "s/+ str(m) + '_' + LDOTPL/+ '100_100'/g" ${OUTNAME}
+        sed "s/+ str(m) + '_' + LDOTPL/+ '100_100'/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       fi
 
       if [ "$TYPE" == 'T' ] ; then
-        sed -i "s/LDOTPL/str(n)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'R' ] ; then
-        sed -i "s/LDOTPL/str(n)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'S' ] ; then
-        sed -i "s/LDOTPL/str(n)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'V' ] ; then
-        sed -i "s/LDOTPL/str(m)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'W' ] ; then
-        sed -i "s/LDOTPL/str(m)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Q' ] ; then
-        sed -i "s/LDOTPL/str(n)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'N' ] ; then
-        sed -i "s/LDOTPL/str(m)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'M' ] ; then
-        sed -i "s/LDOTPL/str(m)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'X' ] ; then
-        sed -i "s/LDOTPL/str(m)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Y' ] ; then
-        sed -i "s/LDOTPL/str(int((m + 3)\/4)\*4)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(int((m + 3)\/4)\*4)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Z' ] ; then
-        sed -i "s/LDOTPL/str(int((m + 3)\/4)\*4)/g" ${OUTNAME}
+        sed "s/LDOTPL/str(int((m + 3)\/4)\*4)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
       else
         continue
       fi

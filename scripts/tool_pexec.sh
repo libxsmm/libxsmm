@@ -282,10 +282,12 @@ if [ "${XARGS}" ] && [ "${FILE}" ] && [ "${SED}" ] && [ "${CAT}" ] && [ "${CUT}"
           local ERROR=\"ERROR\"; \
             if [ \"132\" = \"\${RESULT}\" ]; then ERROR=\"ILLEG\"; \
           elif [ \"139\" = \"\${RESULT}\" ]; then ERROR=\"CRASH\"; fi; \
-          if [ \"${BUILD}\" ] && [ \"0\" != \"\${PERMIT}\" ]; then \
+          1>&2 printf \" -> \033[91m\${ERROR}\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; \
+          if [ \"${BUILD}\" ] && [ \"0\" != \"\${PERMIT}\" ] && [ \"0\" != \"${XFAIL}\" ]; then \
             ${FLOCK} ${BUILD} \"echo \${_PEXEC_PRETTY} >>${BUILD}\"; \
+          else \
+            exit 1; \
           fi; \
-          1>&2 printf \" -> \033[91m\${ERROR}\033[0m[%03d]: \${_PEXEC_PRETTY}\n\" \${RESULT}; exit 1; \
         fi; \
       else \
         if [ ! \"${ALLOW}\" ] || [ \"0\" = \"${SHAKY}\" ] || [ \"no\" = \"${SHAKY}\" ] || \

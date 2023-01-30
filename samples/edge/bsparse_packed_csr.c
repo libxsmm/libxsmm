@@ -184,8 +184,9 @@ int main(int argc, char* argv[]) {
       }
     }
     printf("max error: %f\n", l_max_error);
-
-    printf("PERFDUMP,%s,%u,%i,%i,%i,%u,%u,%f,%f,%f\n", l_csr_file, REPS, M, N, K, l_elements, M * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
+    printf("PERFDUMP,%s,%u,%i,%i,%i,%u,%u,%f,%f,%f\n", l_csr_file,
+      (unsigned int)REPS, M, N, K, l_elements, (unsigned int)M * l_elements * (unsigned int)N_CRUNS * 2, l_max_error, l_total,
+      ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
   }
   while (0);
 

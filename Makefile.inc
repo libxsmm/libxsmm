@@ -86,6 +86,12 @@ CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 MAKE ?= make
 
+SED := $(call which,gsed)
+# GNU sed is desired (macOS)
+ifeq (,$(SED))
+  SED := $(call which,sed)
+endif
+
 # Python interpreter per PYTHON=/path/to/python
 PYTHON3 := $(call which,python3)
 # Python3 by default
@@ -268,7 +274,7 @@ REVERSION1 := s/..* \($(REVERSION0)\)[ \S]*.*/\1/
 REVERSION2 := s/..* \([0-9]\{5\}[0-9]*\)[ \S]*.*/\1/
 
 ifneq (0,$(SPACES))
-  unquote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed -e 's/^[" ][" ]*//' -e 's/[" ][" ]*$$//')
+  unquote = $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | $(SED) -e 's/^[" ][" ]*//' -e 's/[" ][" ]*$$//')
   quote = $(strip $(if $(filter 0 1,$(words $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})), \
                                             $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}, \
                             "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})"))
@@ -277,17 +283,17 @@ ifneq (0,$(SPACES))
     else cd "$${VAR}" 2>/dev/null && pwd -P; fi; fi))
   qndir = $(call quote,$(shell export "VAR=$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})" && \
     if [ ! -d "$${VAR}" ]; then basename "$${VAR}" 2>/dev/null; fi))
-  qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null | sed "s/\/\(\"*\)$$/\1/"))
+  qdir = $(call quote,$(shell dirname "$(call unquote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})x" 2>/dev/null | $(SED) "s/\/\(\"*\)$$/\1/"))
 else
   quote = $(strip        $(subst "",$(NULL),$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qapath = $(abspath     $(call quote,      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
   qndir =  $(notdir      $(call quote,      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-  qdir =   $(shell echo "$(dir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))" | sed "s/\/\(\"*\)$$/\1/")
+  qdir =   $(shell echo "$(dir $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))" | $(SED) "s/\/\(\"*\)$$/\1/")
 endif
 qsuffix = $(suffix   $(strip      $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
 qbname =  $(basename $(call quote,$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}))
-qxdir =   $(shell if [ -d "$1" ]; then echo "$1" | sed "s/\/\(\"*\)$$/\1/"; else echo "$(call qdir,$1)"; fi)
-qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed "s/\.$(REVERSION0)//")))
+qxdir =   $(shell if [ -d "$1" ]; then echo "$1" | $(SED) "s/\/\(\"*\)$$/\1/"; else echo "$(call qdir,$1)"; fi)
+qname =   $(basename $(call quote,$(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | $(SED) "s/\.$(REVERSION0)//")))
 
 # absolute directory paths
 ABSDIR := $(call qapath,$(ROOTDIR))
@@ -330,7 +336,7 @@ ldflib = $(if $1,$(call ftest,$1 $2,-l$(strip $3)))
 # extract from source file (1st arg) the value of the preprocessor definition (2nd arg)
 preppat = $(if $1$2,s/[[:space:]]*$(CHAR_HASH)[[:space:]]*define[[:space:]][[:space:]]*$(if $(wildcard $1),$2,$1)[[:space:]][[:space:]]*\(..*\)[[:space:]]*/\1/p)
 prepget = $(shell $(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) $(if $(wildcard $1),-c $1,- </dev/null) -dM -E 2>/dev/null \
-          | sed -n "$(call preppat,$1,$2);$(call preppat,$1,$3);$(call preppat,$1,$4)")
+          | $(SED) -n "$(call preppat,$1,$2);$(call preppat,$1,$3);$(call preppat,$1,$4)")
 
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
@@ -398,12 +404,12 @@ endif
 
 ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
         | $(CC) $(call ctest,$(CC),$(ECFLAGS) $(EFLAGS)) -E -P - 2>/dev/null \
-        | sed "/^[[:space:]]*$$/d" 2>/dev/null)))
+        | $(SED) "/^[[:space:]]*$$/d" 2>/dev/null)))
   ICX := 1
 endif
 ifneq (,$(filter-out __INTEL_LLVM_COMPILER,$(shell echo "__INTEL_LLVM_COMPILER" \
         | $(FC) $(call ftest,$(FC),$(EFCFLAGS) $(EFLAGS)) -E -P /dev/stdin 2>/dev/null \
-        | sed "/^[[:space:]]*$$/d" 2>/dev/null; rm -f stdin.f)))
+        | $(SED) "/^[[:space:]]*$$/d" 2>/dev/null; rm -f stdin.f)))
   ICX := $(if $(filter 1,$(ICX)),2,1)
   FIXFC ?= 0
 endif
@@ -453,9 +459,9 @@ ifneq (0,$(NOBLAS))
   BLAS_FLAGS += $(DNOBLAS)
 endif
 
-CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
 ifeq (,$(CXX_VERSION))
-  CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+  CXX_VERSION := $(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
 endif
 CXX_VERSION_MAJOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f1)
 CXX_VERSION_MINOR := $(shell echo "$(CXX_VERSION)" | cut -d. -f2)
@@ -470,9 +476,9 @@ else
   CXX_VERSION_NUM := 0
 endif
 
-CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
 ifeq (,$(CC_VERSION))
-  CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+  CC_VERSION := $(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
 endif
 CC_VERSION_MAJOR := $(shell echo "$(CC_VERSION)" | cut -d. -f1)
 CC_VERSION_MINOR := $(shell echo "$(CC_VERSION)" | cut -d. -f2)
@@ -516,9 +522,9 @@ ifneq (0,$(FIXFC))
 endif
 
 ifneq (,$(strip $(FC)))
-  FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+  FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
   ifeq (,$(FC_VERSION))
-    FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+    FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
   endif
   FC_VERSION_MAJOR := $(shell echo "$(FC_VERSION)" | cut -d. -f1)
   FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
@@ -536,9 +542,9 @@ ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((40500>$(FC_VERSION_NUM)))"))
       ifneq (gfortran,$(call qndir,$(FC)))
         FC := gfortran
-        FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+        FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
         ifeq (,$(FC_VERSION))
-          FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION2)p")
+          FC_VERSION := $(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION2)p")
         endif
         FC_VERSION_MAJOR := $(shell echo "$(FC_VERSION)" | cut -d. -f1)
         FC_VERSION_MINOR := $(shell echo "$(FC_VERSION)" | cut -d. -f2)
@@ -580,7 +586,7 @@ endif
 # compiler names
 ifeq (0,$(PLATFORM))
   CXX_NAME := $(call qbname,$(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 \
-              | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
+              | $(SED) -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
                     -e "s/[[:space:]][[:space:]]*$(CHAR_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
                     -e "s/[[:space:]][[:space:]]*$(REVERSION0)//" \
               | rev | cut -d" " -f1 | rev))
@@ -590,7 +596,7 @@ ifeq (,$(strip $(CXX_NAME)))
 endif
 ifeq (0,$(PLATFORM))
   CC_NAME := $(call qbname,$(shell $(CC) $(CC_VERSION_FLAG) | head -n1 \
-             | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
+             | $(SED) -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
                    -e "s/[[:space:]][[:space:]]*$(CHAR_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
                    -e "s/[[:space:]][[:space:]]*$(REVERSION0)//" \
              | rev | cut -d" " -f1 | rev))
@@ -608,7 +614,7 @@ endif
 ifneq (0,$(FORTRAN))
   ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) | head -n1 | $(SED) "s/.* (\(..*\)) .*/\1/"))
         GFC := $(FC)
       else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
         GFC := $(FC)
@@ -635,7 +641,7 @@ endif
 XSMM_GCC ?= 0
 ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
   XSMM_GCC := 1
-else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) | head -n1 | $(SED) "s/.* (\(..*\)) .*/\1/"))
   XSMM_GCC := 1
 else ifneq (pgcc,$(CC_NAME))
   ifneq (,$(findstring pgcc,$(CC_NAME)))
@@ -645,7 +651,7 @@ endif
 ifeq (1,$(XSMM_GCC))
   ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
     XSMM_GCC := 2
-  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) | head -n1 | $(SED) "s/.* (\(..*\)) .*/\1/"))
     XSMM_GCC := 2
   else ifneq (,$(findstring g++,$(CXX_NAME)))
     XSMM_GCC := 2
@@ -770,7 +776,7 @@ ifneq (0,$(XSMM_GCC))
 else ifeq (0,$(CLANG))
   GCCBIN := $(call qndir,$(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION := $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | sed -n "$(REVERSION1)p")
+    GCC_VERSION := $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | head -n1 | $(SED) -n "$(REVERSION1)p")
     GCC_VERSION_MAJOR := $(shell echo "$(GCC_VERSION)" | cut -d. -f1)
     GCC_VERSION_MINOR := $(shell echo "$(GCC_VERSION)" | cut -d. -f2)
     GCC_VERSION_PATCH := $(shell echo "$(GCC_VERSION)" | cut -d. -f3)
@@ -991,7 +997,7 @@ abslibpath ?= $(call absliblpath,$1)
 abslibpath_force ?= $(NULL)
 
 libpath = $(call qapath,$(if $1,$(shell $(FLUSH) $1 $2 -l$(strip $3) $(call linkopt,$(XLNKVERBOSE)) 2>&1 \
-  | grep "lib$3" | tr " " "\n" | sed -n "/\//p" | sed "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
+  | grep "lib$3" | tr " " "\n" | $(SED) -n "/\//p" | $(SED) "s/[$(CHAR_OPEN)]\(..*\)[$(CHAR_CLOSE)]/\1/" \
   | xargs -I {} sh -c "ls -pd {} 2>/dev/null || ls -pd {}.* 2>/dev/null" | grep -v /$$ | tail -n1)))
 
 ifneq (Windows_NT1,$(UNAME)$(DEPSTATIC))
@@ -2421,7 +2427,7 @@ endif
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
-cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | sed \
+cleanld = $(strip $(shell echo "$1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}" | $(SED) \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
   -e "s/\/\//\//g"))

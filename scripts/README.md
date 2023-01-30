@@ -31,6 +31,8 @@ The version information is based on [version.txt](https://github.com/libxsmm/lib
 
 ### Development Tools
 
+#### Overview
+
 * `tool_analyze.sh`: Runs compiler based static analysis based on Clang or GCC.
 * `tool_changelog.sh`: Rephrases the history of LIBXSMM's checked-out repository to consist as a changelog grouped by contributors.
 * `tool_checkabi.sh`: Extracts exported/visible functions and other symbols (public interface) from built LIBXSMM and compares against a recorded state. The purpose is to acknowledge and confirm for instance removed functionality (compatibility). This includes functions only exported to allow interaction between LIBXSMM's different libraries. However, it currently falls short of recognizing changes to the signature of functions (arguments).
@@ -48,3 +50,16 @@ The version information is based on [version.txt](https://github.com/libxsmm/lib
 * `tool_scan.sh`: Core developer team can scan the repository based on a list of keywords.
 * `tool_test.sh`: 
 * `tool_version.sh`: Determines LIBXSMM's version from the history of the checked-out repository (Git). With respect to LIBXSMM's patch version, the information is not fully accurate given a non-linear history.
+
+#### Parallel Execution
+
+The script `tool_pexec.sh` allows to execute commands read from standard input (see `-h` or `--help`). The execution may be concurrent on a per-command basis. The level of parallelism is determined automatically but can be adjusted (oversubscription, nested parallelism). By default, a separate logfile is written for every executed command which can be disabled (`-o /dev/null`). File I/O can become a bottleneck on distributed filesystems (e.g., NFS), or generally hinders nested parallelism (`-o /dev/null -k`).
+
+Every line of standard input denotes a separate command:
+
+```bash
+seq 100 | xargs -I{} echo "echo \"{}\"" \
+        | tool_pexec.sh
+```
+
+The script can consider an allow-list which permits certain error codes. Allow-lists can be generated automatically (`-u`).
