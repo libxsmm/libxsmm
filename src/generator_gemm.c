@@ -263,8 +263,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     }
     /* ASIMD + MMLA */
+    /* TODO: These are not properly implemented yet  */
     if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+#if 0
       l_vector_length = 4;
+#else
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+#endif
     }
     /* SVE256 + MMLA */
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
