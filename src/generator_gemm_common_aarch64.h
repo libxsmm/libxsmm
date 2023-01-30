@@ -15,8 +15,6 @@
 
 #include "generator_common.h"
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_mmla_gemm_pack_b_to_vnnit_on_stack_aarch64(void);
-
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( libxsmm_generated_code*    io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,

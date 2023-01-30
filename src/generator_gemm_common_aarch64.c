@@ -21,16 +21,6 @@
 #include "generator_mateltwise_transform_aarch64_asimd.h"
 #include "generator_mateltwise_transform_aarch64_sve.h"
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_mmla_gemm_pack_b_to_vnnit_on_stack_aarch64(void) {
-  const char *const l_env_b_vnnit_in_stack = getenv("LIBXSMM_AARCH64_MMLA_GEMM_B_INPUT_PACKING_ON_STACK");
-  unsigned int l_b_vnnit_in_stack = 0;
-  if ( 0 == l_env_b_vnnit_in_stack ) {
-  } else {
-    l_b_vnnit_in_stack = atoi(l_env_b_vnnit_in_stack);
-  }
-  return l_b_vnnit_in_stack;
-}
-
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( libxsmm_generated_code*    io_generated_code,
                                                                                       libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                       libxsmm_micro_kernel_config*   i_micro_kernel_config,

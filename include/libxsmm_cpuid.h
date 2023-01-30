@@ -68,6 +68,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(libxsmm_cpuid_info* info);
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info);
 #endif
 
+LIBXSMM_API_INTERN unsigned int libxsmm_generator_mmla_gemm_pack_b_to_vnnit_on_stack_aarch64(void);
+
 /**
  * TODO: this might be limited lifetime API until we have a fully-fleged
  * ARM CPU flags test
