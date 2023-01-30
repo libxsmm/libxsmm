@@ -404,7 +404,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
             echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           fi
-          echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
+          if [ "none" != "${PARTITION}" ]; then
+            echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
+          else
+            echo "echo -n \"--- \"" >>"${TESTSCRIPT}"
+          fi
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
