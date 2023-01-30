@@ -300,7 +300,7 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       if [[ "${CONFIGFILES[*]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
-          CONFIGFILES=($(echo "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+          CONFIGFILES=($(printf "%s\n" "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
         CONFIGCOUNT=${#CONFIGFILES[@]}
       fi
