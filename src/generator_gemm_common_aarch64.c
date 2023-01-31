@@ -1759,7 +1759,7 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
         l_m_blocking = 12;
       }
       /* If we have relubitmask make sure to init m_blocking is divisible by 8 */
-      if (io_micro_kernel_config->fused_relu > 0) {
+      if ((i_xgemm_desc->eltw_cp_op == LIBXSMM_MELTW_OPERATION_UNARY) && (i_xgemm_desc->eltw_cp_param == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0)) {
         if (l_m_blocking > 8) {
           l_m_blocking = 8;
         }
