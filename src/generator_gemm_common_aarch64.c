@@ -1758,6 +1758,12 @@ unsigned int libxsmm_generator_gemm_aarch64_get_initial_m_blocking( libxsmm_micr
       if (l_m_blocking == 15) {  /* for 15 we would need 5 M registers :-( 4-4-4-2-1 */
         l_m_blocking = 12;
       }
+      /* If we have relubitmask make sure to init m_blocking is divisible by 8 */
+      if (io_micro_kernel_config->fused_relu > 0) {
+        if (l_m_blocking > 8) {
+          l_m_blocking = 8;
+        }
+      }
     }
   } else if ( ( i_arch == LIBXSMM_AARCH64_V81 || i_arch == LIBXSMM_AARCH64_V82 || i_arch == LIBXSMM_AARCH64_APPL_M1 ) && ( LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     /* TODO: check if there is a better blocking strategy */
