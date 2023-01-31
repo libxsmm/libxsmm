@@ -75,7 +75,7 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void) {
 }
 #endif
 
-LIBXSMM_API_INTERN unsigned int libxsmm_generator_mmla_gemm_pack_b_to_vnnit_on_stack_aarch64(void) {
+LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void) {
 #if defined(LIBXSMM_PLATFORM_X86)
   return 0;
 #else
