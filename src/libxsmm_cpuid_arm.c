@@ -75,7 +75,9 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void) {
 }
 #endif
 
-LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void) {
+
+LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void)
+{
 #if defined(LIBXSMM_PLATFORM_X86)
   return 0;
 #else
@@ -88,6 +90,7 @@ LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(vo
   return l_b_vnnit_in_stack;
 #endif
 }
+
 
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void)
 {
