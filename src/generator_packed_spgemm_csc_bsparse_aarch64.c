@@ -12,6 +12,7 @@
 #include "generator_packed_spgemm_csc_bsparse_aarch64.h"
 #include "generator_aarch64_instructions.h"
 #include "generator_common_aarch64.h"
+#include "generator_mateltwise_aarch64.h"
 #include "generator_gemm_common_aarch64.h"
 #include "libxsmm_main.h"
 
@@ -690,7 +691,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
   libxsmm_aarch64_sve_type  l_type_zip = LIBXSMM_AARCH64_SVE_TYPE_D;
   libxsmm_aarch64_sve_type l_sve_type = libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(sizeof(float)));
 
-  unsigned int l_vec_reg_tmp[2];
+  unsigned int l_vec_reg_tmp[4];
 
   /* temporary vector registers used to load values to before zipping */
   l_vec_reg_tmp[0] = l_max_reg_block;
@@ -715,7 +716,6 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
       i_gp_reg_mapping->gp_reg_c, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_c, 1ull * i_n_processed * i_packed_width * i_micro_kernel_config->datatype_size_out );
 
   for ( l_n = 0; l_n < l_n_blocks; l_n++ ) {
-    if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) {
       /* second address register for loads */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -723,8 +723,6 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
                                                      l_gp_reg_scratch,
                                                      l_gp_reg_scratch,
                                                      i_packed_width * i_micro_kernel_config->datatype_size_out  );
-    }
-
     for ( l_p = 0; l_p < i_packed_blocking; l_p+=2 ) {
       if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
 
@@ -844,13 +842,13 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
       unsigned int l_cur_col_elements = i_column_idx[i_n_processed+l_n+1] - i_column_idx[i_n_processed+l_n];
       unsigned int l_next_col_elements = i_column_idx[i_n_processed+l_n+2] - i_column_idx[i_n_processed+l_n+1];
 
-      for ( l_col_k = 0; l_col_k < l_cur_col_elements-3; l_col_k++ ) {
+      for ( l_col_k = 0; l_col_k < LIBXSMM_MAX(0, (int)l_cur_col_elements-3); l_col_k++ ) {
         if ((l_k + 0 == i_row_idx[l_cur_column + l_col_k + 0]) && (l_col_bitmask[l_n][l_col_k + 0] == 0) &&
             (l_k + 1 == i_row_idx[l_cur_column + l_col_k + 1]) && (l_col_bitmask[l_n][l_col_k + 1] == 0) &&
             (l_k + 2 == i_row_idx[l_cur_column + l_col_k + 2]) && (l_col_bitmask[l_n][l_col_k + 2] == 0) &&
             (l_k + 3 == i_row_idx[l_cur_column + l_col_k + 3]) && (l_col_bitmask[l_n][l_col_k + 3] == 0) ) {
           /* Check next column  */
-          for ( l_next_col_k = 0; l_next_col_k < l_next_col_elements-3; l_next_col_k++ ) {
+          for ( l_next_col_k = 0; l_next_col_k < LIBXSMM_MAX(0, (int)l_next_col_elements-3); l_next_col_k++ ) {
             if ((l_k + 0 == i_row_idx[l_next_column + l_next_col_k + 0]) && (l_col_bitmask[l_n+1][l_next_col_k + 0] == 0) &&
                 (l_k + 1 == i_row_idx[l_next_column + l_next_col_k + 1]) && (l_col_bitmask[l_n+1][l_next_col_k + 1] == 0) &&
                 (l_k + 2 == i_row_idx[l_next_column + l_next_col_k + 2]) && (l_col_bitmask[l_n+1][l_next_col_k + 2] == 0) &&

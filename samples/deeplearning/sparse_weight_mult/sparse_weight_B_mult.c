@@ -218,6 +218,10 @@ int main(int argc, char* argv[]) {
   /* sparse routine */
   mykernel_csc = libxsmm_create_packed_spgemm_csc_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
     l_colptr, l_rowidx, (const void*)l_b_sp_csc);
+  if (mykernel_csc == NULL) {
+    printf("Could not generate CSC kernel!!!\n");
+    return 0;
+  }
   if (use_bf16 == 0) {
     mykernel_csr = libxsmm_create_packed_spgemm_csr_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
       l_rowptr, l_colidx, (const void*)l_b_sp_csr);
