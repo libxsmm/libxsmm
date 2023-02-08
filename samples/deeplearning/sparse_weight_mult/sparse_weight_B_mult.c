@@ -138,9 +138,10 @@ int main(int argc, char* argv[]) {
         }
         nnz++;
       }
-      printf("%.2g\t", LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) );
+      //if (l_j == 0) printf("Col %d: ", l_i);
+      //printf("%.2g\t", LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) );
     }
-    printf("\n");
+    //printf("\n");
   }
 
   printf("we just generated a %i x %i matrix with %i NZ entries\n", K, C, nnz);
