@@ -92,13 +92,13 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   /* get max column in C */
   l_max_cols = i_xgemm_desc->n;
   for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
-    //printf("i_column_idx[%u]=%u\n",l_n, i_column_idx[l_n]);
+    /*printf("i_column_idx[%u]=%u\n",l_n, i_column_idx[l_n]);*/
     if ( i_column_idx[l_n] == i_column_idx[i_xgemm_desc->n] ) {
       l_max_cols = l_n;
       break;
     }
   }
-  printf("i_column_idx[%u]=%u\n",i_xgemm_desc->n, i_column_idx[i_xgemm_desc->n]);
+  /*printf("i_column_idx[%u]=%u\n",i_xgemm_desc->n, i_column_idx[i_xgemm_desc->n]);*/
 
 #if 0
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
@@ -686,9 +686,10 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
   unsigned int l_n = 0;
   unsigned int l_p = 0;
   unsigned int l_k = 0;
-  unsigned int l_n_blocking = (i_n_limit + 1 <= i_xgemm_desc->n) ? i_n_limit - i_n_processed :  i_n_limit - i_n_processed;
+  unsigned int l_n_blocking =  i_n_limit - i_n_processed;
   unsigned int l_max_reg_block = l_n_blocking * i_packed_blocking;
   unsigned int l_n_blocks = (l_n_blocking + 1)/2;
+  unsigned int l_process_last_column = (i_n_limit == i_xgemm_desc->n) ? 1 : 0;
 
   /* Book-keeping for processed columns  */
   unsigned char *l_col_bitmask[l_n_blocking];
@@ -839,18 +840,23 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
       l_col_bitmask[l_n] = i_prev_column_bitmask;
     } else {
       unsigned int l_col_elements = i_column_idx[i_n_processed+l_n+1] - i_column_idx[i_n_processed+l_n];
-      unsigned char *l_col_used_array = (unsigned char*) malloc(l_col_elements * sizeof(unsigned char));
-      l_col_bitmask[l_n] = l_col_used_array;
-      memset(l_col_used_array, (unsigned char)0, l_col_elements * sizeof(unsigned char));
+      if (!((l_process_last_column > 0) && (l_n == l_n_blocking))) {
+        unsigned char *l_col_used_array = (unsigned char*) malloc(l_col_elements * sizeof(unsigned char));
+        l_col_bitmask[l_n] = l_col_used_array;
+        memset(l_col_used_array, (unsigned char)0, l_col_elements * sizeof(unsigned char));
+      } else {
+        l_col_bitmask[l_n] = NULL;
+      }
     }
   }
 
   /* do dense packed times sparse multiplication */
   for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k-3; l_k++ ) {
     unsigned int l_col_k = 0, l_next_col_k = 0;
+    unsigned int l_n_bound = (i_n_processed + l_n_blocking >= i_xgemm_desc->n) ? l_n_blocking - 1 : l_n_blocking;
 
     /* loop over the columns of B and consider the corresponding pairs if the 4k-plets that have not been used*/
-    for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+    for ( l_n = 0; l_n < l_n_bound; l_n++ ) {
       unsigned int l_loaded_A_matrix = 0;
       unsigned int l_cur_column = i_column_idx[i_n_processed+l_n];
       unsigned int l_next_column = i_column_idx[i_n_processed+l_n+1];
@@ -988,7 +994,8 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
 
   for ( l_p = 0; l_p < i_packed_blocking; l_p+=2 ) {
     unsigned int l_n_advancements = 0;
-    for ( l_n = 0; l_n < l_n_blocking; l_n+=2 ) {
+    unsigned int l_n_bound = (i_n_processed + l_n_blocking >= i_xgemm_desc->n) ? l_n_blocking - 1 : l_n_blocking;
+    for ( l_n = 0; l_n < l_n_bound; l_n+=2 ) {
       /* second address register for stores */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                      LIBXSMM_AARCH64_INSTR_GP_META_ADD,

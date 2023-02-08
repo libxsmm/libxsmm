@@ -104,14 +104,19 @@ int main(int argc, char* argv[]) {
             tmp = 0;
             LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = tmp;
           } else {
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+1, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+2, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+3, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+1, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+2, C) = tmp;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+3, C) = tmp;
+            if ((LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) &&
+                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+1, C) == 0) &&
+                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+2, C) == 0) &&
+                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+3, C) == 0)) {
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+1, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+2, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+3, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+1, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+2, C) = tmp;
+              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+3, C) = tmp;
+            }
           }
         }
       }
@@ -138,10 +143,10 @@ int main(int argc, char* argv[]) {
         }
         nnz++;
       }
-      //if (l_j == 0) printf("Col %d: ", l_i);
-      //printf("%.2g\t", LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) );
+     /*if (l_j == 0) printf("Col %d: ", l_i);
+      printf("%.2g\t", LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) ); */
     }
-    //printf("\n");
+    /*printf("\n");*/
   }
 
   printf("we just generated a %i x %i matrix with %i NZ entries\n", K, C, nnz);
