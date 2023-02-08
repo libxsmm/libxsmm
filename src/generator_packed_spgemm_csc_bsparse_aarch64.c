@@ -92,10 +92,13 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
   /* get max column in C */
   l_max_cols = i_xgemm_desc->n;
   for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
+    printf("i_column_idx[%u]=%u\n",l_n, i_column_idx[l_n]);
     if ( i_column_idx[l_n] == i_column_idx[i_xgemm_desc->n] ) {
-      l_max_cols = l_n+1;
+      l_max_cols = l_n;
+      break;
     }
   }
+  printf("i_column_idx[%u]=%u\n",i_xgemm_desc->n, i_column_idx[i_xgemm_desc->n]);
 
 #if 0
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
@@ -207,8 +210,12 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64( libxsmm_generated_code
                                                     l_gp_reg_mapping.gp_reg_help_0 );
     }
     /* Reset blocking factor decisions...  */
+    printf("Max cols is %u\n", l_max_cols);
     libxsmm_compute_equalized_blocking( l_simd_packed_iters, 4, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
     libxsmm_compute_equalized_blocking( l_max_cols, 5, &(l_col_reg_range[0][0]), &(l_col_reg_block[0][0]), &(l_col_reg_range[0][1]), &(l_col_reg_block[0][1]) );
+
+    printf("packed blocking (range0, block0, range1, block1): %u %u %u %u\n", l_packed_reg_range[0], l_packed_reg_block[0], l_packed_reg_range[1], l_packed_reg_block[1]);
+    printf("n blocking 0    (range0, block0, range1, block1): %u %u %u %u\n",  l_col_reg_range[0][0],  l_col_reg_block[0][0],  l_col_reg_range[0][1],  l_col_reg_block[0][1]);
   }
 
   /* m loop */
@@ -673,8 +680,8 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
   unsigned int l_n = 0;
   unsigned int l_p = 0;
   unsigned int l_k = 0;
-  unsigned int l_n_blocking = (i_n_limit + 1 <= i_xgemm_desc->n) ? i_n_limit - i_n_processed + 1 :  i_n_limit - i_n_processed;
-  unsigned int l_max_reg_block = (l_n_blocking-1) * i_packed_blocking;
+  unsigned int l_n_blocking = (i_n_limit + 1 <= i_xgemm_desc->n) ? i_n_limit - i_n_processed :  i_n_limit - i_n_processed;
+  unsigned int l_max_reg_block = l_n_blocking * i_packed_blocking;
   unsigned int l_n_blocks = (l_n_blocking + 1)/2;
 
   /* Book-keeping for processed columns  */
@@ -873,7 +880,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
                 /* Load 4 columns of A */
                 for ( l_col_a = 0; l_col_a < 4; l_col_a++ ) {
                   libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
-                                                             ((long long)i_packed_processed + l_col_a * i_packed_width) * i_micro_kernel_config->datatype_size_in);
+                                                             ((long long)i_packed_processed + (l_col_a+l_k) * i_packed_width) * i_micro_kernel_config->datatype_size_in);
                   libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR,
                                                                        i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_help_0, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
                   libxsmm_aarch64_instruction_sve_move( io_generated_code,
@@ -957,7 +964,6 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
                                                      i_packed_blocking * l_n + 3,
                                                      LIBXSMM_AARCH64_SVE_REG_UNDEF,
                                                      (libxsmm_aarch64_sve_type)0 );
-
             }
           }
         }
@@ -1069,7 +1075,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
                                                    i_gp_reg_mapping->gp_reg_c,
                                                    l_gp_reg_scratch,
                                                    i_gp_reg_mapping->gp_reg_c,
-                                                   (i_packed_width * 2 * (l_n_blocking-1) - 8) * i_micro_kernel_config->datatype_size_out  );
+                                                   (i_packed_width * 2 * (l_n_blocking)/2 - 8) * i_micro_kernel_config->datatype_size_out  );
   }
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                  LIBXSMM_AARCH64_INSTR_GP_META_SUB,

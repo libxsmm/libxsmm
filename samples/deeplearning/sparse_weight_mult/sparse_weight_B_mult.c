@@ -63,6 +63,10 @@ int main(int argc, char* argv[]) {
   double l_total;
   unsigned int nnz = 0;
 
+  libxsmm_matdiff_info norms_csc, diff;
+  libxsmm_matdiff_clear(&norms_csc);
+  libxsmm_matdiff_clear(&diff);
+
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
   if (argc != 8 && argc != 1) {
@@ -90,7 +94,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (use_bf16 > 0) {
+  if (use_bf16 > 0 || 1) {
     for ( l_i = 0; l_i < K-1; l_i++ ) {
       for ( l_j = 0; l_j < C-3; l_j++ ) {
         if (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) {
@@ -169,6 +173,7 @@ int main(int argc, char* argv[]) {
         if (use_bf16 > 0) {
           libxsmm_rne_convert_fp32_bf16( &l_b_sp_csc[l_k], &l_b_sp_csc_bf16[l_k], 1);
           libxsmm_convert_bf16_f32( &l_b_sp_csc_bf16[l_k], &l_b_sp_csc[l_k], 1 );
+          libxsmm_convert_bf16_f32( &l_b_sp_csc_bf16[l_k], &LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C), 1 );
         }
         l_k++;
       }
@@ -277,6 +282,17 @@ int main(int argc, char* argv[]) {
     }
   }
   printf("max error (csc): %f\n", l_max_error);
+
+  /* compare */
+  libxsmm_matdiff(&norms_csc, LIBXSMM_DATATYPE_F32, NB * K * nb, 1, l_c_gold, l_c_asm_csc, 0, 0);
+  printf("L1 reference  : %.25g\n", norms_csc.l1_ref);
+  printf("L1 test       : %.25g\n", norms_csc.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_csc.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_csc.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_csc.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_csc.linf_rel);
+  printf("Check-norm    : %.24f\n", libxsmm_matdiff_epsilon(&norms_csc));
+  libxsmm_matdiff_reduce(&diff, &norms_csc);
 
   if (use_bf16 == 0) {
     l_max_error = 0.f;
