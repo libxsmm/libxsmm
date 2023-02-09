@@ -725,7 +725,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
     libxsmm_generator_loop_header_aarch64( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_help_3, i_packed_range/i_packed_blocking );
   }
 
-  printf("Start column is %u and last column is %u\n", i_n_processed, i_n_processed + l_n_blocking);
+  /*printf("Start column is %u and last column is %u\n", i_n_processed, i_n_processed + l_n_blocking);*/
 
   /* load C accumulator */
   libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,  LIBXSMM_AARCH64_INSTR_GP_META_ADD,

@@ -215,6 +215,13 @@ int main(int argc, char* argv[]) {
             LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
               +=   LIBXSMM_VLA_ACCESS(3, l_p_a, l_i, l_jj, l_k, C, nb)
                  * l_b_de[(l_j*C)+l_jj];
+            if (use_bf16 > 0) {
+              if (l_jj == C-1) {
+                libxsmm_bfloat16 tmp_bf16;
+                libxsmm_rne_convert_fp32_bf16( &LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb), &tmp_bf16, 1);
+                libxsmm_convert_bf16_f32( &tmp_bf16, &LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb), 1 );
+              }
+            }
           }
         }
       }
