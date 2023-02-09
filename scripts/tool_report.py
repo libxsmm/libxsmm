@@ -23,50 +23,6 @@ import re
 import os
 
 
-def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
-    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
-    for match in (
-        match
-        for match in re.finditer(
-            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+-]+)*", txt, re.MULTILINE
-        )
-        if match and match.group(1) and match.group(2)
-    ):
-        values = [
-            line.group(1)
-            for line in re.finditer(r"([^\n\r]+)", match.group(2))
-            if line
-            and line.group(1)
-            and all(i not in line.group(1) for i in invalid)
-            and all(32 <= ord(c) for c in line.group(1))
-        ]
-        if values:
-            category = match.group(1) if not select else select
-            if strbuild not in database:
-                database[strbuild] = dict()
-            if category not in database[strbuild]:
-                database[strbuild][category] = dict()
-            if jobname not in database[strbuild][category]:
-                database[strbuild][category][jobname] = dict()
-            oldval = database[strbuild][category][jobname]
-            if values != oldval:
-                database[strbuild][category][jobname] = values
-                nentries = nentries + 1
-        else:
-            nerrors = nerrors + 1
-    return nentries, nerrors
-
-
-def parseval(string):
-    """
-    Split "string" into "init", "value", and "unit".
-    """
-    return re.match(
-        r"(.+)?(^|[\s:=])([+-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+-]?\d+)?)",
-        string,  # noqa: E501
-    )
-
-
 def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
@@ -76,6 +32,109 @@ def matchstr(s1, s2, exact=False):
             return s1 in s2
     else:
         return False
+
+
+def parsename(string):
+    parts = string.split()
+    result = parts[0]
+    for name in parts:
+        if re.match(r"[a-zA-Z]+(?:[0-9_\-]+[a-zA-Z]+)*$", name):
+            result = name
+    return result
+
+
+def parseval(string):
+    """
+    Split "string" into "init", "value", and "unit".
+    """
+    return re.match(
+        r"(.+)?(^|[\s:=])([+\-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+\-]?\d+)?)",
+        string,  # noqa: E501
+    )
+
+
+def parselog(database, strbuild, jobname, txt, nentries, nerrors):
+    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
+    pattern = r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-][a-zA-Z])*)([^\+\-]+)"
+    matches = [
+        match
+        for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
+        if match and match.group(1) and match.group(2)
+    ]
+    if matches:  # attempt to match native format
+        for match in matches:
+            values = [
+                line.group(1)
+                for line in re.finditer(r"([^\n\r]+)", match.group(2))
+                if (line and line.group(1))
+                and all(i not in line.group(1) for i in invalid)
+                and all(32 <= ord(c) for c in line.group(1))
+            ]
+            if values:
+                category = match.group(1)
+                if strbuild not in database:
+                    database[strbuild] = dict()
+                if category not in database[strbuild]:
+                    database[strbuild][category] = dict()
+                if jobname not in database[strbuild][category]:
+                    database[strbuild][category][jobname] = dict()
+                oldval = database[strbuild][category][jobname]
+                if values != oldval:
+                    database[strbuild][category][jobname] = values
+                    nentries = nentries + 1
+            else:
+                nerrors = nerrors + 1
+    else:  # attempt to match pure JSON section
+        pattern = r"--partition=([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
+        matches = [
+            match
+            for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
+            if match and match.group(1) and match.group(2)
+        ]
+        for match in matches:
+            try:
+                clean = (
+                    match.group(2)
+                    .replace("'", '"')
+                    .replace("True", "true")
+                    .replace("False", "false")
+                )
+                values = json.loads(clean)
+            except:  # noqa: E722
+                values = None
+            if values:
+                category = match.group(1).replace(",", " ")
+                if strbuild not in database:
+                    database[strbuild] = dict()
+                if category not in database[strbuild]:
+                    database[strbuild][category] = dict()
+                if jobname not in database[strbuild][category]:
+                    database[strbuild][category][jobname] = dict()
+                oldval = database[strbuild][category][jobname]
+                if values != oldval:
+                    database[strbuild][category][jobname] = values
+                    nentries = nentries + 1
+            else:
+                nerrors = nerrors + 1
+    return nentries, nerrors
+
+
+def savedb(filename, database):
+    if ".json" == filename.suffix:
+        with open(filename, "w") as file:
+            json.dump(database, file, indent=2)
+            file.write("\n")  # append newline at EOF
+    else:  # pickle
+        with open(filename, "wb") as file:
+            pickle.dump(database, file)
+
+
+def mtime(filename):
+    try:
+        os.sync()  # flush pending buffers
+        return pathlib.Path(filename).stat().st_mtime if filename else 0
+    except:  # noqa: E722
+        return 0
 
 
 def num2fix(num, decimals=0):
@@ -93,24 +152,6 @@ def num2str(num):
 
 def divup(a, b):
     return int((a + b - 1) / b)
-
-
-def mtime(filename):
-    try:
-        os.sync()  # flush pending buffers
-        return pathlib.Path(filename).stat().st_mtime if filename else 0
-    except:  # noqa: E722
-        return 0
-
-
-def savedb(filename, database):
-    if ".json" == filename.suffix:
-        with open(filename, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
-    else:  # pickle
-        with open(filename, "wb") as file:
-            pickle.dump(database, file)
 
 
 def main(args, argd):
@@ -198,7 +239,7 @@ def main(args, argd):
     for build in database.values():
         for entries in build.values():
             for key, entry in entries.items():
-                name = key.split()[0]
+                name = parsename(key)
                 if name not in weights:
                     write = [1.0 for e in entry if ":" in e]
                     if write:
@@ -219,13 +260,7 @@ def main(args, argd):
             else args.infile.stem
         )
         nentries, nerrors = parselog(
-            database,
-            str(nbld),
-            name,
-            txt,
-            nentries,
-            nerrors,
-            select=args.select,
+            database, str(nbld), name, txt, nentries, nerrors
         )
         if 0 < nentries:
             latest = next
@@ -245,7 +280,7 @@ def main(args, argd):
         elif not builds:
             print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
-        njobs = 0
+        nbuilds = njobs = 0
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
@@ -261,7 +296,11 @@ def main(args, argd):
                     break
                 jobs = build["jobs"]
                 n = 0
-                for job in (job for job in jobs if 0 == job["exit_status"]):
+                for job in (
+                    job
+                    for job in jobs
+                    if "exit_status" in job and 0 == job["exit_status"]
+                ):
                     if 2 <= args.verbosity or 0 > args.verbosity:
                         if 0 == n:
                             print(f"[{nbuild}]", end="", flush=True)
@@ -272,11 +311,14 @@ def main(args, argd):
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
                     n = n + 1
-                if 0 == n and nbuild <= latest and "running" != build["state"]:
+                nbuilds = nbuilds + 1
+                njobs = njobs + n
+                if (
+                    0 == n and nbuild <= latest and "running" != build["state"]
+                ) or args.history <= nbuilds:
                     latest = nbuild
                     builds = None
                     break
-                njobs = njobs + n
             if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
@@ -334,7 +376,7 @@ def main(args, argd):
         e  # category (one level below build number)
         for e in template
         if not select
-        or any(matchstr(s, e.lower(), exact=args.select_exact) for s in select)
+        or any(matchstr(s, e.lower(), args.select_exact) for s in select)
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
@@ -392,61 +434,78 @@ def main(args, argd):
             ):
                 ylabel = slabel = None
                 values = database[build][entry][value]
-                # match --result primarily against "unit"
-                for v in reversed(values):  # match last entry
-                    parsed = parseval(v)
-                    if parsed and parsed.group(3):
-                        unit = v[parsed.end(3) :].strip()  # noqa: E203
-                        ulow = unit.lower()
-                        if not ylabel and matchstr(rslt, ulow):
-                            yvalue.append(float(parsed.group(3)))
-                            xvalue.append(build)  # string
-                            ylabel = unit
-                        if not slabel and sdo and matchstr(smry, ulow):
-                            meanvl.append(float(parsed.group(3)))
-                            slabel = unit
-                # match --result secondary against "init"
-                for v in reversed(values):  # match last entry
-                    parsed = parseval(v)
-                    if parsed and parsed.group(3):
-                        init = (
-                            parsed.group(1).strip(": ")
-                            if parsed.group(1)
-                            else ""  # noqa: E501
-                        )
-                        unit = v[parsed.end(3) :].strip()  # noqa: E203
-                        ulab = unit if unit else init
-                        ilow = init.lower()
-                        if not ylabel and matchstr(rslt, ilow):
-                            yvalue.append(float(parsed.group(3)))
-                            xvalue.append(build)  # string
-                            ylabel = ulab
-                        if not slabel and sdo and matchstr(smry, ilow):
-                            meanvl.append(float(parsed.group(3)))
-                            slabel = ulab
-                        if (init and (not aunit or ulab == aunit)) and (
-                            not args.analyze or matchstr(args.analyze, ilow)
-                        ):
-                            if init not in layers:
-                                if not aunit:
-                                    aunit = ulab
-                                layers[init] = []
-                            layers[init].append(float(parsed.group(3)))
+                if isinstance(values, dict):
+                    if rslt in values:
+                        yvalue.append(float(values[rslt]) * 1000)
+                        xvalue.append(build)  # string
+                        ylabel = "ms"
+                    if sdo and smry in values:
+                        meanvl.append(float(values[smry]) * 1000)
+                    slabel = "ms"
+                else:
+                    # match --result primarily against "unit"
+                    for v in reversed(values):  # match last entry
+                        parsed = parseval(v)
+                        if parsed and parsed.group(3):
+                            unit = v[parsed.end(3) :].strip()  # noqa: E203
+                            ulow = unit.lower()
+                            if not ylabel and matchstr(rslt, ulow):
+                                yvalue.append(float(parsed.group(3)))
+                                xvalue.append(build)  # string
+                                ylabel = unit
+                            if not slabel and sdo and matchstr(smry, ulow):
+                                meanvl.append(float(parsed.group(3)))
+                                slabel = unit
+                    # match --result secondary against "init"
+                    for v in reversed(values):  # match last entry
+                        parsed = parseval(v)
+                        if parsed and parsed.group(3):
+                            init = (
+                                parsed.group(1).strip(": ")
+                                if parsed.group(1)
+                                else ""  # noqa: E501
+                            )
+                            unit = v[parsed.end(3) :].strip()  # noqa: E203
+                            ulab = unit if unit else init
+                            ilow = init.lower()
+                            if not ylabel and matchstr(rslt, ilow):
+                                yvalue.append(float(parsed.group(3)))
+                                xvalue.append(build)  # string
+                                ylabel = ulab
+                            if not slabel and sdo and matchstr(smry, ilow):
+                                meanvl.append(float(parsed.group(3)))
+                                slabel = ulab
+                            if (init and (not aunit or ulab == aunit)) and (
+                                not args.analyze
+                                or matchstr(args.analyze, ilow)
+                            ):
+                                if init not in layers:
+                                    if not aunit:
+                                        aunit = ulab
+                                    layers[init] = []
+                                layers[init].append(float(parsed.group(3)))
 
             j = 0
             s = args.history
             wname = value.split()[0]
             wlist = weights[wname] if wname in weights else []
+            wdflt = True  # only default-weights discovered
             # (re-)reverse, trim, and apply weights
             for a in reversed(layers):
                 y = layers[a]
                 s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
-                layers[a] = [w * y[len(y) - k - 1] for k in range(s)]
+                if 1.0 != w:
+                    layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
+                    if wdflt:
+                        wdflt = False
+                else:  # unit-weight
+                    layers[a] = [y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
             if not yunit:
                 yunit = (ylabel if ylabel else args.result).split()[0]
-            if not aunit or aunit == yunit:
+            # summarize layer into yvalue only in case of non-default weights
+            if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
             elif yvalue:  # (re-)reverse and trim
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
@@ -583,10 +642,12 @@ def main(args, argd):
 
         # determine filename from components
         punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
-        figcat = (
+        figcat = re.sub(
+            r"[ ,;]+",
+            "_",
             ""
             if 1 < len(entries) or 0 == len(entries)
-            else f"-{entries[0].translate(punct)}"
+            else f"-{entries[0].translate(punct)}",
         )
         if 0 < len(match):
             clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
@@ -702,7 +763,7 @@ if __name__ == "__main__":
         "-y",
         "--query",
         type=str,
-        default="resnet",
+        default="resnet-50",
         help="Set of values",
     )
     argparser.add_argument(
@@ -767,11 +828,16 @@ if __name__ == "__main__":
         default=2,
         help="Re-scan builds",
     )
+
     args = argparser.parse_args()  # 1st pass
+    filepath = rdir / f"{args.pipeline}.json"
+    argparser.set_defaults(filepath=filepath)
+    args = argparser.parse_args()  # 2nd pass
     weights = args.filepath.with_name(
         f"{args.filepath.stem}.weights{args.filepath.suffix}"
     )
     argparser.set_defaults(weights=weights)
-    args = argparser.parse_args()  # 2nd pass
+    args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
+
     main(args, argd)
