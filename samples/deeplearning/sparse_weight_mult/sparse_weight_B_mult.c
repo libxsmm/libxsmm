@@ -204,9 +204,10 @@ int main(int argc, char* argv[]) {
   }
 
   /* dense routine */
-  l_start = libxsmm_timer_tick();
+  l_total = 0.0;
 #if 1
   for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
+    l_start = libxsmm_timer_tick();
     for ( l_i = 0; l_i < NB; l_i++) {
       for ( l_j = 0; l_j < K; l_j++) {
         for ( l_jj = 0; l_jj < C; l_jj++) {
@@ -215,6 +216,7 @@ int main(int argc, char* argv[]) {
             LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
               +=   LIBXSMM_VLA_ACCESS(3, l_p_a, l_i, l_jj, l_k, C, nb)
                  * l_b_de[(l_j*C)+l_jj];
+#if 0
             if (use_bf16 > 0) {
               if (l_jj == C-1) {
                 libxsmm_bfloat16 tmp_bf16;
@@ -222,14 +224,18 @@ int main(int argc, char* argv[]) {
                 libxsmm_convert_bf16_f32( &tmp_bf16, &LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb), 1 );
               }
             }
+#endif
           }
         }
       }
     }
+    l_end = libxsmm_timer_tick();
+    l_total += libxsmm_timer_duration(l_start, l_end);
+    if (l_n < REPS-1) {
+      memset(&LIBXSMM_VLA_ACCESS(3, l_p_c_gold, 0, 0, 0, K, nb), 0, K * NB * nb * sizeof(float));
+    }
   }
 #endif
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
@@ -254,12 +260,20 @@ int main(int argc, char* argv[]) {
     gemm_param.b.primary = l_b_sp_csc_bf16;
     gemm_param.c.primary = l_c_asm_csc_bf16;
   }
-  l_start = libxsmm_timer_tick();
+  l_total = 0.0;
   for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
+    l_start = libxsmm_timer_tick();
     mykernel_csc( &gemm_param );
+    l_end = libxsmm_timer_tick();
+    l_total += libxsmm_timer_duration(l_start, l_end);
+    if (l_n < REPS-1) {
+      if (use_bf16 > 0) {
+        memset((libxsmm_bfloat16*)l_c_asm_csc_bf16, 0, K * NB * nb * sizeof(libxsmm_bfloat16));
+      } else {
+        memset((float*)l_c_asm_csc, 0, K * NB * nb * sizeof(float));
+      }
+    }
   }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse (asm, csc)\n", l_total);
   printf("%f GFLOPS for sparse (asm, csc)\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
