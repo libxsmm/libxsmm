@@ -994,7 +994,7 @@ void libxsmm_generator_packed_spgemm_csc_bsparse_aarch64_kloop_mmla_sve( libxsmm
 
   for ( l_p = 0; l_p < i_packed_blocking; l_p+=2 ) {
     unsigned int l_n_advancements = 0;
-    unsigned int l_n_bound = (i_n_processed + l_n_blocking >= i_xgemm_desc->n) ? l_n_blocking - 1 : l_n_blocking;
+    unsigned int l_n_bound = (i_n_processed + l_n_blocking >= i_xgemm_desc->n) ? l_n_blocking /*- 1*/ : l_n_blocking;
     for ( l_n = 0; l_n < l_n_bound; l_n+=2 ) {
       /* second address register for stores */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,

@@ -283,6 +283,7 @@ int main(int argc, char* argv[]) {
   }
 
   l_max_error = 0.f;
+  unsigned int _k = 0, _j = 0;
   for ( l_i = 0; l_i < NB; l_i++) {
     for ( l_j = 0; l_j < K; l_j++) {
       for ( l_k = 0; l_k < nb; l_k++ ) {
@@ -290,11 +291,13 @@ int main(int argc, char* argv[]) {
                     - LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc, l_i, l_j, l_k, K, nb) ) > l_max_error ) {
           l_max_error = LIBXSMM_FABSF( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
                                        -LIBXSMM_VLA_ACCESS(3, l_p_c_asm_csc, l_i, l_j, l_k, K, nb) );
+          _k = l_k;
+          _j = l_j;
         }
       }
     }
   }
-  printf("max error (csc): %f\n", l_max_error);
+  printf("max error (csc): %f at %u %u\n", l_max_error, _j, _k);
 
   /* compare */
   libxsmm_matdiff(&norms_csc, LIBXSMM_DATATYPE_F32, NB * K * nb, 1, l_c_gold, l_c_asm_csc, 0, 0);
