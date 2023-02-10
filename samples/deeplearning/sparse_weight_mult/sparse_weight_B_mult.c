@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
   unsigned int use_ac_vnni = (use_bcsc > 0) ? 1 : 0;
   unsigned int vnni_block_size = (use_ac_vnni > 0) ? 4 : 1;
   unsigned int BC = 4, BK = 2;
+  unsigned int SBC = 4, SBK = 2;
 
   libxsmm_blasint NB = N / nb;
 
@@ -136,16 +137,16 @@ int main(int argc, char* argv[]) {
     }
   } else if (use_bcsc > 0) {
     nnz = 0;
-    for ( l_i = 0; l_i < K/BK; l_i++ ) {
-      for ( l_j = 0; l_j < C/BC; l_j++ ) {
+    for ( l_i = 0; l_i < K/SBK; l_i++ ) {
+      for ( l_j = 0; l_j < C/SBC; l_j++ ) {
         if (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) {
           float tmp = (float)libxsmm_rng_f64();
           if (tmp >= sparse_frac) {
-            unsigned int l_ui = l_i * BK;
-            unsigned int l_uj = l_j * BC;
+            unsigned int l_ui = l_i * SBK;
+            unsigned int l_uj = l_j * SBC;
             unsigned int l_di = 0, l_dj = 0;
-            for (l_di = 0; l_di < BK; l_di++) {
-              for (l_dj = 0; l_dj < BC; l_dj++) {
+            for (l_di = 0; l_di < SBK; l_di++) {
+              for (l_dj = 0; l_dj < SBC; l_dj++) {
                 float val = (float)libxsmm_rng_f64();
                 while (val == 0) {
                   val = (float)libxsmm_rng_f64();
@@ -153,7 +154,7 @@ int main(int argc, char* argv[]) {
                 LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_ui+l_di, l_uj+l_dj, C) = val;
               }
             }
-            nnz += BK*BC;
+            nnz += SBK*SBC;
           }
         }
       }
