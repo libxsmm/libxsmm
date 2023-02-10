@@ -195,6 +195,9 @@ endif
 # avoid to link with C++ standard library
 FORCE_CXX := 0
 
+# enable additional/compile-time warnings
+WCHECK := 1
+
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
@@ -693,8 +696,8 @@ endif
 
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
-	@-rm -f $(1)
-	-$(CC) $(4) $(if $(filter 0,$(WERROR)),$(NULL),$(WERROR_CFLAG)) -c $(2) -o $(1)
+#	@-rm -f $(1)
+	-$(CC) $(if $(filter 0,$(WERROR)),$(4),$(filter-out $(WERROR_CFLAG),$(4)) $(WERROR_CFLAG)) -c $(2) -o $(1)
 	@if ! [ -e $(1) ]; then \
 		if [ "2" = "$(INTRINSICS)" ]; then \
 			echo "--------------------------------------------------------------"; \

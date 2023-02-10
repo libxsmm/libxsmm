@@ -695,7 +695,7 @@ ifneq (,$(filter-out 0,$(FORCE_CXX)))
   override CC := $(CXX)
 endif
 
-WCHECK ?= 1
+WCHECK ?= 0
 WERROR_CFLAG := $(call ctest,$(CC),-Werror)
 WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
 ifneq (0,$(WCHECK))
