@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 
   memset( &gemm_param, 0, sizeof(libxsmm_gemm_param) );
 
-  if (argc != 8 && argc != 1) {
+  if (argc != 9 && argc != 1) {
     fprintf( stderr, "arguments failure\n" );
     return -1;
   }
@@ -186,6 +186,20 @@ int main(int argc, char* argv[]) {
       }
       /*printf("\n");*/
     }
+  } else {
+    for ( l_i = 0; l_i < K; l_i++ ) {
+      for ( l_j = 0; l_j < C; l_j++ ) {
+        if (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) != 0) {
+          LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = (float)libxsmm_rng_f64();
+          while (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) {
+            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = (float)libxsmm_rng_f64();
+          }
+        }
+       if (l_j == 0) printf("Col %d: ", l_i);
+       printf("%.2g\t", LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) );
+      }
+      printf("\n");
+    }
   }
 
   printf("we just generated a %i x %i matrix with %i NZ entries\n", K, C, nnz);
@@ -255,6 +269,7 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+    printf("l_val_idx is %d\n", l_val_idx);
   }
 
   /* create B, csr */
