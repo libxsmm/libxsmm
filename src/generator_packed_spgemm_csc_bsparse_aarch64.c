@@ -487,8 +487,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                        ((long long)(l_k*i_BK)*i_packed_width*i_micro_kernel_config->datatype_size_in ) +
                                                        (((long long)i_packed_processed + l_p * 4) * i_BK * i_micro_kernel_config->datatype_size_in) );
 
-        libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF,
-            i_gp_reg_mapping->gp_reg_help_0, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+l_p, LIBXSMM_AARCH64_SVE_REG_P0 );
+        libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1D_I_OFF, l_gp_reg_scratch, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+l_p, LIBXSMM_AARCH64_SVE_REG_P0 );
       }
 
       /* loop over the columns of B/C */
