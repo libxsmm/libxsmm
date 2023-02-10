@@ -1216,6 +1216,7 @@ void libxsmm_aarch64_instruction_sve_compute( libxsmm_generated_code*        io_
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLT_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V:
     case LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V:
+    case LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_E:
     case LIBXSMM_AARCH64_INSTR_SVE_UZP_P_O:
     case LIBXSMM_AARCH64_INSTR_SVE_ZIP_P_H:

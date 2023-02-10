@@ -455,6 +455,8 @@
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMLE_P_V      0x65004193 /* fp compare less than, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGE_P_V      0x65004083 /* fp compare greater than or equal, store result into pred reg (dst is pred reg) */
 #define LIBXSMM_AARCH64_INSTR_SVE_FCMGT_Z_V      0x65102092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
+#define LIBXSMM_AARCH64_INSTR_SVE_CMPGT_Z_V      0x24200092 /* fp compare greather than zero, predicated, dst is result predicate register, 0-15 */
+
 #define LIBXSMM_AARCH64_INSTR_SVE_BFDOT_V        0x64608003 /* BF16 dot-product */
 /* define indexed instructions */
 #define LIBXSMM_AARCH64_INSTR_SVE_FMLA_V_I       0x64200043 /* fused multiply-add */
