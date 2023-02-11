@@ -55,7 +55,9 @@ def parseval(string):
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
-    pattern = r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-][a-zA-Z])*)([^\+\-]+)"
+    pattern = (
+        r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*)([^\+\-]+)"
+    )
     matches = [
         match
         for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
@@ -66,22 +68,21 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
             values = [
                 line.group(1)
                 for line in re.finditer(r"([^\n\r]+)", match.group(2))
-                if (line and line.group(1))
+                if (line and line.group(1) and 4 >= len(line.group(1).split()))
                 and all(i not in line.group(1) for i in invalid)
                 and all(32 <= ord(c) for c in line.group(1))
             ]
             if values:
-                category = match.group(1)
+                category = match.group(1).replace(",", " ")
                 if strbuild not in database:
                     database[strbuild] = dict()
                 if category not in database[strbuild]:
                     database[strbuild][category] = dict()
                 if jobname not in database[strbuild][category]:
-                    database[strbuild][category][jobname] = dict()
-                oldval = database[strbuild][category][jobname]
-                if values != oldval:
-                    database[strbuild][category][jobname] = values
                     nentries = nentries + 1
+                else:
+                    nerrors = nerrors + 1
+                database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
     else:  # attempt to match pure JSON section
@@ -109,24 +110,26 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 if category not in database[strbuild]:
                     database[strbuild][category] = dict()
                 if jobname not in database[strbuild][category]:
-                    database[strbuild][category][jobname] = dict()
-                oldval = database[strbuild][category][jobname]
-                if values != oldval:
-                    database[strbuild][category][jobname] = values
                     nentries = nentries + 1
+                else:
+                    nerrors = nerrors + 1
+                database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
     return nentries, nerrors
 
 
 def savedb(filename, database):
-    if ".json" == filename.suffix:
-        with open(filename, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
-    else:  # pickle
-        with open(filename, "wb") as file:
-            pickle.dump(database, file)
+    if not filename.is_dir():
+        if ".json" == filename.suffix:
+            with open(filename, "w") as file:
+                json.dump(database, file, indent=2)
+                file.write("\n")  # append newline at EOF
+        else:  # pickle
+            with open(filename, "wb") as file:
+                pickle.dump(database, file)
+    else:
+        print("WARNING: no database created.", file=sys.stderr)
 
 
 def mtime(filename):
@@ -192,7 +195,7 @@ def main(args, argd):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if args.filepath == argd.filepath
+            if args.filepath == argd.filepath or not args.filepath.is_file()
             else args.filepath
         )
     elif args.infile is None:  # connect to URL
@@ -415,7 +418,8 @@ def main(args, argd):
         for value in (
             v
             for v in template[entry]
-            if not query or any(matchstr(p, v.lower()) for p in query)
+            if not query
+            or eval(args.query_op)(matchstr(p, v.lower()) for p in query)
         ):
             xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
@@ -754,6 +758,14 @@ if __name__ == "__main__":
         help="Authorization token",
     )
     argparser.add_argument(
+        "-u",
+        "--query-op",
+        type=str,
+        default="any",
+        choices=["any", "all"],
+        help="Inexact query operator",
+    )
+    argparser.add_argument(
         "-x",
         "--query-exact",
         action="store_true",
@@ -815,14 +827,14 @@ if __name__ == "__main__":
         help="Number of builds",
     )
     argparser.add_argument(
-        "-u",
+        "-k",
         "--retention",
         type=int,
         default=60,
         help="Keep history",
     )
     argparser.add_argument(
-        "-k",
+        "-e",
         "--inflight",
         type=int,
         default=2,
@@ -833,10 +845,11 @@ if __name__ == "__main__":
     filepath = rdir / f"{args.pipeline}.json"
     argparser.set_defaults(filepath=filepath)
     args = argparser.parse_args()  # 2nd pass
-    weights = args.filepath.with_name(
-        f"{args.filepath.stem}.weights{args.filepath.suffix}"
-    )
-    argparser.set_defaults(weights=weights)
+    if args.filepath.name:
+        weights = args.filepath.with_name(
+            f"{args.filepath.stem}.weights{args.filepath.suffix}"
+        )
+        argparser.set_defaults(weights=weights)
     args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 

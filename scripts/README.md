@@ -46,14 +46,14 @@ The version information is based on [version.txt](https://github.com/libxsmm/lib
 * `tool_normalize.sh`: Detects simple code patters banned from LIBXSMM's source code.
 * `tool_perflog.sh`: Extracts performance information produced by certain examples (driver code), e.g., [LIBXSMM-DNN tests](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
 * `tool_pexec.sh`: Reads standard input and attempts to execute every line (command) on a per CPU-core basis, which can help to parallelize tests on a per-process basis.
-* `tool_report.py`: Core developer team can collect a performance history of a certain CI-collection (Buildkite pipeline).
+* `tool_report.py`: Core developer team can collect a performance history of specified CI-collection (Buildkite pipeline).
 * `tool_scan.sh`: Core developer team can scan the repository based on a list of keywords.
 * `tool_test.sh`: 
 * `tool_version.sh`: Determines LIBXSMM's version from the history of the checked-out repository (Git). With respect to LIBXSMM's patch version, the information is not fully accurate given a non-linear history.
 
 #### Parallel Execution
 
-The script `tool_pexec.sh` allows to execute commands read from standard input (see `-h` or `--help`). The execution may be concurrent on a per-command basis. The level of parallelism is determined automatically but can be adjusted (oversubscription, nested parallelism). By default, a separate logfile is written for every executed command which can be disabled (`-o /dev/null`). File I/O can become a bottleneck on distributed filesystems (e.g., NFS), or generally hinders nested parallelism (`-o /dev/null -k`).
+The script `tool_pexec.sh` can execute commands read from standard input (see `-h` or `--help`). The execution may be concurrent on a per-command basis. The level of parallelism is determined automatically but can be adjusted (oversubscription, nested parallelism). By default, a separate logfile is written for every executed command which can be disabled (`-o /dev/null`). File I/O can become a bottleneck on distributed filesystems (e.g., NFS), or generally hinders nested parallelism (`-o /dev/null -k`).
 
 Every line of standard input denotes a separate command:
 
@@ -62,4 +62,68 @@ seq 100 | xargs -I{} echo "echo \"{}\"" \
         | tool_pexec.sh
 ```
 
-The script can consider an allow-list which permits certain error codes. Allow-lists can be generated automatically (`-u`).
+The script considers an allow-list which permits certain error codes. Allow-lists can be automatically generated (`-u`).
+
+#### Performance Report
+
+The script `tool_report.py` collects performance results given in two possible formats: <span>(1)&#160;native</span> "telegram" format, and <span>(2)&#160;JSON</span> format. The script aims to avoid encoding domain knowledge. In fact, the collected information is not necessarily performance data but a time series in general. Usually, the script is not executed directly but launched using a wrapper supplying the authorization token and further adapting to the execution environment (setup):
+
+```bash
+#!/usr/bin/env bash
+
+# authorization token
+TOKEN=0123456789abcdef0123456789abcdef01234567
+
+PYTHON=$(command -v python3)
+if [ ! "${PYTHON}" ]; then
+  PYTHON=$(command -v python)
+fi
+
+if [ "${PYTHON}" ]; then
+  HERE=$(cd "$(dirname "$0")" && pwd -P)
+  NAME=$(basename "$0" .sh)
+  SCRT=${NAME}.py
+
+  if [ "${HERE}" ] && [ -e "${HERE}/${SCRT}" ]; then
+    ${PYTHON} "${HERE}/${SCRT}" --token "${TOKEN}" "$@"
+  elif [ "${LIBXSMMROOT}" ] && [ -e "${LIBXSMMROOT}/scripts/${SCRT}" ]; then
+    ${PYTHON} "${LIBXSMMROOT}/scripts/${SCRT}" --token "${TOKEN}" "$@"
+  elif [ "${REPOREMOTE}" ] && [ -e "${REPOREMOTE}/libxsmm/scripts/${SCRT}" ]; then
+    ${PYTHON} "${REPOREMOTE}/libxsmm/scripts/${SCRT}" --token "${TOKEN}" "$@"
+  else
+    >&2 echo "ERROR: missing ${SCRT}!"
+    exit 1
+  fi
+else
+  >&2 echo "ERROR: missing prerequisites!"
+  exit 1
+fi
+```
+
+The following flow is established:
+
+1. Connect to a specified pipeline (online) or load a logfile directly (offline).
+2. Populate an instance (JSON-block or telegram) under a "build number", "category", and "case".
+3. Plot "execution time" over the history of build numbers.
+
+There are several command line options to customize each of the above steps (`--help` or `-h`):
+
+* To only plot data (already collected), use `-i ""` to omit a network connection.
+* To query, e.g., ResNet-50 results, use `-y resnet-50` (case-insensitive).
+* Multiple results can be combined, i.e., use `-y` (space-separated words).
+* To query exactly (single results) use `-x` in addition to `-y`.
+* To limit and select a specific "category" (instead of all), use `-s`.
+* Select exactly using `-z`, e.g., `-z -s "clx"` (omits, e.g., "clxap").
+* Create a PDF (vector graphics have infinite resolution), use `-g myreport.pdf`.
+* Adjust pixel resolution, aspect ratio, or density, use `-d 1200x800`.
+
+The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progress). Default verbosity shows progress (downloading results) whereas "automation" allows to further automate reports, e.g., get the filename of the generated plot (errors are generally printed to `stderr`). Loading a logfile into the database directly can serve two purposes: <span>(1)&#160;debugging</span> the supported format like "telegram" or JSON, and <span>(2)&#160;offline</span> operation. The latter can be also useful if for instance a CI-agents produces a log, i.e., it can load into the database right away. Command line options also allow for "exact placement" (`-j`) by specifying the build number supposed to take the loaded data (data is appended by default, i.e., it is assumed to be a new build or the build number is incremented). In general, data is not duplicated underneath a build of the category or the actual data matches an existing entry.
+
+Examples:
+
+* Plot ResNet-50 results from CI-pipeline "tpp-libxsmm" for "clx" systems:  
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -y resnet-50 -z -s clx`.
+* Like above request, but only FP32 results:  
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -x -y "ResNet-50 (fwd, mb=1, f32)" -z -s clx`.
+* Like above request, but alternatively:  
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -u all -y "resnet f32" -z -s clx`.
