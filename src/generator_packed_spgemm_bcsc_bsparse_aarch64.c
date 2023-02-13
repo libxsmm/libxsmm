@@ -29,7 +29,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   unsigned int l_simd_packed_remainder = 0;
   unsigned int l_simd_packed_iters = 0;
   unsigned int l_simd_packed_iters_full = 0;
-  unsigned int l_simd_packed_width = 0;
+  unsigned int l_simd_packed_width = 4;
   unsigned int l_packed_done = 0;
   unsigned int l_packed_count = 0;
   unsigned int l_packed_reg_block[2] = {0,0};
@@ -73,9 +73,18 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       l_simd_packed_width = 4;
       l_bf16_mmla_kernel = 1;
       /* Check for A in VNNI and C in VNNI */
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
     }
   } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
+  }
 
+  if (l_bf16_mmla_kernel == 0) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    return;
   }
 
   l_simd_packed_remainder = i_packed_width % l_simd_packed_width;
