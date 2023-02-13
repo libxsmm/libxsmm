@@ -20,6 +20,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                            const unsigned int*             i_row_idx,
                                                            const unsigned int*             i_column_idx,
+                                                           const unsigned int              i_packed_width,
                                                            const unsigned int              i_bk,
                                                            const unsigned int              i_bn );
 
@@ -31,7 +32,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                           const unsigned int*                i_row_idx,
                                                                           const unsigned int*                i_column_idx,
-                                                                          const void*                        i_values,
                                                                           const unsigned int                 i_n_processed,
                                                                           const unsigned int                 i_n_limit,
                                                                           const unsigned int                 i_packed_processed,

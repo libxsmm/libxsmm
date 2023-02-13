@@ -21,6 +21,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                            const unsigned int*             i_row_idx,
                                                            const unsigned int*             i_column_idx,
+                                                           const unsigned int              i_packed_width,
                                                            const unsigned int              i_bk,
                                                            const unsigned int              i_bn ) {
   unsigned int l_n = 0;
@@ -295,7 +296,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                                          i_xgemm_desc,
                                                                          i_row_idx,
                                                                          i_column_idx,
-                                                                         i_values,
                                                                          l_n_processed,
                                                                          l_n_processed + l_n_blocking,
                                                                          l_packed_done,
@@ -345,7 +345,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                           const unsigned int*                i_row_idx,
                                                                           const unsigned int*                i_column_idx,
-                                                                          const void*                        i_values,
                                                                           const unsigned int                 i_n_processed,
                                                                           const unsigned int                 i_n_limit,
                                                                           const unsigned int                 i_packed_processed,
@@ -390,7 +389,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   l_vec_reg_tmp[3] = l_max_reg_block+3;
   l_vec_reg_tmp[4] = l_max_reg_block+4;
 
-  LIBXSMM_UNUSED(i_values);
   LIBXSMM_ASSERT( i_packed_blocking > 0 );
 
   /* Adjust A and C pointers for already processed N/M  */
