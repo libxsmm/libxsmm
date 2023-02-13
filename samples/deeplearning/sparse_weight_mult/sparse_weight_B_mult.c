@@ -274,7 +274,9 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+#if 0
     printf("l_val_idx is %d\n", l_val_idx);
+#endif
   }
 
   /* create B, csr */
@@ -339,8 +341,8 @@ int main(int argc, char* argv[]) {
       return 0;
     }
   } else {
-    mykernel_csc = libxsmm_create_packed_spgemm_csc_v2(gemm_shape, l_flags, l_prefetch_flags, nb,
-      l_colptr, l_rowidx, (const void*)l_b_sp_bcsc_bf16);
+    mykernel_csc = libxsmm_create_packed_spgemm_bcsc(gemm_shape, l_flags, l_prefetch_flags, nb, BC, BK,
+      l_colptr, l_rowidx);
     if (mykernel_csc == NULL) {
       printf("Could not generate BCSC kernel!!!\n");
       return 0;
