@@ -98,22 +98,26 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     HOSTPREFIX="${HOSTPREFIX}${HOSTDELIMCHAR}"
   fi
 
-  # setup PARTITIONS for multi-tests
-  if [ ! "${PARTITIONS}" ]; then
-    if [ "${PARTITION}" ]; then
-      PARTITIONS=${PARTITION}
-    else
-      PARTITIONS=none
+  if [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
+    # setup PARTITIONS for multi-tests
+    if [ ! "${PARTITIONS}" ]; then
+      if [ "${PARTITION}" ]; then
+        PARTITIONS=${PARTITION}
+      else
+        PARTITIONS=none
+      fi
     fi
-  fi
-  if [ "random" = "${PARTITION}" ]; then
-    if [ "random" != "${PARTITIONS}" ]; then
-      read -ra ARRAY <<<"${PARTITIONS}"
-      NPARTITIONS=${#ARRAY[@]}
-      PARTITIONS=${ARRAY[RANDOM%NPARTITIONS]}
-    else
-      PARTITIONS=none
+    if [ "random" = "${PARTITION}" ]; then
+      if [ "random" != "${PARTITIONS}" ]; then
+        read -ra ARRAY <<<"${PARTITIONS}"
+        NPARTITIONS=${#ARRAY[@]}
+        PARTITIONS=${ARRAY[RANDOM%NPARTITIONS]}
+      else
+        PARTITIONS=none
+      fi
     fi
+  else
+    PARTITIONS=none
   fi
   export PARTITIONS
   read -ra ARRAY <<<"${PARTITIONS}"
@@ -347,7 +351,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       else
         CAPTION="${HEADER}"
       fi
-      echo "--- TEST ${CAPTION}"
+      if [ "${CAPTION}" ]; then
+        echo "--- TEST ${CAPTION}"
+      fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
