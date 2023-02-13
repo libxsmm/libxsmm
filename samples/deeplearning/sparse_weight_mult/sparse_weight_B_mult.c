@@ -108,34 +108,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if ((use_bf16 > 0 || 1) && (use_bcsc == 0)) {
-    for ( l_i = 0; l_i < K-1; l_i++ ) {
-      for ( l_j = 0; l_j < C-3; l_j++ ) {
-        if (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) {
-          /* Only in this case triger initialization, otherwise it has been taken care of */
-          float tmp = (float)libxsmm_rng_f64();
-          if ( tmp < (1.0-(1.0-sparse_frac)/8.0) ) {
-            tmp = 0;
-            LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = tmp;
-          } else {
-            if ((LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) == 0) &&
-                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+1, C) == 0) &&
-                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+2, C) == 0) &&
-                (LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+3, C) == 0)) {
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+1, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+2, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i, l_j+3, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+1, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+2, C) = tmp;
-              LIBXSMM_VLA_ACCESS(2, l_p_b_de, l_i+1, l_j+3, C) = tmp;
-            }
-          }
-        }
-      }
-    }
-  } else if (use_bcsc > 0) {
+  if (use_bcsc > 0 || use_bf16 > 0) {
     nnz = 0;
     for ( l_i = 0; l_i < K/SBK; l_i++ ) {
       for ( l_j = 0; l_j < C/SBC; l_j++ ) {
@@ -298,7 +271,6 @@ int main(int argc, char* argv[]) {
 
   /* dense routine */
   l_total = 0.0;
-#if 1
   for ( l_n = 0; l_n < (libxsmm_blasint)REPS; l_n++) {
     l_start = libxsmm_timer_tick();
     for ( l_i = 0; l_i < NB; l_i++) {
@@ -309,15 +281,6 @@ int main(int argc, char* argv[]) {
             LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb)
               +=   LIBXSMM_VLA_ACCESS(3, l_p_a, l_i, l_jj, l_k, C, nb)
                  * l_b_de[(l_j*C)+l_jj];
-#if 0
-            if (use_bf16 > 0) {
-              if (l_jj == C-1) {
-                libxsmm_bfloat16 tmp_bf16;
-                libxsmm_rne_convert_fp32_bf16( &LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb), &tmp_bf16, 1);
-                libxsmm_convert_bf16_f32( &tmp_bf16, &LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, K, nb), 1 );
-              }
-            }
-#endif
           }
         }
       }
@@ -328,7 +291,6 @@ int main(int argc, char* argv[]) {
       memset(&LIBXSMM_VLA_ACCESS(3, l_p_c_gold, 0, 0, 0, K, nb), 0, K * NB * nb * sizeof(float));
     }
   }
-#endif
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N * (double)C * (double)K) * 2.0) / (l_total * 1.0e9));
 
