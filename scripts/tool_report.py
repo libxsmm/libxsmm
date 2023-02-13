@@ -119,8 +119,16 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     return nentries, nerrors
 
 
-def savedb(filename, database):
-    if not filename.is_dir():
+def mtime(filename):
+    try:
+        os.sync()  # flush pending buffers
+        return pathlib.Path(filename).stat().st_mtime if filename else 0
+    except:  # noqa: E722
+        return 0
+
+
+def savedb(filename, database, filetime=None):
+    if not filename.is_dir() and (not filetime or filetime == mtime(filename)):
         if ".json" == filename.suffix:
             with open(filename, "w") as file:
                 json.dump(database, file, indent=2)
@@ -129,15 +137,7 @@ def savedb(filename, database):
             with open(filename, "wb") as file:
                 pickle.dump(database, file)
     else:
-        print("WARNING: no database created.", file=sys.stderr)
-
-
-def mtime(filename):
-    try:
-        os.sync()  # flush pending buffers
-        return pathlib.Path(filename).stat().st_mtime if filename else 0
-    except:  # noqa: E722
-        return 0
+        print("WARNING: no database created or updated.", file=sys.stderr)
 
 
 def num2fix(num, decimals=0):
@@ -344,16 +344,12 @@ def main(args, argd):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
-    if 0 != nentries and ofmtime == mtime(outfile):
-        if not outfile.exists() and (
-            2 <= args.verbosity or 0 > args.verbosity
-        ):
-            print(f"{outfile} database created.")
+    if 0 != nentries:
         # sort by top-level key if database is to be stored (build number)
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
         # backup database and prune according to retention
         retention = max(args.retention, args.history)
-        if 0 < retention and (2 * retention) < dbsize:
+        if 0 < retention and (retention + args.history) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
             retfile = outfile.with_name(
@@ -365,7 +361,11 @@ def main(args, argd):
                     del database[key]
                 dbkeys = list(database.keys())
                 dbsize = retention
-        savedb(outfile, database)
+        savedb(outfile, database, ofmtime)
+        if not outfile.exists() and (
+            2 <= args.verbosity or 0 > args.verbosity
+        ):
+            print(f"{outfile} database created.")
 
     # collect categories for template (figure)
     templidx = (
