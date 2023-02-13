@@ -125,5 +125,5 @@ Examples:
   `scripts/tool_report.sh -p tpp-libxsmm -i "" -y resnet-50 -z -s clx`.
 * Like above request, but only FP32 results:  
   `scripts/tool_report.sh -p tpp-libxsmm -i "" -x -y "ResNet-50 (fwd, mb=1, f32)" -z -s clx`.
-* Like above request, but alternatively:  
+* Like above request, but alternatively ("all" operator is also default):  
   `scripts/tool_report.sh -p tpp-libxsmm -i "" -u all -y "resnet f32" -z -s clx`.

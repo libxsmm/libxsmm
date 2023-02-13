@@ -761,8 +761,8 @@ if __name__ == "__main__":
         "-u",
         "--query-op",
         type=str,
-        default="any",
-        choices=["any", "all"],
+        default="all",
+        choices=["all", "any"],
         help="Inexact query operator",
     )
     argparser.add_argument(
