@@ -6,7 +6,7 @@
 * Further information: https://github.com/libxsmm/libxsmm/                    *
 * SPDX-License-Identifier: BSD-3-Clause                                       *
 ******************************************************************************/
-/* Hans Pabst, Alexander Heinecke (Intel Corp.)
+/* Hans Pabst, Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trace.h"
 #include "libxsmm_xcopy.h"
@@ -2082,7 +2082,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_DATATYPE_BF16 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_csc->gemm->datatype))
       {
         const unsigned int nnz = (request->descriptor.pspgemm_csc->gemm->lda == 0) ?
-            request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->k] : request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->n/2]*8;
+            request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->k] : request->descriptor.pspgemm_csc->column_ptr[request->descriptor.pspgemm_csc->gemm->n];
         const unsigned int gemm_factor = (request->descriptor.pspgemm_csc->gemm->lda == 0) ? request->descriptor.pspgemm_csc->gemm->n : request->descriptor.pspgemm_csc->gemm->m;
         extra.nflops = 2 * nnz * gemm_factor * request->descriptor.pspgemm_csc->packed_width;
         libxsmm_generator_packed_spgemm_csc_kernel(&generated_code, request->descriptor.pspgemm_csc->gemm,
@@ -2101,6 +2101,36 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             request->descriptor.pspgemm_csc->gemm->lda, request->descriptor.pspgemm_csc->gemm->ldb, request->descriptor.pspgemm_csc->gemm->ldc,
             request->descriptor.pspgemm_csc->packed_width,
             1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pspgemm_csc->gemm->flags) ? 0 : 1,
+            uid, nnz);
+        }
+      }
+    } break;
+    case LIBXSMM_BUILD_KIND_PSPGEMM_BCSC: { /* packed sparse gemm kernel, BCSC format */
+      LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc && 0 != request->descriptor.pspgemm_bcsc->gemm);
+      LIBXSMM_ASSERT(NULL != request->descriptor.pspgemm_bcsc->row_idx && 0 != request->descriptor.pspgemm_bcsc->column_ptr);
+      /* only floating point */
+      if (LIBXSMM_DATATYPE_BF16 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.pspgemm_bcsc->gemm->datatype))
+      {
+        const unsigned int nnz = (request->descriptor.pspgemm_bcsc->gemm->lda == 0) ?
+            request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->k] : request->descriptor.pspgemm_bcsc->column_ptr[request->descriptor.pspgemm_bcsc->gemm->n/request->descriptor.pspgemm_bcsc->bn]*(request->descriptor.pspgemm_bcsc->bn*request->descriptor.pspgemm_bcsc->bk);
+        const unsigned int gemm_factor = (request->descriptor.pspgemm_bcsc->gemm->lda == 0) ? request->descriptor.pspgemm_bcsc->gemm->n : request->descriptor.pspgemm_bcsc->gemm->m;
+        extra.nflops = 2 * nnz * gemm_factor * request->descriptor.pspgemm_bcsc->packed_width;
+        libxsmm_generator_packed_spgemm_bcsc_kernel(&generated_code, request->descriptor.pspgemm_bcsc->gemm,
+          request->descriptor.pspgemm_bcsc->row_idx, request->descriptor.pspgemm_bcsc->column_ptr, request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pspgemm_bcsc->gemm->prefetch);
+          const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_bcsc->gemm->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_bk%u_bn%u_a%i_b%i_p%i_nnz%u.pspgemm_bcsc", target_arch, tname,
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
+            request->descriptor.pspgemm_bcsc->gemm->m,   request->descriptor.pspgemm_bcsc->gemm->n,   request->descriptor.pspgemm_bcsc->gemm->k,
+            request->descriptor.pspgemm_bcsc->gemm->lda, request->descriptor.pspgemm_bcsc->gemm->ldb, request->descriptor.pspgemm_bcsc->gemm->ldc,
+            request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn,
+            1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1,
             uid, nnz);
         }
       }
@@ -3537,6 +3567,48 @@ LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_csc_v2(
   return result.xgemm.gemm;
 }
 
+LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_spgemm_bcsc(
+  const libxsmm_gemm_shape gemm_shape, const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width, const libxsmm_blasint bk, const libxsmm_blasint bn,
+  const unsigned int* column_ptr, const unsigned int* row_idx )
+{
+  int l_gemm_flags = (int)gemm_flags;
+  libxsmm_pspgemm_bcsc_descriptor pspgemm_bcsc /*= { 0 }*/;
+  libxsmm_build_request request /*= { 0 }*/;
+  libxsmm_descriptor_blob blob;
+  libxsmm_gemm_descriptor *desc = NULL;
+  libxsmm_code_pointer result = { 0 };
+  LIBXSMM_INIT
+
+  /* TODO: some checks */
+  if ( gemm_shape.a_in_type != gemm_shape.b_in_type ) {
+    return NULL;
+  }
+  if ( (NULL == column_ptr) || (NULL == row_idx) ) {
+    return NULL;
+  }
+
+  /* use the XGEMM ABI which utilizes an arg struct */
+  l_gemm_flags |= LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI;
+
+  /* build descriptor */
+  desc = libxsmm_gemm_descriptor_dinit2(&blob, gemm_shape.a_in_type, gemm_shape.out_type,
+    gemm_shape.m, gemm_shape.n, gemm_shape.k,
+    gemm_shape.lda, gemm_shape.ldb, gemm_shape.ldc,
+    LIBXSMM_ALPHA, !((l_gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) == LIBXSMM_GEMM_FLAG_BETA_0),
+    l_gemm_flags, libxsmm_get_gemm_xprefetch((const int*)&prefetch_flags));
+
+  pspgemm_bcsc.gemm = desc;
+  pspgemm_bcsc.column_ptr = column_ptr;
+  pspgemm_bcsc.row_idx = row_idx;
+  pspgemm_bcsc.packed_width = packed_width;
+  pspgemm_bcsc.bk = bk;
+  pspgemm_bcsc.bn = bn;
+  request.descriptor.pspgemm_bcsc = &pspgemm_bcsc;
+  request.kind = LIBXSMM_BUILD_KIND_PSPGEMM_BCSC;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+
+  return result.xgemm.gemm;
+}
 
 LIBXSMM_API libxsmm_gemmfunction libxsmm_create_packed_gemm_ac_rm_v2( const libxsmm_gemm_shape gemm_shape,
   const libxsmm_bitfield gemm_flags, const libxsmm_bitfield prefetch_flags, const libxsmm_blasint packed_width )

@@ -189,6 +189,14 @@ void libxsmm_generator_packed_spgemm_csc_kernel( libxsmm_generated_code*        
                                                  const unsigned int             i_packed_width );
 
 LIBXSMM_API
+void libxsmm_generator_packed_spgemm_bcsc_kernel( libxsmm_generated_code*        io_generated_code,
+                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                  const unsigned int*            i_row_idx,
+                                                  const unsigned int*            i_column_idx,
+                                                  const unsigned int             i_packed_width,
+                                                  const unsigned int             i_bk,
+                                                  const unsigned int             i_bn );
+LIBXSMM_API
 void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*         io_generated_code,
                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                           const unsigned int              i_packed_width );
