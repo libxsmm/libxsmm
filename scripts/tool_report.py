@@ -14,6 +14,7 @@ import statistics
 import requests
 import argparse
 import datetime
+import tempfile
 import pathlib
 import pickle
 import json
@@ -128,14 +129,23 @@ def mtime(filename):
 
 
 def savedb(filename, database, filetime=None):
-    if not filename.is_dir() and (not filetime or filetime == mtime(filename)):
+    if not filename.is_dir():
+        tmpfile = tempfile.mkstemp(
+            filename.suffix, filename.stem + ".", filename.parent
+        )
         if ".json" == filename.suffix:
-            with open(filename, "w") as file:
+            with os.fdopen(tmpfile[0], "w") as file:
                 json.dump(database, file, indent=2)
                 file.write("\n")  # append newline at EOF
         else:  # pickle
-            with open(filename, "wb") as file:
+            with os.fdopen(tmpfile[0], "wb") as file:
                 pickle.dump(database, file)
+        # os.close(tmpfile[0])
+        if not filetime or filetime == mtime(filename):
+            if filename.exists():
+                os.replace(tmpfile[1], filename)
+            else:
+                os.rename(tmpfile[1], filename)
     else:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
