@@ -695,7 +695,7 @@ ifneq (,$(filter-out 0,$(FORCE_CXX)))
   override CC := $(CXX)
 endif
 
-WCHECK ?= 1
+WCHECK ?= 0
 WERROR_CFLAG := $(call ctest,$(CC),-Werror)
 WERROR_FCFLAG := $(call ftest,$(FC),-Werror)
 ifneq (0,$(WCHECK))
@@ -1470,19 +1470,33 @@ else # GCC assumed
     CXXFLAGS += -Wall
     CFLAGS += -Wall
     FSTD := -std=$(if $(filter 1,$(FORTRAN)),f2003,f2008)
-    CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
+    CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros \
+                 -Wno-unused-parameter -Wwrite-strings \
+                 -Wmissing-field-initializers
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wconversion -Wintrinsics-std \
                  -Wcharacter-truncation
     ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION_NUM)))"))
       CPEDANTIC += -Wno-overlength-strings
+      ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
+        # can yield false positives with older GCC
+        CPEDANTIC += -Wshadow
+        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION_NUM)))"))
+          ifneq (0,$(shell echo "$$((0==$(CLANG)||100000<=$(CC_VERSION_NUM)))"))
+            CPEDANTIC += -Wmisleading-indentation
+          endif
+          ifneq (0,$(shell echo "$$((70000<=$(CC_VERSION_NUM)))"))
+            CPEDANTIC += -Wimplicit-fallthrough
+          endif
+        endif
+      endif
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40600<=$(CC_VERSION_NUM)))"))
-      # can yield false positives with older GCC
-      CPEDANTIC += -Wshadow
+    ifneq (0,$(CLANG))
+      CPEDANTIC += -Wcovered-switch-default
+      CPEDANTIC += -Wstring-conversion
     endif
     ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION_NUM)))"))

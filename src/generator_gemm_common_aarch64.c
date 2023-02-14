@@ -233,7 +233,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_in_vnniT_to_stack_aarch64
 
   libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack_aarch64( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
       i_gp_reg_mapping->gp_reg_b, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2, tmp_reg3,
-      LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T, i_xgemm_desc_orig->k, i_xgemm_desc_orig->n, i_xgemm_desc_orig->ldb, i_xgemm_desc_orig->n, i_xgemm_desc_orig->c2,
+      LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_NORM_TO_VNNI4T, i_xgemm_desc_orig->k, i_xgemm_desc_orig->n, i_xgemm_desc_orig->ldb, i_xgemm_desc_orig->n, LIBXSMM_CAST_BLASINT(i_xgemm_desc_orig->c2),
       LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16, LIBXSMM_DATATYPE_BF16,
       LIBXSMM_GEMM_STACK_VAR_B_OFFS_BRGEMM_PTR, LIBXSMM_GEMM_STACK_VAR_A_SCRATCH_PTR, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR,
       LIBXSMM_MELTW_TYPE_UNARY_NONE, 0, 0, 0, 0, (libxsmm_datatype)0, (libxsmm_datatype)0, (libxsmm_datatype)0);

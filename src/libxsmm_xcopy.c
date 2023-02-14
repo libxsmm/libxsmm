@@ -72,7 +72,7 @@ LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
     const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     if (0 < m) libxsmm_mzero_mbytes = LIBXSMM_MAX(m, 1) * 8/*DP*/;
-    if (0 < n && 0 != libxsmm_tcopy_mbytes) {
+    if (0 < n && 0 != libxsmm_mzero_mbytes) {
       libxsmm_mzero_nscale = ((float)(n * 8/*DP*/)) / libxsmm_mzero_mbytes;
     }
     if (0 != libxsmm_mzero_mbytes && 0 != libxsmm_mzero_nscale) {

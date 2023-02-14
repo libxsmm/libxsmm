@@ -380,6 +380,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
 
   l_m                 = i_mateltwise_desc->m;
   l_n                 = i_mateltwise_desc->n;
+  LIBXSMM_ASSERT(0 != l_vlen);
   l_m_remainder_elements = l_m % l_vlen;
   l_m_trips           = (l_m + l_vlen - 1) / l_vlen;
   l_m_unroll_factor   = l_m_trips;
@@ -684,6 +685,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
 
   l_m                 = i_mateltwise_desc->m;
   l_n                 = i_mateltwise_desc->n;
+  LIBXSMM_ASSERT(0 != l_vlen);
   l_m_remainder_elements = l_m % l_vlen;
   l_m_trips           = (l_m + l_vlen - 1) / l_vlen;
   l_m_unroll_factor   = l_m_trips;
