@@ -23,8 +23,8 @@ int main(int argc, char* argv[]) {
   unsigned int use_bf16  = ( argc > 7 ) ? atoi(argv[7]) : 0;
   unsigned int use_bcsc  = ( argc > 8 ) ? atoi(argv[8]) : 0;
   unsigned int use_ac_vnni = (use_bcsc > 0) ? 1 : 0;
-  unsigned int vnni_block_size = (use_ac_vnni > 0) ? 4 : 1;
-  unsigned int BC = 4, BK = 2;
+  unsigned int vnni_block_size = (use_ac_vnni > 0) ? libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16) : 1;
+  unsigned int BC = vnni_block_size, BK = 2;
   unsigned int SBC = 4, SBK = 2;
 
   libxsmm_blasint NB = N / nb;
