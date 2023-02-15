@@ -176,7 +176,11 @@ def divup(a, b):
 
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
-    url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+    url = (
+        f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+        if args.pipeline
+        else ""
+    )
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
     if args.select:
@@ -284,7 +288,7 @@ def main(args, argd):
         )
         if 0 < nentries:
             latest = next
-    elif args.infile is None:  # connect to URL
+    elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -870,16 +874,17 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
-    filepath = rdir / f"{args.pipeline}.json"
-    figure = f"{args.pipeline}.{figtype}"
-    argparser.set_defaults(filepath=filepath, figure=figure)
-    args = argparser.parse_args()  # 2nd pass
+    if args.pipeline:
+        filepath = rdir / f"{args.pipeline}.json"
+        figure = f"{args.pipeline}.{figtype}"
+        argparser.set_defaults(filepath=filepath, figure=figure)
+        args = argparser.parse_args()  # 2nd pass
     if args.filepath.name:
         weights = args.filepath.with_name(
             f"{args.filepath.stem}.weights{args.filepath.suffix}"
         )
         argparser.set_defaults(weights=weights)
-    args = argparser.parse_args()  # 3rd pass
+        args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
     main(args, argd)
