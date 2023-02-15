@@ -1904,9 +1904,12 @@ void libxsmm_generator_gemm_aarch64_setup_n_blocking( libxsmm_generated_code*   
   init_m_blocks = LIBXSMM_UPDIV(init_m_blocking, io_micro_kernel_config->vector_length);
 
   /* increment m register blocking in case of 2 remainder registers */
-  if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
-    init_m_blocks++;
+  if (init_m_blocking > 0) {
+    if ( (init_m_blocking % io_micro_kernel_config->vector_length == 3) || ((i_xgemm_desc->m % init_m_blocking) % io_micro_kernel_config->vector_length == 3) ) {
+      init_m_blocks++;
+    }
   }
+
   while ((init_m_blocks * max_n_blocking + init_m_blocks + 1) > io_micro_kernel_config->vector_reg_count) {
     max_n_blocking--;
   }
