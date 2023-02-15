@@ -35,6 +35,13 @@ def matchstr(s1, s2, exact=False):
         return False
 
 
+def matchlst(string, strlst, exact=False):
+    for s in strlst:
+        if matchstr(string, s.lower(), exact):
+            return s
+    return ""
+
+
 def parsename(string):
     parts = string.split()
     result = parts[0]
@@ -133,7 +140,7 @@ def savedb(filename, database, filetime=None):
         tmpfile = tempfile.mkstemp(
             filename.suffix, filename.stem + ".", filename.parent
         )
-        if ".json" == filename.suffix:
+        if ".json" == filename.suffix.lower():
             with os.fdopen(tmpfile[0], "w") as file:
                 json.dump(database, file, indent=2)
                 file.write("\n")  # append newline at EOF
@@ -215,7 +222,7 @@ def main(args, argd):
     ofmtime = mtime(outfile)
     if args.filepath.is_file():
         try:
-            if ".json" == args.filepath.suffix:
+            if ".json" == args.filepath.suffix.lower():
                 with open(args.filepath, "r") as file:
                     database = json.load(file)
             else:  # pickle
@@ -234,7 +241,7 @@ def main(args, argd):
     wfile = args.weights if args.weights.is_file() else argd.weights
     if wfile.is_file():
         try:
-            if ".json" == wfile.suffix:
+            if ".json" == wfile.suffix.lower():
                 with open(wfile, "r") as file:
                     weights = json.load(file)
             else:  # pickle
@@ -337,7 +344,7 @@ def main(args, argd):
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
+        if (2 <= args.verbosity or 0 > args.verbosity) and 0 < njobs:
             print("[OK]")
 
     # conclude loading data from latest CI
@@ -372,19 +379,22 @@ def main(args, argd):
                 dbkeys = list(database.keys())
                 dbsize = retention
         savedb(outfile, database, ofmtime)
-        if not outfile.exists() and (
+        if (  # print filename of database
             2 <= args.verbosity or 0 > args.verbosity
-        ):
+        ) and not outfile.exists():
             print(f"{outfile} database created.")
 
-    # collect categories for template (figure)
-    templidx = (
-        1  # file-based input (just added) shall determine template
-        if (args.infile and args.infile.is_file())
-        else min(inflight + 1, dbsize)
-    )
-    templkey = dbkeys[-templidx] if dbkeys else ""  # string
-    template = database[templkey] if templkey in database else []
+    if dbkeys:  # collect categories for template (figure)
+        if args.nbuild in dbkeys:
+            templkey = dbkeys[args.nbuild]
+        elif not args.infile or not args.infile.is_file():
+            templkey = dbkeys[-min(inflight + 1, dbsize)]
+        else:  # file-based input (just added)
+            templkey = dbkeys[-1]
+        template = database[templkey]
+    else:
+        template = dict()
+
     entries = [
         e  # category (one level below build number)
         for e in template
@@ -449,13 +459,20 @@ def main(args, argd):
                 ylabel = slabel = None
                 values = database[build][entry][value]
                 if isinstance(values, dict):
-                    if rslt in values:
-                        yvalue.append(float(values[rslt]) * 1000)
+                    qry = rslt.split(",")
+                    key = matchlst(qry[0], values.keys())
+                    if key:
+                        scale = 1.0 if 2 > len(qry) else float(qry[1])
+                        yvalue.append(float(values[key]) * scale)
                         xvalue.append(build)  # string
-                        ylabel = "ms"
-                    if sdo and smry in values:
-                        meanvl.append(float(values[smry]) * 1000)
-                    slabel = "ms"
+                        ylabel = key if 3 > len(qry) else qry[2]
+                    if sdo:
+                        qry = smry.split(",")
+                        key = matchlst(qry[0], values.keys())
+                        if key:
+                            scale = 1.0 if 2 > len(qry) else float(qry[1])
+                            meanvl.append(float(values[key]) * scale)
+                    slabel = ylabel
                 else:
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -672,7 +689,7 @@ def main(args, argd):
         figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
 
         # reduce file size (png) and save figure
-        if ".png" == figout.suffix:
+        if ".png" == figout.suffix.lower():
             figcanvas.draw()  # otherwise the image is empty
             imageraw = figcanvas.tostring_rgb()
             image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
@@ -693,6 +710,7 @@ if __name__ == "__main__":
     except ValueError:
         rdir = here
     base = path.stem
+    figtype = "png"
 
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
@@ -723,7 +741,7 @@ if __name__ == "__main__":
         "-g",
         "--figure",
         type=str,
-        default=f"{base}.png",
+        default=f"{base}.{figtype}",
         help="Graphics format, filename, or path",
     )
     argparser.add_argument(
@@ -853,7 +871,8 @@ if __name__ == "__main__":
 
     args = argparser.parse_args()  # 1st pass
     filepath = rdir / f"{args.pipeline}.json"
-    argparser.set_defaults(filepath=filepath)
+    figure = f"{args.pipeline}.{figtype}"
+    argparser.set_defaults(filepath=filepath, figure=figure)
     args = argparser.parse_args()  # 2nd pass
     if args.filepath.name:
         weights = args.filepath.with_name(

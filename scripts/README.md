@@ -122,8 +122,12 @@ The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progr
 Examples:
 
 * Plot ResNet-50 results from CI-pipeline "tpp-libxsmm" for "clx" systems:  
-  `scripts/tool_report.sh -p tpp-libxsmm -i "" -y resnet-50 -z -s clx`.
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -y "resnet-50" -z -s "clx"`.
 * Like above request, but only FP32 results:  
-  `scripts/tool_report.sh -p tpp-libxsmm -i "" -x -y "ResNet-50 (fwd, mb=1, f32)" -z -s clx`.
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -x -y "ResNet-50 (fwd, mb=1, f32)" -z -s "clx"`.
 * Like above request, but alternatively ("all" operator is also default):  
-  `scripts/tool_report.sh -p tpp-libxsmm -i "" -u all -y "resnet f32" -z -s clx`.
+  `scripts/tool_report.sh -p tpp-libxsmm -i "" -u "all" -y "resnet f32" -z -s "clx"`.
+* Plot ResNet-50 results from CI-pipeline "tpp-plaidml":  
+  `scripts/tool_report.sh -p tpp-plaidml -i "" -r "duration_per_example,1000,ms"`
+* Plot "GFLOP/s" for "conv2d_odd_med" from CI-pipeline "tpp-plaidml":  
+  `scripts/tool_report.sh -p tpp-plaidml -i "" -y "conv2d_odd_med" -r "gflop"`
