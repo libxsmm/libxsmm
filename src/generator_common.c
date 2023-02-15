@@ -1233,6 +1233,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "encoding for out-of-bound regnumber was requested (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_BCSC_BLOCK_SIZE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "Block dimensions for BCSC format are invalid (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );

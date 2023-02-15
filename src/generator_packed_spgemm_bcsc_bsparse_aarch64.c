@@ -74,9 +74,17 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       if (l_use_bfdot == 0) {
         l_simd_packed_width = 4;
         l_bf16_mmla_kernel = 1;
+        if ((i_bk != 4) || (i_bn != 2)) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+          return;
+        }
       } else {
         l_simd_packed_width = 8;
         l_bf16_mmla_kernel = 0;
+        if ((i_bk != 2) || (i_bn != 2)) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+          return;
+        }
       }
       /* TODO: Check for A in VNNI and C in VNNI */
       /* TODO: Check provided bk and bn in BCSC format */
