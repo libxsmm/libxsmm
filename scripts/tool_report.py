@@ -24,6 +24,18 @@ import re
 import os
 
 
+def depth(obj):
+    result = 0
+    if not isinstance(obj, str):
+        try:  # iterable?
+            for i in obj:
+                item = obj[i] if isinstance(obj, dict) else i
+                result = max(result, depth(item) + 1)
+        except:  # noqa: E722
+            pass
+    return result
+
+
 def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
@@ -117,11 +129,19 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     database[strbuild] = dict()
                 if category not in database[strbuild]:
                     database[strbuild][category] = dict()
-                if jobname not in database[strbuild][category]:
-                    nentries = nentries + 1
+                if 1 < depth(values):
+                    for i in values:
+                        if i not in database[strbuild][category]:
+                            nentries = nentries + 1
+                        else:
+                            nerrors = nerrors + 1
+                        database[strbuild][category][i] = values[i]
                 else:
-                    nerrors = nerrors + 1
-                database[strbuild][category][jobname] = values
+                    if jobname not in database[strbuild][category]:
+                        nentries = nentries + 1
+                    else:
+                        nerrors = nerrors + 1
+                    database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
     return nentries, nerrors
@@ -418,9 +438,8 @@ def main(args, argd):
         try:
             rint.append(int(rstr[i]))
         except:  # noqa: E722
-            rint.append(
-                rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            )
+            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
+            rint.append(r)
 
     # setup figure
     figure, axes = plot.subplots(
