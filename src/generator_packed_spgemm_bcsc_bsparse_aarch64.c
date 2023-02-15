@@ -70,9 +70,16 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     }
   } else if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     if (io_generated_code->arch == LIBXSMM_AARCH64_NEOV1) {
-      l_simd_packed_width = 4;
-      l_bf16_mmla_kernel = 1;
-      /* Check for A in VNNI and C in VNNI */
+      char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
+      if (l_use_bfdot == 0) {
+        l_simd_packed_width = 4;
+        l_bf16_mmla_kernel = 1;
+      } else {
+        l_simd_packed_width = 8;
+        l_bf16_mmla_kernel = 0;
+      }
+      /* TODO: Check for A in VNNI and C in VNNI */
+      /* TODO: Check provided bk and bn in BCSC format */
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -82,7 +89,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     return;
   }
 
-  if (l_bf16_mmla_kernel == 0) {
+  if ( LIBXSMM_DATATYPE_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -171,9 +178,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     unsigned int l_max_n_blocking = 6;
     unsigned int l_max_m_blocking = 4;
     /* Set blocking factor decisions...  */
-#if 0
-    printf("Max cols is %u\n", l_max_cols);
-#endif
     if (l_simd_packed_iters <= l_max_m_blocking) {
       l_packed_reg_range[0] = l_simd_packed_iters;
       l_packed_reg_block[0] = l_simd_packed_iters;
