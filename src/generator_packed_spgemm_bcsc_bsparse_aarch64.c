@@ -75,14 +75,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
         l_simd_packed_width = 4;
         l_bf16_mmla_kernel = 1;
         if ((i_bk != 4) || (i_bn != 2)) {
-          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
           return;
         }
       } else {
         l_simd_packed_width = 8;
         l_bf16_mmla_kernel = 0;
         if ((i_bk != 2) || (i_bn != 2)) {
-          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
           return;
         }
       }
