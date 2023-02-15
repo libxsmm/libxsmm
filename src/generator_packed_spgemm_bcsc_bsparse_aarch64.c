@@ -100,9 +100,10 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     }
   }
 
+  libxsmm_compute_equalized_blocking( l_simd_packed_iters, l_max_reg_block, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
+
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
-
   l_gp_reg_mapping.gp_reg_param_struct = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_AARCH64_GP_REG_X0;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_AARCH64_GP_REG_X1;
