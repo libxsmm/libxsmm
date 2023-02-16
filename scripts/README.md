@@ -44,7 +44,8 @@ The version information is based on [version.txt](https://github.com/libxsmm/lib
 * `tool_gitprune.sh`: Performs garbage collection of the checked-out repository (`.git folder`). The script does not remove files, i.e., it does not run `git clean`.
 * `tool_inspector.sh`: Wrapper script when running a binary to detect potential memory leaks or data races.
 * `tool_normalize.sh`: Detects simple code patters banned from LIBXSMM's source code.
-* `tool_perflog.sh`: Extracts performance information produced by certain examples (driver code), e.g., [LIBXSMM-DNN tests](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
+* `tool_logperf.sh`: Extracts performance information produced by certain examples (driver code), e.g., [LIBXSMM-DNN tests](https://github.com/libxsmm/libxsmm-dnn/tree/main/tests).
+* `tool_logrept.sh`: Calls `tool_logperf.sh` to summarize performance, updates a database of history to generate a report (`tool_report.py`/`tool_report.sh`), and prints a base64 encoded image.
 * `tool_pexec.sh`: Reads standard input and attempts to execute every line (command) on a per CPU-core basis, which can help to parallelize tests on a per-process basis.
 * `tool_report.py`: Core developer team can collect a performance history of specified CI-collection (Buildkite pipeline).
 * `tool_scan.sh`: Core developer team can scan the repository based on a list of keywords.
