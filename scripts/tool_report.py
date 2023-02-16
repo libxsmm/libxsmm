@@ -24,6 +24,18 @@ import re
 import os
 
 
+def depth(obj):
+    result = 0
+    if not isinstance(obj, str):
+        try:  # iterable?
+            for i in obj:
+                item = obj[i] if isinstance(obj, dict) else i
+                result = max(result, depth(item) + 1)
+        except:  # noqa: E722
+            pass
+    return result
+
+
 def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
@@ -33,6 +45,13 @@ def matchstr(s1, s2, exact=False):
             return s1 in s2
     else:
         return False
+
+
+def matchlst(string, strlst, exact=False):
+    for s in strlst:
+        if matchstr(string, s.lower(), exact):
+            return s
+    return ""
 
 
 def parsename(string):
@@ -55,7 +74,6 @@ def parseval(string):
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors):
-    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
     pattern = (
         r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*)([^\+\-]+)"
     )
@@ -64,7 +82,8 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
         if match and match.group(1) and match.group(2)
     ]
-    if matches:  # attempt to match native format
+    if matches:  # attempt to match native format (telegram)
+        invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
         for match in matches:
             values = [
                 line.group(1)
@@ -86,16 +105,27 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
-    else:  # attempt to match pure JSON section
+    else:  # attempt to match inlined JSON section
         pattern = r"--partition=([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
         matches = [
             match
             for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
             if match and match.group(1) and match.group(2)
         ]
+        if not matches:
+            pattern = (  # JSON-only (not a full logfile)
+                r"^\+\+\+ REPORT ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
+            )
+            matches = [
+                match
+                for match in re.finditer(
+                    pattern, txt, re.MULTILINE | re.DOTALL
+                )
+                if match and match.group(1) and match.group(2)
+            ]
         for match in matches:
             try:
-                clean = (
+                clean = (  # fixup somewhat malformed JSON
                     match.group(2)
                     .replace("'", '"')
                     .replace("True", "true")
@@ -110,11 +140,19 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     database[strbuild] = dict()
                 if category not in database[strbuild]:
                     database[strbuild][category] = dict()
-                if jobname not in database[strbuild][category]:
-                    nentries = nentries + 1
+                if 1 < depth(values):
+                    for i in values:
+                        if i not in database[strbuild][category]:
+                            nentries = nentries + 1
+                        else:
+                            nerrors = nerrors + 1
+                        database[strbuild][category][i] = values[i]
                 else:
-                    nerrors = nerrors + 1
-                database[strbuild][category][jobname] = values
+                    if jobname not in database[strbuild][category]:
+                        nentries = nentries + 1
+                    else:
+                        nerrors = nerrors + 1
+                    database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
     return nentries, nerrors
@@ -133,7 +171,7 @@ def savedb(filename, database, filetime=None):
         tmpfile = tempfile.mkstemp(
             filename.suffix, filename.stem + ".", filename.parent
         )
-        if ".json" == filename.suffix:
+        if ".json" == filename.suffix.lower():
             with os.fdopen(tmpfile[0], "w") as file:
                 json.dump(database, file, indent=2)
                 file.write("\n")  # append newline at EOF
@@ -169,7 +207,11 @@ def divup(a, b):
 
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
-    url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+    url = (
+        f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+        if args.pipeline
+        else ""
+    )
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
     if args.select:
@@ -196,16 +238,19 @@ def main(args, argd):
     accuracy = 1
     match = []
 
-    if args.infile and args.infile.is_file():
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         try:
             with open(args.infile, "r") as file:
                 txt = file.read()
+            if 0 > args.verbosity:
+                print(txt)
         except:  # noqa: E722
             args.infile = None
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if args.filepath == argd.filepath or not args.filepath.is_file()
+            if args.filepath == argd.filepath
+            or not (args.filepath.is_file() or args.filepath.is_fifo())
             else args.filepath
         )
     elif args.infile is None:  # connect to URL
@@ -213,9 +258,9 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    if args.filepath.is_file():
+    if args.filepath.is_file() or args.filepath.is_fifo():
         try:
-            if ".json" == args.filepath.suffix:
+            if ".json" == args.filepath.suffix.lower():
                 with open(args.filepath, "r") as file:
                     database = json.load(file)
             else:  # pickle
@@ -231,10 +276,14 @@ def main(args, argd):
     latest = int(dbkeys[-1]) if dbkeys else 0
 
     # attempt to load weights
-    wfile = args.weights if args.weights.is_file() else argd.weights
-    if wfile.is_file():
+    wfile = (
+        args.weights
+        if (args.weights.is_file() or args.weights.is_fifo())
+        else argd.weights
+    )
+    if wfile.is_file() or wfile.is_fifo():
         try:
-            if ".json" == wfile.suffix:
+            if ".json" == wfile.suffix.lower():
                 with open(wfile, "r") as file:
                     weights = json.load(file)
             else:  # pickle
@@ -260,7 +309,7 @@ def main(args, argd):
     if write:  # write weights if modified (not wfile)
         savedb(args.weights, weights)
 
-    if args.infile and args.infile.is_file():
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
         nbld = (
             args.nbuild
@@ -277,7 +326,7 @@ def main(args, argd):
         )
         if 0 < nentries:
             latest = next
-    elif args.infile is None:  # connect to URL
+    elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -314,7 +363,7 @@ def main(args, argd):
                     for job in jobs
                     if "exit_status" in job and 0 == job["exit_status"]
                 ):
-                    if 2 <= args.verbosity or 0 > args.verbosity:
+                    if 2 <= abs(args.verbosity):
                         if 0 == n:
                             print(f"[{nbuild}]", end="", flush=True)
                         print(".", end="", flush=True)
@@ -337,11 +386,11 @@ def main(args, argd):
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
+        if 2 <= abs(args.verbosity) and 0 < njobs:
             print("[OK]")
 
     # conclude loading data from latest CI
-    if 2 <= args.verbosity or 0 > args.verbosity:
+    if 2 <= abs(args.verbosity):
         if 0 != nerrors:
             y = "ies" if 1 != nerrors else "y"
             print(
@@ -372,19 +421,22 @@ def main(args, argd):
                 dbkeys = list(database.keys())
                 dbsize = retention
         savedb(outfile, database, ofmtime)
-        if not outfile.exists() and (
-            2 <= args.verbosity or 0 > args.verbosity
-        ):
+        if 2 <= abs(args.verbosity) and not outfile.exists():
             print(f"{outfile} database created.")
 
-    # collect categories for template (figure)
-    templidx = (
-        1  # file-based input (just added) shall determine template
-        if (args.infile and args.infile.is_file())
-        else min(inflight + 1, dbsize)
-    )
-    templkey = dbkeys[-templidx] if dbkeys else ""  # string
-    template = database[templkey] if templkey in database else []
+    if dbkeys:  # collect categories for template (figure)
+        if args.nbuild in dbkeys:
+            templkey = dbkeys[args.nbuild]
+        elif not args.infile or not (
+            args.infile.is_file() or args.infile.is_fifo()
+        ):
+            templkey = dbkeys[-min(inflight + 1, dbsize)]
+        else:  # file-based input (just added)
+            templkey = dbkeys[-1]
+        template = database[templkey]
+    else:
+        template = dict()
+
     entries = [
         e  # category (one level below build number)
         for e in template
@@ -404,9 +456,8 @@ def main(args, argd):
         try:
             rint.append(int(rstr[i]))
         except:  # noqa: E722
-            rint.append(
-                rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            )
+            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
+            rint.append(r)
 
     # setup figure
     figure, axes = plot.subplots(
@@ -449,13 +500,34 @@ def main(args, argd):
                 ylabel = slabel = None
                 values = database[build][entry][value]
                 if isinstance(values, dict):
-                    if rslt in values:
-                        yvalue.append(float(values[rslt]) * 1000)
+                    qry = rslt.split(",")
+                    key = matchlst(qry[0], values.keys())
+                    if key:
+                        scale = 1.0 if 2 > len(qry) else float(qry[1])
+                        parsed = parseval(values[key])
+                        unit = values[key][
+                            parsed.end(3) :  # noqa: E203
+                        ].strip()
+                        yvalue.append(float(values[key].split()[0]) * scale)
                         xvalue.append(build)  # string
-                        ylabel = "ms"
-                    if sdo and smry in values:
-                        meanvl.append(float(values[smry]) * 1000)
-                    slabel = "ms"
+                        ylabel = (
+                            (unit if unit else key) if 3 > len(qry) else qry[2]
+                        )
+                    if sdo:
+                        qry = smry.split(",")
+                        key = matchlst(qry[0], values.keys())
+                        if key:
+                            scale = 1.0 if 2 > len(qry) else float(qry[1])
+                            parsed = parseval(values[key])
+                            unit = values[key][
+                                parsed.end(3) :  # noqa: E203
+                            ].strip()
+                            meanvl.append(
+                                float(values[key].split()[0]) * scale
+                            )
+                            slabel = unit if unit else key
+                    if not slabel:
+                        slabel = ylabel
                 else:
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -516,7 +588,7 @@ def main(args, argd):
                 else:  # unit-weight
                     layers[a] = [y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
-            if not yunit:
+            if not yunit and (ylabel or args.result):
                 yunit = (ylabel if ylabel else args.result).split()[0]
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
@@ -623,7 +695,11 @@ def main(args, argd):
             axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
-    figure.suptitle("Performance History", fontsize="x-large")
+    title = "Performance History"
+    addon = "" if args.pipeline else rslt.split(",")[0].upper()
+    figure.suptitle(
+        f"{title} ({addon})" if addon else title, fontsize="x-large"
+    )
     figure.gca().invert_xaxis()
     figure.tight_layout()
 
@@ -672,7 +748,7 @@ def main(args, argd):
         figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
 
         # reduce file size (png) and save figure
-        if ".png" == figout.suffix:
+        if ".png" == figout.suffix.lower():
             figcanvas.draw()  # otherwise the image is empty
             imageraw = figcanvas.tostring_rgb()
             image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
@@ -681,7 +757,7 @@ def main(args, argd):
             image.save(figout, "PNG", optimize=True)
         else:
             figure.savefig(figout)  # save graphics file
-        if 1 == args.verbosity or 0 > args.verbosity:
+        if 1 == abs(args.verbosity):
             print(f"{figout} created.")
 
 
@@ -693,6 +769,7 @@ if __name__ == "__main__":
     except ValueError:
         rdir = here
     base = path.stem
+    figtype = "png"
 
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
@@ -703,7 +780,7 @@ if __name__ == "__main__":
         "--verbosity",
         type=int,
         default=2,
-        help="0: quiet, 1: automation, 2: progress",
+        help="0: quiet, 1: automation, 2: progress, negative: echo input",
     )
     argparser.add_argument(
         "-w",
@@ -723,7 +800,7 @@ if __name__ == "__main__":
         "-g",
         "--figure",
         type=str,
-        default=f"{base}.png",
+        default=f"{base}.{figtype}",
         help="Graphics format, filename, or path",
     )
     argparser.add_argument(
@@ -852,15 +929,17 @@ if __name__ == "__main__":
     )
 
     args = argparser.parse_args()  # 1st pass
-    filepath = rdir / f"{args.pipeline}.json"
-    argparser.set_defaults(filepath=filepath)
-    args = argparser.parse_args()  # 2nd pass
+    if args.pipeline:
+        filepath = rdir / f"{args.pipeline}.json"
+        figure = f"{args.pipeline}.{figtype}"
+        argparser.set_defaults(filepath=filepath, figure=figure)
+        args = argparser.parse_args()  # 2nd pass
     if args.filepath.name:
         weights = args.filepath.with_name(
             f"{args.filepath.stem}.weights{args.filepath.suffix}"
         )
         argparser.set_defaults(weights=weights)
-    args = argparser.parse_args()  # 3rd pass
+        args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
     main(args, argd)
