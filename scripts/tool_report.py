@@ -242,6 +242,8 @@ def main(args, argd):
         try:
             with open(args.infile, "r") as file:
                 txt = file.read()
+            if 0 > args.verbosity:
+                print(txt)
         except:  # noqa: E722
             args.infile = None
             pass
@@ -361,7 +363,7 @@ def main(args, argd):
                     for job in jobs
                     if "exit_status" in job and 0 == job["exit_status"]
                 ):
-                    if 2 <= args.verbosity or 0 > args.verbosity:
+                    if 2 <= abs(args.verbosity):
                         if 0 == n:
                             print(f"[{nbuild}]", end="", flush=True)
                         print(".", end="", flush=True)
@@ -384,11 +386,11 @@ def main(args, argd):
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if (2 <= args.verbosity or 0 > args.verbosity) and 0 < njobs:
+        if 2 <= abs(args.verbosity) and 0 < njobs:
             print("[OK]")
 
     # conclude loading data from latest CI
-    if 2 <= args.verbosity or 0 > args.verbosity:
+    if 2 <= abs(args.verbosity):
         if 0 != nerrors:
             y = "ies" if 1 != nerrors else "y"
             print(
@@ -419,9 +421,7 @@ def main(args, argd):
                 dbkeys = list(database.keys())
                 dbsize = retention
         savedb(outfile, database, ofmtime)
-        if (  # print filename of database
-            2 <= args.verbosity or 0 > args.verbosity
-        ) and not outfile.exists():
+        if 2 <= abs(args.verbosity) and not outfile.exists():
             print(f"{outfile} database created.")
 
     if dbkeys:  # collect categories for template (figure)
@@ -588,7 +588,7 @@ def main(args, argd):
                 else:  # unit-weight
                     layers[a] = [y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
-            if not yunit:
+            if not yunit and (ylabel or args.result):
                 yunit = (ylabel if ylabel else args.result).split()[0]
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
@@ -695,7 +695,11 @@ def main(args, argd):
             axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
-    figure.suptitle("Performance History", fontsize="x-large")
+    title = "Performance History"
+    addon = "" if args.pipeline else rslt.split(",")[0].upper()
+    figure.suptitle(
+        f"{title} ({addon})" if addon else title, fontsize="x-large"
+    )
     figure.gca().invert_xaxis()
     figure.tight_layout()
 
@@ -753,7 +757,7 @@ def main(args, argd):
             image.save(figout, "PNG", optimize=True)
         else:
             figure.savefig(figout)  # save graphics file
-        if 1 == args.verbosity or 0 > args.verbosity:
+        if 1 == abs(args.verbosity):
             print(f"{figout} created.")
 
 
@@ -776,7 +780,7 @@ if __name__ == "__main__":
         "--verbosity",
         type=int,
         default=2,
-        help="0: quiet, 1: automation, 2: progress",
+        help="0: quiet, 1: automation, 2: progress, negative: echo input",
     )
     argparser.add_argument(
         "-w",

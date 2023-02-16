@@ -9,7 +9,7 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-# shellcheck disable=SC2012,SC2181
+# shellcheck disable=SC2012
 
 # check if logfile is given (existence, validity is checked later)
 if [ ! "${LOGFILE}" ]; then
@@ -52,40 +52,30 @@ if [ "${DEBUG_REPORT}" ] && [ "0" != "${DEBUG_REPORT}" ]; then
   echo "*** DEBUG ***"
 fi
 
-# post-process logfile (extract and collect performance results)
-if [ -e "${HERE}/tool_logperf.sh" ]; then
-  if flush "${HERE}/tool_logperf.sh" "${LOGFILE}"; then
-    LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
-  fi
-fi
-
-# consider opting-out from generating artifacts
-if [ "${ARTOFF}" ] && [ "0" != "${ARTOFF}" ]; then LOGDIR=""; fi
-
-# determine artifact directory (logfile was processed, etc)
-if [ "${LOGDIR}" ]; then
-  if [ "${ARTDIR}" ] && [ -d "${ARTDIR}" ]; then
-    LOGDIR=${ARTDIR}
-  else
-    if [ "${HOME}" ] && [ -d "${HOME}/artifacts" ]; then
-      LOGDIR=${HOME}/artifacts
-    elif [ "${HOME_REMOTE}" ] && [ -d "${HOME_REMOTE}/artifacts" ]; then
-      LOGDIR=${HOME_REMOTE}/artifacts
-    elif [ "$(command -v cut)" ] && [ "$(command -v getent)" ]; then
-      ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3) # group
-      ARTROOT=$(getent passwd "${ARTUSER}" 2>/dev/null | cut -d: -f6 2>/dev/null)
-      if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
-      if [ -d "${ARTROOT}/artifacts" ]; then
-        LOGDIR=${ARTROOT}/artifacts
-      else
-        LOGDIR=""
-      fi
+# determine artifact directory
+if [ "${LOGRPTDIR}" ] && [ -d "${LOGRPTDIR}" ]; then
+  LOGDIR=${LOGRPTDIR}
+else
+  if [ "${HOME}" ] && [ -d "${HOME}/artifacts" ]; then
+    LOGDIR=${HOME}/artifacts
+  elif [ "${HOME_REMOTE}" ] && [ -d "${HOME_REMOTE}/artifacts" ]; then
+    LOGDIR=${HOME_REMOTE}/artifacts
+  elif [ "$(command -v cut)" ] && [ "$(command -v getent)" ]; then
+    ARTUSER=$(ls -g "${LOGFILE}" | cut 2>/dev/null -d' ' -f3) # group
+    ARTROOT=$(getent passwd "${ARTUSER}" 2>/dev/null | cut -d: -f6 2>/dev/null)
+    if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
+    if [ -d "${ARTROOT}/artifacts" ]; then
+      LOGDIR=${ARTROOT}/artifacts
+    else
+      LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
     fi
   fi
 fi
 
-# determine prerequisites for report (artifact directory exists, etc)
-if [ "${LOGDIR}" ]; then
+# prerequisites for report and opting-out from artifacts
+if [ "${LOGDIR}" ] && [ "0" != "${LOGRPT}" ] && \
+   [ -e "${HERE}/tool_logperf.sh" ];
+then
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
   if [ "${JOBID}" ] && [ "${STEPNAME}" ]; then
@@ -104,10 +94,11 @@ if [ "${LOGDIR}" ]; then
   fi
 fi
 
-# determine non-default location of weights-file
-if [ "${PPID}" ] && [ "$(command -v ps)" ] && \
+# determine non-default weights-file (optional)
+if [ "${LOGDIR}" ] && [ "${PPID}" ] && \
    [ "$(command -v tail)" ] && \
-   [ "$(command -v sed)" ];
+   [ "$(command -v sed)" ] && \
+   [ "$(command -v ps)" ];
 then
   PARENT_PID=${PPID}
   while [ "${PARENT_PID}" ]; do
@@ -133,21 +124,40 @@ then
   done
 fi
 
-# generate report (report script was found, etc)
+# post-process logfile and generate report
 if [ "${LOGDIR}" ]; then
-  mkdir -p "${LOGDIR}/${JOBID}"
-  OUTPUT=$(${DBSCRT} -f "${DBFILE}" -g "${LOGDIR}/${JOBID}" \
-    -i "${LOGFILE}" -j "${JOBID}" -x -y "${STEPNAME}" -z -v 1)
+  FINPUT=$(flush "${HERE}/tool_logperf.sh" "${LOGFILE}")
   RESULT=$?
+  if [ "0" = "${RESULT}" ] && [ "${FINPUT}" ]; then
+    if [ ! "${LOGRPTSUM}" ] || \
+       [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
+    then
+      SUMMARY=${LOGRPTSUM:-1}
+      SELECT=${STEPNAME}
+      QUERY="ms"
+    else
+      QUERY="${LOGRPTSUM}"
+      SELECT=""
+      SUMMARY=0
+    fi
+    mkdir -p "${LOGDIR}/${JOBID}"
+    OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
+      -f "${DBFILE}" -g "${LOGDIR}/${JOBID}" \
+      -i /dev/stdin -j "${JOBID}" \
+      -x -y "${SELECT}" -r "${QUERY}" \
+      -z -v 1)
+    RESULT=$?
+  fi
   if [ "0" = "${RESULT}" ] && [ "${OUTPUT}" ] && \
      [ "$(command -v base64)" ] && \
      [ "$(command -v cut)" ];
   then
     FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
-    if [ -e "${FIGURE}" ]; then
+    if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
       FIGURE=$(base64 -w0 "${FIGURE}")
       RESULT=$?
       if [ "0" = "${RESULT}" ] && [ "${FIGURE}" ]; then
+        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
         printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
           "${FIGURE}" "${STEPNAME}"
       fi
