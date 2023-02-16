@@ -112,9 +112,20 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
             for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
             if match and match.group(1) and match.group(2)
         ]
+        if not matches:
+            pattern = (  # JSON-only (not a full logfile)
+                r"^\+\+\+ REPORT ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
+            )
+            matches = [
+                match
+                for match in re.finditer(
+                    pattern, txt, re.MULTILINE | re.DOTALL
+                )
+                if match and match.group(1) and match.group(2)
+            ]
         for match in matches:
             try:
-                clean = (
+                clean = (  # fixup somewhat malformed JSON
                     match.group(2)
                     .replace("'", '"')
                     .replace("True", "true")
@@ -493,16 +504,30 @@ def main(args, argd):
                     key = matchlst(qry[0], values.keys())
                     if key:
                         scale = 1.0 if 2 > len(qry) else float(qry[1])
-                        yvalue.append(float(values[key]) * scale)
+                        parsed = parseval(values[key])
+                        unit = values[key][
+                            parsed.end(3) :  # noqa: E203
+                        ].strip()
+                        yvalue.append(float(values[key].split()[0]) * scale)
                         xvalue.append(build)  # string
-                        ylabel = key if 3 > len(qry) else qry[2]
+                        ylabel = (
+                            (unit if unit else key) if 3 > len(qry) else qry[2]
+                        )
                     if sdo:
                         qry = smry.split(",")
                         key = matchlst(qry[0], values.keys())
                         if key:
                             scale = 1.0 if 2 > len(qry) else float(qry[1])
-                            meanvl.append(float(values[key]) * scale)
-                    slabel = ylabel
+                            parsed = parseval(values[key])
+                            unit = values[key][
+                                parsed.end(3) :  # noqa: E203
+                            ].strip()
+                            meanvl.append(
+                                float(values[key].split()[0]) * scale
+                            )
+                            slabel = unit if unit else key
+                    if not slabel:
+                        slabel = ylabel
                 else:
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
