@@ -74,7 +74,6 @@ def parseval(string):
 
 
 def parselog(database, strbuild, jobname, txt, nentries, nerrors):
-    invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
     pattern = (
         r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*)([^\+\-]+)"
     )
@@ -83,7 +82,8 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
         if match and match.group(1) and match.group(2)
     ]
-    if matches:  # attempt to match native format
+    if matches:  # attempt to match native format (telegram)
+        invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
         for match in matches:
             values = [
                 line.group(1)
@@ -105,7 +105,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
-    else:  # attempt to match pure JSON section
+    else:  # attempt to match inlined JSON section
         pattern = r"--partition=([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
         matches = [
             match
@@ -227,7 +227,7 @@ def main(args, argd):
     accuracy = 1
     match = []
 
-    if args.infile and args.infile.is_file():
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         try:
             with open(args.infile, "r") as file:
                 txt = file.read()
@@ -236,7 +236,8 @@ def main(args, argd):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if args.filepath == argd.filepath or not args.filepath.is_file()
+            if args.filepath == argd.filepath
+            or not (args.filepath.is_file() or args.filepath.is_fifo())
             else args.filepath
         )
     elif args.infile is None:  # connect to URL
@@ -244,7 +245,7 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    if args.filepath.is_file():
+    if args.filepath.is_file() or args.filepath.is_fifo():
         try:
             if ".json" == args.filepath.suffix.lower():
                 with open(args.filepath, "r") as file:
@@ -262,8 +263,12 @@ def main(args, argd):
     latest = int(dbkeys[-1]) if dbkeys else 0
 
     # attempt to load weights
-    wfile = args.weights if args.weights.is_file() else argd.weights
-    if wfile.is_file():
+    wfile = (
+        args.weights
+        if (args.weights.is_file() or args.weights.is_fifo())
+        else argd.weights
+    )
+    if wfile.is_file() or wfile.is_fifo():
         try:
             if ".json" == wfile.suffix.lower():
                 with open(wfile, "r") as file:
@@ -291,7 +296,7 @@ def main(args, argd):
     if write:  # write weights if modified (not wfile)
         savedb(args.weights, weights)
 
-    if args.infile and args.infile.is_file():
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
         nbld = (
             args.nbuild
@@ -411,7 +416,9 @@ def main(args, argd):
     if dbkeys:  # collect categories for template (figure)
         if args.nbuild in dbkeys:
             templkey = dbkeys[args.nbuild]
-        elif not args.infile or not args.infile.is_file():
+        elif not args.infile or not (
+            args.infile.is_file() or args.infile.is_fifo()
+        ):
             templkey = dbkeys[-min(inflight + 1, dbsize)]
         else:  # file-based input (just added)
             templkey = dbkeys[-1]
