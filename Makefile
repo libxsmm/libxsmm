@@ -1408,6 +1408,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(MKDIR) -p $(PREFIX)/$(SCRDIR)
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_getenvars.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_cpuinfo.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_logperf.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_logrept.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_report.py $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_pexec.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_test.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 endif
