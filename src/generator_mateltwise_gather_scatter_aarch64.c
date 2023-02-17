@@ -249,7 +249,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_gen
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_dtype_size_reg_mat)) );
           }
         } else {
           libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
@@ -265,7 +265,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_mn_loop_unrolled( libxsmm_gen
         /* Scatter based on index vector im*/
         if (l_is_sve > 0) {
           if (l_is_16bit_gs || l_is_64bit_idx) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_dtype_size_reg_mat)) );
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
@@ -380,6 +380,7 @@ void libxsmm_generator_gather_scatter_rows_aarch64_microkernel( libxsmm_generate
 
   l_m                 = i_mateltwise_desc->m;
   l_n                 = i_mateltwise_desc->n;
+  LIBXSMM_ASSERT(0 != l_vlen);
   l_m_remainder_elements = l_m % l_vlen;
   l_m_trips           = (l_m + l_vlen - 1) / l_vlen;
   l_m_unroll_factor   = l_m_trips;
@@ -554,7 +555,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_dtype_size_reg_mat)) );
           }
         } else {
           libxsmm_generator_gather_scatter_vreg_asimd_aarch64( io_generated_code, i_gp_idx_mat_reg, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_scratch_1,
@@ -570,7 +571,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_mn_loop_unrolled( libxsmm_gen
         /* Scatter based on index vector im*/
         if (l_is_sve > 0) {
           if (l_is_16bit_gs || l_is_64bit_idx) {
-            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(i_dtype_size_reg_mat) );
+            libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(LIBXSMM_CAST_UCHAR(i_dtype_size_reg_mat)) );
             if ((l_is_16bit_gs > 0) && (l_is_64bit_idx> 0)) {
               libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_ZIP1_V, l_aux_vreg, l_aux_vreg, 0, l_aux_vreg, 0, libxsmm_generator_aarch64_get_sve_type(4) );
             }
@@ -684,6 +685,7 @@ void libxsmm_generator_gather_scatter_offs_aarch64_microkernel( libxsmm_generate
 
   l_m                 = i_mateltwise_desc->m;
   l_n                 = i_mateltwise_desc->n;
+  LIBXSMM_ASSERT(0 != l_vlen);
   l_m_remainder_elements = l_m % l_vlen;
   l_m_trips           = (l_m + l_vlen - 1) / l_vlen;
   l_m_unroll_factor   = l_m_trips;

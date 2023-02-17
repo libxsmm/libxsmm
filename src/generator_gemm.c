@@ -32,6 +32,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     l_emu_amx = atoi(l_env_emu_amx);
   }
 
+  if ( ((l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0) && ( io_generated_code->arch >= LIBXSMM_X86_GENERIC ) &&  ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+    return;
+  }
+
   /* for low precision lets make KNL/KNM an AVX2 machine */
   if ( ( ( io_generated_code->arch == LIBXSMM_X86_AVX512_KNM ) || ( io_generated_code->arch == LIBXSMM_X86_AVX512_MIC ) ) &&
        ( ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ||
@@ -263,8 +268,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       }
     }
     /* ASIMD + MMLA */
+    /* TODO: These are not properly implemented yet  */
     if ( io_generated_code->arch < LIBXSMM_AARCH64_SVE128 ) {
+#if 0
       l_vector_length = 4;
+#else
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
+#endif
     }
     /* SVE256 + MMLA */
     else if ( ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 )  ) {
@@ -341,10 +352,21 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
       /* we are fine, we have transpose support */
     }
     if ( ( LIBXSMM_DATATYPE_BF16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) ) {
-      if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
+      if ( (l_aarch64_bfdot == 0 ) && ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 )) {
+        /* we are fine, we do support mmla kernels with B in vnni4t  */
+      } else if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
         return;
       }
+    }
+  }
+
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0 ) {
+    if ( (l_aarch64_bfdot == 0 ) && ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 )) {
+      /* we are fine, we do support mmla kernels with B in vnni4t  */
+    } else if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_VNNI_A) > 0 ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VNNI_B );
+      return;
     }
   }
 

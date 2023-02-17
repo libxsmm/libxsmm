@@ -76,6 +76,22 @@ LIBXSMM_API_INTERN char libxsmm_cpuid_arm_vendor(void) {
 #endif
 
 
+LIBXSMM_API unsigned int libxsmm_cpuid_arm_mmla_gemm_pack_b_to_vnnit_on_stack(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  return 0;
+#else
+  const char *const l_env_b_vnnit_in_stack = getenv("LIBXSMM_AARCH64_MMLA_GEMM_B_INPUT_PACKING_ON_STACK");
+  unsigned int l_b_vnnit_in_stack = 0;
+  if ( 0 == l_env_b_vnnit_in_stack ) {
+  } else {
+    l_b_vnnit_in_stack = atoi(l_env_b_vnnit_in_stack);
+  }
+  return l_b_vnnit_in_stack;
+#endif
+}
+
+
 LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void)
 {
 #if defined(LIBXSMM_PLATFORM_X86)

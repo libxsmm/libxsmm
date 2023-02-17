@@ -14,54 +14,26 @@ import statistics
 import requests
 import argparse
 import datetime
+import tempfile
 import pathlib
 import pickle
 import json
 import PIL
 import sys
 import re
+import os
 
 
-def parselog(database, strbuild, jobname, txt, nentries, nerrors, select=None):
-    for match in (
-        match
-        for match in re.finditer(
-            r"^\+\+\+ PERFORMANCE ([\w-]+)([^+-]+)*", txt, re.MULTILINE
-        )
-        if match and match.group(1) and match.group(2)
-    ):
-        values = [
-            line.group(1)
-            for line in re.finditer(r"([^\n\r]+)", match.group(2))
-            if line
-            and line.group(1)
-            and all(32 <= ord(c) for c in line.group(1))
-        ]
-        if values and not any("syntax error" in v for v in values):
-            category = match.group(1) if not select else select
-            if strbuild not in database:
-                database[strbuild] = dict()
-            if category not in database[strbuild]:
-                database[strbuild][category] = dict()
-            if jobname not in database[strbuild][category]:
-                database[strbuild][category][jobname] = dict()
-            oldval = database[strbuild][category][jobname]
-            if values != oldval:
-                database[strbuild][category][jobname] = values
-                nentries = nentries + 1
-        else:
-            nerrors = nerrors + 1
-    return nentries, nerrors
-
-
-def parseval(string):
-    """
-    Split "string" into "init", "value", and "unit".
-    """
-    return re.match(
-        r"(.+)?(^|[\s:=])([+-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+-]?\d+)?)",
-        string,  # noqa: E501
-    )
+def depth(obj):
+    result = 0
+    if not isinstance(obj, str):
+        try:  # iterable?
+            for i in obj:
+                item = obj[i] if isinstance(obj, dict) else i
+                result = max(result, depth(item) + 1)
+        except:  # noqa: E722
+            pass
+    return result
 
 
 def matchstr(s1, s2, exact=False):
@@ -75,8 +47,150 @@ def matchstr(s1, s2, exact=False):
         return False
 
 
-def num2int(num):
-    return int((num + 0.5) if 0 <= num else (num - 0.5))
+def matchlst(string, strlst, exact=False):
+    for s in strlst:
+        if matchstr(string, s.lower(), exact):
+            return s
+    return ""
+
+
+def parsename(string):
+    parts = string.split()
+    result = parts[0]
+    for name in parts:
+        if re.match(r"[a-zA-Z]+(?:[0-9_\-]+[a-zA-Z]+)*$", name):
+            result = name
+    return result
+
+
+def parseval(string):
+    """
+    Split "string" into "init", "value", and "unit".
+    """
+    return re.match(
+        r"(.+)?(^|[\s:=])([+\-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+\-]?\d+)?)",
+        string,  # noqa: E501
+    )
+
+
+def parselog(database, strbuild, jobname, txt, nentries, nerrors):
+    pattern = (
+        r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*)([^\+\-]+)"
+    )
+    matches = [
+        match
+        for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
+        if match and match.group(1) and match.group(2)
+    ]
+    if matches:  # attempt to match native format (telegram)
+        invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
+        for match in matches:
+            values = [
+                line.group(1)
+                for line in re.finditer(r"([^\n\r]+)", match.group(2))
+                if (line and line.group(1) and 4 >= len(line.group(1).split()))
+                and all(i not in line.group(1) for i in invalid)
+                and all(32 <= ord(c) for c in line.group(1))
+            ]
+            if values:
+                category = match.group(1).replace(",", " ")
+                if strbuild not in database:
+                    database[strbuild] = dict()
+                if category not in database[strbuild]:
+                    database[strbuild][category] = dict()
+                if jobname not in database[strbuild][category]:
+                    nentries = nentries + 1
+                else:
+                    nerrors = nerrors + 1
+                database[strbuild][category][jobname] = values
+            else:
+                nerrors = nerrors + 1
+    else:  # attempt to match inlined JSON section
+        pattern = r"--partition=([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
+        matches = [
+            match
+            for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
+            if match and match.group(1) and match.group(2)
+        ]
+        if not matches:
+            pattern = (  # JSON-only (not a full logfile)
+                r"^\+\+\+ REPORT ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
+            )
+            matches = [
+                match
+                for match in re.finditer(
+                    pattern, txt, re.MULTILINE | re.DOTALL
+                )
+                if match and match.group(1) and match.group(2)
+            ]
+        for match in matches:
+            try:
+                clean = (  # fixup somewhat malformed JSON
+                    match.group(2)
+                    .replace("'", '"')
+                    .replace("True", "true")
+                    .replace("False", "false")
+                )
+                values = json.loads(clean)
+            except:  # noqa: E722
+                values = None
+            if values:
+                category = match.group(1).replace(",", " ")
+                if strbuild not in database:
+                    database[strbuild] = dict()
+                if category not in database[strbuild]:
+                    database[strbuild][category] = dict()
+                if 1 < depth(values):
+                    for i in values:
+                        if i not in database[strbuild][category]:
+                            nentries = nentries + 1
+                        else:
+                            nerrors = nerrors + 1
+                        database[strbuild][category][i] = values[i]
+                else:
+                    if jobname not in database[strbuild][category]:
+                        nentries = nentries + 1
+                    else:
+                        nerrors = nerrors + 1
+                    database[strbuild][category][jobname] = values
+            else:
+                nerrors = nerrors + 1
+    return nentries, nerrors
+
+
+def mtime(filename):
+    try:
+        os.sync()  # flush pending buffers
+        return pathlib.Path(filename).stat().st_mtime if filename else 0
+    except:  # noqa: E722
+        return 0
+
+
+def savedb(filename, database, filetime=None):
+    if not filename.is_dir():
+        tmpfile = tempfile.mkstemp(
+            filename.suffix, filename.stem + ".", filename.parent
+        )
+        if ".json" == filename.suffix.lower():
+            with os.fdopen(tmpfile[0], "w") as file:
+                json.dump(database, file, indent=2)
+                file.write("\n")  # append newline at EOF
+        else:  # pickle
+            with os.fdopen(tmpfile[0], "wb") as file:
+                pickle.dump(database, file)
+        # os.close(tmpfile[0])
+        if not filetime or filetime == mtime(filename):
+            if filename.exists():
+                os.replace(tmpfile[1], filename)
+            else:
+                os.rename(tmpfile[1], filename)
+    else:
+        print("WARNING: no database created or updated.", file=sys.stderr)
+
+
+def num2fix(num, decimals=0):
+    dec = pow(10, decimals)
+    return int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5)) / dec
 
 
 def num2str(num):
@@ -91,26 +205,13 @@ def divup(a, b):
     return int((a + b - 1) / b)
 
 
-def mtime(filename):
-    try:
-        return pathlib.Path(filename).stat().st_mtime if filename else 0
-    except:  # noqa: E722
-        return 0
-
-
-def savedb(filename, database):
-    if ".json" == filename.suffix:
-        with open(filename, "w") as file:
-            json.dump(database, file, indent=2)
-            file.write("\n")  # append newline at EOF
-    else:  # pickle
-        with open(filename, "wb") as file:
-            pickle.dump(database, file)
-
-
 def main(args, argd):
     urlbase = "https://api.buildkite.com/v2/organizations"
-    url = f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+    url = (
+        f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
+        if args.pipeline
+        else ""
+    )
     auth = {"Authorization": f"Bearer {args.token}"} if args.token else None
     params = {"per_page": 100, "page": 1}
     if args.select:
@@ -134,18 +235,22 @@ def main(args, argd):
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     outfile = None
+    accuracy = 1
     match = []
 
-    if args.infile and args.infile.is_file():
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         try:
             with open(args.infile, "r") as file:
                 txt = file.read()
+            if 0 > args.verbosity:
+                print(txt)
         except:  # noqa: E722
             args.infile = None
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
             if args.filepath == argd.filepath
+            or not (args.filepath.is_file() or args.filepath.is_fifo())
             else args.filepath
         )
     elif args.infile is None:  # connect to URL
@@ -153,9 +258,9 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    if args.filepath.is_file():
+    if args.filepath.is_file() or args.filepath.is_fifo():
         try:
-            if ".json" == args.filepath.suffix:
+            if ".json" == args.filepath.suffix.lower():
                 with open(args.filepath, "r") as file:
                     database = json.load(file)
             else:  # pickle
@@ -170,7 +275,41 @@ def main(args, argd):
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
-    if args.infile and args.infile.is_file():
+    # attempt to load weights
+    wfile = (
+        args.weights
+        if (args.weights.is_file() or args.weights.is_fifo())
+        else argd.weights
+    )
+    if wfile.is_file() or wfile.is_fifo():
+        try:
+            if ".json" == wfile.suffix.lower():
+                with open(wfile, "r") as file:
+                    weights = json.load(file)
+            else:  # pickle
+                with open(wfile, "rb") as file:
+                    weights = pickle.load(file)
+        except Exception as error:
+            msg = str(error).replace(": ", f" in {wfile.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
+            exit(1)
+    else:
+        weights = {}
+
+    # populate default weights
+    write = None
+    for build in database.values():
+        for entries in build.values():
+            for key, entry in entries.items():
+                name = parsename(key)
+                if name not in weights:
+                    write = [1.0 for e in entry if ":" in e]
+                    if write:
+                        weights[name] = write
+    if write:  # write weights if modified (not wfile)
+        savedb(args.weights, weights)
+
+    if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
         nbld = (
             args.nbuild
@@ -183,17 +322,11 @@ def main(args, argd):
             else args.infile.stem
         )
         nentries, nerrors = parselog(
-            database,
-            str(nbld),
-            name,
-            txt,
-            nentries,
-            nerrors,
-            select=args.select,
+            database, str(nbld), name, txt, nentries, nerrors
         )
         if 0 < nentries:
             latest = next
-    elif args.infile is None:  # connect to URL
+    elif args.infile is None and url:  # connect to URL
         try:  # proceeed with cached results in case of an error
             builds = requests.get(url, params=params, headers=auth).json()
         except:  # noqa: E722
@@ -209,7 +342,7 @@ def main(args, argd):
         elif not builds:
             print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
-        njobs = 0
+        nbuilds = njobs = 0
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
@@ -225,8 +358,12 @@ def main(args, argd):
                     break
                 jobs = build["jobs"]
                 n = 0
-                for job in (job for job in jobs if 0 == job["exit_status"]):
-                    if 2 <= args.verbosity or 0 > args.verbosity:
+                for job in (
+                    job
+                    for job in jobs
+                    if "exit_status" in job and 0 == job["exit_status"]
+                ):
+                    if 2 <= abs(args.verbosity):
                         if 0 == n:
                             print(f"[{nbuild}]", end="", flush=True)
                         print(".", end="", flush=True)
@@ -236,21 +373,24 @@ def main(args, argd):
                         database, strbuild, job["name"], txt, nentries, nerrors
                     )
                     n = n + 1
-                if 0 == n and nbuild <= latest and "running" != build["state"]:
+                nbuilds = nbuilds + 1
+                njobs = njobs + n
+                if (
+                    0 == n and nbuild <= latest and "running" != build["state"]
+                ) or args.history <= nbuilds:
                     latest = nbuild
                     builds = None
                     break
-                njobs = njobs + n
             if builds and 1 < nbuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
                 builds = None
-        if 0 < njobs and (2 <= args.verbosity or 0 > args.verbosity):
+        if 2 <= abs(args.verbosity) and 0 < njobs:
             print("[OK]")
 
     # conclude loading data from latest CI
-    if 2 <= args.verbosity or 0 > args.verbosity:
+    if 2 <= abs(args.verbosity):
         if 0 != nerrors:
             y = "ies" if 1 != nerrors else "y"
             print(
@@ -263,40 +403,45 @@ def main(args, argd):
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
-    if 0 != nentries and ofmtime == mtime(outfile):
-        if not outfile.exists() and (
-            2 <= args.verbosity or 0 > args.verbosity
-        ):
-            print(f"{outfile} database created.")
+    if 0 != nentries:
         # sort by top-level key if database is to be stored (build number)
         database = dict(sorted(database.items(), key=lambda v: int(v[0])))
         # backup database and prune according to retention
         retention = max(args.retention, args.history)
-        if 0 < retention and (2 * retention) < dbsize:
+        if 0 < retention and (retention + args.history) < dbsize:
             nowutc = datetime.datetime.now(datetime.timezone.utc)
             nowstr = nowutc.strftime("%Y%m%d")  # day
-            retfile = outfile.with_stem(f"{outfile.stem}-{nowstr}")
+            retfile = outfile.with_name(
+                f"{outfile.stem}.{nowstr}{outfile.suffix}"
+            )
             if not retfile.exists():
                 savedb(retfile, database)  # unpruned
                 for key in dbkeys[0 : dbsize - retention]:  # noqa: E203
                     del database[key]
                 dbkeys = list(database.keys())
                 dbsize = retention
-        savedb(outfile, database)
+        savedb(outfile, database, ofmtime)
+        if 2 <= abs(args.verbosity) and not outfile.exists():
+            print(f"{outfile} database created.")
 
-    # collect categories for template (figure)
-    templidx = (
-        1  # file-based input (just added) shall determine template
-        if (args.infile and args.infile.is_file())
-        else min(inflight + 1, dbsize)
-    )
-    templkey = dbkeys[-templidx] if dbkeys else ""  # string
-    template = database[templkey] if templkey in database else []
+    if dbkeys:  # collect categories for template (figure)
+        if args.nbuild in dbkeys:
+            templkey = dbkeys[args.nbuild]
+        elif not args.infile or not (
+            args.infile.is_file() or args.infile.is_fifo()
+        ):
+            templkey = dbkeys[-min(inflight + 1, dbsize)]
+        else:  # file-based input (just added)
+            templkey = dbkeys[-1]
+        template = database[templkey]
+    else:
+        template = dict()
+
     entries = [
         e  # category (one level below build number)
         for e in template
         if not select
-        or any(matchstr(s, e.lower(), exact=args.select_exact) for s in select)
+        or any(matchstr(s, e.lower(), args.select_exact) for s in select)
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
@@ -311,9 +456,8 @@ def main(args, argd):
         try:
             rint.append(int(rstr[i]))
         except:  # noqa: E722
-            rint.append(
-                rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
-            )
+            r = rdef[i] if 1 != i else round(rint[0] * rdef[1] / rdef[0])
+            rint.append(r)
 
     # setup figure
     figure, axes = plot.subplots(
@@ -335,17 +479,19 @@ def main(args, argd):
         for value in (
             v
             for v in template[entry]
-            if not query or any(matchstr(p, v.lower()) for p in query)
+            if not query
+            or eval(args.query_op)(matchstr(p, v.lower()) for p in query)
         ):
             xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
             meanvl = []  # determined by --summary
             sunit = aunit = None
-            analyze = dict()
-            analyze_min = ""
-            analyze_max = ""
+            layers = dict()
+            layers_min = ""
+            layers_max = ""
             if value not in match:
                 match.append(value)
+            # collect data to be plotted
             for build in (
                 b
                 for b in database
@@ -353,55 +499,106 @@ def main(args, argd):
             ):
                 ylabel = slabel = None
                 values = database[build][entry][value]
-                # match --result primarily against "unit"
-                for v in reversed(values):  # match last entry
-                    parsed = parseval(v)
-                    if parsed and parsed.group(3):
-                        unit = v[parsed.end(3) :].strip()  # noqa: E203
-                        ulow = unit.lower()
-                        if not ylabel and matchstr(rslt, ulow):
-                            yvalue.append(float(parsed.group(3)))
-                            xvalue.append(build)  # string
-                            ylabel = unit
-                        if not slabel and sdo and matchstr(smry, ulow):
-                            meanvl.append(float(parsed.group(3)))
-                            slabel = unit
-                # match --result secondary against "init"
-                for v in reversed(values):  # match last entry
-                    parsed = parseval(v)
-                    if parsed and parsed.group(3):
-                        init = (
-                            parsed.group(1).strip(": ")
-                            if parsed.group(1)
-                            else ""  # noqa: E501
+                if isinstance(values, dict):
+                    qry = rslt.split(",")
+                    key = matchlst(qry[0], values.keys())
+                    if key:
+                        scale = 1.0 if 2 > len(qry) else float(qry[1])
+                        parsed = parseval(values[key])
+                        unit = values[key][
+                            parsed.end(3) :  # noqa: E203
+                        ].strip()
+                        yvalue.append(float(values[key].split()[0]) * scale)
+                        xvalue.append(build)  # string
+                        ylabel = (
+                            (unit if unit else key) if 3 > len(qry) else qry[2]
                         )
-                        unit = v[parsed.end(3) :].strip()  # noqa: E203
-                        ulab = unit if unit else init
-                        ilow = init.lower()
-                        if not ylabel and matchstr(rslt, ilow):
-                            yvalue.append(float(parsed.group(3)))
-                            xvalue.append(build)  # string
-                            ylabel = ulab
-                        if not slabel and sdo and matchstr(smry, ilow):
-                            meanvl.append(float(parsed.group(3)))
-                            slabel = ulab
-                        if (not aunit or ulab == aunit) and matchstr(
-                            args.analyze, ilow
-                        ):
-                            if init not in analyze:
-                                if not aunit:
-                                    aunit = ulab
-                                analyze[init] = []
-                            analyze[init].append(float(parsed.group(3)))
+                    if sdo:
+                        qry = smry.split(",")
+                        key = matchlst(qry[0], values.keys())
+                        if key:
+                            scale = 1.0 if 2 > len(qry) else float(qry[1])
+                            parsed = parseval(values[key])
+                            unit = values[key][
+                                parsed.end(3) :  # noqa: E203
+                            ].strip()
+                            meanvl.append(
+                                float(values[key].split()[0]) * scale
+                            )
+                            slabel = unit if unit else key
+                    if not slabel:
+                        slabel = ylabel
+                else:
+                    # match --result primarily against "unit"
+                    for v in reversed(values):  # match last entry
+                        parsed = parseval(v)
+                        if parsed and parsed.group(3):
+                            unit = v[parsed.end(3) :].strip()  # noqa: E203
+                            ulow = unit.lower()
+                            if not ylabel and matchstr(rslt, ulow):
+                                yvalue.append(float(parsed.group(3)))
+                                xvalue.append(build)  # string
+                                ylabel = unit
+                            if not slabel and sdo and matchstr(smry, ulow):
+                                meanvl.append(float(parsed.group(3)))
+                                slabel = unit
+                    # match --result secondary against "init"
+                    for v in reversed(values):  # match last entry
+                        parsed = parseval(v)
+                        if parsed and parsed.group(3):
+                            init = (
+                                parsed.group(1).strip(": ")
+                                if parsed.group(1)
+                                else ""  # noqa: E501
+                            )
+                            unit = v[parsed.end(3) :].strip()  # noqa: E203
+                            ulab = unit if unit else init
+                            ilow = init.lower()
+                            if not ylabel and matchstr(rslt, ilow):
+                                yvalue.append(float(parsed.group(3)))
+                                xvalue.append(build)  # string
+                                ylabel = ulab
+                            if not slabel and sdo and matchstr(smry, ilow):
+                                meanvl.append(float(parsed.group(3)))
+                                slabel = ulab
+                            if (init and (not aunit or ulab == aunit)) and (
+                                not args.analyze
+                                or matchstr(args.analyze, ilow)
+                            ):
+                                if init not in layers:
+                                    if not aunit:
+                                        aunit = ulab
+                                    layers[init] = []
+                                layers[init].append(float(parsed.group(3)))
 
-            if yvalue:  # (re-)reverse and trim collected values
-                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
-                xvalue = xvalue[: -args.history - 1 : -1]  # noqa: E203
-            for a in analyze:  # (re-)reverse and trim collected values
-                analyze[a] = analyze[a][: -args.history - 1 : -1]  # noqa: E203
-
-            if not yunit:
+            j = 0
+            s = args.history
+            wname = value.split()[0]
+            wlist = weights[wname] if wname in weights else []
+            wdflt = True  # only default-weights discovered
+            # (re-)reverse, trim, and apply weights
+            for a in reversed(layers):
+                y = layers[a]
+                s = min(s, len(y))
+                w = wlist[j] if j < len(wlist) else 1.0
+                if 1.0 != w:
+                    layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
+                    if wdflt:
+                        wdflt = False
+                else:  # unit-weight
+                    layers[a] = [y[len(y) - k - 1] for k in range(s)]
+                j = j + 1
+            if not yunit and (ylabel or args.result):
                 yunit = (ylabel if ylabel else args.result).split()[0]
+            # summarize layer into yvalue only in case of non-default weights
+            if (not aunit or aunit == yunit) and not wdflt:
+                yvalue = [sum(y) for y in zip(*layers.values())]
+            elif yvalue:  # (re-)reverse and trim
+                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+            if xvalue and yvalue:  # (re-)reverse and trim
+                xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
+
+            # collect statistics and perform some analysis
             if 0 < args.mean:
                 if meanvl:  # (re-)reverse and trim collected values
                     meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
@@ -412,43 +609,43 @@ def main(args, argd):
                         sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {num2int(mnew)} {sunit}"
+                    label = f"{value} = {num2fix(mnew, accuracy)} {sunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
-                        perc = num2int(100 * (mnew - mold) / mold)
+                        perc = num2fix(100 * (mnew - mold) / mold)
                         label = f"{label} ({num2str(perc)}%)"
 
                         if 0 != perc and args.analyze:
                             vmax = vmin = 0
                             amax = infneg
                             amin = infpos
-                            for a in analyze:
-                                values = [v for v in analyze[a] if 0 < v]
+                            for a in layers:
+                                values = [v for v in layers[a] if 0 < v]
                                 vnew = values[0 : args.mean]  # noqa: E203
                                 vold = values[args.mean :]  # noqa: E203
                                 if vnew and vold:
                                     anew = statistics.geometric_mean(vnew)
                                     aold = statistics.geometric_mean(vold)
-                                    perc = num2int(100 * (anew - aold) / aold)
+                                    perc = num2fix(100 * (anew - aold) / aold)
                                     if perc > amax:
-                                        vmax = num2int(anew)
-                                        analyze_max = a
+                                        vmax = num2fix(anew, accuracy)
+                                        layers_max = a
                                         amax = perc
                                     elif perc < amin:
-                                        vmin = num2int(anew)
-                                        analyze_min = a
+                                        vmin = num2fix(anew, accuracy)
+                                        layers_min = a
                                         amin = perc
                             unit = f" {aunit}" if aunit else ""
-                            if analyze_min and 0 != vmin and infpos != amin:
-                                vlabel = analyze_min.replace(" ", "")
+                            if layers_min and 0 != vmin and infpos != amin:
+                                vlabel = layers_min.replace(" ", "")
                                 label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
                             else:
-                                analyze_min = ""
-                            if analyze_max and 0 != vmax and infneg != amax:
-                                vlabel = analyze_max.replace(" ", "")
+                                layers_min = ""
+                            if layers_max and 0 != vmax and infneg != amax:
+                                vlabel = layers_max.replace(" ", "")
                                 label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
                             else:
-                                analyze_max = ""
+                                layers_max = ""
                 else:
                     label = value
             else:
@@ -456,33 +653,33 @@ def main(args, argd):
 
             # determine size of shared x-axis
             xsize = args.history
-            if smry and yunit == aunit:
+            if smry and (not aunit or aunit == yunit):
                 xsize = min(len(yvalue), xsize)
-            for a in analyze:
-                if a == analyze_min or not smry:
-                    xsize = min(len(analyze[a]), xsize)
-                if a == analyze_max and smry:
-                    xsize = min(len(analyze[a]), xsize)
-            xrange = range(0, xsize)
+            for a in layers:
+                if a == layers_min or not smry:
+                    xsize = min(len(layers[a]), xsize)
+                if a == layers_max and smry:
+                    xsize = min(len(layers[a]), xsize)
+            xrange = range(xsize)
 
             # plot values and legend as collected above
-            if smry and (not aunit or yunit == aunit):
+            if smry and (not aunit or aunit == yunit):
                 axes[i].step(
                     xrange, yvalue[0:xsize], ".:", where="mid", label=label
                 )
                 axes[i].set_ylabel(yunit)
                 n = n + 1
-            for a in analyze:
-                if a == analyze_min or not smry:
-                    yvalue = analyze[a][0:xsize]
+            for a in layers:
+                if a == layers_min or not smry:
+                    yvalue = layers[a][0:xsize]
                     label = f"{value}: {a}"
                     axes[i].step(
                         xrange, yvalue, ".:", where="mid", label=label
                     )  # noqa: E501
                     axes[i].set_ylabel(aunit)
                     n = n + 1
-                if a == analyze_max and smry:
-                    yvalue = analyze[a][0:xsize]
+                if a == layers_max and smry:
+                    yvalue = layers[a][0:xsize]
                     label = f"{value}: {a}"
                     axes[i].step(
                         xrange, yvalue, ".:", where="mid", label=label
@@ -498,7 +695,11 @@ def main(args, argd):
             axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
-    figure.suptitle("Performance History", fontsize="x-large")
+    title = "Performance History"
+    addon = "" if args.pipeline else rslt.split(",")[0].upper()
+    figure.suptitle(
+        f"{title} ({addon})" if addon else title, fontsize="x-large"
+    )
     figure.gca().invert_xaxis()
     figure.tight_layout()
 
@@ -531,10 +732,12 @@ def main(args, argd):
 
         # determine filename from components
         punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
-        figcat = (
+        figcat = re.sub(
+            r"[ ,;]+",
+            "_",
             ""
             if 1 < len(entries) or 0 == len(entries)
-            else f"-{entries[0].translate(punct)}"
+            else f"-{entries[0].translate(punct)}",
         )
         if 0 < len(match):
             clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
@@ -545,17 +748,16 @@ def main(args, argd):
         figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
 
         # reduce file size (png) and save figure
-        if ".png" == figout.suffix:
+        if ".png" == figout.suffix.lower():
             figcanvas.draw()  # otherwise the image is empty
             imageraw = figcanvas.tostring_rgb()
             image = PIL.Image.frombytes("RGB", rint[0:2], imageraw)
-            ncolors = divup(ngraphs + 2, 8) * 8  # back/foreground
-            palette = PIL.Image.Palette.ADAPTIVE
-            image = image.convert("P", palette=palette, colors=ncolors)
+            # avoid Palette.ADAPTIVE, consider back/foreground color
+            image = image.convert("P", colors=ngraphs + 2)
             image.save(figout, "PNG", optimize=True)
         else:
             figure.savefig(figout)  # save graphics file
-        if 1 == args.verbosity or 0 > args.verbosity:
+        if 1 == abs(args.verbosity):
             print(f"{figout} created.")
 
 
@@ -567,6 +769,7 @@ if __name__ == "__main__":
     except ValueError:
         rdir = here
     base = path.stem
+    figtype = "png"
 
     argparser = argparse.ArgumentParser(
         description="Report results from Continuous Integration",
@@ -577,13 +780,13 @@ if __name__ == "__main__":
         "--verbosity",
         type=int,
         default=2,
-        help="0: quiet, 1: automation, 2: progress",
+        help="0: quiet, 1: automation, 2: progress, negative: echo input",
     )
     argparser.add_argument(
         "-w",
-        "--wfile",
+        "--weights",
         type=pathlib.Path,
-        default=rdir / f"{base}-weights.json",
+        default=rdir / f"{base}.weights.json",
         help="Database to load weights",
     )
     argparser.add_argument(
@@ -597,7 +800,7 @@ if __name__ == "__main__":
         "-g",
         "--figure",
         type=str,
-        default=f"{base}.png",
+        default=f"{base}.{figtype}",
         help="Graphics format, filename, or path",
     )
     argparser.add_argument(
@@ -642,6 +845,14 @@ if __name__ == "__main__":
         help="Authorization token",
     )
     argparser.add_argument(
+        "-u",
+        "--query-op",
+        type=str,
+        default="all",
+        choices=["all", "any"],
+        help="Inexact query operator",
+    )
+    argparser.add_argument(
         "-x",
         "--query-exact",
         action="store_true",
@@ -651,7 +862,7 @@ if __name__ == "__main__":
         "-y",
         "--query",
         type=str,
-        default="resnet",
+        default="resnet-50",
         help="Set of values",
     )
     argparser.add_argument(
@@ -685,7 +896,7 @@ if __name__ == "__main__":
         "-b",
         "--summary",
         type=str,
-        default="gflops",
+        default="ms",
         help='If "", plot per-layer history',
     )
     argparser.add_argument(
@@ -703,19 +914,32 @@ if __name__ == "__main__":
         help="Number of builds",
     )
     argparser.add_argument(
-        "-u",
+        "-k",
         "--retention",
         type=int,
         default=60,
         help="Keep history",
     )
     argparser.add_argument(
-        "-k",
+        "-e",
         "--inflight",
         type=int,
         default=2,
         help="Re-scan builds",
     )
-    args = argparser.parse_args()
+
+    args = argparser.parse_args()  # 1st pass
+    if args.pipeline:
+        filepath = rdir / f"{args.pipeline}.json"
+        figure = f"{args.pipeline}.{figtype}"
+        argparser.set_defaults(filepath=filepath, figure=figure)
+        args = argparser.parse_args()  # 2nd pass
+    if args.filepath.name:
+        weights = args.filepath.with_name(
+            f"{args.filepath.stem}.weights{args.filepath.suffix}"
+        )
+        argparser.set_defaults(weights=weights)
+        args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
+
     main(args, argd)

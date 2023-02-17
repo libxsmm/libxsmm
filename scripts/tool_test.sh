@@ -13,11 +13,11 @@
 set -o pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd -P)
+ROOTENV=${HERE}/../.env
 ROOT=${HERE}/..
-ENVDIR=${ROOT}/.env
 
 # TODO: map to CI-provider (abstract environment)
-source "${ENVDIR}/buildkite.env" ""
+source "${ROOTENV}/buildkite.env" ""
 
 MKTEMP=${ROOT}/.mktmp.sh
 MKDIR=$(command -v mkdir)
@@ -98,22 +98,26 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     HOSTPREFIX="${HOSTPREFIX}${HOSTDELIMCHAR}"
   fi
 
-  # setup PARTITIONS for multi-tests
-  if [ ! "${PARTITIONS}" ]; then
-    if [ "${PARTITION}" ]; then
-      PARTITIONS=${PARTITION}
-    else
-      PARTITIONS=none
+  if [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
+    # setup PARTITIONS for multi-tests
+    if [ ! "${PARTITIONS}" ]; then
+      if [ "${PARTITION}" ]; then
+        PARTITIONS=${PARTITION}
+      else
+        PARTITIONS=none
+      fi
     fi
-  fi
-  if [ "random" = "${PARTITION}" ]; then
-    if [ "random" != "${PARTITIONS}" ]; then
-      read -ra ARRAY <<<"${PARTITIONS}"
-      NPARTITIONS=${#ARRAY[@]}
-      PARTITIONS=${ARRAY[RANDOM%NPARTITIONS]}
-    else
-      PARTITIONS=none
+    if [ "random" = "${PARTITION}" ]; then
+      if [ "random" != "${PARTITIONS}" ]; then
+        read -ra ARRAY <<<"${PARTITIONS}"
+        NPARTITIONS=${#ARRAY[@]}
+        PARTITIONS=${ARRAY[RANDOM%NPARTITIONS]}
+      else
+        PARTITIONS=none
+      fi
     fi
+  else
+    PARTITIONS=none
   fi
   export PARTITIONS
   read -ra ARRAY <<<"${PARTITIONS}"
@@ -292,18 +296,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
     COUNT_PRT=0; for PARTITION in ${PARTITIONS}; do
     COUNT_CFG=0; for CONFIG in ${CONFIGS}; do
     # determine configuration files once according to pattern
-    if [[ (! "${CONFIGFILES[*]}") && \
-          ("none" != "${CONFIG}") && \
-          ("${HOSTNAME}" || "${HOSTPREFIX}") ]];
-    then
-      CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
+    if [[ ("none" != "${CONFIG}") && ("${HOSTNAME}" || "${HOSTPREFIX}") ]]; then
+      CONFIGFILES=($(ls -1 "${ROOTENV}/${HOSTNAME}"/${CONFIG}.env 2>/dev/null))
       if [[ ! "${CONFIGFILES[*]}" ]]; then
-        CONFIGFILES=($(ls -1 "${ENVDIR}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
+        CONFIGFILES=($(ls -1 "${ROOTENV}/${HOSTPREFIX}"*/${CONFIG}.env 2>/dev/null))
       fi
       if [[ "${CONFIGFILES[*]}" ]]; then
         CONFIGPAT=$(echo "${CONFIGEX}" | ${SED} "s/[[:space:]][[:space:]]*/\\\|/g" | ${SED} "s/\\\|$//")
         if [ "${CONFIGPAT}" ]; then
-          CONFIGFILES=($(echo "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
+          CONFIGFILES=($(printf "%s\n" "${CONFIGFILES[@]}" | ${SED} "/\(${CONFIGPAT}\)/d"))
         fi
         CONFIGCOUNT=${#CONFIGFILES[@]}
       fi
@@ -350,7 +351,9 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
       else
         CAPTION="${HEADER}"
       fi
-      echo "--- TEST ${CAPTION}"
+      if [ "${CAPTION}" ]; then
+        echo "--- TEST ${CAPTION}"
+      fi
       # prepare temporary script for remote environment/execution
       if [ "${TESTSCRIPT}" ] && [ -e "${TESTSCRIPT}" ]; then
         echo "#!/usr/bin/env bash" >"${TESTSCRIPT}"
@@ -404,7 +407,11 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
             echo "cd ${ABSREM} && make -e \${MAKEJ}" >>"${TESTSCRIPT}"
             echo "RESULT=\$?; if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >>"${TESTSCRIPT}"
           fi
-          echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
+          if [ "none" != "${PARTITION}" ]; then
+            echo "echo \"--- RUN ${PARTITION}\"" >>"${TESTSCRIPT}"
+          else
+            echo "echo -n \"--- \"" >>"${TESTSCRIPT}"
+          fi
           DIRSED=$(echo "${ABSREM}" | ${SED} "${DIRPAT}")
           ${SED} \
             -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail\n${UMASK_CMD}/" -e "s/\(^\|[[:space:]]\)\(\.\|\.\.\)\//\1${DIRSED}\/\2\//" \
