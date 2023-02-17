@@ -309,13 +309,10 @@ def main(args, argd):
     if write:  # write weights if modified (not wfile)
         savedb(args.weights, weights)
 
+    nbuild = int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
-        nbld = (
-            args.nbuild
-            if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
-            else next
-        )
+        nbld = nbuild if (0 < nbuild and nbuild < next) else next
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -346,14 +343,14 @@ def main(args, argd):
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
-                nbuild = build["number"]
-                strbuild = str(nbuild)  # JSON stores integers as string
+                ibuild = build["number"]
+                strbuild = str(ibuild)  # JSON stores integers as string
                 if (  # consider early exit
-                    nbuild <= max(latest - inflight, 1)
+                    ibuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
                 ):
-                    latest = nbuild
+                    latest = ibuild
                     builds = None
                     break
                 jobs = build["jobs"]
@@ -365,7 +362,7 @@ def main(args, argd):
                 ):
                     if 2 <= abs(args.verbosity):
                         if 0 == n:
-                            print(f"[{nbuild}]", end="", flush=True)
+                            print(f"[{ibuild}]", end="", flush=True)
                         print(".", end="", flush=True)
                     log = requests.get(job["log_url"], headers=auth)
                     txt = json.loads(log.text)["content"]
@@ -376,12 +373,12 @@ def main(args, argd):
                 nbuilds = nbuilds + 1
                 njobs = njobs + n
                 if (
-                    0 == n and nbuild <= latest and "running" != build["state"]
+                    0 == n and ibuild <= latest and "running" != build["state"]
                 ) or args.history <= nbuilds:
-                    latest = nbuild
+                    latest = ibuild
                     builds = None
                     break
-            if builds and 1 < nbuild:
+            if builds and 1 < ibuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
@@ -425,8 +422,8 @@ def main(args, argd):
             print(f"{outfile} database created.")
 
     if dbkeys:  # collect categories for template (figure)
-        if args.nbuild in dbkeys:
-            templkey = dbkeys[args.nbuild]
+        if nbuild in dbkeys:
+            templkey = dbkeys[nbuild]
         elif not args.infile or not (
             args.infile.is_file() or args.infile.is_fifo()
         ):
@@ -820,7 +817,7 @@ if __name__ == "__main__":
     argparser.add_argument(
         "-j",
         "--nbuild",
-        type=int,
+        type=str,
         default=None,
         help="Where to insert, not limited to infile",
     )

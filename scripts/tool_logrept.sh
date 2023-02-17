@@ -11,17 +11,33 @@
 ###############################################################################
 # shellcheck disable=SC2012
 
-# check if logfile is given (existence, validity is checked later)
+# check if logfile is given
 if [ ! "${LOGFILE}" ]; then
   if [ "$1" ]; then
     LOGFILE=$1
   else
-    exit 0;
+    LOGFILE=/dev/stdin
+  fi
+fi
+if [ ! -e "${LOGFILE}" ]; then
+  >&2 echo "ERROR: logfile \"${LOGFILE}\" does not exist!"
+  exit 1
+fi
+
+# automatically echoing input
+if [ ! "${LOGRPT_ECHO}" ]; then
+  if [ "/dev/stdin" = "${LOGFILE}" ]; then
+    LOGRPT_ECHO=1
+  else
+    LOGRPT_ECHO=0
   fi
 fi
 
-# location of this script
-HERE=$(cd "$(dirname "$0")" && pwd -P)
+# ensure proper permissions
+if [ "${UMASK}" ]; then
+  UMASK_CMD="umask ${UMASK};"
+  eval "${UMASK_CMD}"
+fi
 
 # based on https://stackoverflow.com/a/20401674/3001239
 flush() {
@@ -34,12 +50,12 @@ flush() {
 }
 
 # optionally enable script debug
-if [ "${DEBUG_REPORT}" ] && [ "0" != "${DEBUG_REPORT}" ]; then
+if [ "${LOGRPT_DEBUG}" ] && [ "0" != "${LOGRPT_DEBUG}" ]; then
   echo "*** DEBUG ***"
-  if [[ ${DEBUG_REPORT} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
     set -xv
   else
-    set "${DEBUG_REPORT}"
+    set "${LOGRPT_DEBUG}"
   fi
   PYTHON=$(command -v python3)
   if [ ! "${PYTHON}" ]; then
@@ -66,20 +82,28 @@ else
     if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
     if [ -d "${ARTROOT}/artifacts" ]; then
       LOGDIR=${ARTROOT}/artifacts
-    else
+    elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
+    else # debug purpose
+      LOGDIR=.
     fi
   fi
 fi
 
 # prerequisites for report and opting-out from artifacts
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 if [ "${LOGDIR}" ] && [ "0" != "${LOGRPT}" ] && \
    [ -e "${HERE}/tool_logperf.sh" ];
 then
   PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ "${PIPELINE}" ] && [ "${JOBID}" ] && [ "${STEPNAME}" ]; then
+  if [ ! "${PIPELINE}" ] && \
+     [ "$(pwd -P)" = "$(cd "$(dirname "${LOGDIR}")" && pwd -P)" ];
+  then
+    PIPELINE="debug"
+  fi
+  if [ "${PIPELINE}" ]; then
     if [ -e "${LOGDIR}/tool_report.sh" ]; then
       DBSCRT=${LOGDIR}/tool_report.sh
     elif [ -e "${HERE}/tool_report.sh" ]; then
@@ -123,41 +147,56 @@ fi
 
 # post-process logfile and generate report
 if [ "${LOGDIR}" ]; then
-  FINPUT=$(flush "${HERE}/tool_logperf.sh" "${LOGFILE}")
-  RESULT=$?
-  if [ "0" = "${RESULT}" ] && [ "${FINPUT}" ]; then
-    if [ ! "${LOGRPTSUM}" ] || \
-       [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
+  if [ ! "${LOGRPTSUM}" ] || \
+     [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
+  then # "telegram" format
+    if ! FINPUT=$(flush "${HERE}/tool_logperf.sh" "${LOGFILE}");
+    then FINPUT=""; fi
+    SUMMARY=${LOGRPTSUM:-1}
+    QUERY=${STEPNAME}
+    RESULT="ms"
+  else # JSON-format
+    if ! FINPUT=$(flush "${HERE}/tool_logperf.sh" -j "${LOGFILE}");
+    then FINPUT=""; fi
+    RESULT=${LOGRPTSUM}
+    SUMMARY=0
+    QUERY=""
+  fi
+  if [ "${FINPUT}" ]; then
+    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
+       [ "$(command -v tail)" ];
     then
-      SUMMARY=${LOGRPTSUM:-1}
-      SELECT=${STEPNAME}
-      QUERY="ms"
+      VERBOSITY=-1
     else
-      QUERY="${LOGRPTSUM}"
-      SELECT=""
-      SUMMARY=0
+      VERBOSITY=1
     fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
-    OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
+    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
       -i /dev/stdin -j "${JOBID}" \
-      -x -y "${SELECT}" -r "${QUERY}" \
-      -z -v 1)
-    RESULT=$?
+      -x -y "${QUERY}" -r "${RESULT}" \
+      -z -v ${VERBOSITY});
+    then
+      OUTPUT=""
+    fi
   fi
-  if [ "0" = "${RESULT}" ] && [ "${OUTPUT}" ] && \
+  if [ "${OUTPUT}" ] && \
      [ "$(command -v base64)" ] && \
      [ "$(command -v cut)" ];
   then
-    FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+    if [ "0" != "$((0>VERBOSITY))" ]; then
+      FIGURE=$(echo "${OUTPUT}" | tail -n1 | cut -d' ' -f1)
+    else
+      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+    fi
     if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-      FIGURE=$(base64 -w0 "${FIGURE}")
-      RESULT=$?
-      if [ "0" = "${RESULT}" ] && [ "${FIGURE}" ]; then
+      if ! FIGURE=$(base64 -w0 "${FIGURE}");
+      then FIGURE=""; fi
+      if [ "${FIGURE}" ]; then
         if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
         printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-          "${FIGURE}" "${STEPNAME}"
+          "${FIGURE}" "${STEPNAME:-${RESULT}}"
       fi
     fi
   fi
