@@ -115,7 +115,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
     }
   }
 
-  libxsmm_compute_equalized_blocking( l_simd_packed_iters, LIBXSMM_UPDIV(32, l_max_cols), &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
+  libxsmm_compute_equalized_blocking( l_simd_packed_iters, LIBXSMM_UPDIV(32, LIBXSMM_MAX(1,l_max_cols)), &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 
   /* define gp register mapping */
   libxsmm_reset_aarch64_gp_reg_mapping( &l_gp_reg_mapping );
@@ -469,7 +469,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   }
 
   /* reset helpers */
-  for ( l_n = 0; l_n < l_n_blocking + 1; l_n++ ) {
+  for ( l_n = 0; l_n < 32; l_n++ ) {
     l_used_column[l_n] = 0;
   }
   /* Iterate over B and mark (paired) columns that are completely empty */
@@ -890,7 +890,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_bfdot_sve(libxsm
   }
 
   /* reset helpers */
-  for ( l_n = 0; l_n < l_n_blocking + 1; l_n++ ) {
+  for ( l_n = 0; l_n < 32; l_n++ ) {
     l_used_column[l_n] = 0;
   }
   /* Iterate over B and mark (paired) columns that are completely empty */
