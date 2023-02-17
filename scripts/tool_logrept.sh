@@ -76,20 +76,17 @@ fi
 if [ "${LOGDIR}" ] && [ "0" != "${LOGRPT}" ] && \
    [ -e "${HERE}/tool_logperf.sh" ];
 then
+  PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ "${JOBID}" ] && [ "${STEPNAME}" ]; then
+  if [ "${PIPELINE}" ] && [ "${JOBID}" ] && [ "${STEPNAME}" ]; then
     if [ -e "${LOGDIR}/tool_report.sh" ]; then
       DBSCRT=${LOGDIR}/tool_report.sh
     elif [ -e "${HERE}/tool_report.sh" ]; then
       DBSCRT=${HERE}/tool_report.sh
     fi
   fi
-  if [ "${DBSCRT}" ]; then
-    PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
-    DBMAIN=${PIPELINE:-tool_report}
-    DBFILE=${LOGDIR}/${DBMAIN}.json
-  else
+  if [ ! "${DBSCRT}" ]; then
     LOGDIR=""
   fi
 fi
@@ -140,9 +137,10 @@ if [ "${LOGDIR}" ]; then
       SELECT=""
       SUMMARY=0
     fi
-    mkdir -p "${LOGDIR}/${JOBID}"
+    mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
     OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
-      -f "${DBFILE}" -g "${LOGDIR}/${JOBID}" \
+      -f "${LOGDIR}/${PIPELINE}.json" \
+      -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
       -i /dev/stdin -j "${JOBID}" \
       -x -y "${SELECT}" -r "${QUERY}" \
       -z -v 1)
