@@ -39,16 +39,6 @@ if [ "${UMASK}" ]; then
   eval "${UMASK_CMD}"
 fi
 
-# based on https://stackoverflow.com/a/20401674/3001239
-flush() {
-  if [ "$(command -v sync)" ]; then sync; fi # e.g., async NFS
-  if [ "$(command -v script)" ]; then
-    script -qefc "$(printf "%q " "$@")" /dev/null
-  else
-    eval "$@"
-  fi
-}
-
 # optionally enable script debug
 if [ "${LOGRPT_DEBUG}" ] && [ "0" != "${LOGRPT_DEBUG}" ]; then
   echo "*** DEBUG ***"
@@ -123,23 +113,27 @@ if [ "${LOGDIR}" ] && [ "${PPID}" ] && \
 then
   PARENT_PID=${PPID}
   while [ "${PARENT_PID}" ]; do
-    PARENT=$(ps -o args= ${PARENT_PID} \
-      | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
-    if [ "${PARENT}" ]; then
-      PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
-      if [ -e "${PARENT}.weights.json" ]; then
-        WEIGHTS=${PARENT}.weights.json
-      else
-        PARENT_DIR=$(dirname "${PARENT}")
-        if [ -e "${PARENT_DIR}/../weights.json" ]; then
-          WEIGHTS=${PARENT_DIR}/../weights.json
+    if PSOUT=$(ps -o args= ${PARENT_PID} 2>/dev/null); then
+      PARENT=$(echo "${PSOUT}" \
+        | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
+      if [ "${PARENT}" ]; then
+        PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
+        if [ -e "${PARENT}.weights.json" ]; then
+          WEIGHTS=${PARENT}.weights.json
+        else
+          PARENT_DIR=$(dirname "${PARENT}" 2>/dev/null)
+          if [ "${PARENT_DIR}" ] && [ -e "${PARENT_DIR}/../weights.json" ]; then
+            WEIGHTS=${PARENT_DIR}/../weights.json
+          fi
         fi
+        if [ "${WEIGHTS}" ]; then # break
+          DBSCRT="${DBSCRT} -w ${WEIGHTS}"
+          PARENT_PID=""
+        fi
+      else # break
+        PARENT_PID=""
       fi
-      if [ "${WEIGHTS}" ]; then
-        DBSCRT="${DBSCRT} -w ${WEIGHTS}"
-        break;
-      fi
-    else
+    else # break
       PARENT_PID=""
     fi
   done
@@ -147,16 +141,18 @@ fi
 
 # post-process logfile and generate report
 if [ "${LOGDIR}" ]; then
+  SYNC=$(command -v sync)
+  ${SYNC} # optional
   if [ ! "${LOGRPTSUM}" ] || \
      [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
   then # "telegram" format
-    if ! FINPUT=$(flush "${HERE}/tool_logperf.sh" "${LOGFILE}");
+    if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
     QUERY=${STEPNAME}
     RESULT="ms"
   else # JSON-format
-    if ! FINPUT=$(flush "${HERE}/tool_logperf.sh" -j "${LOGFILE}");
+    if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
     SUMMARY=0
@@ -164,7 +160,7 @@ if [ "${LOGDIR}" ]; then
   fi
   if [ "${FINPUT}" ]; then
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
-       [ "$(command -v tail)" ];
+       [ "$(command -v sed)" ];
     then
       VERBOSITY=-1
     else
@@ -181,22 +177,26 @@ if [ "${LOGDIR}" ]; then
       OUTPUT=""
     fi
   fi
-  if [ "${OUTPUT}" ] && \
-     [ "$(command -v base64)" ] && \
-     [ "$(command -v cut)" ];
-  then
+  if [ "${OUTPUT}" ]; then
     if [ "0" != "$((0>VERBOSITY))" ]; then
-      FIGURE=$(echo "${OUTPUT}" | tail -n1 | cut -d' ' -f1)
-    else
-      FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+      echo "${OUTPUT}" | sed '$d'
     fi
-    if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-      if ! FIGURE=$(base64 -w0 "${FIGURE}");
-      then FIGURE=""; fi
-      if [ "${FIGURE}" ]; then
-        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-        printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-          "${FIGURE}" "${STEPNAME:-${RESULT}}"
+    if [ "$(command -v base64)" ] && \
+       [ "$(command -v cut)" ];
+    then
+      if [ "0" != "$((0>VERBOSITY))" ]; then
+        FIGURE=$(echo "${OUTPUT}" | sed '$!d' | cut -d' ' -f1)
+      else
+        FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+      fi
+      if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
+        if ! FIGURE=$(base64 -w0 "${FIGURE}");
+        then FIGURE=""; fi
+        if [ "${FIGURE}" ]; then
+          if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+          printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
+            "${FIGURE}" "${STEPNAME:-${RESULT}}"
+        fi
       fi
     fi
   fi

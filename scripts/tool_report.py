@@ -372,9 +372,9 @@ def main(args, argd):
                     n = n + 1
                 nbuilds = nbuilds + 1
                 njobs = njobs + n
-                if (
+                if (  # consider early exit
                     0 == n and ibuild <= latest and "running" != build["state"]
-                ) or args.history <= nbuilds:
+                ) or (args.history <= nbuilds or nbuild == ibuild):
                     latest = ibuild
                     builds = None
                     break
