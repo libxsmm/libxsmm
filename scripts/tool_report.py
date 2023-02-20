@@ -55,6 +55,20 @@ def matchlst(string, strlst, exact=False):
     return ""
 
 
+def matchop(op, value, query, exact=False):
+    if query:
+        if "not" != op:
+            if op:
+                result = eval(op)(matchstr(q, value.lower()) for q in query)
+            else:  # any
+                result = any(matchstr(q, value.lower()) for q in query)
+        else:  # not
+            result = all(not matchstr(q, value.lower()) for q in query)
+    else:
+        result = True
+    return result
+
+
 def parsename(string):
     parts = string.split()
     result = parts[0]
@@ -456,11 +470,8 @@ def main(args, argd):
     else:
         template = dict()
 
-    entries = [
-        e  # category (one level below build number)
-        for e in template
-        if not select
-        or any(matchstr(s, e.lower(), args.select_exact) for s in select)
+    entries = [  # category (one level below build number)
+        e for e in template if matchop("any", e, select, args.select_exact)
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
@@ -489,17 +500,15 @@ def main(args, argd):
         axes = [axes]
 
     # build figure
-    ngraphs = i = 0
+    query_op = args.query_op if args.query_op else argd.query_op
     infneg = float("-inf")
     infpos = float("inf")
+    ngraphs = i = 0
     yunit = None
     for entry in entries:
         n = 0
         for value in (
-            v
-            for v in template[entry]
-            if not query
-            or eval(args.query_op)(matchstr(p, v.lower()) for p in query)
+            v for v in template[entry] if matchop(query_op, v, query)
         ):
             xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
@@ -868,8 +877,8 @@ if __name__ == "__main__":
         "--query-op",
         type=str,
         default="all",
-        choices=["all", "any"],
-        help="Inexact query operator",
+        choices=["all", "any", "not", ""],
+        help="Query operator",
     )
     argparser.add_argument(
         "-x",

@@ -155,8 +155,8 @@ if [ "${LOGDIR}" ]; then
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
     RESULT=${LOGRPTSUM}
+    QUERY=${LOGRPTQRY}
     SUMMARY=0
-    QUERY=""
   fi
   if [ "${FINPUT}" ]; then
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
@@ -171,8 +171,9 @@ if [ "${LOGDIR}" ]; then
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
       -i /dev/stdin -j "${JOBID}" \
-      -x -y "${QUERY}" -r "${RESULT}" \
-      -z -v ${VERBOSITY});
+      -x -y "${QUERY}" -r "${RESULT}" -z \
+      -u "${LOGRPTQOP}" \
+      -v ${VERBOSITY});
     then
       OUTPUT=""
     fi
