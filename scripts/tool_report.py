@@ -18,6 +18,7 @@ import tempfile
 import pathlib
 import pickle
 import json
+import stat
 import PIL
 import sys
 import re
@@ -166,24 +167,72 @@ def mtime(filename):
         return 0
 
 
-def savedb(filename, database, filetime=None):
-    if not filename.is_dir():
-        tmpfile = tempfile.mkstemp(
+def sortdb(database):
+    try:  # treat top-level key as integer (build number)
+        result = dict(sorted(database.items(), key=lambda v: int(v[0])))
+    except ValueError:
+        result = dict(sorted(database.items()))
+    for key, value in result.items():
+        if isinstance(value, dict):
+            result[key] = sortdb(value)
+        else:
+            result[key] = value
+    return result
+
+
+def loaddb(filename):
+    result = dict()
+    if filename.is_file() or filename.is_fifo():
+        try:
+            if ".json" == filename.suffix.lower():
+                with open(filename, "r") as file:
+                    result = json.load(file)
+            else:  # pickle
+                with open(filename, "rb") as file:
+                    result = pickle.load(file)
+        except Exception as error:
+            msg = str(error).replace(": ", f" in {filename.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
+            exit(1)
+    return result
+
+
+def savedb(filename, database, filetime=None, retry=None):
+    if filename and not filename.is_dir():
+        tmpfile = tempfile.mkstemp(  # create temporary file
             filename.suffix, filename.stem + ".", filename.parent
         )
-        if ".json" == filename.suffix.lower():
-            with os.fdopen(tmpfile[0], "w") as file:
-                json.dump(database, file, indent=2)
-                file.write("\n")  # append newline at EOF
-        else:  # pickle
-            with os.fdopen(tmpfile[0], "wb") as file:
-                pickle.dump(database, file)
-        # os.close(tmpfile[0])
-        if not filetime or filetime == mtime(filename):
+        if filename.exists():  # adopt permissions
+            mode = stat.S_IMODE(os.stat(filename).st_mode)
+        else:  # determine permissions
+            umask = os.umask(0o666)
+            os.umask(umask)
+            mode = 0o666 & ~umask
+        os.fchmod(tmpfile[0], mode)
+        max_retry = retry if retry else 1
+        for i in range(max_retry):
+            database = sortdb(database)
+            if ".json" == filename.suffix.lower():
+                with os.fdopen(tmpfile[0], "w") as file:
+                    json.dump(database, file, indent=2)
+                    file.write("\n")  # append newline at EOF
+            else:  # pickle
+                with os.fdopen(tmpfile[0], "wb") as file:
+                    pickle.dump(database, file)
             if filename.exists():
-                os.replace(tmpfile[1], filename)
+                now = mtime(filename) if filetime else 0
+                if not filetime or filetime == now:
+                    os.replace(tmpfile[1], filename)
+                    break
+                elif (i + 1) < max_retry:  # retry
+                    filetime = now
+                    updated = loaddb(filename)
+                    database.update(updated)
+                else:
+                    os.unlink(tmpfile[1])
             else:
                 os.rename(tmpfile[1], filename)
+                break
     else:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
@@ -258,20 +307,7 @@ def main(args, argd):
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    if args.filepath.is_file() or args.filepath.is_fifo():
-        try:
-            if ".json" == args.filepath.suffix.lower():
-                with open(args.filepath, "r") as file:
-                    database = json.load(file)
-            else:  # pickle
-                with open(args.filepath, "rb") as file:
-                    database = pickle.load(file)
-        except Exception as error:
-            msg = str(error).replace(": ", f" in {args.filepath.name}: ")
-            print(f"ERROR: {msg}", file=sys.stderr)
-            exit(1)
-    else:
-        database = dict()
+    database = loaddb(args.filepath)
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
@@ -281,20 +317,8 @@ def main(args, argd):
         if (args.weights.is_file() or args.weights.is_fifo())
         else argd.weights
     )
-    if wfile.is_file() or wfile.is_fifo():
-        try:
-            if ".json" == wfile.suffix.lower():
-                with open(wfile, "r") as file:
-                    weights = json.load(file)
-            else:  # pickle
-                with open(wfile, "rb") as file:
-                    weights = pickle.load(file)
-        except Exception as error:
-            msg = str(error).replace(": ", f" in {wfile.name}: ")
-            print(f"ERROR: {msg}", file=sys.stderr)
-            exit(1)
-    else:
-        weights = {}
+    wfmtime = mtime(wfile)
+    weights = loaddb(wfile)
 
     # populate default weights
     write = None
@@ -306,8 +330,8 @@ def main(args, argd):
                     write = [1.0 for e in entry if ":" in e]
                     if write:
                         weights[name] = write
-    if write:  # write weights if modified (not wfile)
-        savedb(args.weights, weights)
+    if write:  # write weights if modified
+        savedb(args.weights, weights, wfmtime, 2)
 
     nbuild = int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
@@ -401,8 +425,6 @@ def main(args, argd):
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
     if 0 != nentries:
-        # sort by top-level key if database is to be stored (build number)
-        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
         # backup database and prune according to retention
         retention = max(args.retention, args.history)
         if 0 < retention and (retention + args.history) < dbsize:
@@ -417,8 +439,8 @@ def main(args, argd):
                     del database[key]
                 dbkeys = list(database.keys())
                 dbsize = retention
-        savedb(outfile, database, ofmtime)
-        if 2 <= abs(args.verbosity) and not outfile.exists():
+        savedb(outfile, database, ofmtime, 2)
+        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
             print(f"{outfile} database created.")
 
     if dbkeys:  # collect categories for template (figure)
