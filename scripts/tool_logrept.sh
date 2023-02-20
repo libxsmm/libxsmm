@@ -154,8 +154,12 @@ if [ "${LOGDIR}" ]; then
   else # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
+    if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
+      QUERY=${LOGRPTQRY:-${STEPNAME}}
+    else
+      QUERY=${LOGRPTQRY}
+    fi
     RESULT=${LOGRPTSUM}
-    QUERY=${LOGRPTQRY}
     SUMMARY=0
   fi
   if [ "${FINPUT}" ]; then
