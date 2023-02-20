@@ -120,7 +120,7 @@ There are several command line options to customize each of the above steps (`--
 
 The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progress). Default verbosity shows progress (downloading results) whereas "automation" allows to further automate reports, e.g., get the filename of the generated plot (errors are generally printed to `stderr`). Loading a logfile into the database directly can serve two purposes: <span>(1)&#160;debugging</span> the supported format like "telegram" or JSON, and <span>(2)&#160;offline</span> operation. The latter can be also useful if for instance a CI-agents produces a log, i.e., it can load into the database right away. Command line options also allow for "exact placement" (`-j`) by specifying the build number supposed to take the loaded data (data is appended by default, i.e., it is assumed to be a new build or the build number is incremented). In general, data is not duplicated underneath a build of the category or the actual data matches an existing entry.
 
-Examples:
+Examples (omit `-i ""` if downloading results is desired):
 
 * Plot ResNet-50 results from CI-pipeline "tpp-libxsmm" for "clx" systems:  
   `scripts/tool_report.sh -p tpp-libxsmm -i "" -y "resnet-50" -z -s "clx"`.
@@ -132,3 +132,9 @@ Examples:
   `scripts/tool_report.sh -p tpp-plaidml -i "" -r "duration_per_example,1000,ms"`
 * Plot "GFLOP/s" for "conv2d_odd_med" from CI-pipeline "tpp-plaidml":  
   `scripts/tool_report.sh -p tpp-plaidml -i "" -y "conv2d_odd_med" -r "gflop"`
+* Plot "tpp-mlir" pipeline (reference benchmarks):  
+  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "ref"`
+* Plot "tpp-mlir" pipeline (MLIR benchmarks):  
+  `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir"`
+* Plot "tpp-mlir" pipeline (MLIR benchmarks without "simple_copy"):  
+  `scripts/tool_report.sh -p tpp-mlir -i "" -u "not" -y "simply_copy" -r "mlir"`

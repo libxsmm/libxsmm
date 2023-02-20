@@ -292,9 +292,7 @@ def main(args, argd):
         if args.query
         else []
     )
-    smry = args.summary.lower()
     rslt = args.result.lower()
-    sdo = 0 < args.mean and smry != rslt
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     outfile = None
@@ -501,9 +499,11 @@ def main(args, argd):
 
     # build figure
     query_op = args.query_op if args.query_op else argd.query_op
-    vdepth = ngraphs = i = 0
-    infneg = float("-inf")
-    infpos = float("inf")
+    transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
+    split = str.maketrans(transpat, " " * len(transpat))
+    clean = str.maketrans("", "", transpat)
+    ngraphs = i = 0
+    vdepth = 1
     yunit = None
     for entry in entries:
         n = 0
@@ -512,11 +512,9 @@ def main(args, argd):
         ):
             xvalue = []  # build numbers corresponding to yvalue
             yvalue = []  # determined by --result
-            meanvl = []  # determined by --summary
-            sunit = aunit = None
+            aunit = None
             layers = dict()
-            layers_min = ""
-            layers_max = ""
+            legend = value
             if value not in match:
                 match.append(value)
             # collect data to be plotted
@@ -525,9 +523,8 @@ def main(args, argd):
                 for b in database
                 if entry in database[b] and value in database[b][entry]
             ):
-                ylabel = slabel = None
+                ylabel = None
                 values = database[build][entry][value]
-                vdepth = max(vdepth, depth(values))
                 if isinstance(values, dict):
                     qry = rslt.split(",")
                     key = matchlst(qry[0], values.keys())
@@ -541,20 +538,12 @@ def main(args, argd):
                         ylabel = (
                             (unit if unit else key) if 3 > len(qry) else qry[2]
                         )
-                    if sdo:
-                        qry = smry.split(",")
-                        key = matchlst(qry[0], values.keys())
-                        if key:
-                            scale = 1.0 if 2 > len(qry) else float(qry[1])
-                            strval = str(values[key])  # ensure string
-                            parsed = parseval(strval)
-                            unit = strval[
-                                parsed.end(3) :  # noqa: E203
-                            ].strip()
-                            meanvl.append(float(strval.split()[0]) * scale)
-                            slabel = unit if unit else key
-                    if not slabel:
-                        slabel = ylabel
+                        keylst = key.translate(split).split()
+                        detail = [s for s in keylst if s.lower() != qry[0]]
+                        legend = (
+                            f"{value}_{'_'.join(detail)}" if detail else value
+                        )
+                        vdepth = max(vdepth, len(values))
                 else:
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -566,9 +555,6 @@ def main(args, argd):
                                 yvalue.append(float(parsed.group(3)))
                                 xvalue.append(build)  # string
                                 ylabel = unit
-                            if not slabel and sdo and matchstr(smry, ulow):
-                                meanvl.append(float(parsed.group(3)))
-                                slabel = unit
                     # match --result secondary against "init"
                     for v in reversed(values):  # match last entry
                         parsed = parseval(v)
@@ -585,13 +571,7 @@ def main(args, argd):
                                 yvalue.append(float(parsed.group(3)))
                                 xvalue.append(build)  # string
                                 ylabel = ulab
-                            if not slabel and sdo and matchstr(smry, ilow):
-                                meanvl.append(float(parsed.group(3)))
-                                slabel = ulab
-                            if (init and (not aunit or ulab == aunit)) and (
-                                not args.analyze
-                                or matchstr(args.analyze, ilow)
-                            ):
+                            if init and (not aunit or ulab == aunit):
                                 if init not in layers:
                                     if not aunit:
                                         aunit = ulab
@@ -627,92 +607,34 @@ def main(args, argd):
 
             # collect statistics and perform some analysis
             if 0 < args.mean:
-                if meanvl:  # (re-)reverse and trim collected values
-                    meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
-                values = [v for v in (meanvl if meanvl else yvalue) if 0 < v]
+                values = [v for v in yvalue if 0 < v]
                 vnew = values[0 : args.mean]  # noqa: E203
                 if vnew:
-                    if not sunit:
-                        sunit = (slabel if slabel else args.result).split()[0]
                     mnew = statistics.geometric_mean(vnew)
                     vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {num2fix(mnew, accuracy)} {sunit}"
+                    label = f"{legend} = {num2fix(mnew, accuracy)} {yunit}"
                     if vold:
                         mold = statistics.geometric_mean(vold)
                         perc = num2fix(100 * (mnew - mold) / mold)
                         label = f"{label} ({num2str(perc)}%)"
-
-                        if 0 != perc and args.analyze:
-                            vmax = vmin = 0
-                            amax = infneg
-                            amin = infpos
-                            for a in layers:
-                                values = [v for v in layers[a] if 0 < v]
-                                vnew = values[0 : args.mean]  # noqa: E203
-                                vold = values[args.mean :]  # noqa: E203
-                                if vnew and vold:
-                                    anew = statistics.geometric_mean(vnew)
-                                    aold = statistics.geometric_mean(vold)
-                                    perc = num2fix(100 * (anew - aold) / aold)
-                                    if perc > amax:
-                                        vmax = num2fix(anew, accuracy)
-                                        layers_max = a
-                                        amax = perc
-                                    elif perc < amin:
-                                        vmin = num2fix(anew, accuracy)
-                                        layers_min = a
-                                        amin = perc
-                            unit = f" {aunit}" if aunit else ""
-                            if layers_min and 0 != vmin and infpos != amin:
-                                vlabel = layers_min.replace(" ", "")
-                                label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
-                            else:
-                                layers_min = ""
-                            if layers_max and 0 != vmax and infneg != amax:
-                                vlabel = layers_max.replace(" ", "")
-                                label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
-                            else:
-                                layers_max = ""
                 else:
-                    label = value
+                    label = legend
             else:
-                label = value
+                label = legend
 
             # determine size of shared x-axis
             xsize = args.history
-            if smry and (not aunit or aunit == yunit):
+            if not aunit or aunit == yunit:
                 xsize = min(len(yvalue), xsize)
-            for a in layers:
-                if a == layers_min or not smry:
-                    xsize = min(len(layers[a]), xsize)
-                if a == layers_max and smry:
-                    xsize = min(len(layers[a]), xsize)
             xrange = range(xsize)
 
             # plot values and legend as collected above
-            if smry and (not aunit or aunit == yunit):
+            if not aunit or aunit == yunit:
                 axes[i].step(
                     xrange, yvalue[0:xsize], ".:", where="mid", label=label
                 )
                 axes[i].set_ylabel(yunit)
                 n = n + 1
-            for a in layers:
-                if a == layers_min or not smry:
-                    yvalue = layers[a][0:xsize]
-                    label = f"{value}: {a}"
-                    axes[i].step(
-                        xrange, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                    axes[i].set_ylabel(aunit)
-                    n = n + 1
-                if a == layers_max and smry:
-                    yvalue = layers[a][0:xsize]
-                    label = f"{value}: {a}"
-                    axes[i].step(
-                        xrange, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                    axes[i].set_ylabel(aunit)
-                    n = n + 1
             axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
             axes[i].set_xticklabels(xvalue[0:xsize])
         ngraphs = max(ngraphs, n)
@@ -758,17 +680,16 @@ def main(args, argd):
             figstm = argfig.stem if argfig.stem else deffig.stem
 
         # determine filename from components
-        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
         figcat = re.sub(
             r"[ ,;]+",
             "_",
             ""
             if 1 < len(entries) or 0 == len(entries)
-            else f"-{entries[0].translate(punct)}",
+            else f"-{entries[0].translate(clean)}",
         )
         if 0 < len(match):
-            clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
-            parts = [s.lower() for c in clean for s in c.split("_")]
+            match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
+            parts = [s.lower() for c in match for s in c.split("_")]
             fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
         else:
             fixqry = ""
@@ -852,7 +773,13 @@ if __name__ == "__main__":
         help="Where to insert, not limited to infile",
     )
     argparser.add_argument(
-        "-c",
+        "-a",
+        "--token",
+        type=str,
+        help="Authorization token",
+    )
+    argparser.add_argument(
+        "-b",
         "--organization",
         type=str,
         default="intel",
@@ -864,12 +791,6 @@ if __name__ == "__main__":
         type=str,
         default="tpp-libxsmm",
         help="Buildkite pipeline",
-    )
-    argparser.add_argument(
-        "-t",
-        "--token",
-        type=str,
-        help="Authorization token",
     )
     argparser.add_argument(
         "-u",
@@ -913,20 +834,6 @@ if __name__ == "__main__":
         help="Plotted values",
     )
     argparser.add_argument(
-        "-a",
-        "--analyze",
-        type=str,
-        default=None,
-        help='Common property, e.g., "layer"',
-    )
-    argparser.add_argument(
-        "-b",
-        "--summary",
-        type=str,
-        default="ms",
-        help='If "", plot per-layer history',
-    )
-    argparser.add_argument(
         "-m",
         "--mean",
         type=int,
@@ -948,7 +855,7 @@ if __name__ == "__main__":
         help="Keep history",
     )
     argparser.add_argument(
-        "-e",
+        "-c",
         "--inflight",
         type=int,
         default=2,
