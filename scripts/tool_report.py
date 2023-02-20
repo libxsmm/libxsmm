@@ -503,7 +503,6 @@ def main(args, argd):
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
     ngraphs = i = 0
-    vdepth = 1
     yunit = None
     for entry in entries:
         n = 0
@@ -543,7 +542,6 @@ def main(args, argd):
                         legend = (
                             f"{value}_{'_'.join(detail)}" if detail else value
                         )
-                        vdepth = max(vdepth, len(values))
                 else:
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -645,7 +643,7 @@ def main(args, argd):
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
-    addon = "" if 1 >= vdepth else rslt.split(",")[0].upper()
+    addon = "" if 1 >= len(match) else rslt.split(",")[0].upper()
     figure.suptitle(
         f"{title} ({addon})" if addon else title, fontsize="x-large"
     )
