@@ -501,9 +501,9 @@ def main(args, argd):
 
     # build figure
     query_op = args.query_op if args.query_op else argd.query_op
+    vdepth = ngraphs = i = 0
     infneg = float("-inf")
     infpos = float("inf")
-    ngraphs = i = 0
     yunit = None
     for entry in entries:
         n = 0
@@ -527,16 +527,16 @@ def main(args, argd):
             ):
                 ylabel = slabel = None
                 values = database[build][entry][value]
+                vdepth = max(vdepth, depth(values))
                 if isinstance(values, dict):
                     qry = rslt.split(",")
                     key = matchlst(qry[0], values.keys())
                     if key:
                         scale = 1.0 if 2 > len(qry) else float(qry[1])
-                        parsed = parseval(values[key])
-                        unit = values[key][
-                            parsed.end(3) :  # noqa: E203
-                        ].strip()
-                        yvalue.append(float(values[key].split()[0]) * scale)
+                        strval = str(values[key])  # ensure string
+                        parsed = parseval(strval)
+                        unit = strval[parsed.end(3) :].strip()  # noqa: E203
+                        yvalue.append(float(strval.split()[0]) * scale)
                         xvalue.append(build)  # string
                         ylabel = (
                             (unit if unit else key) if 3 > len(qry) else qry[2]
@@ -546,13 +546,12 @@ def main(args, argd):
                         key = matchlst(qry[0], values.keys())
                         if key:
                             scale = 1.0 if 2 > len(qry) else float(qry[1])
-                            parsed = parseval(values[key])
-                            unit = values[key][
+                            strval = str(values[key])  # ensure string
+                            parsed = parseval(strval)
+                            unit = strval[
                                 parsed.end(3) :  # noqa: E203
                             ].strip()
-                            meanvl.append(
-                                float(values[key].split()[0]) * scale
-                            )
+                            meanvl.append(float(strval.split()[0]) * scale)
                             slabel = unit if unit else key
                     if not slabel:
                         slabel = ylabel
@@ -724,7 +723,7 @@ def main(args, argd):
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
-    addon = "" if args.pipeline else rslt.split(",")[0].upper()
+    addon = "" if 1 >= vdepth else rslt.split(",")[0].upper()
     figure.suptitle(
         f"{title} ({addon})" if addon else title, fontsize="x-large"
     )
