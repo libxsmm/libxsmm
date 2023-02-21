@@ -83,7 +83,7 @@ def parseval(string):
     """
     return re.match(
         r"(.+)?(^|[\s:=])([+\-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+\-]?\d+)?)",
-        string,  # noqa: E501
+        string,
     )
 
 
@@ -263,11 +263,11 @@ def divup(a, b):
 
 def mean2label(meanfn, size, values, init, unit, accuracy):
     nonzero = [v for v in values if 0 < v]
-    vnew = values[0:size]  # noqa: E203
+    vnew = values[0:size]
     result = ""
     if vnew:
         mnew = eval(meanfn)(vnew)
-        vold = nonzero[size:]  # noqa: E203
+        vold = nonzero[size:]
         result = f"{init} = {num2fix(mnew, accuracy)} {unit}"
         if vold:
             mold = eval(meanfn)(vold)
@@ -394,8 +394,7 @@ def main(args, argd):
                     and "running" != build["state"]
                     and strbuild in database
                 ):
-                    latest = ibuild
-                    builds = None
+                    latest, builds = ibuild, None
                     break
                 jobs = build["jobs"]
                 n = 0
@@ -419,8 +418,7 @@ def main(args, argd):
                 if (  # consider early exit
                     0 == n and ibuild <= latest and "running" != build["state"]
                 ) or (args.history <= nbuilds or nbuild == ibuild):
-                    latest = ibuild
-                    builds = None
+                    latest, builds = ibuild, None
                     break
             if builds and 1 < ibuild:
                 params["page"] = params["page"] + 1  # next page
@@ -468,8 +466,13 @@ def main(args, argd):
             templkey = dbkeys[nbuild]
         elif not args.infile or not (
             args.infile.is_file() or args.infile.is_fifo()
-        ):
-            templkey = dbkeys[-min(inflight + 1, dbsize)]
+        ):  # find template with most content
+            templkeys = dbkeys[-min(inflight + 1, dbsize) :]  # noqa: E203
+            templkey, s = None, 0
+            for k in templkeys:
+                t = sum(len(v) for v in database[k].values())
+                if s <= t:
+                    templkey, s = k, t
         else:  # file-based input (just added)
             templkey = dbkeys[-1]
         template = database[templkey]
@@ -549,7 +552,7 @@ def main(args, argd):
                         lst = key.translate(split).split()
                         detail = [s for s in lst if s.lower() != qlst[0]]
                         legd.append(
-                            f"{value}_{'_'.join(detail)}" if detail else value
+                            f"{value} {'_'.join(detail)}" if detail else value
                         )
                     if vals:
                         if 1 < len(legd):
@@ -579,7 +582,7 @@ def main(args, argd):
                             init = (
                                 parsed.group(1).strip(": ")
                                 if parsed.group(1)
-                                else ""  # noqa: E501
+                                else ""
                             )
                             unit = v[parsed.end(3) :].strip()  # noqa: E203
                             ulab = unit if unit else init
