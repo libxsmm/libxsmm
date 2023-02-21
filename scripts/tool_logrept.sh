@@ -149,18 +149,20 @@ if [ "${LOGDIR}" ]; then
     if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
     then FINPUT=""; fi
     SUMMARY=${LOGRPTSUM:-1}
-    QUERY=${STEPNAME}
     RESULT="ms"
   else # JSON-format
     if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
     then FINPUT=""; fi
-    if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
-      QUERY=${LOGRPTQRY:-${STEPNAME}}
-    else
-      QUERY=${LOGRPTQRY}
-    fi
     RESULT=${LOGRPTSUM}
     SUMMARY=0
+  fi
+  if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
+    QUERY=${LOGRPTQRY:-${STEPNAME}}
+  else
+    QUERY=${LOGRPTQRY}
+  fi
+  if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
+    EXACT="-e"
   fi
   if [ "${FINPUT}" ]; then
     if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
@@ -174,7 +176,7 @@ if [ "${LOGDIR}" ]; then
     if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} -p ${PIPELINE} \
       -f "${LOGDIR}/${PIPELINE}.json" \
       -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
-      -i /dev/stdin -j "${JOBID}" \
+      -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
       -u "${LOGRPTQOP}" \
       -v ${VERBOSITY});

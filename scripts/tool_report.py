@@ -40,8 +40,10 @@ def depth(obj):
 def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
-            # avoid matching, e.g. "a12" if "a1" is searched
-            return (s1 + ".") in (s2 + ".")
+            if exact:
+                return s1 == s2
+            else:  # avoid matching, e.g. "a12" if "a1" is searched
+                return (s1 + ".") in (s2 + ".")
         else:
             return s1 in s2
     else:
@@ -530,7 +532,7 @@ def main(args, argd):
                 values = database[build][entry][value]
                 if isinstance(values, dict):  # JSON-format
                     qlst = rslt.split(",")
-                    keys = matchlst(qlst[0], values.keys())
+                    keys = matchlst(qlst[0], values.keys(), args.exact)
                     vals, legd = [], []
                     for key in keys:
                         scale = 1.0 if 2 > len(qlst) else float(qlst[1])
@@ -848,6 +850,12 @@ if __name__ == "__main__":
         type=str,
         default="ms",
         help="Plotted values",
+    )
+    argparser.add_argument(
+        "-e",
+        "--exact",
+        action="store_true",
+        help="Match result exactly",
     )
     argparser.add_argument(
         "-m",
