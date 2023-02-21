@@ -112,8 +112,6 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     database[strbuild][category] = dict()
                 if jobname not in database[strbuild][category]:
                     nentries = nentries + 1
-                else:
-                    nerrors = nerrors + 1
                 database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
@@ -156,14 +154,10 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     for i in values:
                         if i not in database[strbuild][category]:
                             nentries = nentries + 1
-                        else:
-                            nerrors = nerrors + 1
                         database[strbuild][category][i] = values[i]
                 else:
                     if jobname not in database[strbuild][category]:
                         nentries = nentries + 1
-                    else:
-                        nerrors = nerrors + 1
                     database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
@@ -655,7 +649,7 @@ def main(args, argd):
             xrange = range(xsize)
 
             # plot values and legend as collected above
-            if not aunit or aunit == yunit:
+            if (not aunit or aunit == yunit) and yvalue:
                 axes[i].step(xrange, yvalue, ".:", where="mid", label=label)
                 axes[i].set_ylabel(yunit)
                 n = n + 1
