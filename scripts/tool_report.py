@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import matplotlib.pyplot as plot
-import statistics
+import statistics  # noqa: F401
 import requests
 import argparse
 import datetime
@@ -49,10 +49,7 @@ def matchstr(s1, s2, exact=False):
 
 
 def matchlst(string, strlst, exact=False):
-    for s in strlst:
-        if matchstr(string, s.lower(), exact):
-            return s
-    return ""
+    return [s for s in strlst if matchstr(string, s.lower(), exact)]
 
 
 def matchop(op, value, query, exact=False):
@@ -266,6 +263,21 @@ def num2str(num):
 
 def divup(a, b):
     return int((a + b - 1) / b)
+
+
+def mean2label(meanfn, size, values, init, unit, accuracy):
+    nonzero = [v for v in values if 0 < v]
+    vnew = values[0:size]  # noqa: E203
+    result = ""
+    if vnew:
+        mnew = eval(meanfn)(vnew)
+        vold = nonzero[size:]  # noqa: E203
+        result = f"{init} = {num2fix(mnew, accuracy)} {unit}"
+        if vold:
+            mold = eval(meanfn)(vold)
+            perc = num2fix(100 * (mnew - mold) / mold)
+            result = f"{result} ({num2str(perc)}%)"
+    return result
 
 
 def main(args, argd):
@@ -504,16 +516,14 @@ def main(args, argd):
     clean = str.maketrans("", "", transpat)
     ngraphs = i = 0
     yunit = None
+    addon = ""
     for entry in entries:
         n = 0
         for value in (
             v for v in template[entry] if matchop(query_op, v, query)
         ):
-            xvalue = []  # build numbers corresponding to yvalue
-            yvalue = []  # determined by --result
-            aunit = None
-            layers = dict()
-            legend = value
+            layers, xvalue, yvalue = dict(), [], []
+            legend, aunit = value, None
             if value not in match:
                 match.append(value)
             # collect data to be plotted
@@ -524,25 +534,38 @@ def main(args, argd):
             ):
                 ylabel = None
                 values = database[build][entry][value]
-                if isinstance(values, dict):
-                    qry = rslt.split(",")
-                    key = matchlst(qry[0], values.keys())
-                    if key:
-                        scale = 1.0 if 2 > len(qry) else float(qry[1])
+                if isinstance(values, dict):  # JSON-format
+                    qlst = rslt.split(",")
+                    keys = matchlst(qlst[0], values.keys())
+                    vals, legd = [], []
+                    for key in keys:
+                        scale = 1.0 if 2 > len(qlst) else float(qlst[1])
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
                         unit = strval[parsed.end(3) :].strip()  # noqa: E203
-                        yvalue.append(float(strval.split()[0]) * scale)
-                        xvalue.append(build)  # string
-                        ylabel = (
-                            (unit if unit else key) if 3 > len(qry) else qry[2]
-                        )
-                        keylst = key.translate(split).split()
-                        detail = [s for s in keylst if s.lower() != qry[0]]
-                        legend = (
+                        vals.append(float(strval.split()[0]) * scale)
+                        if not ylabel:
+                            ylabel = (
+                                (unit if unit else key)
+                                if 3 > len(qlst)
+                                else qlst[2]
+                            )
+                        lst = key.translate(split).split()
+                        detail = [s for s in lst if s.lower() != qlst[0]]
+                        legd.append(
                             f"{value}_{'_'.join(detail)}" if detail else value
                         )
-                else:
+                    if vals:
+                        if 1 < len(legd):
+                            if not addon:
+                                addon = rslt.split(",")[0].upper()
+                            yvalue.append(vals)
+                            legend = legd
+                        else:
+                            yvalue.append(vals[0])
+                            legend = legd[0]
+                        xvalue.append(build)  # string
+                else:  # telegram format
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
                         parsed = parseval(v)
@@ -582,14 +605,14 @@ def main(args, argd):
             wlist = weights[wname] if wname in weights else []
             wdflt = True  # only default-weights discovered
             # (re-)reverse, trim, and apply weights
-            for a in reversed(layers):
+            layerkeys = list(layers.keys())
+            for a in reversed(layerkeys):
                 y = layers[a]
                 s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
                     layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
-                    if wdflt:
-                        wdflt = False
+                    wdflt = False
                 else:  # unit-weight
                     layers[a] = [y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
@@ -605,18 +628,22 @@ def main(args, argd):
 
             # collect statistics and perform some analysis
             if 0 < args.mean:
-                values = [v for v in yvalue if 0 < v]
-                vnew = values[0 : args.mean]  # noqa: E203
-                if vnew:
-                    mnew = statistics.geometric_mean(vnew)
-                    vold = values[args.mean :]  # noqa: E203
-                    label = f"{legend} = {num2fix(mnew, accuracy)} {yunit}"
-                    if vold:
-                        mold = statistics.geometric_mean(vold)
-                        perc = num2fix(100 * (mnew - mold) / mold)
-                        label = f"{label} ({num2str(perc)}%)"
+                fn = (
+                    "statistics.geometric_mean"
+                    if hasattr(statistics, "geometric_mean")
+                    else "statistics.median"
+                )
+                if isinstance(legend, list):
+                    ylist = list(zip(*yvalue))
+                    label = []
+                    for j in range(len(legend)):
+                        y, z = ylist[j], legend[j]
+                        s = mean2label(fn, args.mean, y, z, yunit, accuracy)
+                        label.append(s)
                 else:
-                    label = legend
+                    label = mean2label(
+                        fn, args.mean, yvalue, legend, yunit, accuracy
+                    )
             else:
                 label = legend
 
@@ -624,13 +651,12 @@ def main(args, argd):
             xsize = args.history
             if not aunit or aunit == yunit:
                 xsize = min(len(yvalue), xsize)
+            yvalue = yvalue[0:xsize]
             xrange = range(xsize)
 
             # plot values and legend as collected above
             if not aunit or aunit == yunit:
-                axes[i].step(
-                    xrange, yvalue[0:xsize], ".:", where="mid", label=label
-                )
+                axes[i].step(xrange, yvalue, ".:", where="mid", label=label)
                 axes[i].set_ylabel(yunit)
                 n = n + 1
             axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
@@ -643,7 +669,6 @@ def main(args, argd):
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
-    addon = "" if 1 >= len(match) else rslt.split(",")[0].upper()
     figure.suptitle(
         f"{title} ({addon})" if addon else title, fontsize="x-large"
     )
@@ -678,13 +703,12 @@ def main(args, argd):
             figstm = argfig.stem if argfig.stem else deffig.stem
 
         # determine filename from components
-        figcat = re.sub(
-            r"[ ,;]+",
-            "_",
-            ""
+        figdet = (
+            ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
-            else f"-{entries[0].translate(clean)}",
+            else f"-{entries[0].translate(clean)}"
         )
+        figcat = re.sub(r"[ ,;]+", "_", figdet)
         if 0 < len(match):
             match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
             parts = [s.lower() for c in match for s in c.split("_")]
