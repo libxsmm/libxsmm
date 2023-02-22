@@ -79,6 +79,7 @@
 #include "../src/generator_packed_spgemm.c"
 #include "../src/generator_packed_spgemm_bcsc_bsparse.c"
 #include "../src/generator_packed_spgemm_bcsc_bsparse_aarch64.c"
+#include "../src/generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx.c"
 #include "../src/generator_packed_spgemm_csc_bsparse.c"
 #include "../src/generator_packed_spgemm_csc_bsparse_aarch64.c"
 #include "../src/generator_packed_spgemm_csc_bsparse_avx_avx2_avx512.c"
