@@ -513,9 +513,8 @@ def main(args, argd):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
+    yunit, addon = None, ""
     ngraphs = i = 0
-    yunit = None
-    addon = ""
     for entry in entries:
         n = 0
         for value in (
@@ -598,16 +597,14 @@ def main(args, argd):
                                     layers[init] = []
                                 layers[init].append(float(parsed.group(3)))
 
-            j = 0
-            s = args.history
+            s, j = args.history, 0
             wname = value.split()[0]
             wlist = weights[wname] if wname in weights else []
             wdflt = True  # only default-weights discovered
             # (re-)reverse, trim, and apply weights
             layerkeys = list(layers.keys())
             for a in reversed(layerkeys):
-                y = layers[a]
-                s = min(s, len(y))
+                y, s = layers[a], min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
                     layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
@@ -633,8 +630,7 @@ def main(args, argd):
                     else "statistics.median"
                 )
                 if isinstance(legend, list):
-                    ylist = list(zip(*yvalue))
-                    label = []
+                    ylist, label = list(zip(*yvalue)), []
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
                         s = mean2label(fn, args.mean, y, z, yunit, accuracy)
@@ -681,24 +677,20 @@ def main(args, argd):
         argfig = pathlib.Path(args.figure)
         deffig = pathlib.Path(argd.figure)
         if argfig.is_dir():
-            figloc = argfig
-            figext = deffig.suffix
+            figloc, figext = argfig, deffig.suffix
             figstm = deffig.stem
         elif argfig.suffix[1:] in figtypes.keys():
-            figloc = argfig.parent
-            figext = argfig.suffix
+            figloc, figext = argfig.parent, argfig.suffix
             figstm = argfig.stem
         elif "." == str(argfig.parent):
-            figloc = argfig.parent
+            figloc, figstm = argfig.parent, deffig.stem
             figext = (
                 f".{argfig.name}"
                 if argfig.name in figtypes.keys()
                 else deffig.suffix
             )
-            figstm = deffig.stem
         else:
-            figloc = argfig.parent
-            figext = deffig.suffix
+            figloc, figext = argfig.parent, deffig.suffix
             figstm = argfig.stem if argfig.stem else deffig.stem
 
         # determine filename from components
