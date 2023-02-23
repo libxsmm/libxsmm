@@ -166,6 +166,27 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
     return nentries, nerrors
 
 
+def fname(extlst, in_path, in_dflt, idetail=""):
+    """
+    Build filename from components and list of file-extensions.
+    """
+    if in_path.is_dir():
+        figloc, figext = in_path, in_dflt.suffix
+        figstm = in_dflt.stem
+    elif in_path.suffix[1:] in extlst:
+        figloc, figext = in_path.parent, in_path.suffix
+        figstm = in_path.stem
+    elif "." == str(in_path.parent):
+        figloc, figstm = in_path.parent, in_dflt.stem
+        figext = (
+            f".{in_path.name}" if in_path.name in extlst else in_dflt.suffix
+        )
+    else:
+        figloc, figext = in_path.parent, in_dflt.suffix
+        figstm = in_path.stem if in_path.stem else in_dflt.stem
+    return figloc / f"{figstm}{idetail}{figext}"
+
+
 def mtime(filename):
     try:
         os.sync()  # flush pending buffers
@@ -276,7 +297,7 @@ def mean2label(meanfn, size, values, init, unit, accuracy):
     return result
 
 
-def main(args, argd):
+def main(args, argd, dbfname):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = (
         f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
@@ -318,16 +339,16 @@ def main(args, argd):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if args.filepath == argd.filepath
-            or not (args.filepath.is_file() or args.filepath.is_fifo())
-            else args.filepath
+            if dbfname == argd.filepath
+            or not (dbfname.is_file() or dbfname.is_fifo())
+            else dbfname
         )
     elif args.infile is None:  # connect to URL
-        outfile = args.filepath
+        outfile = dbfname
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    database = loaddb(args.filepath)
+    database = loaddb(dbfname)
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
@@ -351,7 +372,7 @@ def main(args, argd):
                     if write:
                         weights[name] = write
     if write:  # write weights if modified
-        savedb(args.weights, weights, wfmtime, 2)
+        savedb(args.weights, weights, wfmtime, 3)
 
     nbuild = int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
@@ -457,7 +478,7 @@ def main(args, argd):
                     del database[key]
                 dbkeys = list(database.keys())
                 dbsize = retention
-        savedb(outfile, database, ofmtime, 2)
+        savedb(outfile, database, ofmtime, 3)
         if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
             print(f"{outfile} database created.")
 
@@ -671,29 +692,7 @@ def main(args, argd):
     figure.tight_layout()
 
     if 0 < ngraphs:
-        # determine supported file types and filename components
-        figcanvas = figure.canvas
-        figtypes = figcanvas.get_supported_filetypes()
-        argfig = pathlib.Path(args.figure)
-        deffig = pathlib.Path(argd.figure)
-        if argfig.is_dir():
-            figloc, figext = argfig, deffig.suffix
-            figstm = deffig.stem
-        elif argfig.suffix[1:] in figtypes.keys():
-            figloc, figext = argfig.parent, argfig.suffix
-            figstm = argfig.stem
-        elif "." == str(argfig.parent):
-            figloc, figstm = argfig.parent, deffig.stem
-            figext = (
-                f".{argfig.name}"
-                if argfig.name in figtypes.keys()
-                else deffig.suffix
-            )
-        else:
-            figloc, figext = argfig.parent, deffig.suffix
-            figstm = argfig.stem if argfig.stem else deffig.stem
-
-        # determine filename from components
+        # supported file types and filename components
         figdet = (
             ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
@@ -703,11 +702,16 @@ def main(args, argd):
         if 0 < len(match):
             match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
             parts = [s.lower() for c in match for s in c.split("_")]
-            fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
+            figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
         else:
-            fixqry = ""
-        figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
-
+            figqry = figcat
+        figcanvas = figure.canvas
+        figout = fname(
+            extlst=figcanvas.get_supported_filetypes().keys(),
+            in_path=pathlib.Path(args.figure),
+            in_dflt=pathlib.Path(argd.figure),
+            idetail=figqry,
+        )
         # reduce file size (png) and save figure
         if ".png" == figout.suffix.lower():
             figcanvas.draw()  # otherwise the image is empty
@@ -887,12 +891,16 @@ if __name__ == "__main__":
         figure = f"{args.pipeline}.{figtype}"
         argparser.set_defaults(filepath=filepath, figure=figure)
         args = argparser.parse_args()  # 2nd pass
-    if args.filepath.name:
-        weights = args.filepath.with_name(
-            f"{args.filepath.stem}.weights{args.filepath.suffix}"
-        )
+    argd = argparser.parse_args([])
+    dbfname = fname(  # database filename
+        ["json", "pickle", "pkl", "db"],
+        in_path=pathlib.Path(args.filepath),
+        in_dflt=pathlib.Path(argd.filepath),
+    )
+    if dbfname.name:
+        weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
         argparser.set_defaults(weights=weights)
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    main(args, argd)
+    main(args, argd, dbfname)
