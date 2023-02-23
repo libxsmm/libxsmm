@@ -38,7 +38,7 @@ if __name__ == "__main__":
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
 
         template = Template(open(filename, "r").read())
-        if fnmatch.fnmatch(filename, "*.h*"):
+        if fnmatch.fnmatch(filename, "*.h"):
             optional = [", ...", ""][0 <= prefetch]
             substitute = {"MNK_INTERFACE_LIST": ""}
             for mnk in mnklist:
