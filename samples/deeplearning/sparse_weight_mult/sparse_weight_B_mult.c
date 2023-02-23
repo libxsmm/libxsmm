@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
   unsigned int use_bcsc  = ( argc > 8 ) ? atoi(argv[8]) : 0;
   unsigned int use_ac_vnni = (use_bcsc > 0) ? 1 : 0;
   unsigned int vnni_block_size = (use_ac_vnni > 0) ? libxsmm_cpuid_dot_pack_factor(LIBXSMM_DATATYPE_BF16) : 1;
-  unsigned int BC = 32, BK = 16;
+  unsigned int BC = 2, BK = 2;
   unsigned int SBC = 32, SBK = 32;
 
   libxsmm_blasint NB = N / nb;

@@ -719,7 +719,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
             i_gp_reg_mapping->gp_reg_c,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             ((1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width * i_bk) +
-             (1ull * i_packed_width * l_vnni_block_size * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+             (1ull * i_packed_width * l_vnni_block_size * l_n) + (l_p * i_packed_blocking * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
             'y', l_reg0,
             ((i_packed_remainder > 0) && (i_packed_remainder < i_simd_packed_width/2) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 1, 0 );
         /* up-convert bf16 to fp32 */
@@ -737,7 +737,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
               i_gp_reg_mapping->gp_reg_c,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               ((1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width * i_bk) +
-               (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p+1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+               (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p * i_packed_blocking + 1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
               'y', l_reg1,
               ((i_packed_remainder > i_simd_packed_width/2) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 1, 0 );
           /* up-convert bf16 to fp32 */
@@ -860,7 +860,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
           i_gp_reg_mapping->gp_reg_c,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           ((1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width * i_bk) +
-           (1ull * i_packed_width * l_vnni_block_size * l_n) + (l_p * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+           (1ull * i_packed_width * l_vnni_block_size * l_n) + (l_p * i_packed_blocking * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
           'y', l_vec_reg_tmp[0],
           ((i_packed_remainder > 0) && (i_packed_remainder < i_simd_packed_width/2) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0, 1 );
 
@@ -878,7 +878,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
             i_gp_reg_mapping->gp_reg_c,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             ((1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width * i_bk) +
-             (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p+1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+             (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p * i_packed_blocking + 1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
             'y', l_reg1,
             ((i_packed_remainder > i_simd_packed_width/2) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0, 1 );
       }
@@ -1228,7 +1228,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
               i_gp_reg_mapping->gp_reg_c,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               ((1ull * i_n_processed * i_bn * i_packed_width + 1ull * i_packed_processed * i_simd_packed_width * l_vnni_block_size) +
-               (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p * i_packed_blocking+1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
+               (1ull * i_packed_width * l_vnni_block_size * l_n) + ((l_p * i_packed_blocking + 1) * i_simd_packed_width)) * (i_micro_kernel_config->datatype_size_out),
               'y', l_reg1,
               ((i_packed_remainder > i_simd_packed_width/2) && (l_p == i_packed_blocking - 1)) ? l_output_bf16_mask : 0, 0, 1 );
         }
