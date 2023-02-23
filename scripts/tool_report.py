@@ -625,7 +625,8 @@ def main(args, argd, dbfname):
             # (re-)reverse, trim, and apply weights
             layerkeys = list(layers.keys())
             for a in reversed(layerkeys):
-                y, s = layers[a], min(s, len(y))
+                y = layers[a]
+                s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
                     layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
