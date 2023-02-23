@@ -81,5 +81,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
                                                                      const unsigned int                 i_vnni_lo_reg_load,
                                                                      const unsigned int                 i_vnni_hi_reg_load,
                                                                      const unsigned int                 i_vnni_lo_reg_store,
-                                                                     const unsigned int                 i_vnni_hi_reg_store );
+                                                                     const unsigned int                 i_vnni_hi_reg_store,
+                                                                     unsigned int                       i_split_tiles );
+
+
 #endif /* GENERATOR_PACKED_SPGEMM_BCSC_BSPARSE_AVX_AVX2_AVX512_AMX_H */
