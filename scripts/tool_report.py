@@ -282,16 +282,18 @@ def divup(a, b):
     return int((a + b - 1) / b)
 
 
-def mean2label(meanfn, size, values, init, unit, accuracy):
+def mean2label(size, values, init, unit, accuracy):
     nonzero = [v for v in values if 0 < v]
-    vnew = values[0:size]
+    vnew = nonzero[0:size]
     result = ""
     if vnew:
-        mnew = eval(meanfn)(vnew)
-        vold = nonzero[size:]
+        mnew = max(statistics.mean(vnew), statistics.median(vnew))
+        vold, vavg = nonzero[size:], []
+        for i in range(0, len(vold), size):
+            vavg.append(statistics.mean(vold[i : i + size]))  # noqa: E203
         result = f"{init} = {num2fix(mnew, accuracy)} {unit}"
-        if vold:
-            mold = eval(meanfn)(vold)
+        if vavg:
+            mold = statistics.median(vavg)
             perc = num2fix(100 * (mnew - mold) / mold)
             result = f"{result} ({num2str(perc)}%)"
     return result
@@ -482,7 +484,7 @@ def main(args, argd, dbfname):
         if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
             print(f"{outfile} database created.")
 
-    if dbkeys:  # collect categories for template (figure)
+    if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
             templkey = dbkeys[nbuild]
         elif not args.infile or not (
@@ -646,20 +648,15 @@ def main(args, argd, dbfname):
 
             # collect statistics and perform some analysis
             if 0 < args.mean:
-                fn = (
-                    "statistics.geometric_mean"
-                    if hasattr(statistics, "geometric_mean")
-                    else "statistics.median"
-                )
                 if isinstance(legend, list):
                     ylist, label = list(zip(*yvalue)), []
                     for j in range(len(legend)):
                         y, z = ylist[j], legend[j]
-                        s = mean2label(fn, args.mean, y, z, yunit, accuracy)
+                        s = mean2label(args.mean, y, z, yunit, accuracy)
                         label.append(s)
                 else:
                     label = mean2label(
-                        fn, args.mean, yvalue, legend, yunit, accuracy
+                        args.mean, yvalue, legend, yunit, accuracy
                     )
             else:
                 label = legend
