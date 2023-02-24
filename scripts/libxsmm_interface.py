@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
-                substitute["MNK_INTERFACE_LIST"] += "\n\n        INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 optional = [", OPTIONAL", ""][0 < prefetch]
                 bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
@@ -166,7 +166,7 @@ if __name__ == "__main__":
                             + pfsigb
                             + "          END SUBROUTINE"
                         )
-                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE\n"
             # print without trailing newline
             sys.stdout.write(template.safe_substitute(substitute))
     else:

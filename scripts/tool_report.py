@@ -10,7 +10,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import matplotlib.pyplot as plot
-import statistics  # noqa: F401
+import statistics
 import requests
 import argparse
 import datetime
