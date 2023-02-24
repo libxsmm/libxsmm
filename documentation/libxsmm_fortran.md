@@ -10,6 +10,5 @@ css: ../.theme/ford.css
 output_dir: fortran
 src_dir: ../include
 search: true
-page_dir: .
 
 <a href="../fortran/module/libxsmm.html" target="_blank">Reference Documentation</a>

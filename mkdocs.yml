@@ -20,7 +20,7 @@ theme:
     custom_dir: .theme
 
 hooks:
-- .theme/ford.py
+- .theme/ford_hook.py
 
 nav:
 - Overview: index.md
@@ -37,7 +37,7 @@ nav:
   - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
 - Fortran:
-  - Reference: ../fortran/module/libxsmm.html
+  - Reference: fortran/module/libxsmm.html
 - Example Code:
   - Collection: libxsmm_samples.md
 - Machine Learning (ML):

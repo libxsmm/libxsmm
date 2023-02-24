@@ -12,17 +12,15 @@
 import mkdocs.plugins
 import ford
 import io
-import os
 
 
 def on_serve(server, config, builder):
+    docs_dir = config.docs_dir if config else "documentation"
     proj_data, proj_docs, md = None, None, None
 
-    with open(f"{config.docs_dir}/libxsmm_fortran.md", "r") as project_file:
-        proj_docs = project_file.read()
-        directory = os.path.dirname(project_file.name)
+    with open(f"{docs_dir}/libxsmm_fortran.md", "r") as project_file:
         proj_data, proj_docs, md = ford.parse_arguments(
-            {}, proj_docs, directory
+            {}, project_file.read(), docs_dir
         )
 
     if proj_data and proj_docs and md:
@@ -30,3 +28,7 @@ def on_serve(server, config, builder):
             ford.main(proj_data, proj_docs, md)
 
     return server
+
+
+if __name__ == "__main__":
+    on_serve(None, None, None)
