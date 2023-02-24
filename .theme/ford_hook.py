@@ -14,7 +14,7 @@ import ford
 import io
 
 
-def on_serve(server, config, builder):
+def on_pre_build(config):
     docs_dir = config.docs_dir if config else "documentation"
     proj_data, proj_docs, md = None, None, None
 
@@ -27,8 +27,6 @@ def on_serve(server, config, builder):
         with ford.stdout_redirector(io.StringIO()):  # quiet
             ford.main(proj_data, proj_docs, md)
 
-    return server
-
 
 if __name__ == "__main__":
-    on_serve(None, None, None)
+    on_pre_build(None)
