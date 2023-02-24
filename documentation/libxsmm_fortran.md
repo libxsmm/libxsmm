@@ -12,4 +12,4 @@ src_dir: ../include
 search: true
 page_dir: .
 
-Library for specialized tensor operations: [libxsmm.readthedocs.io/](https://libxsmm.readthedocs.io/)
+<a href="../fortran/module/libxsmm.html" target="_blank">Reference Documentation</a>
