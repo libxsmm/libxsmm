@@ -24,8 +24,8 @@ def on_pre_build(config):
         )
 
     if proj_data and proj_docs and md:
-        with ford.stdout_redirector(io.StringIO()):  # quiet
-            ford.main(proj_data, proj_docs, md)
+        #with ford.stdout_redirector(io.StringIO()):  # quiet
+        ford.main(proj_data, proj_docs, md)
 
 
 if __name__ == "__main__":
