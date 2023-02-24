@@ -1,3 +1,5 @@
+# Compatibility
+
 ## Linux
 
 All Linux distributions are meant to be fully supported (please [report](https://github.com/libxsmm/libxsmm/issues/new) any compatibility issue). A shared library (`STATIC=0`) necessarily implies some performance hit when accessing thread-local memory (contended multicore execution). The GNU Compiler Collection prior to v5.1 may imply performance hits in some CPUID-dispatched code paths (non-JIT).
