@@ -237,7 +237,10 @@ void libxsmm_generator_store_2dregblock_aarch64_sve( libxsmm_generated_code* io_
                                                      const unsigned int      i_vec_reg_count,
                                                      const unsigned int      i_m_blocking,
                                                      const unsigned int      i_n_blocking,
-                                                     const unsigned int      i_ld );
+                                                     const unsigned int      i_ld,
+                                                     const libxsmm_datatype  i_inp_datatype,
+                                                     const libxsmm_datatype  i_aux_gp_reg,
+                                                     const unsigned int      i_reduce_on_output  );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_load_prng_state_aarch64_asimd( libxsmm_generated_code* io_generated_code,

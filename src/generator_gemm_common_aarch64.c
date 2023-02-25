@@ -1946,6 +1946,7 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   /* register blocking counter in n */
   unsigned int l_n = 0;
   libxsmm_blasint l_aarch64_bfdot = (libxsmm_blasint)libxsmm_cpuid_arm_use_bfdot();
+  libxsmm_blasint l_aarch64_i8dot = (libxsmm_blasint)libxsmm_cpuid_arm_use_i8dot();
 
   /* preload offset of B */
   if ( io_generated_code->arch == LIBXSMM_AARCH64_V81 || io_generated_code->arch == LIBXSMM_AARCH64_V82 || io_generated_code->arch == LIBXSMM_AARCH64_APPL_M1 ) {
@@ -1975,6 +1976,9 @@ void libxsmm_generator_gemm_aarch64_setup_k_strides( libxsmm_generated_code*    
   if ( (l_aarch64_bfdot != 0) && ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda - i_m_blocking) * 2*i_micro_kernel_config->datatype_size_in );
+  } else if ( (l_aarch64_i8dot != 0) && ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+    libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
+                                             ((long long)i_xgemm_desc->lda - i_m_blocking) * 4*i_micro_kernel_config->datatype_size_in );
   } else {
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, i_gp_reg_mapping->gp_reg_help_0,
                                              ((long long)i_xgemm_desc->lda - i_m_blocking) * i_micro_kernel_config->datatype_size_in );

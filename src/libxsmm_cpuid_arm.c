@@ -110,6 +110,23 @@ LIBXSMM_API int libxsmm_cpuid_arm_use_bfdot(void)
 #endif
 }
 
+LIBXSMM_API int libxsmm_cpuid_arm_use_i8dot(void)
+{
+#if defined(LIBXSMM_PLATFORM_X86)
+  return 0;
+#else
+  const char *const l_env_aarch64_i8dot = getenv("LIBXSMM_AARCH64_USE_I8DOT");
+  int result = 0;
+  if ( 0 == l_env_aarch64_i8dot ) {
+    result = 0;
+  } else {
+    if ( atoi(l_env_aarch64_i8dot) != 0 ) {
+      result = 1;
+    }
+  }
+  return result;
+#endif
+}
 
 LIBXSMM_API int libxsmm_cpuid_arm(libxsmm_cpuid_info* info)
 {

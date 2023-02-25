@@ -537,6 +537,13 @@ void libxsmm_generator_gemm_aarch64_microkernel_sve_a64fx( libxsmm_generated_cod
     l_compute_is_pred = 0;
     l_compute_type = LIBXSMM_AARCH64_SVE_TYPE_H;
     l_k_pack_factor = 2; /* BFDOT works on BF16 tuples */
+  } else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_A_UNSIGNED) == 0) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_B_UNSIGNED) > 0) ) {
+      l_compute_instr = LIBXSMM_AARCH64_INSTR_SVE_USDOT_V;
+    }
+    l_compute_is_pred = 0;
+    l_compute_type = LIBXSMM_AARCH64_SVE_TYPE_B;
+    l_k_pack_factor = 4; /* I8DOT works on I8 4-plets */
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
@@ -1064,10 +1071,11 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
   /* TODO (MMLA) */
   /* enable MMLA settings for supported datatypes */
   char l_use_bfdot = (char)libxsmm_cpuid_arm_use_bfdot();
+  char l_use_i8dot = (char)libxsmm_cpuid_arm_use_i8dot();
   char l_use_mmla = 0;
 
-  if ( l_use_bfdot == 0 ) {
-    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( l_use_bfdot == 0 ) {
       l_use_mmla = 1;
       if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) {
         if (i_xgemm_desc->k % 8 == 0) {
@@ -1081,8 +1089,13 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
         l_k_blocking = 8;
         l_k_stride = 8;
       }
+    } else {
+      l_k_blocking = 8;
+      l_k_stride = 2;
     }
-    else if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+  }
+  if ( LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( l_use_i8dot == 0 ) {
       l_use_mmla = 1;
       if ( io_generated_code->arch == LIBXSMM_AARCH64_SVE256 || io_generated_code->arch == LIBXSMM_AARCH64_NEOV1 ) {
         if (i_xgemm_desc->k % 16 == 0) {
@@ -1096,11 +1109,9 @@ void libxsmm_generator_gemm_aarch64_kloop( libxsmm_generated_code*            io
         l_k_blocking = 16;
         l_k_stride = 16;
       }
-    }
-  } else {
-    if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      l_k_blocking = 8;
-      l_k_stride = 2;
+    } else {
+      l_k_blocking = 16;
+      l_k_stride = 4;
     }
   }
 
@@ -1220,24 +1231,26 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
 
   /* TODO (MMLA): clean up integration */
   int l_use_bfdot = libxsmm_cpuid_arm_use_bfdot();
+  int l_use_i8dot = libxsmm_cpuid_arm_use_i8dot();
   char l_use_mmla = 0;
   char l_mmla_zip_row_major = 0;
 
   /* enable MMLA settings for supported datatypes */
-  if ( (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ||
-       (LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+  if ( LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
     if ( l_use_bfdot == 0 ) {
       l_use_mmla = 1;
     } else {
       l_use_mmla = 0;
     }
-
-    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      a_vnni_factor = ( l_use_mmla == 0 ) ? 2 : 4;
+    a_vnni_factor = ( l_use_mmla == 0 ) ? 2 : 4;
+  }
+  if ( LIBXSMM_DATATYPE_I8   == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( l_use_i8dot == 0 ) {
+      l_use_mmla = 1;
+    } else {
+      l_use_mmla = 0;
     }
-    if (LIBXSMM_DATATYPE_I8 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-      a_vnni_factor = ( l_use_mmla == 0 ) ? 4 : 8;
-    }
+    a_vnni_factor = ( l_use_mmla == 0 ) ? 4 : 8;
   }
 
   /* define gp register mapping */
@@ -1510,7 +1523,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
               libxsmm_generator_load_2dregblock_aarch64_sve( io_generated_code, (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                              l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
                                                              l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
-                                                             (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags) );
+                                                             (l_is_i8f32_gemm > 0) ? 1 : (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags) );
             }
           }
         } else {
@@ -1653,7 +1666,10 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                 l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking  );
             libxsmm_generator_store_2dregblock_aarch64_sve( io_generated_code, (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ), l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_0,
                                                             l_micro_kernel_config.vector_length, l_micro_kernel_config.vector_reg_count, l_m_blocking, l_n_blocking,
-                                                            l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out );
+                                                            l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out,
+                                                            ( l_is_i8f32_gemm > 0 ) ? (libxsmm_datatype)LIBXSMM_DATATYPE_I32 : (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ),
+                                                            ( l_is_i8f32_gemm > 0 ) ? l_gp_reg_mapping.gp_reg_scf : 0,
+                                                            ( l_is_i8f32_gemm > 0 ) ? (LIBXSMM_GEMM_FLAG_BETA_0 & l_xgemm_desc_opa->flags) == 0 ? 1 : 0 : 0 );
           }
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );

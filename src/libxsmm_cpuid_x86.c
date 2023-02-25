@@ -509,29 +509,32 @@ LIBXSMM_API int libxsmm_cpuid_dot_pack_factor(libxsmm_datatype in_dtype)
     result = 1;
   }
 # else
+  if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
+       (in_dtype == LIBXSMM_DATATYPE_F16)  ||
+       (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
+    result = 4;
+  } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
+              (in_dtype == LIBXSMM_DATATYPE_HF8) ||
+              (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
+    result = 8;
+  } else {
+    result = 1;
+  }
   if ( libxsmm_cpuid_arm_use_bfdot() != 0 ) {
     if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
-         (in_dtype == LIBXSMM_DATATYPE_F16)  ||
-         (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
+         (in_dtype == LIBXSMM_DATATYPE_F16)  ) {
       result = 2;
     } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
-                (in_dtype == LIBXSMM_DATATYPE_HF8) ||
-                (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
+                (in_dtype == LIBXSMM_DATATYPE_HF8)  ) {
       result = 4;
-    } else {
-      result = 1;
     }
-  } else {
-    if ( (in_dtype == LIBXSMM_DATATYPE_BF16) ||
-         (in_dtype == LIBXSMM_DATATYPE_F16)  ||
-         (in_dtype == LIBXSMM_DATATYPE_I16)     ) {
-      result = 4;
+  }
+  if ( libxsmm_cpuid_arm_use_i8dot() != 0 ) {
+    if ( in_dtype == LIBXSMM_DATATYPE_I16 ) {
+      result = 2;
     } else if ( (in_dtype == LIBXSMM_DATATYPE_BF8) ||
-                (in_dtype == LIBXSMM_DATATYPE_HF8) ||
                 (in_dtype == LIBXSMM_DATATYPE_I8)     ) {
-      result = 8;
-    } else {
-      result = 1;
+      result = 4;
     }
   }
 #endif
