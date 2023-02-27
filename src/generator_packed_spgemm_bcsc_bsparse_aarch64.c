@@ -145,6 +145,14 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   /* open asm */
   libxsmm_aarch64_instruction_open_stream( io_generated_code, 0xf );
 
+  /* ensuring compatibility with X86 AMX */
+  if ( !( (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) == 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
+          (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) != 0))    ) ) {
+    /* close asm */
+    libxsmm_aarch64_instruction_close_stream( io_generated_code, 0xf );
+    return;
+  }
+
   /* implementing load from struct */
   if ( ((LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI & i_xgemm_desc->flags) == LIBXSMM_GEMM_FLAG_USE_XGEMM_ABI) ) {
     /* RDI holds the pointer to the strcut, so lets first move this one into R15 */
