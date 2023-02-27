@@ -2125,14 +2125,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_bcsc->gemm->datatype);
           char tc_option[16] = { 0 };
           /* query tileconfig options */
-          if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.gemm->flags) != 0) &&
-              ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.gemm->flags) == 0) ) {
+          if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) != 0) &&
+              ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) == 0) ) {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "conf");
-          } else if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.gemm->flags) == 0) &&
-                     ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.gemm->flags) != 0) ) {
+          } else if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) == 0) &&
+                     ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) != 0) ) {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "rele");
-          } else if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.gemm->flags) != 0) &&
-                     ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.gemm->flags) != 0)) {
+          } else if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) != 0) &&
+                     ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->flags) != 0)) {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "none");
           } else {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
