@@ -10,13 +10,13 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import matplotlib.pyplot as plot
-import statistics
 import requests
 import argparse
 import datetime
 import tempfile
 import pathlib
 import pickle
+import numpy
 import json
 import stat
 import PIL
@@ -267,35 +267,47 @@ def savedb(filename, database, filetime=None, retry=None):
 
 def num2fix(num, decimals=0):
     dec = pow(10, decimals)
-    return int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5)) / dec
-
-
-def num2str(num):
-    return (
-        f"$\pm${num}"  # noqa: W605
-        if 0 == num
-        else (f"+{num}" if 0 < num else f"{num}")
-    )
+    nom = int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5))
+    return nom / dec if 1 != dec else nom
 
 
 def divup(a, b):
     return int((a + b - 1) / b)
 
 
-def mean2label(size, values, init, unit, accuracy):
-    nonzero = [v for v in values if 0 < v]
-    vnew = nonzero[0:size]
-    result = ""
-    if vnew:
-        mnew = max(statistics.mean(vnew), statistics.median(vnew))
-        vold, vavg = nonzero[size:], []
-        for i in range(0, len(vold), size):
-            vavg.append(statistics.mean(vold[i : i + size]))  # noqa: E203
-        result = f"{init} = {num2fix(mnew, accuracy)} {unit}"
-        if vavg:
-            mold = statistics.median(vavg)
-            perc = num2fix(100 * (mnew - mold) / mold)
-            result = f"{result} ({num2str(perc)}%)"
+def trend(values):
+    a, rd, cv = values[0] if values else 0, None, None
+    if 2 < len(values):
+        m, b = numpy.polyfit(range(1, len(values)), values[1:], deg=1)
+        if 0 != b:
+            rd = (a - b) / b
+            avg = numpy.mean(values[1:])
+            if 0 != avg:
+                cv = numpy.std(values[1:]) / avg
+    return (a, rd, cv)
+
+
+def bold(s):
+    c, t = s.count("$"), s.replace("%", r"\%")
+    return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+
+
+def label(values, init, unit, accuracy):
+    vnew, rd, cv = trend(values)
+    result = f"{num2fix(vnew, accuracy)} {unit}"
+    if rd:
+        inum = num2fix(100 * rd)
+        if cv:
+            bnum = num2fix(100 * cv)
+            anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
+            if bnum < abs(inum):
+                result = f"{init} = {bold(result)} ({anum}>{bnum}%)"
+            else:
+                expr = f"{anum}" + r"$\leq$" + f"{bnum}%"
+                result = f"{init} = {result} ({expr})"
+        else:
+            sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
+            result = f"{init} = {result} ({sign}{inum}%)"
     return result
 
 
@@ -451,17 +463,6 @@ def main(args, argd, dbfname):
         if 2 <= abs(args.verbosity) and 0 < njobs:
             print("[OK]")
 
-    # conclude loading data from latest CI
-    if 2 <= abs(args.verbosity):
-        if 0 != nerrors:
-            y = "ies" if 1 != nerrors else "y"
-            print(
-                f"WARNING: ignored {nerrors} erroneous entr{y}!",
-                file=sys.stderr,
-            )
-        y = "ies" if 1 != nentries else "y"
-        print(f"Found {nentries} new entr{y}.")
-
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
@@ -483,6 +484,18 @@ def main(args, argd, dbfname):
         savedb(outfile, database, ofmtime, 3)
         if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
             print(f"{outfile} database created.")
+
+    # conclude loading data from latest CI
+    if 2 <= abs(args.verbosity):
+        if 0 != nerrors:
+            y = "ies" if 1 != nerrors else "y"
+            print(
+                f"WARNING: ignored {nerrors} erroneous entr{y}!",
+                file=sys.stderr,
+            )
+        y = "ies" if 1 != nentries else "y"
+        print(f"Database consists of {dbsize} builds.")
+        print(f"Found {nentries} new entr{y}.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -646,20 +659,15 @@ def main(args, argd, dbfname):
             if xvalue and yvalue:  # (re-)reverse and trim
                 xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
 
-            # collect statistics and perform some analysis
-            if 0 < args.mean:
-                if isinstance(legend, list):
-                    ylist, label = list(zip(*yvalue)), []
-                    for j in range(len(legend)):
-                        y, z = ylist[j], legend[j]
-                        s = mean2label(args.mean, y, z, yunit, accuracy)
-                        label.append(s)
-                else:
-                    label = mean2label(
-                        args.mean, yvalue, legend, yunit, accuracy
-                    )
+            # perform some trend analysis
+            if isinstance(legend, list):
+                ylist, ylabel = list(zip(*yvalue)), []
+                for j in range(len(legend)):
+                    y, z = ylist[j], legend[j]
+                    s = label(y, z, yunit, accuracy)
+                    ylabel.append(s)
             else:
-                label = legend
+                ylabel = label(yvalue, legend, yunit, accuracy)
 
             # determine size of shared x-axis
             xsize = args.history
@@ -670,7 +678,7 @@ def main(args, argd, dbfname):
 
             # plot values and legend as collected above
             if (not aunit or aunit == yunit) and yvalue:
-                axes[i].step(xrange, yvalue, ".:", where="mid", label=label)
+                axes[i].step(xrange, yvalue, ".:", where="mid", label=ylabel)
                 axes[i].set_ylabel(yunit)
                 n = n + 1
             axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
@@ -856,10 +864,10 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-m",
-        "--mean",
+        "--inflight",
         type=int,
-        default=3,
-        help="Number of samples",
+        default=2,
+        help="Rescan builds",
     )
     argparser.add_argument(
         "-n",
@@ -874,13 +882,6 @@ if __name__ == "__main__":
         type=int,
         default=60,
         help="Keep history",
-    )
-    argparser.add_argument(
-        "-c",
-        "--inflight",
-        type=int,
-        default=2,
-        help="Re-scan builds",
     )
 
     args = argparser.parse_args()  # 1st pass
