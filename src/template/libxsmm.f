@@ -571,8 +571,8 @@
             INTEGER(C_LONG_LONG), INTENT(IN) :: nbytes
             LOGICAL(C_BOOL), INTENT(OUT)     :: diff
           END SUBROUTINE
-        END INTERFACE$MNK_INTERFACE_LIST
-
+        END INTERFACE
+$MNK_INTERFACE_LIST
         INTERFACE libxsmm_ptr0
           MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
           MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0

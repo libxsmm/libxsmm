@@ -38,7 +38,7 @@ if __name__ == "__main__":
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
 
         template = Template(open(filename, "r").read())
-        if fnmatch.fnmatch(filename, "*.h*"):
+        if fnmatch.fnmatch(filename, "*.h"):
             optional = [", ...", ""][0 <= prefetch]
             substitute = {"MNK_INTERFACE_LIST": ""}
             for mnk in mnklist:
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 "CONTIGUOUS": ["", ", CONTIGUOUS"][1 < ifversion],
             }
             if mnklist:
-                substitute["MNK_INTERFACE_LIST"] += "\n\n        INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 optional = [", OPTIONAL", ""][0 < prefetch]
                 bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
@@ -166,7 +166,7 @@ if __name__ == "__main__":
                             + pfsigb
                             + "          END SUBROUTINE"
                         )
-                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE\n"
             # print without trailing newline
             sys.stdout.write(template.safe_substitute(substitute))
     else:

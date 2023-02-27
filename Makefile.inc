@@ -680,14 +680,15 @@ ifneq (0,$(ANALYZE))
   ifeq (1,$(ANALYZE))
     ANALYZE_FLAG := $(call ctest,$(CC),--analyze)
     ifeq (,$(ANALYZE_FLAG))
-      EFLAGS += $(call ctest,$(CC),-fanalyzer)
+      ECFLAGS += $(call ctest,$(CC),-fanalyzer)
     else
       EFLAGS += $(ANALYZE_FLAG)
+      FORCE_CXX := 1
     endif
   else
+    FORCE_CXX := 1
     PEDANTIC := 3
   endif
-  FORCE_CXX := 1
 endif
 
 ifneq (,$(filter-out 0,$(FORCE_CXX)))

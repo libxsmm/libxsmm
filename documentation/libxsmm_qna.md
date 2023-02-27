@@ -1,3 +1,5 @@
+# Q&A
+
 ## What is the background of the name "LIBXSMM"?
 The "MM" stands for Matrix Multiplication, and the "S" clarifies the working domain i.e., Small Matrix Multiplication. The latter also means the name is neither a variation of "MXM" nor an eXtreme Small Matrix Multiplication but rather about Intel Architecture (x86) - and no, the library is [64&#8209;bit only](https://github.com/libxsmm/libxsmm/issues/103#issuecomment-256887962). The spelling of the name might follow the syllables of libx\\/smm, libx'smm, or libx&#8209;smm.
 > **NOTE**: the library does [not](https://github.com/libxsmm/libxsmm/issues/103#issuecomment-256887962) support 32-bit architecture (64&#8209;bit only)

@@ -1143,6 +1143,14 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		-e 'N;/^\n$$/d;P;D' \
 		>$@
 
+$(DOCDIR)/libxsmm_scripts.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/$(SCRDIR)/README.md
+	@$(SED) $(ROOTDIR)/$(SCRDIR)/README.md \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e "s/](${DOCDIR}\//](/g" \
+		-e 'N;/^\n$$/d;P;D' \
+		>$@
+
 $(DOCDIR)/libxsmm_compat.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version.txt
 	@wget -T $(TIMEOUT) -q -O $@ "https://raw.githubusercontent.com/wiki/libxsmm/libxsmm/Compatibility.md"
 	@echo >>$@
@@ -1157,7 +1165,7 @@ $(DOCDIR)/libxsmm_qna.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/version
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/$(DOCDIR)/index.md \
 $(ROOTDIR)/$(DOCDIR)/libxsmm_mm.md $(ROOTDIR)/$(DOCDIR)/libxsmm_aux.md $(ROOTDIR)/$(DOCDIR)/libxsmm_prof.md \
-$(ROOTDIR)/$(DOCDIR)/libxsmm_tune.md $(ROOTDIR)/$(DOCDIR)/libxsmm_be.md $(ROOTDIR)/$(SCRDIR)/README.md \
+$(ROOTDIR)/$(DOCDIR)/libxsmm_tune.md $(ROOTDIR)/$(DOCDIR)/libxsmm_be.md $(ROOTDIR)/$(DOCDIR)/libxsmm_scripts.md \
 $(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(ROOTDIR)/$(DOCDIR)/libxsmm_qna.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/$(DOCDIR)/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
@@ -1175,12 +1183,9 @@ $(ROOTDIR)/$(DOCDIR)/libxsmm_compat.md $(ROOTDIR)/$(DOCDIR)/libxsmm_valid.md $(R
 		iconv -t utf-8 libxsmm_tune.md && echo && \
 		iconv -t utf-8 libxsmm_be.md && echo && \
 		echo "# Appendix" && \
-		echo "## Compatibility" && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_compat.md | iconv -t utf-8 && \
-		echo "## Validation" && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_valid.md | iconv -t utf-8 && \
-		iconv -t utf-8 ../$(SCRDIR)/README.md && \
-		echo "## Q&A" && \
+		$(SED) "s/^\(##*\) /#\1 /" libxsmm_scripts.md | iconv -t utf-8 && \
 		$(SED) "s/^\(##*\) /#\1 /" libxsmm_qna.md | iconv -t utf-8; ) \
 	| $(SED) \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1408,6 +1413,9 @@ ifneq ($(PREFIX),$(ABSDIR))
 	@$(MKDIR) -p $(PREFIX)/$(SCRDIR)
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_getenvars.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_cpuinfo.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_logperf.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_logrept.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
+	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_report.py $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_pexec.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 	@$(CP) -v $(ROOTDIR)/$(SCRDIR)/tool_test.sh $(PREFIX)/$(SCRDIR) 2>/dev/null || true
 endif

@@ -11,35 +11,41 @@
 ###############################################################################
 # shellcheck disable=SC2012
 
-# check if logfile is given (existence, validity is checked later)
+# check if logfile is given
 if [ ! "${LOGFILE}" ]; then
   if [ "$1" ]; then
     LOGFILE=$1
   else
-    exit 0;
+    LOGFILE=/dev/stdin
+  fi
+fi
+if [ ! -e "${LOGFILE}" ]; then
+  >&2 echo "ERROR: logfile \"${LOGFILE}\" does not exist!"
+  exit 1
+fi
+
+# automatically echoing input
+if [ ! "${LOGRPT_ECHO}" ]; then
+  if [ "/dev/stdin" = "${LOGFILE}" ]; then
+    LOGRPT_ECHO=1
+  else
+    LOGRPT_ECHO=0
   fi
 fi
 
-# location of this script
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-
-# based on https://stackoverflow.com/a/20401674/3001239
-flush() {
-  if [ "$(command -v sync)" ]; then sync; fi # e.g., async NFS
-  if [ "$(command -v script)" ]; then
-    script -qefc "$(printf "%q " "$@")" /dev/null
-  else
-    eval "$@"
-  fi
-}
+# ensure proper permissions
+if [ "${UMASK}" ]; then
+  UMASK_CMD="umask ${UMASK};"
+  eval "${UMASK_CMD}"
+fi
 
 # optionally enable script debug
-if [ "${DEBUG_REPORT}" ] && [ "0" != "${DEBUG_REPORT}" ]; then
+if [ "${LOGRPT_DEBUG}" ] && [ "0" != "${LOGRPT_DEBUG}" ]; then
   echo "*** DEBUG ***"
-  if [[ ${DEBUG_REPORT} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
+  if [[ ${LOGRPT_DEBUG} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]]; then
     set -xv
   else
-    set "${DEBUG_REPORT}"
+    set "${LOGRPT_DEBUG}"
   fi
   PYTHON=$(command -v python3)
   if [ ! "${PYTHON}" ]; then
@@ -66,30 +72,35 @@ else
     if [ ! "${ARTROOT}" ]; then ARTROOT=$(dirname "${HOME}")/${ARTUSER}; fi
     if [ -d "${ARTROOT}/artifacts" ]; then
       LOGDIR=${ARTROOT}/artifacts
-    else
+    elif [ "/dev/stdin" != "${LOGFILE}" ]; then
       LOGDIR=$(cd "$(dirname "${LOGFILE}")" && pwd -P)
+    else # debug purpose
+      LOGDIR=.
     fi
   fi
 fi
 
 # prerequisites for report and opting-out from artifacts
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 if [ "${LOGDIR}" ] && [ "0" != "${LOGRPT}" ] && \
    [ -e "${HERE}/tool_logperf.sh" ];
 then
+  PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
   JOBID=${JOBID:-${BUILDKITE_BUILD_NUMBER}}
   STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
-  if [ "${JOBID}" ] && [ "${STEPNAME}" ]; then
+  if [ ! "${PIPELINE}" ] && \
+     [ "$(pwd -P)" = "$(cd "$(dirname "${LOGDIR}")" && pwd -P)" ];
+  then
+    PIPELINE="debug"
+  fi
+  if [ "${PIPELINE}" ]; then
     if [ -e "${LOGDIR}/tool_report.sh" ]; then
       DBSCRT=${LOGDIR}/tool_report.sh
     elif [ -e "${HERE}/tool_report.sh" ]; then
       DBSCRT=${HERE}/tool_report.sh
     fi
   fi
-  if [ "${DBSCRT}" ]; then
-    PIPELINE=${PIPELINE:-${BUILDKITE_PIPELINE_SLUG}}
-    DBMAIN=${PIPELINE:-tool_report}
-    DBFILE=${LOGDIR}/${DBMAIN}.json
-  else
+  if [ ! "${DBSCRT}" ]; then
     LOGDIR=""
   fi
 fi
@@ -102,23 +113,27 @@ if [ "${LOGDIR}" ] && [ "${PPID}" ] && \
 then
   PARENT_PID=${PPID}
   while [ "${PARENT_PID}" ]; do
-    PARENT=$(ps -o args= ${PARENT_PID} \
-      | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
-    if [ "${PARENT}" ]; then
-      PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
-      if [ -e "${PARENT}.weights.json" ]; then
-        WEIGHTS=${PARENT}.weights.json
-      else
-        PARENT_DIR=$(dirname "${PARENT}")
-        if [ -e "${PARENT_DIR}/../weights.json" ]; then
-          WEIGHTS=${PARENT_DIR}/../weights.json
+    if PSOUT=$(ps -o args= ${PARENT_PID} 2>/dev/null); then
+      PARENT=$(echo "${PSOUT}" \
+        | sed -n "s/[^[:space:]][^[:space:]]*[[:space:]][[:space:]]*\([^.][^.]*\)[.[:space:]]*.*/\1/p")
+      if [ "${PARENT}" ]; then
+        PARENT_PID=$(ps -oppid ${PARENT_PID} | tail -n1)
+        if [ -e "${PARENT}.weights.json" ]; then
+          WEIGHTS=${PARENT}.weights.json
+        else
+          PARENT_DIR=$(dirname "${PARENT}" 2>/dev/null)
+          if [ "${PARENT_DIR}" ] && [ -e "${PARENT_DIR}/../weights.json" ]; then
+            WEIGHTS=${PARENT_DIR}/../weights.json
+          fi
         fi
+        if [ "${WEIGHTS}" ]; then # break
+          DBSCRT="${DBSCRT} -w ${WEIGHTS}"
+          PARENT_PID=""
+        fi
+      else # break
+        PARENT_PID=""
       fi
-      if [ "${WEIGHTS}" ]; then
-        DBSCRT="${DBSCRT} -w ${WEIGHTS}"
-        break;
-      fi
-    else
+    else # break
       PARENT_PID=""
     fi
   done
@@ -126,40 +141,69 @@ fi
 
 # post-process logfile and generate report
 if [ "${LOGDIR}" ]; then
-  FINPUT=$(flush "${HERE}/tool_logperf.sh" "${LOGFILE}")
-  RESULT=$?
-  if [ "0" = "${RESULT}" ] && [ "${FINPUT}" ]; then
-    if [ ! "${LOGRPTSUM}" ] || \
-       [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
-    then
-      SUMMARY=${LOGRPTSUM:-1}
-      SELECT=${STEPNAME}
-      QUERY="ms"
-    else
-      QUERY="${LOGRPTSUM}"
-      SELECT=""
-      SUMMARY=0
-    fi
-    mkdir -p "${LOGDIR}/${JOBID}"
-    OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
-      -f "${DBFILE}" -g "${LOGDIR}/${JOBID}" \
-      -i /dev/stdin -j "${JOBID}" \
-      -x -y "${SELECT}" -r "${QUERY}" \
-      -z -v 1)
-    RESULT=$?
+  SYNC=$(command -v sync)
+  ${SYNC} # optional
+  if [ ! "${LOGRPTSUM}" ] || \
+     [[ ${LOGRPTSUM} =~ ^[+-]?[0-9]+([.][0-9]+)?$ ]];
+  then # "telegram" format
+    if ! FINPUT=$("${HERE}/tool_logperf.sh" ${LOGFILE});
+    then FINPUT=""; fi
+    SUMMARY=${LOGRPTSUM:-1}
+    RESULT="ms"
+  else # JSON-format
+    if ! FINPUT=$("${HERE}/tool_logperf.sh" -j ${LOGFILE});
+    then FINPUT=""; fi
+    RESULT=${LOGRPTSUM}
+    SUMMARY=0
   fi
-  if [ "0" = "${RESULT}" ] && [ "${OUTPUT}" ] && \
-     [ "$(command -v base64)" ] && \
-     [ "$(command -v cut)" ];
-  then
-    FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
-    if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
-      FIGURE=$(base64 -w0 "${FIGURE}")
-      RESULT=$?
-      if [ "0" = "${RESULT}" ] && [ "${FIGURE}" ]; then
-        if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
-        printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
-          "${FIGURE}" "${STEPNAME}"
+  if [ ! "${LOGRPTQNO}" ] || [ "0" = "${LOGRPTQNO}" ]; then
+    QUERY=${LOGRPTQRY:-${STEPNAME}}
+  else
+    QUERY=${LOGRPTQRY}
+  fi
+  if [ "${LOGRPTQRX}" ] && [ "0" != "${LOGRPTQRX}" ]; then
+    EXACT="-e"
+  fi
+  if [ "${FINPUT}" ]; then
+    if [ "${LOGRPT_ECHO}" ] && [ "0" != "${LOGRPT_ECHO}" ] && \
+       [ "$(command -v sed)" ];
+    then
+      VERBOSITY=-1
+    else
+      VERBOSITY=1
+    fi
+    mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
+    if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} -p ${PIPELINE} \
+      -f "${LOGDIR}/${PIPELINE}.json" \
+      -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
+      -i /dev/stdin -j "${JOBID}" ${EXACT} \
+      -x -y "${QUERY}" -r "${RESULT}" -z \
+      -u "${LOGRPTQOP}" \
+      -v ${VERBOSITY});
+    then
+      OUTPUT=""
+    fi
+  fi
+  if [ "${OUTPUT}" ]; then
+    if [ "0" != "$((0>VERBOSITY))" ]; then
+      echo "${OUTPUT}" | sed '$d'
+    fi
+    if [ "$(command -v base64)" ] && \
+       [ "$(command -v cut)" ];
+    then
+      if [ "0" != "$((0>VERBOSITY))" ]; then
+        FIGURE=$(echo "${OUTPUT}" | sed '$!d' | cut -d' ' -f1)
+      else
+        FIGURE=$(echo "${OUTPUT}" | cut -d' ' -f1)
+      fi
+      if [ "${FIGURE}" ] && [ -e "${FIGURE}" ]; then
+        if ! FIGURE=$(base64 -w0 "${FIGURE}");
+        then FIGURE=""; fi
+        if [ "${FIGURE}" ]; then
+          if [ "0" != "${SUMMARY}" ]; then echo "${FINPUT}"; fi
+          printf "\n\033]1338;url=\"data:image/png;base64,%s\";alt=\"%s\"\a\n" \
+            "${FIGURE}" "${STEPNAME:-${RESULT}}"
+        fi
       fi
     fi
   fi

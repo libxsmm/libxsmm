@@ -2,14 +2,15 @@
 
 .. toctree::
    :caption: Overview
+   :hidden:
 
    Compatibility <libxsmm_compat.md>
    Validation <libxsmm_valid.md>
+   Scripts <libxsmm_scripts.md>
    Q&A <libxsmm_qna.md>
 
 .. toctree::
    :caption: LIBXSMM Domains
-   :hidden:
 
    MM: Matrix Multiplication <libxsmm_mm.md>
    TPP: Tensor Processing Primitives <libxsmm_tpp.md>

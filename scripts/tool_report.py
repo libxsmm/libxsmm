@@ -10,14 +10,15 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import matplotlib.pyplot as plot
-import statistics
 import requests
 import argparse
 import datetime
 import tempfile
 import pathlib
 import pickle
+import numpy
 import json
+import stat
 import PIL
 import sys
 import re
@@ -39,8 +40,10 @@ def depth(obj):
 def matchstr(s1, s2, exact=False):
     if s1:
         if exact or (re.search(r"\d+$", s1) and re.search(r"\d+$", s2)):
-            # avoid matching, e.g. "a12" if "a1" is searched
-            return (s1 + ".") in (s2 + ".")
+            if exact:
+                return s1 == s2
+            else:  # avoid matching, e.g. "a12" if "a1" is searched
+                return (s1 + ".") in (s2 + ".")
         else:
             return s1 in s2
     else:
@@ -48,10 +51,21 @@ def matchstr(s1, s2, exact=False):
 
 
 def matchlst(string, strlst, exact=False):
-    for s in strlst:
-        if matchstr(string, s.lower(), exact):
-            return s
-    return ""
+    return [s for s in strlst if matchstr(string, s.lower(), exact)]
+
+
+def matchop(op, value, query, exact=False):
+    if query:
+        if "not" != op:
+            if op:
+                result = eval(op)(matchstr(q, value.lower()) for q in query)
+            else:  # any
+                result = any(matchstr(q, value.lower()) for q in query)
+        else:  # not
+            result = all(not matchstr(q, value.lower()) for q in query)
+    else:
+        result = True
+    return result
 
 
 def parsename(string):
@@ -69,7 +83,7 @@ def parseval(string):
     """
     return re.match(
         r"(.+)?(^|[\s:=])([+\-]?((\d+\.\d*)|(\.\d+)|(\d+))([eE][+\-]?\d+)?)",
-        string,  # noqa: E501
+        string,
     )
 
 
@@ -100,8 +114,6 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     database[strbuild][category] = dict()
                 if jobname not in database[strbuild][category]:
                     nentries = nentries + 1
-                else:
-                    nerrors = nerrors + 1
                 database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
@@ -144,18 +156,35 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                     for i in values:
                         if i not in database[strbuild][category]:
                             nentries = nentries + 1
-                        else:
-                            nerrors = nerrors + 1
                         database[strbuild][category][i] = values[i]
                 else:
                     if jobname not in database[strbuild][category]:
                         nentries = nentries + 1
-                    else:
-                        nerrors = nerrors + 1
                     database[strbuild][category][jobname] = values
             else:
                 nerrors = nerrors + 1
     return nentries, nerrors
+
+
+def fname(extlst, in_path, in_dflt, idetail=""):
+    """
+    Build filename from components and list of file-extensions.
+    """
+    if in_path.is_dir():
+        figloc, figext = in_path, in_dflt.suffix
+        figstm = in_dflt.stem
+    elif in_path.suffix[1:] in extlst:
+        figloc, figext = in_path.parent, in_path.suffix
+        figstm = in_path.stem
+    elif "." == str(in_path.parent):
+        figloc, figstm = in_path.parent, in_dflt.stem
+        figext = (
+            f".{in_path.name}" if in_path.name in extlst else in_dflt.suffix
+        )
+    else:
+        figloc, figext = in_path.parent, in_dflt.suffix
+        figstm = in_path.stem if in_path.stem else in_dflt.stem
+    return figloc / f"{figstm}{idetail}{figext}"
 
 
 def mtime(filename):
@@ -166,46 +195,123 @@ def mtime(filename):
         return 0
 
 
-def savedb(filename, database, filetime=None):
-    if not filename.is_dir():
-        tmpfile = tempfile.mkstemp(
+def sortdb(database):
+    try:  # treat top-level key as integer (build number)
+        result = dict(sorted(database.items(), key=lambda v: int(v[0])))
+    except ValueError:
+        result = dict(sorted(database.items()))
+    for key, value in result.items():
+        if isinstance(value, dict):
+            result[key] = sortdb(value)
+        else:
+            result[key] = value
+    return result
+
+
+def loaddb(filename):
+    result = dict()
+    if filename.is_file() or filename.is_fifo():
+        try:
+            if ".json" == filename.suffix.lower():
+                with open(filename, "r") as file:
+                    result = json.load(file)
+            else:  # pickle
+                with open(filename, "rb") as file:
+                    result = pickle.load(file)
+        except Exception as error:
+            msg = str(error).replace(": ", f" in {filename.name}: ")
+            print(f"ERROR: {msg}", file=sys.stderr)
+            exit(1)
+    return result
+
+
+def savedb(filename, database, filetime=None, retry=None):
+    if filename and not filename.is_dir():
+        tmpfile = tempfile.mkstemp(  # create temporary file
             filename.suffix, filename.stem + ".", filename.parent
         )
-        if ".json" == filename.suffix.lower():
-            with os.fdopen(tmpfile[0], "w") as file:
-                json.dump(database, file, indent=2)
-                file.write("\n")  # append newline at EOF
-        else:  # pickle
-            with os.fdopen(tmpfile[0], "wb") as file:
-                pickle.dump(database, file)
-        # os.close(tmpfile[0])
-        if not filetime or filetime == mtime(filename):
+        if filename.exists():  # adopt permissions
+            mode = stat.S_IMODE(os.stat(filename).st_mode)
+        else:  # determine permissions
+            umask = os.umask(0o666)
+            os.umask(umask)
+            mode = 0o666 & ~umask
+        os.fchmod(tmpfile[0], mode)
+        max_retry = retry if retry else 1
+        for i in range(max_retry):
+            database = sortdb(database)
+            if ".json" == filename.suffix.lower():
+                with os.fdopen(tmpfile[0], "w") as file:
+                    json.dump(database, file, indent=2)
+                    file.write("\n")  # append newline at EOF
+            else:  # pickle
+                with os.fdopen(tmpfile[0], "wb") as file:
+                    pickle.dump(database, file)
             if filename.exists():
-                os.replace(tmpfile[1], filename)
+                now = mtime(filename) if filetime else 0
+                if not filetime or filetime == now:
+                    os.replace(tmpfile[1], filename)
+                    break
+                elif (i + 1) < max_retry:  # retry
+                    filetime = now
+                    updated = loaddb(filename)
+                    database.update(updated)
+                else:
+                    os.unlink(tmpfile[1])
             else:
                 os.rename(tmpfile[1], filename)
+                break
     else:
         print("WARNING: no database created or updated.", file=sys.stderr)
 
 
 def num2fix(num, decimals=0):
     dec = pow(10, decimals)
-    return int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5)) / dec
-
-
-def num2str(num):
-    return (
-        f"$\pm${num}"  # noqa: W605
-        if 0 == num
-        else (f"+{num}" if 0 < num else f"{num}")
-    )
+    nom = int((dec * num + 0.5) if 0 <= num else (dec * num - 0.5))
+    return nom / dec if 1 != dec else nom
 
 
 def divup(a, b):
     return int((a + b - 1) / b)
 
 
-def main(args, argd):
+def trend(values):
+    a, rd, cv = values[0] if values else 0, None, None
+    if 2 < len(values):
+        m, b = numpy.polyfit(range(1, len(values)), values[1:], deg=1)
+        if 0 != b:
+            rd = (a - b) / b
+            avg = numpy.mean(values[1:])
+            if 0 != avg:
+                cv = numpy.std(values[1:]) / avg
+    return (a, rd, cv)
+
+
+def bold(s):
+    c, t = s.count("$"), s.replace("%", r"\%")
+    return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
+
+
+def label(values, init, unit, accuracy):
+    vnew, rd, cv = trend(values)
+    result = f"{num2fix(vnew, accuracy)} {unit}"
+    if rd:
+        inum = num2fix(100 * rd)
+        if cv:
+            bnum = num2fix(100 * cv)
+            anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
+            if bnum < abs(inum):
+                result = f"{init} = {bold(result)} ({anum}>{bnum}%)"
+            else:
+                expr = f"{anum}" + r"$\leq$" + f"{bnum}%"
+                result = f"{init} = {result} ({expr})"
+        else:
+            sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
+            result = f"{init} = {result} ({sign}{inum}%)"
+    return result
+
+
+def main(args, argd, dbfname):
     urlbase = "https://api.buildkite.com/v2/organizations"
     url = (
         f"{urlbase}/{args.organization}/pipelines/{args.pipeline}/builds"
@@ -229,9 +335,7 @@ def main(args, argd):
         if args.query
         else []
     )
-    smry = args.summary.lower()
     rslt = args.result.lower()
-    sdo = 0 < args.mean and smry != rslt
     inflight = max(args.inflight, 0)
     nerrors = nentries = 0
     outfile = None
@@ -249,29 +353,16 @@ def main(args, argd):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if args.filepath == argd.filepath
-            or not (args.filepath.is_file() or args.filepath.is_fifo())
-            else args.filepath
+            if dbfname == argd.filepath
+            or not (dbfname.is_file() or dbfname.is_fifo())
+            else dbfname
         )
     elif args.infile is None:  # connect to URL
-        outfile = args.filepath
+        outfile = dbfname
 
     # timestamp before loading database
     ofmtime = mtime(outfile)
-    if args.filepath.is_file() or args.filepath.is_fifo():
-        try:
-            if ".json" == args.filepath.suffix.lower():
-                with open(args.filepath, "r") as file:
-                    database = json.load(file)
-            else:  # pickle
-                with open(args.filepath, "rb") as file:
-                    database = pickle.load(file)
-        except Exception as error:
-            msg = str(error).replace(": ", f" in {args.filepath.name}: ")
-            print(f"ERROR: {msg}", file=sys.stderr)
-            exit(1)
-    else:
-        database = dict()
+    database = loaddb(dbfname)
     dbkeys = list(database.keys())
     latest = int(dbkeys[-1]) if dbkeys else 0
 
@@ -281,20 +372,8 @@ def main(args, argd):
         if (args.weights.is_file() or args.weights.is_fifo())
         else argd.weights
     )
-    if wfile.is_file() or wfile.is_fifo():
-        try:
-            if ".json" == wfile.suffix.lower():
-                with open(wfile, "r") as file:
-                    weights = json.load(file)
-            else:  # pickle
-                with open(wfile, "rb") as file:
-                    weights = pickle.load(file)
-        except Exception as error:
-            msg = str(error).replace(": ", f" in {wfile.name}: ")
-            print(f"ERROR: {msg}", file=sys.stderr)
-            exit(1)
-    else:
-        weights = {}
+    wfmtime = mtime(wfile)
+    weights = loaddb(wfile)
 
     # populate default weights
     write = None
@@ -306,16 +385,13 @@ def main(args, argd):
                     write = [1.0 for e in entry if ":" in e]
                     if write:
                         weights[name] = write
-    if write:  # write weights if modified (not wfile)
-        savedb(args.weights, weights)
+    if write:  # write weights if modified
+        savedb(args.weights, weights, wfmtime, 3)
 
+    nbuild = int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
-        nbld = (
-            args.nbuild
-            if (args.nbuild and 0 < args.nbuild and args.nbuild < next)
-            else next
-        )
+        nbld = nbuild if (0 < nbuild and nbuild < next) else next
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -346,15 +422,14 @@ def main(args, argd):
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
-                nbuild = build["number"]
-                strbuild = str(nbuild)  # JSON stores integers as string
+                ibuild = build["number"]
+                strbuild = str(ibuild)  # JSON stores integers as string
                 if (  # consider early exit
-                    nbuild <= max(latest - inflight, 1)
+                    ibuild <= max(latest - inflight, 1)
                     and "running" != build["state"]
                     and strbuild in database
                 ):
-                    latest = nbuild
-                    builds = None
+                    latest, builds = ibuild, None
                     break
                 jobs = build["jobs"]
                 n = 0
@@ -365,7 +440,7 @@ def main(args, argd):
                 ):
                     if 2 <= abs(args.verbosity):
                         if 0 == n:
-                            print(f"[{nbuild}]", end="", flush=True)
+                            print(f"[{ibuild}]", end="", flush=True)
                         print(".", end="", flush=True)
                     log = requests.get(job["log_url"], headers=auth)
                     txt = json.loads(log.text)["content"]
@@ -375,13 +450,12 @@ def main(args, argd):
                     n = n + 1
                 nbuilds = nbuilds + 1
                 njobs = njobs + n
-                if (
-                    0 == n and nbuild <= latest and "running" != build["state"]
-                ) or args.history <= nbuilds:
-                    latest = nbuild
-                    builds = None
+                if (  # consider early exit
+                    0 == n and ibuild <= latest and "running" != build["state"]
+                ) or (args.history <= nbuilds or nbuild == ibuild):
+                    latest, builds = ibuild, None
                     break
-            if builds and 1 < nbuild:
+            if builds and 1 < ibuild:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
@@ -389,23 +463,10 @@ def main(args, argd):
         if 2 <= abs(args.verbosity) and 0 < njobs:
             print("[OK]")
 
-    # conclude loading data from latest CI
-    if 2 <= abs(args.verbosity):
-        if 0 != nerrors:
-            y = "ies" if 1 != nerrors else "y"
-            print(
-                f"WARNING: ignored {nerrors} erroneous entr{y}!",
-                file=sys.stderr,
-            )
-        y = "ies" if 1 != nentries else "y"
-        print(f"Found {nentries} new entr{y}.")
-
     # save database (consider retention), and update dbkeys
     dbkeys = list(database.keys())
     dbsize = len(dbkeys)
     if 0 != nentries:
-        # sort by top-level key if database is to be stored (build number)
-        database = dict(sorted(database.items(), key=lambda v: int(v[0])))
         # backup database and prune according to retention
         retention = max(args.retention, args.history)
         if 0 < retention and (retention + args.history) < dbsize:
@@ -420,28 +481,42 @@ def main(args, argd):
                     del database[key]
                 dbkeys = list(database.keys())
                 dbsize = retention
-        savedb(outfile, database, ofmtime)
-        if 2 <= abs(args.verbosity) and not outfile.exists():
+        savedb(outfile, database, ofmtime, 3)
+        if 2 <= abs(args.verbosity) and outfile and not outfile.exists():
             print(f"{outfile} database created.")
 
-    if dbkeys:  # collect categories for template (figure)
-        if args.nbuild in dbkeys:
-            templkey = dbkeys[args.nbuild]
+    # conclude loading data from latest CI
+    if 2 <= abs(args.verbosity):
+        if 0 != nerrors:
+            y = "ies" if 1 != nerrors else "y"
+            print(
+                f"WARNING: ignored {nerrors} erroneous entr{y}!",
+                file=sys.stderr,
+            )
+        y = "ies" if 1 != nentries else "y"
+        print(f"Database consists of {dbsize} builds.")
+        print(f"Found {nentries} new entr{y}.")
+
+    if dbkeys and args.figure:  # determine template-record for figure
+        if nbuild in dbkeys:
+            templkey = dbkeys[nbuild]
         elif not args.infile or not (
             args.infile.is_file() or args.infile.is_fifo()
-        ):
-            templkey = dbkeys[-min(inflight + 1, dbsize)]
+        ):  # find template with most content
+            templkeys = dbkeys[-min(inflight + 1, dbsize) :]  # noqa: E203
+            templkey, s = None, 0
+            for k in templkeys:
+                t = sum(len(v) for v in database[k].values())
+                if s <= t:
+                    templkey, s = k, t
         else:  # file-based input (just added)
             templkey = dbkeys[-1]
         template = database[templkey]
     else:
         template = dict()
 
-    entries = [
-        e  # category (one level below build number)
-        for e in template
-        if not select
-        or any(matchstr(s, e.lower(), args.select_exact) for s in select)
+    entries = [  # category (one level below build number)
+        e for e in template if matchop("any", e, select, args.select_exact)
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
@@ -470,25 +545,19 @@ def main(args, argd):
         axes = [axes]
 
     # build figure
+    query_op = args.query_op if args.query_op else argd.query_op
+    transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
+    split = str.maketrans(transpat, " " * len(transpat))
+    clean = str.maketrans("", "", transpat)
+    yunit, addon = None, ""
     ngraphs = i = 0
-    infneg = float("-inf")
-    infpos = float("inf")
-    yunit = None
     for entry in entries:
         n = 0
         for value in (
-            v
-            for v in template[entry]
-            if not query
-            or eval(args.query_op)(matchstr(p, v.lower()) for p in query)
+            v for v in template[entry] if matchop(query_op, v, query)
         ):
-            xvalue = []  # build numbers corresponding to yvalue
-            yvalue = []  # determined by --result
-            meanvl = []  # determined by --summary
-            sunit = aunit = None
-            layers = dict()
-            layers_min = ""
-            layers_max = ""
+            layers, xvalue, yvalue = dict(), [], []
+            legend, aunit = value, None
             if value not in match:
                 match.append(value)
             # collect data to be plotted
@@ -497,38 +566,40 @@ def main(args, argd):
                 for b in database
                 if entry in database[b] and value in database[b][entry]
             ):
-                ylabel = slabel = None
+                ylabel = None
                 values = database[build][entry][value]
-                if isinstance(values, dict):
-                    qry = rslt.split(",")
-                    key = matchlst(qry[0], values.keys())
-                    if key:
-                        scale = 1.0 if 2 > len(qry) else float(qry[1])
-                        parsed = parseval(values[key])
-                        unit = values[key][
-                            parsed.end(3) :  # noqa: E203
-                        ].strip()
-                        yvalue.append(float(values[key].split()[0]) * scale)
-                        xvalue.append(build)  # string
-                        ylabel = (
-                            (unit if unit else key) if 3 > len(qry) else qry[2]
-                        )
-                    if sdo:
-                        qry = smry.split(",")
-                        key = matchlst(qry[0], values.keys())
-                        if key:
-                            scale = 1.0 if 2 > len(qry) else float(qry[1])
-                            parsed = parseval(values[key])
-                            unit = values[key][
-                                parsed.end(3) :  # noqa: E203
-                            ].strip()
-                            meanvl.append(
-                                float(values[key].split()[0]) * scale
+                if isinstance(values, dict):  # JSON-format
+                    qlst = rslt.split(",")
+                    keys = matchlst(qlst[0], values.keys(), args.exact)
+                    vals, legd = [], []
+                    for key in keys:
+                        scale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                        strval = str(values[key])  # ensure string
+                        parsed = parseval(strval)
+                        unit = strval[parsed.end(3) :].strip()  # noqa: E203
+                        vals.append(float(strval.split()[0]) * scale)
+                        if not ylabel:
+                            ylabel = (
+                                (unit if unit else key)
+                                if 3 > len(qlst)
+                                else qlst[2]
                             )
-                            slabel = unit if unit else key
-                    if not slabel:
-                        slabel = ylabel
-                else:
+                        lst = key.translate(split).split()
+                        detail = [s for s in lst if s.lower() != qlst[0]]
+                        legd.append(
+                            f"{value} {'_'.join(detail)}" if detail else value
+                        )
+                    if vals:
+                        if 1 < len(legd):
+                            if not addon:
+                                addon = rslt.split(",")[0].upper()
+                            yvalue.append(vals)
+                            legend = legd
+                        else:
+                            yvalue.append(vals[0])
+                            legend = legd[0]
+                        xvalue.append(build)  # string
+                else:  # telegram format
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
                         parsed = parseval(v)
@@ -539,9 +610,6 @@ def main(args, argd):
                                 yvalue.append(float(parsed.group(3)))
                                 xvalue.append(build)  # string
                                 ylabel = unit
-                            if not slabel and sdo and matchstr(smry, ulow):
-                                meanvl.append(float(parsed.group(3)))
-                                slabel = unit
                     # match --result secondary against "init"
                     for v in reversed(values):  # match last entry
                         parsed = parseval(v)
@@ -549,7 +617,7 @@ def main(args, argd):
                             init = (
                                 parsed.group(1).strip(": ")
                                 if parsed.group(1)
-                                else ""  # noqa: E501
+                                else ""
                             )
                             unit = v[parsed.end(3) :].strip()  # noqa: E203
                             ulab = unit if unit else init
@@ -558,33 +626,26 @@ def main(args, argd):
                                 yvalue.append(float(parsed.group(3)))
                                 xvalue.append(build)  # string
                                 ylabel = ulab
-                            if not slabel and sdo and matchstr(smry, ilow):
-                                meanvl.append(float(parsed.group(3)))
-                                slabel = ulab
-                            if (init and (not aunit or ulab == aunit)) and (
-                                not args.analyze
-                                or matchstr(args.analyze, ilow)
-                            ):
+                            if init and (not aunit or ulab == aunit):
                                 if init not in layers:
                                     if not aunit:
                                         aunit = ulab
                                     layers[init] = []
                                 layers[init].append(float(parsed.group(3)))
 
-            j = 0
-            s = args.history
+            s, j = args.history, 0
             wname = value.split()[0]
             wlist = weights[wname] if wname in weights else []
             wdflt = True  # only default-weights discovered
             # (re-)reverse, trim, and apply weights
-            for a in reversed(layers):
+            layerkeys = list(layers.keys())
+            for a in reversed(layerkeys):
                 y = layers[a]
                 s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
                     layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
-                    if wdflt:
-                        wdflt = False
+                    wdflt = False
                 else:  # unit-weight
                     layers[a] = [y[len(y) - k - 1] for k in range(s)]
                 j = j + 1
@@ -598,94 +659,28 @@ def main(args, argd):
             if xvalue and yvalue:  # (re-)reverse and trim
                 xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
 
-            # collect statistics and perform some analysis
-            if 0 < args.mean:
-                if meanvl:  # (re-)reverse and trim collected values
-                    meanvl = meanvl[: -args.history - 1 : -1]  # noqa: E203
-                values = [v for v in (meanvl if meanvl else yvalue) if 0 < v]
-                vnew = values[0 : args.mean]  # noqa: E203
-                if vnew:
-                    if not sunit:
-                        sunit = (slabel if slabel else args.result).split()[0]
-                    mnew = statistics.geometric_mean(vnew)
-                    vold = values[args.mean :]  # noqa: E203
-                    label = f"{value} = {num2fix(mnew, accuracy)} {sunit}"
-                    if vold:
-                        mold = statistics.geometric_mean(vold)
-                        perc = num2fix(100 * (mnew - mold) / mold)
-                        label = f"{label} ({num2str(perc)}%)"
-
-                        if 0 != perc and args.analyze:
-                            vmax = vmin = 0
-                            amax = infneg
-                            amin = infpos
-                            for a in layers:
-                                values = [v for v in layers[a] if 0 < v]
-                                vnew = values[0 : args.mean]  # noqa: E203
-                                vold = values[args.mean :]  # noqa: E203
-                                if vnew and vold:
-                                    anew = statistics.geometric_mean(vnew)
-                                    aold = statistics.geometric_mean(vold)
-                                    perc = num2fix(100 * (anew - aold) / aold)
-                                    if perc > amax:
-                                        vmax = num2fix(anew, accuracy)
-                                        layers_max = a
-                                        amax = perc
-                                    elif perc < amin:
-                                        vmin = num2fix(anew, accuracy)
-                                        layers_min = a
-                                        amin = perc
-                            unit = f" {aunit}" if aunit else ""
-                            if layers_min and 0 != vmin and infpos != amin:
-                                vlabel = layers_min.replace(" ", "")
-                                label = f"{label} {vlabel}={vmin}{unit} ({num2str(amin)}%)"  # noqa: E501
-                            else:
-                                layers_min = ""
-                            if layers_max and 0 != vmax and infneg != amax:
-                                vlabel = layers_max.replace(" ", "")
-                                label = f"{label} {vlabel}={vmax}{unit} ({num2str(amax)}%)"  # noqa: E501
-                            else:
-                                layers_max = ""
-                else:
-                    label = value
+            # perform some trend analysis
+            if isinstance(legend, list):
+                ylist, ylabel = list(zip(*yvalue)), []
+                for j in range(len(legend)):
+                    y, z = ylist[j], legend[j]
+                    s = label(y, z, yunit, accuracy)
+                    ylabel.append(s)
             else:
-                label = value
+                ylabel = label(yvalue, legend, yunit, accuracy)
 
             # determine size of shared x-axis
             xsize = args.history
-            if smry and (not aunit or aunit == yunit):
+            if not aunit or aunit == yunit:
                 xsize = min(len(yvalue), xsize)
-            for a in layers:
-                if a == layers_min or not smry:
-                    xsize = min(len(layers[a]), xsize)
-                if a == layers_max and smry:
-                    xsize = min(len(layers[a]), xsize)
+            yvalue = yvalue[0:xsize]
             xrange = range(xsize)
 
             # plot values and legend as collected above
-            if smry and (not aunit or aunit == yunit):
-                axes[i].step(
-                    xrange, yvalue[0:xsize], ".:", where="mid", label=label
-                )
+            if (not aunit or aunit == yunit) and yvalue:
+                axes[i].step(xrange, yvalue, ".:", where="mid", label=ylabel)
                 axes[i].set_ylabel(yunit)
                 n = n + 1
-            for a in layers:
-                if a == layers_min or not smry:
-                    yvalue = layers[a][0:xsize]
-                    label = f"{value}: {a}"
-                    axes[i].step(
-                        xrange, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                    axes[i].set_ylabel(aunit)
-                    n = n + 1
-                if a == layers_max and smry:
-                    yvalue = layers[a][0:xsize]
-                    label = f"{value}: {a}"
-                    axes[i].step(
-                        xrange, yvalue, ".:", where="mid", label=label
-                    )  # noqa: E501
-                    axes[i].set_ylabel(aunit)
-                    n = n + 1
             axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
             axes[i].set_xticklabels(xvalue[0:xsize])
         ngraphs = max(ngraphs, n)
@@ -696,7 +691,6 @@ def main(args, argd):
         i = i + 1
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
-    addon = "" if args.pipeline else rslt.split(",")[0].upper()
     figure.suptitle(
         f"{title} ({addon})" if addon else title, fontsize="x-large"
     )
@@ -704,49 +698,26 @@ def main(args, argd):
     figure.tight_layout()
 
     if 0 < ngraphs:
-        # determine supported file types and filename components
-        figcanvas = figure.canvas
-        figtypes = figcanvas.get_supported_filetypes()
-        argfig = pathlib.Path(args.figure)
-        deffig = pathlib.Path(argd.figure)
-        if argfig.is_dir():
-            figloc = argfig
-            figext = deffig.suffix
-            figstm = deffig.stem
-        elif argfig.suffix[1:] in figtypes.keys():
-            figloc = argfig.parent
-            figext = argfig.suffix
-            figstm = argfig.stem
-        elif "." == str(argfig.parent):
-            figloc = argfig.parent
-            figext = (
-                f".{argfig.name}"
-                if argfig.name in figtypes.keys()
-                else deffig.suffix
-            )
-            figstm = deffig.stem
-        else:
-            figloc = argfig.parent
-            figext = deffig.suffix
-            figstm = argfig.stem if argfig.stem else deffig.stem
-
-        # determine filename from components
-        punct = str.maketrans("", "", "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~")
-        figcat = re.sub(
-            r"[ ,;]+",
-            "_",
-            ""
+        # supported file types and filename components
+        figdet = (
+            ""  # eventually add details about category
             if 1 < len(entries) or 0 == len(entries)
-            else f"-{entries[0].translate(punct)}",
+            else f"-{entries[0].translate(clean)}"
         )
+        figcat = re.sub(r"[ ,;]+", "_", figdet)
         if 0 < len(match):
-            clean = [re.sub(r"[ ,;]+", "_", s.translate(punct)) for s in match]
-            parts = [s.lower() for c in clean for s in c.split("_")]
-            fixqry = f"-{'_'.join(dict.fromkeys(parts))}"
+            match = [re.sub(r"[ ,;]+", "_", s.translate(clean)) for s in match]
+            parts = [s.lower() for c in match for s in c.split("_")]
+            figqry = f"-{'_'.join(dict.fromkeys(parts))}{figcat}"
         else:
-            fixqry = ""
-        figout = figloc / f"{figstm}{fixqry}{figcat}{figext}"
-
+            figqry = figcat
+        figcanvas = figure.canvas
+        figout = fname(
+            extlst=figcanvas.get_supported_filetypes().keys(),
+            in_path=pathlib.Path(args.figure),
+            in_dflt=pathlib.Path(argd.figure),
+            idetail=figqry,
+        )
         # reduce file size (png) and save figure
         if ".png" == figout.suffix.lower():
             figcanvas.draw()  # otherwise the image is empty
@@ -820,12 +791,18 @@ if __name__ == "__main__":
     argparser.add_argument(
         "-j",
         "--nbuild",
-        type=int,
+        type=str,
         default=None,
         help="Where to insert, not limited to infile",
     )
     argparser.add_argument(
-        "-c",
+        "-a",
+        "--token",
+        type=str,
+        help="Authorization token",
+    )
+    argparser.add_argument(
+        "-b",
         "--organization",
         type=str,
         default="intel",
@@ -839,18 +816,12 @@ if __name__ == "__main__":
         help="Buildkite pipeline",
     )
     argparser.add_argument(
-        "-t",
-        "--token",
-        type=str,
-        help="Authorization token",
-    )
-    argparser.add_argument(
         "-u",
         "--query-op",
         type=str,
         default="all",
-        choices=["all", "any"],
-        help="Inexact query operator",
+        choices=["all", "any", "not", ""],
+        help="Query operator",
     )
     argparser.add_argument(
         "-x",
@@ -886,25 +857,17 @@ if __name__ == "__main__":
         help="Plotted values",
     )
     argparser.add_argument(
-        "-a",
-        "--analyze",
-        type=str,
-        default=None,
-        help='Common property, e.g., "layer"',
-    )
-    argparser.add_argument(
-        "-b",
-        "--summary",
-        type=str,
-        default="ms",
-        help='If "", plot per-layer history',
+        "-e",
+        "--exact",
+        action="store_true",
+        help="Match result exactly",
     )
     argparser.add_argument(
         "-m",
-        "--mean",
+        "--inflight",
         type=int,
-        default=3,
-        help="Number of samples",
+        default=2,
+        help="Rescan builds",
     )
     argparser.add_argument(
         "-n",
@@ -920,13 +883,6 @@ if __name__ == "__main__":
         default=60,
         help="Keep history",
     )
-    argparser.add_argument(
-        "-e",
-        "--inflight",
-        type=int,
-        default=2,
-        help="Re-scan builds",
-    )
 
     args = argparser.parse_args()  # 1st pass
     if args.pipeline:
@@ -934,12 +890,16 @@ if __name__ == "__main__":
         figure = f"{args.pipeline}.{figtype}"
         argparser.set_defaults(filepath=filepath, figure=figure)
         args = argparser.parse_args()  # 2nd pass
-    if args.filepath.name:
-        weights = args.filepath.with_name(
-            f"{args.filepath.stem}.weights{args.filepath.suffix}"
-        )
+    argd = argparser.parse_args([])
+    dbfname = fname(  # database filename
+        ["json", "pickle", "pkl", "db"],
+        in_path=pathlib.Path(args.filepath),
+        in_dflt=pathlib.Path(argd.filepath),
+    )
+    if dbfname.name:
+        weights = dbfname.with_name(f"{dbfname.stem}.weights{dbfname.suffix}")
         argparser.set_defaults(weights=weights)
         args = argparser.parse_args()  # 3rd pass
     argd = argparser.parse_args([])
 
-    main(args, argd)
+    main(args, argd, dbfname)
