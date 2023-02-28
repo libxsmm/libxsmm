@@ -1,1 +1,1 @@
-feature_sparse_weight_bcsc_mmla-1.17-3559
+feature_sparse_weight_bcsc_mmla_param_bn-1.17-3560
