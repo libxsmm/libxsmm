@@ -13,6 +13,7 @@ from string import Template
 import libxsmm_utilities
 import fnmatch
 import sys
+import re
 
 
 if __name__ == "__main__":
@@ -75,8 +76,6 @@ if __name__ == "__main__":
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if mnklist and 0 != precision:
                 substitute["MNK_INTERFACE_LIST"] += "\n"
-            # print without trailing newline
-            sys.stdout.write(template.safe_substitute(substitute))
         else:  # Fortran interface
             if 1 > ifversion and 0 != ifversion:
                 raise ValueError("Fortran interface level is inconsistent!")
@@ -167,8 +166,10 @@ if __name__ == "__main__":
                             + "          END SUBROUTINE"
                         )
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE\n"
-            # print without trailing newline
-            sys.stdout.write(template.safe_substitute(substitute))
+        txt = template.safe_substitute(substitute)
+        sys.stdout.write(  # print without trailing newline
+            re.sub(r"[ \t]+\r*\n", r"\n", txt)
+        )
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
