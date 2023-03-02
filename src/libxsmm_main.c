@@ -2124,6 +2124,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pspgemm_bcsc->gemm->prefetch);
           const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_bcsc->gemm->datatype);
           char tc_option[16] = { 0 };
+          char hw_sparsity[16] = { 0 };
           /* query tileconfig options */
           if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) != 0) &&
               ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) == 0) ) {
@@ -2137,15 +2138,21 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           } else {
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
           }
+          if ((LIBXSMM_GEMM_FLAG_NO_HARDWIRED_SPARSITY & request->descriptor.pspgemm_bcsc->gemm->flags) != 0) {
+            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "no_hw_sparsity");
+          } else {
+            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "hw_sparsity");
+          }
+
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_bk%u_bn%u_a%i_b%i_p%i_nnz%u_tc-%s.pspgemm_bcsc", target_arch, tname,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_w%u_bk%u_bn%u_a%i_b%i_p%i_nnz%u_tc-%s_%s.pspgemm_bcsc", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.pspgemm_bcsc->gemm->flags) ? 'n' : 't',
             request->descriptor.pspgemm_bcsc->gemm->m,   request->descriptor.pspgemm_bcsc->gemm->n,   request->descriptor.pspgemm_bcsc->gemm->k,
             request->descriptor.pspgemm_bcsc->gemm->lda, request->descriptor.pspgemm_bcsc->gemm->ldb, request->descriptor.pspgemm_bcsc->gemm->ldc,
             request->descriptor.pspgemm_bcsc->packed_width, request->descriptor.pspgemm_bcsc->bk, request->descriptor.pspgemm_bcsc->bn,
             1, 0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.pspgemm_bcsc->gemm->flags) ? 0 : 1,
-            uid, nnz, tc_option);
+            uid, nnz, tc_option, hw_sparsity);
         }
       }
     } break;
