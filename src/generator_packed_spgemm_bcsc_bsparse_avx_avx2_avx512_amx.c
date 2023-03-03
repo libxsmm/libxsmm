@@ -176,7 +176,6 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_avx_avx2_avx512_amx( libxsmm_g
   unsigned int l_row_idx_gpr = LIBXSMM_X86_GP_REG_R10;
   unsigned int l_cur_column_gpr = LIBXSMM_X86_GP_REG_RAX;
   unsigned int l_next_column_gpr = LIBXSMM_X86_GP_REG_RBX;
-  unsigned int EMPTY_BLOCK_COLUMN_LABEL = 0;
 #if defined(LIBXSMM_GENERATOR_X86_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker *const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
 #else
