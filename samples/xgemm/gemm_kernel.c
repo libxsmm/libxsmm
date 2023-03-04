@@ -1675,7 +1675,7 @@ void print_help(void) {
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2_BL2viaC, curAL2_BL2viaC\n");
-  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8, BF8F32_FLAT, BF8_FLAT, HF8F32, HF8, HF8F32_FLAT, HF8_FLAT  \n");
+  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF16F32_BVNNI, BF16_BVNNI, BF8F32, BF8, BF8F32_FLAT, BF8_FLAT, HF8F32, HF8, HF8F32_FLAT, HF8_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
@@ -1695,7 +1695,7 @@ void print_help(void) {
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    0: A normal, 1: A trans\n");
   printf("    0: B normal, 1: B trans\n");
-  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF8F32, BF8, BF8F32_FLAT, BF8_FLAT, HF8F32, HF8, HF8F32_FLAT, HF8_FLAT\n");
+  printf("    PRECISION: F32, F64, I16I32, USI8I32, SUI8I32, USI8F32, SUI8F32, BF16F32, BF16, BF16F32_FLAT, BF16_FLAT, BF16F32_BVNNI, BF16_BVNNI, BF8F32, BF8, BF8F32_FLAT, BF8_FLAT, HF8F32, HF8, HF8F32_FLAT, HF8_FLAT\n");
   printf("    BRGEMM: nobr, addrbr, offsbr, strdbr\n");
   printf("    BRsize: 1 - N\n");
   printf("    BRunroll: 0/1\n");
