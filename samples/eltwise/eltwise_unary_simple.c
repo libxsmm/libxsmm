@@ -253,21 +253,31 @@ void unary_op_gold(const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_blasint i, j;
 
   if ( ( ((dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_BF16)) ||
-         ((dtype_in == LIBXSMM_DATATYPE_F16 ) && (dtype_out == LIBXSMM_DATATYPE_F16 ) && (dtype_comp == LIBXSMM_DATATYPE_F16 ))    ) && (op == COPY_OP) ) {
+         ((dtype_in == LIBXSMM_DATATYPE_F16 ) && (dtype_out == LIBXSMM_DATATYPE_F16 ) && (dtype_comp == LIBXSMM_DATATYPE_F16 ))    ) && ((op == COPY_OP) || (op == XOR_OP) || (op == REPLICATE_COL_VAR)) ) {
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         const unsigned short* bf_in = (const unsigned short*)in;
         unsigned short* bf_out = (unsigned short*)out;
-        bf_out[(j*ldo) + i] = bf_in[(j*ldi) + i];
+        if ( (op == COPY_OP) || (op == REPLICATE_COL_VAR) ) {
+          bf_out[(j*ldo) + i] = bf_in[(j*ldi) + i];
+        } else if ( op == XOR_OP ) {
+          bf_out[(j*ldo) + i] = 0;
+        } else {
+          /* shouldn't happen */
+        }
       }
     }
   } else if ( ( ((dtype_in == LIBXSMM_DATATYPE_BF8) && (dtype_out == LIBXSMM_DATATYPE_BF8) && (dtype_comp == LIBXSMM_DATATYPE_BF8)) ||
-                ((dtype_in == LIBXSMM_DATATYPE_HF8) && (dtype_out == LIBXSMM_DATATYPE_HF8) && (dtype_comp == LIBXSMM_DATATYPE_HF8))    ) && (op == COPY_OP) ) {
+                ((dtype_in == LIBXSMM_DATATYPE_HF8) && (dtype_out == LIBXSMM_DATATYPE_HF8) && (dtype_comp == LIBXSMM_DATATYPE_HF8))    ) && ((op == COPY_OP) || (op == XOR_OP) || (op == REPLICATE_COL_VAR)) ) {
     for ( j = 0; j < N; ++j ) {
       for ( i = 0; i < M; ++i ) {
         const unsigned char* bf_in = (const unsigned char*)in;
         unsigned char* bf_out = (unsigned char*)out;
-        bf_out[(j*ldo) + i] = bf_in[(j*ldi) + i];
+        if ( (op == COPY_OP) || (op == REPLICATE_COL_VAR) ) {
+          bf_out[(j*ldo) + i] = bf_in[(j*ldi) + i];
+        } else if ( op == XOR_OP ) {
+          bf_out[(j*ldo) + i] = 0;
+        }
       }
     }
   } else if ( dtype_comp == LIBXSMM_DATATYPE_F32 ) {
@@ -564,7 +574,7 @@ int main( int argc, char* argv[] ) {
     use_bcast = COL_BCAST;
   }
 
-  if ( op == COPY_OP ) {
+  if ( (op == COPY_OP) || (op == XOR_OP) || (op == REPLICATE_COL_VAR) ) {
     if ( ( (dtype_in == LIBXSMM_DATATYPE_F64 ) && (dtype_out == LIBXSMM_DATATYPE_F64 ) && (dtype_comp == LIBXSMM_DATATYPE_F64 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
          ( (dtype_in == LIBXSMM_DATATYPE_BF16) && (dtype_out == LIBXSMM_DATATYPE_F32 ) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ||
