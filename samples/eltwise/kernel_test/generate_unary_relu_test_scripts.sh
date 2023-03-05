@@ -13,16 +13,22 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
   for LD in 'eqld' 'gtld'; do
     OUTNAME="unary_relu_"
     PRECLC=$(echo "$PREC" | awk '{print tolower($0)}')
+    CASES="D L E"
 
     # only cpy TPP has low precision compute
-    if [[ (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8') || ("$PREC" == 'F64_F64_F64')) ]]; then
+    if [[ (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8') || ("$PREC" == 'F64_F64_F64')) ]]; then
       continue
+    fi
+
+    if [[ ("$PREC" == 'BF16_BF16_BF16') ]]; then
+      CASES="D"
     fi
 
     OUTNAME=${OUTNAME}${PRECLC}_${LD}.sh
 
     # generate script by sed
     sed "s/PREC=0/PREC=\"${PREC}\"/g" unary_relu.tpl \
+    | sed "s/CASES=0/CASES=\"${CASES}\"/g" \
     | sed "s/SAMPLESIZE/${SAMPLESIZE}/g" \
     >${OUTNAME}
 
