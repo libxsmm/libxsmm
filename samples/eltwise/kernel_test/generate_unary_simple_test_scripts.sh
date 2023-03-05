@@ -22,7 +22,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
       fi
 
       # only cpy TPP has low precision compute
-      if [[ ("$TYPE" != '1') && (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8')) ]]; then
+      if [[ ("$TYPE" != '1') && ("$TYPE" != '2') && ("$TYPE" != '27') && (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8')) ]]; then
         continue
       fi
 
