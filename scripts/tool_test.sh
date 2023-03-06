@@ -184,14 +184,15 @@ if [ "${MKTEMP}" ] && [ "${MKDIR}" ] && [ "${DIFF}" ] && [ "${GREP}" ] && [ "${S
   rm -f "${REPOROOT}"/.tool_??????.sh
   # setup batch execution (TEST may be a singular test given by filename)
   if [ ! "${LAUNCH_CMD}" ] && [ ! "${LAUNCH}" ] && [ "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
-    STEPNAME=${STEPNAME:-${BUILDKITE_LABEL}}
     if [ "${STEPNAME}" ]; then
       LABEL=$(echo "${STEPNAME}" \
         | ${TR} -s "[:punct:][:space:]" "-" \
         | ${SED} "s/^-//;s/-$//" \
         | ${SED} "s/[^A-Za-z0-9._-]//g")
     fi
-    if [ "${LABEL}" ]; then
+    if [ "${PIPELINE}" ] && [ "${JOBID}" ]; then
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${PIPELINE}/${JOBID}"
+    elif [ "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
     if [ "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
