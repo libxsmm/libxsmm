@@ -2761,7 +2761,7 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code, LIBXSMM_X86_INSTR_MOVQ,
                                          i_gp_reg_tmp, l_mask );
 
-    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVW_GPR_LD,
+    libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
                                        i_gp_reg_tmp, i_micro_kernel_config->mask_hi );
   }
 }

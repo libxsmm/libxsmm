@@ -583,13 +583,14 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
       }
 
       libxsmm_rne_convert_fp32_bf16(&in_value, &out_value, 1);
+#if 0
       libxsmm_convert_bf16_f32( &out_value, &tmp, 1 );
       tmp2 = in_value - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp2, &out2_value, 1);
       libxsmm_convert_bf16_f32( &out2_value, &tmp, 1 );
       tmp = tmp2 - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp, &out3_value, 1);
-
+#endif
       if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out_gold;
         bf16_out[(j*ldo) + i            ] = out_value;
