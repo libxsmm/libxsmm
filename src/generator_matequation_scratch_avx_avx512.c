@@ -475,7 +475,8 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
 
   /* Setup secondaries if need be */
   if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
-      ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ||
+      ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) ||
+       (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ||
        ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ))) {
     if (is_last_op > 0) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -489,6 +490,8 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct(libxsmm_gene
     } else {
       if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
         fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
+      } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+        fprintf( stderr, "The requested UNPACK_TO_BLOCKS operation can only be the head of the equation...\n" );
       } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
         fprintf( stderr, "The requested RELU operation with bitmask can only be the head of the equation...\n" );
       }

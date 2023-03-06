@@ -1164,6 +1164,7 @@ void libxsmm_generator_matequation_avx_avx512_kernel( libxsmm_generated_code*   
       /* If head of equaiton is unpack_to_blocks, then make sure we load the block offset from the stack */
       if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (cur_eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS)) {
         libxsmm_generator_meqn_getval_stack_var( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, l_gp_reg_mapping.gp_reg_offset);
+        libxsmm_x86_instruction_alu_mem( io_generated_code, l_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_offset, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, l_gp_reg_mapping.gp_reg_offset, 0 );
       }
 
       libxsmm_generator_reoptimize_eqn(cur_eqn);

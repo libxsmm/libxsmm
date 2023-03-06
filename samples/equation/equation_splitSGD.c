@@ -197,7 +197,7 @@ int main( int argc, char* argv[] ) {
   eqn_param.inputs = arg_array;
   eqn_param.output.primary = (void*)eqn_wt_lo;
   offset = (long long) ((char*)eqn_wt_hi - (char*)eqn_wt_lo);
-  eqn_param.output.secondary = (void*)offset;
+  eqn_param.output.secondary = (void*)&offset;
   func0(&eqn_param);
 
   /* Run reference split sgd  */
