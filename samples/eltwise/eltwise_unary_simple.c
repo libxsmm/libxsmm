@@ -518,7 +518,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
 LIBXSMM_INLINE
 int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
-  char *in, *_in;
+  char *in;
   char *out, *out_gold;
   libxsmm_blasint i, j;
   int ret = EXIT_SUCCESS;
@@ -549,7 +549,6 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
   in       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi,   64 );
   out      = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo*3, 64 );
   out_gold = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo*3, 64 );
-  _in      = in;
 
   /* init in */
   init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
@@ -605,7 +604,7 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
   }
 
   /* use jited transpose */
-  unary_param.in.primary  = (void*)_in;
+  unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
   stride0 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N);
   stride1 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N*2);

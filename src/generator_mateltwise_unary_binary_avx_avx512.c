@@ -675,16 +675,16 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
         libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, 'z',
                                                        cur_vreg, i_micro_kernel_config->vec_tmp0,
-                                                       i_micro_kernel_config->mask_hi, 0);
+                                                       i_micro_kernel_config->mask_hi, 1);
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z', cur_vreg, i_micro_kernel_config->vec_tmp0, cur_vreg );
         libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, 'z',
                                                        cur_vreg, i_micro_kernel_config->vec_tmp1,
-                                                       i_micro_kernel_config->mask_hi, 0);
+                                                       i_micro_kernel_config->mask_hi, 1);
         if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3 ) {
           libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, 'z', cur_vreg, i_micro_kernel_config->vec_tmp1, cur_vreg );
           libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, 'z',
                                                          cur_vreg, i_micro_kernel_config->vec_tmp2,
-                                                         i_micro_kernel_config->mask_hi, 0);
+                                                         i_micro_kernel_config->mask_hi, 1);
         }
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, 'z', i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_tmp0, 16 );
         libxsmm_x86_instruction_vec_move( io_generated_code,
