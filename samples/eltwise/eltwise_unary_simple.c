@@ -42,6 +42,8 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
+#define FP32_TO_BF16X2 64
+#define FP32_TO_BF16X3 65
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
@@ -197,6 +199,10 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "reciprocal sqrt");
   } else if (op == EXP_OP) {
     sprintf(opname, "exp");
+  } else if (op == FP32_TO_BF16X2) {
+    sprintf(opname, "FP32 decomp to BF16x2");
+  } else if (op == FP32_TO_BF16X3) {
+    sprintf(opname, "FP32 decomp to BF16x3");
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -239,6 +245,10 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_EXP;
   } else if (op == RCP_SQRT_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
+  } else if (op == FP32_TO_BF16X2) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2;
+  } else if (op == FP32_TO_BF16X3) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -506,6 +516,155 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   return ret;
 }
 
+LIBXSMM_INLINE
+int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
+  char *in, *_in;
+  char *out, *out_gold;
+  libxsmm_blasint i, j;
+  int ret = EXIT_SUCCESS;
+  libxsmm_matdiff_info norms_out;
+  libxsmm_meltw_unary_shape unary_shape = libxsmm_create_meltw_unary_shape( M, N, ldi, ldo, dtype_in, dtype_out, dtype_comp );
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_flags unary_flags;
+  libxsmm_meltw_unary_type unary_type;
+  libxsmm_meltwfunction_unary unary_kernel;
+  unsigned long long stride0, stride1;
+  char opname[256];
+  double error_bound = 0.0;
+
+  set_opname(op, opname);
+  set_unarytype(op, &unary_type);
+
+  if ( M > ldi && !(use_bcast == ROW_BCAST || use_bcast == SCALAR_BCAST) ) {
+    fprintf( stderr, "test_unary_%s %i %i %i: ldi needs to be equal to or bigger than M\n", opname, (int)dtype_in, (int)dtype_out, (int)dtype_comp);
+    exit(-1);
+  }
+  if (M > ldo ) {
+    fprintf( stderr, "test_unary_%s %i %i %i: ldo needs to be equal to or bigger than N\n", opname, (int)dtype_in, (int)dtype_out, (int)dtype_comp);
+    exit(-1);
+  }
+
+  libxsmm_rng_set_seed(1);
+
+  in       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi,   64 );
+  out      = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo*3, 64 );
+  out_gold = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo*3, 64 );
+  _in      = in;
+
+  /* init in */
+  init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
+  init_zero_matrix(   dtype_out, out,      1, ldo, N*3 );
+  init_zero_matrix(   dtype_out, out_gold, 1, ldo, N*3 );
+
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST) {
+      apply_row_bcast_matrix( dtype_in, in, ldi, M, N );
+    }
+    if (use_bcast == COL_BCAST) {
+      apply_col_bcast_matrix( dtype_in, in, ldi, M, N );
+    }
+    if (use_bcast == SCALAR_BCAST) {
+      apply_scalar_bcast_matrix( dtype_in, in, ldi, M, N );
+    }
+  }
+
+  unary_flags = LIBXSMM_MELTW_FLAG_UNARY_NONE;
+
+  /* compute out_gold */
+  for ( j = 0; j < N; ++j ) {
+    for ( i = 0; i < M; ++i ) {
+      float in_value = 0.0f;
+      libxsmm_bfloat16 out_value = 0, out2_value = 0, out3_value = 0;
+      float tmp = 0.0f, tmp2 = 0.0f;
+      if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {
+        const float* f_in = (const float*)in;
+        in_value = f_in[(j*ldi) + i];
+      } else {
+        /* shouldn't happen */
+      }
+
+      libxsmm_rne_convert_fp32_bf16(&in_value, &out_value, 1);
+      libxsmm_convert_bf16_f32( &out_value, &tmp, 1 );
+      tmp2 = in_value - tmp;
+      libxsmm_rne_convert_fp32_bf16(&tmp2, &out2_value, 1);
+      libxsmm_convert_bf16_f32( &out2_value, &tmp, 1 );
+      tmp = tmp2 - tmp;
+      libxsmm_rne_convert_fp32_bf16(&tmp, &out3_value, 1);
+
+      if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
+        libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out_gold;
+        bf16_out[(j*ldo) + i            ] = out_value;
+#if 0
+        bf16_out[(j*ldo) + i + (ldo*N)  ] = out2_value;
+        bf16_out[(j*ldo) + i + (ldo*N*2)] = out3_value;
+#endif
+      } else {
+        /* shouldn't happen */
+      }
+    }
+  }
+
+  /* use jited transpose */
+  unary_param.in.primary  = (void*)_in;
+  unary_param.out.primary = (void*)out;
+  stride0 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N);
+  stride1 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N*2);
+  unary_param.out.secondary = (void*)(&stride0);
+  unary_param.out.tertiary = (void*)(&stride1);
+
+  if (use_bcast != NO_BCAST) {
+    if (use_bcast == ROW_BCAST) {
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW;
+    }
+    if (use_bcast == COL_BCAST) {
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL;
+    }
+    if (use_bcast == SCALAR_BCAST) {
+      unary_flags = LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR;
+    }
+  }
+
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, unary_flags );
+
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for UNARY TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N*3 );
+  printf("##########################################\n");
+  printf("#   Correctness  - Output                #\n");
+  printf("##########################################\n");
+  printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+  printf("L1 test       : %.25g\n", norms_out.l1_tst);
+  printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+  printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+  printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+  printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+  printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  error_bound = 0.00001;
+
+  if ( norms_out.normf_rel > error_bound ) {
+    ret = EXIT_FAILURE;
+  }
+
+  benchmark_unary(unary_type, unary_shape, unary_flags, unary_param);
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  if ( ret == EXIT_SUCCESS ) {
+    printf("SUCCESS unary F32 DECOMP BF16 %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
+  } else {
+    printf("FAILURE unary F32 DECOMP BF16 %i %i %i\n", (int)dtype_in, (int)dtype_out, (int)dtype_comp);
+  }
+
+  return ret;
+}
+
 int main( int argc, char* argv[] ) {
   char* dt_in = NULL;
   char* dt_out = NULL;
@@ -595,6 +754,15 @@ int main( int argc, char* argv[] ) {
          ( (dtype_in == LIBXSMM_DATATYPE_HF8 ) && (dtype_out == LIBXSMM_DATATYPE_HF8 ) && (dtype_comp == LIBXSMM_DATATYPE_HF8 ) ) ) {
       printf("Testing in:%s out:%s comp:%s unary copy - M=%i, N=%i, LDI=%i, LDO=%i\n",  libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo);
       ret = test_unary_op( M, N, ldi, ldo, op, use_bcast, dtype_in, dtype_out, dtype_comp, rnd_mode );
+    } else {
+      printf("  %s, Op: %i, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %u\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
+      printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/F16/BF8/HF8] [prec_comp: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
+      exit(-1);
+    }
+  } else if ( (op == FP32_TO_BF16X2) || (op == FP32_TO_BF16X3) ) {
+    if ( ( (dtype_in == LIBXSMM_DATATYPE_F32 ) && (dtype_out == LIBXSMM_DATATYPE_BF16) && (dtype_comp == LIBXSMM_DATATYPE_F32 ) ) ) {
+      printf("Testing in:%s out:%s comp:%s unary FP32 TO BF16X2/BF16X3 - M=%i, N=%i, LDI=%i, LDO=%i\n",  libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_out), libxsmm_get_typename(dtype_comp), M, N, ldi, ldo);
+      ret = test_unary_fp32_decomp_op( M, N, ldi, ldo, op, use_bcast, dtype_in, dtype_out, dtype_comp, rnd_mode );
     } else {
       printf("  %s, Op: %i, prec_in: %s, compute_prec: %s, prec_out: %s, rnd_mode : %u\n", argv[0], valid_op, libxsmm_get_typename(dtype_in), libxsmm_get_typename(dtype_comp), libxsmm_get_typename(dtype_out), rnd_mode);
       printf(" Error! Usage: %s [type] [use_bcast: 0/1/2/3] [prec_in: F32/BF16/F16/BF8/HF8] [prec_comp: F32/BF16/F16/BF8/HF8] [prec_out: F32/BF16/F16/BF8/HF8] [M] [N] [ldi] [ldo] [rnd_mode : 0/1]\n", argv[0] );
