@@ -178,7 +178,7 @@ if [ "${LOGDIR}" ]; then
       -g "${LOGDIR}/${PIPELINE}/${JOBID}" \
       -i /dev/stdin -j "${JOBID}" ${EXACT} \
       -x -y "${QUERY}" -r "${RESULT}" -z \
-      -u "${LOGRPTQOP}" \
+      -q "${LOGRPTQOP}" \
       -v ${VERBOSITY});
     then
       OUTPUT=""

@@ -292,18 +292,18 @@ def bold(s):
     return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
 
 
-def label(values, init, unit, accuracy):
+def label(values, init, unit, accuracy, cstdev):
     vnew, rd, cv = trend(values)
     result = f"{num2fix(vnew, accuracy)} {unit}"
     if rd:
         inum = num2fix(100 * rd)
         if cv:
-            bnum = num2fix(100 * cv)
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
-            if bnum < abs(inum):
-                result = f"{init} = {bold(result)} ({anum}>{bnum}%)"
+            bnum, cnum = num2fix(100 * cv), num2fix(cstdev, accuracy)
+            if num2fix(100 * cv * cstdev) < abs(inum):
+                result = f"{init} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
-                expr = f"{anum}" + r"$\leq$" + f"{bnum}%"
+                expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
                 result = f"{init} = {result} ({expr})"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
@@ -353,8 +353,7 @@ def main(args, argd, dbfname):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if dbfname == argd.filepath
-            or not (dbfname.is_file() or dbfname.is_fifo())
+            if dbfname == argd.filepath and args.infile.is_file()
             else dbfname
         )
     elif args.infile is None:  # connect to URL
@@ -664,10 +663,10 @@ def main(args, argd, dbfname):
                 ylist, ylabel = list(zip(*yvalue)), []
                 for j in range(len(legend)):
                     y, z = ylist[j], legend[j]
-                    s = label(y, z, yunit, accuracy)
+                    s = label(y, z, yunit, accuracy, args.cstdev)
                     ylabel.append(s)
             else:
-                ylabel = label(yvalue, legend, yunit, accuracy)
+                ylabel = label(yvalue, legend, yunit, accuracy, args.cstdev)
 
             # determine size of shared x-axis
             xsize = args.history
@@ -816,7 +815,7 @@ if __name__ == "__main__":
         help="Buildkite pipeline",
     )
     argparser.add_argument(
-        "-u",
+        "-q",
         "--query-op",
         type=str,
         default="all",
@@ -861,6 +860,13 @@ if __name__ == "__main__":
         "--exact",
         action="store_true",
         help="Match result exactly",
+    )
+    argparser.add_argument(
+        "-c",
+        "--cstdev",
+        type=float,
+        default=1.2,
+        help="Highlight if C*Stdev is exceeded",
     )
     argparser.add_argument(
         "-m",
