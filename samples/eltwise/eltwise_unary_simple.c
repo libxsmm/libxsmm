@@ -528,7 +528,7 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
   libxsmm_meltw_unary_flags unary_flags;
   libxsmm_meltw_unary_type unary_type;
   libxsmm_meltwfunction_unary unary_kernel;
-  unsigned long long stride0, stride1;
+  unsigned long long strides[2];
   char opname[256];
   double error_bound = 0.0;
 
@@ -583,21 +583,20 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
       }
 
       libxsmm_rne_convert_fp32_bf16(&in_value, &out_value, 1);
-#if 0
       libxsmm_convert_bf16_f32( &out_value, &tmp, 1 );
       tmp2 = in_value - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp2, &out2_value, 1);
       libxsmm_convert_bf16_f32( &out2_value, &tmp, 1 );
       tmp = tmp2 - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp, &out3_value, 1);
-#endif
+
       if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out_gold;
         bf16_out[(j*ldo) + i            ] = out_value;
-#if 0
         bf16_out[(j*ldo) + i + (ldo*N)  ] = out2_value;
-        bf16_out[(j*ldo) + i + (ldo*N*2)] = out3_value;
-#endif
+        if ( op == FP32_TO_BF16X3 ) {
+          bf16_out[(j*ldo) + i + (ldo*N*2)] = out3_value;
+        }
       } else {
         /* shouldn't happen */
       }
@@ -607,10 +606,9 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
   /* use jited transpose */
   unary_param.in.primary  = (void*)in;
   unary_param.out.primary = (void*)out;
-  stride0 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N);
-  stride1 = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N*2);
-  unary_param.out.secondary = (void*)(&stride0);
-  unary_param.out.tertiary = (void*)(&stride1);
+  strides[0] = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N);
+  strides[1] = (unsigned long long)(LIBXSMM_TYPESIZE(dtype_out)*ldo*N*2);
+  unary_param.out.secondary = (void*)(&strides[0]);
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {

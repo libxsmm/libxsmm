@@ -698,7 +698,6 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
             i_micro_kernel_config->vec_tmp0,
             ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
             0, 1);
-#if 0
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, 'z', i_micro_kernel_config->vec_tmp1, i_micro_kernel_config->vec_tmp1, 16 );
         libxsmm_x86_instruction_vec_move( io_generated_code,
             io_generated_code->arch,
@@ -725,7 +724,6 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
               ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
               0, 1);
         }
-#endif
       }
     }
   } else if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) && (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_BINARY_PACK)) {
@@ -2750,11 +2748,11 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2 || op == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3) {
     unsigned int l_mask = 0xaaaaaaaa;
-    i_micro_kernel_config->vec_tmp0           = i_micro_kernel_config->reserved_zmms + 1;
-    i_micro_kernel_config->vec_tmp1           = i_micro_kernel_config->reserved_zmms + 2;
-    i_micro_kernel_config->vec_tmp2           = i_micro_kernel_config->reserved_zmms + 3;
+    i_micro_kernel_config->vec_tmp0           = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->vec_tmp1           = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->vec_tmp2           = i_micro_kernel_config->reserved_zmms + 2;
     i_micro_kernel_config->reserved_zmms      = i_micro_kernel_config->reserved_zmms + 3;
-    i_micro_kernel_config->mask_hi            = i_micro_kernel_config->reserved_mask_regs + 1;
+    i_micro_kernel_config->mask_hi            = i_micro_kernel_config->reserved_mask_regs;
     i_micro_kernel_config->reserved_mask_regs = i_micro_kernel_config->reserved_mask_regs + 1;
 
     /* init mask for upper BF16 part */
@@ -2763,6 +2761,25 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
 
     libxsmm_x86_instruction_mask_move( io_generated_code, LIBXSMM_X86_INSTR_KMOVD_GPR_LD,
                                        i_gp_reg_tmp, i_micro_kernel_config->mask_hi );
+
+    /* let's load the offsets */
+    if ( op == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3 ) {
+      libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                       i_micro_kernel_config->alu_mov_instruction,
+                                       i_gp_reg_aux0,
+                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                       8,
+                                       i_gp_reg_aux1,
+                                       0 );
+    }
+
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                     i_micro_kernel_config->alu_mov_instruction,
+                                     i_gp_reg_aux0,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                     0,
+                                     i_gp_reg_aux0,
+                                     0 );
   }
 }
 
@@ -3337,6 +3354,7 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           72,
           i_gp_reg_mapping->gp_reg_offset,
           0 );
+      l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_offset;
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
@@ -3345,13 +3363,8 @@ void libxsmm_generator_unary_binary_avx512_microkernel( libxsmm_generated_code* 
           72,
           i_gp_reg_mapping->gp_reg_offset,
           0 );
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_param_struct,
-          LIBXSMM_X86_GP_REG_UNDEF, 0,
-          80,
-          i_gp_reg_mapping->gp_reg_offset_2,
-          0 );
+      l_gp_reg_aux0 = i_gp_reg_mapping->gp_reg_offset;
+      l_gp_reg_aux1 = i_gp_reg_mapping->gp_reg_offset_2;
     } else if (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DROPOUT) {
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
