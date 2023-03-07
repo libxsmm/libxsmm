@@ -573,8 +573,10 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
   for ( j = 0; j < N; ++j ) {
     for ( i = 0; i < M; ++i ) {
       float in_value = 0.0f;
-      libxsmm_bfloat16 out_value = 0, out2_value = 0, out3_value = 0;
-      float tmp = 0.0f, tmp2 = 0.0f;
+      libxsmm_bfloat16 out1_value = 0, out2_value = 0, out3_value = 0;
+      float ftmp = 0.0f, ftmp2 = 0.0f;
+      libxsmm_bfloat16_f32 tmp;
+
       if ( dtype_in == LIBXSMM_DATATYPE_F32 ) {
         const float* f_in = (const float*)in;
         in_value = f_in[(j*ldi) + i];
@@ -582,17 +584,31 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
         /* shouldn't happen */
       }
 
-      libxsmm_rne_convert_fp32_bf16(&in_value, &out_value, 1);
+      tmp.f = in_value;
+      tmp.i[0] = 0;
+      out1_value = tmp.i[1];
+
+      ftmp = in_value - tmp.f;
+      tmp.f = ftmp;
+      tmp.i[0] = 0;
+      out2_value = tmp.i[1];
+
+      ftmp2 = ftmp - tmp.f;
+      tmp.f = ftmp2;
+      out3_value = tmp.i[1];
+
+#if 0
+      libxsmm_rne_convert_fp32_bf16(&in_value, &out1_value, 1);
       libxsmm_convert_bf16_f32( &out_value, &tmp, 1 );
       tmp2 = in_value - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp2, &out2_value, 1);
       libxsmm_convert_bf16_f32( &out2_value, &tmp, 1 );
       tmp = tmp2 - tmp;
       libxsmm_rne_convert_fp32_bf16(&tmp, &out3_value, 1);
-
+#endif
       if ( dtype_out == LIBXSMM_DATATYPE_BF16 ) {
         libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out_gold;
-        bf16_out[(j*ldo) + i            ] = out_value;
+        bf16_out[(j*ldo) + i            ] = out1_value;
         bf16_out[(j*ldo) + i + (ldo*N)  ] = out2_value;
         if ( op == FP32_TO_BF16X3 ) {
           bf16_out[(j*ldo) + i + (ldo*N*2)] = out3_value;
@@ -629,6 +645,19 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
     exit(-1);
   }
   unary_kernel( &unary_param );
+
+#if 0
+  for ( i = 0 ; i < ldo*N*3 ; ++i ) {
+    libxsmm_bfloat16* bf16_out = (libxsmm_bfloat16*)out;
+    libxsmm_bfloat16* bf16_gold = (libxsmm_bfloat16*)out_gold;
+    libxsmm_bfloat16_f32 tmp1;
+    libxsmm_bfloat16_f32 tmp2;
+    tmp1.i[0] = 0; tmp2.i[0] = 0;
+    tmp1.i[1] = bf16_gold[i];
+    tmp2.i[1] = bf16_out[i];
+    printf(" ( %f, %f ) ", tmp1.f, tmp2.f );
+  }
+#endif
 
   /* compare result */
   norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N*3 );

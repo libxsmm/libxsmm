@@ -674,17 +674,26 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        if (bcast_row == 1) {
+          cur_vreg = i_start_vreg + in * i_m_blocking;
+        }
+        if (bcast_scalar == 1) {
+          cur_vreg = i_start_vreg;
+        }
+        if (bcast_col == 1) {
+          cur_vreg = i_start_vreg + im;
+        }
         libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, vname,
                                                        cur_vreg, i_micro_kernel_config->vec_tmp0,
                                                        i_micro_kernel_config->mask_hi, 1);
-        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, vname, cur_vreg, i_micro_kernel_config->vec_tmp0, cur_vreg );
+        libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, vname, i_micro_kernel_config->vec_tmp0, cur_vreg, i_micro_kernel_config->vec_tmp2 );
         libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, vname,
-                                                       cur_vreg, i_micro_kernel_config->vec_tmp1,
+                                                       i_micro_kernel_config->vec_tmp2, i_micro_kernel_config->vec_tmp1,
                                                        i_micro_kernel_config->mask_hi, 1);
         if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3 ) {
-          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, vname, cur_vreg, i_micro_kernel_config->vec_tmp1, cur_vreg );
+          libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VSUBPS, vname, i_micro_kernel_config->vec_tmp1, i_micro_kernel_config->vec_tmp2, i_micro_kernel_config->vec_tmp2 );
           libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VMOVDQU16, vname,
-                                                         cur_vreg, i_micro_kernel_config->vec_tmp2,
+                                                         i_micro_kernel_config->vec_tmp2, i_micro_kernel_config->vec_tmp2,
                                                          i_micro_kernel_config->mask_hi, 1);
         }
         libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, vname, i_micro_kernel_config->vec_tmp0, i_micro_kernel_config->vec_tmp0, 16 );
