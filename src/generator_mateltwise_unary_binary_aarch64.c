@@ -548,7 +548,7 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
                                          unsigned int                            i_n_blocking,
                                          unsigned int                            i_mask_last_m_chunk,
                                          unsigned int                            i_mask_reg) {
-  unsigned int im, in, cur_vreg;
+  unsigned int im, in, cur_vreg, cur_vreg_real;
   unsigned int bcast_row = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_ROW) > 0))) ? 1 : 0;
   unsigned int bcast_col = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_COL) > 0))) ? 1 : 0;
   unsigned int bcast_scalar = (((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BCAST_SCALAR) > 0))) ? 1 : 0;
@@ -576,8 +576,22 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
                                                            : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
         unsigned int l_mask_store = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 0 : 0
                                                       : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 2 : 2;
-        cur_vreg = i_start_vreg + in * i_m_blocking + im;
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg, 0, libxsmm_generator_aarch64_get_sve_type(2) );
+        cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
+        if (bcast_row == 1) {
+          cur_vreg = i_start_vreg + in * i_m_blocking;
+        } else if (bcast_scalar == 1) {
+          cur_vreg = i_start_vreg;
+        } else if (bcast_col == 1) {
+          cur_vreg = i_start_vreg + im;
+        } else {
+          cur_vreg = cur_vreg_real;
+        }
+        if (((bcast_row == 0) && (bcast_col == 0) && (bcast_scalar == 0)) ||
+            ((bcast_scalar == 1) && (in == 0) && (im == 0)) ||
+            ((bcast_row == 1) && (im == 0)) ||
+            (bcast_col == 1)) {
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP1_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg, 0, libxsmm_generator_aarch64_get_sve_type(2) );
+        }
         libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_micro_kernel_config->tmp_vreg,
                                                           i_micro_kernel_config->datatype_size_out, l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store) );
       }
@@ -601,9 +615,23 @@ void libxsmm_store_aarch64_2d_reg_block( libxsmm_generated_code*                
                                                            : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? i_mask_last_m_chunk : i_vlen : i_vlen;
         unsigned int l_mask_store = (l_is_f32_or_f64) ? (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 0 : 0
                                                       : (im == i_m_blocking - 1) ? (i_mask_last_m_chunk > 0) ? 1 : 2 : 2;
-        cur_vreg = i_start_vreg + in * i_m_blocking + im;
-        libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP2_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg, 0, libxsmm_generator_aarch64_get_sve_type(2) );
-        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_micro_kernel_config->tmp_vreg,
+        cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
+        if (bcast_row == 1) {
+          cur_vreg = i_start_vreg + in * i_m_blocking;
+        } else if (bcast_scalar == 1) {
+          cur_vreg = i_start_vreg;
+        } else if (bcast_col == 1) {
+          cur_vreg = i_start_vreg + im;
+        } else {
+          cur_vreg = cur_vreg_real;
+        }
+        if (((bcast_row == 0) && (bcast_col == 0) && (bcast_scalar == 0)) ||
+            ((bcast_scalar == 1) && (in == 0) && (im == 0)) ||
+            ((bcast_row == 1) && (im == 0)) ||
+            (bcast_col == 1)) {
+          libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_UZP2_V, cur_vreg, cur_vreg, 0, i_micro_kernel_config->tmp_vreg2, 0, libxsmm_generator_aarch64_get_sve_type(2) );
+        }
+        libxsmm_generator_vloadstore_masked_vreg_aarch64( io_generated_code, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_1, i_micro_kernel_config->tmp_vreg2,
                                                           i_micro_kernel_config->datatype_size_out, l_masked_elements, 1, 1, LIBXSMM_CAST_UCHAR(l_mask_store) );
       }
       if ( l_ld_bytes != l_m_adjust ) {
@@ -2481,7 +2509,8 @@ void libxsmm_configure_unary_aarch64_kernel_vregs_masks(  libxsmm_generated_code
 
   if (op == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
     i_micro_kernel_config->tmp_vreg  = i_micro_kernel_config->reserved_zmms;
-    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->tmp_vreg2 = i_micro_kernel_config->reserved_zmms + 1;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 2;
   }
 
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_RELU)       || (op == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)   ||

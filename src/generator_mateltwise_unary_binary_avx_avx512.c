@@ -644,7 +644,16 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
         char unpack_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
-        cur_vreg = i_start_vreg + in * i_m_blocking + im;
+        cur_vreg_real = i_start_vreg + in * i_m_blocking + im;
+        if (bcast_row == 1) {
+          cur_vreg = i_start_vreg + in * i_m_blocking;
+        } else if (bcast_scalar == 1) {
+          cur_vreg = i_start_vreg;
+        } else if (bcast_col == 1) {
+          cur_vreg = i_start_vreg + im;
+        } else {
+          cur_vreg = cur_vreg_real;
+        }
         libxsmm_x86_instruction_vec_move( io_generated_code,
             io_generated_code->arch,
             LIBXSMM_X86_INSTR_VPMOVDW,
@@ -656,7 +665,12 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
             cur_vreg,
             ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
             0, 1);
-        libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, unpack_vname, cur_vreg, cur_vreg, 16 );
+        if (((bcast_row == 0) && (bcast_col == 0) && (bcast_scalar == 0)) ||
+            ((bcast_scalar == 1) && (in == 0) && (im == 0)) ||
+            ((bcast_row == 1) && (im == 0)) ||
+            (bcast_col == 1)) {
+          libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAD_I, unpack_vname, cur_vreg, i_micro_kernel_config->tmp_vreg, 16 );
+        }
         libxsmm_x86_instruction_vec_move( io_generated_code,
             io_generated_code->arch,
             LIBXSMM_X86_INSTR_VPMOVDW,
@@ -665,7 +679,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
             1,
             (im * i_vlen + in * i_mateltwise_desc->ldo) * i_micro_kernel_config->datatype_size_out,
             unpack_vname,
-            cur_vreg,
+            i_micro_kernel_config->tmp_vreg,
             ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
             0, 1);
       }
@@ -2148,6 +2162,11 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
                                                  const unsigned int                      i_gp_reg_aux1 ) {
   const char vname = (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 'y' : 'z';
   unsigned int use_fp64_compute = (i_compute_dtype == LIBXSMM_DATATYPE_F64) ? 1 : 0;
+
+  if ( op == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS ) {
+    i_micro_kernel_config->tmp_vreg = i_micro_kernel_config->reserved_zmms;
+    i_micro_kernel_config->reserved_zmms = i_micro_kernel_config->reserved_zmms + 1;
+  }
 
   if ((op == LIBXSMM_MELTW_TYPE_UNARY_RELU)       || (op == LIBXSMM_MELTW_TYPE_UNARY_RELU_INV)       ||
       (op == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU) || (op == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU_INV)    ) {
