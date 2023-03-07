@@ -30,7 +30,7 @@
 #define SUB_OP 3
 #define DIV_OP 4
 #define MULADD_OP 5
-
+#define PACK_OP 6
 
 LIBXSMM_INLINE
 void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
@@ -138,6 +138,8 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "div");
   } else if ( op == MULADD_OP ) {
     sprintf(opname, "muladd");
+  } else if ( op == PACK_OP ) {
+    sprintf(opname, "pack_2x16bit_to_32bit");
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -158,12 +160,30 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
   } else if ( op == MULADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
+  } else if ( op == PACK_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_PACK;
   } else {
     printf("Invalid OP\n");
     exit(-1);
   }
 
   *type = binary_type;
+}
+
+LIBXSMM_INLINE
+void reference_pack_2x16bit_blocks_to_32bit(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi0, libxsmm_blasint ldi1, libxsmm_blasint ldo, char *in_lo_char, char *in_hi_char, char *out_char) {
+  float *out = (float*)out_char;
+  libxsmm_bfloat16 *in_lo = (libxsmm_bfloat16*)in_lo_char;
+  libxsmm_bfloat16 *in_hi = (libxsmm_bfloat16*)in_hi_char;
+  libxsmm_blasint i, j;
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < M; i++) {
+      libxsmm_bfloat16_f32 bf16_hp;
+      bf16_hp.i[0] = in_lo[j * ldi0 + i];
+      bf16_hp.i[1] = in_hi[j * ldi1 + i];
+      out[j * ldo + i] = bf16_hp.f;
+    }
+  }
 }
 
 LIBXSMM_INLINE
@@ -346,7 +366,11 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   }
 
   /* compute out_gold */
-  binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
+  if (op == PACK_OP) {
+    reference_pack_2x16bit_blocks_to_32bit(M, N, ldi, ldi, ldo, in, in2, out_gold);
+  } else {
+    binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
+  }
 
   /* use jited transpose */
   binary_param.in0.primary  = (void*)_in;
@@ -456,7 +480,7 @@ int main( int argc, char* argv[] ) {
 
   set_opname(op, opname);
 
-  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP ) ? 1 : 0;
+  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == PACK_OP) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {

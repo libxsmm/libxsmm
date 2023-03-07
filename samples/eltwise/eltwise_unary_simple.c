@@ -48,7 +48,7 @@
 #endif
 
 LIBXSMM_INLINE
-void reference_unpack_32bit_to_16bit_blocks(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, char *in_char, char *out_char, long long offset) {
+void reference_unpack_32bit_to_2x16bit_blocks(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo, char *in_char, char *out_char, long long offset) {
   float *in = (float*)in_char;
   libxsmm_bfloat16 *out_lo = (libxsmm_bfloat16*)out_char;
   libxsmm_bfloat16 *out_hi = (libxsmm_bfloat16*)((char*)out_char + offset);
@@ -451,7 +451,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
 
   /* compute out_gold */
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
-    reference_unpack_32bit_to_16bit_blocks( M, N, ldi, ldo, in, out_gold, offset);
+    reference_unpack_32bit_to_2x16bit_blocks( M, N, ldi, ldo, in, out_gold, offset);
   } else {
     unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
   }
