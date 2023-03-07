@@ -42,9 +42,26 @@
 #define RCP_SQRT_OP 16
 #define EXP_OP 17
 #define REPLICATE_COL_VAR 27
+#define UNPACK_TO_BLOCKS 42
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
+
+LIBXSMM_INLINE
+void reference_unpack_to_blocks_16bit(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, char *in_char, char *out_lo_char, char *out_hi_char) {
+  float *in = (float*)in_char;
+  libxsmm_bfloat16 *out_lo = (libxsmm_bfloat16*)out_lo_char;
+  libxsmm_bfloat16 *out_hi = (libxsmm_bfloat16*)out_hi_char;
+  libxsmm_blasint i, j;
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < M; i++) {
+      libxsmm_bfloat16_f32 bf16_hp;
+      bf16_hp.f = in[j * ld + i];
+      out_lo[j * ld + i] = bf16_hp.i[0];
+      out_hi[j * ld + i] = bf16_hp.i[1];
+    }
+  }
+}
 
 LIBXSMM_INLINE
 void adjust_input_for_hf8_rcp_family( libxsmm_datatype dtype_in, void *in, libxsmm_blasint ldi, libxsmm_blasint N ) {
@@ -197,6 +214,8 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "reciprocal sqrt");
   } else if (op == EXP_OP) {
     sprintf(opname, "exp");
+  } else if (op == UNPACK_TO_BLOCKS) {
+    sprintf(opname, "unpack to blocks");
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -239,6 +258,8 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_EXP;
   } else if (op == RCP_SQRT_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
+  }  else if (op == UNPACK_TO_BLOCKS) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -351,7 +372,9 @@ LIBXSMM_INLINE
 int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const unsigned int op, const unsigned int use_bcast, const libxsmm_datatype dtype_in, const libxsmm_datatype dtype_out, const libxsmm_datatype dtype_comp, const unsigned int rnd_mode ) {
   char *in, *_in;
   char *out, *out_gold;
+  char *out2, *out_gold2;
   unsigned int *rng_state = NULL;
+  long long offset = 0;
 
   int ret = EXIT_SUCCESS;
   libxsmm_matdiff_info norms_out;
@@ -381,10 +404,18 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi, 64 );
   out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
   out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
+  if (op == UNPACK_TO_BLOCKS) {
+    out2       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
+    out_gold2  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*N*ldo, 64 );
+  }
   _in       = in;
 
   /* init in */
-  init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+    init_random_matrix( dtype_out,  in,       1, ldi*2, N, 0 );
+  } else {
+    init_random_matrix( dtype_in,  in,       1, ldi, N, 0 );
+  }
   init_zero_matrix(   dtype_out, out,      1, ldo, N );
   init_zero_matrix(   dtype_out, out_gold, 1, ldo, N );
 
@@ -416,13 +447,21 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 
   /* compute out_gold */
-  unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+    reference_unpack_to_blocks_16bit( M, N, ldi, in, out_gold, out_gold2);
+  } else {
+    unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
+  }
 
   /* use jited transpose */
   unary_param.in.primary  = (void*)_in;
   unary_param.out.primary = (void*)out;
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_param.op.primary = (void*) &_N;
+  }
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+    offset = (long long) ((char*)out2 - (char*)out);
+    unary_param.out.secondary = (void*)&offset;
   }
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST) {
@@ -451,7 +490,11 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   /* compare result */
   norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N );
   printf("##########################################\n");
-  printf("#   Correctness  - Output                #\n");
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+    printf("#   Correctness  - Output-LO             #\n");
+  } else {
+    printf("#   Correctness  - Output                #\n");
+  }
   printf("##########################################\n");
   printf("L1 reference  : %.25g\n", norms_out.l1_ref);
   printf("L1 test       : %.25g\n", norms_out.l1_tst);
@@ -460,6 +503,20 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
   printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
   printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+    norms_out = check_matrix( dtype_out, out_gold2, out2, ldo, M, N );
+    printf("##########################################\n");
+    printf("#   Correctness  - Output-HI             #\n");
+    printf("##########################################\n");
+    printf("L1 reference  : %.25g\n", norms_out.l1_ref);
+    printf("L1 test       : %.25g\n", norms_out.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_out.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_out.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_out.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_out.linf_rel);
+    printf("Check-norm    : %.24f\n\n", norms_out.normf_rel);
+  }
 
   if ( op == RCP_OP || op == RCP_SQRT_OP ) {
     if ((dtype_in == LIBXSMM_DATATYPE_BF16 || dtype_out == LIBXSMM_DATATYPE_BF16) && (libxsmm_get_target_archid() >= LIBXSMM_X86_GENERIC) && (libxsmm_get_target_archid() <= LIBXSMM_X86_AVX2)) {
@@ -495,6 +552,10 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
   libxsmm_free( out_gold );
   libxsmm_free( out );
+  if (op == UNPACK_TO_BLOCKS) {
+    libxsmm_free( out_gold2 );
+    libxsmm_free( out2 );
+  }
   libxsmm_free( in );
 
   if ( ret == EXIT_SUCCESS ) {
@@ -551,7 +612,7 @@ int main( int argc, char* argv[] ) {
 
   valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP ||
                op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP ||
-               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR) ? 1 : 0;
+               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR || op == UNPACK_TO_BLOCKS) ? 1 : 0;
 
   if ((rnd_mode == RND_STOCHASTIC && dtype_out != LIBXSMM_DATATYPE_BF8) || (rnd_mode > RND_STOCHASTIC)) {
     printf(" Error! rnd_mode = %u is not supported with the selected output precision, prec_out : %i\n", rnd_mode, (int)dtype_out );
