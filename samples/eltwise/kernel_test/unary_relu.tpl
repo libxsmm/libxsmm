@@ -23,6 +23,7 @@ f1.close()
 END
 
 PREC=0
+CASES=0
 
 for i in `cat ${TESTFILE1}`
 do
@@ -34,11 +35,11 @@ do
   PREC_IN=`echo ${PREC} | awk -F"_" '{print $1}'`
   PREC_OUT=`echo ${PREC} | awk -F"_" '{print $2}'`
   PREC_COMP=`echo ${PREC} | awk -F"_" '{print $3}'`
-  for RELU_OP in D L E
+  for RELU_OP in ${CASES}
   do
-    ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
-    ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
-    ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+    ./eltwise_unary_relu ${RELU_OP} F 0 ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+    ./eltwise_unary_relu ${RELU_OP} F 1 ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
+    ./eltwise_unary_relu ${RELU_OP} B 1 ${PREC_IN} ${PREC_COMP} ${PREC_OUT} ${M} ${N} ${LDI} ${LDO}
   done
 done
 
