@@ -569,7 +569,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg,
-                                                 unsigned int                            i_skip_dtype_cvt ) {
+                                                 unsigned int                            i_skip_dtype_cvt,
+                                                 unsigned int                            i_is_unpack_load ) {
 
   unsigned int in, im;
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
@@ -609,7 +610,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
-        if ( arg_info[i_arg_id].dtype == LIBXSMM_DATATYPE_I16 ) {
+        if ( i_is_unpack_load > 0 ) {
           char unpack_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
           libxsmm_x86_instruction_vec_move( io_generated_code,
               io_generated_code->arch,
@@ -1339,7 +1340,7 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
         /* We have to load the input from the argument tensor using the node's assigned tmp reg block */
         left_reg_block = cur_op->tmp.id;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_DUMP) ? 1 : 0  );
+            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_DUMP) ? 1 : 0, 0);
         arg_id++;
       }
       if (cur_op->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_DUMP) {
@@ -1370,11 +1371,11 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
         /* We have to load the input from the argument tensor using the node's assigned tmp reg block */
         left_reg_block = cur_op->tmp.id;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_PACK) ? 1 : 0);
         arg_id++;
         right_reg_block = aux_reg_block;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_PACK) ? 1 : 0);
         arg_id++;
       } else if ((cur_op->le->type != LIBXSMM_MATRIX_EQN_NODE_ARG) && (cur_op->ri->type != LIBXSMM_MATRIX_EQN_NODE_ARG)) {
         left_reg_block = cur_op->le->tmp.id;
@@ -1385,13 +1386,13 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
           left_reg_block = cur_op->le->tmp.id;
           right_reg_block = aux_reg_block;
           libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_PACK) ? 1 : 0 );
           arg_id++;
         } else {
           left_reg_block = aux_reg_block;
           right_reg_block = cur_op->ri->tmp.id;
           libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+              arg_id, i_vlen_in, aux_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, (cur_op->info.b_op.type == LIBXSMM_MELTW_TYPE_BINARY_PACK) ? 1 : 0 );
           arg_id++;
         }
       }
@@ -1401,7 +1402,7 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
       if (cur_op->le->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
         left_reg_block = aux_reg_block;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, left_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, 0 );
         arg_id++;
       } else {
         left_reg_block = cur_op->le->tmp.id;
@@ -1409,7 +1410,7 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
       if (cur_op->ri->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
         right_reg_block = aux_reg_block2;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, right_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, 0 );
         arg_id++;
       } else {
         right_reg_block = cur_op->ri->tmp.id;
@@ -1417,7 +1418,7 @@ void libxsmm_generator_mateqn_2d_microkernel( libxsmm_generated_code*           
       if (cur_op->r2->type == LIBXSMM_MATRIX_EQN_NODE_ARG) {
         right2_reg_block = cur_op->tmp.id;
         libxsmm_generator_mateqn_load_arg_to_2d_reg_block( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_meqn_desc,
-            arg_id, i_vlen_in, right2_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0 );
+            arg_id, i_vlen_in, right2_reg_block, m_unroll_factor, n_unroll_factor, use_m_input_masking, mask_reg_in, 0, 0 );
         arg_id++;
       } else {
         right2_reg_block = cur_op->r2->tmp.id;

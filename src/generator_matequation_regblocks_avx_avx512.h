@@ -105,7 +105,6 @@ unsigned int libxsmm_generator_matequation_regblocks_vmove_instruction(libxsmm_d
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_matequation_regblocks_vbcast_instruction(libxsmm_generated_code* io_generated_code,  libxsmm_datatype  dtype);
 
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code*          io_generated_code,
                                                  libxsmm_matequation_gp_reg_mapping*     i_gp_reg_mapping,
@@ -118,7 +117,8 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg,
-                                                 unsigned int                            i_skip_dtype_cvt );
+                                                 unsigned int                            i_skip_dtype_cvt,
+                                                 unsigned int                            i_is_unpack_load );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*          io_generated_code,
