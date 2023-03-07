@@ -10,7 +10,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_F32_F32' 'F16_F16_F16' 'F16_F16_F32' 'F32_F16_F32' 'F16_F32_F32' 'BF8_BF8_BF8' 'BF8_BF8_F32' 'F32_BF8_F32' 'BF8_F32_F32' 'HF8_HF8_HF8' 'HF8_HF8_F32' 'F32_HF8_F32' 'HF8_F32_F32' 'F64_F64_F64'; do
-  for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27; do
+  for TYPE in 1 2 3 4 7 8 9 10 11 12 13 14 15 16 17 27 42; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_"
@@ -23,6 +23,11 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
 
       # only cpy TPP has low precision compute
       if [[ ("$TYPE" != '1') && ("$TYPE" != '2') && ("$TYPE" != '27') && (("$PREC" == 'F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8')) ]]; then
+        continue
+      fi
+
+      # Unary unpack to blocks FP32 -> 2 x BF16 in only possible for 1 prec combination
+      if [[ ("$TYPE" == '42') && ("$PREC" != 'F32_BF16_F32') ]]; then
         continue
       fi
 
@@ -59,6 +64,8 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
         TPPNAME="exp"
       elif [ "$TYPE" == '27' ] ; then
         TPPNAME="replicate_col_var"
+      elif [ "$TYPE" == '42' ] ; then
+        TPPNAME="unpack_to_blocks"
       else
         continue
       fi
