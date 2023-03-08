@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
   libxsmm_blasint ld = N + 5;
   long i;
   long j;
+  libxsmm_matdiff_info norms, diff;
 
   libxsmm_blasint ld_dump;
 
@@ -164,7 +165,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  libxsmm_matdiff_info norms, diff;
   libxsmm_matdiff_clear(&norms);
   libxsmm_matdiff_clear(&diff);
 
