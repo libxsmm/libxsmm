@@ -449,10 +449,20 @@ void libxsmm_load_aarch64_2d_reg_block( libxsmm_generated_code*                 
             }
           }
         }
-        if ( l_ld_bytes != l_m_adjust ) {
-          libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                        i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in,
-                                                        ((long long)l_ld_bytes - l_m_adjust) );
+        if ( bcast_input == 0 ) {
+          if ( l_ld_bytes != l_m_adjust ) {
+            libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                          i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in,
+                                                          ((long long)l_ld_bytes - l_m_adjust) );
+          }
+        } else {
+          if (bcast_row == 1) {
+            if ( l_ld_bytes != i_micro_kernel_config->datatype_size_in ) {
+              libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
+                                                            i_gp_reg_mapping->gp_reg_in, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_in,
+                                                            ((long long)l_ld_bytes - i_micro_kernel_config->datatype_size_in) );
+            }
+          }
         }
       }
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
