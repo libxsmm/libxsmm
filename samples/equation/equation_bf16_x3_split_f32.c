@@ -50,7 +50,6 @@ int main(int argc, char** argv) {
 
   ld_dump = M;
 
-  // Allocate buffers
   naive_input = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
   naive_output = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
   naive_output0 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
