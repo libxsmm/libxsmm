@@ -9,7 +9,6 @@
 /* Kirill Voronin (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -21,35 +20,52 @@ int main(int argc, char** argv) {
   long M = 31;
   long N = 15;
   libxsmm_blasint ld = N + 5;
-  long n_iters = 400;
   long i;
   long j;
+
+  libxsmm_blasint ld_dump;
+
+  libxsmm_meqn_arg_shape  arg_shape_out;
+  libxsmm_matrix_eqn_op_metadata  op_metadata;
+  libxsmm_bitfield unary_flags;
+  libxsmm_blasint my_eqn0;
+  libxsmm_matrix_eqn_function func0;
+  libxsmm_matrix_arg arg_array[2];
+  libxsmm_matrix_op_arg op_arg_arr[2];
+  libxsmm_matrix_eqn_param eqn_param;
+
+  float *naive_input;
+  float *naive_output;
+  libxsmm_bfloat16 *naive_output0;
+  libxsmm_bfloat16 *naive_output1;
+  libxsmm_bfloat16 *naive_output2;
+  float *output_libxsmm;
+  libxsmm_bfloat16 *output0_libxsmm;
+  libxsmm_bfloat16 *output1_libxsmm;
+  libxsmm_bfloat16 *output2_libxsmm;
 
   if (argc > 1) M  = atoi(argv[1]);
   if (argc > 2) N  = atoi(argv[2]);
   if (argc > 3) ld = atoi(argv[3]);
 
-  libxsmm_blasint ld_dump = M;
+  ld_dump = M;
 
   // Allocate buffers
-  float *naive_input = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
+  naive_input = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
+  naive_output = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
+  naive_output0 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output1 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output2 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
+  output0_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
+  output1_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
+  output2_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
+
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {
       naive_input[i*ld + j] = (float)libxsmm_rng_f64();
     }
   }
-
-  float *naive_output = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
-
-  libxsmm_bfloat16 *naive_output0 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-  libxsmm_bfloat16 *naive_output1 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-  libxsmm_bfloat16 *naive_output2 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-
-  float *output_libxsmm = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
-
-  libxsmm_bfloat16 *output0_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
-  libxsmm_bfloat16 *output1_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
-  libxsmm_bfloat16 *output2_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < M; ++j ) {
@@ -81,13 +97,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  libxsmm_meqn_arg_shape  arg_shape_out;
-
-  libxsmm_matrix_eqn_op_metadata  op_metadata;
-
-  libxsmm_bitfield unary_flags;
-
-  libxsmm_blasint my_eqn0 = libxsmm_matrix_eqn_create();
+  my_eqn0 = libxsmm_matrix_eqn_create();
 
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_IDENTITY, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_BF16 ); /* not sure about dtype */
   libxsmm_matrix_eqn_push_back_binary_op( my_eqn0, LIBXSMM_MELTW_TYPE_BINARY_SUB, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
@@ -125,16 +135,12 @@ int main(int argc, char** argv) {
 
   /* libxsmm_matrix_eqn_tree_print(my_eqn0); */
   /* libxsmm_matrix_eqn_rpn_print(my_eqn0); */
-  libxsmm_matrix_eqn_function func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
+  func0 = libxsmm_dispatch_matrix_eqn_v2( my_eqn0, arg_shape_out );
   if ( func0 == NULL ) {
     fprintf( stderr, "JIT for func0 failed. Bailing...!\n");
     exit(-1);
   }
 
-  libxsmm_matrix_arg arg_array[2];
-  libxsmm_matrix_op_arg op_arg_arr[2];
-
-  libxsmm_matrix_eqn_param eqn_param;
   memset( &eqn_param, 0, sizeof(eqn_param));
   eqn_param.inputs   = arg_array;
   eqn_param.ops_args = op_arg_arr;
