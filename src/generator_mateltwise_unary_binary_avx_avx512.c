@@ -377,17 +377,54 @@ void libxsmm_load_2d_reg_block( libxsmm_generated_code*                 io_gener
       for (im = 0; im < i_m_blocking; im++) {
         char pack_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            io_generated_code->arch,
-            LIBXSMM_X86_INSTR_VPMOVZXWD,
-            i_gp_reg_mapping->gp_reg_in,
-            LIBXSMM_X86_GP_REG_UNDEF,
-            0,
-            (im * i_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
-            pack_vname,
-            cur_vreg,
-            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
-            0, 0);
+        if ( bcast_input == 0) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              io_generated_code->arch,
+              LIBXSMM_X86_INSTR_VPMOVZXWD,
+              i_gp_reg_mapping->gp_reg_in,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              0,
+              (im * i_vlen + in * i_mateltwise_desc->ldi) * i_micro_kernel_config->datatype_size_in,
+              pack_vname,
+              cur_vreg,
+              ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+              0, 0);
+        } else {
+          if ( (bcast_row == 1) || (bcast_scalar == 1) ) {
+            if (im == 0) {
+              if ((bcast_row == 1) || ((bcast_scalar == 1) && (in == 0))) {
+                char copy_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
+                libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                    vbcast_instr,
+                    i_gp_reg_mapping->gp_reg_in,
+                    LIBXSMM_X86_GP_REG_UNDEF, 0,
+                    in * i_mateltwise_desc->ldi * i_micro_kernel_config->datatype_size_in,
+                    vname,
+                    cur_vreg, 0, 0, 0 );
+                libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXWD, copy_vname, cur_vreg, cur_vreg );
+              } else if ((bcast_scalar == 1) && (in > 0) && (i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_BINARY) ) {
+                char copy_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
+                libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, copy_vname, i_start_vreg, cur_vreg );
+              }
+            } else {
+              char copy_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, copy_vname, i_start_vreg + in * i_m_blocking, cur_vreg );
+            }
+          } else if ( bcast_col == 1 ) {
+            if (in == 0) {
+              libxsmm_x86_instruction_unified_vec_move( io_generated_code,
+                  LIBXSMM_X86_INSTR_VPMOVZXWD,
+                  i_gp_reg_mapping->gp_reg_in,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  im * i_vlen * i_micro_kernel_config->datatype_size_in,
+                  pack_vname,
+                  cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 0 );
+            } else {
+              char copy_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
+              libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VMOVUPS, copy_vname, i_start_vreg + im, cur_vreg );
+            }
+          }
+        }
       }
     }
     return;
@@ -1731,21 +1768,40 @@ void libxsmm_compute_binary_2d_reg_block( libxsmm_generated_code*               
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
         char pack_vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
+        unsigned int _im = (bcast_row == 1) ? 0 : im;
+        unsigned int _in = (bcast_col == 1) ? 0 : in;
+        unsigned int in_offset;
+        unsigned int l_vlen = 16;
+        if (io_generated_code->arch < LIBXSMM_X86_AVX512) {
+          l_vlen = l_vlen/2;
+        }
+        if (bcast_scalar == 1) {
+          _im = 0;
+          _in = 0;
+        }
+        in_offset = _in * i_mateltwise_desc->ldi2;
         cur_vreg = i_start_vreg + in * i_m_blocking + im;
-
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-            io_generated_code->arch,
-            LIBXSMM_X86_INSTR_VPMOVZXWD,
-            i_gp_reg_mapping->gp_reg_in2,
-            LIBXSMM_X86_GP_REG_UNDEF,
-            0,
-            (im * i_vlen + in * i_mateltwise_desc->ldi2) * i_micro_kernel_config->datatype_size_in,
-            pack_vname,
-            i_micro_kernel_config->tmp_vreg,
-            ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
-            0, 0);
-
-        libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, pack_vname, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg, 16 );
+        if ( (bcast_input == 0) ||
+           (bcast_col == 1) ||
+           ((bcast_row == 1) && (im == 0)) ||
+           ((bcast_scalar == 1) && (im == 0) && (in == 0))) {
+          unsigned int vmove_instr_in2 = (bcast_input == 0 || bcast_col == 1) ? LIBXSMM_X86_INSTR_VPMOVZXWD: vbcast_instr;
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              io_generated_code->arch,
+              vmove_instr_in2,
+              i_gp_reg_mapping->gp_reg_in2,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              0,
+              (_im * l_vlen + in_offset) * i_micro_kernel_config->datatype_size_in1,
+              pack_vname,
+              i_micro_kernel_config->tmp_vreg,
+              ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
+              0, 0);
+          if (vmove_instr_in2 == vbcast_instr) {
+            libxsmm_x86_instruction_vec_compute_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPMOVZXWD, pack_vname, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg );
+          }
+          libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSLLD_I, pack_vname, i_micro_kernel_config->tmp_vreg, i_micro_kernel_config->tmp_vreg, 16 );
+        }
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, pack_vname, cur_vreg, i_micro_kernel_config->tmp_vreg, cur_vreg );
       }
     }
