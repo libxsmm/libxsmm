@@ -15,8 +15,12 @@
 # include <omp.h>
 #endif
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && \
-    (defined(LIBXSMM_PLATFORM_X86)) && 0
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && ( \
+    (defined(__x86_64__) && 0 != (__x86_64__)) || \
+    (defined(__amd64__) && 0 != (__amd64__)) || \
+    (defined(_M_X64) || defined(_M_AMD64)) || \
+    (defined(__i386__) && 0 != (__i386__)) || \
+    (defined(_M_IX86)))
 # include <mkl.h>
 #endif
 #if defined(__INTEL_MKL__) && (110300 <= (10000*__INTEL_MKL__+100*__INTEL_MKL_MINOR__))

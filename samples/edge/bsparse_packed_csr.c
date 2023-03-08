@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
   libxsmm_blasint K = ( argc == 7 ) ? atoi(argv[3]) : 20;
   libxsmm_blasint N_CRUNS = ( argc == 7 ) ? atoi(argv[4]) : 8;
   libxsmm_blasint REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
-  char* l_csr_file =     ( argc == 7 ) ?      argv[6]  : "file.csr";
+  const char* l_csr_file =  ( argc == 7 ) ?      argv[6]  : "file.csr";
 
   libxsmm_gemmfunction mykernel = NULL;
   const libxsmm_gemm_shape gemm_shape = libxsmm_create_gemm_shape(

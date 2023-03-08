@@ -1147,6 +1147,10 @@ void libxsmm_compute_unary_2d_reg_block_relu( libxsmm_generated_code*           
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
       if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+        if ( l_bf16_compute != 0 ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+          return;
+        }
         l_vlen = l_vlen/2;
         cur_mask_reg = i_micro_kernel_config->tmp_vreg;
         if ( i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_LEAKY_RELU ) {
@@ -1286,6 +1290,10 @@ void libxsmm_compute_unary_2d_reg_block_relu_inv( libxsmm_generated_code*       
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
       if (io_generated_code->arch < LIBXSMM_X86_AVX512_VL256) {
+        if ( l_bf16_compute != 0 ) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+          return;
+        }
         l_vlen = l_vlen/2;
 
         if ( ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) && (i_mateltwise_desc->param != LIBXSMM_MELTW_TYPE_UNARY_ELU_INV) ) {

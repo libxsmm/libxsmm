@@ -7,9 +7,8 @@ project_github: https://github.com/libxsmm/libxsmm/
 project_download: https://github.com/libxsmm/libxsmm/releases/latest/
 favicon: ../.theme/img/favicon.png
 css: ../.theme/ford.css
-output_dir: ../html
-src_dir: ../include
+output_dir: fortran
+src_dir: ../src/template
 search: true
-page_dir: .
 
-Library for specialized tensor operations: [libxsmm.readthedocs.io/](https://libxsmm.readthedocs.io/)
+<a href="../fortran/module/libxsmm.html" target="_blank">Reference Documentation</a>

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ###############################################################################
 # Copyright (c) Intel Corporation - All rights reserved.                      #
 # This file is part of the LIBXSMM library.                                   #
@@ -8,39 +9,23 @@
 ###############################################################################
 # Hans Pabst (Intel Corp.)
 ###############################################################################
-import sphinx_rtd_theme
-from cgitb import html
-import os
+import mkdocs.plugins  # noqa: F401
+import ford
 
-project = "LIBXSMM"
-copyright = "2009-2023, Intel Corporation."
-author = "Intel Corporation"
-user = os.environ.get("USER")
 
-extensions = [
-    "recommonmark",
-    # "breathe",
-    # "m2r2",
-]
+def on_pre_build(config):
+    docs_dir = config.docs_dir if config else "documentation"
+    proj_data, proj_docs, md = None, None, None
 
-master_doc = "index"
-source_suffix = [
-    ".rst",
-    # ".md"
-]
+    with open(f"{docs_dir}/libxsmm_fortran.md", "r") as project_file:
+        proj_data, proj_docs, md = ford.parse_arguments(
+            {}, project_file.read(), docs_dir
+        )
 
-exclude_patterns = ["*-" + user + "-*.md", "Thumbs.db", ".DS_Store", "_build"]
+    if proj_data and proj_docs and md:
+        # with ford.stdout_redirector(io.StringIO()):  # quiet
+        ford.main(proj_data, proj_docs, md)
 
-html_theme = "sphinx_rtd_theme"
-html_theme_options = {"navigation_depth": 2}
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_static_path = ["../.theme"]
 
-templates_path = ["_templates"]
-pygments_style = "sphinx"
-
-# language = None
-language = "en"
-
-# Breathe configuration
-breathe_default_project = project
+if __name__ == "__main__":
+    on_pre_build(None)

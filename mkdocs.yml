@@ -19,10 +19,14 @@ theme:
     name: readthedocs
     custom_dir: .theme
 
+hooks:
+- .theme/ford_hook.py
+
 nav:
 - Overview: index.md
 - Compatibility: libxsmm_compat.md
 - Validation: libxsmm_valid.md
+- Scripts: libxsmm_scripts.md
 - Q&A: libxsmm_qna.md
 - LIBXSMM Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
@@ -32,6 +36,8 @@ nav:
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
+- Fortran:
+  - Reference: fortran/module/libxsmm.html
 - Example Code:
   - Collection: libxsmm_samples.md
 - Machine Learning (ML):
