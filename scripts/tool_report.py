@@ -239,14 +239,13 @@ def savedb(filename, database, filetime=None, retry=None):
         os.fchmod(tmpfile[0], mode)
         max_retry = retry if retry else 1
         for i in range(max_retry):
-            database = sortdb(database)
             if ".json" == filename.suffix.lower():
                 with os.fdopen(tmpfile[0], "w") as file:
-                    json.dump(database, file, indent=2)
+                    json.dump(sortdb(database), file, indent=2)
                     file.write("\n")  # append newline at EOF
             else:  # pickle
                 with os.fdopen(tmpfile[0], "wb") as file:
-                    pickle.dump(database, file)
+                    pickle.dump(sortdb(database), file)
             if filename.exists():
                 now = mtime(filename) if filetime else 0
                 if not filetime or filetime == now:
@@ -865,7 +864,7 @@ if __name__ == "__main__":
         "-c",
         "--cstdev",
         type=float,
-        default=1.2,
+        default=1.5,
         help="Highlight if C*Stdev is exceeded",
     )
     argparser.add_argument(
