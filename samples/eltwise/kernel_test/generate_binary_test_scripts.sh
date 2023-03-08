@@ -10,7 +10,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16_F32_F32' 'F32_BF16_BF16_F32' 'BF16_F32_F32_F32' 'BF16_F32_BF16_F32' 'BF16_BF16_F32_F32' 'BF16_BF16_BF16_F32' 'F16_F16_F16_F16' 'F32_F32_F16_F32' 'F32_F16_F32_F32' 'F32_F16_F16_F32' 'F16_F32_F32_F32' 'F16_F32_F16_F32' 'F16_F16_F32_F32' 'F16_F16_F16_F32' 'BF8_BF8_BF8_BF8' 'F32_F32_BF8_F32' 'F32_BF8_F32_F32' 'F32_BF8_BF8_F32' 'BF8_F32_F32_F32' 'BF8_F32_BF8_F32' 'BF8_BF8_F32_F32' 'BF8_BF8_BF8_F32' 'HF8_HF8_HF8_HF8' 'F32_F32_HF8_F32' 'F32_HF8_F32_F32' 'F32_HF8_HF8_F32' 'HF8_F32_F32_F32' 'HF8_F32_HF8_F32' 'HF8_HF8_F32_F32' 'HF8_HF8_HF8_F32' 'F64_F64_F64_F64'; do
-  for TYPE in 1 2 3 4 5; do
+  for TYPE in 1 2 3 4 5 6; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="binary_"
@@ -18,6 +18,11 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
 
       # only cpy TPP has low precision compute
       if [[ (("$PREC" == 'F16_F16_F16_F16') || ("$PREC" == 'BF16_BF16_BF16_BF16') || ("$PREC" == 'BF8_BF8_BF8_BF8') || ("$PREC" == 'HF8_HF8_HF8_HF8')) ]]; then
+        continue
+      fi
+
+      # Binary pack tp blocks 2 x BF16 -> F32 is only possible for 1 prec combination
+      if [[ ("$TYPE" == '6') && ("$PREC" != 'BF16_BF16_F32_F32') ]]; then
         continue
       fi
 
@@ -32,6 +37,8 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
         TPPNAME="div"
       elif [ "$TYPE" == '5' ] ; then
         TPPNAME="muladd"
+      elif [ "$TYPE" == '6' ] ; then
+        TPPNAME="pack"
       else
         continue
       fi
