@@ -963,7 +963,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_gen
     }
   } else {
     if (l_beta_0 > 0) {
-      /* Check if empty B column and beta == 1 and jump at the C store part of the kernel */
+      /* Check if empty B column and beta == 0 and jump at the C store part of the kernel */
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, l_cur_column_gpr, l_next_column_gpr);
       libxsmm_x86_instruction_jump_to_label(io_generated_code, LIBXSMM_X86_INSTR_JE, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker);
     }
