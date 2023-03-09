@@ -2,4 +2,3 @@ equation_gather_reduce
 equation_relu
 equation_simple
 equation_split_sgd
-equation_bf16_x3_split_f32
