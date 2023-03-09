@@ -587,7 +587,7 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    yunit, addon = None, ""
+    yunit, addon = None, args.branch
     ngraphs = i = 0
     for entry in entries:
         n = 0
@@ -635,8 +635,10 @@ def main(args, argd, dbfname):
                         )
                     if vals:
                         if 1 < len(legd):
-                            if not addon:
-                                addon = rslt.split(",")[0].upper()
+                            if addon == args.branch:
+                                addon = rslt.split(",")[0] + (
+                                    f"@{addon}" if addon else ""
+                                )
                             yvalue.append(vals)
                             legend = legd
                         else:
@@ -736,7 +738,7 @@ def main(args, argd, dbfname):
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
     figure.suptitle(
-        f"{title} ({addon})" if addon else title, fontsize="x-large"
+        f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
     )
     figure.gca().invert_xaxis()
     figure.tight_layout()
