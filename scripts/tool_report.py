@@ -604,8 +604,10 @@ def main(args, argd, dbfname):
                 for b in database
                 if (entry in database[b] and value in database[b][entry])
                 and (  # match branch
-                    (not infokey or infokey not in database[b])
-                    or (not args.branch or database[b][infokey] == args.branch)
+                    not (infokey and args.branch)
+                    or infokey not in database[b]
+                    or "branch" not in database[b][infokey]
+                    or (database[b][infokey]["branch"] == args.branch)
                 )
             ):
                 ylabel = None
