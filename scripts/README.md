@@ -137,4 +137,4 @@ The level of verbosity (`-v`) can be adjusted (0: quiet, 1: automation, 2: progr
 * Plot "tpp-mlir" pipeline (MLIR benchmarks):  
   `scripts/tool_report.sh -p tpp-mlir -i "" -y "" -r "mlir"`
 * Plot "tpp-mlir" pipeline (MLIR benchmarks without "simple_copy"):  
-  `scripts/tool_report.sh -p tpp-mlir -i "" -u "not" -y "simple_copy" -r "mlir"`
+  `scripts/tool_report.sh -p tpp-mlir -i "" -q "not" -y "simple_copy" -r "mlir"`
