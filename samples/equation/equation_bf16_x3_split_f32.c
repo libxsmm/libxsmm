@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   int ret = EXIT_SUCCESS;
   double error_bound = 0.0000005;
   long M = 31;
@@ -51,15 +51,15 @@ int main(int argc, char** argv) {
 
   ld_dump = M;
 
-  naive_input = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
-  naive_output = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
-  naive_output0 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-  naive_output1 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-  naive_output2 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
-  output_libxsmm = (float*)libxsmm_aligned_malloc( N*ld*sizeof(float), 2097152);
-  output0_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
-  output1_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld_dump*sizeof(libxsmm_bfloat16), 2097152);
-  output2_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( N*ld*sizeof(libxsmm_bfloat16), 2097152);
+  naive_input = (float*)libxsmm_aligned_malloc( sizeof(float)*N*ld, 2097152);
+  naive_output = (float*)libxsmm_aligned_malloc( sizeof(float)*N*ld, 2097152);
+  naive_output0 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld, 2097152);
+  naive_output1 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld, 2097152);
+  naive_output2 = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld, 2097152);
+  output_libxsmm = (float*)libxsmm_aligned_malloc( sizeof(float)*N*ld, 2097152);
+  output0_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld_dump, 2097152);
+  output1_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld_dump, 2097152);
+  output2_libxsmm = (libxsmm_bfloat16*)libxsmm_aligned_malloc( sizeof(libxsmm_bfloat16)*N*ld, 2097152);
 
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < ld; ++j ) {
