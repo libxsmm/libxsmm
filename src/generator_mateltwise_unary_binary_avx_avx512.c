@@ -670,7 +670,7 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
     }
   } else if ((i_mateltwise_desc->operation == LIBXSMM_MELTW_OPERATION_UNARY) && ( (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X2) ||
                                                                                   (i_mateltwise_desc->param == LIBXSMM_MELTW_TYPE_UNARY_DECOMP_FP32_TO_BF16X3)    ) ) {
-    char vname_in  = (i_vlen * i_micro_kernel_config->datatype_size_in  == 64) ? 'z' : ( (i_vlen * i_micro_kernel_config->datatype_size_in  == 16) ? 'y' : 'x' );
+    char vname_in  = (i_vlen * i_micro_kernel_config->datatype_size_in  == 64) ? 'z' : ( (i_vlen * i_micro_kernel_config->datatype_size_in  == 32) ? 'y' : 'x' );
     char vname_out = (i_vlen * i_micro_kernel_config->datatype_size_out == 32) ? 'y' : ( (i_vlen * i_micro_kernel_config->datatype_size_out == 16) ? 'x' : 'x' );
     for (in = 0; in < i_n_blocking; in++) {
       for (im = 0; im < i_m_blocking; im++) {
