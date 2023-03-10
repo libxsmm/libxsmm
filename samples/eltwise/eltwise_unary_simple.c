@@ -589,13 +589,16 @@ int test_unary_fp32_decomp_op( const libxsmm_blasint M, const libxsmm_blasint N,
       out1_value = tmp.i[1];
 
       ftmp = in_value - tmp.f;
-      tmp.f = ftmp;
-      tmp.i[0] = 0;
-      out2_value = tmp.i[1];
+      if ( op == FP32_TO_BF16X3 ) {
+        tmp.f = ftmp;
+        tmp.i[0] = 0;
+        out2_value = tmp.i[1];
 
-      ftmp2 = ftmp - tmp.f;
-      tmp.f = ftmp2;
-      out3_value = tmp.i[1];
+        ftmp2 = ftmp - tmp.f;
+        libxsmm_rne_convert_fp32_bf16(&ftmp2, &out3_value, 1);
+      } else {
+        libxsmm_rne_convert_fp32_bf16(&ftmp,  &out2_value, 1);
+      }
 
 #if 0
       libxsmm_rne_convert_fp32_bf16(&in_value, &out1_value, 1);
