@@ -91,7 +91,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
       if (l_use_bfdot == 0) {
         l_simd_packed_width = 4;
         l_bf16_mmla_kernel = 1;
-        if ((i_bk != 4) || (i_bn % 2 != 0)) {
+        if ((i_bk != 4) || ((i_bn != 2) && (i_bn != 4) && (i_bn != 8))) {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BCSC_BLOCK_SIZE );
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
           free(p_jump_label_tracker);
