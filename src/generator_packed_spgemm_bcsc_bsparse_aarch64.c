@@ -47,10 +47,10 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   unsigned int l_hardwire_sparsity_pattern = ((LIBXSMM_GEMM_FLAG_NO_HARDWIRED_SPARSITY & i_xgemm_desc->flags) != 0) ? 0 : 1;
-  unsigned int l_column_idx_gpr = LIBXSMM_AARCH64_GP_REG_X26;
-  unsigned int l_row_idx_gpr    = LIBXSMM_AARCH64_GP_REG_X27;
-  unsigned int l_cur_column_gpr = LIBXSMM_AARCH64_GP_REG_W28;
-  unsigned int l_next_column_gpr= LIBXSMM_AARCH64_GP_REG_W30;
+  unsigned int l_column_idx_gpr = LIBXSMM_AARCH64_GP_REG_X3;
+  unsigned int l_row_idx_gpr    = LIBXSMM_AARCH64_GP_REG_X4;
+  unsigned int l_cur_column_gpr = LIBXSMM_AARCH64_GP_REG_W13;
+  unsigned int l_next_column_gpr= LIBXSMM_AARCH64_GP_REG_W14;
 
 #if defined(LIBXSMM_GENERATOR_AARCH64_SPGEMM_BCSC_JUMP_LABEL_TRACKER_MALLOC)
   libxsmm_jump_label_tracker* const p_jump_label_tracker = (libxsmm_jump_label_tracker*)malloc(sizeof(libxsmm_jump_label_tracker));
@@ -265,7 +265,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
         l_max_n_blocking = 1;
       }
     }
-    if (l_hardwire_sparsity_pattern == 0) {
+    if (l_hardwire_sparsity_pattern == 0 || 1) {
       l_max_n_blocking = 1;
     }
     /* Set blocking factor decisions...  */
@@ -422,7 +422,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                             l_column_idx_gpr, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_cur_column_gpr );
       libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF,
                                             l_column_idx_gpr, LIBXSMM_AARCH64_GP_REG_UNDEF, 4, l_next_column_gpr );
-
+#if 1
       libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( io_generated_code,
                                                                            &l_loop_label_tracker,
                                                                            p_jump_label_tracker,
@@ -441,6 +441,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64( libxsmm_generated_cod
                                                                            l_simd_packed_width,
                                                                            i_bk,
                                                                            i_bn);
+#endif
       /* close n loop */
       /* advance C pointer */
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -575,6 +576,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
 
   /* Auxiliary GPRs  */
   unsigned int l_gp_reg_scratch = i_gp_reg_mapping->gp_reg_help_2;
+  unsigned int l_gp_reg_scratch_32bit = i_gp_reg_mapping->gp_reg_help_2 - 32;
+  unsigned int l_tmp_a_gp_reg = LIBXSMM_AARCH64_GP_REG_X8;
   unsigned int l_output_bf16_mask = LIBXSMM_AARCH64_SVE_REG_P2;
   unsigned int l_output_bf16_mask_skip_odd_n = LIBXSMM_AARCH64_SVE_REG_P3;
   unsigned int l_output_bf16_mask_skip_odd_m = LIBXSMM_AARCH64_SVE_REG_P4;
@@ -583,6 +586,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   unsigned int l_hardwire_sparsity_pattern = ((LIBXSMM_GEMM_FLAG_NO_HARDWIRED_SPARSITY & i_xgemm_desc->flags) != 0) ? 0 : 1;
   unsigned int l_row_idx_gpr = i_gp_reg_mapping->gp_reg_help_4;
   unsigned int l_cur_column_gpr = i_gp_reg_mapping->gp_reg_help_5;
+  unsigned int l_cur_column_gpr_64bit = l_cur_column_gpr + 32;
   unsigned int l_next_column_gpr = i_gp_reg_mapping->gp_reg_help_6;
   unsigned int EMPTY_BLOCK_COLUMN_LABEL = (i_packed_processed == 0) ? 0 : 1;
 
@@ -611,8 +615,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
 
   if ((l_beta_0 == 0) && (l_hardwire_sparsity_pattern == 0)) {
     /* Check if empty B column and beta == 1 and jump at the end of the kernel */
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-    libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, l_gp_reg_scratch, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch_32bit, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, l_gp_reg_scratch_32bit, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker );
   }
 
   /* packed loop */
@@ -756,35 +760,35 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
   if (l_hardwire_sparsity_pattern == 0) {
     if (l_beta_0 > 0) {
       /* Check if empty B column and beta == 1 and jump at the C store part of the kernel */
-      libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-      libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, l_gp_reg_scratch, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker );
+      libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch_32bit, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+      libxsmm_aarch64_instruction_cond_jump_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBZ, l_gp_reg_scratch_32bit, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker );
     }
 
     /* k loop header */
     libxsmm_aarch64_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, l_row_idx_gpr, l_cur_column_gpr, l_gp_reg_scratch, 2, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, l_row_idx_gpr, l_cur_column_gpr_64bit, l_gp_reg_scratch, 2, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, l_gp_reg_scratch, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, i_gp_reg_mapping->gp_reg_kloop );
 
     /* Prep reg_a with "k" offset */
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_scratch, i_bk * i_packed_width * i_micro_kernel_config->datatype_size_in );
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_scratch, l_gp_reg_scratch, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_kloop, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_scratch_32bit, l_gp_reg_scratch_32bit, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_a, l_gp_reg_scratch, l_tmp_a_gp_reg, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     /* Prep reg_b with "k" offset */
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, l_gp_reg_scratch, i_bk * i_bn  * i_micro_kernel_config->datatype_size_in);
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, l_cur_column_gpr, l_gp_reg_scratch, l_gp_reg_scratch, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, l_cur_column_gpr, l_gp_reg_scratch_32bit, l_gp_reg_scratch_32bit, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_SR, i_gp_reg_mapping->gp_reg_b, l_gp_reg_scratch, i_gp_reg_mapping->gp_reg_help_1, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
 
     /* Load A registers  */
     for ( l_p = 0; l_p < i_packed_blocking; l_p++ ) {
       libxsmm_aarch64_instruction_sve_move( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_LD1H_I_OFF,
-          i_gp_reg_mapping->gp_reg_kloop, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+l_p, ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_input_bf16_mask : LIBXSMM_AARCH64_SVE_REG_P0 );
+          l_tmp_a_gp_reg, LIBXSMM_AARCH64_GP_REG_UNDEF, 0, l_max_reg_block+l_p, ((i_packed_remainder > 0) && (l_p == i_packed_blocking - 1)) ? l_input_bf16_mask : LIBXSMM_AARCH64_SVE_REG_P0 );
       if (l_p < i_packed_blocking - 1) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code,
                                                        LIBXSMM_AARCH64_INSTR_GP_META_ADD,
-                                                       i_gp_reg_mapping->gp_reg_kloop,
+                                                       l_tmp_a_gp_reg,
                                                        l_gp_reg_scratch,
-                                                       i_gp_reg_mapping->gp_reg_kloop,
-                                                       (long long)(l_p+1) * i_simd_packed_width * i_bk * i_micro_kernel_config->datatype_size_in );
+                                                       l_tmp_a_gp_reg,
+                                                       (long long) i_simd_packed_width * i_bk * i_micro_kernel_config->datatype_size_in );
       }
     }
 
@@ -798,7 +802,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
                                                          LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                          i_gp_reg_mapping->gp_reg_help_1,
                                                          l_gp_reg_scratch,
-                                                         l_gp_reg_scratch,
+                                                         i_gp_reg_mapping->gp_reg_help_1,
                                                          ((long long)2 * i_bk) * i_micro_kernel_config->datatype_size_in );
         }
 
@@ -817,9 +821,8 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_aarch64_kloop_mmla_sve( libxsm
 
     /* k loop footer */
     libxsmm_aarch64_instruction_alu_compute_imm12( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_ADD_I, l_cur_column_gpr, l_cur_column_gpr, 1, 0 );
-    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
-    libxsmm_aarch64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBNZ, l_gp_reg_scratch, io_loop_label_tracker );
-
+    libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, l_next_column_gpr, l_cur_column_gpr, l_gp_reg_scratch_32bit, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
+    libxsmm_aarch64_instruction_cond_jump_back_to_label( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_CBNZ, l_gp_reg_scratch_32bit, io_loop_label_tracker );
     if (l_beta_0 > 0) {
       /* LABEL for empty column and beta == 0 */
       libxsmm_aarch64_instruction_register_jump_label(io_generated_code, EMPTY_BLOCK_COLUMN_LABEL, i_jump_label_tracker);
