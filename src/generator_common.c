@@ -776,7 +776,7 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
   io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
-  /* Auxiliary regs for sparsity in A support  */
+  /* Auxiliary regs for sparsity in A support */
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }
@@ -811,7 +811,7 @@ void libxsmm_reset_aarch64_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_map
   io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
-  /* Auxiliary regs for sparsity in A support  */
+  /* Auxiliary regs for sparsity in A support */
   io_gp_reg_mapping->gp_reg_bitmap_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_decompressed_a = LIBXSMM_X86_GP_REG_UNDEF;
 }

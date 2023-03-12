@@ -58,7 +58,7 @@ void libxsmm_generator_reduce_cols_ncnc_aarch64_microkernel( libxsmm_generated_c
   Nb  = N/bn;
 
   if ( (N % bn != 0)  || (C % bc != 0) ) {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -277,14 +277,14 @@ void libxsmm_generator_reduce_cols_aarch64_microkernel( libxsmm_generated_code* 
   } else if ( flag_reduce_op_max > 0 ) {
     reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
   } else {
-    /* This should not happen  */
+    /* This should not happen */
     printf("Only supported reduction OPs are ADD and MAX for this reduce kernel\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
 
   if ((compute_squared_vals_reduce > 0) && (flag_reduce_op_add == 0)) {
-    /* This should not happen  */
+    /* This should not happen */
     printf("Support for squares's reduction only when reduction OP is ADD\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -924,7 +924,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
     reduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAX_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAX_V;
     hreduce_instr = is_sve ? LIBXSMM_AARCH64_INSTR_SVE_FMAXV_V_P : LIBXSMM_AARCH64_INSTR_ASIMD_FMAXP_V;
   } else {
-    /* This should not happen  */
+    /* This should not happen */
     printf("Only supported reduction OPs are ADD and MAX for this reduce kernel\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -937,7 +937,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
   }
 
   if ((compute_squared_vals_reduce > 0) && (flag_reduce_op_add == 0)) {
-    /* This should not happen  */
+    /* This should not happen */
     printf("Support for squares's reduction only when reduction OP is ADD\n");
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
@@ -1135,7 +1135,7 @@ void libxsmm_generator_reduce_rows_aarch64_microkernel( libxsmm_generated_code* 
     }
   }
 
-  /* Now last horizontal reduction and store of the result...  */
+  /* Now last horizontal reduction and store of the result... */
   if ( compute_plain_vals_reduce > 0 ) {
     if ( is_sve ) {/* reduces all values into one; places result into asimd register */
       /* if m_trips is 1 && use_m_masking, then the end of the vreg is set to zero */
@@ -1375,7 +1375,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
     free(p_jump_label_tracker);
 #endif
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -1530,7 +1530,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
-      /* This should not happen  */
+      /* This should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
@@ -1550,7 +1550,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
-      /* This should not happen  */
+      /* This should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
@@ -1572,7 +1572,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
       free(p_jump_label_tracker);
 #endif
-      /* This should not happen  */
+      /* This should not happen */
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
       return;
     }
@@ -1656,7 +1656,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 
   if (m_trips_loop >= 1) {
     for (im = 0; im < m_unroll_factor; im++) {
-      /* Load output for reduction  */
+      /* Load output for reduction */
       if (apply_redop == 1) {
         if (load_acc == 0) {
           if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
@@ -1698,7 +1698,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
       }
 
-      /* Initialize argop vectors if need be  */
+      /* Initialize argop vectors if need be */
       if (record_argop_off_vec0 == 1) {
         if (is_sve){
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
@@ -1725,7 +1725,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
       }
 
-      /* Initialize argop vectors if need be  */
+      /* Initialize argop vectors if need be */
       if (record_argop_off_vec1 == 1) {
         if (is_sve){
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
@@ -1787,7 +1787,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       }
     }
 
-    /* Adjust post advancements if need be  */
+    /* Adjust post advancements if need be */
     if (apply_redop == 1) {
       if (load_acc == 1) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB,
@@ -1921,7 +1921,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
 
         if (op_instr == LIBXSMM_AARCH64_INSTR_DOTPS) {
-          /* TODO: Add DOT op sequence here  */
+          /* TODO: Add DOT op sequence here */
         } else {
           if (is_sve){
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, op_instr,
@@ -1984,7 +1984,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                     im + vecargop_vec1_offset, temp_vreg_argop1, 0, im + vecargop_vec1_offset, argop_mask, LIBXSMM_AARCH64_SVE_TYPE_S );
               }
             } else {
-              /* Extract lo mask to aux  */
+              /* Extract lo mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
               if (record_argop_off_vec0 == 1) {/* todo sve: mix old value with new value (index), by argop_mask */
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
@@ -1994,7 +1994,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
                     im + vecargop_vec0_offset, temp_vreg_argop1, 0, im + vecargop_vec1_offset, argop_mask_aux, LIBXSMM_AARCH64_SVE_TYPE_D );
               }
-              /* Extract hi mask to aux  */
+              /* Extract hi mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
               if (record_argop_off_vec0 == 1) {/* todo sve: mix old value with new value (index), by argop_mask */
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
@@ -2023,7 +2023,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                     temp_vreg_argop1, argop_mask, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
               }
             } else {
-              /* Extract lo mask to aux  */
+              /* Extract lo mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
@@ -2033,7 +2033,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                     temp_vreg_argop1, argop_mask_aux, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
               }
-              /* Extract hi mask to aux  */
+              /* Extract hi mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
@@ -2080,14 +2080,14 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       }
     }
 
-    /* Adjust scale base reg  */
+    /* Adjust scale base reg */
     if (scale_op_result == 1) {
       libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, scratch_gpr, i_micro_kernel_config->datatype_size_in );
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_MUL, scratch_gpr, i_gp_reg_mapping->gp_reg_n, scratch_gpr, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, i_gp_reg_mapping->gp_reg_scale_base, scratch_gpr, i_gp_reg_mapping->gp_reg_scale_base, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     }
 
-    /* Now store accumulators  */
+    /* Now store accumulators */
     for (im = 0; im < m_unroll_factor; im++) {
       l_masked_elements = (l_is_out_bf16 == 0) ? 0 : vlen;
       pred_reg_mask_use = (l_is_out_bf16 == 0) ? pred_reg_all : pred_reg_all_bf16;
@@ -2185,7 +2185,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
 
     /* Perform the reductions for all columns */
     for (im = 0; im < peeled_m_trips; im++) {
-      /* Load output for reduction  */
+      /* Load output for reduction */
       if (apply_redop == 1) {
         if (load_acc == 0) {
           if ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_REDOP_MAX) > 0) {
@@ -2228,7 +2228,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
       }
 
-      /* Initialize argop vectors if need be  */
+      /* Initialize argop vectors if need be */
       if (record_argop_off_vec0 == 1) {
         if (is_sve){
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
@@ -2247,7 +2247,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
       }
 
-      /* Initialize argop vectors if need be  */
+      /* Initialize argop vectors if need be */
       if (record_argop_off_vec1 == 1) {
         if (is_sve){
           libxsmm_aarch64_instruction_sve_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_SVE_EOR_V,
@@ -2302,7 +2302,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       }
     }
 
-    /* Adjust post advancements if need be  */
+    /* Adjust post advancements if need be */
     if (apply_redop == 1) {
       if (load_acc == 1) {
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_SUB, i_gp_reg_mapping->gp_reg_out, i_gp_reg_mapping->gp_reg_scratch_0, i_gp_reg_mapping->gp_reg_out,
@@ -2432,7 +2432,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
         }
 
         if (op_instr == LIBXSMM_AARCH64_INSTR_DOTPS) {
-          /* TODO: Add DOT op sequence here  */
+          /* TODO: Add DOT op sequence here */
         } else {
           if (is_sve){
             libxsmm_aarch64_instruction_sve_compute( io_generated_code, op_instr,
@@ -2494,7 +2494,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                     im + vecargop_vec1_offset, temp_vreg_argop1, 0, im + vecargop_vec1_offset, argop_mask, LIBXSMM_AARCH64_SVE_TYPE_S );
               }
             } else {
-              /* Extract lo mask to aux  */
+              /* Extract lo mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
@@ -2504,7 +2504,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
                     im + vecargop_vec1_offset, temp_vreg_argop1, 0, im + vecargop_vec1_offset, argop_mask_aux, LIBXSMM_AARCH64_SVE_TYPE_D );
               }
-              /* Extract hi mask to aux  */
+              /* Extract hi mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_sve_compute( io_generated_code, argop_blend_instr,
@@ -2533,7 +2533,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                     temp_vreg_argop1, argop_mask, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
               }
             } else {
-              /* Extract lo mask to aux  */
+              /* Extract lo mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 0);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
@@ -2543,7 +2543,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
                     temp_vreg_argop1, argop_mask_aux, 0, im + vecargop_vec1_offset, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_16B );
               }
-              /* Extract hi mask to aux  */
+              /* Extract hi mask to aux */
               libxsmm_aarch64_extract_mask2_from_mask4(io_generated_code, argop_mask, argop_mask_aux, 1);
               if (record_argop_off_vec0 == 1) {
                 libxsmm_aarch64_instruction_asimd_compute( io_generated_code, argop_blend_instr,
@@ -2596,7 +2596,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( libxsmm_ge
       libxsmm_aarch64_instruction_alu_compute_shifted_reg( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_SUB_SR, i_gp_reg_mapping->gp_reg_scale_base, scratch_gpr, i_gp_reg_mapping->gp_reg_scale_base, 0, LIBXSMM_AARCH64_SHIFTMODE_LSL );
     }
 
-    /* Now store accumulators  */
+    /* Now store accumulators */
     for (im = 0; im < peeled_m_trips; im++) {
       mask_count2 = ((im == peeled_m_trips-1) && (use_m_masking > 0)) ? mask_count : 0;
       l_masked_elements = (l_is_out_bf16 == 0) ? mask_count2 : (mask_count2 > 0) ? mask_count2 : vlen;
@@ -2735,7 +2735,7 @@ void libxsmm_generator_opreduce_vecs_index_aarch64_microkernel( libxsmm_generate
     if ((bcast_param >= i_mateltwise_desc->m) || ((i_mateltwise_desc->m % bcast_param) == 0)) {
       libxsmm_generator_opreduce_vecs_index_aarch64_microkernel_block( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, &i_mateltwise_desc_copy );
     } else {
-      /* In this case we stamp out two different microkernels back to back...  */
+      /* In this case we stamp out two different microkernels back to back... */
       unsigned int temp_gpr = LIBXSMM_AARCH64_GP_REG_X9;
       unsigned int scratch_gpr = LIBXSMM_AARCH64_GP_REG_X10;
       int aux = 0;
@@ -2984,7 +2984,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
 
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
 
-    /* Now store accumulators  */
+    /* Now store accumulators */
     for (im = 0; im < m_unroll_factor; im++) {
       l_masked_elements = (l_is_out_bf16 == 0) ? 0 : vlen;
       pred_reg_mask_use = (l_is_out_bf16 == 0) ? pred_reg_all : pred_reg_all_bf16;
@@ -3067,7 +3067,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
 
     libxsmm_generator_loop_footer_aarch64(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 1);
 
-    /* Now store accumulators  */
+    /* Now store accumulators */
     for (im = 0; im < peeled_m_trips; im++) {
       mask_count2 = ((im == peeled_m_trips-1) && (use_m_masking > 0 )) ? mask_count : 0;
       l_masked_elements = (l_is_out_bf16 == 0) ? mask_count2 : (mask_count2 > 0) ? mask_count2 : vlen;
