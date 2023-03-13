@@ -2931,45 +2931,6 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   /* start register of accumulator */
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
-#if !defined(NDEBUG)
-  /* Do some test if it is possible to generate the requested code.
-     This is not done in release mode and therefore bad
-     things might happen.... HUAAH */
-  if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_GENERIC ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3    ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE42   ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX     ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2_ADL   ) {
-    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256 ||i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CLX
-              ||i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CPX) {
-    if ( (i_n_blocking > 28) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 8) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_CORE ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking != 1) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 6) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else {}
-#if 0
-  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
-    return;
-  }
-#endif
-#endif /*!defined(NDEBUG)*/
-
   /* load C accumulator */
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
     /* pure BF16 kernel */
@@ -3226,43 +3187,6 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   libxsmm_micro_kernel_config l_micro_kernel_config_mod;
   libxsmm_micro_kernel_config *const i_micro_kernel_config_mod = (libxsmm_micro_kernel_config*)&l_micro_kernel_config_mod;
   memcpy(i_micro_kernel_config_mod, i_micro_kernel_config, sizeof(libxsmm_micro_kernel_config));
-
-  /* TODO: fix this test */
-#if !defined(NDEBUG)
-  if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_GENERIC ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3    ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE42   ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX     ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ||
-      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2_ADL  ) {
-    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256 || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CLX
-              || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_VL256_CPX) {
-    if ( (i_n_blocking > 28) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 8) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set > LIBXSMM_X86_AVX512_VL256 ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 6)  ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256 ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
-      return;
-    }
-  } else {}
-#if 0
-  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
-    return;
-  }
-#endif
-#endif
 
   if ( ( ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX2) && (i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_VL256) )             ||
          ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) ||
