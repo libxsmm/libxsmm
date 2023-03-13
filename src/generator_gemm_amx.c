@@ -556,6 +556,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
   int vbias_reg = 31;
   int m_tiles = m_blocking_info->tiles;
   int n_tiles = n_blocking_info->tiles;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking();
   unsigned int col = 0;
   unsigned int gp_reg_bias = (i_micro_kernel_config->m_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_0 : i_gp_reg_mapping->gp_reg_help_1;
 
@@ -664,7 +665,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
               (i_n_offset * i_micro_kernel_config->gemm_scratch_ld + i_m_offset) * 4/*i_micro_kernel_config->datatype_size*/,
               acc_id);
           acc_id++;
-          if (n_tiles == 1) {
+          if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
             acc_id++;
           }
           i_n_offset += n_blocking_info->sizes[in];
@@ -750,7 +751,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
               acc_id);
 
           acc_id++;
-          if (n_tiles == 1) {
+          if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
             acc_id++;
           }
           i_n_offset += n_blocking_info->sizes[in];
@@ -787,7 +788,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 acc_id);
 
             acc_id++;
-            if (n_tiles == 1) {
+            if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
               acc_id++;
             }
             i_n_offset += n_blocking_info->sizes[in];
@@ -875,7 +876,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
                 acc_id);
 
             acc_id++;
-            if (n_tiles == 1) {
+            if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
               acc_id++;
             }
             i_n_offset += n_blocking_info->sizes[in];
@@ -912,7 +913,7 @@ void libxsmm_generator_gemm_load_C_amx( libxsmm_generated_code*            io_ge
               0,
               acc_id);
           acc_id++;
-          if (n_tiles == 1) {
+          if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
             acc_id++;
           }
         }
@@ -1122,82 +1123,135 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     libxsmm_tile_config*          tile_config ) {
   unsigned int im = 0, in = 0, m_blocking = 0, n_blocking = 0, k_blocking = 0, ii = 0, m_tiles = 0, n_tiles = 0, l_k_pack_factor = 2;
   unsigned int has_fused_relu_bitmask = ((i_xgemm_desc->eltw_cp_flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ? 1 : 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking();
 
-  i_micro_kernel_config->m_remainder  = 0;
-  m_blocking = 32;
-  while (i_xgemm_desc->m % m_blocking != 0) {
-    m_blocking--;
-  }
-
-  if ((i_xgemm_desc->m > 32) && (has_fused_relu_bitmask > 0) && (m_blocking % 16 != 0)) {
-    m_blocking = 32;
-    while ((i_xgemm_desc->m % m_blocking != 0) || (m_blocking % 16 != 0)) {
+  if (l_enforce_Mx1_amx_tile_blocking > 0) {
+    i_micro_kernel_config->m_remainder  = 0;
+    m_blocking = 64;
+    while (i_xgemm_desc->m % m_blocking != 0) {
       m_blocking--;
     }
-  }
-
-  if (m_blocking <= 16) {
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 1;
-    m_blocking_info[0].sizes[0] = m_blocking;
-    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
-  } else {
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 2;
-    m_blocking_info[0].sizes[0] = 16 /*(m_blocking+1)/2*/;
-    m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
-    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[1] % 16;
-  }
-
-  n_blocking = 32;
-  while (i_xgemm_desc->n % n_blocking != 0) {
-    n_blocking--;
-  }
-  if (n_blocking <= 16) {
+    if ((i_xgemm_desc->m > 64) && (has_fused_relu_bitmask > 0) && (m_blocking % 16 != 0)) {
+      m_blocking = 64;
+      while ((i_xgemm_desc->m % m_blocking != 0) || (m_blocking % 16 != 0)) {
+        m_blocking--;
+      }
+    }
+    if (m_blocking <= 16) {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 1;
+      m_blocking_info[0].sizes[0] = m_blocking;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
+    } else if (m_blocking <= 32) {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 2;
+      m_blocking_info[0].sizes[0] = 16;
+      m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[1] % 16;
+    } else if (m_blocking <= 48) {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 3;
+      m_blocking_info[0].sizes[0] = 16;
+      m_blocking_info[0].sizes[1] = 16;
+      m_blocking_info[0].sizes[2] = m_blocking - 2 * 16;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[2] % 16;
+    } else {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 4;
+      m_blocking_info[0].sizes[0] = 16;
+      m_blocking_info[0].sizes[1] = 16;
+      m_blocking_info[0].sizes[2] = 16;
+      m_blocking_info[0].sizes[3] = m_blocking - 3 * 16;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[3] % 16;
+    }
+    n_blocking = 16;
+    while (i_xgemm_desc->n % n_blocking != 0) {
+      n_blocking--;
+    }
     n_blocking_info[0].blocking = n_blocking;
     n_blocking_info[0].block_size = i_xgemm_desc->n;
     n_blocking_info[0].tiles = 1;
     n_blocking_info[0].sizes[0] = n_blocking;
   } else {
-    n_blocking_info[0].blocking = n_blocking;
-    n_blocking_info[0].block_size = i_xgemm_desc->n;
-    n_blocking_info[0].tiles = 2;
-    n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
-    n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
-  }
-
-  /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
-  if (i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) {
-    m_blocking = 16;
+    i_micro_kernel_config->m_remainder  = 0;
+    m_blocking = 32;
     while (i_xgemm_desc->m % m_blocking != 0) {
       m_blocking--;
     }
-    m_blocking_info[0].blocking = m_blocking;
-    m_blocking_info[0].block_size = i_xgemm_desc->m;
-    m_blocking_info[0].tiles = 1;
-    m_blocking_info[0].sizes[0] = m_blocking;
-    i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
-    if (i_xgemm_desc->n == 49) {
-      n_blocking_info[0].blocking = 49;
-      n_blocking_info[0].block_size = 49;
-      n_blocking_info[0].tiles = 4;
-      /* I.e. N = 49 = 3 * 13 + 10 */
-      n_blocking_info[0].sizes[0] = 13;
-      n_blocking_info[0].sizes[1] = 13;
-      n_blocking_info[0].sizes[2] = 13;
-      n_blocking_info[0].sizes[3] = 10;
+    if ((i_xgemm_desc->m > 32) && (has_fused_relu_bitmask > 0) && (m_blocking % 16 != 0)) {
+      m_blocking = 32;
+      while ((i_xgemm_desc->m % m_blocking != 0) || (m_blocking % 16 != 0)) {
+        m_blocking--;
+      }
     }
-    if (i_xgemm_desc->n == 61) {
-      n_blocking_info[0].blocking = 61;
-      n_blocking_info[0].block_size = 61;
-      n_blocking_info[0].tiles = 4;
-      /* I.e. N = 61 = 3 * 16 + 13 */
-      n_blocking_info[0].sizes[0] = 16;
-      n_blocking_info[0].sizes[1] = 16;
-      n_blocking_info[0].sizes[2] = 16;
-      n_blocking_info[0].sizes[3] = 13;
+
+    if (m_blocking <= 16) {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 1;
+      m_blocking_info[0].sizes[0] = m_blocking;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
+    } else {
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 2;
+      m_blocking_info[0].sizes[0] = 16 /*(m_blocking+1)/2*/;
+      m_blocking_info[0].sizes[1] = m_blocking - m_blocking_info[0].sizes[0];
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[1] % 16;
+    }
+
+    n_blocking = 32;
+    while (i_xgemm_desc->n % n_blocking != 0) {
+      n_blocking--;
+    }
+    if (n_blocking <= 16) {
+      n_blocking_info[0].blocking = n_blocking;
+      n_blocking_info[0].block_size = i_xgemm_desc->n;
+      n_blocking_info[0].tiles = 1;
+      n_blocking_info[0].sizes[0] = n_blocking;
+    } else {
+      n_blocking_info[0].blocking = n_blocking;
+      n_blocking_info[0].block_size = i_xgemm_desc->n;
+      n_blocking_info[0].tiles = 2;
+      n_blocking_info[0].sizes[0] = (n_blocking+1)/2;
+      n_blocking_info[0].sizes[1] = n_blocking - n_blocking_info[0].sizes[0];
+    }
+
+    /* Special case when N = 49 or N = 61 -- we do 1x4 blocking */
+    if (i_xgemm_desc->n == 49 || i_xgemm_desc->n == 61) {
+      m_blocking = 16;
+      while (i_xgemm_desc->m % m_blocking != 0) {
+        m_blocking--;
+      }
+      m_blocking_info[0].blocking = m_blocking;
+      m_blocking_info[0].block_size = i_xgemm_desc->m;
+      m_blocking_info[0].tiles = 1;
+      m_blocking_info[0].sizes[0] = m_blocking;
+      i_micro_kernel_config->m_remainder  = m_blocking_info[0].sizes[0] % 16;
+      if (i_xgemm_desc->n == 49) {
+        n_blocking_info[0].blocking = 49;
+        n_blocking_info[0].block_size = 49;
+        n_blocking_info[0].tiles = 4;
+        /* I.e. N = 49 = 3 * 13 + 10 */
+        n_blocking_info[0].sizes[0] = 13;
+        n_blocking_info[0].sizes[1] = 13;
+        n_blocking_info[0].sizes[2] = 13;
+        n_blocking_info[0].sizes[3] = 10;
+      }
+      if (i_xgemm_desc->n == 61) {
+        n_blocking_info[0].blocking = 61;
+        n_blocking_info[0].block_size = 61;
+        n_blocking_info[0].tiles = 4;
+        /* I.e. N = 61 = 3 * 16 + 13 */
+        n_blocking_info[0].sizes[0] = 16;
+        n_blocking_info[0].sizes[1] = 16;
+        n_blocking_info[0].sizes[2] = 16;
+        n_blocking_info[0].sizes[3] = 13;
+      }
     }
   }
 
@@ -1232,15 +1286,15 @@ void libxsmm_generator_gemm_init_micro_kernel_config_tileblocking(libxsmm_gemm_d
     for (in = 0; in < n_tiles; in++) {
       libxsmm_setup_tile(ii, m_blocking_info[0].sizes[im], n_blocking_info[0].sizes[in], tile_config);
       ii++;
-      if (n_tiles == 1) {
+      if ((n_tiles == 1) && (l_enforce_Mx1_amx_tile_blocking == 0)) {
         ii++;
       }
     }
   }
   /* Configure tiles for A */
   libxsmm_setup_tile(4, m_blocking_info[0].sizes[0], k_blocking/l_k_pack_factor, tile_config);
-  if (m_tiles == 2) {
-    libxsmm_setup_tile(5, m_blocking_info[0].sizes[1], k_blocking/l_k_pack_factor, tile_config);
+  if (m_tiles == 2 || m_tiles == 3 || m_tiles == 4) {
+    libxsmm_setup_tile(5, m_blocking_info[0].sizes[m_tiles-1], k_blocking/l_k_pack_factor, tile_config);
   }
   /* Configure tiles for B */
   libxsmm_setup_tile(6, k_blocking/l_k_pack_factor, n_blocking_info[0].sizes[0], tile_config);
@@ -1900,6 +1954,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   libxsmm_gemm_descriptor *l_xgemm_desc = &l_xgemm_desc_mod;
   unsigned int m0 = 0, m1 = 0;
+  unsigned int l_enforce_Mx1_amx_tile_blocking = libxsmm_cpuid_x86_amx_gemm_enforce_mx1_tile_blocking();
 
   /* AMX specific blocking info */
   libxsmm_blocking_info_t m_blocking_info[2], n_blocking_info[2];
@@ -1936,7 +1991,7 @@ void libxsmm_generator_gemm_amx_kernel( libxsmm_generated_code*            io_ge
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, l_xgemm_desc, 0 );
 
   /* First stamp out a nice GEMM and the if need be take care of remainder handling    */
-  if ((l_xgemm_desc->m % 16 == 0) || (l_xgemm_desc->m <= 32)) {
+  if ((l_xgemm_desc->m % 16 == 0) || (l_xgemm_desc->m <= 32) || (l_enforce_Mx1_amx_tile_blocking > 0)) {
     /* Nothing to do here  */
     n_gemm_code_blocks = 1;
   } else {

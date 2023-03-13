@@ -17,6 +17,7 @@ import tempfile
 import pathlib
 import pickle
 import numpy
+import copy
 import json
 import stat
 import PIL
@@ -54,6 +55,13 @@ def matchlst(string, strlst, exact=False):
     return [s for s in strlst if matchstr(string, s.lower(), exact)]
 
 
+def matchdict(value, key, dct, negate=False, exact=False):
+    if key in dct and value:
+        return value != dct[key] if negate else value == dct[key]
+    else:
+        return not exact
+
+
 def matchop(op, value, query, exact=False):
     if query:
         if "not" != op:
@@ -87,7 +95,9 @@ def parseval(string):
     )
 
 
-def parselog(database, strbuild, jobname, txt, nentries, nerrors):
+def parselog(
+    database, strbuild, jobname, infokey, info, txt, nentries, nerrors
+):
     pattern = (
         r"^\+\+\+ PERFORMANCE ([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*)([^\+\-]+)"
     )
@@ -96,6 +106,7 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
         for match in re.finditer(pattern, txt, re.MULTILINE | re.DOTALL)
         if match and match.group(1) and match.group(2)
     ]
+    m = n = 0
     if matches:  # attempt to match native format (telegram)
         invalid = ["syntax error", "ERROR:", "Traceback", '\\"']
         for match in matches:
@@ -113,10 +124,10 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 if category not in database[strbuild]:
                     database[strbuild][category] = dict()
                 if jobname not in database[strbuild][category]:
-                    nentries = nentries + 1
+                    m = m + 1
                 database[strbuild][category][jobname] = values
             else:
-                nerrors = nerrors + 1
+                n = n + 1
     else:  # attempt to match inlined JSON section
         pattern = r"--partition=([a-zA-Z]+(?:[0-9_\-,]+[a-zA-Z]+)*).+(^{.+})"
         matches = [
@@ -155,15 +166,21 @@ def parselog(database, strbuild, jobname, txt, nentries, nerrors):
                 if 1 < depth(values):
                     for i in values:
                         if i not in database[strbuild][category]:
-                            nentries = nentries + 1
+                            m = m + 1
                         database[strbuild][category][i] = values[i]
                 else:
                     if jobname not in database[strbuild][category]:
-                        nentries = nentries + 1
+                        m = m + 1
                     database[strbuild][category][jobname] = values
             else:
-                nerrors = nerrors + 1
-    return nentries, nerrors
+                n = n + 1
+    if (infokey and info) and (
+        strbuild in database and infokey not in database[strbuild]
+    ):
+        database[strbuild][infokey] = info
+        if 0 == m:  # ensure database rewrite
+            m = m + 1
+    return nentries + m, nerrors + n
 
 
 def fname(extlst, in_path, in_dflt, idetail=""):
@@ -239,14 +256,13 @@ def savedb(filename, database, filetime=None, retry=None):
         os.fchmod(tmpfile[0], mode)
         max_retry = retry if retry else 1
         for i in range(max_retry):
-            database = sortdb(database)
             if ".json" == filename.suffix.lower():
                 with os.fdopen(tmpfile[0], "w") as file:
-                    json.dump(database, file, indent=2)
+                    json.dump(sortdb(database), file, indent=2)
                     file.write("\n")  # append newline at EOF
             else:  # pickle
                 with os.fdopen(tmpfile[0], "wb") as file:
-                    pickle.dump(database, file)
+                    pickle.dump(sortdb(database), file)
             if filename.exists():
                 now = mtime(filename) if filetime else 0
                 if not filetime or filetime == now:
@@ -292,18 +308,18 @@ def bold(s):
     return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
 
 
-def label(values, init, unit, accuracy):
+def label(values, init, unit, accuracy, highlight):
     vnew, rd, cv = trend(values)
     result = f"{num2fix(vnew, accuracy)} {unit}"
     if rd:
         inum = num2fix(100 * rd)
         if cv:
-            bnum = num2fix(100 * cv)
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
-            if bnum < abs(inum):
-                result = f"{init} = {bold(result)} ({anum}>{bnum}%)"
+            bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
+            if num2fix(100 * cv * highlight) < abs(inum):
+                result = f"{init} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
-                expr = f"{anum}" + r"$\leq$" + f"{bnum}%"
+                expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
                 result = f"{init} = {result} ({expr})"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
@@ -336,10 +352,11 @@ def main(args, argd, dbfname):
         else []
     )
     rslt = args.result.lower()
+    nerrors, nentries, accuracy = 0, 0, 1
     inflight = max(args.inflight, 0)
-    nerrors = nentries = 0
+    info = {"branch": args.branch} if args.branch else {}
+    infokey = "INFO"
     outfile = None
-    accuracy = 1
     match = []
 
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
@@ -353,8 +370,7 @@ def main(args, argd, dbfname):
             pass
         outfile = (
             pathlib.Path(f"{args.infile.stem}{argd.filepath.suffix}")
-            if dbfname == argd.filepath
-            or not (dbfname.is_file() or dbfname.is_fifo())
+            if dbfname == argd.filepath and args.infile.is_file()
             else dbfname
         )
     elif args.infile is None:  # connect to URL
@@ -398,7 +414,7 @@ def main(args, argd, dbfname):
             else args.infile.stem
         )
         nentries, nerrors = parselog(
-            database, str(nbld), name, txt, nentries, nerrors
+            database, str(nbld), name, infokey, info, txt, nentries, nerrors
         )
         if 0 < nentries:
             latest = next
@@ -422,40 +438,59 @@ def main(args, argd, dbfname):
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
-                ibuild = build["number"]
+                ibuild = build["number"] if "number" in build else 0
                 strbuild = str(ibuild)  # JSON stores integers as string
                 if (  # consider early exit
                     ibuild <= max(latest - inflight, 1)
-                    and "running" != build["state"]
+                    and matchdict("running", "state", build, negate=True)
                     and strbuild in database
                 ):
                     latest, builds = ibuild, None
                     break
-                jobs = build["jobs"]
                 n = 0
+                infocpy = info
+                if "branch" in build and matchdict(
+                    build["branch"], "branch", info, negate=True
+                ):
+                    infocpy = copy.deepcopy(info)
+                    infocpy["branch"] = build["branch"]
+                jobs = build["jobs"] if "jobs" in build else []
                 for job in (
                     job
                     for job in jobs
-                    if "exit_status" in job and 0 == job["exit_status"]
+                    if "name" in job and matchdict(0, "exit_status", job)
                 ):
                     if 2 <= abs(args.verbosity):
                         if 0 == n:
                             print(f"[{ibuild}]", end="", flush=True)
                         print(".", end="", flush=True)
-                    log = requests.get(job["log_url"], headers=auth)
-                    txt = json.loads(log.text)["content"]
-                    nentries, nerrors = parselog(
-                        database, strbuild, job["name"], txt, nentries, nerrors
+                    log = (
+                        requests.get(job["log_url"], headers=auth).text
+                        if "log_url" in job
+                        else ""
                     )
-                    n = n + 1
+                    txt = json.loads(log) if log else {}
+                    if txt and "content" in txt:
+                        nentries, nerrors = parselog(
+                            database,
+                            strbuild,
+                            job["name"],
+                            infokey,
+                            infocpy,
+                            txt["content"],
+                            nentries,
+                            nerrors,
+                        )
+                        n = n + 1
                 nbuilds = nbuilds + 1
                 njobs = njobs + n
                 if (  # consider early exit
-                    0 == n and ibuild <= latest and "running" != build["state"]
+                    (0 == n and ibuild <= latest)
+                    and matchdict("running", "state", build, negate=True)
                 ) or (args.history <= nbuilds or nbuild == ibuild):
                     latest, builds = ibuild, None
                     break
-            if builds and 1 < ibuild:
+            if builds and 1 < ibuild and "page" in params:
                 params["page"] = params["page"] + 1  # next page
                 builds = requests.get(url, params=params, headers=auth).json()
             else:
@@ -515,8 +550,11 @@ def main(args, argd, dbfname):
     else:
         template = dict()
 
-    entries = [  # category (one level below build number)
-        e for e in template if matchop("any", e, select, args.select_exact)
+    entries = [
+        e  # category (one level below build number)
+        for e in template
+        if (e != infokey or (select and infokey in select))
+        and matchop("any", e, select, args.select_exact)
     ]
     if entries and not select and args.select_exact:
         entries = [entries[-1]]  # assume insertion order is preserved
@@ -549,7 +587,7 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    yunit, addon = None, ""
+    yunit, addon = None, args.branch
     ngraphs = i = 0
     for entry in entries:
         n = 0
@@ -564,7 +602,13 @@ def main(args, argd, dbfname):
             for build in (
                 b
                 for b in database
-                if entry in database[b] and value in database[b][entry]
+                if (entry in database[b] and value in database[b][entry])
+                and (  # match branch
+                    not (infokey and args.branch)
+                    or infokey not in database[b]
+                    or "branch" not in database[b][infokey]
+                    or (database[b][infokey]["branch"] == args.branch)
+                )
             ):
                 ylabel = None
                 values = database[build][entry][value]
@@ -591,8 +635,10 @@ def main(args, argd, dbfname):
                         )
                     if vals:
                         if 1 < len(legd):
-                            if not addon:
-                                addon = rslt.split(",")[0].upper()
+                            if addon == args.branch:
+                                addon = rslt.split(",")[0] + (
+                                    f"@{addon}" if addon else ""
+                                )
                             yvalue.append(vals)
                             legend = legd
                         else:
@@ -664,10 +710,10 @@ def main(args, argd, dbfname):
                 ylist, ylabel = list(zip(*yvalue)), []
                 for j in range(len(legend)):
                     y, z = ylist[j], legend[j]
-                    s = label(y, z, yunit, accuracy)
+                    s = label(y, z, yunit, accuracy, args.highlight)
                     ylabel.append(s)
             else:
-                ylabel = label(yvalue, legend, yunit, accuracy)
+                ylabel = label(yvalue, legend, yunit, accuracy, args.highlight)
 
             # determine size of shared x-axis
             xsize = args.history
@@ -692,7 +738,7 @@ def main(args, argd, dbfname):
     axes[i - 1].set_xlabel("Build Number")
     title = "Performance History"
     figure.suptitle(
-        f"{title} ({addon})" if addon else title, fontsize="x-large"
+        f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
     )
     figure.gca().invert_xaxis()
     figure.tight_layout()
@@ -803,10 +849,17 @@ if __name__ == "__main__":
     )
     argparser.add_argument(
         "-b",
+        "--branch",
+        type=str,
+        default=None,
+        help="Branch, all if None",
+    )
+    argparser.add_argument(
+        "-c",
         "--organization",
         type=str,
         default="intel",
-        help="Buildkite organization/slug",
+        help="Buildkite org/slug/company",
     )
     argparser.add_argument(
         "-p",
@@ -816,7 +869,7 @@ if __name__ == "__main__":
         help="Buildkite pipeline",
     )
     argparser.add_argument(
-        "-u",
+        "-q",
         "--query-op",
         type=str,
         default="all",
@@ -847,7 +900,7 @@ if __name__ == "__main__":
         "--select",
         type=str,
         default=None,
-        help="Category, all if none",
+        help="Category, all if None",
     )
     argparser.add_argument(
         "-r",
@@ -861,6 +914,13 @@ if __name__ == "__main__":
         "--exact",
         action="store_true",
         help="Match result exactly",
+    )
+    argparser.add_argument(
+        "-t",
+        "--highlight",
+        type=float,
+        default=1.5,
+        help="Highlight if T*Stdev is exceeded",
     )
     argparser.add_argument(
         "-m",
