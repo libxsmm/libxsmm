@@ -2124,7 +2124,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.pspgemm_bcsc->gemm->prefetch);
           const char *const tname = libxsmm_get_typename((libxsmm_datatype)request->descriptor.pspgemm_bcsc->gemm->datatype);
           char tc_option[16] = { 0 };
-          char hw_sparsity[16] = { 0 };
+          char hw_sparsity[32] = { 0 };
           /* query tileconfig options */
           if (((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) != 0) &&
               ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & request->descriptor.pspgemm_bcsc->gemm->flags) == 0) ) {
@@ -2139,9 +2139,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             LIBXSMM_SNPRINTF(tc_option, sizeof(tc_option), "abid");
           }
           if ((LIBXSMM_GEMM_FLAG_NO_HARDWIRED_SPARSITY & request->descriptor.pspgemm_bcsc->gemm->flags) != 0) {
-            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "no_hw_sparsity");
+            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "without_hardwired_sparsity");
           } else {
-            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "hw_sparsity");
+            LIBXSMM_SNPRINTF(hw_sparsity, sizeof(hw_sparsity), "with_hardwired_sparsity");
           }
 
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
