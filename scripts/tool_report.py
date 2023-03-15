@@ -352,6 +352,7 @@ def main(args, argd, dbfname):
         else []
     )
     rslt = args.result.lower()
+    qlst = rslt.split(",")
     nerrors, nentries, accuracy = 0, 0, 1
     inflight = max(args.inflight, 0)
     info = {"branch": args.branch} if args.branch else {}
@@ -407,7 +408,7 @@ def main(args, argd, dbfname):
     nbuild = int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
-        nbld = nbuild if (0 < nbuild and nbuild < next) else next
+        nbld = nbuild if 0 < nbuild else next
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -447,7 +448,7 @@ def main(args, argd, dbfname):
                 ):
                     latest, builds = ibuild, None
                     break
-                n = 0
+                m, n = nentries, 0
                 infocpy = info
                 if "branch" in build and matchdict(
                     build["branch"], "branch", info, negate=True
@@ -482,8 +483,9 @@ def main(args, argd, dbfname):
                             nerrors,
                         )
                         n = n + 1
-                nbuilds = nbuilds + 1
-                njobs = njobs + n
+                if 0 < n:
+                    nbuilds = nbuilds + (1 if m != nentries else 0)
+                    njobs = njobs + n
                 if (  # consider early exit
                     (0 == n and ibuild <= latest)
                     and matchdict("running", "state", build, negate=True)
@@ -598,9 +600,8 @@ def main(args, argd, dbfname):
             legend, aunit = value, None
             if value not in match:
                 match.append(value)
-            # collect data to be plotted
-            for build in (
-                b
+            builds = [
+                b  # collect builds to be plotted
                 for b in database
                 if (entry in database[b] and value in database[b][entry])
                 and (  # match branch
@@ -609,12 +610,20 @@ def main(args, argd, dbfname):
                     or "branch" not in database[b][infokey]
                     or (database[b][infokey]["branch"] == args.branch)
                 )
-            ):
-                ylabel = None
+            ]
+            # collect common keys (if inline-JSON)
+            keys = None
+            for build in builds:
                 values = database[build][entry][value]
                 if isinstance(values, dict):  # JSON-format
-                    qlst = rslt.split(",")
-                    keys = matchlst(qlst[0], values.keys(), args.exact)
+                    tmps = matchlst(qlst[0], values.keys(), args.exact)
+                    keys = [v for v in tmps if v in keys] if keys else tmps
+                else:
+                    break
+            # collect data to be plotted
+            for build in builds:
+                values, ylabel = database[build][entry][value], None
+                if isinstance(values, dict):  # JSON-format
                     vals, legd = [], []
                     for key in keys:
                         scale = 1.0 if 2 > len(qlst) else float(qlst[1])
@@ -728,10 +737,10 @@ def main(args, argd, dbfname):
                 axes[i].set_ylabel(yunit)
                 n = n + 1
             axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
-            axes[i].set_xticklabels(xvalue[0:xsize])
+            axes[i].set_xticklabels(xvalue[0:xsize], rotation=45)
         ngraphs = max(ngraphs, n)
         if 0 < ngraphs:
-            axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
+            # axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
             axes[i].set_title(entry.upper())
             axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
