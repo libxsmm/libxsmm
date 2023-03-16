@@ -36,7 +36,9 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_config_tiles_amx( libxsmm_gene
                                                                     unsigned int                    i_simd_packed_iters,
                                                                     unsigned int*                   i_packed_reg_block,
                                                                     const unsigned int              i_bk,
-                                                                    const unsigned int              i_bn );
+                                                                    const unsigned int              i_bn,
+                                                                    unsigned int*                   io_a_tile_id_starts );
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_bfdot_avx512(libxsmm_generated_code*            io_generated_code,
                                                                      libxsmm_loop_label_tracker*        io_loop_label_tracker,
@@ -84,7 +86,7 @@ void libxsmm_generator_packed_spgemm_bcsc_bsparse_kloop_amx(         libxsmm_gen
                                                                      const unsigned int                 i_vnni_hi_reg_load,
                                                                      const unsigned int                 i_vnni_lo_reg_store,
                                                                      const unsigned int                 i_vnni_hi_reg_store,
-                                                                     unsigned int                       i_split_tiles );
-
+                                                                     unsigned int                       i_split_tiles,
+                                                                     unsigned int*                      i_a_tile_id_starts );
 
 #endif /* GENERATOR_PACKED_SPGEMM_BCSC_BSPARSE_AVX_AVX2_AVX512_AMX_H */
