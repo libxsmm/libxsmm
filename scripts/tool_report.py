@@ -324,6 +324,8 @@ def label(values, init, unit, accuracy, highlight):
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
             result = f"{init} = {result} ({sign}{inum}%)"
+    else:
+        result = f"{init} = {result}"
     return result
 
 
@@ -405,7 +407,7 @@ def main(args, argd, dbfname):
     if write:  # write weights if modified
         savedb(args.weights, weights, wfmtime, 3)
 
-    nbuild = int(args.nbuild) if args.nbuild else 0
+    nbuilds, nbuild = 0, int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
         nbld = nbuild if 0 < nbuild else next
@@ -435,7 +437,7 @@ def main(args, argd, dbfname):
         elif not builds:
             print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
-        nbuilds = njobs = 0
+        njobs = 0
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
@@ -532,7 +534,11 @@ def main(args, argd, dbfname):
             )
         y = "ies" if 1 != nentries else "y"
         print(f"Database consists of {dbsize} builds.")
-        print(f"Found {nentries} new entr{y}.")
+        if 0 < nentries:
+            s = "s" if 1 != nbuilds else ""
+            print(f"Found {nentries} new entr{y} in {nbuilds} build{s}.")
+        else:
+            print(f"Found {nentries} new entr{y}.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -612,12 +618,13 @@ def main(args, argd, dbfname):
                 )
             ]
             # collect common keys (if inline-JSON)
-            keys = None
+            keys = []
             for build in builds:
                 values = database[build][entry][value]
                 if isinstance(values, dict):  # JSON-format
-                    tmps = matchlst(qlst[0], values.keys(), args.exact)
-                    keys = [v for v in tmps if v in keys] if keys else tmps
+                    for key in matchlst(qlst[0], values.keys(), args.exact):
+                        if key not in keys:
+                            keys.append(key)
                 else:
                     break
             # collect data to be plotted
@@ -625,7 +632,7 @@ def main(args, argd, dbfname):
                 values, ylabel = database[build][entry][value], None
                 if isinstance(values, dict):  # JSON-format
                     vals, legd = [], []
-                    for key in keys:
+                    for key in (k for k in keys if k in values):
                         scale = 1.0 if 2 > len(qlst) else float(qlst[1])
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
@@ -648,7 +655,14 @@ def main(args, argd, dbfname):
                                 addon = rslt.split(",")[0] + (
                                     f"@{addon}" if addon else ""
                                 )
-                            yvalue.append(vals)
+                            if (  # ensure same dimensionality
+                                yvalue
+                                and isinstance(yvalue[0], list)
+                                and len(yvalue[0]) == len(vals)
+                            ):
+                                yvalue.append(vals)
+                            else:  # start over
+                                yvalue = [vals]
                             legend = legd
                         else:
                             yvalue.append(vals[0])
@@ -711,33 +725,33 @@ def main(args, argd, dbfname):
                 yvalue = [sum(y) for y in zip(*layers.values())]
             elif yvalue:  # (re-)reverse and trim
                 yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
-            if xvalue and yvalue:  # (re-)reverse and trim
-                xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
-
-            # perform some trend analysis
-            if isinstance(legend, list):
-                ylist, ylabel = list(zip(*yvalue)), []
-                for j in range(len(legend)):
-                    y, z = ylist[j], legend[j]
-                    s = label(y, z, yunit, accuracy, args.highlight)
-                    ylabel.append(s)
-            else:
-                ylabel = label(yvalue, legend, yunit, accuracy, args.highlight)
-
-            # determine size of shared x-axis
-            xsize = args.history
-            if not aunit or aunit == yunit:
-                xsize = min(len(yvalue), xsize)
-            yvalue = yvalue[0:xsize]
+            xsize = len(yvalue) if yvalue else 0
+            if xvalue:  # (re-)reverse and trim
+                xvalue = xvalue[: -xsize - 1 : -1]  # noqa: E203
             xrange = range(xsize)
 
-            # plot values and legend as collected above
-            if (not aunit or aunit == yunit) and yvalue:
-                axes[i].step(xrange, yvalue, ".:", where="mid", label=ylabel)
-                axes[i].set_ylabel(yunit)
-                n = n + 1
-            axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
-            axes[i].set_xticklabels(xvalue[0:xsize], rotation=45)
+            if 0 < xsize:  # skip empty plot
+                # perform some trend analysis
+                if isinstance(legend, list):
+                    ylist, ylabel = list(zip(*yvalue)), []
+                    for j in range(len(legend)):
+                        y, z = ylist[j], legend[j]
+                        s = label(y, z, yunit, accuracy, args.highlight)
+                        ylabel.append(s)
+                else:
+                    ylabel = label(
+                        yvalue, legend, yunit, accuracy, args.highlight
+                    )
+                # plot values and legend as collected above
+                if (not aunit or aunit == yunit) and yvalue:
+                    axes[i].step(
+                        xrange, yvalue, ".:", where="mid", label=ylabel
+                    )
+                    axes[i].set_ylabel(yunit)
+                    n = n + 1
+            if len(axes[i].xaxis.get_ticklabels()) < xsize:
+                axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
+                axes[i].set_xticklabels(xvalue, rotation=45)
         ngraphs = max(ngraphs, n)
         if 0 < ngraphs:
             # axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
