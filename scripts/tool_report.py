@@ -292,7 +292,8 @@ def divup(a, b):
 
 
 def trend(values):
-    a, rd, cv = values[0] if values else 0, None, None
+    a = values[0] if values else 0
+    rd, cv = None, None
     if 2 < len(values):
         m, b = numpy.polyfit(range(1, len(values)), values[1:], deg=1)
         if 0 != b:
@@ -308,7 +309,7 @@ def bold(s):
     return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
 
 
-def label(values, init, unit, accuracy, highlight):
+def label(values, base, unit, accuracy, highlight):
     vnew, rd, cv = trend(values)
     result = f"{num2fix(vnew, accuracy)} {unit}"
     if rd:
@@ -317,15 +318,15 @@ def label(values, init, unit, accuracy, highlight):
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
             if num2fix(100 * cv * highlight) < abs(inum):
-                result = f"{init} = {bold(result)} ({anum}>{bnum}%*{cnum})"
+                result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
                 expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
-                result = f"{init} = {result} ({expr})"
+                result = f"{base} = {result} ({expr})"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
-            result = f"{init} = {result} ({sign}{inum}%)"
+            result = f"{base} = {result} ({sign}{inum}%)"
     else:
-        result = f"{init} = {result}"
+        result = f"{base} = {result}"
     return result
 
 
@@ -595,8 +596,8 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    yunit, addon = None, args.branch
-    ngraphs = i = 0
+    sval, yunit, addon = None, None, args.branch
+    ngraphs = span = i = 0
     for entry in entries:
         n = 0
         for value in (
@@ -650,24 +651,18 @@ def main(args, argd, dbfname):
                             f"{value} {'_'.join(detail)}" if detail else value
                         )
                     if vals:
-                        if 1 < len(legd):
-                            if addon == args.branch:
-                                addon = rslt.split(",")[0] + (
-                                    f"@{addon}" if addon else ""
-                                )
-                            if (  # ensure same dimensionality
-                                yvalue
-                                and isinstance(yvalue[-1], list)
-                                and len(yvalue[-1]) == len(vals)
-                            ):
-                                yvalue.append(vals)
-                            else:  # start over
-                                yvalue = [vals]
-                            legend = legd
-                        else:
-                            yvalue.append(vals[0])
-                            legend = legd[0]
-                        xvalue.append(build)  # string
+                        if addon == args.branch:
+                            addon = rslt.split(",")[0] + (
+                                f"@{addon}" if addon else ""
+                            )
+                        if (  # ensure same dimensionality
+                            yvalue and isinstance(yvalue[-1], list)
+                        ) and len(yvalue[-1]) == len(vals):
+                            yvalue.append(vals)
+                        else:  # start over
+                            yvalue = [vals]
+                        legend = legd  # if 1 < len(legd) else legd[0]
+                        xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -677,7 +672,7 @@ def main(args, argd, dbfname):
                             ulow = unit.lower()
                             if not ylabel and matchstr(rslt, ulow):
                                 yvalue.append(float(parsed.group(3)))
-                                xvalue.append(build)  # string
+                                xvalue.append(int(build))
                                 ylabel = unit
                     # match --result secondary against "init"
                     for v in reversed(values):  # match last entry
@@ -693,7 +688,7 @@ def main(args, argd, dbfname):
                             ilow = init.lower()
                             if not ylabel and matchstr(rslt, ilow):
                                 yvalue.append(float(parsed.group(3)))
-                                xvalue.append(build)  # string
+                                xvalue.append(int(build))
                                 ylabel = ulab
                             if init and (not aunit or ulab == aunit):
                                 if init not in layers:
@@ -728,7 +723,6 @@ def main(args, argd, dbfname):
             xsize = len(yvalue) if yvalue else 0
             if xvalue:  # (re-)reverse and trim
                 xvalue = xvalue[: -xsize - 1 : -1]  # noqa: E203
-            xrange = range(xsize)
 
             if 0 < xsize:  # skip empty plot
                 # perform some trend analysis
@@ -738,27 +732,31 @@ def main(args, argd, dbfname):
                         y, z = ylist[j], legend[j]
                         s = label(y, z, yunit, accuracy, args.highlight)
                         ylabel.append(s)
+                    ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
                 else:
                     ylabel = label(
                         yvalue, legend, yunit, accuracy, args.highlight
                     )
                 # plot values and legend as collected above
-                if (not aunit or aunit == yunit) and yvalue:
-                    axes[i].step(
-                        xrange, yvalue, ".:", where="mid", label=ylabel
+                if (not aunit or aunit == yunit) and (
+                    yvalue and latest == xvalue[0]
+                ):
+                    ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
+                    if span < ispan:
+                        sval, span = xvalue, ispan
+                    axes[i].step(  # xvalue,
+                        yvalue, ".:", where="mid", label=ylabel
                     )
                     axes[i].set_ylabel(yunit)
+                    # axes[i].invert_xaxis()
                     n = n + 1
-            if len(axes[i].xaxis.get_ticklabels()) < xsize:
-                axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
-                axes[i].set_xticklabels(xvalue, rotation=45)
         ngraphs = max(ngraphs, n)
-        if 0 < ngraphs:
-            # axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
+        if 0 < n:
+            axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
             axes[i].set_title(entry.upper())
             axes[i].legend(loc="center left", fontsize="x-small")
         i = i + 1
-    axes[i - 1].set_xlabel("Build Number")
+    axes[-1].set_xlabel("Build Number")
     title = "Performance History"
     figure.suptitle(
         f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
