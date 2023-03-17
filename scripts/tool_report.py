@@ -657,8 +657,8 @@ def main(args, argd, dbfname):
                                 )
                             if (  # ensure same dimensionality
                                 yvalue
-                                and isinstance(yvalue[0], list)
-                                and len(yvalue[0]) == len(vals)
+                                and isinstance(yvalue[-1], list)
+                                and len(yvalue[-1]) == len(vals)
                             ):
                                 yvalue.append(vals)
                             else:  # start over
