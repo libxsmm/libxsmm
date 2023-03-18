@@ -66,11 +66,13 @@ def matchop(op, value, query, exact=False):
     if query:
         if "not" != op:
             if op:
-                result = eval(op)(matchstr(q, value.lower()) for q in query)
+                result = eval(op)(
+                    matchstr(q, value.lower(), exact) for q in query
+                )
             else:  # any
-                result = any(matchstr(q, value.lower()) for q in query)
+                result = any(matchstr(q, value.lower(), exact) for q in query)
         else:  # not
-            result = all(not matchstr(q, value.lower()) for q in query)
+            result = all(not matchstr(q, value.lower(), exact) for q in query)
     else:
         result = True
     return result
@@ -629,7 +631,7 @@ def main(args, argd, dbfname):
                 else:
                     break
             # collect data to be plotted
-            for build in builds:
+            for build in reversed(builds):  # order: latest -> older
                 values, ylabel = database[build][entry][value], None
                 if isinstance(values, dict):  # JSON-format
                     vals, legd = [], []
@@ -655,11 +657,12 @@ def main(args, argd, dbfname):
                             addon = rslt.split(",")[0] + (
                                 f"@{addon}" if addon else ""
                             )
-                        if (  # ensure same dimensionality
-                            yvalue and isinstance(yvalue[-1], list)
-                        ) and len(yvalue[-1]) == len(vals):
-                            yvalue.append(vals)
-                        else:  # start over
+                        if yvalue:
+                            if not isinstance(yvalue[0], list) or (
+                                len(yvalue[0]) == len(vals)
+                            ):  # same dimensionality
+                                yvalue.append(vals)
+                        else:
                             yvalue = [vals]
                         legend = legd  # if 1 < len(legd) else legd[0]
                         xvalue.append(int(build))
@@ -701,28 +704,26 @@ def main(args, argd, dbfname):
             wname = value.split()[0]
             wlist = weights[wname] if wname in weights else []
             wdflt = True  # only default-weights discovered
-            # (re-)reverse, trim, and apply weights
-            layerkeys = list(layers.keys())
-            for a in reversed(layerkeys):
+            # trim, and apply weights
+            for a in layers.keys():
                 y = layers[a]
                 s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
-                    layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
+                    layers[a] = [y[k] * w for k in range(s)]
                     wdflt = False
                 else:  # unit-weight
-                    layers[a] = [y[len(y) - k - 1] for k in range(s)]
+                    layers[a] = [y[k] for k in range(s)]
                 j = j + 1
             if not yunit and (ylabel or args.result):
                 yunit = (ylabel if ylabel else args.result).split()[0]
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
-            elif yvalue:  # (re-)reverse and trim
-                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
+            elif yvalue:  # trim
+                yvalue = yvalue[0 : args.history]  # noqa: E203
             xsize = len(yvalue) if yvalue else 0
-            if xvalue:  # (re-)reverse and trim
-                xvalue = xvalue[: -xsize - 1 : -1]  # noqa: E203
+            xvalue = xvalue[0:xsize]  # trim
 
             if 0 < xsize:  # skip empty plot
                 # perform some trend analysis
@@ -748,7 +749,6 @@ def main(args, argd, dbfname):
                         yvalue, ".:", where="mid", label=ylabel
                     )
                     axes[i].set_ylabel(yunit)
-                    # axes[i].invert_xaxis()
                     n = n + 1
         ngraphs = max(ngraphs, n)
         if 0 < n:
@@ -940,7 +940,7 @@ if __name__ == "__main__":
         "-t",
         "--highlight",
         type=float,
-        default=1.5,
+        default=2.0,
         help="Highlight if T*Stdev is exceeded",
     )
     argparser.add_argument(
