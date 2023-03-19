@@ -653,18 +653,16 @@ def main(args, argd, dbfname):
                             f"{value} {'_'.join(detail)}" if detail else value
                         )
                     if vals:
-                        if addon == args.branch:
-                            addon = rslt.split(",")[0] + (
-                                f"@{addon}" if addon else ""
-                            )
                         if yvalue:
                             if not isinstance(yvalue[0], list) or (
                                 len(yvalue[0]) == len(vals)
                             ):  # same dimensionality
                                 yvalue.append(vals)
-                        else:
-                            yvalue = [vals]
-                        legend = legd  # if 1 < len(legd) else legd[0]
+                        elif int(build) == latest:
+                            yvalue, legend = [vals], legd
+                            addon = rslt.split(",")[0] + (
+                                f"@{addon}" if addon else ""
+                            )  # title-addon
                         xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
@@ -754,7 +752,7 @@ def main(args, argd, dbfname):
         if 0 < n:
             axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="center left", fontsize="x-small")
+            axes[i].legend(loc="upper left", ncol=2)  # fontsize="x-small"
         i = i + 1
     axes[-1].set_xlabel("Build Number")
     title = "Performance History"
@@ -845,7 +843,7 @@ if __name__ == "__main__":
         "-d",
         "--resolution",
         type=str,
-        default="900x600",
+        default="1600x900",
         help="Graphics WxH[xDPI]",
     )
     argparser.add_argument(
