@@ -294,16 +294,17 @@ def divup(a, b):
 
 
 def trend(values):
-    a = values[0] if values else 0
-    rd, cv = None, None
-    if 2 < len(values):
-        m, b = numpy.polyfit(range(1, len(values)), values[1:], deg=1)
-        if 0 != b:
-            rd = (a - b) / b
+    v, rd, cv, size = (values[0] if values else 0), None, None, len(values)
+    if 2 < size:
+        a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
+        w = a + b  # value predicted for x=1 (a * x + b)
+        if 0 != w:
+            rd = (v - w) / w
             avg = numpy.mean(values[1:])
             if 0 != avg:
                 cv = numpy.std(values[1:]) / avg
-    return (a, rd, cv)
+        v = w  # predicted value
+    return (v, rd, cv)
 
 
 def bold(s):
@@ -312,8 +313,8 @@ def bold(s):
 
 
 def label(values, base, unit, accuracy, highlight):
-    vnew, rd, cv = trend(values)
-    result = f"{num2fix(vnew, accuracy)} {unit}"
+    guess, rd, cv = trend(values)
+    result = f"{num2fix(values[0], accuracy)} {unit}"
     if rd:
         inum = num2fix(100 * rd)
         if cv:
@@ -938,7 +939,7 @@ if __name__ == "__main__":
         "-t",
         "--highlight",
         type=float,
-        default=2.0,
+        default=3.0,
         help="Highlight if T*Stdev is exceeded",
     )
     argparser.add_argument(
