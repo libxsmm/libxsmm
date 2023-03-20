@@ -870,7 +870,7 @@ int main( int argc, char* argv[] ) {
       var[i] = (float)libxsmm_rng_f64();
     }
 
-    /* dgamma function  */
+    /* dgamma function */
     my_eqn1 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD, LIBXSMM_MELTW_FLAG_TERNARY_REUSE_IN_2_AS_OUT, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_ternary_op( my_eqn1, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
@@ -888,7 +888,7 @@ int main( int argc, char* argv[] ) {
       exit(-1);
     }
 
-    /* dbeta function  */
+    /* dbeta function */
     my_eqn2 = libxsmm_matrix_eqn_create();
     libxsmm_matrix_eqn_push_back_binary_op( my_eqn2, LIBXSMM_MELTW_TYPE_BINARY_ADD, LIBXSMM_MELTW_FLAG_BINARY_NONE, LIBXSMM_DATATYPE_F32 );
     libxsmm_matrix_eqn_push_back_arg( my_eqn2, S3, S1, ld, 3, 0, in_dt );

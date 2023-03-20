@@ -29,7 +29,7 @@ void eqn0_f32f32(libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ld, float
       res = 1.0f + (Arg0 - Arg1) + Arg2;
       /* Set relu mask */
       relu_mask[(i*mask_ld) + j/8] |= (unsigned char)(( res <= 0.0f ) ? 0x0 : (1 << (j%8)) );
-      /* Apply relu  */
+      /* Apply relu */
       res = (res < 0.0f) ? 0.0f : res;
       out[(i*ld)+j] = res;
     }

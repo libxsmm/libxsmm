@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
   _n = (use_regular_vecin > 0) ? 1 : n;
   ld_in = LIBXSMM_MAX(ld_in,(libxsmm_blasint)m);
 
-  /* Allocate arrays  */
+  /* Allocate arrays */
   inp_matrix              = (float*) malloc(sizeof(float)*ld_in*n);
   result                  = (float*) malloc(sizeof(float)*ld_in);
   ref_result              = (float*) malloc(sizeof(float)*ld_in);
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
     argop_off_vec_1_i32[i] = 0;
   }
 
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (jj = 0; jj < n_cols_idx; jj++) {
     float op_res = 0.0f;
     j = (unsigned int)cols_ind_array[jj];
@@ -556,7 +556,7 @@ int main(int argc, char* argv[])
   }
 
   l_start = libxsmm_timer_tick();
-  /* Calculate reference results...  */
+  /* Calculate reference results... */
   for (k = 0; k < iters; k++) {
     for (jj = 0; jj < n_cols_idx; jj++) {
       float op_res = 0.0f;

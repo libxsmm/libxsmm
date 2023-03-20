@@ -172,6 +172,9 @@ if [ "${LOGDIR}" ]; then
     else
       VERBOSITY=1
     fi
+    if [ "${LOGRPTHLT}" ]; then # highlight
+      DBSCRT="${DBSCRT} -t ${LOGRPTHLT}"
+    fi
     mkdir -p "${LOGDIR}/${PIPELINE}/${JOBID}"
     if ! OUTPUT=$(echo "${FINPUT}" | ${DBSCRT} \
       -p "${PIPELINE}" -b "${LOGRPTBRN}" \
@@ -182,6 +185,7 @@ if [ "${LOGDIR}" ]; then
       -q "${LOGRPTQOP}" \
       -v ${VERBOSITY});
     then
+      echo "${OUTPUT}" | sed '$d'
       OUTPUT=""
     fi
   fi

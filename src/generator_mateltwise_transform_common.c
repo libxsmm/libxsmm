@@ -47,7 +47,7 @@ void libxsmm_generator_transform_x86_microkernel( libxsmm_generated_code*       
   } else if ( (io_generated_code->arch >= LIBXSMM_X86_GENERIC) /*&& (io_generated_code->arch < LIBXSMM_X86_AVX)*/) {
     libxsmm_generator_transform_sse_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -64,7 +64,7 @@ void libxsmm_generator_transform_aarch64_microkernel( libxsmm_generated_code*   
   } else if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) && (io_generated_code->arch < LIBXSMM_AARCH64_ALLFEAT) ) {
     libxsmm_generator_transform_aarch64_sve_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
   } else {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }

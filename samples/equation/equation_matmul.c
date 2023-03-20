@@ -384,7 +384,7 @@ int main( int argc, char* argv[] ) {
     bf16_arg_array[k].primary = bf16_arg[k];
   }
 
-  /* Result = gelu(A+B) * tanh(C x D)  */
+  /* Result = gelu(A+B) * tanh(C x D) */
   arg_singular_attr.type = LIBXSMM_MATRIX_ARG_TYPE_SINGULAR;
 
   my_eqn0 = libxsmm_matrix_eqn_create();
@@ -500,7 +500,7 @@ int main( int argc, char* argv[] ) {
 
   printf("\n\nNow testing equation 1...\n\n");
 
-  /* Create copy of B since this is now Inout  */
+  /* Create copy of B since this is now Inout */
   copy_B = (float*) libxsmm_aligned_malloc( sizeof(float)*n_i[1]*ld_i[1]*blocks_i[1],   64);
   orig_B = arg[1];
   for ( i = 0; i < n_i[1]; i++ ) {
@@ -557,7 +557,7 @@ int main( int argc, char* argv[] ) {
   libxsmm_matrix_eqn_tree_print( my_eqn1 );
   func1 = libxsmm_dispatch_matrix_eqn_v2( my_eqn1, arg_shape[n_tensors-1] );
   func1(&eqn_param);
-  /* Recover type of arg1  */
+  /* Recover type of arg1 */
   arg_shape[1].type = in_dt;
 
   if (datatype_mode == 0 || datatype_mode == 1) {
@@ -643,7 +643,7 @@ int main( int argc, char* argv[] ) {
     arg_metadata[42].in_arg_pos = 42;
 
     if (relu_sigmoid_fusion_mode == 0) {
-      /* Do nothing  */
+      /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
       libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {
@@ -948,7 +948,7 @@ int main( int argc, char* argv[] ) {
     op_metadata[1].eqn_idx      = my_eqn4;
 
     if (relu_sigmoid_fusion_mode == 0) {
-      /* Do nothing  */
+      /* Do nothing */
     } else if (relu_sigmoid_fusion_mode == 1) {
       libxsmm_matrix_eqn_push_back_unary_op_v2(op_metadata[0], LIBXSMM_MELTW_TYPE_UNARY_RELU, LIBXSMM_DATATYPE_F32, LIBXSMM_MELTW_FLAG_UNARY_NONE);
     } else if (relu_sigmoid_fusion_mode == 2) {

@@ -2898,7 +2898,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
     libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
                                                             l_zmm + 1, i_vnni_hi_reg_2, l_zmm_tmp2, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
-    /* Store 2 registers  */
+    /* Store 2 registers */
     if ( i_m_step > l_m_bound/2 ) {
       libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                         i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out,
@@ -2929,7 +2929,7 @@ void libxsmm_generator_transform_norm_to_vnni4_16bit_avx512_mnblock_micro_kernel
       libxsmm_x86_instruction_vec_compute_3reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPERMT2D, i_micro_kernel_config->vector_name,
                                                               l_zmm_tmp0, i_vnni_hi_reg_2, l_zmm_tmp3, 0, 0, 0, LIBXSMM_X86_IMM_UNDEF );
 
-      /* Store 2 registers  */
+      /* Store 2 registers */
       if ( i_m_step > l_m_bound + l_m_bound/2 ) {
         libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, i_micro_kernel_config->vmove_instruction_out,
                                           i_gp_reg_out, LIBXSMM_X86_GP_REG_UNDEF, 0, l_zmm * i_mateltwise_desc->ldo * i_micro_kernel_config->datatype_size_out + (l_m_bound * 4 * i_micro_kernel_config->datatype_size_out),

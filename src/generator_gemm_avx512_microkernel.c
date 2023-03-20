@@ -220,7 +220,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( lib
       }
     }
 
-    /* In case of batch reduce try to prefetch a few more columns ahead for A...  */
+    /* In case of batch reduce try to prefetch a few more columns ahead for A... */
     if ((l_n < l_m_blocking)  && ((i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BRGEMM_OOB) > 0) && (LIBXSMM_DATATYPE_I8 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && (LIBXSMM_DATATYPE_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype)) && ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE))) {
       unsigned int pf_a_cols_ahead = 16;
       if (i_xgemm_desc->lda == 1024) {
