@@ -399,15 +399,25 @@ def main(args, argd, dbfname):
     weights = loaddb(wfile)
 
     # populate default weights
-    write = None
-    for build in database.values():
-        for entries in build.values():
-            for key, entry in entries.items():
-                name = parsename(key)
-                if name not in weights:
-                    write = [1.0 for e in entry if ":" in e]
-                    if write:
-                        weights[name] = write
+    write = False
+    for entries in (
+        build[b] for build in database.values() for b in build if infokey != b
+    ):
+        for key, entry in entries.items():
+            name = parsename(key)
+            if isinstance(entry, dict):  # JSON-format
+                for e in entry:
+                    if name not in weights:
+                        weights[name] = {}
+                        weights[name][e] = 1.0
+                        write = True
+                    elif e not in weights[name]:
+                        weights[name][e] = 1.0
+                        write = True
+            elif name not in weights:  # telegram format
+                write = [1.0 for e in entry if ":" in e]
+                if write:
+                    weights[name] = write
     if write:  # write weights if modified
         savedb(args.weights, weights, wfmtime, 3)
 
@@ -606,6 +616,8 @@ def main(args, argd, dbfname):
         for value in (
             v for v in template[entry] if matchop(query_op, v, query)
         ):
+            wname = value.split()[0]  # name/key of weight-entry
+            wlist = weights[wname] if wname in weights else []
             layers, xvalue, yvalue = dict(), [], []
             legend, aunit = value, None
             if value not in match:
@@ -637,11 +649,12 @@ def main(args, argd, dbfname):
                 if isinstance(values, dict):  # JSON-format
                     vals, legd = [], []
                     for key in (k for k in keys if k in values):
-                        scale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                        vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                        weight = wlist[key] if key in wlist else 1.0
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
                         unit = strval[parsed.end(3) :].strip()  # noqa: E203
-                        vals.append(float(strval.split()[0]) * scale)
+                        vals.append(float(strval.split()[0]) * vscale * weight)
                         if not ylabel:
                             ylabel = (
                                 (unit if unit else key)
@@ -700,10 +713,7 @@ def main(args, argd, dbfname):
                                     layers[init] = []
                                 layers[init].append(float(parsed.group(3)))
 
-            s, j = args.history, 0
-            wname = value.split()[0]
-            wlist = weights[wname] if wname in weights else []
-            wdflt = True  # only default-weights discovered
+            wdflt, s, j = True, args.history, 0
             # trim, and apply weights
             for a in layers.keys():
                 y = layers[a]
@@ -711,7 +721,7 @@ def main(args, argd, dbfname):
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
                     layers[a] = [y[k] * w for k in range(s)]
-                    wdflt = False
+                    wdflt = False  # non-default weight discovered
                 else:  # unit-weight
                     layers[a] = [y[k] for k in range(s)]
                 j = j + 1
