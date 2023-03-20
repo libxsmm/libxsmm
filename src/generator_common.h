@@ -1690,6 +1690,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_mateltwise_kernel_config_struct {
 
   /* aux variable for stochastic rounding */
   unsigned int prng_vreg_tmp0;
+  unsigned int prng_vreg_tmp1;
   unsigned int prng_vreg_rand;
 
   /* aux variable for quantization */

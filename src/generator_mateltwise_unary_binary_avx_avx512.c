@@ -723,12 +723,11 @@ void libxsmm_store_2d_reg_block( libxsmm_generated_code*                 io_gene
 
             unsigned int stochastic_rnd = ((i_mateltwise_desc->flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0);
             if ( stochastic_rnd == 1 ) {
-              /* draw a random number */
-              libxsmm_generator_xoshiro128p_f32_avx2_avx512( io_generated_code, i_micro_kernel_config->vector_name,
+              libxsmm_generator_xoshiro128p_i32_avx2_avx512 ( io_generated_code, i_micro_kernel_config->vector_name,
                                                        i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
                                                        i_micro_kernel_config->prng_state2_vreg, i_micro_kernel_config->prng_state3_vreg,
-                                                       i_micro_kernel_config->dcvt_zmm_aux0, i_micro_kernel_config->dcvt_zmm_aux1,
-                                                       i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_rand);
+                                                       i_micro_kernel_config->prng_vreg_tmp0, i_micro_kernel_config->prng_vreg_tmp1,
+                                                       i_micro_kernel_config->prng_vreg_rand);
             }
 
             libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( io_generated_code, i_micro_kernel_config->vector_name,
@@ -2217,14 +2216,15 @@ void libxsmm_configure_unary_kernel_vregs_masks( libxsmm_generated_code*        
   if (((flags & LIBXSMM_MELTW_FLAG_UNARY_STOCHASTIC_ROUND) > 0)) {
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX) && (io_generated_code->arch < LIBXSMM_X86_ALLFEAT)) {
       unsigned int reserved_zmms = i_micro_kernel_config->reserved_zmms;
-      reserved_zmms += 6;
+      reserved_zmms += 7;
 
       i_micro_kernel_config->prng_state0_vreg     = reserved_zmms - 1;
       i_micro_kernel_config->prng_state1_vreg     = reserved_zmms - 2;
       i_micro_kernel_config->prng_state2_vreg     = reserved_zmms - 3;
       i_micro_kernel_config->prng_state3_vreg     = reserved_zmms - 4;
       i_micro_kernel_config->prng_vreg_tmp0       = reserved_zmms - 5;
-      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 6;
+      i_micro_kernel_config->prng_vreg_tmp1       = reserved_zmms - 6;
+      i_micro_kernel_config->prng_vreg_rand       = reserved_zmms - 7;
 
       libxsmm_generator_load_prng_state_avx_avx512( io_generated_code, vname, i_gp_reg_aux0,
                                                     i_micro_kernel_config->prng_state0_vreg, i_micro_kernel_config->prng_state1_vreg,
