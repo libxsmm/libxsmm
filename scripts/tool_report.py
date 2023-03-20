@@ -661,9 +661,10 @@ def main(args, argd, dbfname):
                                 yvalue.append(vals)
                         elif int(build) == latest:
                             yvalue, legend = [vals], legd
-                            addon = rslt.split(",")[0] + (
-                                f"@{addon}" if addon else ""
-                            )  # title-addon
+                            if addon == args.branch:
+                                addon = rslt.split(",")[0] + (
+                                    f"@{addon}" if addon else ""
+                                )  # title-addon
                         xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
