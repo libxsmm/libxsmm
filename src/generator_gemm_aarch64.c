@@ -1353,7 +1353,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
   /* setting up the stack frame */
   libxsmm_generator_gemm_setup_stack_frame_aarch64( io_generated_code, i_xgemm_desc, &l_gp_reg_mapping, &l_micro_kernel_config);
 
-  /* In this case we store C to scratch  */
+  /* In this case we store C to scratch */
   if (l_micro_kernel_config.vnni_format_C > 0) {
     libxsmm_generator_gemm_setval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_TRANS_EXT_BUF_C, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c);
     libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_GEMM_SCRATCH_PTR, l_gp_reg_mapping.gp_reg_help_1);
@@ -1362,7 +1362,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
     l_xgemm_desc_opa->ldc = i_xgemm_desc->m;
   }
 
-  /* Apply potential opA / opB  */
+  /* Apply potential opA / opB */
   libxsmm_generator_gemm_apply_opA_opB_aarch64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa, i_xgemm_desc);
 
   if ( (io_generated_code->arch >= LIBXSMM_AARCH64_SVE128) &&
@@ -1655,7 +1655,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
         libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
                                                        l_gp_reg_mapping.gp_reg_c, l_gp_reg_mapping.gp_reg_help_2, l_gp_reg_mapping.gp_reg_c,
                                                        (long long)l_m_blocking*l_micro_kernel_config.datatype_size_out );
-        /* Adjust relu bitmask pointer  */
+        /* Adjust relu bitmask pointer */
         if ((l_micro_kernel_config.fused_relu == 1) && (l_micro_kernel_config.overwrite_C == 1) ) {
           libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_1);
           libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1724,7 +1724,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                    ((long long)l_n_blocking * l_xgemm_desc_opa->ldc * l_micro_kernel_config.datatype_size_out) -
                                                    ((long long)l_xgemm_desc_opa->m * l_micro_kernel_config.datatype_size_out) );
 
-    /* Adjust relu bitmask pointer  */
+    /* Adjust relu bitmask pointer */
     if ((l_micro_kernel_config.fused_relu == 1) && (l_micro_kernel_config.overwrite_C == 1) ) {
       libxsmm_generator_gemm_getval_stack_var_aarch64( io_generated_code, LIBXSMM_GEMM_STACK_VAR_ELT_OUTPUT_PTR, l_gp_reg_mapping.gp_reg_help_1);
       libxsmm_aarch64_instruction_alu_compute_imm64( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_META_ADD,
@@ -1808,7 +1808,7 @@ void libxsmm_generator_gemm_aarch64_kernel( libxsmm_generated_code*        io_ge
                                                 l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
   }
 
-  /* In this case we vnni-format C from scratch  */
+  /* In this case we vnni-format C from scratch */
   if (l_micro_kernel_config.vnni_format_C > 0) {
     l_xgemm_desc_opa->ldc = l_ldc_saved;
     libxsmm_generator_gemm_vnni_store_C_from_scratch_aarch64( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_xgemm_desc_opa);

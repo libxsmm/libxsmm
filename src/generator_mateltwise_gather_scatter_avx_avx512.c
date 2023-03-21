@@ -132,7 +132,7 @@ void libxsmm_generator_gather_scatter_offs_avx_avx512_mn_loop_unrolled( libxsmm_
               help_mask_reg,
               0);
         }
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             vstore_instr,
             gp_reg_mat_reg,
@@ -522,7 +522,7 @@ void libxsmm_generator_gather_scatter_rows_avx_avx512_mn_loop_unrolled( libxsmm_
               help_mask_reg,
               0);
         }
-        /* Store gathered vector  */
+        /* Store gathered vector */
         libxsmm_x86_instruction_unified_vec_move( io_generated_code,
             vstore_instr,
             gp_reg_mat_reg,
@@ -1098,7 +1098,7 @@ void libxsmm_generator_gather_scatter_rows_scalar_x86_microkernel( libxsmm_gener
     store_instr = LIBXSMM_X86_INSTR_MOVD;
   }
 
-  /* M loop  */
+  /* M loop */
   libxsmm_generator_generic_loop_header_no_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 0);
   /* Load row index and add the corresponding offset to the idx_mat_reg*/
   libxsmm_x86_instruction_alu_mem( io_generated_code, idx_load_instr, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_m_loop, idx_tsize, 0, gp_idx, 0 );
@@ -1229,11 +1229,11 @@ void libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( libxsmm_gener
     store_instr = LIBXSMM_X86_INSTR_MOVD;
   }
 
-  /* N loop  */
+  /* N loop */
   libxsmm_generator_generic_loop_header( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_n_loop, 0, 1 );
-  /* M loop  */
+  /* M loop */
   libxsmm_generator_generic_loop_header_no_idx_inc( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping->gp_reg_m_loop, 0);
-  /* Load absolute offset  */
+  /* Load absolute offset */
   libxsmm_x86_instruction_alu_mem( io_generated_code, idx_load_instr, i_gp_reg_mapping->gp_reg_ind_base, i_gp_reg_mapping->gp_reg_m_loop, idx_tsize, 0, gp_idx, 0 );
   libxsmm_x86_instruction_alu_mem( io_generated_code, LIBXSMM_X86_INSTR_LEAQ, gp_idx_mat_reg, gp_idx, dtype_size_idx_mat, 0, gp_idx, 0);
   if (is_gather == 1) {
@@ -1580,6 +1580,6 @@ void libxsmm_generator_gather_scatter_avx_avx512_microkernel( libxsmm_generated_
       libxsmm_generator_gather_scatter_offs_scalar_x86_microkernel( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_mateltwise_desc );
     }
   } else {
-    /* SHOULD NOT HAPPEN  */
+    /* SHOULD NOT HAPPEN */
   }
 }

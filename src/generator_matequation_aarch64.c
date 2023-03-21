@@ -272,7 +272,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
   if (allocate_scratch > 0) {
     unsigned int scratch_size = 0;
     unsigned int addr_scratch_size = 0;
-    /* Now align RSP to 64 byte boundary  */
+    /* Now align RSP to 64 byte boundary */
     libxsmm_aarch64_instruction_alu_set_imm64( io_generated_code, temp_reg, 0xFFFFFFFFFFFFFFC0 );
     /* reg-reg instruction */
 #if 0
@@ -348,7 +348,7 @@ void libxsmm_generator_matequation_setup_stack_frame_aarch64( libxsmm_generated_
     }
   }
 
-  /* Store the out ptr in stack  */
+  /* Store the out ptr in stack */
   libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_LDR_I_OFF, i_gp_reg_mapping->gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, temp_reg );
   libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_OUT_PTR, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
 
@@ -390,7 +390,7 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
   unsigned int all_args_fp64 = libxsmm_generator_matequation_all_args_dtype(i_eqn, LIBXSMM_DATATYPE_F64);
   unsigned int all_fp64 = ((all_nodes_fp64 > 0) && (all_args_fp64 > 0) && (LIBXSMM_DATATYPE_F64 == LIBXSMM_GETENUM_OUT( i_mateqn_desc->datatype ))) ? 1 : 0;
 
-  /* Unary not supported for fp64  */
+  /* Unary not supported for fp64 */
   libxsmm_meltw_unary_type non_fp64_unary[21] = { LIBXSMM_MELTW_TYPE_UNARY_RELU,
                                                   LIBXSMM_MELTW_TYPE_UNARY_RELU_INV,
                                                   LIBXSMM_MELTW_TYPE_UNARY_TANH,
@@ -413,7 +413,7 @@ libxsmm_blasint libxsmm_generator_matequation_aarch64_valid_arch_precision( libx
                                                   LIBXSMM_MELTW_TYPE_UNARY_GATHER,
                                                   LIBXSMM_MELTW_TYPE_UNARY_SCATTER };
 
-  /* Binary not supported for fp64  */
+  /* Binary not supported for fp64 */
   libxsmm_meltw_binary_type non_fp64_binary[2] = { LIBXSMM_MELTW_TYPE_BINARY_MUL_AND_REDUCE_TO_SCALAR_OP_ADD,
                                                    LIBXSMM_MELTW_TYPE_BINARY_ZIP };
 
@@ -547,8 +547,8 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
     libxsmm_aarch64_instruction_alu_move( io_generated_code, LIBXSMM_AARCH64_INSTR_GP_STR_I_OFF, l_gp_reg_mapping.gp_reg_param_struct, LIBXSMM_AARCH64_GP_REG_UNDEF, 16, l_gp_reg_mapping.temp_reg );
 
     if (libxsmm_generator_matequation_is_eqn_node_breaking_point(cur_eqn->eqn_root, &fusion_knobs) > 0) {
-      /* For these nodes use strategy via scratch  */
-      /* Re assign visit_stamps to current equation tree  */
+      /* For these nodes use strategy via scratch */
+      /* Re assign visit_stamps to current equation tree */
       libxsmm_generator_matequation_assign_timestamps(cur_eqn);
       if (eqn_tree_id < queue_size - 1) {
         if ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_TERNARY) &&
@@ -565,8 +565,8 @@ void libxsmm_generator_matequation_aarch64_kernel( libxsmm_generated_code*      
       l_kernel_config.meltw_kernel_config.vector_name = l_kernel_config.vector_name;
       libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel(io_generated_code, &copy_mateqn_desc, &l_gp_reg_mapping, &l_kernel_config, &l_loop_label_tracker, cur_eqn);
     } else {
-      /* For these nodes use strategy via regblocks  */
-      /* Re-optimize current tree  */
+      /* For these nodes use strategy via regblocks */
+      /* Re-optimize current tree */
       if (((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (libxsmm_matrix_eqn_is_unary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.u_op.type) > 0)) ||
           ((cur_eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_BINARY) && (libxsmm_matrix_eqn_is_binary_opcode_reduce_to_scalar(cur_eqn->eqn_root->info.b_op.type) > 0))) {
         copy_mateqn_desc.m = cur_eqn->eqn_root->le->tmp.m;
