@@ -78,8 +78,12 @@
   (LIBXSMM_DATATYPE_I32  == ((int)(ENUM))) ? 4 : ( \
   (LIBXSMM_DATATYPE_I16  == ((int)(ENUM))) ? 2 : ( \
   (LIBXSMM_DATATYPE_I8   == ((int)(ENUM))) ? 1 : ( \
+  (LIBXSMM_DATATYPE_U64  == ((int)(ENUM))) ? 8 : ( \
+  (LIBXSMM_DATATYPE_U32  == ((int)(ENUM))) ? 4 : ( \
+  (LIBXSMM_DATATYPE_U16  == ((int)(ENUM))) ? 2 : ( \
+  (LIBXSMM_DATATYPE_U8   == ((int)(ENUM))) ? 1 : ( \
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
-    0/*invalid*/))))))))))))
+    0/*invalid*/))))))))))))))))
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
@@ -176,6 +180,11 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_I32,
   LIBXSMM_DATATYPE_I16,
   LIBXSMM_DATATYPE_I8,
+  LIBXSMM_DATATYPE_U64,
+  LIBXSMM_DATATYPE_U32,
+  LIBXSMM_DATATYPE_U16,
+  LIBXSMM_DATATYPE_U8,
+  LIBXSMM_DATATYPE_IMPLICIT,
   LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
 
