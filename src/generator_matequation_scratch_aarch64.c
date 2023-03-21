@@ -102,7 +102,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct_aarch64(libx
 
   /* Setup secondaries if need be */
   if ((cur_node->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) &&
-      ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) ||
+      ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) ||
        (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) ||
        ((cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) && ((cur_node->info.u_op.flags & LIBXSMM_MELTW_FLAG_UNARY_BITMASK_2BYTEMULT) > 0) ) )) {
     if (is_last_op > 0) {
@@ -111,7 +111,7 @@ void libxsmm_generator_matequation_set_output_in_stack_param_struct_aarch64(libx
     } else {
       if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_SCATTER) {
         fprintf( stderr, "The requested SCATTER operation can only be the head of the equation...\n" );
-      } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+      } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
         fprintf( stderr, "The requested UNPACK_TO_BLOCKS operation can only be the head of the equation...\n" );
       } else if (cur_node->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_RELU) {
         fprintf( stderr, "The requested RELU operation with bitmask can only be the head of the equation...\n" );
@@ -383,7 +383,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_aarch64_kernel( libxsmm_gen
         }
 
         /* If need, be set properly the offset param from scratch...  */
-        if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) && (timestamp == last_timestamp)) {
+        if ((eqn->eqn_root->type == LIBXSMM_MATRIX_EQN_NODE_UNARY) && (eqn->eqn_root->info.u_op.type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) && (timestamp == last_timestamp)) {
           libxsmm_generator_meqn_getval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_CONST_9, temp_reg );
           libxsmm_generator_meqn_setval_stack_var_aarch64( io_generated_code, LIBXSMM_MEQN_STACK_VAR_PARAM_STRUCT_PTR9, i_gp_reg_mapping->gp_reg_scratch_0, temp_reg );
         }

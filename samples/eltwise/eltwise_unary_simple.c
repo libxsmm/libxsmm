@@ -40,9 +40,9 @@
 #define INC_OP 14
 #define RCP_OP 15
 #define RCP_SQRT_OP 16
-#define EXP_OP 17
+#define EXP_OP17
 #define REPLICATE_COL_VAR 27
-#define UNPACK_TO_BLOCKS 42
+#define UNZIP 42
 #if 0
 #define USE_ZERO_RNG_STATE_UNITTEST
 #endif
@@ -214,7 +214,7 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "reciprocal sqrt");
   } else if (op == EXP_OP) {
     sprintf(opname, "exp");
-  } else if (op == UNPACK_TO_BLOCKS) {
+  } else if (op == UNZIP) {
     sprintf(opname, "unpack to blocks");
   } else {
     printf("Invalid OP\n");
@@ -258,8 +258,8 @@ void set_unarytype(unsigned int op, libxsmm_meltw_unary_type *type) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_EXP;
   } else if (op == RCP_SQRT_OP) {
     unary_type = LIBXSMM_MELTW_TYPE_UNARY_RECIPROCAL_SQRT;
-  }  else if (op == UNPACK_TO_BLOCKS) {
-    unary_type = LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS;
+  }  else if (op == UNZIP) {
+    unary_type = LIBXSMM_MELTW_TYPE_UNARY_UNZIP;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -401,7 +401,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   libxsmm_rng_set_seed(1);
 
   in        = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_in) *N*ldi, 64 );
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
     out       = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*2*N*ldo, 64 );
     out_gold  = (char*) libxsmm_aligned_malloc( LIBXSMM_TYPESIZE(dtype_out)*2*N*ldo, 64 );
   } else {
@@ -411,7 +411,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   _in       = in;
 
   /* init in */
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
     init_random_matrix( dtype_out, in,       1, ldi*2, N, 0 );
     init_zero_matrix(   dtype_out, out,      1, ldo*2, N );
     init_zero_matrix(   dtype_out, out_gold, 1, ldo*2, N );
@@ -450,7 +450,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   }
 
   /* compute out_gold */
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
     reference_unpack_32bit_to_2x16bit_blocks( M, N, ldi, ldo, in, out_gold, offset);
   } else {
     unary_op_gold( M, N, ldi, ldo, in, out_gold, op, dtype_in, dtype_out, dtype_comp, unary_flags );
@@ -462,7 +462,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_REPLICATE_COL_VAR) {
     unary_param.op.primary = (void*) &_N;
   }
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
     unary_param.out.secondary = (void*)&offset;
   }
   if (use_bcast != NO_BCAST) {
@@ -490,7 +490,7 @@ int test_unary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libxs
   unary_kernel( &unary_param );
 
   /* compare result */
-  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS) {
+  if (unary_type == LIBXSMM_MELTW_TYPE_UNARY_UNZIP) {
     norms_out = check_matrix( dtype_out, out_gold, out, ldo, ldo, 2*N );
   } else {
     norms_out = check_matrix( dtype_out, out_gold, out, ldo, M, N );
@@ -596,7 +596,7 @@ int main( int argc, char* argv[] ) {
 
   valid_op = ( op == COPY_OP || op == X2_OP || op == XOR_OP || op == TANH_OP || op == SIGMOID_OP || op == GELU_OP ||
                op == GELU_INV_OP || op == TANH_INV_OP || op == SIGMOID_INV_OP || op == SQRT_OP || op == NEGATE_OP ||
-               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR || op == UNPACK_TO_BLOCKS) ? 1 : 0;
+               op == INC_OP || op == RCP_OP || op == RCP_SQRT_OP || op == EXP_OP || op == REPLICATE_COL_VAR || op == UNZIP) ? 1 : 0;
 
   if ((rnd_mode == RND_STOCHASTIC && dtype_out != LIBXSMM_DATATYPE_BF8) || (rnd_mode > RND_STOCHASTIC)) {
     printf(" Error! rnd_mode = %u is not supported with the selected output precision, prec_out : %i\n", rnd_mode, (int)dtype_out );

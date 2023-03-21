@@ -30,7 +30,7 @@
 #define SUB_OP 3
 #define DIV_OP 4
 #define MULADD_OP 5
-#define PACK_OP 6
+#define ZIP_OP 6
 
 LIBXSMM_INLINE
 void adjust_inputs_for_hf8_div( libxsmm_datatype dtype_in, void *in, libxsmm_datatype dtype_in1,  void* in2, libxsmm_blasint ldi, libxsmm_blasint N, unsigned int use_bcast ) {
@@ -138,8 +138,8 @@ void set_opname(unsigned int op, char *opname) {
     sprintf(opname, "div");
   } else if ( op == MULADD_OP ) {
     sprintf(opname, "muladd");
-  } else if ( op == PACK_OP ) {
-    sprintf(opname, "pack_2x16bit_to_32bit");
+  } else if ( op == ZIP_OP ) {
+    sprintf(opname, "zip");
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -160,8 +160,8 @@ void set_binarytype(unsigned int op, libxsmm_meltw_binary_type *type) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_DIV;
   } else if ( op == MULADD_OP ) {
     binary_type = LIBXSMM_MELTW_TYPE_BINARY_MULADD;
-  } else if ( op == PACK_OP ) {
-    binary_type = LIBXSMM_MELTW_TYPE_BINARY_PACK;
+  } else if ( op == ZIP_OP ) {
+    binary_type = LIBXSMM_MELTW_TYPE_BINARY_ZIP;
   } else {
     printf("Invalid OP\n");
     exit(-1);
@@ -366,7 +366,7 @@ int test_binary_op( const libxsmm_blasint M, const libxsmm_blasint N, const libx
   }
 
   /* compute out_gold */
-  if (op == PACK_OP) {
+  if (op == ZIP_OP) {
     reference_pack_2x16bit_blocks_to_32bit(M, N, ldi, ldi, ldo, in, in2, out_gold);
   } else {
     binary_op_gold( M, N, ldi, ldi, ldo, in, in2, out_gold, op, dtype_in, dtype_in1, dtype_out, dtype_comp );
@@ -480,7 +480,7 @@ int main( int argc, char* argv[] ) {
 
   set_opname(op, opname);
 
-  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == PACK_OP) ? 1 : 0;
+  valid_op = ( op == ADD_OP || op == SUB_OP || op == MUL_OP || op == DIV_OP || op == MULADD_OP || op == ZIP_OP) ? 1 : 0;
 
   if (use_bcast != NO_BCAST) {
     if (use_bcast == ROW_BCAST_IN0) {
