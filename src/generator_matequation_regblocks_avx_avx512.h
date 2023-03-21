@@ -117,8 +117,7 @@ void libxsmm_generator_mateqn_load_arg_to_2d_reg_block( libxsmm_generated_code* 
                                                  unsigned int                            i_n_blocking,
                                                  unsigned int                            i_mask_last_m_chunk,
                                                  unsigned int                            i_mask_reg,
-                                                 unsigned int                            i_skip_dtype_cvt,
-                                                 unsigned int                            i_is_unpack_load );
+                                                 unsigned int                            i_skip_dtype_cvt );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*          io_generated_code,
