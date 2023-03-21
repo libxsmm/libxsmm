@@ -40,7 +40,7 @@
 #define INC_OP 14
 #define RCP_OP 15
 #define RCP_SQRT_OP 16
-#define EXP_OP17
+#define EXP_OP 17
 #define REPLICATE_COL_VAR 27
 #define UNZIP 42
 #if 0

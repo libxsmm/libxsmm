@@ -26,7 +26,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
         continue
       fi
 
-      # Unary unpack to blocks FP32 -> 2 x BF16 in only possible for 1 prec combination
+      # Unary unzip to blocks FP32 -> 2 x BF16 in only possible for 1 prec combination
       if [[ ("$TYPE" == '42') && ("$PREC" != 'F32_BF16_F32') ]]; then
         continue
       fi
@@ -65,7 +65,7 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
       elif [ "$TYPE" == '27' ] ; then
         TPPNAME="replicate_col_var"
       elif [ "$TYPE" == '42' ] ; then
-        TPPNAME="unpack_to_blocks"
+        TPPNAME="unzip"
       else
         continue
       fi

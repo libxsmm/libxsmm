@@ -21,7 +21,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
         continue
       fi
 
-      # Binary pack tp blocks 2 x BF16 -> F32 is only possible for 1 prec combination
+      # Binary zip tp blocks 2 x BF16 -> F32 is only possible for 1 prec combination
       if [[ ("$TYPE" == '6') && ("$PREC" != 'BF16_BF16_F32_F32') ]]; then
         continue
       fi
@@ -38,7 +38,7 @@ for PREC in 'F32_F32_F32_F32' 'BF16_BF16_BF16_BF16' 'F32_F32_BF16_F32' 'F32_BF16
       elif [ "$TYPE" == '5' ] ; then
         TPPNAME="muladd"
       elif [ "$TYPE" == '6' ] ; then
-        TPPNAME="pack"
+        TPPNAME="zip"
       else
         continue
       fi
