@@ -171,7 +171,7 @@ void libxsmm_generator_reduce_cols_ncnc_avx512_microkernel( libxsmm_generated_co
 
 
     if (use_m_masking > 0) {
-      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, bc % vlen, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ));
+      libxsmm_generator_initialize_avx_mask(io_generated_code, mask_inout, bc % vlen, (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype ));
     }
 
     /* Register allocation: Registers zmm8-zmm15 are accumulators, zmm0-zmm7 are used for loading input */
@@ -1654,7 +1654,7 @@ void libxsmm_generator_reduce_rows_avx512_microkernel( libxsmm_generated_code*  
         mask_out = 1;
         libxsmm_generator_initialize_avx512_mask(io_generated_code, LIBXSMM_X86_GP_REG_RAX, mask_out, vlen - 1, LIBXSMM_DATATYPE_F64);
       } else {
-        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_out, 1, (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ));
+        libxsmm_generator_initialize_avx_mask(io_generated_code, mask_out, 1, (libxsmm_datatype)LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype ));
       }
     }
 
@@ -6941,7 +6941,7 @@ void libxsmm_generator_reduce_cols_index_avx512_microkernel( libxsmm_generated_c
     unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
     unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
     unsigned short combined_params = argidx_params | bcast_shifted_params;
-    const libxsmm_meltw_descriptor *const new_desc = libxsmm_meltw_descriptor_init(&blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ), (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ),
+    const libxsmm_meltw_descriptor *const new_desc = libxsmm_meltw_descriptor_init(&blob, (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype ), (libxsmm_datatype)LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype ),
         i_mateltwise_desc->m, idx_dtype_size, i_mateltwise_desc->ldi, i_mateltwise_desc->ldo, (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
     free(p_jump_label_tracker);
