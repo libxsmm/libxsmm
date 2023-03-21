@@ -37,6 +37,8 @@ float upconvert_bf16(libxsmm_bfloat16 x) {
   return bf16_hp.f;
 }
 
+LIBXSMM_PRAGMA_OPTIMIZE_OFF
+
 LIBXSMM_INLINE
 void vectorized_layernorm_fwd_bf16(long S1, long S2, long S3, libxsmm_bfloat16 *pinp, libxsmm_bfloat16 *pgamma, libxsmm_bfloat16 *pbeta, float *mean, float *var, libxsmm_bfloat16 *pout, float eps) {
   int s1, s2, s3;
@@ -412,6 +414,8 @@ void vectorized_layernorm_bwd_fp32(long S1, long S2, long S3, float *pdout, floa
   }
 #endif
 }
+
+LIBXSMM_PRAGMA_OPTIMIZE_ON
 
 LIBXSMM_INLINE
 void tpp_layernorm_fwd_fp32(long S1, long S2, long S3, float *pinp, float *pgamma, float *pbeta, float *mean, float *var, float *pout, float eps, libxsmm_matrix_eqn_function func0, libxsmm_meltwfunction_unary reduce_rows_kernel, libxsmm_meltwfunction_unary reduce_cols_kernel) {
