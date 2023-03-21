@@ -85,10 +85,10 @@
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
     0/*invalid*/))))))))))))))))
 
-/* Get input or output precision */
-#define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
-/* Get signed precision type for signed or unsigned datatype */
-#define LIBXSMM_GETENUM_UNP(SRC) ( \
+/* Get input precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UNP(SRC) ((SRC) & 0x0F)
+/* Get signed precision datatype regardless of signed or unsigned input */
+#define LIBXSMM_GETENUM_INP(SRC) ( \
   (LIBXSMM_DATATYPE_F64  == ((int)(SRC))) ? LIBXSMM_DATATYPE_F64 : ( \
   (LIBXSMM_DATATYPE_F32  == ((int)(SRC))) ? LIBXSMM_DATATYPE_F32 : ( \
   (LIBXSMM_DATATYPE_BF16 == ((int)(SRC))) ? LIBXSMM_DATATYPE_BF16 : ( \
@@ -106,6 +106,9 @@
   (LIBXSMM_ASSERT_MSG(0/*false*/, "Invalid datatype"), \
     0/*invalid*/))))))))))))))))
 
+/* Get output precision datatype (preserves unsigned datatype) */
+#define LIBXSMM_GETENUM_UOT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_UNP(SRC) : ((SRC) >> 4))
+/* Get signed precision datatype regardless of signed or unsigned output */
 #define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
 #define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) \
