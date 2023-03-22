@@ -59,7 +59,7 @@
  * 27 Reversal load/store ordering. 0=regular, 1=reverse (open question: is one bit enough, or do I need a couple bits to show other orderings)
  * 26 Op code extension in ModRM Regfiles (extennsion is bits 20-22)
  * 25 gather/scatter instructions with VSIB / enforce SIB addressing (valid only), e.g. AMX, in REX only -> force REX prefix
- * 24 used for pure/base REX/IA32 encodings to signal that the insturctions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
+ * 24 used for pure/base REX/IA32 encodings to signal that the instructions skips the modrm byte and the opcode byte holds the register, used in EVEX mode as fake W' -> when set to 1 and W (bit 23) is 0 -> 16bit broadcast
  * 3rd byte:
  * ---------
  * 23 W bit (single inputs=0 or double inputs=1)
