@@ -10,7 +10,7 @@ TMPFILE=$(mktemp)
 trap 'rm ${TMPFILE}' EXIT
 
 for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
-  for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z'; do
+  for TYPE in 'T' 'R' 'S' 'V' 'W' 'Q' 'N' 'M' 'X' 'Y' 'Z' 'B'; do
     for LD in 'eqld' 'gtld'; do
       TPPNAME="none"
       OUTNAME="unary_transform_"
@@ -24,7 +24,7 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
       fi
 
       # some transforms work only for 16bit
-      if [[ (("$TYPE" == 'R') || ("$TYPE" == 'V') || ("$TYPE" == 'Q')) && (("$PREC" == 'I8') || ("$PREC" == 'BF8') || ("$PREC" == 'HF8')) ]]; then
+      if [[ (("$TYPE" == 'R') || ("$TYPE" == 'V') || ("$TYPE" == 'B') || ("$TYPE" == 'Q')) && (("$PREC" == 'I8') || ("$PREC" == 'BF8') || ("$PREC" == 'HF8')) ]]; then
         continue
       fi
 
@@ -56,6 +56,10 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
         TPPNAME="norm_to_vnni4T"
         MSTART=4
         MSTEP=4
+      elif [ "$TYPE" == 'B' ] ; then
+        TPPNAME="norm_to_vnni2T"
+        MSTART=2
+        MSTEP=2
       elif [ "$TYPE" == 'N' ] ; then
         TPPNAME="vnni4_to_norm"
         MSTART=4
@@ -112,6 +116,9 @@ for PREC in 'I8' 'I16' 'I32' 'I64' 'BF8' 'HF8' 'BF16' 'F16' 'F32' 'F64'; do
         sed "s/LDOTPL/str(m)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'Q' ] ; then
+        sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
+        cp ${TMPFILE} ${OUTNAME}
+      elif [ "$TYPE" == 'B' ] ; then
         sed "s/LDOTPL/str(n)/g" ${OUTNAME} >${TMPFILE}
         cp ${TMPFILE} ${OUTNAME}
       elif [ "$TYPE" == 'N' ] ; then
