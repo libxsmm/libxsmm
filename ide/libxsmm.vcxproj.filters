@@ -105,9 +105,6 @@
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_memory.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\template\libxsmm.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -302,6 +299,9 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_utils.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utils\libxsmm_memory.h">
+      <Filter>include\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -117,6 +117,7 @@
 #include "../src/libxsmm_sync.c"
 #include "../src/libxsmm_timer.c"
 #include "../src/libxsmm_trace.c"
+#include "../src/libxsmm_utils.c"
 #include "../src/libxsmm_xcopy.c"
 
 #endif /*LIBXSMM_SOURCE_H*/

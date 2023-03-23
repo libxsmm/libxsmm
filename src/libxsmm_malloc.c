@@ -12,6 +12,8 @@
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 
+#include <utils/libxsmm_math.h>
+
 #if (defined(LIBXSMM_BUILD) && (1 < (LIBXSMM_BUILD)))
 # include <features.h>
 # include <malloc.h>

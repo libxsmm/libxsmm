@@ -330,22 +330,22 @@ SRCFILES_KERNELS := $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 KRNOBJS := $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 
 HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
-          $(ROOTDIR)/include/libxsmm_cpuid.h \
-          $(ROOTDIR)/include/libxsmm_rng.h \
-          $(ROOTDIR)/include/libxsmm_lpflt_quant.h \
+          $(ROOTDIR)/include/utils/libxsmm_intrinsics_x86.h \
+          $(ROOTDIR)/include/utils/libxsmm_lpflt_quant.h \
+          $(ROOTDIR)/include/utils/libxsmm_memory.h \
+          $(ROOTDIR)/include/utils/libxsmm_timer.h \
+          $(ROOTDIR)/include/utils/libxsmm_sync.h \
+          $(ROOTDIR)/include/utils/libxsmm_math.h \
+          $(ROOTDIR)/include/utils/libxsmm_rng.h \
+          $(ROOTDIR)/include/utils/libxsmm_mhd.h \
+          $(ROOTDIR)/include/libxsmm_generator.h \
+          $(ROOTDIR)/include/libxsmm_typedefs.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
-          $(ROOTDIR)/include/libxsmm_generator.h \
-          $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
-          $(ROOTDIR)/include/libxsmm_math.h \
-          $(ROOTDIR)/include/libxsmm_memory.h \
-          $(ROOTDIR)/include/libxsmm_mhd.h \
-          $(ROOTDIR)/include/libxsmm_sync.h \
-          $(ROOTDIR)/include/libxsmm_timer.h \
-          $(ROOTDIR)/include/libxsmm_typedefs.h
+          $(ROOTDIR)/include/libxsmm_cpuid.h \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c
 SRCFILES_LIB := $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c \
           libxsmm_perf.c libxsmm_gemm.c libxsmm_xcopy.c libxsmm_fsspmdm.c libxsmm_rng.c libxsmm_lpflt_quant.c)
@@ -1381,7 +1381,8 @@ ifneq ($(PREFIX),$(ABSDIR))
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)
+	@$(MKDIR) -p $(PREFIX)/$(PINCDIR)/utils
+	@$(CP) -v $(INCDIR)/utils/libxsmm*.h $(PREFIX)/$(PINCDIR)/utils 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR) 2>/dev/null || true

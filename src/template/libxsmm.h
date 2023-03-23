@@ -36,20 +36,14 @@
 /**
  * The following interfaces shall be explicitly included,
  * i.e., separate from libxsmm.h:
- * - libxsmm_intrinsics_x86.h
  * - libxsmm_cpuid.h
- * - libxsmm_sync.h
- * - libxsmm_mhd.h
+ * - utils
 */
-#include "libxsmm_lpflt_quant.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_cpuid.h"
-#include "libxsmm_timer.h"
-#include "libxsmm_math.h"
-#include "libxsmm_rng.h"
 
 
 /** Initialize the library; pay for setup cost at a specific point. */
