@@ -749,18 +749,15 @@ int main(int argc, char* argv[])
   }
 
   if (record_idx > 0) {
-    for (k = 0; k < m; k++) {
-      ref_argop_off_i32[k] = LIBXSMM_CAST_UINT(ref_argop_off[k]);
-    }
-    if (idx_type == 0) {
-      for (k = 0; k < m; k++) {
-        argop_off_i32[k] = LIBXSMM_CAST_UINT(argop_off[k]);
-      }
-    }
     printf("##########################################\n");
     printf("# Arg idx correctness  #\n");
     printf("##########################################\n");
-    libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
+    if (idx_type == 0) {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off, argop_off, 0, 0);
+    }
+    else {
+      libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
+    }
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
     printf("L1 test       : %.25g\n", norms_elts.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_elts.l2_abs);
