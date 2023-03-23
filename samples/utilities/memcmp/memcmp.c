@@ -8,10 +8,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 
 
 int main(int argc, char* argv[])

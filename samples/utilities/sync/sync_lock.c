@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_sync.h>
-#include <libxsmm.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_sync.h>
 
 #if defined(_OPENMP)
 # include <omp.h>
@@ -156,7 +156,6 @@ int main(int argc, char* argv[])
   const int nlat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 2000000, 1);
   const int ntpt = LIBXSMM_MAX(6 < argc ? atoi(argv[6]) : 10000, 1);
 
-  libxsmm_init();
   printf("LIBXSMM: default lock-kind \"%s\" (%s)\n\n", LIBXSMM_STRINGIFY(LIBXSMM_LOCK_DEFAULT),
 #if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
     "OS-native");

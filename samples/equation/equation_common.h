@@ -11,10 +11,15 @@
 #ifndef LIBXSMM_EQUATION_COMMON_H
 #define LIBXSMM_EQUATION_COMMON_H
 
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 
 #define EPS 1.19209290e-03F
 #define DEPS 1.19209290e-06F
+
 
 LIBXSMM_INLINE
 void print_dt_info(int datatype_mode) {

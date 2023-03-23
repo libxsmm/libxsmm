@@ -13,10 +13,6 @@
 #include "generator_x86_instructions.h"
 #include "generator_common_x86.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_header_decompress_loop_amx( libxsmm_generated_code*             io_generated_code,

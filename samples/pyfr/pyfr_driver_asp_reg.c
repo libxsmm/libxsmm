@@ -8,6 +8,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 
 #if !defined(REALTYPE)

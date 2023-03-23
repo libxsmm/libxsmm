@@ -8,11 +8,11 @@
 *********************************************************************************************/
 /* Evangelos Georganas (Intel Corp.), Antonio Noack (FSU Jena)
 *********************************************************************************************/
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 
 #define OP_COPY 0
 #define OP_ADD  1
@@ -29,6 +29,7 @@
 #define REDOP_MAX   2
 #define REDOP_MIN   3
 #define OFFSET 1.0
+
 
 LIBXSMM_INLINE
 void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n, unsigned int avoid_small_vals )

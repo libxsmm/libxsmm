@@ -8,10 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
 #include <libxsmm.h>
+
 
 int main(int argc, char* argv[]) {
   libxsmm_blasint N =     ( argc > 1 ) ? atoi(argv[1]) : 64;

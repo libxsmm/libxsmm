@@ -8,8 +8,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_math.h>
 #include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
 
 #if !defined(ITYPE)
 # define ITYPE double

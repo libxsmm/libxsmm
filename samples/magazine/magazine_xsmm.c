@@ -8,6 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_timer.h>
 #include "magazine.h"
 #if !defined(SHUFFLE)
 # include <libxsmm.h>

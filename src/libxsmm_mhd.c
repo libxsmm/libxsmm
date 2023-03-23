@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_mhd.h>
+#include <utils/libxsmm_mhd.h>
 #include "libxsmm_main.h" /* libxsmm_typesize */
 
 #include <ctype.h>

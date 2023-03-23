@@ -8,15 +8,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-# include <libxsmm_intrinsics_x86.h>
-#endif
-#include <math.h>
-#if defined(INCLUDE_LIBXSMM_LAST)
-# include <libxsmm.h>
-# include <libxsmm_intrinsics_x86.h>
-#endif
+#include <utils/libxsmm_intrinsics_x86.h>
+#include <utils/libxsmm_math.h>
+#include <libxsmm.h>
 
 #define N 1000000
 

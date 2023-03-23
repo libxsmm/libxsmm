@@ -8,10 +8,12 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_lpflt_quant.h>
-#include "libxsmm_main.h"
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_intrinsics_x86.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -69,9 +71,6 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
   unsigned int sign = 0;
   unsigned char rhs = 0;
   unsigned char exp_off = 0;
-
-  /* init libxsmm */
-  LIBXSMM_INIT
 
   /* in case of zero we do not need to do anything */
   if (LIBXSMM_FEQ(input, 0)) {
@@ -147,9 +146,6 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
 /* TODO: make this routine aware of any int type */
 LIBXSMM_API void libxsmm_quantize_i16( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   int i = 0;
-
-  /* init libxsmm */
-  LIBXSMM_INIT
 
   /* in case we are using FP-Mul based quantization we use a different path for now
      TODO: let's unify the paths by using the similar vectorization for both */
@@ -339,7 +335,7 @@ LIBXSMM_API float libxsmm_convert_f16_to_f32( libxsmm_float16 in ) {
 
   /* set result to 0 */
   res.u = 0x0;
-  /* set exp and mant */
+  /* set exponent and mantissa */
   res.u |= (e_norm << 23);
   res.u |= (m << 13);
   /* sign it */
@@ -382,7 +378,7 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
 #if 1
     /* denormalized mantissa */
     m = m_f32 | 0x00800000;
-    /* addtionally subnormal shift */
+    /* additionally subnormal shift */
     m = m >> ((f32_bias - f16_bias) + 1 - e_f32);
     /* preserve sticky bit (some sticky bits are lost when denormalizing) */
     m |= (((m_f32 & 0x1fff) + 0x1fff) >> 13);
@@ -421,7 +417,7 @@ LIBXSMM_API libxsmm_float16 libxsmm_convert_f32_to_f16( float in ) {
 
   /* set result to 0 */
   res = 0x0;
-  /* set exp and mant */
+  /* set exponent and mantissa */
   res |= e << 10;
   res |= m;
   /* sign it */
@@ -484,7 +480,7 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
     /* RNE */
     /* denormalized mantissa */
     m = m_f32 | 0x00800000;
-    /* addtionally subnormal shift */
+    /* additionally subnormal shift */
     m = m >> ((f32_bias - bf8_bias) + 1 - e_f32);
     /* preserve sticky bit (some sticky bits are lost when denormalizing) */
     m |= (((m_f32 & 0x1fff) + 0x1fff) >> 21);
@@ -507,7 +503,7 @@ LIBXSMM_API libxsmm_bfloat8 libxsmm_convert_f32_to_bf8( float in ) {
 
   /* set result to 0 */
   res = 0x0;
-  /* set exp and mant */
+  /* set exponent and mantissa */
   res |= e << 2;
   res |= m;
   /* sign it */
@@ -544,7 +540,7 @@ LIBXSMM_API void libxsmm_convert_hf8_f32(const libxsmm_hfloat8* in, float* out, 
     }
     /* set result to 0 */
     res.u = 0x0;
-    /* set exp and mant */
+    /* set exponent and mantissa */
     res.u |= (e_norm << 23);
     res.u |= (m << 20);
     /* sign it */
@@ -588,7 +584,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
       /* RNE */
       /* denormalized mantissa */
       m = m_f32 | 0x00800000;
-      /* addtionally subnormal shift */
+      /* additionally subnormal shift */
       m = m >> ((f32_bias - f8_bias) + 1 - e_f32);
       /* preserve sticky bit (some sticky bits are lost when denormalizing) */
       m |= (((m_f32 & 0x000fffff) + 0x000fffff) >> 20);
@@ -610,7 +606,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_hf8(const float* in, libxsmm_hfloat8* 
     }
     /* set result to 0 */
     res = 0x0;
-    /* set exp and mant */
+    /* set exponent and mantissa */
     res |= e << 3;
     res |= m;
     /* sign it */
@@ -649,7 +645,7 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) 
     /* RNE */
     /* denormalized mantissa */
     m = m_f16 | 0x0400;
-    /* addtionally subnormal shift */
+    /* additionally subnormal shift */
     m = m >> ((f16_bias - f8_bias) + 1 - e_f16);
     /* preserve sticky bit (some sticky bits are lost when denormalizing) */
     m |= (((m_f16 & 0x007f) + 0x007f) >> 7);
@@ -672,7 +668,7 @@ LIBXSMM_API libxsmm_hfloat8 libxsmm_rne_convert_fp16_hf8( libxsmm_float16 inp ) 
 
   /* set result to 0 */
   res = 0x0;
-  /* set exp and mant */
+  /* set exponent and mantissa */
   res |= e << 3;
   res |= m;
   /* sign it */

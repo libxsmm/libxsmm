@@ -8,7 +8,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_mhd.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_mhd.h>
+#include <libxsmm_cpuid.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_NO_LIBM)

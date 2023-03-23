@@ -9,11 +9,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Antonio Noack (FSU Jena)
 ******************************************************************************/
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
+
 
 LIBXSMM_INLINE
 libxsmm_datatype char_to_libxsmm_datatype( const char* dt ) {

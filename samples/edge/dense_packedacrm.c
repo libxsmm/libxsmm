@@ -8,6 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
 
 #if defined(__EDGE_EXECUTE_F32__)

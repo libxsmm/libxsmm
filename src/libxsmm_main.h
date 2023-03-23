@@ -12,12 +12,8 @@
 #define LIBXSMM_MAIN_H
 
 #include <libxsmm.h>
-/**
- * TF includes src/libxsmm_main.h and uses LIBXSMM's sync primitives
- * without including libxsmm_sync. However, libxsmm_sync.h shall be
- * an explicit include separate from including libxsmm.h.
- */
-#include <libxsmm_sync.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */

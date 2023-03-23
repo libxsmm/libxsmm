@@ -8,7 +8,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_rng.h"
+#include <utils/libxsmm_rng.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_RNG_DRAND48) && (!defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE)))

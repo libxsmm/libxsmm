@@ -18,11 +18,6 @@
 #include "generator_gemm_amx_microkernel.h"
 #include "generator_gemm_amx_microkernel_emu.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-
 #if !defined(LIBXSMM_GENERATOR_GEMM_AMX_EMU_JUMP_LABEL_TRACKER_MALLOC)
 # define LIBXSMM_GENERATOR_GEMM_AMX_EMU_JUMP_LABEL_TRACKER_MALLOC
 #endif

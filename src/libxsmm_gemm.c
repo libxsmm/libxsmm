@@ -11,11 +11,8 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
-#include <libxsmm_mhd.h>
-
-#if !defined(LIBXSMM_NO_LIBM)
-# include <math.h>
-#endif
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_mhd.h>
 
 #if !defined(LIBXSMM_GEMM_CHECK_EPSILON)
 # define LIBXSMM_GEMM_CHECK_EPSILON 1E-16

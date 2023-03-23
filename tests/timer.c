@@ -11,7 +11,7 @@
 #if !defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
 #endif
-#include <math.h>
+#include <utils/libxsmm_timer.h>
 #if defined(INCLUDE_LIBXSMM_LAST)
 # include <libxsmm.h>
 #endif

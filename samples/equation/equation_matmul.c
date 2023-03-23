@@ -8,16 +8,17 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_sync.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
-#include <libxsmm_sync.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+
 
 LIBXSMM_INLINE
 float fsigmoid(float x) {

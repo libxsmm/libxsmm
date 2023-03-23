@@ -8,12 +8,11 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
 #include <libxsmm.h>
 
 #include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif

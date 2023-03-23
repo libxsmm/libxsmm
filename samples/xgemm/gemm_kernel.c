@@ -8,15 +8,15 @@
 ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_rng.h>
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
 #include <float.h>
-# if defined(__APPLE__) && defined(__arm64__)
-#include <pthread.h>
-# endif
+#if defined(__APPLE__) && defined(__arm64__)
+# include <pthread.h>
+#endif
 
 #define OP_NONE         0
 #define COLBIAS_ADD     1

@@ -8,13 +8,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "eltwise_common.h"
+
 
 LIBXSMM_INLINE
 void ref_transpose( const void* in, void* out, const libxsmm_blasint M, const libxsmm_blasint N, const libxsmm_blasint ldi, const libxsmm_blasint ldo, const libxsmm_datatype dtype ) {
@@ -229,7 +224,7 @@ int test_vnni2_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( out_vnni[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+        printf("error at position i=%i, j=%i\n", i, j);
         s = 1;
       }
     }
@@ -339,7 +334,7 @@ int test_vnni4_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( out_vnni[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+        printf("error at position i=%i, j=%i\n", i, j);
         s = 1;
       }
     }
@@ -449,7 +444,7 @@ int test_vnni4_to_vnni4T_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   for ( i = 0; i < M; ++i ) {
     for ( j = 0; j < N; ++j ) {
       if ( out_vnni[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i\n", i, j);
+        printf("error at position i=%i, j=%i\n", i, j);
         s = 1;
       }
     }
@@ -554,7 +549,7 @@ int test_norm_to_vnni2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -861,7 +856,7 @@ int test_norm_to_vnni4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blas
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1131,7 +1126,7 @@ int test_norm_padn_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1223,7 +1218,7 @@ int test_norm_padm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < Mn; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1316,7 +1311,7 @@ int test_norm_padnm_mod2_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < Mn; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1408,7 +1403,7 @@ int test_norm_padn_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < M; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1500,7 +1495,7 @@ int test_norm_padm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
   for ( i = 0; i < N; ++i ) {
     for ( j = 0; j < Mn; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
@@ -1593,7 +1588,7 @@ int test_norm_padnm_mod4_08bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bl
   for ( i = 0; i < Nn; ++i ) {
     for ( j = 0; j < Mn; ++j ) {
       if ( out_gold[(i*ldo)+j] != out[(i*ldo)+j] ) {
-        printf("error at possition i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
+        printf("error at position i=%i, j=%i, %i %i\n", i, j, out_gold[(i*ldo)+j], out[(i*ldo)+j]);
         s = 1;
       }
     }
