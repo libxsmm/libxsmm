@@ -673,6 +673,202 @@ int test_norm_to_vnni2T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_bla
 }
 
 LIBXSMM_INLINE
+int test_vnni4T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned short *in;
+  unsigned short *out, *out_gold;
+  libxsmm_blasint i, j, i2;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltwfunction_unary unary_kernel;
+
+  if ( M % 4 != 0 || ldo % 4 != 0 ) {
+    fprintf( stderr, "test_vnni4T_to_norm_16bit: M mod 4 AND ldo mod 4 must be 0\n");
+    exit(-1);
+  }
+  if ( N > ldi ) {
+    fprintf( stderr, "test_vnni4T_to_norm_16bit: ldi needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+  if ( M > ldo ) {
+    fprintf( stderr, "test_vnni4T_to_norm_16bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldi*M, 64);
+  out      = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldo*N, 64);
+  out_gold = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldo*N, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(j*ldi)+i] = (unsigned short)(((j*ldi)+i)%112);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < ldo*N; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < ldo*N; ++i ) {
+    out_gold[i] = 0;
+  }
+
+  for ( i = 0; i < M/4; ++i ) {
+    for ( j = 0; j < N ; ++j ) {
+      for ( i2 = 0; i2 < 4; ++i2 ) {
+        out_gold[(j*ldo)+(i*4)+i2] = in[(i*ldi*4)+(j*4+i2)];
+      }
+    }
+  }
+
+  unary_shape.m = N;
+  unary_shape.n = M;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI4T_TO_NORM;
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for VNNI4T_TO_NORM TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < M/4; ++i ) {
+    for ( j = 0; j < N ; ++j ) {
+      for ( i2 = 0; i2 < 4; ++i2 ) {
+        if ( out_gold[(j*ldo)+(i*4)+i2] != out[(j*ldo)+(i*4)+i2]) {
+          printf("error at position OUT[%i][%i][%i]: %i %i\n", i, j, i2, out_gold[(j*ldo)+(i*4)+i2], out[(j*ldo)+(i*4)+i2]);
+          s = 1;
+        }
+      }
+    }
+  }
+
+  if ( s == 0 ) {
+    printf("SUCCESS unary VNNI4T to norm transform 16bit\n");
+  } else {
+    printf("FAILURE unary VNNI4T to norm transform 16bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
+}
+
+LIBXSMM_INLINE
+int test_vnni2T_to_norm_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
+  unsigned short *in;
+  unsigned short *out, *out_gold;
+  libxsmm_blasint i, j, i2;
+  unsigned int s;
+  int ret = EXIT_SUCCESS;
+  libxsmm_meltw_unary_param unary_param /*= { 0 }*/;
+  libxsmm_meltw_unary_shape unary_shape /*= { 0 }*/;
+  libxsmm_meltw_unary_type  unary_type;
+  libxsmm_meltwfunction_unary unary_kernel;
+
+  if ( M % 2 != 0 || ldo % 2 != 0 ) {
+    fprintf( stderr, "test_vnni2T_to_norm_16bit: M mod 2 AND ld0 mod 2 must be 0\n");
+    exit(-1);
+  }
+  if ( N > ldi ) {
+    fprintf( stderr, "test_vnni2T_to_norm_16bit: ldi needs to be equal to or bigger than N\n");
+    exit(-1);
+  }
+  if ( M > ldo ) {
+    fprintf( stderr, "test_vnni2T_to_norm_16bit: ldo needs to be equal to or bigger than M\n");
+    exit(-1);
+  }
+
+  in       = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldi*M, 64);
+  out      = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldo*N, 64);
+  out_gold = (unsigned short*)libxsmm_aligned_malloc( sizeof(unsigned short)*ldo*N, 64);
+
+  /* init in */
+  for ( i = 0; i < N; ++i ) {
+    for ( j = 0; j < M; ++j ) {
+      in[(j*ldi)+i] = (unsigned short)(((j*ldi)+i)%112);
+    }
+  }
+
+  /* init out */
+  for ( i = 0; i < ldo*N; ++i ) {
+    out[i] = 0;
+  }
+  for ( i = 0; i < ldo*N; ++i ) {
+    out_gold[i] = 0;
+  }
+
+  for ( i = 0; i < M/2; ++i ) {
+    for ( j = 0; j < N ; ++j ) {
+      for ( i2 = 0; i2 < 2; ++i2 ) {
+        out_gold[(j*ldo)+(i*2)+i2] = in[(i*ldi*2)+(j*2+i2)];
+      }
+    }
+  }
+
+  unary_shape.m = N;
+  unary_shape.n = M;
+  unary_shape.ldi = ldi;
+  unary_shape.ldo = ldo;
+  unary_shape.in0_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.out_type = LIBXSMM_DATATYPE_I16;
+  unary_shape.comp_type = LIBXSMM_DATATYPE_I16;
+
+  /* use jited tranpose */
+  unary_param.in.primary  = (void*)in;
+  unary_param.out.primary = (void*)out;
+  unary_type = LIBXSMM_MELTW_TYPE_UNARY_TRANSFORM_VNNI2T_TO_NORM;
+  unary_kernel = libxsmm_dispatch_meltw_unary_v2( unary_type, unary_shape, LIBXSMM_MELTW_FLAG_UNARY_NONE );
+  if ( unary_kernel == NULL ) {
+    fprintf( stderr, "JIT for VNNI2T_TO_NORM TPP. Bailing...!\n");
+    exit(-1);
+  }
+  unary_kernel( &unary_param );
+
+  /* compare result */
+  s = 0;
+  for ( i = 0; i < M/2; ++i ) {
+    for ( j = 0; j < N ; ++j ) {
+      for ( i2 = 0; i2 < 2; ++i2 ) {
+        if ( out_gold[(j*ldo)+(i*2)+i2] != out[(j*ldo)+(i*2)+i2]) {
+          printf("error at position OUT[%i][%i][%i]: %i %i\n", i, j, i2, out_gold[(j*ldo)+(i*2)+i2], out[(j*ldo)+(i*2)+i2]);
+          s = 1;
+        }
+      }
+    }
+  }
+
+  if ( s == 0 ) {
+    printf("SUCCESS unary VNNI2T to norm transform 16bit\n");
+  } else {
+    printf("FAILURE unary VNNI2T to norm transform 16bit\n");
+    ret = EXIT_FAILURE;
+  }
+
+  libxsmm_free( out_gold );
+  libxsmm_free( out );
+  libxsmm_free( in );
+
+  return ret;
+}
+
+LIBXSMM_INLINE
 int test_norm_to_vnni4T_16bit( libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint ldi, libxsmm_blasint ldo ) {
   unsigned short *in;
   unsigned short *out, *out_gold;
@@ -1723,7 +1919,7 @@ int main( int argc, char* argv[] ) {
   int ret = EXIT_FAILURE;
 
   if ( argc != 7 ) {
-    printf(" Error! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B/C/D] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
@@ -1736,7 +1932,7 @@ int main( int argc, char* argv[] ) {
 
   dtype = char_to_libxsmm_datatype( dt );
   if ( dtype == LIBXSMM_DATATYPE_UNSUPPORTED ) {
-    printf(" Error! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Error! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B/C/D] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
@@ -1764,6 +1960,12 @@ int main( int argc, char* argv[] ) {
   } else if ( op == 'B' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 ) ) {
     printf("Testing 16bit NORM to VNNI2T Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni2T_16bit( M, N, ldi, ldo );
+  } else if ( op == 'C' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 ) ) {
+    printf("Testing 16bit VNNI2T to NORM Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_vnni2T_to_norm_16bit( M, N, ldi, ldo );
+  } else if ( op == 'D' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 ) ) {
+    printf("Testing 16bit VNNI4T to NORM Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
+    ret = test_vnni4T_to_norm_16bit( M, N, ldi, ldo );
   } else if ( op == 'W' && ( dtype == LIBXSMM_DATATYPE_I16 || dtype == LIBXSMM_DATATYPE_BF16 || dtype == LIBXSMM_DATATYPE_F16 ) ) {
     printf("Testing 16bit NORM to VNNI4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_to_vnni4_16bit( M, N, ldi, ldo );
@@ -1792,7 +1994,7 @@ int main( int argc, char* argv[] ) {
     printf("Testing 08bit NORM PADNM Mod4 Reformat - M=%i, N=%i, LDI=%i, LDO=%i\n", M, N, ldi, ldo);
     ret = test_norm_padnm_mod4_08bit( M, N, ldi, ldo );
    } else {
-    printf(" Case not implemented! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
+    printf(" Case not implemented! Usage: %s [T/R/S/V/W/Q/N/M/X/Y/Z/B/C/D] [F64/I64/F32/I32/BF16/F16/I16/BF8/I8] [M] [N] [ldi] [ldo]\n", argv[0] );
     exit(-1);
   }
 
