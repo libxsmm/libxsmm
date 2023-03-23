@@ -753,33 +753,57 @@ LIBXSMM_API_INTERN void libxsmm_lsfr_i32( unsigned int* rng_state, unsigned int*
   rng_state[seed_idx + (3 * state_ld)] = state_3;
 }
 
-LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state, int seed_idx) {
+LIBXSMM_API_INTERN void libxsmm_lsfr_i32_intrinsic( unsigned int* rng_state, unsigned int* prng_out ) {
+  unsigned int *vs0 = &rng_state[0];
+  unsigned int *vs1 = &rng_state[16];
+  unsigned int *vs2 = &rng_state[32];
+  unsigned int *vs3 = &rng_state[48];
+
+  __m512i vrplus = _mm512_add_epi32 (_mm512_load_epi32 (vs0), _mm512_load_epi32 (vs3));
+  _mm512_storeu_epi32 (prng_out, vrplus);
+  __m512i vt = _mm512_sll_epi32 (_mm512_load_epi32 (vs1), _mm_set1_epi8 (9));
+  _mm512_store_epi32 (vs2, _mm512_xor_epi32 (_mm512_load_epi32 (vs2), _mm512_load_epi32 (vs0)));
+  _mm512_store_epi32 (vs3, _mm512_xor_epi32 (_mm512_load_epi32 (vs3), _mm512_load_epi32 (vs1)));
+  _mm512_store_epi32 (vs1, _mm512_xor_epi32 (_mm512_load_epi32 (vs1), _mm512_load_epi32 (vs2)));
+  _mm512_store_epi32 (vs0, _mm512_xor_epi32 (_mm512_load_epi32 (vs0), _mm512_load_epi32 (vs3)));
+  _mm512_store_epi32 (vs2, _mm512_xor_epi32 (_mm512_load_epi32 (vs2), vt));
+
+  __m512i vl = _mm512_sll_epi32 (_mm512_load_epi32 (vs3), _mm_set1_epi8 (11));
+  __m512i vr = _mm512_sra_epi32 (_mm512_load_epi32 (vs3), _mm_set1_epi8 (21));
+  _mm512_store_epi32 (vs3, _mm512_or_epi32 (vl, vr));
+}
+
+LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bfloat8* out, unsigned int len, void *rng_state) {
   unsigned int i = 0;
   unsigned int j = 0;
 
   /* truncate buffer to bf8 */
-  for ( i = 0; i < len; ++i ) {
+  for ( i = 0; i < len; i+=16 ) {
     unsigned int do_round = 1;
-    unsigned int vrng;
-    libxsmm_lsfr_i32( (unsigned int*)rng_state, &vrng, seed_idx);
+    unsigned int vrng[16];
+    libxsmm_lsfr_i32_intrinsic((unsigned int*)rng_state, &vrng[0]);
 
-    unsigned short short_round = libxsmm_convert_f32_to_f16( in[i] );
-    unsigned short rand = (unsigned short)(vrng >> 24);
-    /* we do not round NaN and inf */
-    if ( (short_round & 0x7c00) == 0x7c00 ) {
-      do_round = 0;
-    }
-    /* perform round nearest tie even */
-    if ( do_round != 0) {
-      if ( (short_round & 0x7c00) == 0x0000 ) {
-        unsigned short fixup = (short_round >> 8) & 1;
-        short_round = short_round + 0x007f + fixup;
-      } else {
-        short_round = short_round + (rand & 0x00ff);
+    for (j=0; j < 16; j++) {
+      if (i+j > len) break;
+
+      unsigned short short_round = libxsmm_convert_f32_to_f16( in[i+j] );
+      unsigned short rand = (unsigned short)((vrng[j] >> 24)&0x000000ff);
+      /* we do not round NaN and inf */
+      if ( (short_round & 0x7c00) == 0x7c00 ) {
+        do_round = 0;
       }
+      /* perform round nearest tie even */
+      if ( do_round != 0) {
+        if ( (short_round & 0x7c00) == 0x0000 ) {
+          unsigned short fixup = (short_round >> 8) & 1;
+          short_round = short_round + 0x007f + fixup;
+        } else {
+          short_round = short_round + (rand & 0x00ff);
+        }
+      }
+      /* create the bf8 value by shifting out the lower 16bits */
+      short_round = short_round >> 8;
+      out[i+j] = (unsigned char)short_round;
     }
-    /* create the bf8 value by shifting out the lower 16bits */
-    short_round = short_round >> 8;
-    out[i] = (unsigned char)short_round;
   }
 }
