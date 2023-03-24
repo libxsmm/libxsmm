@@ -234,7 +234,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_A_trans_tensor_to_stack( li
   libxsmm_generator_x86_restore_gpr_regs( io_generated_code, gp_save_bitmask);
 }
 
-/* Setup B vnnit tensor in stack */
+/* Setup B vnnit tensor in stack and A if need be*/
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack(   libxsmm_generated_code*        io_generated_code,
                                                                                     libxsmm_loop_label_tracker*    io_loop_label_tracker,
                                                                                     const libxsmm_gp_reg_mapping*  i_gp_reg_mapping,
@@ -273,7 +273,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
   libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_B_EMU_PTR, tmp_reg );
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, tmp_reg, i_gp_reg_mapping->gp_reg_b);
 
-  /* In this case we have to copy over also B in strided BRGEMM format */
+  /* In this case we have to copy over also A in strided BRGEMM format */
   if ( (is_offset_brgemm > 0) || (is_address_brgemm > 0) ) {
     libxsmm_generator_gemm_apply_ops_input_tensor_and_store_to_stack( io_generated_code, io_loop_label_tracker, i_micro_kernel_config, i_xgemm_desc,
         i_gp_reg_mapping->gp_reg_a, struct_gp_reg, tmp_reg, loop_reg, bound_reg, tmp_reg2,
@@ -304,7 +304,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_B_vnni2t_to_norm_into_stack
 
   libxsmm_generator_x86_restore_gpr_regs( io_generated_code, gp_save_bitmask);
 }
-
 
 /* Setup A (in vnni4 or flat) and B bf8 tensors as fp32 tensors in stack */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack(  libxsmm_generated_code*       io_generated_code,
@@ -400,9 +399,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_apply_opA_opB( libxsmm_generated_
   } else if (( i_micro_kernel_config->bf8_gemm_via_stack_alloc_tensors > 0) || (i_micro_kernel_config->hf8_gemm_via_stack_alloc_tensors > 0)) {
     /* Now setup A and B tensors in stack as FP32 flat tensors */
     if ((io_generated_code->arch >= LIBXSMM_X86_AVX512_CPX) || (io_generated_code->arch == LIBXSMM_X86_AVX512_VL256_CPX)) {
-      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_BF16);
+      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_UNP( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_BF16);
     } else {
-      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_INP( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_F32);
+      libxsmm_generator_gemm_setup_f8_AB_tensors_to_stack( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, i_xgemm_desc_orig, (libxsmm_datatype) LIBXSMM_GETENUM_UNP( i_xgemm_desc_orig->datatype ), LIBXSMM_DATATYPE_F32);
     }
   }
 }
@@ -2730,7 +2729,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_xgemm_desc->datatype) );
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -2804,7 +2803,7 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
 
     /* for VNNI we are stepping through to pack ks */
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+      l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_xgemm_desc->datatype) );
     }
 
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -2854,7 +2853,7 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*            io_
 
   /* for VNNI we are stepping through to pack ks */
   if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_A) == LIBXSMM_GEMM_FLAG_VNNI_A ) {
-    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
+    l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_xgemm_desc->datatype) );
   }
 
   /* advance C pointer */

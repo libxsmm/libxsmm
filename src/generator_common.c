@@ -821,15 +821,15 @@ int libxsmm_meltw_getenum_precision( const libxsmm_meltw_descriptor* i_mateltwis
                                      libxsmm_meltw_field_type        type) {
   int result = 0;
   if (type == LIBXSMM_MELTW_FIELD_IN0) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype );
   } else if (type == LIBXSMM_MELTW_FIELD_IN1) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype1 );
   } else if (type == LIBXSMM_MELTW_FIELD_IN2) {
-    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype1 );
+    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype1 );
   } else if (type == LIBXSMM_MELTW_FIELD_OUT) {
-    result = LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype );
+    result = LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype );
   } else if (type == LIBXSMM_MELTW_FIELD_COMP) {
-    result = LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype2 );
+    result = LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype2 );
   }
   return result;
 }
