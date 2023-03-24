@@ -11,7 +11,6 @@
 #ifndef LIBXSMM_CPUID_H
 #define LIBXSMM_CPUID_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 /**

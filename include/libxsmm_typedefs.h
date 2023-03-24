@@ -27,7 +27,7 @@
 # define LIBXSMM_BLASINT int
 #endif
 
-/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO (libxsmm_frontend.h) */
+/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO */
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 

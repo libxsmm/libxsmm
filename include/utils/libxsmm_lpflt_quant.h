@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_LPFLT_QUANT_H
 #define LIBXSMM_LPFLT_QUANT_H
 
-#include "libxsmm_typedefs.h"
+#include "../libxsmm_typedefs.h"
 
 /** these are some quantization definitions, not sure if we want to
     move them into some main part of LIBXSMM */

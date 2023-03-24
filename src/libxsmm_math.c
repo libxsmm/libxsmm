@@ -10,6 +10,7 @@
 ******************************************************************************/
 #include <utils/libxsmm_math.h>
 #include <utils/libxsmm_lpflt_quant.h>
+#include <utils/libxsmm_utils.h>
 #include <utils/libxsmm_mhd.h>
 #include <libxsmm_cpuid.h>
 #include "libxsmm_main.h"

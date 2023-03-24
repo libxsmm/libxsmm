@@ -10,7 +10,6 @@
 ******************************************************************************/
 #include <utils/libxsmm_mhd.h>
 #include "libxsmm_main.h" /* libxsmm_typesize */
-
 #include <ctype.h>
 
 #if !defined(LIBXSMM_MHD_MAX_LINELENGTH)

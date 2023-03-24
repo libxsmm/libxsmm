@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_TIMER_H
 #define LIBXSMM_TIMER_H
 
-#include "libxsmm_macros.h"
+#include "../libxsmm_macros.h"
 
 
 typedef unsigned long long libxsmm_timer_tickint;

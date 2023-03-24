@@ -40,7 +40,6 @@
  * - utils
 */
 #include "libxsmm_generator.h"
-#include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_cpuid.h"
@@ -414,18 +413,6 @@ LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-/**
- * General dense matrix multiplication, which re-exposes LAPACK/BLAS
- * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
- * when supplying NULL-arguments in certain places.
- */
-LIBXSMM_API void libxsmm_blas_gemm(
-  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc);
-
 #if !defined(LIBXSMM_DEFAULT_CONFIG) && !defined(LIBXSMM_SOURCE_H)
 
 #endif /*!defined(LIBXSMM_DEFAULT_CONFIG)*/
@@ -459,59 +446,87 @@ public:
 public:
   libxsmm_mmfunction() { m_function.xmm = 0; }
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS) {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch) {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta) {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, otype alpha, otype beta, int prefetch) {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, m, k, m,
       &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int prefetch)
   {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       NULL/*alpha*/, NULL/*beta*/, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta)
   {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(NULL));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, otype alpha, otype beta, int prefetch)
   {
+#if 0
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob,
       libxsmm_datatype_enum<itype>::value, libxsmm_datatype_enum<otype>::value, m, n, k, lda, ldb, ldc,
       &alpha, &beta, flags, libxsmm_get_gemm_prefetch(prefetch));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
+#else
+    assert(0);
+#endif
   }
 public:
   const libxsmm_xmmfunction& kernel() const {
@@ -521,13 +536,21 @@ public:
     return 0 != m_function.xmm ? this : 0;
   }
   void operator()(const itype* a, const itype* b, otype* c) const {
+#if 0
     LIBXSMM_MMCALL_ABC(m_function.xmm, a, b, c);
+#else
+    assert(0);
+#endif
   }
   void operator()(const itype* a, const itype* b, otype* c, const itype* pa, const itype* pb, const otype* pc) const {
+#if 0
     LIBXSMM_UNUSED( pa );
     LIBXSMM_UNUSED( pb );
     LIBXSMM_UNUSED( pc );
     LIBXSMM_MMCALL_PRF(m_function.xmm, a, b, c, pa, pb, pc);
+#else
+    assert(0);
+#endif
   }
 };
 
@@ -675,42 +698,6 @@ inline void libxsmm_gemm(const char* transa, const char* transb,
   const float* beta,        float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-                       const double* b, const libxsmm_blasint* ldb,
-  const double* beta,        double* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-                       const double* b, const libxsmm_blasint* ldb,
-  const double* beta,        double* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-/** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-                      const float* b, const libxsmm_blasint* ldb,
-  const float* beta,        float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-inline void libxsmm_blas_gemm(const char* transa, const char* transb,
-  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-                      const float* b, const libxsmm_blasint* ldb,
-  const float* beta,        float* c, const libxsmm_blasint* ldc)
-{
-  libxsmm_blas_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 #endif /*__cplusplus*/

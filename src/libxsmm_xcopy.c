@@ -9,7 +9,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_xcopy.h"
-#include <utils/libxsmm_math.h>
+#include <utils/libxsmm_utils.h>
 
 
 /* definition of corresponding variables */

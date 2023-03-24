@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_RNG_H
 #define LIBXSMM_RNG_H
 
-#include "libxsmm_typedefs.h"
+#include "../libxsmm_typedefs.h"
 
 /**
  * create a new external state for thread-save execution managed

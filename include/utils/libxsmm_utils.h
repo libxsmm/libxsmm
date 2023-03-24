@@ -8,10 +8,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_FRONTEND_H
-#define LIBXSMM_FRONTEND_H
+#ifndef LIBXSMM_UTILS_H
+#define LIBXSMM_UTILS_H
 
-#include "libxsmm_typedefs.h"
+#include "libxsmm_math.h"
 
 #if !defined(LIBXSMM_DESCRIPTION)
 # define LIBXSMM_DESCRIPTION "Library for specialized dense and sparse matrix operations, and deep learning primitives."
@@ -535,6 +535,13 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
 LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
+/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
+
+/** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
+LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
+
 /** GEMM_BATCH_STRIDED: fallback prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef void (*libxsmm_dgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch_strided));
 LIBXSMM_EXTERN_C typedef void (*libxsmm_sgemm_batch_strided_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch_strided));
@@ -570,6 +577,18 @@ LIBXSMM_API libxsmm_sgemv_function libxsmm_original_sgemv(void);
 LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
 LIBXSMM_API void libxsmm_sink(const void* arg, ...);
 
+/**
+ * General dense matrix multiplication, which re-exposes LAPACK/BLAS
+ * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
+ * when supplying NULL-arguments in certain places.
+ */
+LIBXSMM_API void libxsmm_blas_gemm(
+  libxsmm_datatype iprec, libxsmm_datatype oprec, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+                     const void* b, const libxsmm_blasint* ldb,
+  const void* beta,        void* c, const libxsmm_blasint* ldc);
+
 #define libxsmm_blas_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   libxsmm_blas_gemm(LIBXSMM_DATATYPE_F64, LIBXSMM_DATATYPE_F64, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
@@ -577,11 +596,43 @@ LIBXSMM_API void libxsmm_sink(const void* arg, ...);
   libxsmm_blas_gemm(LIBXSMM_DATATYPE_F32, LIBXSMM_DATATYPE_F32, \
     TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
-/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
+#if defined(__cplusplus)
 
-/** Determines the given value in double-precision (EXIT_SUCCESS if value is NULL). */
-LIBXSMM_API int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
+/** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+                       const double* b, const libxsmm_blasint* ldb,
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
+  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+                       const double* b, const libxsmm_blasint* ldb,
+  const double* beta,        double* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_blas_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
 
-#endif /*LIBXSMM_FRONTEND_H*/
+/** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+                      const float* b, const libxsmm_blasint* ldb,
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+inline void libxsmm_blas_gemm(const char* transa, const char* transb,
+  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+                      const float* b, const libxsmm_blasint* ldb,
+  const float* beta,        float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_blas_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+#endif /*__cplusplus*/
+#endif /*LIBXSMM_UTILS_H*/

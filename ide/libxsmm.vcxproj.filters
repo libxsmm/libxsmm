@@ -27,9 +27,6 @@
     <ClInclude Include="..\src\libxsmm_hash.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_frontend.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_generator.h">
       <Filter>include</Filter>
     </ClInclude>

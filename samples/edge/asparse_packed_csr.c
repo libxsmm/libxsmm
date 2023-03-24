@@ -9,6 +9,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <utils/libxsmm_timer.h>
+#include <utils/libxsmm_utils.h>
+#include <utils/libxsmm_rng.h>
 #include "common_edge_proxy.h"
 
 

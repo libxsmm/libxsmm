@@ -13,8 +13,8 @@
 #else
 # include <libxsmm_source.h>
 #endif
+#include <utils/libxsmm_utils.h>
 #include <utils/libxsmm_timer.h>
-#include <utils/libxsmm_math.h>
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>

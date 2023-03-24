@@ -11,6 +11,7 @@
 #ifndef LIBXSMM_GEMM_H
 #define LIBXSMM_GEMM_H
 
+#include <utils/libxsmm_utils.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_GEMM_LOCK)

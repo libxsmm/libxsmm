@@ -334,13 +334,13 @@ HEADERS := $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.h) $(wildcard $(ROOTDIR)/$
           $(ROOTDIR)/include/utils/libxsmm_lpflt_quant.h \
           $(ROOTDIR)/include/utils/libxsmm_memory.h \
           $(ROOTDIR)/include/utils/libxsmm_timer.h \
+          $(ROOTDIR)/include/utils/libxsmm_utils.h \
           $(ROOTDIR)/include/utils/libxsmm_sync.h \
           $(ROOTDIR)/include/utils/libxsmm_math.h \
           $(ROOTDIR)/include/utils/libxsmm_rng.h \
           $(ROOTDIR)/include/utils/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h \
-          $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \

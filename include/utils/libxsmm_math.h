@@ -11,7 +11,7 @@
 #ifndef LIBXSMM_MATH_H
 #define LIBXSMM_MATH_H
 
-#include "libxsmm_typedefs.h"
+#include "../libxsmm_typedefs.h"
 
 
 /**
