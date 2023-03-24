@@ -780,14 +780,15 @@ LIBXSMM_API void libxsmm_stochastic_convert_fp32_bf8(const float* in, libxsmm_bf
   /* truncate buffer to bf8 */
   for ( i = 0; i < len; i+=16 ) {
     unsigned int do_round = 1;
-    unsigned int vrng[16];
-    libxsmm_lsfr_i32_intrinsic((unsigned int*)rng_state, &vrng[0]);
 
     for (j=0; j < 16; j++) {
       if (i+j > len) break;
 
       unsigned short short_round = libxsmm_convert_f32_to_f16( in[i+j] );
-      unsigned short rand = (unsigned short)((vrng[j] >> 24)&0x000000ff);
+      unsigned int vrng;
+      libxsmm_lsfr_i32((unsigned int*)rng_state, &vrng, j);
+
+      unsigned short rand = (unsigned short)(vrng >> 24);
       /* we do not round NaN and inf */
       if ( (short_round & 0x7c00) == 0x7c00 ) {
         do_round = 0;

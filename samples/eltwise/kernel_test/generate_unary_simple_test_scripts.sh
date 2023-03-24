@@ -69,12 +69,12 @@ for PREC in 'F32_F32_F32' 'BF16_BF16_BF16' 'BF16_BF16_F32' 'F32_BF16_F32' 'BF16_
         if [ "$PREC_OUT" == 'bf8' ] ; then
           PREC_IN=$(echo "$PRECLC" |  awk -F"_" '{print $1}')
           PREC_COMP=$(echo "$PRECLC" |  awk -F"_" '{print $3}')
-          PREC_OUT=${PREC_OUT}_${ROUND}
-          PRECLC2=${PREC_IN}_${PREC_OUT}_${PREC_COMP}
-          OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC2}_${LD}.sh
           if [ "$ROUND" == 'stochastic' ]; then
+            PREC_OUT=${PREC_OUT}_${ROUND}
             RMODE=1
           fi
+          PRECLC2=${PREC_IN}_${PREC_OUT}_${PREC_COMP}
+          OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC2}_${LD}.sh
         else
           OUTNAME=${OUTNAME}${TPPNAME}_${PRECLC}_${LD}.sh
         fi
