@@ -63,7 +63,8 @@ int main(int argc, char* argv[])
     LIBXSMM_BLAS_CONST libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
     LIBXSMM_BLAS_CONST libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
     const libxsmm_blasint q = (5 < argc ? std::atoi(argv[5]) : 0/*auto*/);
-    const libxsmm_blasint nrepeat = (6 < argc ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
+    const libxsmm_blasint nrepeat = ((6 < argc && 0 < std::atoi(argv[6]))
+      ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
 
     LIBXSMM_BLAS_CONST libxsmm_blasint lda = m, ldb = k, ldc = m;
     LIBXSMM_BLAS_CONST char transa = 'N', transb = 'N';

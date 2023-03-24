@@ -300,7 +300,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
     free(p_jump_label_tracker);
 #endif
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -319,7 +319,7 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_MISC_AVX_AVX512_JUMP_LABEL_TRACKER_MALLOC)
     free(p_jump_label_tracker);
 #endif
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
@@ -372,7 +372,10 @@ void libxsmm_generator_replicate_col_var_avx_avx512_microkernel( libxsmm_generat
 
   if (use_m_masking == 1) {
     if (io_generated_code->arch >= LIBXSMM_X86_AVX512_VL256) {
-      libxsmm_datatype precision = (libxsmm_datatype)((LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) ) ? LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) : LIBXSMM_DATATYPE_F32);
+      const libxsmm_datatype precision = (libxsmm_datatype)(
+          (LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) == LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ) )
+        ? LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ) /* treat signed and unsigned types as equal */
+        : LIBXSMM_DATATYPE_F32);
       mask_out = 1;
       mask_in = 1;
       mask_out_count = vlen - (m % vlen);

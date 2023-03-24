@@ -66,11 +66,13 @@ def matchop(op, value, query, exact=False):
     if query:
         if "not" != op:
             if op:
-                result = eval(op)(matchstr(q, value.lower()) for q in query)
+                result = eval(op)(
+                    matchstr(q, value.lower(), exact) for q in query
+                )
             else:  # any
-                result = any(matchstr(q, value.lower()) for q in query)
+                result = any(matchstr(q, value.lower(), exact) for q in query)
         else:  # not
-            result = all(not matchstr(q, value.lower()) for q in query)
+            result = all(not matchstr(q, value.lower(), exact) for q in query)
     else:
         result = True
     return result
@@ -292,15 +294,19 @@ def divup(a, b):
 
 
 def trend(values):
-    a, rd, cv = values[0] if values else 0, None, None
-    if 2 < len(values):
-        m, b = numpy.polyfit(range(1, len(values)), values[1:], deg=1)
-        if 0 != b:
-            rd = (a - b) / b
+    v, size = (values[0] if values else 0), len(values)
+    rd, cv, eqn = None, None, None
+    if 2 < size:
+        a, b = numpy.polyfit(range(1, size), values[1:], deg=1)
+        eqn = numpy.poly1d((a, b))
+        w = a + b  # value predicted for x=1 (a * x + b)
+        if 0 != w:
+            rd = (v - w) / w
             avg = numpy.mean(values[1:])
             if 0 != avg:
                 cv = numpy.std(values[1:]) / avg
-    return (a, rd, cv)
+        v = w  # predicted value
+    return (v, rd, cv, eqn)
 
 
 def bold(s):
@@ -308,23 +314,25 @@ def bold(s):
     return r"$\bf{" + (t.replace("$", "") if 0 == (c % 2) else t) + "}$"
 
 
-def label(values, init, unit, accuracy, highlight):
-    vnew, rd, cv = trend(values)
-    result = f"{num2fix(vnew, accuracy)} {unit}"
+def label(values, base, unit, accuracy, highlight):
+    guess, rd, cv, eqn = trend(values)
+    result = f"{num2fix(values[0], accuracy)} {unit}"
     if rd:
         inum = num2fix(100 * rd)
         if cv:
             anum = f"{inum}%" if 0 <= inum else f"|{inum}%|"
             bnum, cnum = num2fix(100 * cv), num2fix(highlight, accuracy)
             if num2fix(100 * cv * highlight) < abs(inum):
-                result = f"{init} = {bold(result)} ({anum}>{bnum}%*{cnum})"
+                result = f"{base} = {bold(result)} ({anum}>{bnum}%*{cnum})"
             else:
                 expr = f"{anum}" + r"$\leq$" + f"{bnum}%*{cnum}"
-                result = f"{init} = {result} ({expr})"
+                result = f"{base} = {result} ({expr})"
         else:
             sign = ("+" if 0 < inum else "") if 0 != inum else r"$\pm$"
-            result = f"{init} = {result} ({sign}{inum}%)"
-    return result
+            result = f"{base} = {result} ({sign}{inum}%)"
+    else:
+        result = f"{base} = {result}"
+    return result, eqn
 
 
 def main(args, argd, dbfname):
@@ -352,6 +360,7 @@ def main(args, argd, dbfname):
         else []
     )
     rslt = args.result.lower()
+    qlst = rslt.split(",")
     nerrors, nentries, accuracy = 0, 0, 1
     inflight = max(args.inflight, 0)
     info = {"branch": args.branch} if args.branch else {}
@@ -392,22 +401,32 @@ def main(args, argd, dbfname):
     weights = loaddb(wfile)
 
     # populate default weights
-    write = None
-    for build in database.values():
-        for entries in build.values():
-            for key, entry in entries.items():
-                name = parsename(key)
-                if name not in weights:
-                    write = [1.0 for e in entry if ":" in e]
-                    if write:
-                        weights[name] = write
+    write = False
+    for entries in (
+        build[b] for build in database.values() for b in build if infokey != b
+    ):
+        for key, entry in entries.items():
+            name = parsename(key)
+            if isinstance(entry, dict):  # JSON-format
+                for e in entry:
+                    if name not in weights:
+                        weights[name] = {}
+                        weights[name][e] = 1.0
+                        write = True
+                    elif e not in weights[name]:
+                        weights[name][e] = 1.0
+                        write = True
+            elif name not in weights:  # telegram format
+                write = [1.0 for e in entry if ":" in e]
+                if write:
+                    weights[name] = write
     if write:  # write weights if modified
         savedb(args.weights, weights, wfmtime, 3)
 
-    nbuild = int(args.nbuild) if args.nbuild else 0
+    nbuilds, nbuild = 0, int(args.nbuild) if args.nbuild else 0
     if args.infile and (args.infile.is_file() or args.infile.is_fifo()):
         next = latest + 1
-        nbld = nbuild if (0 < nbuild and nbuild < next) else next
+        nbld = nbuild if 0 < nbuild else next
         name = (
             args.query
             if args.query and (args.query != argd.query or args.query_exact)
@@ -434,7 +453,7 @@ def main(args, argd, dbfname):
         elif not builds:
             print(f"WARNING: failed to connect to {url}.", file=sys.stderr)
 
-        nbuilds = njobs = 0
+        njobs = 0
         while builds:
             # iterate over all builds (latest first)
             for build in builds:
@@ -447,7 +466,7 @@ def main(args, argd, dbfname):
                 ):
                     latest, builds = ibuild, None
                     break
-                n = 0
+                m, n = nentries, 0
                 infocpy = info
                 if "branch" in build and matchdict(
                     build["branch"], "branch", info, negate=True
@@ -482,8 +501,9 @@ def main(args, argd, dbfname):
                             nerrors,
                         )
                         n = n + 1
-                nbuilds = nbuilds + 1
-                njobs = njobs + n
+                if 0 < n:
+                    nbuilds = nbuilds + (1 if m != nentries else 0)
+                    njobs = njobs + n
                 if (  # consider early exit
                     (0 == n and ibuild <= latest)
                     and matchdict("running", "state", build, negate=True)
@@ -530,7 +550,11 @@ def main(args, argd, dbfname):
             )
         y = "ies" if 1 != nentries else "y"
         print(f"Database consists of {dbsize} builds.")
-        print(f"Found {nentries} new entr{y}.")
+        if 0 < nentries:
+            s = "s" if 1 != nbuilds else ""
+            print(f"Found {nentries} new entr{y} in {nbuilds} build{s}.")
+        else:
+            print(f"Found {nentries} new entr{y}.")
 
     if dbkeys and args.figure:  # determine template-record for figure
         if nbuild in dbkeys:
@@ -587,20 +611,21 @@ def main(args, argd, dbfname):
     transpat = "!\"#$%&'()*+-./:<=>?@[\\]^_`{|}~"
     split = str.maketrans(transpat, " " * len(transpat))
     clean = str.maketrans("", "", transpat)
-    yunit, addon = None, args.branch
-    ngraphs = i = 0
+    sval, yunit, addon = None, None, args.branch
+    ngraphs = span = i = 0
     for entry in entries:
         n = 0
         for value in (
             v for v in template[entry] if matchop(query_op, v, query)
         ):
+            wname = value.split()[0]  # name/key of weight-entry
+            wlist = weights[wname] if wname in weights else []
             layers, xvalue, yvalue = dict(), [], []
             legend, aunit = value, None
             if value not in match:
                 match.append(value)
-            # collect data to be plotted
-            for build in (
-                b
+            builds = [
+                b  # collect builds to be plotted
                 for b in database
                 if (entry in database[b] and value in database[b][entry])
                 and (  # match branch
@@ -609,19 +634,29 @@ def main(args, argd, dbfname):
                     or "branch" not in database[b][infokey]
                     or (database[b][infokey]["branch"] == args.branch)
                 )
-            ):
-                ylabel = None
+            ]
+            # collect common keys (if inline-JSON)
+            keys = []
+            for build in builds:
                 values = database[build][entry][value]
                 if isinstance(values, dict):  # JSON-format
-                    qlst = rslt.split(",")
-                    keys = matchlst(qlst[0], values.keys(), args.exact)
+                    for key in matchlst(qlst[0], values.keys(), args.exact):
+                        if key not in keys:
+                            keys.append(key)
+                else:
+                    break
+            # collect data to be plotted
+            for build in reversed(builds):  # order: latest -> older
+                values, ylabel = database[build][entry][value], None
+                if isinstance(values, dict):  # JSON-format
                     vals, legd = [], []
-                    for key in keys:
-                        scale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                    for key in (k for k in keys if k in values):
+                        vscale = 1.0 if 2 > len(qlst) else float(qlst[1])
+                        weight = wlist[key] if key in wlist else 1.0
                         strval = str(values[key])  # ensure string
                         parsed = parseval(strval)
                         unit = strval[parsed.end(3) :].strip()  # noqa: E203
-                        vals.append(float(strval.split()[0]) * scale)
+                        vals.append(float(strval.split()[0]) * vscale * weight)
                         if not ylabel:
                             ylabel = (
                                 (unit if unit else key)
@@ -634,17 +669,18 @@ def main(args, argd, dbfname):
                             f"{value} {'_'.join(detail)}" if detail else value
                         )
                     if vals:
-                        if 1 < len(legd):
+                        if yvalue:
+                            if not isinstance(yvalue[0], list) or (
+                                len(yvalue[0]) == len(vals)
+                            ):  # same dimensionality
+                                yvalue.append(vals)
+                        elif int(build) == latest:
+                            yvalue, legend = [vals], legd
                             if addon == args.branch:
                                 addon = rslt.split(",")[0] + (
                                     f"@{addon}" if addon else ""
-                                )
-                            yvalue.append(vals)
-                            legend = legd
-                        else:
-                            yvalue.append(vals[0])
-                            legend = legd[0]
-                        xvalue.append(build)  # string
+                                )  # title-addon
+                        xvalue.append(int(build))
                 else:  # telegram format
                     # match --result primarily against "unit"
                     for v in reversed(values):  # match last entry
@@ -654,7 +690,7 @@ def main(args, argd, dbfname):
                             ulow = unit.lower()
                             if not ylabel and matchstr(rslt, ulow):
                                 yvalue.append(float(parsed.group(3)))
-                                xvalue.append(build)  # string
+                                xvalue.append(int(build))
                                 ylabel = unit
                     # match --result secondary against "init"
                     for v in reversed(values):  # match last entry
@@ -670,7 +706,7 @@ def main(args, argd, dbfname):
                             ilow = init.lower()
                             if not ylabel and matchstr(rslt, ilow):
                                 yvalue.append(float(parsed.group(3)))
-                                xvalue.append(build)  # string
+                                xvalue.append(int(build))
                                 ylabel = ulab
                             if init and (not aunit or ulab == aunit):
                                 if init not in layers:
@@ -679,63 +715,61 @@ def main(args, argd, dbfname):
                                     layers[init] = []
                                 layers[init].append(float(parsed.group(3)))
 
-            s, j = args.history, 0
-            wname = value.split()[0]
-            wlist = weights[wname] if wname in weights else []
-            wdflt = True  # only default-weights discovered
-            # (re-)reverse, trim, and apply weights
-            layerkeys = list(layers.keys())
-            for a in reversed(layerkeys):
+            wdflt, s, j = True, args.history, 0
+            # trim, and apply weights
+            for a in layers.keys():
                 y = layers[a]
                 s = min(s, len(y))
                 w = wlist[j] if j < len(wlist) else 1.0
                 if 1.0 != w:
-                    layers[a] = [y[len(y) - k - 1] * w for k in range(s)]
-                    wdflt = False
+                    layers[a] = [y[k] * w for k in range(s)]
+                    wdflt = False  # non-default weight discovered
                 else:  # unit-weight
-                    layers[a] = [y[len(y) - k - 1] for k in range(s)]
+                    layers[a] = [y[k] for k in range(s)]
                 j = j + 1
             if not yunit and (ylabel or args.result):
                 yunit = (ylabel if ylabel else args.result).split()[0]
             # summarize layer into yvalue only in case of non-default weights
             if (not aunit or aunit == yunit) and not wdflt:
                 yvalue = [sum(y) for y in zip(*layers.values())]
-            elif yvalue:  # (re-)reverse and trim
-                yvalue = yvalue[: -args.history - 1 : -1]  # noqa: E203
-            if xvalue and yvalue:  # (re-)reverse and trim
-                xvalue = xvalue[: -len(yvalue) - 1 : -1]  # noqa: E203
+            elif yvalue:  # trim
+                yvalue = yvalue[0 : args.history]  # noqa: E203
+            xsize = len(yvalue) if yvalue else 0
+            xvalue = xvalue[0:xsize]  # trim
 
-            # perform some trend analysis
-            if isinstance(legend, list):
-                ylist, ylabel = list(zip(*yvalue)), []
-                for j in range(len(legend)):
-                    y, z = ylist[j], legend[j]
-                    s = label(y, z, yunit, accuracy, args.highlight)
-                    ylabel.append(s)
-            else:
-                ylabel = label(yvalue, legend, yunit, accuracy, args.highlight)
-
-            # determine size of shared x-axis
-            xsize = args.history
-            if not aunit or aunit == yunit:
-                xsize = min(len(yvalue), xsize)
-            yvalue = yvalue[0:xsize]
-            xrange = range(xsize)
-
-            # plot values and legend as collected above
-            if (not aunit or aunit == yunit) and yvalue:
-                axes[i].step(xrange, yvalue, ".:", where="mid", label=ylabel)
-                axes[i].set_ylabel(yunit)
-                n = n + 1
-            axes[i].xaxis.set_ticks(xrange)  # before set_xticklabels
-            axes[i].set_xticklabels(xvalue[0:xsize])
+            if 0 < xsize:  # skip empty plot
+                # perform some trend analysis
+                eqn = None
+                if isinstance(legend, list):
+                    ylist, ylabel = list(zip(*yvalue)), []
+                    for j in range(len(legend)):
+                        y, z = ylist[j], legend[j]
+                        s, eqn = label(y, z, yunit, accuracy, args.highlight)
+                        ylabel.append(s)
+                    ylabel = ylabel if 1 < len(ylabel) else ylabel[0]
+                else:
+                    ylabel, eqn = label(
+                        yvalue, legend, yunit, accuracy, args.highlight
+                    )
+                # plot values and legend as collected above
+                if (not aunit or aunit == yunit) and (
+                    yvalue and latest == xvalue[0]
+                ):
+                    ispan = xsize * xsize / (xvalue[0] - xvalue[-1] + 1)
+                    if span < ispan:
+                        sval, span = xvalue, ispan
+                    axes[i].step(  # xvalue,
+                        yvalue, ".:", where="mid", label=ylabel
+                    )
+                    axes[i].set_ylabel(yunit)
+                    n = n + 1
         ngraphs = max(ngraphs, n)
-        if 0 < ngraphs:
-            axes[i].xaxis.set_major_locator(plot.MaxNLocator(integer=True))
+        if 0 < n:
+            axes[i].xaxis.set_ticks(range(len(sval)), sval, rotation=45)
             axes[i].set_title(entry.upper())
-            axes[i].legend(loc="center left", fontsize="x-small")
+            axes[i].legend(loc="upper left", ncol=2)  # fontsize="x-small"
         i = i + 1
-    axes[i - 1].set_xlabel("Build Number")
+    axes[-1].set_xlabel("Build Number")
     title = "Performance History"
     figure.suptitle(
         f"{title} ({addon.lower()})" if addon else title, fontsize="x-large"
@@ -824,7 +858,7 @@ if __name__ == "__main__":
         "-d",
         "--resolution",
         type=str,
-        default="900x600",
+        default="1600x900",
         help="Graphics WxH[xDPI]",
     )
     argparser.add_argument(
@@ -919,7 +953,7 @@ if __name__ == "__main__":
         "-t",
         "--highlight",
         type=float,
-        default=1.5,
+        default=3.0,
         help="Highlight if T*Stdev is exceeded",
     )
     argparser.add_argument(

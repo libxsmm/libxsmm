@@ -90,7 +90,7 @@ void libxsmm_generator_packed_spgemm_csr_bsparse_aarch64( libxsmm_generated_code
 #if 0
   printf("packed parameters: %u, %u, %u, %u, %u\n", i_packed_width, l_simd_packed_remainder, l_simd_packed_iters, l_simd_packed_iters_full, l_simd_packed_width );
 #endif
- /* packed blocking  */
+  /* packed blocking */
   /* TODO: for 2^x for l_simd_packed iters we might want to todo something else */
   libxsmm_compute_equalized_blocking( l_simd_packed_iters, l_max_reg_block, &(l_packed_reg_range[0]), &(l_packed_reg_block[0]), &(l_packed_reg_range[1]), &(l_packed_reg_block[1]) );
 #if 0

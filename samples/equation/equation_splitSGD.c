@@ -173,7 +173,7 @@ int main( int argc, char* argv[] ) {
   }
   libxsmm_rne_convert_fp32_bf16( wt, bf16_dwt, ld * N );
 
-  /* Split sgd via equation  */
+  /* Split sgd via equation */
   my_eqn0 = libxsmm_matrix_eqn_create();
   libxsmm_matrix_eqn_push_back_unary_op( my_eqn0, LIBXSMM_MELTW_TYPE_UNARY_UNPACK_TO_BLOCKS, LIBXSMM_MELTW_FLAG_UNARY_NONE, LIBXSMM_DATATYPE_F32 );
   libxsmm_matrix_eqn_push_back_ternary_op( my_eqn0, LIBXSMM_MELTW_TYPE_TERNARY_MULADD,
@@ -200,7 +200,7 @@ int main( int argc, char* argv[] ) {
   eqn_param.output.secondary = (void*)offset;
   func0(&eqn_param);
 
-  /* Run reference split sgd  */
+  /* Run reference split sgd */
   reference_equation(M, N, ld, bf16_dwt, lr, wt_lo, wt_hi);
 
   reference_pack(M, N, ld, f32_ref_out, wt_lo, wt_hi);

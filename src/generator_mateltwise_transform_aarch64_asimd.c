@@ -693,7 +693,7 @@ void libxsmm_generator_transform_vnni4_to_vnni4t_Nmod16_16bit_aarch64_asimd_micr
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP1, 14, 15, 0, 8, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S ); /* N13,N12: M3M2M1M0 M3M2M1M0 */
   libxsmm_aarch64_instruction_asimd_compute( io_generated_code, LIBXSMM_AARCH64_INSTR_ASIMD_ZIP2, 14, 15, 0, 9, LIBXSMM_AARCH64_ASIMD_TUPLETYPE_4S ); /* N15,N14: M3M2M1M0 M3M2M1M0 */
 
-  /* Store 8 registers  */
+  /* Store 8 registers */
   libxsmm_generator_store_2dregblock_aarch64_asimd( io_generated_code, i_gp_reg_out, i_gp_reg_scratch, 2, 10, 4, 4, 16 * i_micro_kernel_config->datatype_size_out );
 
 

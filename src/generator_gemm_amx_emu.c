@@ -407,7 +407,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
       libxsmm_generator_gemm_header_generic_loop(io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_micro_kernel_config, n_loop_gp );
 
 
-      /* Initialize accumulators to 0  */
+      /* Initialize accumulators to 0 */
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                                  LIBXSMM_X86_INSTR_VPXORD,
@@ -519,7 +519,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
       libxsmm_generator_gemm_footer_generic_loop( io_generated_code, i_micro_kernel_config->io_loop_label_tracker, i_micro_kernel_config, k_loop_gp, 64, 32*i_k_blocking);
 
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-        /* Add the two partial inner products  */
+        /* Add the two partial inner products */
         libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
                                           LIBXSMM_X86_INSTR_VADDPS,
                                           i_micro_kernel_config->vector_name,
@@ -527,7 +527,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
                                           4 + l_n,
                                           4 + l_n + i_n_blocking);
 
-        /* Load C fp32 value and add it to the computed inner product  */
+        /* Load C fp32 value and add it to the computed inner product */
         libxsmm_x86_instruction_vec_compute_mem_2reg_mask_imm8( io_generated_code,
             LIBXSMM_X86_INSTR_VADDPS,
             i_micro_kernel_config->vector_name,
@@ -538,7 +538,7 @@ void libxsmm_x86_instruction_tile_compute_emu( libxsmm_generated_code* io_genera
             4 + l_n + i_n_blocking,
             0, 0, 0);
 
-        /* Store the result to C scratch tiles  */
+        /* Store the result to C scratch tiles */
         libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch,
                                       LIBXSMM_X86_INSTR_VMOVUPS,
                                       tile_scratch_gpb,
@@ -706,7 +706,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
     }
     if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype )) {
       unsigned int gp_reg_gemm_scratch = (i_micro_kernel_config->n_loop_exists == 0) ? i_gp_reg_mapping->gp_reg_help_1 : i_gp_reg_mapping->gp_reg_help_0;
-      /* Check if we have to save the tmp registers  */
+      /* Check if we have to save the tmp registers */
       if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_0) && (i_micro_kernel_config->m_loop_exists == 1)  ) {
         libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
       }
@@ -755,7 +755,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
         }
 
         for (in = 0; in < n_tiles; in++) {
-          /* Now for all the columns in the tile, upconvert them to F32 from BF16  */
+          /* Now for all the columns in the tile, upconvert them to F32 from BF16 */
           for (col = 0; col < n_blocking_info->sizes[in]; col++) {
             zmm_reg = (col % 4) + i_micro_kernel_config->reserved_zmms;  /* we do mod 4 as are otherwise running out ymms */
             /* load 16 bit values into ymm portion of the register */
@@ -811,7 +811,7 @@ void libxsmm_generator_gemm_load_C_amx_emu( libxsmm_generated_code*            i
         }
         i_m_offset += m_blocking_info->sizes[im];
       }
-      /* Check if we have to restore the tmp registers  */
+      /* Check if we have to restore the tmp registers */
       if ( (gp_reg_gemm_scratch == i_gp_reg_mapping->gp_reg_help_0) && (i_micro_kernel_config->m_loop_exists == 1)  ) {
         libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
       }
@@ -1078,7 +1078,7 @@ void libxsmm_generator_gemm_store_C_amx_emu( libxsmm_generated_code*            
     in = i_micro_kernel_config->_in[i];
     _C_tile_done[i_micro_kernel_config->_C_tile_id[i]] = 1;
     if (i_micro_kernel_config->use_paired_tilestores == 1) {
-      /* If mate C tile is also ready, then two paired tilestore  */
+      /* If mate C tile is also ready, then two paired tilestore */
       if (_C_tile_done[i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]]] == 1) {
         int min_mate_C_id = (i_micro_kernel_config->_C_tile_id[i] < i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]]) ? i_micro_kernel_config->_C_tile_id[i] : i_micro_kernel_config->_C_tile_mate_id[i_micro_kernel_config->_C_tile_id[i]];
         int im_store = min_mate_C_id / n_tiles;
@@ -1152,7 +1152,7 @@ void libxsmm_generator_gemm_amx_setup_fusion_infra_emu( libxsmm_generated_code* 
     }
   }
 
-  /* Setup zmms to be reused throughout the kernel  */
+  /* Setup zmms to be reused throughout the kernel */
   if ((i_micro_kernel_config->fused_relu == 1) || (i_micro_kernel_config->fused_relu_nobitmask == 1) || (i_micro_kernel_config->fused_relu_bwd == 1) ) {
     i_micro_kernel_config->zero_reg = reserved_zmms;
     libxsmm_x86_instruction_vec_compute_3reg( io_generated_code,
@@ -1265,7 +1265,7 @@ void libxsmm_generator_gemm_amx_kernel_emu_wrapper( libxsmm_generated_code* io_g
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
-  /* If we are generating the batchreduce kernel, then we rename the registers  */
+  /* If we are generating the batchreduce kernel, then we rename the registers */
   if (i_xgemm_desc_const->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
     l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RAX;
     l_gp_reg_mapping.gp_reg_a_ptrs = LIBXSMM_X86_GP_REG_RDI;
@@ -1338,8 +1338,8 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
   l_micro_kernel_config.io_loop_label_tracker = io_loop_label_tracker;
 
-  /* Here compute the 2D blocking info based on the M and N values  */
-  /* For now super simple, rudimentary logic, to be generalized later on  */
+  /* Here compute the 2D blocking info based on the M and N values */
+  /* For now super simple, rudimentary logic, to be generalized later on */
   m_blocking = 32;
   while (i_xgemm_desc->m % m_blocking != 0) {
     m_blocking--;
@@ -1437,7 +1437,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
   }
 #endif
 
-  /* Find K blocking  */
+  /* Find K blocking */
   l_k_pack_factor = libxsmm_cpuid_dot_pack_factor( (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype) );
   if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) {
     k_blocking = 32;
@@ -1461,7 +1461,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
   /* First configure the accumulator tiles 0-4 */
   m_tiles = m_blocking_info[0].tiles;
   n_tiles = n_blocking_info[0].tiles;
-  /* Setup stack frame...  */
+  /* Setup stack frame... */
   l_micro_kernel_config.m_tiles = m_blocking_info[0].tiles;
   l_micro_kernel_config.n_tiles = n_blocking_info[0].tiles;
 
@@ -1526,11 +1526,11 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ILLEGAL_ABI );
   }
 
-  /* Setup stack frame...  */
+  /* Setup stack frame... */
   libxsmm_generator_gemm_setup_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config);
   libxsmm_generator_gemm_amx_setup_fusion_infra_emu( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
 
-  /* Store tile configuration for later usage...  */
+  /* Store tile configuration for later usage... */
   l_micro_kernel_config.tile_config = tile_config;
 
   if ((((LIBXSMM_GEMM_FLAG_NO_RESET_TILECONFIG & i_xgemm_desc->flags) != 0) && ((LIBXSMM_GEMM_FLAG_NO_SETUP_TILECONFIG & i_xgemm_desc->flags) == 0)) ||
@@ -1559,7 +1559,7 @@ void libxsmm_generator_gemm_amx_kernel_emu( libxsmm_generated_code*        io_ge
     /* We are emulating AMX, tilerelease is meaningless!!!! */
   }
 
-  /* Properly destroy stack frame...  */
+  /* Properly destroy stack frame... */
   libxsmm_generator_gemm_destroy_stack_frame( io_generated_code, i_xgemm_desc, i_gp_reg_mapping, &l_micro_kernel_config );
 }
 
@@ -1626,10 +1626,10 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
           libxsmm_generator_gemm_getval_stack_var( io_generated_code, i_micro_kernel_config, LIBXSMM_GEMM_STACK_VAR_ELT_DECOMPRESS_BUF, i_gp_reg_mapping->gp_reg_decompressed_a );
         }
       }
-      /* This is the reduce loop  */
+      /* This is the reduce loop */
       for (i = 0; i < i_xgemm_desc->c3; i++) {
         if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
-          /* load to reg_a the proper array based on the reduce loop index  */
+          /* load to reg_a the proper array based on the reduce loop index */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_a_ptrs,
@@ -1637,7 +1637,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
               i*8,
               i_gp_reg_mapping->gp_reg_a,
               0 );
-          /* load to reg_b the proper array based on the reduce loop index  */
+          /* load to reg_b the proper array based on the reduce loop index */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_b_ptrs,
@@ -1646,7 +1646,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
               i_gp_reg_mapping->gp_reg_b,
               0 );
         } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
-          /* Calculate to reg_b the proper address based on the reduce loop index  */
+          /* Calculate to reg_b the proper address based on the reduce loop index */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_b_offset,
@@ -1656,7 +1656,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
               0 );
           libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_base, i_gp_reg_mapping->gp_reg_b);
 
-          /* Calculate to reg_a the proper address based on the reduce loop index  */
+          /* Calculate to reg_a the proper address based on the reduce loop index */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_micro_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_a_offset,
@@ -1724,11 +1724,11 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
 
       /* NON_UNROLLED_BR_LOOP_LABEL_START */
       libxsmm_x86_instruction_register_jump_label(io_generated_code, NON_UNROLLED_BR_LOOP_LABEL_START, p_jump_label_tracker);
-      /* This is the reduce loop  */
+      /* This is the reduce loop */
       libxsmm_generator_gemm_header_reduceloop_amx( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
 
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
-        /* load to reg_a the proper array based on the reduce loop index  */
+        /* load to reg_a the proper array based on the reduce loop index */
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_a_ptrs,
@@ -1736,7 +1736,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
             0,
             i_gp_reg_mapping->gp_reg_a,
             0 );
-        /* load to reg_b the proper array based on the reduce loop index  */
+        /* load to reg_b the proper array based on the reduce loop index */
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_b_ptrs,
@@ -1745,7 +1745,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
             i_gp_reg_mapping->gp_reg_b,
             0 );
       } else if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) {
-        /* Calculate to reg_b the proper address based on the reduce loop index  */
+        /* Calculate to reg_b the proper address based on the reduce loop index */
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_b_offset,
@@ -1755,7 +1755,7 @@ void libxsmm_generator_gemm_amx_kernel_mloop_emu( libxsmm_generated_code*       
             0 );
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_base, i_gp_reg_mapping->gp_reg_b);
 
-        /* Calculate to reg_a the proper address based on the reduce loop index  */
+        /* Calculate to reg_a the proper address based on the reduce loop index */
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_a_offset,
@@ -1909,7 +1909,7 @@ void libxsmm_generator_gemm_amx_kernel_nloop_emu( libxsmm_generated_code*       
       libxsmm_generator_gemm_header_nloop_amx( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, l_n_blocking );
     }
 
-    /* Generate M loop  */
+    /* Generate M loop */
     libxsmm_generator_gemm_amx_kernel_mloop_emu(io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, &n_blocking_info[l_n_count], m_blocking_info);
 
     if (l_n_blocking < i_xgemm_desc->n) {

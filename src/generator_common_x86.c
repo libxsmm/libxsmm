@@ -1863,7 +1863,7 @@ void libxsmm_generator_hinstrps_avx( libxsmm_generated_code*                    
     const unsigned int                             i_vec_tmp2) {
 
   if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1920,7 +1920,7 @@ void libxsmm_generator_hinstrpd_avx( libxsmm_generated_code*                    
     const unsigned int                             i_vec_tmp2) {
 
   if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -1955,7 +1955,7 @@ void libxsmm_generator_hinstrpd_avx512( libxsmm_generated_code*                 
   char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
 
   if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -2003,7 +2003,7 @@ void libxsmm_generator_hinstrps_avx512( libxsmm_generated_code*                 
   char vname = (io_generated_code->arch >= LIBXSMM_X86_AVX512) ? 'z' : 'y';
 
   if (i_vec_tmp1 > 15 || i_vec_tmp2 > 15 ) {
-    /* This should not happen  */
+    /* This should not happen */
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_GENERAL );
     return;
   }
@@ -2600,7 +2600,7 @@ void libxsmm_generator_vcvtneps2bf16_avx512_preppedstack( libxsmm_generated_code
     libxsmm_generator_vcvtneps2bf16_avx2_preppedstack( io_generated_code, i_vname, i_vec_reg, o_vec_reg, io_vec_tmp_0, io_vec_tmp_1, i_skip_downcvt );
   } else {
     /* TODO: check for valid i_vnames */
-    /* and with naninf and compute mask  */
+    /* and with naninf and compute mask */
     libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname,
                                                   LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
                                                   i_vec_reg, io_vec_tmp_0 );
@@ -2808,7 +2808,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
                                                           const unsigned int      io_mask_1,
                                                           const unsigned int      io_mask_2 ) {
   char i_vname2 = (i_vname == 'z')?'y':'x';
-  /* Convert FP32 number to FP16  */
+  /* Convert FP32 number to FP16 */
   libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
                                                           i_vec_reg, i_vec_reg, 0,
                                                           (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1,
@@ -2826,7 +2826,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 136, 1,
                                                 i_vec_reg, io_vec_tmp_2 );
-  /* mask1 condition for > overflow exp  */
+  /* mask1 condition for > overflow exp */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 128, i_vname2, io_vec_tmp_3, 0, 1, 0 );
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname2,
@@ -2847,7 +2847,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
   /* mask0 = mask1 OR mask 0 --> result should be e = 0xf, m = 0x7 */
   libxsmm_x86_instruction_mask_compute_reg( io_generated_code, LIBXSMM_X86_INSTR_KORW, io_mask_1, io_mask_0, io_mask_0, 0);
 
-  /* mask1 : smaller than denormal f8 + eps, result must be 0  */
+  /* mask1 : smaller than denormal f8 + eps, result must be 0 */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 152, i_vname2, io_vec_tmp_3, 0, 1, 0 );
   libxsmm_x86_instruction_vec_compute_3reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPCMPW, i_vname2,
@@ -2878,11 +2878,11 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
 
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
                                                  io_vec_tmp_3, io_vec_tmp_0, 7 );
-  /* Tmp0 has fixup  */
+  /* Tmp0 has fixup */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 184, 1,
                                                 io_vec_tmp_0, io_vec_tmp_0 );
-  /* Tmp3 is now mant with added fixup  */
+  /* Tmp3 is now mant with added fixup */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPADDW, i_vname2, io_vec_tmp_3, io_vec_tmp_0, io_vec_tmp_3 );
 
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
@@ -2894,7 +2894,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
                                                  io_vec_tmp_3, io_vec_tmp_3, 7 );
 
   /* Start building the normal result... */
-  /* Tmp2 has now the normal fixup  */
+  /* Tmp2 has now the normal fixup */
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
                                                  io_vec_tmp_2, io_vec_tmp_2, 7 );
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname2,
@@ -2920,7 +2920,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
   libxsmm_x86_instruction_vec_compute_2reg_imm8( io_generated_code, LIBXSMM_X86_INSTR_VPSRAW_I, i_vname2,
                                                  io_vec_tmp_2, io_vec_tmp_2, 7 );
 
-  /* Start building result for normal and denormal case using tmp1 as we  */
+  /* Start building result for normal and denormal case using tmp1 as we */
   /* Broadcast 0 on tmp1 based on mask 2*/
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, i_vname2, io_vec_tmp_1, io_mask_2, 0, 0 );
@@ -2930,7 +2930,7 @@ void libxsmm_generator_vcvtf32_to_hf8_avx512_preppedstack( libxsmm_generated_cod
   libxsmm_x86_instruction_vec_compute_2reg_mask( io_generated_code,  LIBXSMM_X86_INSTR_VMOVDQU16, i_vname2, io_vec_tmp_3, io_vec_tmp_2, io_mask_2, 0);
   /* Now tmp1 holds final result for normal/denormal case */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname2, io_vec_tmp_1, io_vec_tmp_2, io_vec_tmp_1 );
-  /* Blend in results with zero if mask1 is set  */
+  /* Blend in results with zero if mask1 is set */
   libxsmm_x86_instruction_vec_move( io_generated_code, io_generated_code->arch, LIBXSMM_X86_INSTR_VPBROADCASTW,
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 72, i_vname2, io_vec_tmp_1, io_mask_1, 0, 0 );
   /* Blend in results with 0x7f is mask 0 is set */
@@ -3134,7 +3134,7 @@ void libxsmm_generator_vcvtneps2bf8_avx512_preppedstack( libxsmm_generated_code*
   libxsmm_x86_instruction_vec_compute_2reg_mask_sae_imm8( io_generated_code, LIBXSMM_X86_INSTR_VCVTPS2PH, i_vname,
                                                           i_vec_reg, i_vec_reg, 0, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, (io_generated_code->arch < LIBXSMM_X86_AVX512) ? 0 : 1, 0x00 );
 
-  /* and with naninf and compute mask  */
+  /* and with naninf and compute mask */
   libxsmm_x86_instruction_vec_compute_mem_2reg( io_generated_code, LIBXSMM_X86_INSTR_VPANDD, i_vname_2,
                                                 LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 16, 1,
                                                 i_vec_reg, io_vec_tmp_0 );
@@ -3301,14 +3301,14 @@ void libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( libxsmm_generat
                                     LIBXSMM_X86_GP_REG_RSP, LIBXSMM_X86_GP_REG_UNDEF, 0, 40, i_vname,
                                     io_vec_tmp_2, 0, 1, 0 );
 
-  /* extract exponent  */
+  /* extract exponent */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBD, i_vname,
                                             io_vec_tmp_1, io_vec_tmp_0, io_vec_tmp_0);
   /* Zero reg */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPXORD, i_vname,
                                             io_vec_tmp_1, io_vec_tmp_1, io_vec_tmp_1);
 
-  /* compute min BF8 exponent  */
+  /* compute min BF8 exponent */
   libxsmm_x86_instruction_vec_compute_3reg( io_generated_code, LIBXSMM_X86_INSTR_VPSUBD, i_vname,
                                             io_vec_tmp_2, io_vec_tmp_1, io_vec_tmp_1);
 
@@ -3342,10 +3342,10 @@ void libxsmm_generator_vcvtneps2bf8_generic_avx512_preppedstack( libxsmm_generat
   /* compute manstissa (denormal, normalize) */
   libxsmm_x86_instruction_vec_compute_3reg_mask( io_generated_code, LIBXSMM_X86_INSTR_VPSLLVD, i_vname,
                                                  io_vec_tmp_1, io_vec_tmp_2, io_vec_tmp_2, io_mask_1, 0 );
-  /* put exponent + mantissa together  */
+  /* put exponent + mantissa together */
   libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
                                              io_vec_tmp_0, io_vec_tmp_2, io_vec_tmp_2 );
-  /* put sign + exponent + mantissa together  */
+  /* put sign + exponent + mantissa together */
   libxsmm_x86_instruction_vec_compute_3reg ( io_generated_code, LIBXSMM_X86_INSTR_VPORD, i_vname,
                                              o_vec_reg, io_vec_tmp_2, o_vec_reg );
   /* Zero reg */
@@ -3490,14 +3490,15 @@ void libxsmm_generator_initialize_avx_mask( libxsmm_generated_code* io_generated
                                             const unsigned int      i_mask_reg,
                                             const unsigned int      i_mask_count,
                                             const libxsmm_datatype  i_datatype) {
-  if ( i_datatype == LIBXSMM_DATATYPE_F64 || i_datatype == LIBXSMM_DATATYPE_I64 ) {
+  const int datatype = LIBXSMM_GETENUM_INP(i_datatype); /* handle signed and unsigned types */
+  if ( datatype == LIBXSMM_DATATYPE_F64 || datatype == LIBXSMM_DATATYPE_I64 ) {
     unsigned long long mask_array[4] = {0, 0, 0, 0};
     unsigned int i;
     for (i = 0; i < LIBXSMM_MIN(4, i_mask_count); i++) {
       mask_array[i] = 0xFFFFFFFFFFFFFFFF;
     }
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code, (const unsigned char *) mask_array, "mask_array", 'y', i_mask_reg );
-  } else if ( i_datatype == LIBXSMM_DATATYPE_F32 || i_datatype == LIBXSMM_DATATYPE_I32 ) {
+  } else if ( datatype == LIBXSMM_DATATYPE_F32 || datatype == LIBXSMM_DATATYPE_I32 ) {
     unsigned int mask_array[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int i;
     for (i = 0; i < LIBXSMM_MIN(8, i_mask_count); i++) {
