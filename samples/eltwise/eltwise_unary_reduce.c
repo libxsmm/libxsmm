@@ -760,6 +760,9 @@ int main(int argc, char* argv[])
       libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I64, m, 1, ref_argop_off, argop_off, 0, 0);
     }
     else {
+      for (k = 0; k < m; k++) {
+        ref_argop_off_i32[k] = LIBXSMM_CAST_UINT(ref_argop_off[k]);
+      }
       libxsmm_matdiff(&norms_elts, LIBXSMM_DATATYPE_I32, m, 1, ref_argop_off_i32, argop_off_i32, 0, 0);
     }
     printf("L1 reference  : %.25g\n", norms_elts.l1_ref);
