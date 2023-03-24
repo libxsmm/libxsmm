@@ -534,7 +534,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
   for (timestamp = 0; timestamp <= last_timestamp; timestamp++) {
     libxsmm_matrix_eqn_elem *cur_op = libxsmm_generator_matequation_find_op_at_timestamp(eqn->eqn_root, timestamp);
 #if 0
-    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_UOT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
+    libxsmm_datatype out_precision = (timestamp == last_timestamp) ? (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype) : cur_op->tmp.dtype;
     libxsmm_datatype in_precision = cur_op->le->tmp.dtype;
 #else
     /* FIXME: This approach that avoids intermediate converts needs extra tmps, because when input is BF16 and output is FP32 we cannot reuse/overwrite the same tmp scratch... */
@@ -552,7 +552,7 @@ void libxsmm_generator_matequation_tmp_stack_scratch_avx_avx512_kernel( libxsmm_
 
     /* Find sibling if applicable. If it is an Arg, set output precision to  that precision... */
     if (timestamp == last_timestamp) {
-      out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_UOT(i_mateqn_desc->datatype);
+      out_precision = (libxsmm_datatype) LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype);
       cur_op->tmp.ld = i_mateqn_desc->ldo;
     } else {
       out_precision = cur_op->tmp.dtype;
