@@ -2838,7 +2838,7 @@ void libxsmm_generator_reduce_cols_index_aarch64_microkernel( libxsmm_generated_
     unsigned short argidx_params = (unsigned short) (((flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_0) | (flags & LIBXSMM_MELTW_FLAG_OPREDUCE_VECS_RECORD_ARGOP_OFF_VEC_1)) >> 16);
     unsigned short bcast_shifted_params = (unsigned short) (bcast_param << 2);
     unsigned short combined_params = argidx_params | bcast_shifted_params;
-    const libxsmm_meltw_descriptor *const new_desc = libxsmm_meltw_descriptor_init(&blob, (libxsmm_datatype)LIBXSMM_GETENUM_UNP( i_mateltwise_desc->datatype ), (libxsmm_datatype)LIBXSMM_GETENUM_UOT( i_mateltwise_desc->datatype ),
+    const libxsmm_meltw_descriptor *const new_desc = libxsmm_meltw_descriptor_init(&blob, (libxsmm_datatype)LIBXSMM_GETENUM_INP( i_mateltwise_desc->datatype ), (libxsmm_datatype)LIBXSMM_GETENUM_OUT( i_mateltwise_desc->datatype ),
         i_mateltwise_desc->m, idx_dtype_size, i_mateltwise_desc->ldi, i_mateltwise_desc->ldo, (unsigned short)flags, (unsigned short) combined_params, LIBXSMM_MELTW_OPERATION_OPREDUCE_VECS_IDX);
 #if defined(LIBXSMM_GENERATOR_MATELTWISE_REDUCE_AARCH64_JUMP_LABEL_TRACKER_MALLOC)
     free(p_jump_label_tracker);

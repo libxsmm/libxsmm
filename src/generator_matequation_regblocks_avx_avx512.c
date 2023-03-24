@@ -255,7 +255,7 @@ void libxsmm_generator_mateqn_adjust_args_addr(libxsmm_generated_code*        io
   unsigned int n_args = i_micro_kernel_config->n_args;
   unsigned int i;
   unsigned int adjust_val = 0;
-  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_UOT(i_mateqn_desc->datatype));
+  unsigned int output_tsize = LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_mateqn_desc->datatype));
   unsigned int temp_reg = i_gp_reg_mapping->temp_reg;
   unsigned int temp_reg2 = i_gp_reg_mapping->temp_reg2;
 
@@ -879,7 +879,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
 
   for (in = 0; in < i_n_blocking; in++) {
     for (im = 0; im < i_m_blocking; im++) {
-      unsigned int vmove_instr = (((LIBXSMM_DATATYPE_BF8 == ((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype))) || (LIBXSMM_DATATYPE_HF8 == ((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)))) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && !((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : libxsmm_generator_matequation_regblocks_vmove_instruction((libxsmm_datatype)LIBXSMM_GETENUM_UOT(i_meqn_desc->datatype));
+      unsigned int vmove_instr = (((LIBXSMM_DATATYPE_BF8 == ((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype))) || (LIBXSMM_DATATYPE_HF8 == ((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)))) && (io_generated_code->arch < LIBXSMM_X86_AVX512) && !((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ) ? LIBXSMM_X86_INSTR_VMOVSD : libxsmm_generator_matequation_regblocks_vmove_instruction((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype));
       cur_vreg = i_start_vreg + in * i_m_blocking + im;
 
       if (i_micro_kernel_config->cvt_result_to_bf16 == 1) {
@@ -910,7 +910,7 @@ void libxsmm_generator_mateqn_store_2d_reg_block( libxsmm_generated_code*       
           vmove_instr,
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF, 0,
-          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_UOT(i_meqn_desc->datatype)),
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           ((i_micro_kernel_config->cvt_result_to_bf8 == 1) || (i_micro_kernel_config->cvt_result_to_hf8 == 1) || ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) && (io_generated_code->arch < LIBXSMM_X86_AVX512)) )? 'x' : ((i_micro_kernel_config->cvt_result_to_bf16 == 1 || i_micro_kernel_config->cvt_result_to_f16 == 1) || (io_generated_code->arch < LIBXSMM_X86_AVX512)) ? 'y' : 'z',
           cur_vreg, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? 1 : 0, ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0, 1 );
     }
@@ -944,7 +944,7 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block( libxsmm_generated_code* 
           i_gp_reg_mapping->gp_reg_out,
           LIBXSMM_X86_GP_REG_UNDEF,
           0,
-          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_UOT(i_meqn_desc->datatype)),
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           vname,
           cur_vreg,
           ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
@@ -956,7 +956,7 @@ void libxsmm_generator_mateqn_unpackstore_2d_reg_block( libxsmm_generated_code* 
           i_gp_reg_mapping->gp_reg_out,
           i_gp_reg_mapping->gp_reg_offset,
           1,
-          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_UOT(i_meqn_desc->datatype)),
+          (im * i_vlen + in * i_meqn_desc->ldo) * LIBXSMM_TYPESIZE(LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
           vname,
           cur_vreg,
           ((i_mask_last_m_chunk == 1) && (im == i_m_blocking - 1)) ? i_mask_reg : 0,
@@ -1005,7 +1005,7 @@ void libxsmm_generator_mateqn_store_reduce_to_scalar_output( libxsmm_generated_c
             i_micro_kernel_config->dcvt_mask_aux0, i_micro_kernel_config->dcvt_mask_aux2, i_micro_kernel_config->dcvt_mask_aux2);
   }
   libxsmm_x86_instruction_unified_vec_move( io_generated_code,
-      libxsmm_generator_matequation_regblocks_vmove_instruction((libxsmm_datatype)LIBXSMM_GETENUM_UOT(i_meqn_desc->datatype)),
+      libxsmm_generator_matequation_regblocks_vmove_instruction((libxsmm_datatype)LIBXSMM_GETENUM_OUT(i_meqn_desc->datatype)),
       i_gp_reg_mapping->gp_reg_out,
       LIBXSMM_X86_GP_REG_UNDEF, 0,
       0,

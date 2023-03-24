@@ -2666,8 +2666,8 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
     if (NULL != libxsmm_get_kernel_xinfo(code, &desc, NULL/*code_size*/) &&
         NULL != desc && LIBXSMM_KERNEL_KIND_MATMUL == LIBXSMM_DESCRIPTOR_KIND(desc->kind))
     {
-      info->iprecision = (libxsmm_datatype)LIBXSMM_GETENUM_UNP(desc->gemm.desc.datatype);
-      info->oprecision = (libxsmm_datatype)LIBXSMM_GETENUM_UOT(desc->gemm.desc.datatype);
+      info->iprecision = (libxsmm_datatype)LIBXSMM_GETENUM_INP(desc->gemm.desc.datatype);
+      info->oprecision = (libxsmm_datatype)LIBXSMM_GETENUM_OUT(desc->gemm.desc.datatype);
       info->prefetch = (libxsmm_gemm_prefetch_type)desc->gemm.desc.prefetch;
       info->flags = desc->gemm.desc.flags;
       info->lda = desc->gemm.desc.lda;
