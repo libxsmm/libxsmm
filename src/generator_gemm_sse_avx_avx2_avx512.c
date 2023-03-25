@@ -180,6 +180,17 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_sse_avx_avx2_avx512_kernel( libxs
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
+  } else if (((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0) && ((l_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_VNNI_B) > 0)) {
+    if (LIBXSMM_DATATYPE_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc->datatype )) {
+      unsigned int aux_flags = (unsigned int)((unsigned int)l_xgemm_desc->flags & (~LIBXSMM_GEMM_FLAG_TRANS_B));
+      l_new_xgemm_desc_opa = *l_xgemm_desc;
+      l_new_xgemm_desc_opa.ldb = l_xgemm_desc->k;
+      l_new_xgemm_desc_opa.flags = (unsigned int)((unsigned int)aux_flags & (~LIBXSMM_GEMM_FLAG_VNNI_B));
+      l_xgemm_desc_opa = (libxsmm_gemm_descriptor *) &l_new_xgemm_desc_opa;
+    } else {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
   } else {
     l_xgemm_desc_opa = l_xgemm_desc;
   }
