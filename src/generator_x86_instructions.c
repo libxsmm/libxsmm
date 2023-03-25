@@ -800,6 +800,12 @@ unsigned int libxsmm_x86_instruction_vec_is_hybrid( const unsigned int i_instr )
     case LIBXSMM_X86_INSTR_VSQRTSH:
     case LIBXSMM_X86_INSTR_VSUBPH:
     case LIBXSMM_X86_INSTR_VSUBSH:
+    case LIBXSMM_X86_INSTR_VPDPBSUD:
+    case LIBXSMM_X86_INSTR_VPDPBSUDS:
+    case LIBXSMM_X86_INSTR_VPDPBSSD:
+    case LIBXSMM_X86_INSTR_VPDPBSSDS:
+    case LIBXSMM_X86_INSTR_VPDPBUUD:
+    case LIBXSMM_X86_INSTR_VPDPBUUDS:
       break;
     default:
       l_return = 0;
@@ -854,6 +860,12 @@ unsigned int libxsmm_x86_instruction_vec_is_regmemonly( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_LDDQU:
     case LIBXSMM_X86_INSTR_VMOVSH_LD_MEM:
     case LIBXSMM_X86_INSTR_VMOVSH_ST_MEM:
+    case LIBXSMM_X86_INSTR_VBCSTNEBF162PS:
+    case LIBXSMM_X86_INSTR_VBCSTNESH2PS:
+    case LIBXSMM_X86_INSTR_VCVTNEEBF162PS:
+    case LIBXSMM_X86_INSTR_VCVTNEEPH2PS:
+    case LIBXSMM_X86_INSTR_VCVTNEOBF162PS:
+    case LIBXSMM_X86_INSTR_VCVTNEOPH2PS:
       break;
     default:
       l_return = 0;
@@ -3902,6 +3914,7 @@ void libxsmm_x86_instruction_tile_compute( libxsmm_generated_code* io_generated_
     case LIBXSMM_X86_INSTR_TDPBUSD:
     case LIBXSMM_X86_INSTR_TDPBUUD:
     case LIBXSMM_X86_INSTR_TDPBF16PS:
+    case LIBXSMM_X86_INSTR_TDPFP16PS:
       break;
     default:
       fprintf(stderr, "libxsmm_x86_instruction_tile_compute: unexpected instruction number: 0x%08x\n", i_tcompute_instr);
